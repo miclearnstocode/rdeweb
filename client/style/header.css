@@ -1,0 +1,115 @@
+.headerDiv{
+    border-bottom: solid thin rgba(200,200,200,0.3);
+    height: fit-content;
+    width: 100%;
+    display: flex;justify-content: center;
+    background-color: rgba(100,100,100,0.5);
+    position: relative;
+}
+.headerTable{
+    height: 100%;
+    width: 100%;
+    margin: auto auto auto 0;
+}
+.headerTD{
+    text-align: center;
+    font-family: Arial,sans-serif;
+    font-size: 2vw;
+    color: deepskyblue;
+    font-weight: bolder;
+    width: 5%;
+    height: fit-content;
+
+}
+.headerTDdetails{
+    font-size: 1.4vw;
+    color: #222222;
+    font-family: "Times New Roman", sans-serif;
+    font-weight: bolder;
+    text-shadow: 0 0 .5vw ghostwhite;
+    width: fit-content ;
+
+}
+.headerTDLogout{
+    width: 40vw ;
+    padding-right: 1vw;
+}
+
+.logoutDiv{
+    margin: auto 0 auto auto;
+    width: fit-content;
+    padding-left: 1vw;
+    padding-right: 1vw;
+    font-family: "Arial Black",sans-serif;
+    font-size: 1.2vw;
+    height: fit-content;
+    cursor: pointer;
+    color: #bbb;
+}
+.logoutDiv:hover{
+    color: deepskyblue;
+    border-bottom: solid thin deepskyblue;
+}
+.iconClass{
+    font-size: 1.4vw;
+    color: #bbb;
+    margin: auto 1vw;
+    animation: open 1s;
+}
+
+.classMe{
+    width: 5vw;
+    animation: hold .3s;
+    background-image: linear-gradient(to right, black,transparent);
+}
+
+@keyframes hold {
+    from{
+       width: .1vw;
+        opacity: 0;
+    }
+    to{
+        width: 5vw;
+        opacity: 1;
+    }
+}
+
+@keyframes open {
+    from{
+        opacity: 0;
+    }
+    to{
+        opacity: 1;
+    }
+}
+.recomBot{
+    height: 100%;
+    width: 50%;
+    margin: auto;
+    justify-content: center;
+    display: flex;
+    font-family: "Arial Black",sans-serif;
+    color: #bbb;
+}
+.recomBot:hover{
+    background-color: rgba(0,0,0,0.3);
+    color: deepskyblue;
+    transition: .3s;
+}
+.chatHeads{
+    background-color: transparent;
+    border-radius: 1vw;
+}
+.chatHeads:hover{
+    background-color: rgba(50,50,50,0.5);
+    transition: .3s;
+}
+.closeImage{
+    color: ghostwhite;
+}
+.closeImage:hover{
+    color: deepskyblue;
+}
+.closeImage:active{
+    color: lightblue;
+}

@@ -1,0 +1,396 @@
+.filePanel{
+    width: 100%;
+    height: 100%;
+}
+
+.tabHolder{
+    background-image: linear-gradient(transparent,black);
+    width: 100%;
+    height: 5%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.tabHolder td{
+    font-size: 1vw;
+    font-family: "Arial Black",sans-serif;
+    text-align: center;
+}
+.botTFiles{
+    white-space: nowrap;
+    padding-right: 1vw;
+    padding-left: 1vw;
+    cursor: pointer;
+    color: #777;
+    border-radius: 1vw 1vw 0 0 ;
+}
+.botTFiles:hover{
+    color: ghostwhite;
+    background-color: rgba(255,255,255,0.1);
+    transition: .5s;
+}
+
+
+.botTFilesActive{
+    color: deepskyblue;
+    background-image: linear-gradient(black,rgba(100,100,100,0.5));
+    pointer-events:none;
+}
+.fileContainer{
+    height: 95%;
+    width: 100%;
+}
+
+.innerP{
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.labelAPp{
+    font-family: "Arial Black",sans-serif;
+    font-size: 1.1vw;
+    color: #777;
+    margin: 1vh 1vh auto;
+    text-align: center;
+}
+.endorsementLeft{
+    width: 40%;
+    height: 100%;
+    margin: auto;
+
+}
+.hoverRem{
+    color: deepskyblue;
+    cursor: pointer;
+}
+.hoverRem:hover{
+    color: black;
+    text-shadow: 0 0 .4vw ghostwhite;
+}
+.searchBar{
+    margin-top: 3vh;
+    margin-left: 1vw;
+    width: fit-content;
+    background-color: rgba(0,0,0,0.2);
+    color: deepskyblue;
+    justify-content: center;
+    border-radius: 1vw;
+    display: flex;
+}
+.searchBar span{
+    vertical-align: middle;
+    margin: auto auto auto .5vw;
+    cursor: pointer;
+}
+.searchBar span:hover{
+    color: black;
+    text-shadow: 0 0 .5vw ghostwhite;
+}
+.adminResHigh{
+    background-color: rgba(0,0,0,0.3);
+}
+.addInputAc{
+    border: none;
+    outline: none;
+    background-image: linear-gradient(to right,transparent,black);
+    background-color: transparent;
+    height: 4vh;
+    width: 10vw;
+    border-radius: 0 1vw 1vw 0;
+    color: #bbb;
+    font-family: Arial,sans-serif;
+    font-size: 1vw;
+    margin-left: 1vw;
+}
+.addInputAc:focus{
+    width: 25vw;
+    animation: expandS .3s;
+}
+@keyframes expandS {
+    from{
+        width:10vw ;
+    }
+    to{
+        width: 25vw;
+    }
+}
+.delStateBot{
+    color: red;
+}
+
+.endorsementRight{
+    width: 54%;
+    margin: auto;
+    height: 100%;
+    border-left: solid thin rgba(255,255,255,0.2);
+}
+.searchTable{
+    width: fit-content;
+    margin: 1vh auto auto 1vw;
+    height: 5%;
+    table-layout: auto;
+    border-collapse: separate;
+
+}
+
+.fileRight{
+    visibility: hidden;
+}
+.recomSearch{
+    background-color: transparent;
+    outline:none;
+    border: none;
+    width: 15vw;
+    height: 4vh;
+    color: #999;
+    font-family: Arial,sans-serif;
+    font-weight: bolder;
+    font-size: 1.2vw;
+    border-radius: 0 1vw 1vw 0;
+    background-image: linear-gradient(to right,transparent,black);
+}
+.recomSearch:focus{
+    animation: exp .3s;
+    width: 30vw;
+}
+.searchIc{
+    color: #aaa;
+    font-size: 1.5vw;
+    background-color: rgba(0,0,0,0.3);
+    white-space: nowrap;
+    border-radius: 1vw;
+    padding-left: 1vw;
+}
+.searchIc{
+    vertical-align: middle;
+}
+ @keyframes exp {
+     from{
+         width: 15vw;
+     }
+     to{
+         width: 30vw;
+     }
+ }
+ .listHead{
+     background-image: linear-gradient(rgba(100,100,100,0.1),transparent);
+     height: 4vh;
+     width: 98%;
+     margin:1vh auto auto ;
+     font-size: 1.2vw;
+     font-family: "Arial Black",sans-serif;
+     color: #999;
+     text-align: center;
+ }
+
+.accAppList{
+    margin: 2vh auto auto;
+    width: 100%;
+    height: 80%;
+    background-color: rgba(0,0,0,0.2);
+    overflow-y: auto;
+}
+.listTab{
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1vh auto;
+}
+.listTab:hover{
+    background-color: rgba(0,0,0,0.3);
+    border: solid thin #bbb;
+}
+.lebTD{
+    font-family: Arial,sans-serif;
+    font-size: 1vw;
+    color: ghostwhite;
+    padding-left: 1vw;
+}
+.removeAcc{
+    font-family: "Arial Black",sans-serif;
+    font-size: 1vw;
+    padding-left: 1vw;
+    color: deepskyblue;
+    cursor: pointer;
+    width: fit-content;
+    text-align: center;
+}
+.removeAcc:hover{
+    color: black;
+    text-shadow: 0 0 .5vw ghostwhite;
+    background-color: black;
+}
+.fileListEndorse{
+    width: 98%;
+    height: 85%;
+    margin: auto;
+    overflow-y: auto;
+}
+.endorseTable{
+    width: 98%;
+    margin:1vh auto auto;
+    table-layout: auto;
+    cursor: pointer;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: .5vw;
+}
+
+.endorseTable:hover{
+    background-color: rgba(0,0,0,0.6);
+}
+.endorseLabel{
+    width: fit-content;
+    color: lightskyblue;
+    font-family: Arial,sans-serif;
+    font-size: 1vw;
+    font-weight: bolder;
+    white-space: nowrap;
+    text-align: right;
+}
+.endorseContent{
+    width: 100%;
+    color: #ddd;
+    font-size: 1vw;
+    font-family: Arial,sans-serif;
+}
+
+.endorsementViewerPanel{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top:0;
+    left: 0;
+    z-index: 3;
+    background-color: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+}
+.endorLet{
+    width: 78%;
+    margin: auto;
+    height: 95%;
+}
+.closeEndor{
+    height: fit-content;
+    width: fit-content;
+    right: 1vw;
+    left: auto;
+    top: 0;
+    text-align: center;
+    font-family: "Arial Black",sans-serif;
+    color: ghostwhite;
+    font-size: 1.5vw;
+    cursor: pointer;
+
+}
+.closeEndor:hover{
+    text-shadow: 0 0 .5vw ghostwhite;
+    color: black;
+}
+.fileTab{
+    width: 100%;
+    height: fit-content;
+}
+.fileTab:hover{
+    background-color: rgba(0,0,0,0.3);
+    color: ghostwhite;
+}
+.botFile{
+    width: 40vw;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+    border: solid thin #bbb;
+    text-align: center;
+    font-size: 2vw;
+    font-family: "Arial Black",sans-serif;
+     border-radius: 1vw;
+    background-color: rgba(150,150,150,0.5);
+    cursor: pointer;
+    margin-top: 3vh;
+    margin-bottom: 3vh;
+    color: #222;
+}
+.botFile:hover{
+    box-shadow: -.1rem -.1rem .5vw rgba(200,200,200,0.5),.1rem .1rem .5vw black;
+    background-color:rgba(150,150,150,0.2);
+    color: #999;
+}
+.botFile:active{
+    background-color:rgba(150,150,150,0.3);
+    color: ghostwhite;
+}
+.filePanelCon{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #666;
+    animation: showC .5s;
+}
+@keyframes showC {
+    from{
+        opacity: 0;
+    }
+    to{
+        opacity: 1;
+        background-color: #666;
+    }
+}
+.botEndors{
+    width: 90%;
+    font-size: 3vw;
+    padding-bottom: 2vh;
+    padding-top: 2vh;
+    padding-left: 2vw;
+    text-align: left;
+    border-bottom: solid thin rgba(0,0,0,0.5);
+    border-top: solid thin rgba(0,0,0,0.5);
+    cursor:pointer ;
+    color: #bbb;
+    text-decoration: none;
+
+}
+.botEndors:hover{
+    background-color: rgba(0,0,0,0.3);
+    color: deepskyblue;
+    transition: .3s;
+}
+.exitBotEndors{
+    position: absolute;
+    bottom: 2vh;
+    width: 90%;
+    left: 0;
+}
+.selectEvent{
+    background-color: rgba(0,0,0,0.2);
+    border: solid thin #555;
+}
+.selectEvent:hover{
+    border-color: deepskyblue;
+    background-color: rgba(0,0,0,0.4);
+}
+.perList{
+    background-color: rgba(50,50,50,0.4);
+    cursor: pointer;
+}
+.perList:hover{
+    background-color: rgba(0,0,0,0.3);
+    transition: .3s;
+}
+.docsList{
+    background-color: rgba(100,100,100,0.3);
+}
+.docsList:hover{
+    background-color: rgba(0,0,0,0.3);
+    transition: .3s;
+}
+.typeList{
+    background:rgba(0,0,0,0.1);
+    padding:.2rem;
+}
+.typeList:hover{
+    background:rgba(0,0,0,0.4);
+    transition:.3s;
+}

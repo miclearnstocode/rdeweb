@@ -1,0 +1,3213 @@
+import {$, CanvasRender, ConfirmationAlert, Fragment, MONTHS, Move, TextAreaExpand, Waiting} from '../../../lib/lib.js'
+
+export const Create = () => {
+
+    const current = window.location.href.replace(window.location.origin, '').split('/')[3]
+
+    const Bot = ({text, event, url}) => {
+
+        const getBot = (button) => {
+            if (current === url.split('/')[3]) {
+                button.className += ' activeBotNav'
+                button.getElementsByTagName('div')[0].style.color = 'deepskyblue'
+            }
+        }
+
+
+        return ($({
+            tag: 'div',
+            att: {
+                className: 'botNavApp',
+                innerHTML: `<div>${text}</div>`
+            },
+            elementHandler: getBot,
+
+            event: {
+                type: 'click',
+                method: event
+            }
+        }))
+    }
+
+    const Share = () => {
+        let frm
+        const getFrm=(el)=>{
+            frm=el
+        }
+
+        const leftPart = () => {
+
+            const data = {
+                file: '',
+                sender: '',
+                office: '',
+                approval: [],
+                finalApproval: '',
+                info: ''
+            }
+
+            const approvalRemover = (value) => {
+                for (let x = 0; x < data.approval.length; x++) {
+                    if (data.approval[x] === value) {
+                        data.approval.splice(x, 1)
+                    }
+                }
+            }
+
+            const getData = {
+                getFile: (value) => {
+                    data.file = value
+                },
+                getSender: (value) => {
+                    data.sender = value
+                },
+                getApproval: (value) => {
+                    data.approval.push(value)
+                },
+                getFinalApproval: (value) => {
+                    data.finalApproval = value
+                },
+                getInfo: (value) => {
+                    data.info = value
+                },
+                getOffice: (value) => {
+                    data.office = value
+                }
+            }
+
+            const selectFile = () => {
+                let label
+                const getLabelName = (leb) => {
+                    label = leb
+                    label.innerText = 'No file Selected'
+                }
+                const getSelect = async (select) => {
+                    const form = new FormData()
+                    form.append('getOffice', 'true')
+                    select.appendChild($({
+                        tag: 'option',
+                        att: {
+                            disabled: true,
+                            selected: true,
+                            innerText: '- - Select Office - -'
+                        }
+                    }))
+                    await fetch('/deleteUser', {
+                        method: 'POST',
+                        body: form
+                    }).then(res => res.json())
+                        .then(data => {
+                            if (data.length > 0) {
+                                data.forEach(val => {
+                                    select.appendChild($({
+                                        tag: 'option',
+                                        att: {
+                                            innerText: val.officeName
+                                        }
+                                    }))
+                                })
+                            }
+                        })
+
+                    select.addEventListener('change', (event) => {
+                        getData.getOffice(event.target.value)
+                    })
+                }
+
+
+                const labelRow = $({
+                    tag: 'tr',
+                    child: [
+                        $({
+                            tag: 'td',
+                            att: {
+                                className: 'labelRowShare'
+                            },
+                            text: 'Select File'
+                        })
+                    ]
+                })
+                const fileRow = $({
+                    tag: 'tr',
+                    child: [
+                        $({
+                            tag: 'td',
+                            att: {
+                                className: 'inputTdShare'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'lebShareFile'
+                                    },
+                                    style:{
+                                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                        fontSize:'1.3vw',
+                                        fontWeight:'bold'
+                                    },
+                                    elementHandler: getLabelName
+                                }),
+                                $({
+                                    tag: 'input',
+                                    att: {
+                                        type: 'file',
+                                        className: 'fileInputShare',
+                                        accept: 'application/pdf'
+                                    },
+                                    event: {
+                                        type: 'input',
+                                        method: (event) => {
+                                            label.innerHTML = `<span class="fa fa-file"></span> ${event.target.files[0].name}`
+                                            getData.getFile(event.target.files[0])
+                                        }
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                })
+
+
+                return ($({
+                    tag: 'table',
+                    att: {
+                        className: 'selectFTable'
+                    },
+                    child: [
+                        labelRow,
+                        fileRow,
+                        $({
+                            tag: 'div',
+                            style: {
+                                height: '1vh'
+                            }
+                        }),
+
+
+                    ]
+                }))
+            }
+
+            const SenderInfo = () => {
+
+
+                const fromRow = () => {
+
+                    const frmInput = () => {
+
+                        return ($({
+                            tag: 'input',
+                            att: {
+                                type: 'text',
+                                placeholder: 'Enter text here',
+                                className: 'frmInput'
+                            },
+                            event: {
+                                type: 'input',
+                                method: (event) => {
+                                    getData.getSender(event.target.value)
+                                }
+                            }
+                        }))
+                    }
+
+                    return ($({
+                        tag: 'tr',
+                        child: [
+                            $({
+                                tag: 'td',
+                                att: {
+                                    innerText: 'From :',
+                                    className: 'frmLabel'
+                                },
+
+                            }),
+                            $({
+                                tag: 'td',
+                                att: {
+                                    className: 'frmTd'
+                                },
+                                child: [
+                                    frmInput()
+                                ]
+
+                            })
+                        ]
+                    }))
+                }
+                let dataListEl
+                let allUser
+
+                const getDatalist = async (dataL) => {
+                    dataListEl = dataL
+                    const form = new FormData()
+                    form.append('allUser', 'true')
+                    await fetch('/loader', {
+                        method: 'POST',
+                        body: form
+                    }).then(res => res.json())
+                        .then(data => {
+                            data.forEach(val => {
+                                dataL.appendChild($({
+                                    tag: 'option',
+                                    att: {
+                                        value: val.fullname,
+                                        id: val.id,
+                                        innerText: val.email,
+                                        status: '',
+                                        signature: {
+                                            locationX: '',
+                                            locationY: ''
+                                        }
+                                    }
+                                }))
+                            })
+                        })
+                }
+                const getNameFinal = (inputFinal) => {
+                    inputFinal.setAttribute('list', 'datalistAdd')
+                    inputFinal.addEventListener('input', (event) => {
+                        getData.getFinalApproval(event.target.value)
+                    })
+                }
+                const ToRow = () => {
+
+                    const toTop = () => {
+                        const addedName = ({name}) => {
+
+                            const remove = $({
+                                tag: 'div',
+                                att: {
+                                    className: 'fa-solid fa-trash-can'
+                                },
+                                style: {
+                                    margin: 'auto',
+                                    width: 'fit-content',
+
+                                }
+                            })
+                            const lebName = $({
+                                tag: 'div',
+                                text: name,
+                                style: {
+                                    margin: 'auto',
+                                    width: '100%',
+                                }
+                            })
+
+                            return ($({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    width: '90%',
+                                    margin: '.5vh auto',
+                                },
+                                att: {
+                                    className: 'listNameShare'
+                                },
+                                child: [
+                                    lebName,
+                                    remove
+                                ]
+                            }))
+                        }
+                        let inputVal
+                        let divCon
+
+
+                        const getInput = (el) => {
+                            inputVal = el
+                            inputVal.setAttribute('list', 'datalistAdd')
+
+                        }
+
+                        const getDiv = (el) => {
+                            divCon = el
+                        }
+
+
+                        /* Creating a span element with the text "Shared To: " and styling it with the font family "Arial
+                        Black,sans-serif". */
+                        const spanLeb = $({
+                            tag: 'span',
+                            text: "Shared To: ",
+                            style: {
+                                fontFamily: "Arial Black,sans-serif",
+                            }
+                        })
+                        const dataList = $({
+                            tag: 'datalist',
+                            att: {
+                                id: 'datalistAdd'
+                            },
+                            elementHandler: getDatalist
+                        })
+
+                        const inputSearch = $({
+                            tag: 'input',
+                            att: {
+                                type: 'search',
+                                className: 'tosearch',
+                                placeholder: 'Enter text here'
+                            },
+                            style:{
+                                border:'solid thin grey'
+                            },
+                            elementHandler: getInput,
+
+                        })
+
+                        /* The above code is creating a span element with class name 'fa fa-user-plus addTo' and adding a
+                        click event to it. */
+                        const addBot = $({
+                            tag: 'span',
+                            att: {
+                                className: 'fa fa-user-plus addTo',
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    if (inputVal.value !== '') {
+                                        let idOp = ''
+                                        let email = ''
+                                        let state = true
+                                        for (let x = 0; x < data.approval.length; x++) {
+                                            if (data.approval[x].name === inputVal.value) {
+                                                state = false
+                                                break;
+                                            }
+                                        }
+                                        if (state) {
+                                            divCon.appendChild(addedName({
+                                                name: inputVal.value
+                                            }))
+                                            let dl = dataListEl.getElementsByTagName('option')
+                                            for (let x = 0; x < dl.length; x++) {
+                                                if (dl[x].value === inputVal.value) {
+                                                    idOp = dl[x].id
+                                                    email = dl[x].innerText
+                                                }
+                                            }
+                                            getData.getApproval({
+                                                name: inputVal.value,
+                                                id: idOp,
+                                                email: email,
+                                                signature: '',
+                                                signurl: '',
+                                                status: '',
+                                                note: ''
+                                            })
+
+                                        } else {
+                                            alert("Already in list...!")
+                                        }
+
+                                        inputVal.value = ''
+                                    }
+                                }
+                            }
+                        })
+                        const divList = $({
+                            tag: 'div',
+                            att: {
+                                className: 'listToDiv'
+                            },
+                            elementHandler: getDiv
+                        })
+                        return ($({
+                            tag: 'div',
+                            att: {
+                                className: 'toDiv'
+                            },
+                            child: [
+                                spanLeb,
+                                dataList,
+                                inputSearch,
+                                addBot,
+                                divList
+                            ]
+                        }))
+                    }
+                    return ($({
+                        tag: 'tr',
+                        child: [
+                            $({
+                                tag: 'td',
+                                att: {
+                                    colSpan: '2'
+                                },
+                                child: [
+                                    toTop()
+                                ]
+
+                            }),
+
+                        ]
+                    }))
+                }
+                const finalRow = () => {
+                    return ($({
+                        tag: 'tr',
+                        child: [
+                            $({
+                                tag: 'td',
+                                att: {
+                                    colSpan: '2'
+                                },
+                                style: {
+
+                                    fontFamily: 'Arial Black, san-serif',
+                                    color: 'lightskyblue',
+                                    fontSize: '1vw',
+                                    height: '4vh',
+                                },
+                                text: 'Recommending Approval: ',
+                                child: [
+                                    $({
+                                        tag: 'input',
+                                        style: {
+                                            marginLeft: '1vw',
+                                            outline: 'none',
+                                            backgroundColor: 'rgba(0,0,0,0.2)',
+                                            width: '23vw',
+                                            fontSize: '1.2vw',
+                                            color: 'ghostwhite',
+                                            height: '100%',
+                                            paddingLeft: '1vw',
+                                            paddingRight: '1vw',
+                                            border:'solid thin grey'
+                                        },
+                                        att: {
+                                            type: 'search',
+                                            placeholder: 'Type name...'
+                                        },
+                                        elementHandler: getNameFinal,
+                                    })
+                                ]
+
+                            }),
+                            $({
+                                tag: 'td'
+                            })
+                        ]
+                    }))
+                }
+                const infoRow = () => {
+
+                    const textArea = $({
+                        tag: 'textarea',
+                        att: {
+                            className: 'infoText',
+                            placeholder: 'Enter additional details',
+                            maxLength: '100'
+                        },
+                        style:{
+                            border:'solid thin grey',
+                            width:'99%'
+                        },
+                        event: {
+                            type: 'input',
+                            /* A function that is being called when the textarea is being typed in. It is expanding the
+                            textarea to the size of the text. */
+                            method: (event) => {
+                                event.target.style.height = TextAreaExpand(event.target.value) + 'vh';
+                                event.target.style.padding = '.5vh'
+                            }
+                        }
+                    })
+                    return ($({
+                        tag: 'tr',
+                        child: [
+                            $({
+                                tag: 'td',
+                                att: {
+                                    colSpan: '2',
+                                },
+                                event: {
+                                    type: 'input',
+                                    method: (event) => {
+                                        getData.getInfo(event.target.value)
+                                    }
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        att: {
+                                            className: ' textareaLeb',
+                                            innerHTML: 'Document Title'
+                                        },
+                                        style:{
+                                            marginBottom: '1vh',
+                                        }
+
+                                    }),
+                                    textArea
+                                ]
+                            })
+                        ]
+                    }))
+                }
+
+
+                const submitRow = () => {
+                    return ($({
+                        tag: 'tr',
+                        event: {
+                            type: 'click',
+                            method: async () => {
+
+                                if (!data.file.size*1   <=10000) {
+                                    // && data.sender !== ''
+                                    /* The above code is a JavaScript code that is used to send the data to the server. */
+                                    if (data.info !== '' && data.approval.length > 0) {
+                                        let loading = Waiting()
+                                        document.body.appendChild(loading)
+                                        const remove = () => {
+                                            loading.remove()
+                                        }
+                                        const form = new FormData()
+
+                                        let dl = dataListEl.getElementsByTagName('option')
+                                        let finalID
+                                        let finalEmail
+
+                                        for (let x = 0; x < dl.length; x++) {
+                                            if (dl[x].value === data.finalApproval) {
+                                                finalID = dl[x].id
+                                                finalEmail = dl[x].innerText
+                                            }
+                                        }
+                                        let finalData = {
+                                            name: data.finalApproval,
+                                            id: finalID,
+                                            email: finalEmail,
+                                            signature: '',
+                                            signurl: '',
+                                            status: '',
+                                            note: ''
+                                        }
+
+                                        form.append('approvalFiles', 'true')
+
+                                        form.append('files', data.file)
+                                        form.append('appSign', JSON.stringify(data.approval))
+                                        form.append('finalApprove', JSON.stringify(finalData))
+                                        form.append('info', data.info.replace(/(\r\n|\n|\r)/gm, " "))
+                                        await fetch('/approval', {
+                                            method: 'POST',
+                                            body: form
+                                        }).then(res => {
+                                            if (res.ok) {
+                                                remove()
+                                                return res.json()
+                                            }
+                                        })
+                                            .then(dat => {
+                                                if (dat.status) {
+                                                    document.body.appendChild(ConfirmationAlert("Success..!", () => {
+                                                        window.location.reload()
+                                                    }))
+                                                } else {
+                                                    alert(dat.message)
+                                                }
+                                            })
+                                    } else {
+                                       if(confirm("Document have only 1 receiver. \n Do you want to proceed?")){
+                                           let loading = Waiting()
+                                           document.body.appendChild(loading)
+                                           const remove = () => {
+                                               loading.remove()
+                                           }
+                                           const form = new FormData()
+
+                                           let dl = dataListEl.getElementsByTagName('option')
+                                           let finalID
+                                           let finalEmail
+
+                                           for (let x = 0; x < dl.length; x++) {
+                                               if (dl[x].value === data.finalApproval) {
+                                                   finalID = dl[x].id
+                                                   finalEmail = dl[x].innerText
+                                               }
+                                           }
+                                           let finalData = {
+                                               name: data.finalApproval,
+                                               id: finalID,
+                                               email: finalEmail,
+                                               signature: '',
+                                               signurl: '',
+                                               status: '',
+                                               note: ''
+                                           }
+
+                                           form.append('approvalFiles', 'true')
+
+                                           form.append('files', data.file)
+                                           form.append('appSign', JSON.stringify(data.approval))
+                                           form.append('finalApprove', JSON.stringify(finalData))
+                                           form.append('info', data.info.replace(/(\r\n|\n|\r)/gm, " "))
+                                           await fetch('/approval', {
+                                               method: 'POST',
+                                               body: form
+                                           }).then(res => {
+                                               if (res.ok) {
+                                                   remove()
+                                                   return res.json()
+                                               }
+                                           })
+                                               .then(dat => {
+                                                   if (dat.status) {
+                                                       document.body.appendChild(ConfirmationAlert("Success..!", () => {
+                                                           window.location.reload()
+                                                       }))
+                                                   } else {
+                                                       alert(dat.message)
+                                                   }
+                                               })
+                                       }
+                                    }
+                                } else {
+                                    alert("Your file is larger than 10 MB...!")
+                                }
+
+                            }
+                        },
+                        child: [
+                            $({
+                                tag: 'td',
+                                att: {
+                                    colSpan: '2',
+                                    className: 'subShe'
+                                },
+                                text: 'Submit'
+                            })
+                        ]
+                    }))
+                }
+
+                return ($({
+                    tag: 'table',
+                    att: {
+                        className: 'infoShare'
+                    },
+                    child: [
+
+                        ToRow(),
+                        finalRow(),
+                        $({
+                            tag: 'tr',
+                            child: [
+                                $({
+                                    tag: 'td',
+                                    style: {
+                                        height: '2vh'
+                                    }
+                                })
+                            ]
+                        }),
+                        infoRow(),
+                        $({
+                            tag: 'tr',
+                            child: [
+                                $({
+                                    tag: 'td',
+                                    style: {
+                                        height: '2vh'
+                                    }
+                                })
+                            ]
+                        }),
+                        submitRow()
+                    ]
+                }))
+            }
+
+
+            return ($({
+                tag: 'div',
+                att: {
+                    className: 'divShare '
+                },
+                child: [
+                    selectFile(),
+                    SenderInfo()
+                ]
+
+            }))
+        }
+        const rightPart = () => {
+            const Label = () => {
+                return ($({
+                    tag: 'div',
+                    att: {
+                        className: 'rightLeb'
+                    },
+                    text: 'Document Status'
+                }))
+            }
+
+            let docsBody
+            const searchingEvent=(inputValue)=>{
+                const child=docsBody.childNodes
+                for(let x=0;x<child.length;x++){
+                    if(!child[x].innerText.includes(inputValue)){
+                        child[x].style.display='none'
+                    }else {
+                        child[x].style.display=''
+                    }
+
+                }
+            }
+
+            const SearchBar = () => {
+
+                const searchHolder = () => {
+                    const searchIcon = $({
+                        tag: 'span',
+                        att: {
+                            className: 'fa fa-search'
+                        }
+                    })
+                    const input = $({
+                        tag: 'input',
+                        att: {
+                            className: 'inputrightBox',
+                            type: 'search',
+                            placeholder:'Search Document'
+                        },
+                        event:{
+                            type:'input',
+                            method:(event)=>{
+                                searchingEvent(event.target.value)
+                            }
+                        }
+                    })
+                    return ($({
+                        tag: 'div',
+                        att: {
+                            className: 'searchHolderBar'
+                        },
+                        child: [
+                            searchIcon,
+                            input
+                        ]
+                    }))
+                }
+
+
+                return ($({
+                    tag: 'div',
+                    att: {
+                        className: 'searchBarRight'
+                    },
+                    child: [
+                        searchHolder(),
+
+                    ]
+                }))
+            }
+            const fileContent = () => {
+
+                const DocsSub=({date, docsNoteText,transferState,status,file, signature, info, docId, office, sender, saveState,responseDocs,approvalName,approvalStatus,approvalNote,approvalDate,})=>{
+                    let docs
+                    let TrackState=false
+                    let statGuide
+
+                    const getMainMesBody=(el)=>{
+                        if(approvalStatus==='approved'){
+                            el.style.borderColor='deepskyblue'
+                            el.style.backgroundColor="rgba(0,0,0,0.2)"
+                        }
+                        statGuide=el
+                        for (const val of signature) {
+                            if(val.status==='rejected'){
+                                el.style.borderColor='#800'
+                                el.style.backgroundColor="rgba(20,0,0,0.4)"
+                                break;
+                            }
+                        }
+                        if(status==='returned'||status==='rejected'){
+                            el.style.borderColor='#800'
+                            el.style.backgroundColor="rgba(20,0,0,0.4)"
+                        }
+
+
+
+                    }
+                    const getVi=(el)=>{
+                        docs=el
+                    }
+                    let tracker
+                    const getTrackerPanel=(el)=>{
+                        tracker=el
+                    }
+                    const icon=$({
+                        tag:'div',
+                        att:{
+                            className:'fa-solid fa-file-pdf'
+                        },
+                        style:{
+                            fontSize:'3.5vw',
+                            textAlign:'center',
+                            margin:'auto',
+                            marginLeft: '.5vw',
+                            marginRight:'auto',
+                            color:'grey'
+                        }
+                    })
+                    const title=$({
+                        tag:'div',
+                        style:{
+                            width:'100%',
+                            height:'100%',
+                            margin:'auto',
+                            paddingLeft: '.5rem',
+                            paddingRight: '.5rem',
+                            color:'#bbb',
+                            fontFamily:'monospace',
+                            fontSize:'1vw'
+                        },
+                        att:{
+                            innerHTML:`<i> " ${info} " </i>`
+                        }
+                    })
+
+                    const Status=()=>{
+                        const statusLabel=$({
+                            tag:'div',
+                            style:{
+                                fontFamily:'arial,sans-serif',
+                                color:'#aaa',
+                                margin:'auto',
+                                marginLeft:'0',
+                                width:'55%',
+                                fontSize:'1vw'
+                            },
+                            att:{
+                                innerHTML:`<span></span>STATUS : </span><span>${(status===null)? "Pending":status}</span>`
+                            }
+                        })
+
+                        return($({
+                            tag:'div',
+                            style:{
+                                width:'98%',
+                                display:'flex',
+                                justifyContent: 'center',
+                                margin:'1vh auto auto',
+                                height:'4vh'
+                            },
+                            child:[
+                                statusLabel,
+
+                            ]
+                        }))
+                    }
+
+                    const BotRow=()=>{
+                        const track=$({
+                            tag:'div',
+                            style:{
+                                fontFamily:'arial,sans-serif',
+                                margin:'auto',
+                                width:'100%',
+
+                                textAlign:'center',
+                                cursor:'pointer',
+                                height:'100%',
+                                justifyContent:'center',
+                                display:'flex'
+                            },
+                            att:{
+                                className:'docsRBot',
+                                innerHTML:'<div style="margin: auto">Track document</div>'
+                            },
+                            event:{
+                                type:'click',
+                                method:()=>{
+                                    TrackState=!TrackState;
+                                    if(TrackState){
+                                        tracker.className+=' trackerPanelShow'
+                                        tracker.innerHTML=''
+                                        transferState.forEach(val=>{
+                                            tracker.appendChild($({
+                                                tag:'div',
+                                                style:{
+                                                    textAlign:'center',
+                                                    margin:'1vh auto auto'
+                                                },
+                                                child:[
+                                                    $({
+                                                        tag:'div',
+                                                        style:{
+                                                            width:'100%',
+                                                            textAlign:'center',
+                                                            color:'#bbb',
+                                                            fontSize:'1vw'
+                                                        },
+                                                        att:{
+                                                            className:'fa-solid fa-arrow-down'
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag:'div',
+                                                        style:{
+                                                            width:'100%',
+                                                            textAlign:'center',
+                                                            color:'#999',
+                                                            fontFamily:'monospace',
+                                                            fontSize:'1vw'
+                                                        },
+                                                        text:`Date : ${val.date}`
+                                                    }),
+                                                    $({
+                                                        tag:'div',
+                                                        style:{
+                                                            width:'100%',
+                                                            textAlign:'center',
+                                                            color:'#bbb',
+                                                            fontFamily:'monospace',
+                                                            fontSize:'1vw'
+                                                        },
+                                                        text:`- - ${val.current} - -`
+                                                    }),
+
+                                                ]
+
+                                            }))
+                                        })
+
+                                    }else {
+                                        tracker.className=tracker.className.replace(' trackerPanelShow','')
+                                    }
+                                }
+                            }
+
+                        })
+
+                        const responseViewer=({file})=>{
+                            let vr
+                            const getViewEr=(el)=>{
+                                vr=el
+                            }
+
+                            return($({
+                                tag:'div',
+                                style:{
+                                    backgroundImage:"radial-gradient(rgba(100,100,100,0.5),black)",
+                                    position: 'absolute',
+                                    left:'0',
+                                    top:'0',
+                                    height:'100%',
+                                    width:'100%'
+                                },
+                                elementHandler:getViewEr,
+                                child:[
+                                    $({
+                                        tag:'div',
+                                        style:{
+                                            width:'80%',
+                                            height:'90%',
+                                            margin:'auto'
+                                        },
+                                        child:[
+                                            $({
+                                                tag:'object',
+                                                att:{
+                                                    type:'application/pdf',
+                                                    data:file.replace('..','')
+                                                },
+                                                style:{
+                                                    width:'100%',
+                                                    height:'100%',
+                                                    margin:'auto'
+                                                }
+                                            }),
+                                            $({
+                                                tag:'div',
+                                                style:{
+                                                    height:'10%',
+                                                    width:'100%',
+                                                    backgroundColor:'yellow',
+                                                    display:'flex',
+                                                    justifyContent:'center',
+                                                },
+                                                child:[
+                                                    $({
+                                                        tag:'div',
+                                                        style:{
+                                                            margin:'auto',
+                                                            display:'flex',
+                                                            justifyContent:'center',
+                                                            cursor:'pointer',
+                                                        },
+                                                        event:{
+                                                            type:'click',
+                                                            method:()=>{
+                                                                vr.remove()
+                                                            }
+                                                        },
+                                                        child:[
+                                                            $({
+                                                                tag:'div',
+                                                                att:{
+                                                                    className:'fa-solid fa-right-from-bracket'
+                                                                },
+                                                                style:{
+                                                                    margin:'auto',
+                                                                    fontSize:'2vw'
+                                                                }
+                                                            }),
+                                                            $({
+                                                                tag:'div',
+                                                                style:{
+                                                                    margin:'.5vw',
+                                                                    fontSize:'2vw',
+                                                                    fontFamily:'arial black,sans-serif'
+                                                                },
+                                                                text:'Exit'
+                                                            })
+                                                        ]
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    })
+                                ]
+                            }))
+                        }
+                        let ntf
+                        const getNotif=(el)=>{
+                            ntf=el
+                        }
+                        const viewResponse=$({
+                            tag:'div',
+                            style:{
+                                fontFamily:'arial,sans-serif',
+                                margin:'auto',
+                                width:'100%',
+
+                                textAlign:'center',
+                                cursor:'pointer',
+                                height:'100%',
+                                justifyContent:'center',
+                                display:'flex',
+                            },
+                            event:{
+                                type:'click',
+                                method:async ()=>{
+
+                                    if(status==='returned'||status==='rejected'){
+                                        alert("No response found..!")
+                                    }else {
+                                        const form=new FormData();
+                                        form.append('docId',docId)
+                                        form.append('responseViewerDoc','true')
+                                        await fetch('/approval',{
+                                            method:'POST',
+                                            body:form
+                                        }).then(res=>res.json())
+                                            .then(data=>{
+                                                if(data.status){
+                                                  window.localStorage.setItem(docId,'true')
+                                                    ntf.style.display='none'
+                                                    document.body.appendChild(responseViewer({
+                                                        file:data.file
+                                                    }))
+                                                }
+                                            })
+                                    }
+                                }
+                            },
+                            att:{
+                                className:'docsRBot',
+
+                            },
+                            child:[
+                                $({
+                                    tag:'div',
+                                    text:'View Response',
+                                    style:{
+                                        margin:'auto',
+                                        position:'relative',
+                                        color:(responseDocs==='responded')? "ghostwhite":"none",
+                                    },
+                                    child:[
+                                        $({
+                                            tag:'div',
+                                            text:'!',
+                                            style:{
+                                                display:(responseDocs==='responded'&&window.localStorage.getItem(docId)===null)? "block":"none",
+                                                position:'absolute',
+                                                top:'-3vh',
+                                                right:'0',
+                                                borderRadius:'45vw',
+                                                color:'black',
+                                                backgroundColor:'ghostwhite',
+                                                width:'1.5vw',
+                                                fontSize:'1.2vw',
+                                                fontFamily:'arial black,sans-serif'
+
+                                            },
+                                            elementHandler:getNotif
+                                        })
+                                    ]
+                                })
+                            ]
+                        })
+
+                        const view=()=>{
+
+                            const viewPan=()=>{
+                                const objectData=$({
+                                    tag:'object',
+                                    att:{
+                                        type:'application/pdf',
+                                        data:file.replace('..',''),
+                                    },
+                                    style:{
+                                        width:'100%',
+                                        height:'100%'
+                                    }
+
+                                })
+
+                                const ControllerTop=()=>{
+                                    /**
+                                     * `const getTop=(conTop)=>{if(status==='returned'){conTop.appendChild(docsNote())}else
+                                     * {conTop.appendChild(docsTitle)conTop.appendChild(signatures)}}`
+                                     * @param conTop - The container that will hold the title and signatures.
+                                     */
+                                    const getTop=(conTop)=>{
+                                        if(status==='returned'){
+                                            conTop.appendChild(docsNote())
+                                        }else {
+                                            conTop.appendChild(docsTitle)
+                                            conTop.appendChild(signatures)
+                                        }
+                                    }
+
+                                    const docsNote=()=>{
+                                        const label=$({
+                                            tag:'div',
+                                            text:'For correction.',
+                                            style:{
+                                                fontFamily:'arial black,sans-serif',
+                                                color:'red',
+                                                fontsize:'1.1vw',
+                                                textAlign:'center',
+                                                margin:'1vh auto auto '
+                                            }
+                                        })
+                                        const noteText=$({
+                                            tag:'div',
+                                            style:{
+                                                fontFamily:'arial,sans-serif',
+                                                fontSize:'1vw',
+                                                color:'#bbb',
+                                                width:'98%',
+                                                height:"fit-content",
+                                                margin:'auto'
+                                            },
+                                            text:docsNoteText
+                                        })
+                                        return($({
+                                            tag:'div',
+                                            style:{
+                                                width:'98%',
+                                                margin:'auto',
+                                            },
+                                            child:[
+                                                label,
+                                                noteText
+                                            ]
+                                        }))
+                                    }
+
+                                    const docsTitle=$({
+                                        tag:'div',
+                                        style:{
+                                            fontFamily:'arial,sans-serif',
+                                            fontsize:'1vw',
+                                            color:'deepskyblue',
+                                            width:'98%',
+                                            margin:'1vh auto'
+                                        },
+                                        text:` TITLE : " ${info} "`,
+                                    })
+                                    const listSig=()=>{
+                                        const getUl=(ul)=>{
+                                            const li=({dateSign,signStat,fullname,note})=>{
+                                                const fullnameList=$({
+                                                    tag:'div',
+                                                    style:{
+                                                        width:'100%',
+                                                    },
+                                                    att:{
+                                                        innerHTML:`<span style="font-weight: bolder; color: deepskyblue">Full name : </span><span style="font-family: arial, sans-serif">${fullname}</span>`
+                                                    }
+
+                                                })
+                                                const dateSigned=$({
+                                                    tag:'div',
+                                                    style:{
+                                                        width:'100%',
+                                                    },
+                                                    att:{
+                                                        innerHTML:`<span style="font-weight: bolder; color: deepskyblue">Date Signed : </span><span style="font-family: arial, sans-serif">${(dateSign===null)?"":dateSign}</span>`
+                                                    }
+
+                                                })
+                                                const StatSign=$({
+                                                    tag:'div',
+                                                    style:{
+                                                        width:'100%',
+                                                    },
+                                                    att:{
+                                                        innerHTML:`<span style="font-weight: bolder; color: deepskyblue">Status : </span><span style="font-family: arial, sans-serif">${(signStat===null)? "Pending...":signStat}</span>`
+                                                    }
+                                                })
+                                                const SignNote=$({
+                                                    tag:'div',
+                                                    style:{
+                                                        width:'100%',
+                                                        border:'solid thin #bbb',
+                                                        marginTop: '1vh',
+                                                        padding:'.2rem',
+                                                        marginBottom:'2vh'
+                                                    },
+                                                    att:{
+                                                        innerHTML:`<span style="font-weight: bolder; color: deepskyblue">Note : </span><span style="font-family: arial, sans-serif">${(note===null)? "no notes found..":note}</span>`
+                                                    }
+                                                })
+
+                                                return($({
+                                                    tag:'li',
+                                                    style:{
+                                                        fontSize:'1vw',
+                                                        fontFamily:'arial,sans-serif',
+                                                        width:'fit-content'
+                                                    },
+                                                    child:[
+                                                        fullnameList,
+                                                        StatSign,
+                                                        dateSigned,
+                                                        SignNote
+                                                    ]
+                                                }))
+                                            }
+
+                                            signature.forEach(val=>{
+
+                                                /* Creating a new list item and appending it to the unordered list. */
+                                                ul.appendChild(li({
+                                                    fullname:val.fullname,
+                                                    dateSign:val.date,
+                                                    signStat:val.status,
+                                                    note:val.note
+                                                }))
+                                            })
+                                        }
+                                        return($({
+                                            tag:'ul',
+                                            style:{
+                                                width:'85%',
+                                                color:'#bbb',
+
+                                            },
+                                            elementHandler:getUl
+                                        }))
+                                    }
+                                    const Approval=()=>{
+
+                                        const getapp=(el)=>{
+                                            const li=({dateSign,signStat,fullname,note})=>{
+
+                                                const fullnameList=$({
+                                                    tag:'div',
+                                                    style:{
+                                                        width:'100%',
+                                                    },
+                                                    att:{
+                                                        innerHTML:`<span style="font-weight: bolder; color: deepskyblue">Full name : </span><span style="font-family: arial, sans-serif">${fullname}</span>`
+                                                    }
+
+                                                })
+                                                const dateSigned=$({
+                                                    tag:'div',
+                                                    style:{
+                                                        width:'100%',
+                                                    },
+                                                    att:{
+                                                        innerHTML:`<span style="font-weight: bolder; color: deepskyblue">Date Signed : </span><span style="font-family: arial, sans-serif">${(dateSign===null)?"":dateSign}</span>`
+                                                    }
+
+                                                })
+                                                const StatSign=$({
+                                                    tag:'div',
+                                                    style:{
+                                                        width:'100%',
+                                                    },
+                                                    att:{
+                                                        innerHTML:`<span style="font-weight: bolder; color: deepskyblue">Status : </span><span style="font-family: arial, sans-serif">${(signStat===null)? "Pending...":signStat}</span>`
+                                                    }
+                                                })
+                                                const SignNote=$({
+                                                    tag:'div',
+                                                    style:{
+                                                        width:'100%',
+                                                        border:'solid thin #bbb',
+                                                        marginTop: '1vh',
+                                                        padding:'.2rem'
+                                                    },
+                                                    att:{
+                                                        innerHTML:`<span style="font-weight: bolder; color: deepskyblue">Note : </span><span style="font-family: arial, sans-serif">${(note===null)? "no notes found..":note}</span>`
+                                                    }
+                                                })
+
+                                                return($({
+                                                    tag:'li',
+                                                    style:{
+                                                        fontSize:'1vw',
+                                                        fontFamily:'arial,sans-serif',
+                                                        width:'fit-content'
+                                                    },
+                                                    child:[
+                                                        fullnameList,
+                                                        StatSign,
+                                                        dateSigned,
+                                                        SignNote
+                                                    ]
+                                                }))
+                                            }
+                                            el.appendChild(li({
+                                                dateSign:approvalDate,
+                                                fullname:approvalName,
+                                                signStat:approvalStatus,
+                                                note:approvalNote
+                                            }))
+                                        }
+                                        return($({
+                                            tag:'ul',
+                                            style:{
+                                                width:'85%',
+                                                color:'#bbb'
+                                            },
+                                            elementHandler:getapp
+                                        }))
+                                    }
+                                    const signatures=$({
+                                        tag:'div',
+                                        style:{
+                                            width:'',
+                                            height:'fit-content',
+                                            paddingTop: '1vh',
+                                            paddingBottom:'1vh',
+                                            backgroundColor:'rgba(0,0,0,0.3)'
+                                        },
+                                        child:[
+                                            $({
+                                                tag:'div',
+                                                text:'Signature Status',
+                                                style:{
+                                                    fontFamily:'arial black,sans-serif',
+                                                    fontSize:'1.1vw',
+                                                    color:'#bbb'
+                                                },
+                                            }),
+                                            listSig(),
+                                            $({
+                                                tag:'div',
+                                                text:'Recommending Approval',
+                                                style:{
+                                                    fontFamily:'arial black,sans-serif',
+                                                    fontSize:'1.1vw',
+                                                    color:'#bbb'
+                                                },
+                                            }),
+                                            Approval()
+
+                                        ]
+                                    })
+                                    return($({
+                                        tag:'div',
+                                        style:{
+                                            width:'100%',
+                                            height:'92%',
+                                            overflowY:'auto'
+                                        },
+                                        elementHandler:getTop,
+                                    }))
+                                }
+                                const ControllerBot=()=>{
+                                    return($({
+                                        tag:'div',
+                                        style:{
+                                            width:'100%',
+                                            height:'7%',
+                                            backgroundColor:'#555',
+                                            display:'flex',
+                                            justifyContent:'center',
+                                            cursor:'pointer'
+                                        },
+                                        child:[
+                                          $({
+                                              tag:'div',
+                                              att:{
+                                                  className:'fa-solid fa-arrow-right-from-bracket'
+                                              },
+                                              style:{
+                                                  fontSize:'2vw',
+                                                  margin:'auto',
+                                                  color:'deepskyblue'
+                                              },
+                                              child:[
+                                                  $({
+                                                      tag:'span',
+                                                      style:{
+                                                          fontFamily:'arial black,sans-serif',
+                                                          color:'deepskyblue'
+                                                      },
+                                                      text:'Exit'
+                                                  })
+                                              ]
+                                          })
+                                        ],
+                                        event:{
+                                            type:'click',
+                                            method:()=>{
+                                                docs.remove()
+                                            }
+                                        }
+                                    }))
+                                }
+
+                                return($({
+                                    tag:'div',
+                                    style:{
+                                        position:'absolute',
+                                        height:'100%',
+                                        left:'0',
+                                        backgroundImage:' radial-gradient(rgba(100,100,100,0.5),black)',
+                                        width:'100%',
+                                        top:'0',
+                                        display:'flex',
+                                        justifyContent:'center'
+                                    },
+                                    elementHandler:getVi,
+                                    child:[
+                                        $({
+                                            tag:'div',
+                                            style:{
+                                                width:'25%',
+                                                height:'98%',
+                                                backgroundColor:'#333',
+                                                margin:'auto'
+                                            },
+                                            child:[
+                                                ControllerTop(),
+                                                ControllerBot()
+                                            ]
+                                        }),
+                                        $({
+                                            tag:'div',
+                                            style:{
+                                                width:'74%',
+                                                height:'98%',
+                                                backgroundColor:'#555',
+                                                margin:'auto'
+                                            },
+                                            child:[objectData]
+
+                                        })
+                                    ]
+                                }))
+                            }
+
+                            return($({
+                                tag:'div',
+                                style:{
+                                    fontFamily:'arial,sans-serif',
+                                    margin:'auto',
+                                    width:'100%',
+
+                                    textAlign:'center',
+                                    cursor:'pointer',
+                                    height:'100%',
+                                    justifyContent:'center',
+                                    display:'flex',
+                                },
+                                att:{
+                                    className:'docsRBot',
+                                    innerHTML:'<div style="margin: auto">View Docs</div>'
+                                },
+                                event:{
+                                    type:'click',
+                                    method:()=>{
+                                        document.body.appendChild(viewPan())
+                                    }
+                                }
+                            }))
+                        }
+                        const deleteDocs=$({
+                            tag:'div',
+                            style:{
+                                fontFamily:'arial,sans-serif',
+                                margin:'auto',
+                                width:'100%',
+
+                                textAlign:'center',
+                                cursor:'pointer',
+                                height:'100%',
+                                justifyContent:'center',
+                                display:'flex',
+                            },
+                            att:{
+                                className:'docsRBot',
+                                innerHTML:'<div style="margin: auto">Delete</div>'
+                            },
+                            event:{
+                                type:'click',
+                                method:async () => {
+                                    if (status !== 'saved' ) {
+                                        if (confirm("Are you sure you want to delete this document?")) {
+                                            let loading = Waiting()
+                                            document.body.appendChild(loading)
+                                            const remove = () => {
+                                                loading.remove()
+                                            }
+                                            const form = new FormData()
+                                            form.append('deleteApprovalFile', 'true')
+                                            form.append('docId', docId)
+                                            form.append('filePath', file)
+                                            await fetch('/sampUp', {
+                                                method: 'POST',
+                                                body: form
+                                            }).then(res => {
+                                                if (res.ok) {
+                                                    remove()
+                                                    return res.json()
+                                                }
+                                            })
+                                                .then(dat => {
+                                                    if (dat.status) {
+                                                        document.body.appendChild(ConfirmationAlert("Deleted..!", () => {
+                                                            window.location.reload()
+                                                        }))
+                                                    } else {
+                                                        document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                                            window.location.reload()
+                                                        }))
+                                                    }
+                                                })
+                                        }
+                                    } else {
+                                        document.body.appendChild(ConfirmationAlert("Please save this file..!", () => {
+                                            window.location.reload()
+                                        }))
+                                    }
+
+                                    //
+                                }
+                            }
+                        })
+                        return($({
+                            tag:'div',
+                            style:{
+                                height:'4vh',
+                                width:'100%',
+                                backgroundColor:'#555',
+                                display:'flex',
+                                justifyContent:'center'
+                            },
+
+                            child:[
+                                view(),
+                                track,
+                                viewResponse,
+                                deleteDocs
+                            ]
+                        }))
+                    }
+
+                    const Tracking=()=>{
+
+                        return($({
+                            tag:'div',
+                            att:{
+                                className:'trackerPanel'
+                            },
+
+                            elementHandler:getTrackerPanel
+                        }))
+                    }
+
+                    return($({
+                        tag:'div',
+                        style:{
+                            height:'fit-content',
+                            width:'98%',
+                            paddingTop:'.5vh',
+                            margin:'1vh auto auto',
+                        },
+                        elementHandler:getMainMesBody,
+                        att:{
+                            className:'mainMesDocs'
+                        },
+                        child:[
+                            $({
+                                tag:'div',
+                                style:{
+                                    width:'100%',
+                                    display:'flex',
+                                    justifyContent:'center',
+                                },
+                                child:[
+                                    icon,
+                                    title
+                                ]
+                            }),
+                            Status(),
+                            BotRow(),
+                            Tracking()
+                        ]
+                    }))
+                }
+
+                const getContainer = async (container) => {
+                    docsBody=container
+                    const docs = ({date, transferState,status,file, signature, info, docId, office, sender, saveState,responseDocs}) => {
+                        /*
+                        $dat->userid=$v['userid'];
+                $dat->fullname=$v['fullname'];
+                $dat->status=$v['status'];
+                $dat->note=$v['note'];
+                $dat->date=$v['updated'];
+                         */
+                        let DocsView
+                        const getViewer = (view) => {
+                            DocsView = view
+                        }
+                        const icon = () => {
+                            return ($({
+                                tag: 'td',
+                                att: {
+                                    rowSpan:'2'
+                                },
+                                style:{
+                                    textAlign: 'center',
+                                    width:'4vw',
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: {
+                                            className: 'fa-solid fa-file-pdf'
+                                        },
+                                        style: {
+                                            fontSize:'4vw'
+                                        },
+                                    }),
+                                ]
+                            }))
+                        }
+                        const deleteFile = () => {
+                            const getBotTd = (botTd) => {
+                                botTd.addEventListener('mouseenter', (event) => {
+                                    event.target.style.color = 'black'
+                                    event.target.style.textShadow = '0 0 .3vw ghostwhite'
+                                    event.target.style.backgroundColor = 'black'
+                                })
+                                botTd.addEventListener('mouseleave', (event) => {
+                                    event.target.style.color = 'deepskyblue'
+                                    event.target.style.textShadow = 'none'
+                                    event.target.style.backgroundColor = 'transparent'
+                                })
+                            }
+
+
+                            return ($({
+                                tag: 'td',
+                                elementHandler: getBotTd,
+                                style: {
+                                    color: 'deepskyblue',
+                                    width: '10%',
+                                    textAlign: 'center'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: {
+                                            className: 'fa-solid fa-trash-can'
+                                        },
+                                        style: {
+                                            width: 'auto'
+                                        },
+                                    }),
+                                ],
+                                event: {
+                                    type: 'click',
+                                    method: async () => {
+                                        if (saveState === null ) {
+                                            if (confirm("Are you sure you want to delete this item?")) {
+                                                let loading = Waiting()
+                                                document.body.appendChild(loading)
+                                                const remove = () => {
+                                                    loading.remove()
+                                                }
+                                                const form = new FormData()
+                                                form.append('deleteApprovalFile', 'true')
+                                                form.append('docId', docId)
+                                                form.append('filePath', file)
+                                                await fetch('/sampUp', {
+                                                    method: 'POST',
+                                                    body: form
+                                                }).then(res => {
+                                                    if (res.ok) {
+                                                        remove()
+                                                        return res.json()
+                                                    }
+                                                })
+                                                    .then(dat => {
+                                                        if (dat.status) {
+                                                            document.body.appendChild(ConfirmationAlert("Deleted..!", () => {
+                                                                window.location.reload()
+                                                            }))
+                                                        } else {
+                                                            document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                                                window.location.reload()
+                                                            }))
+                                                        }
+                                                    })
+                                            }
+                                        } else {
+                                            document.body.appendChild(ConfirmationAlert("Please save this file..!", () => {
+                                                window.location.reload()
+                                            }))
+                                        }
+
+                                        //
+                                    }
+                                }
+                            }))
+                        }
+                        const details = () => {
+                            return ($({
+                                tag: 'td',
+                                att: {
+                                    className: 'docsDetails',
+                                    innerHTML:`<i>" ${info} "</i>`
+                                },
+                                style: {
+                                    width: 'auto'
+                                },
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        document.body.appendChild(viewerDocs())
+                                    }
+                                },
+                            }))
+                        }
+
+                        const viewerDocs = () => {
+                            let objectPRint
+                            const assign = (obj) => {
+                                objectPRint = obj
+                            }
+                            let bitImage
+                            const getByte = (bit) => {
+                                bitImage = bit
+                            }
+
+                            const object = () => {
+                               /*
+                                const getObject = async (object) => {
+
+                                    assign(object)
+                                    const pdf = PDFLib.PDFDocument;
+
+                                    let buffer = await fetch('/' + file).then((res) => res.arrayBuffer());
+                                    let pdfDoc = await pdf.load(buffer)
+                                    const pages = pdfDoc.getPages()
+
+
+                                    for (const val of signature) {
+                                        if (val.signurl !== '') {
+                                            let signatuireBuffer = await fetch(val.signurl.url.replace('..', '')).then((res) => res.arrayBuffer());
+                                            let eSign = await pdfDoc.embedPng(signatuireBuffer)
+
+                                            eSign.width = val.signurl.scale
+                                            eSign.height = val.signurl.scale
+                                            const firstPage = pages[val.signature.page * 1 - 1]
+                                            const {width, height} = firstPage.getSize()
+
+                                            firstPage.drawImage(eSign, {
+                                                x: width * val.signature.left - (eSign.width / 2),
+                                                y: height - (height * val.signature.top) - (eSign.height / 2),
+                                            })
+
+                                        }
+                                    }
+                                    const biturl = await pdfDoc.saveAsBase64({dataUri: true})
+                                    getByte(biturl)
+
+                                    object.data = biturl
+
+
+                                }
+                                */
+
+
+                                return ($({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'objectHolder'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'object',
+                                            att: {
+                                                type: 'application/pdf',
+                                                className: 'objectViewerReturn',
+                                                id: 'me',
+                                            },
+
+                                        })
+                                    ]
+                                }))
+                            }
+
+                            const control = () => {
+
+                                const dataDocs = ({label, content, docHeigh}) => {
+                                    return ($({
+                                        tag: 'div',
+                                        att: {
+                                            className: 'docBord ' + docHeigh
+                                        },
+                                        child: [
+                                            label,
+                                            content
+                                        ]
+
+                                    }))
+                                }
+                                const infoDocs = dataDocs({
+                                    label: $({
+                                        tag: 'div',
+                                        att: {
+                                            className: 'lebRetc'
+                                        },
+                                        text: "Title"
+                                    }),
+                                    content: $({
+                                        tag: 'div',
+                                        att: {
+                                            className: 'contentDocs'
+                                        },
+                                        text: info
+                                    })
+                                })
+
+                                const approval = () => {
+                                    const conT = ({leb, dataCont, status, note}) => {
+                                        return $({
+                                            tag: 'div',
+                                            att: {
+                                                className: 'appDivCont'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    text: leb
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: dataCont
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        borderBottom: 'solid thin deepskyblue',
+                                                        width: '100%'
+                                                    },
+
+                                                    child: [
+                                                        $({
+                                                            tag: 'span',
+                                                            text: 'Status: '
+                                                        }),
+                                                        $({
+                                                            tag: 'span',
+                                                            text: status
+                                                        }),
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                marginTop: '1vh',
+                                                                color: 'deepskyblue'
+                                                            },
+                                                            text: '"Note"',
+                                                        }),
+                                                        $({
+                                                            tag: 'div',
+                                                            text: (note !== '') ? note : "No available data",
+                                                        })
+                                                    ]
+                                                })
+                                            ]
+                                        })
+                                    }
+                                    let frag = []
+
+                                    signature.forEach(val => {
+
+                                        frag.push(conT({
+                                            leb: "Name :",
+                                            dataCont: val.fullname,
+                                            status: val.status,
+                                            note: val.note
+                                        }))
+                                    })
+//docHeigh:'overFlowDoc'
+                                    return dataDocs({
+                                        label: $({
+                                            tag: 'div',
+                                            att: {
+                                                className: 'lebRetc'
+                                            },
+                                            text: "Approval"
+                                        }),
+                                        content: ($({
+                                            tag: 'div',
+                                            att: {
+                                                className: 'overFlowDoc'
+                                            },
+                                            child: [
+                                                Fragment({child: frag})
+                                            ]
+                                        })),
+
+                                    })
+                                }
+                                const printOut = () => {
+                                    return ($({
+                                        tag: 'a',
+                                        att: {
+                                            className: 'printOut'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: async (event) => {
+                                                let month = new Date().getMonth()
+                                                let min = new Date().getMinutes()
+                                                let day = new Date().getDay()
+                                                let sec = new Date().getSeconds()
+                                                let year = new Date().getFullYear()
+                                                let time = new Date().getHours()
+                                                event.target.download = `[ ${year}/${month + 1}/${day} ${time} : ${min} : ${sec} ] ` + 'file.pdf'
+                                                event.target.href = bitImage
+                                            }
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    margin: 'auto'
+                                                },
+                                                text: 'Download'
+                                            })
+                                        ]
+                                    }))
+                                }
+                                const exitBot = () => {
+                                    return ($({
+                                        tag: 'div',
+                                        att: {
+                                            className: 'closeDocs'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                DocsView.remove()
+                                            }
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    margin: 'auto'
+                                                },
+                                                text: 'EXIT'
+                                            })
+                                        ]
+                                    }))
+                                }
+                                const SaveToSystem = () => {
+                                    return ($({
+                                        tag: 'div',
+                                        att: {
+                                            className: 'saveToSystem'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: async () => {
+                                                let completeState = true
+                                                for (let signatureElement of signature) {
+                                                    if (signatureElement.status !== 'approve') {
+                                                        completeState = false
+                                                        break
+                                                    }
+                                                }
+                                                if (completeState) {
+                                                    let doc = file.split('/').length
+                                                    let docName = file.split('/')[doc - 1]
+                                                    const form = new FormData()
+                                                    let loading = Waiting()
+                                                    document.body.appendChild(loading)
+                                                    const remove = () => {
+                                                        loading.remove()
+                                                    }
+                                                    form.append('saveFile', bitImage)
+                                                    form.append('ssm', 'true')
+                                                    form.append('docId', docId)
+                                                    form.append('name', info)
+                                                    form.append('office', office)
+                                                    form.append('sender', sender)
+                                                    form.append('docName', docName)
+                                                    await fetch('/sampUp', {
+                                                        method: 'POST',
+                                                        body: form
+                                                    }).then(res => {
+                                                        if (res.ok) {
+                                                            remove()
+                                                            return res.json()
+                                                        }
+                                                    }).then(dat => {
+                                                        if (dat.status) {
+                                                            document.body.appendChild(ConfirmationAlert("Saved successfully...!", () => {
+                                                                window.location.reload()
+                                                            }))
+                                                        } else {
+                                                            document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                                                window.location.reload()
+                                                            }))
+                                                        }
+                                                    })
+                                                } else {
+                                                    document.body.appendChild(ConfirmationAlert("Signatures are not complete!", () => {
+                                                        window.location.reload()
+                                                    }))
+                                                }
+
+                                            }
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    margin: 'auto'
+                                                },
+                                                text: 'Save File'
+                                            })
+                                        ]
+                                    }))
+                                }
+                                return ($({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'returnControl'
+                                    },
+                                    child: [
+                                        infoDocs,
+                                        approval(),
+                                        printOut(),
+                                        SaveToSystem(),
+                                        exitBot()
+                                    ]
+                                }))
+                            }
+
+                            return ($({
+                                tag: 'div',
+                                att: {
+                                    className: 'docsReturn'
+                                },
+                                elementHandler: getViewer,
+                                child: [
+                                    control(),
+                                    object()
+                                ]
+                            }))
+                        }
+
+                        const getTatbleState = (tbState) => {
+                            if (saveState === null) {
+                                tbState.className += ' notSave'
+                            }
+
+
+                        }
+
+                        const Status=()=>{
+                            const statusLabel=$({
+                                tag:'div',
+                                style:{
+                                    fontFamily:'arial,sans-serif',
+                                    color:'#aaa',
+                                    margin:'auto',
+                                    width:'50%'
+                                },
+                                att:{
+                                    innerHTML:`<span></span>STATUS : </span><span>${(status===null)? "Pending":status}</span>`
+                                }
+                            })
+                            const track=$({
+                                tag:'div',
+                                text:'Track document',
+                                style:{
+                                    fontFamily:'arial,sans-serif',
+                                    color:'#aaa',
+                                    margin:'auto',
+                                    width:'50%',
+                                }
+                            })
+                            return($({
+                                tag:'div',
+                                style:{
+                                    width:'100%',
+                                    height:'4vh',
+                                    display:'flex',
+                                    justifyContent: 'center'
+                                },
+                                child:[
+                                    statusLabel,
+                                    track
+                                ]
+                            }))
+                        }
+
+                        return ($({
+                            tag: 'table',
+                            att: {
+                                className: 'docsStatTable'
+                            },
+
+                            elementHandler: getTatbleState,
+                            child: [
+                                $({
+                                    tag: 'tr',
+                                    child: [
+                                        icon(),
+                                        details(),
+                                        deleteFile()
+                                    ]
+                                }),
+                                $({
+                                    tag:'tr',
+                                    child:[
+                                        $({
+                                            tag:'td',
+                                            att:{
+                                                colSpan:'2',
+                                            },
+                                            child:[
+                                                Status()
+                                            ]
+                                        })
+                                    ]
+                                })
+                            ]
+                        }));
+                    }
+
+                    const form = new FormData();
+                    form.append('getDocsStat', 'true')
+                    await fetch('/approval', {
+                        method: 'POST',
+                        body: form
+                    }).then(res => res.json())
+                        .then(data => {
+                            let revData = data.reverse()
+                            revData.forEach(val => {
+                                // create a script to display approval sign
+                                if (val.saveState === '' || val.saveState === undefined) {
+                                    container.insertBefore(DocsSub({
+                                        date: val.date,
+                                        info: val.info,
+                                        file: val.file,
+                                        docsNoteText: val.note,
+                                        docId: val.docId,
+                                        saveState: val.saveState,
+                                        signature:val.signature,
+                                        transferState:val.doctransferstate,
+                                        approvalName:val.approvalName,
+                                        approvalStatus:val.approvalStatus,
+                                        approvalNote:val.approvalNote,
+                                        approvalDate:val.approvalDate,
+                                        status:val.status,
+                                        responseDocs:val.response
+                                    }), container.childNodes[0])
+                                } else {
+                                    if(val.approvalStatus==='approved'){
+                                        container.insertBefore(DocsSub({
+                                            date: val.date,
+                                            info: val.info,
+                                            file: val.file,
+                                            docsNoteText: val.note,
+                                            docId: val.docId,
+                                            saveState: val.saveState,
+                                            signature:val.signature,
+                                            transferState:val.doctransferstate,
+                                            approvalName:val.approvalName,
+                                            approvalStatus:val.approvalStatus,
+                                            approvalNote:val.approvalNote,
+                                            approvalDate:val.approvalDate,
+                                            status:val.status,
+                                            responseDocs:val.response
+                                        }), container.childNodes[0])
+                                    }else {
+                                        container.appendChild(DocsSub({
+                                            date: val.date,
+                                            info: val.info,
+                                            file: val.file,
+                                            docsNoteText: val.note,
+                                            docId: val.docId,
+                                            saveState: val.saveState,
+                                            signature:val.signature,
+                                            transferState:val.doctransferstate,
+                                            approvalName:val.approvalName,
+                                            approvalStatus:val.approvalStatus,
+                                            approvalNote:val.approvalNote,
+                                            approvalDate:val.approvalDate,
+                                            status:val.status,
+                                            responseDocs:val.response
+                                        }))
+                                    }
+
+                                }
+
+                            })
+                        })
+                }
+
+                return ($({
+                    tag: 'div',
+                    elementHandler: getContainer,
+                    att: {
+                        className: 'fileContent'
+                    }
+                }))
+            }
+            return ($({
+                tag: 'div',
+                att: {
+                    className: 'divShare'
+                },
+                child: [
+                    Label(),
+                    SearchBar(),
+                    fileContent()
+                ]
+            }))
+        }
+
+
+        return ($({
+            tag: 'div',
+            att: {
+                className: 'shareFrame'
+            },
+            elementHandler:getFrm,
+            child: [
+                leftPart(),
+                rightPart(),
+            ]
+        }))
+    }
+
+    const Approval = () => {
+
+        const header = () => {
+
+            const searchHeader = () => {
+                const icon = $({
+                    tag: 'span',
+                    att: {
+                        className: 'fa fa-search ic'
+                    }
+                })
+                const input = $({
+                    tag: 'input',
+                    att: {
+                        type: 'search',
+                        className: 'inS',
+                        placeholder:'Search documents'
+                    }
+                })
+
+                return ($({
+                    tag: 'div',
+                    att: {
+                        className: 'holderSearch'
+                    },
+                    child: [
+                        icon,
+                        input
+                    ]
+                }))
+            }
+
+            return ($({
+                tag: 'div',
+                att: {
+                    className: 'headerApp'
+                },
+                child: [
+                    searchHeader()
+                ]
+            }))
+        }
+
+        const container = () => {
+
+            const appMessage = ({from, file, docId,date,signUrl,title}) => {
+
+                const Row = ({label, data}) => {
+                    return ($({
+                        tag: 'tr',
+                        child: [
+                            $({
+                                tag: 'td',
+                                att: {
+                                    className: 'labelSms'
+                                },
+                                text: label
+                            }),
+                            $({
+                                tag: 'td',
+                                att: {
+                                    className: 'contentSms'
+                                },
+                                text: data
+                            })
+                        ]
+                    }))
+                }
+
+                const Viewer = () => {
+
+                    const data={
+                        sign:'',
+                        status:'',
+                        note:''
+                    }
+                    const getSignatureData={
+                        getSign:(value)=>{
+                            data.sign=value
+                        },
+                        getStatus:(value)=>{
+                            data.status=value
+                        },
+                        getNote:(value)=>{
+                            data.note=value
+                        }
+                    }
+
+                    let main
+                    const getViewerMain = (m) => {
+                        main = m
+                    }
+
+                    let pageNum
+                    let signLoc
+                    const getPage = (num) => {
+                        //source.pdf.doc.numPages
+                        pageNum = num
+                    }
+
+                    const source = {
+                        currentPage: '',
+                        pdf: '',
+                        queRender: '',
+                    }
+
+
+                    const getSource = (currentPage, pdf, queRender, pageNumber) => {
+                        source.currentPage = currentPage
+                        source.pdf = pdf
+                        source.queRender = queRender
+                        pageNum = pageNumber
+                    }
+                    const prevPage = () => {
+                        if (source.currentPage <= 1) {
+                            return
+                        }
+                        source.currentPage--
+                        source.pdf.pageNumber--
+                        source.queRender(source.pdf.pageNumber)
+                        pageNum.innerText = `${source.currentPage} of ${source.pdf.doc.numPages}`
+                    }
+
+                    const nextPage = () => {
+                        if (source.currentPage >= source.pdf.doc.numPages) {
+                            return
+                        }
+                        source.currentPage++
+                        source.pdf.pageNumber++
+                        source.queRender(source.pdf.pageNumber)
+                        pageNum.innerText = `${source.currentPage} of ${source.pdf.doc.numPages}`
+                    }
+
+                    let canvasBody
+                    let panBOdSig
+                    let saveBott
+                    const SaveEsign = (Save) => {
+                        saveBott = Save
+                        Save.addEventListener('click', async () => {
+
+                            if (confirm("Please click OK to Confirm..!")) {
+                                getSignatureData.getSign(signLoc)
+                                getSignatureData.getStatus('approved')
+                                const form = new FormData()
+                                form.append('updateApprove', 'true')
+                                form.append('signed', JSON.stringify(data))
+                                form.append('docId', docId)
+                                await fetch('/approval', {
+                                    method: 'POST',
+                                    body: form
+                                }).then(res => res.json())
+                                    .then(data => {
+                                        if(data.status){
+                                            alert("successs......")
+                                        }else {
+                                            alert(data.message)
+                                        }
+
+                                    })
+                            }
+
+
+                        })
+                    }
+                    const getCanvas = (can) => {
+                        canvasBody = can
+                        can.addEventListener('dblclick', async (event) => {
+
+                            if (signUrl.url !== '' && signUrl.url  !== null) {
+
+                                //signature.status===
+
+
+
+                                const bound = canvasBody.getBoundingClientRect()
+                                if (confirm("Click of to confirm")) {
+                                    saveBott.style.color = 'red'
+                                    signLoc = {
+                                        left: (event.clientX - bound.left) / bound.width,
+                                        top: (event.clientY - bound.top) / bound.height,
+                                        page: source.pdf.pageNumber
+                                    }
+                                    getSignatureData.getSign(signLoc)
+                                    getSignatureData.getStatus("approved")
+                                    if (signUrl.url !== '') {
+                                        const img = new Image()
+                                        img.src = '/' + signUrl.url
+                                        img.onload = (ev) => {
+                                            let scale = ev.target.width - (ev.target.width * signUrl.scale)
+                                            //  let height=ev.target.height-(ev.target.height*signature.signurl.scale)
+                                            // img.style.width = signature.signurl.scale + 'px'
+                                            img.style.width = ev.target.width * (signUrl.scale / 100) + 'px'
+                                            const pdfCan = canvasBody.getContext('2d')
+                                            pdfCan.drawImage(img, event.clientX - bound.left - (ev.target.width * (signUrl.scale/ 100) / 2), event.clientY - bound.top - (ev.target.height * (signUrl.scale/ 100) / 2), (ev.target.width * (signUrl.scale / 100)), ev.target.height * (signUrl.scale / 100))
+
+                                        }
+
+
+
+                                    }
+                                }
+                            } else {
+                                alert('Unable to Sign. E-signature is missing.\n Please upload your Signature..!')
+                            }
+
+                        })
+
+                        CanvasRender({
+                            pdf: {
+                                doc: '',
+                                pageNumber: 1,
+                                Rendering: false,
+                                pageNumberPending: null,
+                                scale: 2,
+                            },
+                            canvas: can,
+                            fileUrl: file,
+                            getSource: getSource,
+                        })
+
+                    }
+                    let hld
+                    const getHolserCanv = (obj) => {
+                        hld = obj
+                        panBOdSig=obj
+                    }
+
+
+                    const object = () => {
+
+                        return ($({
+                            tag: 'div',
+                            att: {
+                                className: 'canvasHold'
+                            },
+                            elementHandler: getHolserCanv,
+
+                            child: [
+                                $({
+                                    tag: 'canvas',
+                                    att: {
+                                        className: 'objectViewer',
+                                        type: 'application/pdf',
+                                    },
+                                    elementHandler: getCanvas,
+
+                                })
+                            ]
+                        }))
+                    }
+
+                    const controller = () => {
+
+                        const table = () => {
+                            let stateDec = false
+                            let declinedBot
+                            const getDec = (el) => {
+                                declinedBot = el
+                            }
+                            const next = () => {
+                                return ($({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'controllBot ctrBot fwr',
+                                        innerHTML: 'Next <span class="fa fa-forward"></span>'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            nextPage()
+                                        }
+                                    }
+                                }))
+                            }
+
+                            const page = () => {
+                                return ($({
+                                    tag: 'div',
+                                    elementHandler: getPage,
+                                    att: {
+                                        className: 'controllBot',
+                                    },
+                                    text: `1`
+                                }))
+                            }
+                            const prev = () => {
+                                return ($({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'controllBot ctrBot bckr',
+                                        innerHTML: '<span class="fa fa-backward"></span> Prev'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            prevPage()
+                                        }
+                                    }
+                                }))
+                            }
+                            const exit = () => {
+
+                                return ($({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'exitViewApp',
+                                        innerHTML: 'Exit <span class="fa fa-sign-out"></span>'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            if (declinedBot !== undefined) {
+                                                declinedBot.remove()
+                                            }
+                                            main.remove()
+                                        }
+                                    }
+                                }))
+                            }
+
+                            const mainControl = () => {
+
+                                let textNote
+                                const getTextNote = (element) => {
+                                    textNote = element
+                                }
+
+
+                                const declineNote = () => {
+                                    const head = $({
+                                        tag: 'table',
+                                        att: {
+                                            className: 'noteHead'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'tr',
+                                                child: [
+                                                    $({
+                                                        tag: 'td',
+                                                        child: [
+                                                            $({
+                                                                tag: 'div',
+                                                                att: {
+                                                                    className: 'fa-solid fa-window-minimize decBotIc'
+                                                                },
+
+                                                            }),
+                                                            $({
+                                                                tag: 'div',
+                                                                att: {
+                                                                    className: 'fa-solid fa-xmark decBotIc'
+                                                                },
+                                                                event: {
+                                                                    type: 'click',
+                                                                    method: () => {
+                                                                        stateDec = false
+                                                                        declinedBot.remove()
+                                                                    }
+                                                                }
+
+                                                            }),
+                                                        ]
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    })
+                                    const textAreaNote = $({
+                                        tag: 'textarea',
+                                        att: {
+                                            className: 'noteTextArea',
+                                            placeholder: 'Insert text here...!'
+                                        },
+                                        event:{
+                                            type:'input',
+                                            method:(event)=>{
+                                                getSignatureData.getNote(event.target.value)
+                                            }
+                                        },
+                                        elementHandler: getTextNote,
+                                    })
+                                    const submit = $({
+                                        tag: 'table',
+                                        att: {
+                                            className: 'decSub'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'tr',
+                                                child: [
+                                                    $({
+                                                        tag: 'td',
+                                                        child: [
+                                                            $({
+                                                                tag: 'div',
+                                                                att: {
+                                                                    className: 'decBot',
+                                                                },
+                                                                text: 'SUBMIT',
+                                                                event: {
+                                                                    type: 'click',
+                                                                    method: async () => {
+
+                                                                        if (confirm("Please click OK to confirm..!")) {
+                                                                            data.status='rejected';
+                                                                            const form = new FormData()
+                                                                            form.append('updateApprove', 'true')
+                                                                            form.append('signed', JSON.stringify(data))
+                                                                            form.append('docId', docId)
+                                                                            await fetch('/approval', {
+                                                                                method: 'POST',
+                                                                                body: form
+                                                                            }).then(res => res.json())
+                                                                                .then(data => {
+                                                                                    alert(data.message)
+                                                                                })
+
+                                                                        }
+                                                                    }
+                                                                }
+                                                            })
+                                                        ]
+                                                    })
+                                                ]
+                                            })
+                                        ]
+
+                                    })
+                                    return ($({
+                                        tag: 'div',
+                                        att: {
+                                            className: 'decNOte'
+                                        },
+                                        elementHandler: getDec,
+                                        child: [
+                                            head,
+                                            textAreaNote,
+                                            submit
+                                        ]
+                                    }))
+                                }
+
+                                const declined = $({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'fa-solid fa-thumbs-down iconMainControl'
+                                    },
+                                    text: ' Reject',
+                                    event: {
+                                        type: 'click',
+                                        method: (event) => {
+                                            stateDec = !stateDec
+                                            if (stateDec) {
+                                                document.body.appendChild(declineNote())
+                                            } else {
+                                                declinedBot.remove()
+                                            }
+
+                                        }
+                                    }
+                                })
+                                //<i class="fa-solid fa-rotate-left"></i>
+                                const unDo = $({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'fa-solid fa-rotate-left iconMainControl'
+                                    },
+                                    text: ' Undo',
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            saveBott.style.color = 'deepskyblue'
+                                            CanvasRender({
+                                                pdf: {
+                                                    doc: '',
+                                                    pageNumber: 1,
+                                                    Rendering: false,
+                                                    pageNumberPending: null,
+                                                    scale: 2,
+                                                },
+                                                canvas: canvasBody,
+                                                fileUrl: file,
+                                                getSource: getSource,
+                                            })
+                                        }
+                                    }
+                                })
+
+
+
+                                const Save = $({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'fa-solid fa-floppy-disk iconMainControl'
+                                    },
+                                    text: 'Save',
+                                    elementHandler: SaveEsign
+                                })
+                                return ($({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'mainControl'
+                                    },
+                                    child: [
+                                        declined,
+                                        unDo,
+                                        Save,
+                                    ]
+                                }))
+                            }
+
+
+                            return ($({
+                                tag: 'table',
+                                att: {
+                                    className: 'tablecontroller'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'tr',
+                                        child: [
+                                            $({
+                                                tag: 'td',
+                                                style: {
+                                                    width: '10%'
+                                                },
+                                                child: [
+                                                    exit()
+                                                ]
+                                            }),
+                                            $({
+                                                tag: 'td',
+                                                style: {
+                                                    width: '70%',
+                                                },
+                                                child: [
+                                                    mainControl('Approve')
+                                                ]
+
+                                            }),
+                                            $({
+                                                tag: 'td',
+                                                style: {
+                                                    width: 'auto',
+                                                    display: 'flex',
+                                                    justifyContent: 'center'
+                                                },
+                                                child: [
+                                                    prev(),
+                                                    page(),
+                                                    next()
+                                                ]
+                                            }),
+
+                                        ]
+                                    })
+                                ]
+                            }))
+                        }
+
+                        return ($({
+                            tag: 'div',
+                            att: {
+                                className: 'controlDiv'
+                            },
+                            child: [
+                                table()
+                            ]
+                        }))
+                    }
+
+                    const instruct = () => {
+
+                        const getInstruct = (el) => {
+                            setTimeout(() => {
+                                el.className += ' autoHide'
+                            }, 8000)
+                        }
+
+                        return ($({
+                            tag: 'div',
+                            att: {
+                                className: 'instruction',
+                                innerHTML: '<i>" Double click over printed name to apply E-signature "</i>'
+                            },
+                            elementHandler: getInstruct
+                        }))
+                    }
+
+                    return ($({
+                        tag: 'div',
+                        att: {
+                            className: 'appViewer'
+                        },
+                        elementHandler: getViewerMain,
+                        child: [
+                            object(),
+                            instruct(),
+                            controller(),
+                        ]
+                    }))
+                }
+                const dat=date.split(' ')[0]
+                let dateFormat,d
+                dateFormat=dat.split('-')
+                let FinalDate=`${MONTHS[dateFormat[1]-1]} ${dateFormat[2]}, ${dateFormat[0]}`
+
+                return ($({
+                    tag: 'table',
+                    att: {
+                        className: 'appMessage'
+                    },
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            document.body.appendChild(Viewer())
+                        }
+                    },
+                    child: [
+                        Row({
+                            label:'Date',
+                            data:FinalDate
+                        }),
+                        Row({
+                            label: "From : ",
+                            data: from
+                        }),
+                        Row({
+                            label: "Title : ",
+                            data: title
+                        })
+                    ]
+                }))
+            }
+
+            const getCont = async (div) => {
+                const form = new FormData()
+                form.append('perUserApproval', 'true')
+                await fetch('/approval', {
+                    method: "POST",
+                    body: form
+                }).then(res => res.json())
+                    .then(data => {
+                        data.forEach(val => {
+
+                            div.appendChild(appMessage({
+                                from: val.docOffice,
+                                file: val.docUrl,
+                                docId: val.docId,
+                                date:val.docSendDate,
+                                signUrl:val.signUrl,
+                                title:val.title
+                            }))
+                        })
+                    })
+            }
+
+            return ($({
+                tag: 'div',
+                att: {
+                    className: 'approvalContainer'
+                },
+                elementHandler: getCont,
+
+
+            }))
+        }
+
+        const finishedDocs=()=>{
+
+            const label=$({
+                tag:'div',
+                text:'Signed Document',
+                style:{
+                    fontFamily:'arial black,sans-serif',
+                    color:'lightskyblue',
+                    width:'fit-content',
+                    margin:'1vh  auto'
+                }
+            })
+
+            const Docs=({title,Status,file,id})=>{
+                const icon=$({
+                    tag:'div',
+                    att:{
+                        className:'fa-solid fa-file-pdf'
+                    },
+                    style:{
+                        width:'fit-content',
+                        padding:'.2rem',
+                        fontSize:'4vw',
+                        color:'grey'
+                    }
+                })
+
+
+                return($({
+                    tag:'div',
+                    style:{
+                        width:'98%',
+                        margin:'1vh auto auto',
+                        display:'flex',
+                        borderBottom:'solid thin grey'
+                    },
+                    att:{
+                        className:'finDoxCont'
+                    },
+                    child:[
+                        icon,
+                        $({
+                            tag:'div',
+                            style:{
+                                width:'90%',
+                                margin:'auto'
+                            },
+                            child:[
+                               $({
+                                   tag:'div',
+                                   style:{
+                                       fontFamily:'arial,sans-serif',
+                                       color:'lightskyblue'
+                                   },
+                                   att:{
+                                       innerHTML:`Title: <span style="text-overflow: ellipsis;overflow:hidden;white-space: nowrap; color: #bbb">${title}</span>`
+                                   }
+                               }),
+                                $({
+                                    tag:'div',
+                                    style:{
+                                        fontFamily:'arial,sans-serif',
+                                        color:'lightskyblue'
+                                    },
+                                    att:{
+                                        innerHTML:`Status: <span style="text-overflow: ellipsis;overflow:hidden;white-space: nowrap; color: #bbb">${Status}</span>`
+                                    }
+                                }),
+
+                            ]
+                        })
+                    ]
+                }))
+            }
+
+            const content=()=>{
+                const getdocs=async (el)=>{
+                    const form=new FormData();
+                    form.append('finDocs','true')
+                    await fetch('/approval',{
+                        method:'POST',
+                        body:form
+                    }).then(res=>res.json())
+                        .then(data=>{
+                            data.forEach(val=>{
+                                el.appendChild(Docs({
+                                    title:val.title,
+                                    Status:val.status,
+                                    id:val.docid
+                                }))
+                            })
+                        })
+                }
+                return($({
+                    tag:'div',
+                    style:{
+                        width:'100%',
+                        height:'91.5%',
+                        border:'solid thin rgba(200,200,200,0.2)',
+                        margin:'auto',
+                        overflowY: 'auto'
+                    },
+                    elementHandler:getdocs
+                }))
+            }
+
+            return($({
+                tag:'div',
+                style:{
+                    width:'48%',
+                    height:'100%',
+
+                },
+                child:[
+                    label,
+                    content()
+                ]
+            }))
+        }
+
+        return ($({
+            tag:'div',
+            style:{
+                width:'100%',
+                display:'flex',
+                justifyContent:'center'
+            },
+            child:[
+                $({
+                    tag: 'div',
+                    att: {
+                        className: ' appRovFrame'
+                    },
+                    child: [
+                        header(),
+                        container()
+                    ]
+                }),
+                finishedDocs()
+            ]
+        }))
+    }
+
+    const TabList = []
+    TabList.push({
+        tabButton: Bot({
+            text: 'Shared File',
+            event: () => {
+                window.location.assign('/user/create/share')
+            },
+            url: '/user/create/share'
+        }),
+        url: "/user/create/share",
+        page: Share
+    })
+    TabList.push({
+        tabButton: Bot({
+            text: 'Approval',
+            event: () => {
+                window.location.assign('/user/create/approval')
+            },
+            url: '/user/create/approval'
+        }),
+        url: "/user/create/approval",
+        page: Approval
+    })
+    const getNav = (nav) => {
+        TabList.forEach(val => {
+            nav.appendChild(val.tabButton)
+        })
+    }
+    const getFrame = (frame) => {
+        TabList.forEach(val => {
+            if (current === val.url.split('/')[3]) {
+                frame.appendChild(val.page())
+            }
+        })
+    }
+
+    const Nav = () => {
+        return ($({
+            tag: 'div',
+            att: {
+                className: 'navApp'
+            },
+            elementHandler: getNav
+        }))
+    }
+    const Frame = () => {
+
+
+        return ($({
+            tag: 'div',
+            att: {
+                className: 'framesCrea'
+            },
+            elementHandler: getFrame
+        }))
+    }
+
+
+    return ($({
+        externalStyle: '/client/component/userComponent/userComponentStyle/create.css',
+        tag: 'div',
+        att: {
+            className: 'createFrame'
+        },
+        child: [
+            Nav(),
+            Frame()
+        ]
+
+    }))
+}

@@ -1,0 +1,79 @@
+.navBar{
+    width: 15%;
+    margin: 0 auto;
+}
+.navBot{
+    width: 100%;
+    padding-right: .5vw;
+    padding-left: .5vw;
+    border-bottom: solid thin #333;
+    cursor: pointer;
+    height: 8vh;
+}
+.navBot:hover{
+    background-color: rgba(100,100,100,0.2);
+    transition: .3s;
+}
+.tabsButton{
+    font-family: "Arial Black",sans-serif;
+    color: rgba(200,200,200,0.9);
+    font-size: 1vw;
+    text-align: left;
+    width: 80%;
+}
+.tabsIcon{
+    width: 20%;
+    text-align: right;
+    font-size: 1.5vw;
+    color: rgba(200,200,200,0.9);
+}
+.userAnimate{
+    background-image: linear-gradient(to right,#333,grey);
+    border-radius: 0 1vw 1vw 0;
+    animation: tabsAnimate .3s;
+    border-bottom: solid thin deepskyblue;
+    border-left: solid thin deepskyblue;
+    border-top: solid thin deepskyblue;
+    pointer-events: none;
+}
+@keyframes tabsAnimate {
+    from{
+        background-color:transparent;
+        border-radius: 0;
+        border: none;
+        border-bottom: solid thin #333;
+    }
+    to{
+        background-color: rgba(0,0,0,0.3);
+        border-radius: 0 1vw 1vw 0;
+        border-bottom: solid thin deepskyblue;
+        border-left: solid thin deepskyblue;
+        border-top: solid thin deepskyblue;
+    }
+}
+
+.capLogo{
+    height: fit-content;
+    width: 100%;
+    background-color: ghostwhite;
+    margin: 1vh auto;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+}
+.capLogo span{
+    font-family: Arial,sans-serif;
+    font-size: 5vw;
+    margin: auto;
+    text-shadow: -.5vh .5vh 0.7vw black;
+    font-weight: bolder;
+}
+.spanR{
+    color: blue;
+}
+.spanD{
+    color: orange;
+}
+.spanE{
+    color: green;
+}

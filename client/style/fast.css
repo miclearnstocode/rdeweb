@@ -1,0 +1,129 @@
+.tabLink{
+    color: deepskyblue;
+}
+
+.tabLink:active{
+    color: ghostwhite;
+}
+
+.addCrit{
+    background-color: #333;
+    color: deepskyblue;
+    border:none;
+}
+.addCrit:hover{
+    background-color: rgba(0,0,0,0.3);
+    transition: .3s;
+}
+.addCrit:active{
+    background-color: rgba(0,0,0,0.1);
+    color: ghostwhite;
+
+}
+.critList{
+    background-color: #333;
+    transition: .3s;
+}
+.critList:hover{
+    background-color: #222;
+}
+.scrClas{
+    color: deepskyblue;
+}
+.scrClas:hover{
+    color: lightblue;
+}
+.listClass{
+    background-color: #222;
+}
+.listClass:hover{
+    background-color: #444;
+    transition: .3s;
+}
+.catBot{
+    background-color: #333;
+    color: #999;
+    font-size: 1.5vw;
+}
+.catBot:hover{
+    background-color: #555;
+    color: deepskyblue;
+    transition: .3s;
+    font-size: 1.8vw;
+}
+.botCrtv2{
+    background-color: deepskyblue;
+}
+.botCrtv2:hover{
+    background-color: lightblue;
+    transition: .3s;
+}
+.saveCrit{
+    background-color: #333;
+    cursor: pointer;
+}
+.saveCrit:hover{
+    background-color: #111;
+    transition: .3s;
+}
+.dropDown{
+    color: deepskyblue;
+    cursor: pointer;
+}
+.dropDown:hover{
+    color: ghostwhite;
+    transition: .3s;
+}
+
+.clearComB{
+    color: #999;
+    background-color: red;
+}
+
+/*
+Approval
+ */
+
+.SubmitApproval{
+    width: 91.5%;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+
+    margin: 2vh auto auto;
+    text-align: center;
+}
+
+.SubmitApproval input{
+    border: none;
+    cursor: pointer;
+    background-color: grey;
+    width: 100%;
+    height: 5vh;
+    border-radius: .5rem;
+    font-size: 1.2vw;
+    color: deepskyblue;
+}
+.SubmitApproval input:hover{
+    background-color: rgba(0,0,0,0.3);
+    transition: .3s;
+    color: white;
+}
+
+.optionDoctype{
+    padding: 5vh;
+    background-color: #555;
+    font-size: 1.3vw;
+}
+
+/*
+AProval version 2
+ */
+
+.listSig{
+    width: 91%;
+    max-height: 20vh;
+    min-height: 0;
+    margin: .5vw auto auto;
+    border-bottom:solid thin grey;
+    overflow-y: auto;
+}

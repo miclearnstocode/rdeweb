@@ -1,0 +1,8 @@
+.perCamp{
+    color: #bbb;
+}
+.perCamp:hover{
+    background-color: rgba(0,0,0,0.5);
+    transition: .3s;
+    color: deepskyblue;
+}
