@@ -85,9 +85,9 @@ export const Header = () => {
         await fetch('/sessionCheck',{
             method:'POST',
             body:form
-        }).then(res=>res.text())
+        }).then(res=>res.json())
             .then(data=>{
-                el.innerText=data
+                el.innerText=data.username || 'UNKNOWN'
             })
     }
 

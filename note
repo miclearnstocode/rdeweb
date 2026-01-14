@@ -129,3 +129,7 @@ september 12 2022
  ALTER TABLE `criteria` ADD `event_id` BIGINT(200) NULL DEFAULT NULL AFTER `id`, ADD `category_id` INT(200) NULL DEFAULT NULL AFTER `event_id`, ADD INDEX `event_id_index` (`event_id`);
 ALTER TABLE `criteria` ADD INDEX(`event_id`);ALTER TABLE `criteria` ADD INDEX(`event_id`);
 
+cd D:\documents\rdeweb
+C:\xampp\php\php.exe -S localhost:8000 index.php
+
+make the php api only sends a  JSON response at the end of execution and no html tags

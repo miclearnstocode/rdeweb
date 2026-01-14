@@ -20,9 +20,54 @@ import {Retrieval} from "./AccountRetrival/retrival.js";
 
 
 
-
-
-
+// DEBUG: Log ALL fetch requests
+(function() {
+    const originalFetch = window.fetch;
+    let requestCount = 0;
+    
+    window.fetch = function(...args) {
+        const requestId = ++requestCount;
+        const [url, options = {}] = args;
+        
+        //console.group(`FETCH #${requestId}: ${options.method || 'GET'} ${url}`);
+        //console.log('Options:', options);
+        //console.log('Time:', new Date().toLocaleTimeString());
+        //console.groupEnd();
+        
+        const startTime = Date.now();
+        
+        return originalFetch.apply(this, args)
+            .then(response => {
+                const duration = Date.now() - startTime;
+                
+                // Clone to check content without consuming
+                const clone = response.clone();
+                const contentType = clone.headers.get('content-type') || '';
+                
+                //console.group(`RESPONSE #${requestId}: ${response.status} ${url}`);
+                //console.log('Status:', response.status, response.statusText);
+                //console.log('Content-Type:', contentType);
+                //console.log('Duration:', duration + 'ms');
+                //console.log('URL:', response.url);
+                
+                // Check if it's JSON or HTML
+                clone.text().then(text => {
+                    //console.log('First 100 chars:', text.substring(0, 100));
+                    
+                    if (!contentType.includes('application/json')) {
+                        //console.warn('⚠️ WARNING: Not JSON! Is HTML?', text.startsWith('<!DOCTYPE') || text.startsWith('<html'));
+                    }
+                }).catch(e => console.log('Could not read response text:', e));
+                
+                //console.groupEnd();
+                return response;
+            })
+            .catch(error => {
+                //console.error(`❌ FETCH ERROR #${requestId}:`, error);
+                throw error;
+            });
+    };
+})();
 
 const Login = () => {
 
@@ -203,7 +248,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
             form.append("sessionChecker", "true")
 
-            fetch("/sessionCheck", {
+            fetch("/server/session.php", {
 
                 method: 'POST',
 
@@ -229,7 +274,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
                     if (!data.status) {
-
                         switch (url.split('/')[1]) {
 
                             case 'admin':
@@ -240,7 +284,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
                                 } else {
 
-                                    window.location.replace('/')
+                                    // Wrong user type for this route, redirect to login
+                                    window.location.replace('/account/Login?')
 
                                 }
 
@@ -254,11 +299,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
                                 } else {
 
-                                    window.location.replace('/')
+                                    // Wrong user type for this route, redirect to login
+                                    window.location.replace('/account/Login?')
 
                                 }
-
-
 
                                 break;
 
@@ -270,11 +314,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
                                 } else {
 
-                                    window.location.replace('/')
+                                    // Wrong user type for this route, redirect to login
+                                    window.location.replace('/account/Login?')
 
                                 }
-
-
 
                                 break;
 
@@ -286,7 +329,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
                                 } else {
 
-                                    window.location.replace('/')
+                                    // Wrong user type for this route, redirect to login
+                                    window.location.replace('/account/Login?')
 
                                 }
 
@@ -299,7 +343,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
                                 } else {
 
-                                    window.location.replace('external/users/a/b/c/b/c/d/e/v1')
+                                    window.location.replace('/external/users/a/b/c/b/c/d/e/v1')
 
                                 }
 
@@ -315,10 +359,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
                     } else {
 
-                        window.location.replace('/')
+                        // User is not logged in, redirect to login page
+                        window.location.replace('/account/Login?')
 
                     }
 
+                })
+                .catch(error => {
+                    console.error('Session check error:', error);
+                    // On error, redirect to login page
+                    window.location.replace('/account/Login?');
                 })
 
         }

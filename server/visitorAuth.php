@@ -1,5 +1,5 @@
 <?php
-
+header('Content-Type: application/json; charset=utf-8');
 include ('db.php');
 
 /** @var TYPE_NAME $username */
@@ -12,7 +12,7 @@ include ('db.php');
 
 if (isset($_POST['auth'])) {
 
-    //  $_SESSION['isLog']=serialize(new Auth(true,$_POST['userType'],$username,'office',$id,$acnem));
+    //$_SESSION['isLog']=serialize(new Auth(true,$_POST['userType'],$username,'office',$id,$acnem));
 
     $response = new stdClass();
 
@@ -23,7 +23,7 @@ if (isset($_POST['auth'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
 
         $userEmail = $_POST['username'];
-        $password = $_POST['password'];
+        $inputPassword = $_POST['password'];
 
         if ($statement = $con->prepare(" SELECT umb_user.id, umb_user.email,umb_user.password FROM umb_user WHERE umb_user.email=?")) {
 
@@ -39,7 +39,7 @@ if (isset($_POST['auth'])) {
 
                 $statement->fetch();
 
-                if (password_verify($password,$pass)) {
+                if (password_verify($inputPassword,$pass)) {
 
                     $response->message = '/external/users/a/b/c/b/c/d/e/v1';
 
@@ -86,8 +86,9 @@ if (isset($_POST['auth'])) {
 
     }
 
+    // Always output JSON
     echo json_encode($response);
-
+    exit();
 }
 
 
@@ -113,6 +114,7 @@ if(isset($_POST['addExtern'])){
         $response->message=$con->error;
     }
     echo json_encode($response);
+    exit();
 }
 
 if(isset($_POST['get_umd_user'])){
@@ -145,4 +147,5 @@ if(isset($_POST['accountIdDel'])){
         $response->message=$con->error;
     }
     echo json_encode($response);
+    exit();
 }

@@ -1,25 +1,32 @@
 <?php
 
-//$host='localhost';
-//$username='root';
-//$pass='';
-//$dbName='rdedb';
+$host='localhost';
+$username='root';
+$pass='';
+$dbName='capsued_rdesystem';
 
+// Create connection
+$conn = new mysqli($host, $username, $pass, $dbName);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
 //Email
-//$rdeEmail='capizstatecapsudayao@gmail.com';
-//$emailPassword='vuxbtbqimnjiawkw';
+$rdeEmail='capizstatecapsudayao@gmail.com';
+$emailPassword='vuxbtbqimnjiawkw';
 
 //CAPSU EMAIL
-$rdeEmail='rdesystem@capsu.edu.ph';
-$emailPassword='rd3LEAD$';
+//$rdeEmail='rdesystem@capsu.edu.ph';
+//$emailPassword='rd3LEAD$';
 
 //Capsu HOST
 
-$host='localhost';
-$username='capsued_rde';
-$pass='capsurde123456';
-$dbName='capsued_rdesystem';
+//$host='localhost';
+//$username='capsued_rde';
+//$pass='capsurde123456';
+//$dbName='capsued_rdesystem';
 
 
 

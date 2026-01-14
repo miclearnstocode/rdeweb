@@ -1,5 +1,23 @@
 <?php
 
+// Force JSON response for API calls
+if (strpos($_SERVER['REQUEST_URI'], '/loginAuth') !== false || 
+    strpos($_SERVER['REQUEST_URI'], '/server/authToken.php') !== false) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type');
+}
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+// Prevent any accidental output
+ob_start();
+
 include ('db.php');
 
 /** @var TYPE_NAME $username */
@@ -27,7 +45,7 @@ if(isset($_POST['auth'])){
                         $statement->bind_result($id,$pas);
                         $statement->fetch();
                         if($pas===$_POST['password']){
-                            $response->message='/';
+                            $response->message='/admin/addAccount';
                             $_SESSION['isLog']=serialize(new Auth(true,$_POST['userType'],$_POST['username'],'',$id,'','','',''));
                             $_SESSION['login']=true;
                             $_SESSION['userId']=$id;
@@ -77,7 +95,7 @@ LEFT JOIN signature ON account_detail.id=signature.user_id WHERE capsu_user.user
                         $statement->bind_result($id,$userName,$passWord,$fullName,$campus,$emailAdd,$userType,$signUrl,$signScale);
                         $statement->fetch();
                         if(password_verify($password,$passWord)){
-                            $response->message='/';
+                            $response->message='/user/create/share';
                             $signature= new stdClass();
                             $signature->url=$signUrl;
                             $signature->scale=$signScale;
@@ -187,7 +205,9 @@ LEFT JOIN signature ON account_detail.id=signature.user_id WHERE capsu_user.user
 
 if(isset($_POST['logout'])){
     session_destroy();
-    echo "/";
+    echo "/account/Login?";
 }
 
 
+ob_end_flush();
+exit();
