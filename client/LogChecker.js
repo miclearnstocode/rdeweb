@@ -1,4 +1,4 @@
- const LogRequest= async ()=>{
+const LogRequest= async ()=>{
 
     const form= new FormData()
 
@@ -14,46 +14,29 @@
 
 }
 
-let checkLogOutExecuted = false;
-let checkLogInExecuted = false;
+// Global flags for logout detection only
+if(typeof window.checkLogOutExecuted === 'undefined') {
+    window.checkLogOutExecuted = false;
+}
 
+// CheckLogOut is called by Logout button only - when user manually logs out
 export const CheckLogOut=async ()=>{
 
-    if(checkLogOutExecuted) return;
-    checkLogOutExecuted = true;
+    if(window.checkLogOutExecuted) return;
+    window.checkLogOutExecuted = true;
 
-    LogRequest().then(data=>{
-
-        if(data.status){
-
-            window.location.replace('/account/Login?')
-
-        }
-
-    })
-
- }
-
- export const CheckLogIn=async ()=>{
-
-     if(checkLogInExecuted) return;
-     checkLogInExecuted = true;
-
-     LogRequest().then(data=>{
-
-         // Only redirect away from login if user IS already logged in
-         if(!data.status && data.message){
-
-             // User is logged in on login page, redirect to appropriate dashboard
-             // This prevents users from staying on login page when already authenticated
-             
-         }
-
-     })
+    try {
+        const data = await LogRequest();
+        // After logout request is sent, redirect to login
+        // Server will have destroyed the session
+        window.location.replace('/account/Login?')
+    } catch(error) {
+        console.error('CheckLogOut error:', error);
+        // Force redirect to login even if request fails
+        window.location.replace('/account/Login?')
+    }
 
  }
-
-
 
  export const Socket=()=>{
 

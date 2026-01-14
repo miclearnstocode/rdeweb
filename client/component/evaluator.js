@@ -1,10 +1,8 @@
 import {$, Request} from '../lib/lib.js';
 import {Header} from "./otherComponent/header.js";
 import {Box, HeaderTable, Search} from "./evaluatorComponent/script/listBox.js";
-import {CheckLogOut} from "../LogChecker.js";
 
 export const Evaluator=()=>{
-    CheckLogOut()
     document.getElementById('root').appendChild(Header())
     let event ,category
     const Label=$({

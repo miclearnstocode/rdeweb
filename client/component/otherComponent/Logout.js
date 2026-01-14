@@ -10,16 +10,29 @@ export const Logout=()=>{
         event:{
             type:'click',
             method:async ()=>{
-                sessionStorage.clear()
+                // Clear all storage
+                sessionStorage.clear();
+                localStorage.clear();
+                
+                // Reset session flags
+                window.checkLogOutExecuted = false;
+                window.checkLogInExecuted = false;
+                
                 const form=new FormData();
                 form.append('logout','true')
-                await fetch('/logout',{
-                    method:'POST',
-                    body:form
-                }).then(res=>res.text())
-                    .then(data=>{
-                        window.location.replace(data)
-                    })
+                
+                try {
+                    const res = await fetch('/logout',{
+                        method:'POST',
+                        body:form
+                    });
+                    const data = await res.text();
+                    window.location.replace(data);
+                } catch(error) {
+                    console.error('Logout error:', error);
+                    // Force redirect to login even if logout request fails
+                    window.location.replace('/account/Login?');
+                }
             }
         }
     }))

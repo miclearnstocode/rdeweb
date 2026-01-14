@@ -1,5 +1,10 @@
 <?php
 
+// Start session first before anything else
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Force JSON response for API calls
 if (strpos($_SERVER['REQUEST_URI'], '/loginAuth') !== false || 
     strpos($_SERVER['REQUEST_URI'], '/server/authToken.php') !== false) {
@@ -44,7 +49,18 @@ if(isset($_POST['auth'])){
                     if($statement->num_rows>0){
                         $statement->bind_result($id,$pas);
                         $statement->fetch();
-                        if($pas===$_POST['password']){
+                        
+                        // Check password - try both plain text and hashed
+                        $passwordMatch = false;
+                        if($pas===$_POST['password']) {
+                            // Plain text match
+                            $passwordMatch = true;
+                        } else if(password_verify($_POST['password'], $pas)) {
+                            // Hashed password match
+                            $passwordMatch = true;
+                        }
+                        
+                        if($passwordMatch){
                             $response->message='/admin/addAccount';
                             $_SESSION['isLog']=serialize(new Auth(true,$_POST['userType'],$_POST['username'],'',$id,'','','',''));
                             $_SESSION['login']=true;

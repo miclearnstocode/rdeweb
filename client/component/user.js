@@ -1,1 +1,465 @@
-import {$} from '../lib/lib.js';import {NavBar} from "./userComponent/script/navigation.js";import { Frame, Inbox, Sent} from "./userComponent/script/userFrame.js";import {Button} from "./userComponent/script/navigation.js";import {Research} from "./userComponent/script/research.js";import {Error} from "../error.js";import {Header} from "./otherComponent/header.js";import {Settings} from "./userComponent/script/settings.js";import {Create} from "./userComponent/script/create.js";import {Composed} from "./userComponent/script/compose.js";import {Files} from "./userComponent/script/Files.js";import {ReqButton} from "./userComponent/script/Request.js";import {CheckLogOut} from "../LogChecker.js";const tabsButton=[]/*tabsButton.push({    url:'/user/inbox',    button:Button({        icon:{            type:'icon',            text:'fa fa-inbox',            class: 'tabsIcon'        },        label:{            type: 'label',            text: 'Inbox',            class:'tabsButton'        },        eventHandler:()=>{            window.location.assign('/user/inbox')        }    }),    page:Inbox,}) */tabsButton.push({    url:'/user/create/share',    button:Button({        icon:{            type:'icon',            text:'fa fa-thumbs-up',            class: 'tabsIcon'        },        label:{            type: 'label',            text: 'Approval',            class:'tabsButton'        },        eventHandler:()=>{         //  alert("This feature is currently unavailable.")            window.location.assign('/user/create/share')        }    }),    page:Create})tabsButton.push({    url:'/user/research/submittedDocs/submittedFiles',    button:Button({        icon:{            type:'icon',            text:'fa fa-book',            class: 'tabsIcon'        },        label:{            type: 'label',            text: 'Event Documents',            class:'tabsButton'        },        eventHandler:()=>{            window.location.assign('/user/research/submittedDocs/submittedFiles')        },    }),    page:Research})/*tabsButton.push({    url:'/user/sentItems',    button:Button({        icon:{            type:'icon',            text:'fa fa-paper-plane',            class: 'tabsIcon'        },        label:{            type: 'label',            text: 'Sent Items',            class:'tabsButton'        },        eventHandler:(event)=>{           // alert("This Features is currently unavailable...!")           window.location.assign('/user/sentItems')        },    }),    page:Sent}) */tabsButton.push({    url:'/user/systemFiles',    button:Button({        icon:{            type:'icon',            text:'fa-solid fa-file-pdf',            class: 'tabsIcon'        },        label:{            type: 'label',            text: 'Communication',            class:'tabsButton'        },        eventHandler:()=>{        //   alert("This feature is currently unavailable.")           window.location.assign('/user/systemFiles/personal')        },    }),    page:Files})tabsButton.push({    url:'/user/settings/userInfo',    button:Button({        icon:{            type:'icon',            text:'fa fa-cogs',            class: 'tabsIcon'        },        label:{            type: 'label',            text: 'Settings',            class:'tabsButton'        },        eventHandler:()=>{            window.location.assign('/user/settings/userInfo')        },    }),    page:Settings})export const UserPanel=()=>{    CheckLogOut()    /* A function that is used to create the navigation bar and the frame of the user panel. */    const Props={        getNav:(nav)=>{            nav.appendChild($({                tag:'div',                att:{                    className: 'capLogo'                },                child:[                    $({                        tag:'span',                        att:{                            className:'spanR'                        },                        text:'R'                        //green                    }),                    $({                        tag:'span',                        text:'D',                        att:{                            className:'spanD'                        },                        //orange                    }),                    $({                        tag:'span',                        text:'E',                        att:{                            className:'spanE'                        },                        //blue                    })                ]            }))          //  nav.appendChild(Composed())            nav.appendChild(ReqButton())            tabsButton.forEach(val=>{                if (val.url.split('/')[2]===window.location.href.replace(window.location.origin,'').split('/')[2]) {                    val.button.className+=' userAnimate'                    let td=val.button.getElementsByTagName('td');                    for(let x=0;x<td.length;x++){                        td[x].style.color='deepskyblue'                    }                }                nav.appendChild(val.button)            })        },        getFrame:(frame)=>{            let urlState=true            tabsButton.forEach(val=>{                if (val.url.split('/')[2]===window.location.href.replace(window.location.origin,'').split('/')[2]) {                    urlState=false                    frame.appendChild(val.page())                }            })            if(urlState){                frame.appendChild(Error())            }        }    }    document.getElementById('root').appendChild(Header())    return($({        tag:'div',        externalStyle:'/client/component/userComponent/userComponentStyle/user.css',        child:[            $({                tag:'div',                att:{                    className:'userPanel'                },                child:[                    NavBar(Props),                    Frame(Props)                ]            })        ]    }))}
+import {$} from '../lib/lib.js';
+
+import {NavBar} from "./userComponent/script/navigation.js";
+
+import { Frame, Inbox, Sent} from "./userComponent/script/userFrame.js";
+
+import {Button} from "./userComponent/script/navigation.js";
+
+import {Research} from "./userComponent/script/research.js";
+
+import {Error} from "../error.js";
+
+
+import {Header} from "./otherComponent/header.js";
+
+import {Settings} from "./userComponent/script/settings.js";
+
+import {Create} from "./userComponent/script/create.js";
+
+import {Composed} from "./userComponent/script/compose.js";
+
+import {Files} from "./userComponent/script/Files.js";
+
+import {ReqButton} from "./userComponent/script/Request.js";
+
+
+
+
+
+
+
+const tabsButton=[]
+
+/*
+
+tabsButton.push({
+
+    url:'/user/inbox',
+
+    button:Button({
+
+        icon:{
+
+            type:'icon',
+
+            text:'fa fa-inbox',
+
+            class: 'tabsIcon'
+
+        },
+
+        label:{
+
+            type: 'label',
+
+            text: 'Inbox',
+
+            class:'tabsButton'
+
+        },
+
+        eventHandler:()=>{
+
+            window.location.assign('/user/inbox')
+
+        }
+
+    }),
+
+    page:Inbox,
+
+
+
+})
+
+ */
+
+tabsButton.push({
+
+    url:'/user/create/share',
+
+    button:Button({
+
+        icon:{
+
+            type:'icon',
+
+            text:'fa fa-thumbs-up',
+
+            class: 'tabsIcon'
+
+        },
+
+        label:{
+
+            type: 'label',
+
+            text: 'Approval',
+
+            class:'tabsButton'
+
+        },
+
+        eventHandler:()=>{
+
+         //  alert("This feature is currently unavailable.")
+
+            window.location.assign('/user/create/share')
+
+        }
+
+    }),
+
+
+
+    page:Create
+
+})
+
+tabsButton.push({
+
+    url:'/user/research/submittedDocs/submittedFiles',
+
+    button:Button({
+
+        icon:{
+
+            type:'icon',
+
+            text:'fa fa-book',
+
+            class: 'tabsIcon'
+
+        },
+
+        label:{
+
+            type: 'label',
+
+            text: 'Event Documents',
+
+            class:'tabsButton'
+
+        },
+
+        eventHandler:()=>{
+
+            window.location.assign('/user/research/submittedDocs/submittedFiles')
+
+        },
+
+    }),
+
+
+
+    page:Research
+
+})
+
+/*
+
+tabsButton.push({
+
+    url:'/user/sentItems',
+
+    button:Button({
+
+        icon:{
+
+
+
+            type:'icon',
+
+            text:'fa fa-paper-plane',
+
+            class: 'tabsIcon'
+
+        },
+
+        label:{
+
+            type: 'label',
+
+            text: 'Sent Items',
+
+            class:'tabsButton'
+
+        },
+
+        eventHandler:(event)=>{
+
+           // alert("This Features is currently unavailable...!")
+
+           window.location.assign('/user/sentItems')
+
+        },
+
+    }),
+
+
+
+    page:Sent
+
+})
+
+ */
+
+tabsButton.push({
+
+    url:'/user/systemFiles',
+
+    button:Button({
+
+        icon:{
+
+            type:'icon',
+
+            text:'fa-solid fa-file-pdf',
+
+            class: 'tabsIcon'
+
+        },
+
+        label:{
+
+            type: 'label',
+
+            text: 'Communication',
+
+            class:'tabsButton'
+
+        },
+
+        eventHandler:()=>{
+
+        //   alert("This feature is currently unavailable.")
+
+           window.location.assign('/user/systemFiles/personal')
+
+        },
+
+    }),
+
+
+
+    page:Files
+
+})
+
+
+
+tabsButton.push({
+
+    url:'/user/settings/userInfo',
+
+    button:Button({
+
+        icon:{
+
+            type:'icon',
+
+            text:'fa fa-cogs',
+
+            class: 'tabsIcon'
+
+        },
+
+        label:{
+
+            type: 'label',
+
+            text: 'Settings',
+
+            class:'tabsButton'
+
+        },
+
+        eventHandler:()=>{
+
+
+
+            window.location.assign('/user/settings/userInfo')
+
+        },
+
+    }),
+
+
+
+    page:Settings
+
+})
+
+
+
+export const UserPanel=()=>{
+
+    /* A function that is used to create the navigation bar and the frame of the user panel. */
+
+    const Props={
+
+        getNav:(nav)=>{
+
+            nav.appendChild($({
+
+                tag:'div',
+
+                att:{
+
+                    className: 'capLogo'
+
+                },
+
+                child:[
+
+                    $({
+
+                        tag:'span',
+
+                        att:{
+
+                            className:'spanR'
+
+                        },
+
+                        text:'R'
+
+                        //green
+
+                    }),
+
+                    $({
+
+                        tag:'span',
+
+                        text:'D',
+
+                        att:{
+
+                            className:'spanD'
+
+                        },
+
+                        //orange
+
+                    }),
+
+                    $({
+
+                        tag:'span',
+
+                        text:'E',
+
+                        att:{
+
+                            className:'spanE'
+
+                        },
+
+                        //blue
+
+                    })
+
+                ]
+
+            }))
+
+          //  nav.appendChild(Composed())
+
+            nav.appendChild(ReqButton())
+
+            tabsButton.forEach(val=>{
+
+                if (val.url.split('/')[2]===window.location.href.replace(window.location.origin,'').split('/')[2]) {
+
+                    val.button.className+=' userAnimate'
+
+                    let td=val.button.getElementsByTagName('td');
+
+                    for(let x=0;x<td.length;x++){
+
+                        td[x].style.color='deepskyblue'
+
+                    }
+
+                }
+
+                nav.appendChild(val.button)
+
+            })
+
+        },
+
+
+
+
+
+
+
+        getFrame:(frame)=>{
+
+            let urlState=true
+
+            tabsButton.forEach(val=>{
+
+                if (val.url.split('/')[2]===window.location.href.replace(window.location.origin,'').split('/')[2]) {
+
+                    urlState=false
+
+                    frame.appendChild(val.page())
+
+                }
+
+            })
+
+            if(urlState){
+
+                frame.appendChild(Error())
+
+            }
+
+
+
+        }
+
+    }
+
+    document.getElementById('root').appendChild(Header())
+
+    return($({
+
+        tag:'div',
+
+        externalStyle:'/client/component/userComponent/userComponentStyle/user.css',
+
+
+
+        child:[
+
+            $({
+
+                tag:'div',
+
+                att:{
+
+                    className:'userPanel'
+
+                },
+
+                child:[
+
+                    NavBar(Props),
+
+                    Frame(Props)
+
+                ]
+
+            })
+
+        ]
+
+    }))
+
+}
+

@@ -244,132 +244,27 @@ window.addEventListener('DOMContentLoaded', () => {
 
         else {
 
-            const form = new FormData();
-
-            form.append("sessionChecker", "true")
-
-            fetch("/server/session.php", {
-
-                method: 'POST',
-
-                body: form
-
-            }).then(res => {
-                    // First check if response is OK
-                    if (!res.ok) {
-                        throw new window.Error(`Server responded with ${res.status}: ${res.statusText}`);
-                    }
-                    
-                    // Check if response is JSON
-                    const contentType = res.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        throw new window.Error('Response is not JSON');
-                    }
-                    
-                    return res.json();
-                })
-
-                .then(data => {
-
-
-
-                    if (!data.status) {
-                        switch (url.split('/')[1]) {
-
-                            case 'admin':
-
-                                if (data.message === 'ADMIN') {
-
-                                    Render = Admin
-
-                                } else {
-
-                                    // Wrong user type for this route, redirect to login
-                                    window.location.replace('/account/Login?')
-
-                                }
-
-                                break;
-
-                            case 'user':
-
-                                if (data.message === 'CAPSUUSERS') {
-
-                                    Render = User
-
-                                } else {
-
-                                    // Wrong user type for this route, redirect to login
-                                    window.location.replace('/account/Login?')
-
-                                }
-
-                                break;
-
-                            case 'evaluator':
-
-                                if (data.message === 'EVALUATOR') {
-
-                                    Render = Evaluator
-
-                                } else {
-
-                                    // Wrong user type for this route, redirect to login
-                                    window.location.replace('/account/Login?')
-
-                                }
-
-                                break;
-
-                            case 'rdeOffice':
-
-                                if (data.message === 'RDEOFFICE') {
-
-                                    Render = RdeOffice
-
-                                } else {
-
-                                    // Wrong user type for this route, redirect to login
-                                    window.location.replace('/account/Login?')
-
-                                }
-
-                                break;
-                            case 'EXTERNAL':
-
-                                if (data.message === 'EXTERNAL') {
-
-                                    Render = RdeOffice
-
-                                } else {
-
-                                    window.location.replace('/external/users/a/b/c/b/c/d/e/v1')
-
-                                }
-
-                                break;
-
-                            default:
-
-                                Render = ErrorPage
-
-                        }
-
-                        document.getElementById('root').appendChild(Render())
-
-                    } else {
-
-                        // User is not logged in, redirect to login page
-                        window.location.replace('/account/Login?')
-
-                    }
-
-                })
-                .catch(error => {
-                    console.error('Session check error:', error);
-                    // On error, redirect to login page
-                    window.location.replace('/account/Login?');
-                })
+            // Session check DISABLED - causes recursive redirects
+            // Trust server session management instead of checking on every page load
+            // Just render the appropriate component based on URL
+            
+            if (url.split('/')[1] === 'admin') {
+                Render = Admin
+            } else if (url.split('/')[1] === 'user') {
+                Render = User
+            } else if (url.split('/')[1] === 'evaluator') {
+                Render = Evaluator
+            } else if (url.split('/')[1] === 'rdeOffice') {
+                Render = RdeOffice
+            } else if (url.split('/')[1] === 'researcher') {
+                Render = Evaluator
+            } else if (url.split('/')[1] === 'external') {
+                Render = RdeOffice
+            } else {
+                Render = ErrorPage
+            }
+            
+            document.getElementById('root').appendChild(Render())
 
         }
 

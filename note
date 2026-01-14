@@ -129,6 +129,25 @@ september 12 2022
  ALTER TABLE `criteria` ADD `event_id` BIGINT(200) NULL DEFAULT NULL AFTER `id`, ADD `category_id` INT(200) NULL DEFAULT NULL AFTER `event_id`, ADD INDEX `event_id_index` (`event_id`);
 ALTER TABLE `criteria` ADD INDEX(`event_id`);ALTER TABLE `criteria` ADD INDEX(`event_id`);
 
+january 14, 2025
+CREATE TABLE center (
+    id        INT AUTO_INCREMENT PRIMARY KEY,
+    code      VARCHAR(20)  NOT NULL,  -- e.g. 'CSRDC'
+    name      VARCHAR(255) NOT NULL   -- optional full name
+);
+Insered the values for center check the table in XAMMPP phpmyadmin
+
+CREATE TABLE center_category (
+    center_id   INT NOT NULL,
+    category_id INT NOT NULL,
+    PRIMARY KEY (center_id, category_id),
+    CONSTRAINT fk_center_category_center
+        FOREIGN KEY (center_id) REFERENCES center(id),
+    CONSTRAINT fk_center_category_category
+        FOREIGN KEY (category_id) REFERENCES category(id)
+);
+
+
 cd D:\documents\rdeweb
 C:\xampp\php\php.exe -S localhost:8000 index.php
 

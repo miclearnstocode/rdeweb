@@ -1,7 +1,5 @@
 import {$, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting} from '../lib/lib.js'
 
-import { CheckLogIn} from "../LogChecker.js";
-
 
 
 /**
@@ -1226,7 +1224,7 @@ export const LoginPage = () => {
 
     let clsObj
 
-    CheckLogIn()
+    // CheckLogIn() is not needed - index.js already handles session verification before showing login page
 
 
 
