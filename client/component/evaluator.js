@@ -69,7 +69,7 @@ export const Evaluator=()=>{
                                 ])
                                 req.Json()
                                 req.Send().then(data=>{
-                                    ev.innerHTML=`<span style="color:deepskyblue">CATEGORY :</span> ${data.category}`
+                                    ev.innerHTML=`<span style="color:deepskyblue">CENTER :</span> ${data.category}`
                                 })
                             })()
                         }

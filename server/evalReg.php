@@ -127,7 +127,9 @@ evaluator.fullname,
 
 evaluator.password,
 
-evaluator.category,
+evaluator.center_id,
+
+center.name,
 
 evaluator.eventid,
 
@@ -136,6 +138,12 @@ event_list.name
 FROM
 
 evaluator
+
+LEFT JOIN
+
+center
+
+ON center.id=evaluator.center_id
 
 LEFT JOIN
 
@@ -155,15 +163,15 @@ WHERE evaluator.username=?";
 
             if ($statement->num_rows > 0) {
 
-                $statement->bind_result($id, $acnem, $pass, $category,$evId,$evName);
+                $statement->bind_result($id, $acnem, $pass, $centerId, $centerName, $evId,$evName);
 
                 $statement->fetch();
 
                 if (password_verify($password, $pass)) {
 
-                    $response->message = '/';
+                    $response->message = '/evaluator';
 
-                    $_SESSION['isLog'] = serialize(new Auth(true, $_POST['userType'], $username, $category, $id, $acnem,'',$acnem,''));
+                    $_SESSION['isLog'] = serialize(new Auth(true, $_POST['userType'], $username, $centerName, $id, $acnem,'',$acnem,''));
 
                     $_SESSION['eventTYpe']=$evName;
 
@@ -183,7 +191,9 @@ WHERE evaluator.username=?";
 
                     $_SESSION['userOffice']='CENTRAL OFFICE';
 
-                    $_SESSION['category']=$category;
+                    $_SESSION['center']=$centerName;
+
+                    $_SESSION['centerId']=$centerId;
 
                     $_SESSION['userEmail']='';
 
@@ -292,31 +302,11 @@ if(isset($_POST['getCenters'])){
 
     if($con = new mysqli($host, $username, $pass, $dbName)){
 
-        $category = isset($_POST['category']) ? $_POST['category'] : '';
-
-        if ($category) {
-            // Get centers that are linked to this category
-            $query = "SELECT DISTINCT center.id, center.code, center.name 
-                      FROM center 
-                      INNER JOIN center_category ON center.id = center_category.center_id 
-                      INNER JOIN category ON center_category.category_id = category.id 
-                      WHERE category.name = ? OR category.id = ?
-                      ORDER BY center.name";
-            
-            if ($statement = $con->prepare($query)) {
-                $statement->bind_param("ss", $category, $category);
-                $statement->execute();
-                $result = $statement->get_result();
-                
-                while ($row = $result->fetch_assoc()) {
-                    $res[] = $row;
-                }
-            }
-        } else {
-            // If no category specified, return all centers
-            $query = "SELECT id, code, name FROM center ORDER BY name";
-            $result = $con->query($query);
-            
+        // Return all centers (no longer filtered by category)
+        $query = "SELECT id, code, name FROM center ORDER BY name";
+        $result = $con->query($query);
+        
+        if ($result) {
             while ($row = $result->fetch_assoc()) {
                 $res[] = $row;
             }
@@ -338,34 +328,13 @@ if(isset($_POST['getCategoriesByCenter'])){
 
     if($con = new mysqli($host, $username, $pass, $dbName)){
 
-        $center = isset($_POST['center']) ? $_POST['center'] : '';
-
-        if ($center) {
-            // Get categories that are linked to this center
-            $query = "SELECT DISTINCT category.id, category.name 
-                      FROM category 
-                      INNER JOIN center_category ON category.id = center_category.category_id 
-                      WHERE center_category.center_id = ?
-                      ORDER BY category.name";
-            
-            if ($statement = $con->prepare($query)) {
-                $statement->bind_param("s", $center);
-                $statement->execute();
-                $result = $statement->get_result();
-                
-                while ($row = $result->fetch_assoc()) {
-                    $res[] = $row;
-                }
-            }
-        } else {
-            // If no center specified, return all categories
-            $query = "SELECT id, name FROM category ORDER BY name";
-            $result = $con->query($query);
-            
-            if ($result) {
-                while ($row = $result->fetch_assoc()) {
-                    $res[] = $row;
-                }
+        // Return all categories (no longer filtered by center)
+        $query = "SELECT id, name FROM category ORDER BY name";
+        $result = $con->query($query);
+        
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $res[] = $row;
             }
         }
 
@@ -384,7 +353,7 @@ if(isset($_POST['evalLeb'])){
 
     $res->event= $_SESSION['eventTYpe'];
 
-    $res->category=$_SESSION['category'];
+    $res->category=$_SESSION['center'];
 
     ob_clean();
     echo json_encode($res);
