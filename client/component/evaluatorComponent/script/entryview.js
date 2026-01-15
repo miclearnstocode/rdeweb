@@ -304,6 +304,9 @@ export const EntryView=({docId,title,eventId,catId})=>{
                 }else {
                     window.location.replace('/evaluator')
                 }
+            }).catch(err=>{
+                console.error('Error loading entry view:', err)
+                el.innerHTML='<div style="color:red;padding:20px">Error loading entry. Please refresh the page.</div>'
             })
         },
     }))

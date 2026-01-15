@@ -1,6 +1,9 @@
 <?php
 
-// Start output buffering FIRST to catch any notices/warnings
+// Set header FIRST before any output
+header('Content-Type: application/json; charset=utf-8');
+
+// Start output buffering to catch any notices/warnings
 ob_start();
 
 // Check if session is already started before starting it
@@ -9,8 +12,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 include('db.php');
-
-header('Content-Type: application/json; charset=utf-8');
 
 /** @var TYPE_NAME $host */
 

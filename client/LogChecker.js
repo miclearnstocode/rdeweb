@@ -43,3 +43,9 @@ export const CheckLogOut=async ()=>{
     const sender=new WebSocket("wss://")
 
  }
+
+export const socket = newWebSocket("ws://localhost:8000");
+
+socket.onopen = function(event) {
+    console.log("WebSocket is open now.");
+}

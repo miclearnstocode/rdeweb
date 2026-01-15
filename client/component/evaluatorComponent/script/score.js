@@ -385,6 +385,9 @@ score:0
                                                         if(data.status){
                                                             window.location.reload()
                                                         }
+                                                    }).catch(err=>{
+                                                        console.error('Error submitting score:', err)
+                                                        alert('Error submitting score. Please try again.')
                                                     })
                                                 }
 
@@ -413,6 +416,8 @@ score:0
                                                 }else {
                                                     el.style.backgroundColor='#aaa'
                                                 }
+                                            }).catch(err=>{
+                                                console.error('Error checking abstain status:', err)
                                             })
                                         }
                                     })

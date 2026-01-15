@@ -619,6 +619,9 @@ export const CommentBoard=({title,docId,closeState})=>{
                                                    })
                                                })
                                             }
+                                        }).catch(err=>{
+                                            console.error('Error updating review:', err)
+                                            alert('Error updating review. Please try again.')
                                         })
                                     }
                                 }

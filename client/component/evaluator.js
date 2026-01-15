@@ -21,7 +21,7 @@ export const Evaluator=()=>{
                     width:'fit-content',
                     height:'fit-content',
                     margin:'auto',
-                    marginLeft:'5vw',
+                    marginLeft:'1vw',
                     marginRight:'0',
                     fontSize:'1.5vw',
                     fontWeight:'bold',
@@ -45,6 +45,10 @@ export const Evaluator=()=>{
                     display:'flex',
                     justifyContent: 'center',
                     padding:'.1rem',
+                    flexWrap:'wrap',
+                    gap:'1vw',
+                    flex: '1',
+                    minWidth:'0'
                 },
                 child:[
                     $({
@@ -52,11 +56,17 @@ export const Evaluator=()=>{
                         style:{
                             margin:'auto',
                             width:'fit-content',
+                            maxWidth:'30vw',
                             height:'fit-content',
                             fontSize:'1.1vw',
                             fontWeight:'bold',
                             color:'#777',
-                            borderBottom:'solid thin deepskyblue'
+                            borderBottom:'solid thin deepskyblue',
+                            wordWrap:'break-word',
+                            overflowWrap:'break-word',
+                            whiteSpace:'normal',
+                            flexShrink:'1',
+                            minWidth: '0'
                         },
                         elementHandler:(ev)=>{
                             (async function(){
@@ -70,6 +80,9 @@ export const Evaluator=()=>{
                                 req.Json()
                                 req.Send().then(data=>{
                                     ev.innerHTML=`<span style="color:deepskyblue">CENTER :</span> ${data.category}`
+                                }).catch(err=>{
+                                    console.error('Error loading center info:', err)
+                                    ev.innerHTML=`<span style="color:deepskyblue">CENTER :</span> <span style="color:red">Error loading</span>`
                                 })
                             })()
                         }
@@ -78,13 +91,18 @@ export const Evaluator=()=>{
                         tag:'div',
                         style:{
                             margin:'auto',
-                            marginLeft:'3vw',
                             width:'fit-content',
+                            maxWidth:'30vw',
                             height:'fit-content',
                             fontSize:'1.1vw',
                             fontWeight:'bold',
                             color:'#777',
-                            borderBottom:'solid thin deepskyblue'
+                            borderBottom:'solid thin deepskyblue',
+                            wordWrap:'break-word',
+                            overflowWrap:'break-word',
+                            whiteSpace:'normal',
+                            flexShrink:'1',
+                            minWidth: '0'
                         },
                         elementHandler:(ev)=>{
                             (async function(){
@@ -98,6 +116,9 @@ export const Evaluator=()=>{
                                 req.Json()
                                 req.Send().then(data=>{
                                     ev.innerHTML=`<span style="color:deepskyblue">EVENT :</span> ${data.event}`
+                                }).catch(err=>{
+                                    console.error('Error loading event info:', err)
+                                    ev.innerHTML=`<span style="color:deepskyblue">EVENT :</span> <span style="color:red">Error loading</span>`
                                 })
                             })()
                         }
