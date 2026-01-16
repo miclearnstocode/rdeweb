@@ -31,13 +31,12 @@ function SendEmail($from,$recipient,$message)
         //Server settings
         /* Setting up the SMTP server. */
         $mail->isSMTP();                                             // Send using SMTP
-        $mail->Host       = 'smtp.capsu.edu.ph';                        // Set the SMTP server to send through
+        $mail->Host       = 'smtp.gmail.com';                        // Set the SMTP server to send through (Gmail SMTP)
         $mail->SMTPAuth   = true;                                    // Enable SMTP authentication
-        $mail->Username   = $from->email;                                   // SMTP username
-        $mail->Password   = $from->password;                               // SMTP password
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;           // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
-        $mail->Port       = 587;
-        // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
+        $mail->Username   = $from->email;                            // SMTP username (Gmail address)
+        $mail->Password   = $from->password;                         // SMTP password (Gmail app password)
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;             // Enable TLS encryption; use SMTPS for Gmail
+        $mail->Port       = 465;                                     // TCP port to connect to, use 465 for SMTPS
 
         //Recipients
         $mail->setFrom($from->email, $from->name);
@@ -45,9 +44,9 @@ function SendEmail($from,$recipient,$message)
 
         // Content
         $mail->isHTML(true);                                  // Set email format to HTML
-        $mail->Subject = 'subject';
+        $mail->Subject = 'CAPSU RDE System - New Account Created';
         $mail->Body=$message;
-        $mail->AltBody = 'This is the body in plain text for non-HTML Mailer clients';
+        $mail->AltBody = 'Your CAPSU RDE System account has been created. Please log in to access the system.';
 
         /* It checks if the message was sent successfully. If it was, it sets the status to true and the message to
         "Message has been sent to". If it wasn't, it sets the status to false and the message to the error message. */

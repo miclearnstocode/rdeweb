@@ -12,7 +12,7 @@ function FileReceive($url, $fileName)
     </div>
     <div>
     <div>Please log in to your account <span><a href='rde.capsu.edu.ph' style='color: deepskyblue'>Log in?</a></span></div>
-    <div>This E-Mailer template is still on progress...</div>
+    <div>This Email Account template is still on progress...</div>
     
 </div>
     </div>
@@ -54,7 +54,7 @@ function AccountCreation($campus,$email)
    
     <div>RDE Central Office</div>
     <div>Good day!</div>
-    <p>You may now create your account using this E-Mailer <i>$email</i> under $campus campus.</p>
+    <p>You may now create your account using this Email account <i>$email</i> under $campus campus.</p>
     <p><a href='rde.capsu.edu.ph/account/Signup?'>Click to Sign-up</a></p>
     </div>
     ");

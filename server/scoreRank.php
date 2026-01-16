@@ -1,5 +1,11 @@
 <?php
 
+// Set header FIRST before any output
+header('Content-Type: application/json; charset=utf-8');
+
+// Start output buffering to catch any notices/warnings
+ob_start();
+
 include('db.php');
 /** @var TYPE_NAME $host */
 /** @var TYPE_NAME $username */
@@ -23,7 +29,10 @@ GROUP BY researchfile.category";
             $response[] = $row;
         }
     }
+    ob_clean();
     echo json_encode($response);
+    ob_end_flush();
+    exit();
 }
 
 if (isset($_POST['getEventName'])) {
@@ -38,8 +47,10 @@ if (isset($_POST['getEventName'])) {
             $response[] = $row;
         }
     }
+    ob_clean();
     echo json_encode($response);
-
+    ob_end_flush();
+    exit();
 }
 
 if (isset($_POST['getCatIdName'])) {
@@ -54,8 +65,10 @@ if (isset($_POST['getCatIdName'])) {
             $response[] = $row;
         }
     }
+    ob_clean();
     echo json_encode($response);
-
+    ob_end_flush();
+    exit();
 }
 
 if (isset($_POST['getDocPerRank'])) {
@@ -105,5 +118,8 @@ ORDER BY evaluator.id";
         }
 
     }
+    ob_clean();
     echo json_encode($response);
+    ob_end_flush();
+    exit();
 }

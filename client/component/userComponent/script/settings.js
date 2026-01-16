@@ -616,7 +616,7 @@ const userInfo = () => {
             att: {
                 className: 'rightLabel'
             },
-            text: 'User,s name and Password'
+            text: 'User name and Password'
         })
 
         const UserName = () => {

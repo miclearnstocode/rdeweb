@@ -618,9 +618,9 @@ const encodeUser=()=>{
 
                                                     setTimeout(()=>{
 
-                                                        alert("Successes..!")
+                                                        alert(data.message)
 
-                                                        window.location.reload()
+                                                        window.location.replace('/account/Login')
 
                                                     },100)
 

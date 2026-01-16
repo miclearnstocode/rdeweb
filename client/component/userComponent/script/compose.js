@@ -442,7 +442,12 @@ const ComposedBox=()=>{
                             {
                                 alert(data.message);
                                 window.location.reload()
+                            }else{
+                                alert('Error: ' + (data.message || 'Failed to send file'))
                             }
+                        }).catch(err=>{
+                            console.error('Error sending file:', err)
+                            alert('Error sending file. Please try again.')
                         })
                 }
             },

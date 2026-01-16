@@ -1,4 +1,16 @@
 <?php
+
+// Set header FIRST before any output
+header('Content-Type: application/json; charset=utf-8');
+
+// Start output buffering to catch any notices/warnings
+ob_start();
+
+// Check if session is already started before starting it
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include_once('db.php');
 
 /** @var TYPE_NAME $host */
@@ -32,10 +44,14 @@ if (isset($_POST['sendFile'])) {
                     $idocs = round(microtime(true) * 1000) . '';
                     $date=date("Y-m-d");
                     $idRec=$_POST['receiver'][$xc];
-                    $query="INSERT INTO `files`(`id`, `sender`, `userid`, `description`, `url`, `date`) VALUES ('$idocs','$sender','$idRec','$description','$filePath','$date')";
-                    if($con->query($query)){
+                    $query="INSERT INTO `files`(`id`, `sender`, `userid`, `description`, `url`, `date`) VALUES (?,?,?,?,?,?)";
+                    $stmt = $con->prepare($query);
+                    $stmt->bind_param("ssssss",$idocs,$sender,$idRec,$description,$filePath,$date);
+                    if($stmt->execute()){
                         $res->status = true;
                         $res->message = 'Success..!';
+                    }else{
+                        $res->message = $stmt->error;
                     }
                 }else{
                     $res->message = 'Directory not existed..!';
@@ -62,7 +78,10 @@ if (isset($_POST['sendFile'])) {
     } else {
         $res->message.= 'Connection Failed..!';
     }
+    ob_clean();
     echo json_encode($res);
+    ob_end_flush();
+    exit();
 }
 
 

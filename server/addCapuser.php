@@ -41,7 +41,13 @@ if(isset($_POST['registerAccount'])){
                 $to=new stdClass();
                 $to->name=$userType;
                 $to->email=$email;
-                SendEmail($from,$to,AccountCreation($campus,$email));
+                $emailResult=SendEmail($from,$to,AccountCreation($campus,$email));
+                if($emailResult->status){
+                    $response->message='New users account was successfully created. Verification email has been sent to '.$email;
+                }else{
+                    error_log('Email sending failed for '.$email.': '.$emailResult->message);
+                    $response->message='Account created but email sending failed. Please contact administrator.';
+                }
             }else{
                 $response->message=$con->error;
             }

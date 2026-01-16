@@ -1639,42 +1639,53 @@ export const Box=  (getBody)=>{
 
         panelBox=panel
 
-        const form=new FormData()
-
-        form.append('researchSubmit','true')
-        await fetch('/uploadResearchFile',{
-            method:'POST',
-            body:form
-        }).then(res=>res.json())
-            .then(data=>{
-                data.list.forEach((val,i)=>{
-                    if(val.status){
-                        panel.appendChild(EntryList({
-                            title:val.title,
-                            author:val.author,
-                            campus:val.campus,
-                            docId:val.id,
-                            eventId:val.eventId,
-                            catId:val.catId
-                        }))
-                    }else {
-                        panel.insertBefore(EntryList({
-                            title:val.title,
-                            author:val.author,
-                            campus:val.campus,
-                            docId:val.id,
-                            status:true,
-                            eventId:val.eventId,
-                            catId:val.catId
-                        }),panel.childNodes[0])
-                    }
-
-                })
-
-            }).catch(err=>{
-                console.error('Error loading research list:', err)
-                panel.innerHTML='<div style="color:red;padding:20px">Error loading entries. Please refresh the page.</div>'
+        try {
+            // First fetch the category and event
+            const evalReq = new FormData()
+            evalReq.append('evalLeb', '1')
+            const evalRes = await fetch('/evaluatorReg', {
+                method: 'POST',
+                body: evalReq
             })
+            const evalData = await evalRes.json()
+
+            const form=new FormData()
+            form.append('researchSubmit','true')
+            form.append('category', evalData.category)
+            form.append('event', evalData.event)
+            
+            const res = await fetch('/uploadResearchFile',{
+                method:'POST',
+                body:form
+            })
+            const data = await res.json()
+            
+            data.list.forEach((val,i)=>{
+                if(val.status){
+                    panel.appendChild(EntryList({
+                        title:val.title,
+                        author:val.author,
+                        campus:val.campus,
+                        docId:val.id,
+                        eventId:val.eventId,
+                        catId:val.catId
+                    }))
+                }else {
+                    panel.insertBefore(EntryList({
+                        title:val.title,
+                        author:val.author,
+                        campus:val.campus,
+                        docId:val.id,
+                        status:true,
+                        eventId:val.eventId,
+                        catId:val.catId
+                    }),panel.childNodes[0])
+                }
+            })
+        } catch(err){
+            console.error('Error loading research list:', err)
+            panel.innerHTML='<div style="color:red;padding:20px">Error loading entries. Please refresh the page.</div>'
+        }
 
     }
 

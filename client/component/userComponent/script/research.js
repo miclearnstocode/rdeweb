@@ -139,7 +139,7 @@ const CreateNew = () => {
                 }
                 el.append($({
                     tag: 'option',
-                    text: '- - Select Category - -',
+                    text: '- - Select Center - -',
                     style: {
                         color: 'black',
                         fontSize: '1.1vw',
@@ -149,11 +149,14 @@ const CreateNew = () => {
                         selected: true
                     }
                 }))
-                el.append(option("Social Science"))
-                el.append(option("Natural / Biological"))
-                el.append(option("Food"))
-                el.append(option("Development"))
-                el.append(option("Extension"))
+                el.append(option("Crop Science Research & Developement Center (CSRDC)"))
+                el.append(option("Livestock Research & Development Center (LRDC)"))
+                el.append(option("Fisheries Research & Development Center (FRDC)"))
+                el.append(option("Food and Industrial Technology Research & Development Center (FITRDC)"))
+                el.append(option("Social Science Research & Development Center (SSRDC)"))
+                el.append(option("Machinery and Agricultural Technology Engineering Center (MATEC)"))
+                el.append(option("Coconut Research and Development Center (Coco RDC)"))
+                el.append(option("Extension Office"))
 
 
             }
@@ -180,7 +183,7 @@ const CreateNew = () => {
             })
             const leb = $({
                 tag: 'div',
-                text: 'Select Category',
+                text: 'Select Center',
                 style: {
                     fontFamily: 'arial,sans-serif',
                     fontWeight: 'bolder',
@@ -995,6 +998,10 @@ const CreateNew = () => {
                                         window.location.reload()
                                     }))
                                 }
+                            }).catch(err => {
+                                remove()
+                                console.error('Error uploading research:', err)
+                                alert('Error uploading document. Please try again.')
                             })
                     }else{
                         alert(fl.message)
