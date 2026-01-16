@@ -349,16 +349,34 @@ if(isset($_POST['getCategoriesByCenter'])){
 }
 
 if(isset($_POST['evalLeb'])){
-
-    $res=new stdClass();
-
-    $res->event= $_SESSION['eventTYpe'];
-
-    $res->category=$_SESSION['center'];
-
+    $res = new stdClass();
+    
+    // Get event info
+    $res->event = $_SESSION['eventTYpe'] ?? '';
+    $res->eventId = $_SESSION['eventId'] ?? '';
+    
+    // Get category/center info with code
+    $centerId = $_SESSION['centerId'] ?? '';
+    $category = $_SESSION['center'] ?? '';
+    
+    // If we have centerId, fetch the full center name with code from database
+    if (!empty($centerId) && $con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "SELECT name, code FROM center WHERE id = ?";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("s", $centerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            // Format: "Coconut Research and Development Center (Coco RDC)"
+            $category = $row['name'] . " (" . $row['code'] . ")";
+        }
+    }
+    
+    $res->category = $category;
+    
     ob_clean();
     echo json_encode($res);
     ob_end_flush();
     exit();
-
 }

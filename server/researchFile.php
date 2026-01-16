@@ -334,39 +334,40 @@ if (isset($_POST['researchSubmit'])) {
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
 
-        //  $dataUser = unserialize($_SESSION['isLog']);
-
         // Use passed category and event, fallback to session if not provided
         $category = isset($_POST['category']) ? $_POST['category'] : (isset($_SESSION['category']) ? $_SESSION['category'] : $_SESSION['center']);
         $event = isset($_POST['event']) ? $_POST['event'] : $_SESSION['eventTYpe'];
-
+        $eventId = isset($_POST['eventId']) ? $_POST['eventId'] : $_SESSION['eventId'];
         $response->userName = $_SESSION['userName'];
 
         $evalId = $_SESSION['userId'];
 
-        $evNm = $event;
-
+        // Always use eventId since we always have it
         $sqlQueries = "SELECT 
-researchfile.id,
-researchfile.author,
-researchfile.file,
-researchfile.title,
-researchfile.event,
-researchfile.category,
-endorsement.campus,
-event_list.id as eventId,
-category.id as catId
+    researchfile.id,
+    researchfile.author,
+    researchfile.file,
+    researchfile.title,
+    researchfile.event,
+    researchfile.category,
+    endorsement.campus,
+    event_list.id as eventId,
+    category.id as catId
 FROM researchfile
-LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
-LEFT JOIN event_list ON researchfile.event=event_list.name
-LEFT JOIN category ON researchfile.category=category.name
-WHERE endorsement.status=? AND (researchfile.category=? OR researchfile.category LIKE CONCAT(?, '%') OR category.name=? OR category.name LIKE CONCAT(?, '%')) AND researchfile.event=? ";
+LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+LEFT JOIN event_list ON researchfile.event = event_list.name
+LEFT JOIN category ON researchfile.category = category.name
+WHERE endorsement.status = ? 
+  AND (researchfile.category = ? OR researchfile.category LIKE CONCAT(?, '%') OR category.name = ? OR category.name LIKE CONCAT(?, '%')) 
+  AND event_list.id = ? 
+  AND event_list.dead_line > CURRENT_TIMESTAMP";
 
         $stm = $con->prepare($sqlQueries);
 
         $stat = 'accepted';
 
-        $stm->bind_param("ssssss", $stat, $category, $category, $category, $category, $evNm);
+        // Bind parameters: status, category (5 times), eventId
+        $stm->bind_param("ssssss", $stat, $category, $category, $category, $category, $eventId);
 
         $stm->execute();
 
@@ -391,8 +392,8 @@ WHERE endorsement.status=? AND (researchfile.category=? OR researchfile.category
             $data->category = $val['category'];
 
             $data->campus = $val['campus'];
-            $data->eventId=$val['eventId'];
-            $data->catId=$val['catId'];
+            $data->eventId = $val['eventId'];
+            $data->catId = $val['catId'];
 
             $data->intro = '';
 
@@ -411,26 +412,16 @@ WHERE endorsement.status=? AND (researchfile.category=? OR researchfile.category
             $data->other = '';
 
             $comquery = "SELECT 
-
-comments.intro,
-
-comments.abstract,
-
-comments.objective,
-
-comments.methodology,
-
-comments.results,
-
-comments.recommendation,
-
-comments.literature,
-
-comments.other,
-
-comments.date
-
-FROM comments WHERE comments.resid=? AND comments.evalid=? AND comments.eventType=?";
+    comments.intro,
+    comments.abstract,
+    comments.objective,
+    comments.methodology,
+    comments.results,
+    comments.recommendation,
+    comments.literature,
+    comments.other,
+    comments.date
+FROM comments WHERE comments.resid = ? AND comments.evalid = ? AND comments.eventType = ?";
 
             $statement = $con->prepare($comquery);
 
@@ -460,15 +451,11 @@ FROM comments WHERE comments.resid=? AND comments.evalid=? AND comments.eventTyp
 
                 $data->other = $v['other'];
 
-
-
             }
 
             $response->list[] = $data;
 
         }
-
-
 
     }
 

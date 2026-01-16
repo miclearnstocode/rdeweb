@@ -8,9 +8,15 @@ export const Evaluator=()=>{
     const Label=$({
         tag:'div',
         style:{
-            height:'5vh',
+            height:'auto', // Changed to auto
+            minHeight: '5vh', // Minimum height
             width:'100%',
             display:'flex',
+            flexWrap: 'wrap', // Allow wrapping on smaller screens
+            padding: '1vh 0',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1vw',
         },
         child:[
             $({
@@ -20,16 +26,15 @@ export const Evaluator=()=>{
                     fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
                     width:'fit-content',
                     height:'fit-content',
-                    margin:'auto',
                     marginLeft:'1vw',
-                    marginRight:'0',
-                    fontSize:'1.5vw',
+                    fontSize:'clamp(1rem, 1.5vw, 1.5rem)',
                     fontWeight:'bold',
                     color:'deepskyblue',
                     backgroundImage:'linear-gradient(to right, #555,transparent)',
-                    paddingLeft:'5vw',
-                    paddingRight:'5vw',
-                    borderRadius:'.5vw 0 0 .5vw',
+                    padding: '0.5vh 2vw',
+                    borderRadius:'.5vw',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
 
                 }
             }),
@@ -37,36 +42,33 @@ export const Evaluator=()=>{
                 tag:'div',
                 style:{
                     fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                    width:'fit-content',
-                    height:'fit-content',
-                    margin:'auto',
-                    marginLeft:'0',
-                    fontSize:'1.5vw',
+                    width:'auto',
                     display:'flex',
                     justifyContent: 'center',
-                    padding:'.1rem',
-                    flexWrap:'wrap',
+                    alignItems: 'center',
+                    padding:'0 1vw',
                     gap:'1vw',
-                    flex: '1',
-                    minWidth:'0'
+                    flex: '1'
                 },
                 child:[
                     $({
                         tag:'div',
                         style:{
-                            margin:'auto',
-                            width:'fit-content',
-                            maxWidth:'30vw',
+                            margin:'0',
+                            width:'auto',
+                            maxWidth:'45%',
+                            flex: '0 1 auto',
+                            minWidth:'150px',
                             height:'fit-content',
-                            fontSize:'1.1vw',
+                            fontSize:'clamp(0.8rem, 1vw, 1.2rem)',
                             fontWeight:'bold',
                             color:'#777',
                             borderBottom:'solid thin deepskyblue',
+                            paddingBottom: '0.5vh',
                             wordWrap:'break-word',
                             overflowWrap:'break-word',
                             whiteSpace:'normal',
-                            flexShrink:'1',
-                            minWidth: '0'
+                            textAlign: 'center',
                         },
                         elementHandler:(ev)=>{
                             (async function(){
@@ -92,7 +94,7 @@ export const Evaluator=()=>{
                         style:{
                             margin:'auto',
                             width:'fit-content',
-                            maxWidth:'30vw',
+                            maxWidth:'45%',
                             height:'fit-content',
                             fontSize:'1.1vw',
                             fontWeight:'bold',

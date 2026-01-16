@@ -271,33 +271,55 @@ if(isset($_POST['deleteEvent'])){
 
 
 if(isset($_POST['collectEntries'])){
-
     $data=0;
-
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
-        $query="SELECT COUNT(*) FROM researchfile 
-
+        // Get category with code format
+        $category = '';
+        $centerId = $_SESSION['centerId'] ?? '';
+        
+        if (!empty($centerId)) {
+            $queryCenter = "SELECT name, code FROM center WHERE id = ?";
+            $stmtCenter = $con->prepare($queryCenter);
+            $stmtCenter->bind_param("s", $centerId);
+            $stmtCenter->execute();
+            $resultCenter = $stmtCenter->get_result();
+            
+            if ($rowCenter = $resultCenter->fetch_assoc()) {
+                $category = $rowCenter['name'] . " (" . $rowCenter['code'] . ")";
+            }
+        }
+        
+        // Fallback to session category if center not found
+        if (empty($category)) {
+            $category = $_SESSION['category'] ?? $_SESSION['center'] ?? '';
+        }
+        
+        error_log("DEBUG - Full category with code: $category");
+        
+        $eventId = $_SESSION['eventId'] ?? '';
+        
+        $query="SELECT COUNT(*) as count FROM researchfile 
 LEFT JOIN endorsement ON researchfile.endorsementid=endorsement.id
 LEFT JOIN event_list ON researchfile.event=event_list.name
-
-WHERE endorsement.status='accepted' AND researchfile.category=? AND event_list.id=?";
+WHERE endorsement.status='accepted' 
+  AND researchfile.category = ?
+  AND event_list.id=?
+  AND event_list.dead_line > CURRENT_TIMESTAMP";
 
         $statement= $con->prepare($query);
-
-        $statement->bind_param("ss",$_SESSION['category'],$_SESSION['eventId']);
-
+        $statement->bind_param("ss", $category, $eventId);
         $statement->execute();
-
-        $row=$statement->get_result()->fetch_row();
-
+        $result = $statement->get_result();
+        $row = $result->fetch_assoc();
+        
+        $count = $row['count'] ?? 0;
+        error_log("DEBUG - Query returned count: $count");
+        
         ob_clean();
-        echo $row[0];
+        echo $count;
         ob_end_flush();
         exit();
-
     }
-
 }
 
 // Default response if no valid POST data
