@@ -97,7 +97,8 @@ const CreateNew = () => {
                     fontSize: "1vw",
                 },
                 att: {
-                    placeholder: 'Insert text here'
+                    placeholder: 'Insert text here',
+                    required: true
                 },
                 event: {
                     type: 'input',
@@ -173,6 +174,9 @@ const CreateNew = () => {
                     marginTop: '1vh',
                     cursor: 'pointer'
                 },
+                att: {
+                    required: true
+                },
                 elementHandler: getSelect,
                 event: {
                     type: 'change',
@@ -212,7 +216,7 @@ const CreateNew = () => {
         const Author = () => {
             const leb = $({
                 tag: 'div',
-                text: 'Author : ',
+                text: 'Main Author : ',
                 style: {
                     fontFamily: 'arial,sans-serif',
                     fontWeight: 'bolder',
@@ -238,7 +242,8 @@ const CreateNew = () => {
                     paddingLeft: '1vw'
                 },
                 att: {
-                    placeholder: 'Enter text here'
+                    placeholder: 'Enter text here',
+                    required: true
                 },
                 event: {
                     type: 'input',
@@ -304,7 +309,8 @@ const CreateNew = () => {
                         $({
                             tag:'div',
                             att:{
-                                className:'fa-solid fa-trash-can'
+                                className:'fa-solid fa-trash-can',
+                                required: true
                             },
                             style:{
                                 margin:'auto',
@@ -375,7 +381,7 @@ const CreateNew = () => {
                     paddingLeft: '1vw'
                 },
                 att: {
-                    placeholder: 'Fullname (optional)'
+                    placeholder: 'Input all authors here'
                 },
                 elementHandler: (el)=>{
                     coInput=el
@@ -428,7 +434,8 @@ const CreateNew = () => {
                 tag: 'input',
                 att: {
                     type: 'file',
-                    accept: '.pdf'
+                    accept: '.pdf',
+                    required: true
                 },
                 style: {
                     opacity: '0',
@@ -463,10 +470,10 @@ const CreateNew = () => {
                     fontSize: '1vw',
                     textAlign: 'center',
                     display: 'flex',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
                 },
                 att: {
-                    innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> upload attachment/entries in pdf format</div>`
+                    innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> upload research or extension proposal/paper in pdf format</div>`
                 },
                 elementHandler: getCo
 
@@ -478,8 +485,8 @@ const CreateNew = () => {
                     className: 'resAtt'
                 },
                 style: {
-                    height: '4vh',
-                    width: '60%',
+                    height: '6vh',
+                    width: '70%',
                     margin: ' 2vh auto',
                     borderRadius: '.5vw',
                     position: 'relative',
@@ -502,6 +509,7 @@ const CreateNew = () => {
                 width: '80%',
                 border: 'solid thin deepskyblue',
                 margin: 'auto',
+                borderRadius: '.5vw'
             },
             child: [
                 Title(),
@@ -707,7 +715,8 @@ const CreateNew = () => {
             tag: 'input',
             att: {
                 type: 'file',
-                accept: '.pdf'
+                accept: '.pdf',
+                required: true
             },
             style: {
                 opacity: '0',
@@ -741,7 +750,8 @@ const CreateNew = () => {
                 textAlign: 'center',
                 display: 'flex',
                 justifyContent: 'center',
-                backgroundColor:'#333'
+                backgroundColor:'#333',
+                borderRadius: '.5vw'
             },
             att: {
                 innerHTML: `<div style="margin: auto;  font-family: monospace" class="fa-solid fa-file-pdf"> upload attachment in pdf format</div>`,
@@ -787,6 +797,7 @@ const CreateNew = () => {
                 display: 'flex',
                 width: '80%',
                 margin: '2vh auto auto',
+                borderRadius: '.5vw'
             },
             att: {
                 className: 'cover'
@@ -842,6 +853,9 @@ const CreateNew = () => {
                         margin: 'auto',
                         fontSize: '1vw',
                         cursor: 'pointer'
+                    },
+                    att: {
+                        required: true
                     },
                     event: {
                         type: 'change',
@@ -935,6 +949,42 @@ const CreateNew = () => {
             event: {
                 type: 'click',
                 method: async () => {
+                                        // Get all required fields
+                    const requiredInputs = document.querySelectorAll('[required]');
+                    let isValid = true;
+                    let firstInvalidField = null;
+
+                    // Check each required field
+                    requiredInputs.forEach(field => {
+                        if (!field.value || (field.type === 'file' && !field.files.length)) {
+                            isValid = false;
+                            if (!firstInvalidField) {
+                                firstInvalidField = field;
+                            }
+                            
+                            // Add visual feedback
+                            field.style.border = '1px solid red';
+                            field.style.boxShadow = '0 0 5px red';
+                            
+                            // Add input event to remove error styling
+                            const removeError = () => {
+                                field.style.border = '';
+                                field.style.boxShadow = '';
+                                field.removeEventListener('input', removeError);
+                            };
+                            field.addEventListener('input', removeError);
+                        }
+                    });
+
+                    if (!isValid) {
+                        // Focus on first invalid field
+                        if (firstInvalidField) {
+                            firstInvalidField.focus();
+                        }
+                        
+                        alert("Please fill all required fields!");
+                        return;
+                    }
                     if (Temp.title === '') {
 
                         alert("Title is missing..!")
@@ -955,6 +1005,7 @@ const CreateNew = () => {
                         alert("Attachment is missing..!")
                         return;
                     }
+                    
                     /* Adding a method to the Array object. */
                     addMethod()
                     const fl=Filter(data)
@@ -3013,7 +3064,8 @@ const Submitted = () => {
                             paddingTop:'1vh',
                             border:'solid thin grey',
                             margin:'auto',
-                            marginTop:'2vh'
+                            marginTop:'2vh', borderRadius: '.5vw'
+                            
                         },
                         att:{
                             className:'campDivBot'
@@ -3027,6 +3079,7 @@ const Submitted = () => {
                                     height:'100%',
                                     textAlign:'center',
                                     fontSize:'1vw',
+                                    
                                 },
                                 text:text,
                                 elementHandler:(el)=>{
@@ -3180,7 +3233,7 @@ export const Research = () => {
             tag: 'td',
             att: {
                 className: 'tabsres'
-            },
+            },          
             text: label,
             elementHandler: getBot,
             event: {

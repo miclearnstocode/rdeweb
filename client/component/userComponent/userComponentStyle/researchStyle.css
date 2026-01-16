@@ -9,7 +9,8 @@
     width: 100%;
     background-image: linear-gradient(transparent,black);
     table-layout: auto;
-    border-collapse: collapse;
+    border-collapse: separate !important;
+    border-spacing: 8px !important;
 }
 
 .tabsres{
@@ -20,20 +21,26 @@
     font-family: Arial,sans-serif;
     font-size: 1.1vw;
     cursor: pointer;
-    border-radius: 1vw 1vw 0 0;
+    border-radius: .5vw !important;
+}
+.tabsres:hover {
+    border: solid thin rgba(0, 191, 255, 0.5) !important;
+    border-radius: .5vw !important;         /* Important override */
+    cursor: pointer;
 }
 .tabActive{
     color: deepskyblue;
     background-image:  linear-gradient(black,#333333);
     pointer-events: none;
+    border-radius: .5vw !important;
 }
-
 .tabFrame{
     width: 100%;
     height: 94%;
     background-color: #333;
     display: flex;
     justify-content: center;
+    border-radius: .5vw !important;
 }
 .createPan{
     width: 98%;

@@ -56,6 +56,10 @@ export const Button=({icon,label,eventHandler})=>{
         att:{
             className: 'navBot'
         },
+        style: {
+            borderRadius: '8px',
+            overflow: 'hidden'
+        },
         event:{
             type:'click',
             method:eventHandler
