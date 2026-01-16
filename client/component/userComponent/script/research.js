@@ -1182,23 +1182,65 @@ const Submitted = () => {
                         event:{
                             type:'input',
                             method:(ev)=>{
-
-
                                 const child=bodCo.childNodes
+                                let hasVisibleResults = false;
+                                
+                                /* Check if child nodes exist */
+                                if (!child || child.length === 0) {
+                                    // Show "no results" message
+                                    showNoResultsMessage();
+                                    return;
+                                }
+                                
                                 /* Searching for the value of the input field and displaying the results. */
-                                for(let x=0;child.length;x++){
-                                    if(!child[x].innerText.toUpperCase().replace(' ','').includes(ev.target.value.toUpperCase().replace(' ',''))){
-                                        child[x].style.display='none'
-                                    }else {
-                                        child[x].style.display='block'
+                                for(let x = 0; x < child.length; x++){ // Fixed: Added condition x < child.length
+                                    if(child[x] && child[x].innerText){ // Added check for element existence
+                                        const text = child[x].innerText || '';
+                                        if(!text.toUpperCase().replace(' ','').includes(ev.target.value.toUpperCase().replace(' ',''))){
+                                            child[x].style.display='none'
+                                        }else {
+                                            child[x].style.display='block'
+                                        }
                                     }
+                                }
+                                // Show/hide "no results" message
+                                if (!hasVisibleResults && ev.target.value.trim() !== '') {
+                                    showNoResultsMessage();
+                                } else {
+                                    hideNoResultsMessage();
                                 }
                             }
                         }
                     })
                 ]
             })
-
+            //"no results" message element
+            let noResultsMessage;
+            const showNoResultsMessage = () => {
+                if (!noResultsMessage) {
+                    noResultsMessage = $({
+                        tag: 'div',
+                        style: {
+                            textAlign: 'center',
+                            color: '#999',
+                            fontSize: '1.2vw',
+                            fontFamily: 'arial, sans-serif',
+                            marginTop: '2vh',
+                            padding: '2vh',
+                            display: 'none'
+                        },
+                        text: 'No matching documents found'
+                    });
+                    bodCo.appendChild(noResultsMessage);
+                }
+                noResultsMessage.style.display = 'block';
+            };
+            
+            const hideNoResultsMessage = () => {
+                if (noResultsMessage) {
+                    noResultsMessage.style.display = 'none';
+                }
+            };
 
             return ($({
                 tag: 'table',
