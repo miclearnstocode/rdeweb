@@ -159,27 +159,28 @@ function AcceptedEntry($eventName,$title){
     </div>
     ");
 }
-function RejectedEntry($correction,$eventName,$title){
+function RejectedEntry($correction, $eventName, $title){
     return ("
     <div style='
     width:100%;
     border:solid thin black;
     background-color:rgba(0,0,0,0.1);
     padding:1rem;
-    boxshadow:-.5vw 1vh .5rem rgba(0,0,0,0.3);
+    box-shadow:-.5vw 1vh .5rem rgba(0,0,0,0.3);
     user-select:none;
-    color:red;
-    font-family:'Helvetica Neue' ;
+    color:black;
+    font-family:\"Helvetica Neue\", Helvetica, Arial, sans-serif;
     '>
     <div style='
     color:deepskyblue;
     font-size:20px;
     '>Capiz State University</div>
     <div style='
-    fontfamily:Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif;
+    font-family: \"Segoe UI Historic\", \"Segoe UI\", Helvetica, Arial, sans-serif;
     font-size:20px;
     font-weight: bold;
-    '>Research,Development and Extension</div>
+    color:black;
+    '>Research, Development and Extension</div>
    
     <div>RDE Central Office</div>
     
@@ -189,20 +190,24 @@ function RejectedEntry($correction,$eventName,$title){
     <b>Event Name: </b> <i>$eventName</i>
     </div>
     <div>
-    <b>Entry Title: </b> 
+    <b>Entry Title(s): </b> 
     <div>
     <i>$title</i>
     </div>
     </div>
     <div>
-    <b>Status: </b> Rejected
+    <b>Status: </b> <span style='color: black; font-weight: bold;'>REJECTED</span>
     </div>
     <div>
-    <b>Reason: </b> $correction
+    <b>Reason for Rejection: </b> <br>
+    <div style='background-color: #fff; padding: 10px; margin: 5px 0; border-left: 3px solid red; color: red;'>
+    $correction
     </div>
-   
-    <div>
-</div>
+    </div>
+    <br>
+    <div>Please revise your submission accordingly and resubmit.</div>
+    <br>
+    <div>Thank you,<br>RDE Office</div>
     </div>
     ");
 }

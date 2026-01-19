@@ -1,5 +1,16 @@
 <?php
+// Set header and start output buffering
+header('Content-Type: application/json; charset=utf-8');
+ob_start();
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include('db.php');
+include_once('Mailer/mailTemplate.php');
+include_once('Mailer/MailSender.php');
 /** @var TYPE_NAME $host */
 /** @var TYPE_NAME $username */
 /** @var TYPE_NAME $pass */
@@ -103,6 +114,56 @@ if(isset($_POST['returnDocs'])){
         $status=$statement->execute();
         if($status){
             $response->status=true;
+
+            // Send notification email to the original sender if reason provided
+            $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
+
+            // Fetch sender info and event
+            $infoQ = "SELECT endorsement.senderid, endorsement.event, account_detail.email, account_detail.fullName FROM endorsement LEFT JOIN account_detail ON endorsement.senderid=account_detail.id WHERE endorsement.id=? LIMIT 1";
+            $infoStmt = $con->prepare($infoQ);
+            $infoStmt->bind_param('s', $docId);
+            $infoStmt->execute();
+            $infoRes = $infoStmt->get_result();
+            if($row = $infoRes->fetch_assoc()){
+                $toEmail = isset($row['email']) && !empty($row['email']) ? $row['email'] : '';
+                
+                // If email is not found in account_detail, try to get it from the senderid
+                if(empty($toEmail) && isset($row['senderid'])){
+                    $emailQ = "SELECT account_detail.email FROM account_detail WHERE account_detail.id=? LIMIT 1";
+                    $emailStmt = $con->prepare($emailQ);
+                    $emailStmt->bind_param('s', $row['senderid']);
+                    $emailStmt->execute();
+                    $emailRes = $emailStmt->get_result();
+                    if($emailRow = $emailRes->fetch_assoc()){
+                        $toEmail = isset($emailRow['email']) ? $emailRow['email'] : '';
+                    }
+                }
+                
+                $toName = isset($row['fullName']) ? $row['fullName'] : 'User';
+                $eventName = isset($row['event']) ? $row['event'] : '';
+
+                if($toEmail){
+                    $from = new stdClass();
+                    $from->email = isset($rdeEmail) ? $rdeEmail : '';
+                    $from->password = isset($emailPassword) ? $emailPassword : '';
+                    $from->name = 'Research, Development and Extension';
+
+                    $to = new stdClass();
+                    $to->name = $toName ? $toName : 'User';
+                    $to->email = $toEmail;
+
+                    $rdeStaff = isset($_SESSION['userFulname']) ? $_SESSION['userFulname'] : 'RDE Staff';
+                    $url = 'http://rde.capsu.edu.ph/user';
+
+                    $emailBody = RejectedApproval($reason, $rdeStaff, $url);
+                    $emailResult = SendEmail($from, $to, $emailBody);
+                    if(!$emailResult->status){
+                        error_log('ReturnDocs email failed: ' . $emailResult->message);
+                        $response->message = 'Email sending failed';
+                    }
+                }
+            }
+
         }else{
             $response->message=$statement->error;
         }

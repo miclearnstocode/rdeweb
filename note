@@ -154,8 +154,15 @@ C:\xampp\php\php.exe -S localhost:8000 index.php
 make the php api only sends a  JSON response at the end of execution and no html tags
 
 january 2026
-Evaluator's account created successfully.
+Evaluators account created successfully.
 Fix the evaluators route. done
 
 
 cd d:\documents\rdeweb\server ; powershell "(Get-Content researchFile.php) -replace [regex]::Escape('echo json_encode(\$response);'), 'outputJSON(\$response);' | Set-Content researchFile.php"
+
+
+account_detail upon creation of account if it is capsu user
+two database where it send the data account_detail and capsu user.
+
+capsu_user.id is a foreign key in account_detail.id were to determine the email 
+of the capsu user use the capsu_user.id to get the account_detail.id to get the account_detail.email

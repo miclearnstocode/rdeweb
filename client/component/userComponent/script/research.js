@@ -343,7 +343,8 @@ const CreateNew = () => {
             const bot=$({
                 tag:'div',
                 att:{
-                    className:'fa-solid fa-user-plus addCo'
+                    className:'fa-solid fa-user-plus addCo',
+                    title: 'Add as co-author?'
                 },
                 style:{
                     fontSize:'1.2vw',
@@ -381,7 +382,8 @@ const CreateNew = () => {
                     paddingLeft: '1vw'
                 },
                 att: {
-                    placeholder: 'Input all authors here'
+                    placeholder: 'Input all authors here',
+                    title: 'To add more authors click the add icon'
                 },
                 elementHandler: (el)=>{
                     coInput=el
@@ -427,6 +429,7 @@ const CreateNew = () => {
                 ]
             }))
         }
+
         const Attachment = () => {
 
 

@@ -16,7 +16,7 @@ import {Route, Router} from "../../../lib/Router.js";
 import {TableScore} from "./src/docsScoreTable.js";
 import {ScoreRank} from "./src/RankingController.js";
 import {RankDocs} from "./src/docsRank.js";
-import { SummaryDocs} from "./src/RankSummary.js";
+import {SummaryDocs} from "./src/RankSummary.js";
 import {FinalRanking, RankPerCriteria, ScoreRankAVe} from "./src/rankAlgo.js";
 import {Summary} from "./src/Summary.js";
 import {PrintResearch} from "../../otherComponent/researchSummary.js";
@@ -6270,9 +6270,20 @@ export const ResearchMain = () => {
 
     const ScoreSummary=()=>{
         let Anchor,EventName
-
+        // Add validation for Path()
+        const safePath = (index) => {
+            const path = Path(index);
+            return path && path !== 'undefined' ? path : null;
+        };
+        
         const ChangeId=(id,name)=>{
-            Anchor.href='/rdeOffice/research/scoreSummary/'+id
+            if (id) {
+                Anchor.href='/rdeOffice/research/scoreSummary/'+id
+            } else {
+                // Handle the case where id is undefined
+                console.error('Event ID is undefined');
+                Anchor.href='/rdeOffice/research/scoreSummary';
+            }
         }
 
         const Top=()=>{
@@ -6581,7 +6592,11 @@ export const ResearchMain = () => {
                                 request.Send().then((data)=>{
                                     let Titles=[]
                                     let docSet
+                                    console.log('Raw data from server:', data);
+        
                                     data.forEach(val => {
+                                        console.log('Evaluator data:', val.evaluator?.fullname);
+                                        console.log('Docs count:', val.docs?.length);
                                         const Order=val.docs.sort((a,b)=>{
                                             if ( a.TotalScore > b.TotalScore ){
                                                 return -1;
@@ -6617,8 +6632,6 @@ export const ResearchMain = () => {
                                         }
                                         return 0;
                                     })
-
-
                                     const RankAve=FinalRanking(FinalRank.reverse())
                                     const ScoreRank=ScoreRankAVe(FinalRank.sort((a,b)=>{
                                         if ( a.averageScore > b.averageScore ){
@@ -6629,16 +6642,12 @@ export const ResearchMain = () => {
                                         }
                                         return 0;
                                     }))
-
                                     getReport({
                                         scoreRank:ScoreRank,
                                         rankAve:RankAve,
                                         RankPerCrit:Titles
                                     })
-
                                 })
-
-
                                 /*
                                  const req= new Request('/score_rank')
                                    req.Post([
@@ -6659,10 +6668,6 @@ export const ResearchMain = () => {
                                    req.Send().then(data=>{
                                        data.forEach(val=>{
                                          //  el.appendChild(TableScore(val.name,val.criteria))
-
-
-
-
                                        })
                                    })
 

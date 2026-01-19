@@ -37,16 +37,27 @@ GROUP BY researchfile.category";
 
 if (isset($_POST['getEventName'])) {
     $response = [];
-    $query = "SELECT event_list.name FROM event_list WHERE event_list.id=?";
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "SELECT event_list.name FROM event_list WHERE event_list.id=?";
         $statement = $con->prepare($query);
-        $statement->bind_param("s", $_POST['getEventName']);
+    
+        $eventId = $_POST['eventId'] ?? $_POST['getEventName'] ?? '';// Fix: Use $_POST['eventId'] instead of $_POST['getEventName']
+        $statement->bind_param("s", $eventId);                     // Or check which parameter is actually being sent
+        
         $statement->execute();
         $result = $statement->get_result();
-        while ($row = $result->fetch_assoc()) {
-            $response[] = $row;
+        
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $response[] = $row;
+            }
+        } else {
+            $response[] = ['name' => 'Unknown Event'];
         }
+    } else {
+        $response[] = ['name' => 'Database Error'];
     }
+    
     ob_clean();
     echo json_encode($response);
     ob_end_flush();

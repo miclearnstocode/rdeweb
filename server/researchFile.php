@@ -242,84 +242,83 @@ ORDER BY endorsement.id DESC LIMIT 1";
 
 
 if (isset($_POST['acceptRequest'])) {
-
     $response = new stdClass();
-
     $response->status = false;
-
     $response->message = '';
-
     $docId = $_POST['docId'];
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $rdeStaff = $_SESSION['userEmail'];
-
         $logDate = date("Y-m-d");
-
         $event = $_POST['eventType'];
-
         $campus = $_POST['campus'];
 
         if ($con->query("UPDATE `endorsement` SET `status`='accepted'  WHERE `id`='$docId'")) {
-
             $details = "RDE staff: $rdeStaff accepted endorsement letter for $event from $campus";
-
             $userId = $_SESSION['userId'];
-
             $logQuery = "INSERT INTO document_log (document_log.user_id,document_log.doc_id,document_log.details,document_log.date) VALUES (?,?,?,?)";
-
             $stm = $con->prepare($logQuery);
-            $defaultTime=date('Y-m-d H:i:s');
-            $stm->bind_param('ssss', $userId, $docId, $details,$defaultTime);
-
+            $defaultTime = date('Y-m-d H:i:s');
+            $stm->bind_param('ssss', $userId, $docId, $details, $defaultTime);
             $status = $stm->execute();
 
             if ($status) {
                 $response->status = true;
-                /*
-                 * $from = new stdClass();
+                
+                // ============================================
+                // UNCOMMENTED AND FIXED EMAIL SENDING CODE
+                // ============================================
+                
+                $from = new stdClass();
                 $from->email = $rdeEmail;
                 $from->password = $emailPassword;
                 $from->name = 'Research, Development and Extension';
-                $emailStatement=$con->prepare("SELECT account_detail.email,researchfile.title,account_detail.fullName,researchfile.event FROM account_detail
-LEFT JOIN researchfile ON account_detail.id=researchfile.senderid WHERE researchfile.id=?");
-                $emailStatement->bind_param("s",$docId);
+                
+                // Get the research papers under this endorsement
+                $emailStatement = $con->prepare("SELECT 
+                    DISTINCT account_detail.email, 
+                    account_detail.fullName, 
+                    researchfile.title, 
+                    researchfile.event 
+                FROM researchfile 
+                LEFT JOIN account_detail ON account_detail.id = researchfile.senderid 
+                WHERE researchfile.endorsementid=?");
+                
+                $emailStatement->bind_param("s", $docId);
                 $emailStatement->execute();
-                $emRes=$emailStatement->get_result();
-
-
-                while ($ro=$emRes->fetch_assoc()){
+                $emRes = $emailStatement->get_result();
+                
+                $emailCount = 0;
+                while ($row = $emRes->fetch_assoc()) {
                     $to = new stdClass();
-                    $to->name = $ro['fullName'];
-                    $to->email =$ro['email'];
-                 //  $response->message=SendEmail($from,$to,AcceptedEntry($ro['event'],$ro['title']));
+                    $to->name = $row['fullName'];
+                    $to->email = $row['email'];
+                    
+                    // Send acceptance email
+                    $emailResult = SendEmail($from, $to, AcceptedEntry($row['event'], $row['title']));
+                    
+                    if ($emailResult) {
+                        $emailCount++;
+                    }
                 }
-                 */
-
-
+                
+                if ($emailCount > 0) {
+                    $response->message = "Document Accepted and email notifications sent to $emailCount submitter(s)";
+                } else {
+                    $response->message = "Document Accepted but no email notifications sent";
+                }
             } else {
-
                 $response->message = $stm->error;
-
             }
-
         } else {
-
             $response->message = $con->error;
-
         }
-
     } else {
-
         $response->message = $con->error;
-
     }
-
+    
     echo json_encode($response);
-
 }
-
 
 
 
@@ -2517,96 +2516,92 @@ if (isset($_POST['grantDeleteResearchRequest'])) {
 
 
 if (isset($_POST['rejectIndorse'])) {
-
     $response = new stdClass();
-
     $response->message = "";
-
     $response->status = false;
-    $response->emailStat='';
+    $response->emailStat = '';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $query = "UPDATE endorsement SET endorsement.status=? WHERE endorsement.id=?";
-
         $statement = $con->prepare($query);
-
         $state = "rejected";
-
         $docId = $_POST['docId'];
-
         $statement->bind_param("ss", $state, $docId);
-
         $status = $statement->execute();
 
         if ($status) {
-
             $query = "INSERT INTO `rejecteddocs`(`id`, `docid`, `url`, `type`, `reason`) VALUES ( ? , ? , ? , ? , ? )";
-
             $docId = $_POST['docId'];
-
             $fileUrl = $_POST['fileUrl'];
-
             $type = $_POST['fileType'];
-
             $reason = $_POST['reasonEnd'];
-
             $idEn = round(microtime(true) * 1000) . '';
 
             $statement2 = $con->prepare($query);
-
             $statement2->bind_param("sssss", $idEn, $docId, $fileUrl, $type, $reason);
-
             $status = $statement2->execute();
 
             if ($status) {
                 $response->status = true;
-               /*
-                *  $from = new stdClass();
+                
+                // Save to abstain table
+                $evalId = $_SESSION['userId'];
+                $abstainQuery = "INSERT INTO abstain (eval_id, doc_id, reason, date) VALUES (?, ?, ?, NOW())";
+                $abstainStmt = $con->prepare($abstainQuery);
+                $abstainStmt->bind_param("iss", $evalId, $docId, $reason);
+                $abstainStmt->execute();
+                
+                // Send email notification
+                $from = new stdClass();
                 $from->email = $rdeEmail;
                 $from->password = $emailPassword;
                 $from->name = 'Research, Development and Extension';
-                $emailStatement=$con->prepare("SELECT account_detail.email,researchfile.title,account_detail.fullName,researchfile.event FROM account_detail
-LEFT JOIN researchfile ON account_detail.id=researchfile.senderid WHERE researchfile.id=?");
-                $emailStatement->bind_param("s",$docId);
+                
+                // FIXED QUERY: Get research titles instead of campus
+                $emailStatement = $con->prepare("SELECT 
+                    account_detail.email, 
+                    account_detail.fullName, 
+                    endorsement.event,
+                    GROUP_CONCAT(researchfile.title SEPARATOR ', ') as research_titles
+                FROM endorsement 
+                LEFT JOIN account_detail ON endorsement.senderid = account_detail.id 
+                LEFT JOIN researchfile ON researchfile.endorsementid = endorsement.id
+                WHERE endorsement.id=?
+                GROUP BY account_detail.email, account_detail.fullName, endorsement.event");
+                
+                $emailStatement->bind_param("s", $docId);
                 $emailStatement->execute();
-                $emRes=$emailStatement->get_result();
-
-
-                while ($ro=$emRes->fetch_assoc()){
+                $emRes = $emailStatement->get_result();
+                
+                if ($row = $emRes->fetch_assoc()) {
                     $to = new stdClass();
-                    $to->name = $ro['fullName'];
-                    $to->email =$ro['email'];
-                 //   $response->emailStat=SendEmail($from,$to,RejectedEntry($reason,$ro['event'],$ro['title']));
+                    $to->name = $row['fullName'];
+                    $to->email = $row['email'];
+                    
+                    // Pass the research titles to the email template
+                    $emailResult = SendEmail($from, $to, RejectedEntry($reason, $row['event'], $row['research_titles']));
+                    
+                    if ($emailResult) {
+                        $response->emailStat = 'Email sent successfully to ' . $row['email'];
+                    } else {
+                        $response->emailStat = 'Failed to send email to ' . $row['email'];
+                    }
+                } else {
+                    $response->emailStat = 'Could not find sender information for email';
                 }
-
-                */
-
-
+                
                 $response->message = "Document Rejected";
-
             } else {
-
                 $response->message = $statement2->error;
-
             }
-
         } else {
-
             $response->message = $statement->error;
-
         }
-
-
-
     } else {
-
         $response->message = $con->error;
-
     }
-
+    
     echo json_encode($response);
-
 }
 
 
