@@ -1,0 +1,129 @@
+.addUserPanel{
+    height: 100%;
+    width: 100%;
+    display: flex;
+}
+.addCapUserPan,.addEvalPan{
+    width: 49%;
+    height: 100%;
+    margin: auto;
+    background-color: rgba(0,0,0,0.1);
+}
+.subOffice{
+    margin: 1vh auto;
+    width: 98%;
+    height: 29%;
+    border: solid thin rgba(100,100,100,.5);
+    display: flex;
+    justify-content: center;
+    background-color: rgba(100,100,100,0.2);
+}
+.encodeP{
+    margin: 5vh auto;
+    width: 98%;
+    border: solid thin rgba(100,100,100,.5);
+    display: flex;
+    justify-content: center;
+    background-color: rgba(100,100,100,0.2);
+}
+.inputRDE{
+    border: solid thin grey;
+    background-color: rgba(100,100,100,0.3);
+}
+.inputRDE::placeholder{
+    color: #999;
+}
+.inputRDE:hover{
+    border-color: deepskyblue;
+}
+.inputRDE:focus{
+    background-color: rgba(0,0,0,0.3);
+    border-color: deepskyblue;
+}
+.subStaff{
+    background-color: #555;,
+}
+.subStaff:hover{
+    color: black;
+    text-shadow: 0 0 .3vw ghostwhite;
+    background-color: #444;
+}
+
+.inputAddUser,.selectAddUser{
+    outline: none;
+    border: solid thin grey;
+    background-color: rgba(100,100,100,0.3);
+    width: 90%;
+    height: 4vh;
+    border-radius: .5vw;
+    padding-right: 1vw;
+    padding-left: 1vw;
+    font-size: 1.2vw;
+    color: ghostwhite;
+}
+.selectAddUser{
+    width: 96%;
+    height: 4.5vh;
+}
+.selectAddUser option{
+    color: black;
+    text-align: center;
+}
+.inputAddUser:hover{
+    border-color: deepskyblue;
+}
+.inputAddUser:focus{
+    border-color: deepskyblue;
+    background-color: rgba(0,0,0,0.2);
+}
+.addUserTable{
+    width: 95%;
+    margin: auto;
+    height: fit-content;
+    border-collapse: separate;
+}
+.leftT{
+    border-spacing: 1vh;
+
+}
+.leftT td{
+    text-align: center;
+}
+
+.rightP{
+   height: fit-content;
+    padding-bottom: 2vh;
+    padding-top: 2vh;
+}
+
+.ev{
+    text-align: left;
+    height: fit-content;
+
+}
+.submitAddUser{
+    font-family: "Arial Black",sans-serif;
+    font-size: 1.4vw;
+    color: deepskyblue;
+    cursor: pointer;
+    text-align: center;
+    background-color: rgba(0,0,0,0.3);
+    height: 5vh;
+}
+.submitAddUser:hover,.submitEval:hover{
+    background-color: rgba(0,0,0,0.2);
+    color: lightblue;
+}
+.submitAddUser:active,.submitEval:hover{
+    background-color: rgba(0,0,0,0.4);
+}
+
+.submitEval{
+    color: deepskyblue;
+    font-family: "Arial Black",sans-serif;
+    font-size: 1.2vw;
+    text-align: center;
+    height: 5vh;
+    background-color: rgba(0,0,0,0.3);
+    cursor: pointer;
+}

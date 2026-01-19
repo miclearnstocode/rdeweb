@@ -1,0 +1,1829 @@
+import {$, ConfirmationAlert, Request, Waiting} from '../../../lib/lib.js'
+
+
+
+
+
+
+
+
+
+export const Search=(method)=>{
+
+
+
+    const searchBox=()=>{
+
+        return($({
+
+            tag:'div',
+
+            att:{
+
+                className:'searchBox'
+
+            },
+
+            child:[
+
+                $({
+
+                    tag:'span',
+
+                    att:{
+
+                        className:'fa fa-search searchIcEval'
+
+                    },
+
+                }),
+
+                $({
+
+                    tag:'input',
+
+                    att:{
+
+                        type:'search',
+
+                        placeholder:'Search Research Paper',
+
+                        className:'searchInputEval'
+
+                    },
+
+                    style:{
+
+                        height:'5vh'
+
+                    },
+
+                    event:{
+
+                        type:'input',
+
+                        method:method
+
+                    }
+
+                })
+
+            ]
+
+        }))
+
+    }
+    const EntriesNumber=()=>{
+
+        return($({
+            tag:'div',
+            style:{
+                margin:'auto',
+                marginRight:'5vw',
+                height:'fit-content',
+                width:'fit-content',
+                display:'flex',
+                justifyContent:'center',
+
+            },
+            child:[
+                $({
+                    tag:'div',
+                    text:'Total number of Entries :',
+                    style:{
+                        fontSize:'1.3vw',
+                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                        color:'deepskyblue',
+                        margin:'auto'
+                    }
+                }),
+                $({
+                    tag:'div',
+                    style:{
+                        fontSize:'1.2vw',
+                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                        color:'#bbb',
+                        margin:'auto'
+                    },
+                    elementHandler:async (el)=>{
+                        const req= new Request('/eventRequest')
+                        req.Post([
+                            {
+                                name:'collectEntries',
+                                value:'1'
+                            }
+                        ])
+                       // req.Json()
+                        req.Send().then(data=>{
+
+                            el.innerText=" "+data
+                        })
+                    }
+                })
+            ]
+        }))
+    }
+
+
+
+    return($({
+
+        tag:'div',
+
+        att:{
+
+            className: 'searchBarEval'
+
+        },
+        style:{
+
+        },
+
+        child:[
+
+            searchBox(),
+            EntriesNumber()
+
+        ]
+
+    }))
+
+}
+
+
+
+export const HeaderTable=()=>{
+
+    const label=[]
+
+    label.push({
+
+        text:'Date',
+
+        className:'dateListEval'
+
+    })
+
+    label.push({
+
+        text:'Author',
+
+        className:'authorListEval'
+
+    })
+
+    label.push({
+
+        text:'Campus',
+
+        className:'campusListEval'
+
+    })
+
+    const gethead=(header)=>{
+
+        label.forEach(val=>{
+
+            header.appendChild($({
+
+                tag:'td',
+
+                text:val.text,
+
+                att:{
+
+                    className:val.className
+
+                }
+
+            }))
+
+        })
+
+    }
+
+    return($({
+
+        tag:'table',
+
+        att:{
+
+            className:'headerList'
+
+        },
+
+        child:[
+
+            $({
+
+                tag:'tr',
+
+                elementHandler:gethead
+
+            })
+
+        ]
+
+    }))
+
+}
+
+
+
+export const Box=  (getBody)=>{
+
+    let panelBox
+
+    const viewResearch=(file,fileId,comments,title)=>{
+
+        let com
+
+        if(comments<1){
+
+            com={
+
+                intro:'',
+
+                abstract:'',
+
+                objective:'',
+
+                methodology:'',
+
+                results:'',
+
+                recommendation:'',
+
+                literature:'',
+
+                other:'',
+
+            }
+
+        }else {
+
+            com=comments
+
+        }
+
+        let viewPanel
+
+        const getPanel=(panel)=>{
+
+            viewPanel=panel
+
+        }
+
+        let commentState=false;
+
+
+
+        const setState=()=>{
+
+            commentState=!commentState
+
+            return commentState
+
+        }
+
+        let categ
+
+        const getCat=(cath)=>{
+
+            categ=cath
+
+        }
+
+        const Changer=(event)=>{
+
+
+
+            if(setState()){
+
+                categ.className+=' showContent';
+
+                event.target.style.color='red';
+
+            }else {
+
+                categ.className=categ.className.replace(' showContent','')
+
+                event.target.style.color='deepskyblue'
+
+            }
+
+        }
+        const data={
+
+            intro:com.intro,
+
+            abstract:com.abstract,
+
+            objective:com.objective,
+
+            methodology:com.methodology,
+
+            results:com.results,
+
+            recommendation:com.recommendation,
+
+            literature:com.literature,
+
+            other:com.other,
+
+        }
+        const baseData={
+            intro:com.intro,
+
+            abstract:com.abstract,
+
+            objective:com.objective,
+
+            methodology:com.methodology,
+
+            results:com.results,
+
+            recommendation:com.recommendation,
+
+            literature:com.literature,
+
+            other:com.other,
+        }
+        const baseCheck=(base,dat)=>{
+            let key=Object.keys(data)
+            let baseKey=Object.keys(baseData)
+            for(let x=0;x<key.length;x++){
+                if(data[key[x]]!==baseData[baseKey[x]]){
+                    return true
+                }
+            }
+            return false
+        }
+
+
+
+
+        const Category=()=>{
+
+
+
+
+
+
+
+            const getData={
+
+                intro:(value)=>{data.intro=value},
+
+                abstract:(value)=>{data.abstract=value},
+
+                objective:(value)=>{data.objective=value},
+
+                methodology:(value)=>{data.methodology=value},
+
+                results:(value)=>{data.results=value},
+
+                recommendation:(value)=>{data.recommendation=value},
+
+                literature:(value)=>{data.literature=value},
+
+                other:(value)=>{data.other=value},
+
+            }
+
+
+
+            const CommentContain=({labelButton,Get,comment,id})=>{
+
+                let stateCom=true
+
+                let textEd,txtInp
+                let mark
+                const changeStateCom=()=>{
+
+                    stateCom=!stateCom
+
+                    return stateCom
+
+                }
+
+                const button=()=>{
+
+                    setTimeout(()=>{
+                        if(txtInp.innerText!==''){
+                           mark.style.visibility='visible'
+                        }
+                    },100)
+
+                    return($({
+                        tag:'div',
+                        style:{
+                            display:'flex',
+                            width:'100%',
+
+                        },
+                        child:[
+                            $({
+                                tag:'div',
+                                style:{
+                                    margin:'auto',
+                                    width:'fit-content',
+                                    marginLeft:'.5vw',
+                                    visibility:'hidden',
+                                    color:'deepskyblue'
+                                },
+                                att:{
+                                    className:'fa-solid fa-circle-check'
+                                },
+                                elementHandler:(el)=>{
+                                   mark=el
+                                }
+                            }),
+                            $({
+
+                                tag:'div',
+
+                                text:labelButton,
+
+                                att:{
+
+                                    className:'ComBot'
+
+                                },
+                                style:{
+                                  width:'100%'
+                                },
+
+                                event:{
+
+                                    type:'click',
+
+                                    method:()=>{
+
+
+
+                                        /* Checking if the changeStateCom() function returns true. If it does, it adds the class
+
+                                        comInOff to the textInput element. If it doesn't, it removes the class comInOff from the
+
+                                        textInput element. */
+
+                                        if(changeStateCom()){
+
+                                            txtInp.className+=' comInOff'
+
+                                            textEd.className+=' comInOff'
+
+                                        }else {
+
+                                            txtInp.className=txtInp.className.replace(' comInOff','')
+
+                                            txtInp.focus()
+
+                                            textEd.className=textEd.className.replace('comInOff','')
+
+
+
+                                        }
+
+
+
+                                    }
+
+                                }
+
+                            })
+                        ]
+                    }))
+                }
+
+
+                const TextInp=()=>{
+                    return($({
+
+                        tag:'div',
+
+                        att:{
+
+                            contentEditable: true,
+
+                            className:'commentInput comInOff',
+
+                            placeholder: 'Enter text here..!',
+
+                            innerHTML:comment,
+
+                            id:id
+
+                        },
+                        elementHandler:(el)=>{
+                            txtInp=el
+                        },
+
+
+                        style:{
+
+                            minHeight:'5vh',
+
+                            maxHeight:'30vh',
+
+                            overflowY:'auto',
+
+                            textAlign: 'left',
+
+                            fontFamily: 'arial',
+
+                            fontSize: '16px',
+
+                            paddingTop: '.5vh',
+
+                            paddingBottom: '.5vh',
+
+                            marginBottom:'1vh',
+
+                            marginTop:'.5vh',
+
+                            color:'black',
+
+                            backgroundColor:'white'
+
+                        },
+
+                        event:{
+
+                            type:'input',
+
+                            method:(event)=>{
+
+                                Get(event.target.innerHTML)
+                                if(event.target.innerText!==''){
+                                    mark.style.visibility='visible'
+                                }else {
+                                    mark.style.visibility='hidden'
+                                }
+
+                            }
+
+                        }
+
+                    }))
+                }
+
+
+
+
+
+
+
+                const Editor=()=>{
+
+
+
+                    const controlIcon=({icon,event,text})=>{
+
+                        return($({
+
+                            tag:'span',
+
+                            style:{
+
+                                fontSize:'1vw',
+
+                                padding:'.3rem',
+
+                                cursor:'pointer',
+
+                                marginLeft:'.5vw',
+
+                                marginRight:'.5vw',
+
+                                backgroundColor:'#777'
+
+                            },
+
+                            att:{
+
+                                className:icon
+
+                            },
+
+                            text:text,
+
+                            event:{
+
+                                type:'click',
+
+                                method:event
+
+                            }
+
+                        }))
+
+                    }
+
+                    const Color=()=>{
+
+                        let inC
+
+                        return($({
+
+                            tag:'span',
+
+                            style:{
+
+                                fontSize:'1vw',
+
+                                padding:'.3rem',
+
+                                cursor:'pointer',
+
+                                marginLeft:'.5vw',
+
+                                marginRight:'.5vw',
+
+                                backgroundColor:'#777',
+
+                                position:'relative',
+
+                                width:'fit-content',
+
+                            },
+
+                            child:[
+
+                                $({
+
+                                    tag:'input',
+
+                                    att:{
+
+                                        type:'color',
+                                    },
+
+                                    style:{
+                                        position:'absolute',
+                                        top:'0',
+                                        left:'0',
+                                        zIndex:'-1',
+                                        opacity:'0',
+                                        width:'5vh'
+                                    },
+                                    event:{
+
+                                        type:'change',
+
+                                        method:(eve)=>{
+
+                                            document.execCommand('foreColor',true,eve.target.value)
+                                        }
+                                    },
+                                    elementHandler:(el)=>{
+                                        setTimeout(()=>{ inC=el},100)
+                                    }
+                                }),
+
+                                $({
+
+                                    tag:'span',
+
+                                    att:{
+
+                                        className:'fa-solid fa-palette'
+
+                                    },
+
+                                    text:'T'
+
+                                })
+
+                            ],
+
+
+
+                            event:{
+
+                                type:'click',
+
+                                method:()=>{
+
+                                    inC.click()
+
+                                }
+
+                            }
+
+                        }))
+
+                    }
+
+                    const Highlight=()=>{
+
+                        let inC
+
+                        return($({
+
+                            tag:'span',
+
+                            style:{
+
+                                fontSize:'1vw',
+
+                                padding:'.3rem',
+
+                                cursor:'pointer',
+
+                                marginLeft:'.5vw',
+
+                                marginRight:'.5vw',
+
+                                backgroundColor:'#777',
+
+                                position:'relative',
+
+                                width:'fit-content',
+
+                            },
+
+                            child:[
+
+                                $({
+
+                                    tag:'input',
+
+                                    att:{
+
+                                        type:'color',
+
+                                    },
+
+                                    style:{
+
+                                        position:'absolute',
+
+                                        top:'0',
+
+                                        left:'0',
+
+                                        zIndex:'-1',
+
+                                        opacity:'0',
+
+                                        width:'5vh'
+
+                                    },
+
+                                    event:{
+
+                                        type:'change',
+
+                                        method:(eve)=>{
+
+                                            document.execCommand('backColor',true,eve.target.value)
+
+                                        }
+
+                                    },
+
+                                    elementHandler:(el)=>{
+
+                                        setTimeout(()=>{ inC=el},100)
+
+                                    }
+
+                                }),
+
+                                $({
+
+                                    tag:'span',
+
+                                    att:{
+
+                                        className:'fa-solid fa-highlighter'
+
+                                    },
+
+                                })
+
+                            ],
+
+
+
+                            event:{
+
+                                type:'click',
+
+                                method:()=>{
+
+                                    inC.click()
+
+                                }
+
+                            }
+
+                        }))
+
+                    }
+
+
+
+
+
+                    return($({
+
+                        tag:'div',
+
+                        style:{
+
+                            height:'fit-content',
+
+                            border:'solid thin #888',
+
+                            width:'98%',
+
+                            margin: 'auto',
+
+                            paddingBottom:'.5vh',
+
+                            paddingTop:'.5vh',
+
+                            textAlign:'left',
+
+
+
+                        },
+
+                        att:{
+
+                            className:'comInOff'
+
+                        },
+
+                        elementHandler:(el)=>{
+
+                            textEd=el
+
+                        },
+
+                        child:[
+
+                            /*
+
+                             $({
+
+                                 tag:'span',
+
+                                 text:'Font style',
+
+                                 style:{
+
+                                     fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+
+                                     fontSize:'1vw'
+
+                                 },
+
+                                 child:[
+
+                                     $({
+
+                                         tag:'select',
+
+                                         style:{
+
+                                             width:'10vw',
+
+                                             height:'100%',
+
+                                             marginLeft:'.5vw',
+
+                                             marginRight: '1vw',
+
+                                         }
+
+                                     })
+
+                                 ]
+
+                             }),
+
+                             */
+
+                            controlIcon({
+
+                                icon:'fa-solid fa-list-ul',
+
+                                event:(eve)=>{
+
+                                    document.execCommand('insertUnorderedList')
+
+                                }
+
+                            }),
+
+                            controlIcon({
+
+                                icon:'fa-solid fa-list-ol',
+
+                                event:(eve)=>{
+
+                                    document.execCommand('insertOrderedList')
+
+                                }
+
+                            }), /*
+
+
+
+                             */
+
+                            controlIcon({
+
+                                icon:'fa-solid fa-bold',
+
+                                event:(eve)=>{
+
+                                    document.execCommand('bold')
+
+                                }
+
+                            }),
+
+                            controlIcon({
+
+                                icon:'fa-solid fa-italic',
+
+                                event:(eve)=>{
+
+                                    document.execCommand('italic')
+
+                                }
+
+                            }),
+
+                            controlIcon({
+
+                                icon:'fa-solid fa-underline',
+
+                                event:(eve)=>{
+
+                                    document.execCommand('underline')
+
+                                }
+
+                            }),
+
+                            Color(),
+
+                         //   Highlight()
+
+
+
+                        ]
+
+                    }))
+
+                }
+
+
+
+                return($({
+
+                    tag:'div',
+
+
+
+                    att:{
+
+                        className:'CommentCon'
+
+                    },
+
+                    child:[
+
+                        button(),
+
+                        Editor(),
+
+                        TextInp()
+
+                    ]
+
+                }))
+
+            }
+
+            const Submit=()=>{
+
+
+                return($({
+                    tag:'div',
+                    style:{
+                        width:'100%',
+                        display:'flex'
+                    },
+                    child:[
+
+                        $({
+
+                            tag:'div',
+
+                            att:{
+
+                                className:'SubmitComment'
+
+                            },
+                            style:{
+                                width:'60%',
+                                fontSize:'1vw',
+                                fontWeight:'bold',
+                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif'
+                            },
+
+                            text:'SAVE COMMENT',
+
+                            event:{
+
+                                type:'click',
+
+                                method:async ()=>{
+
+                                    getData.intro(document.getElementById('introDiv').innerHTML)
+
+                                    /* Creating an array of the keys of the data object. */
+
+                                    let keys=Object.keys(data)
+
+                                    let stateKeys=false
+
+                                    /* Checking if the data is empty or not. */
+
+                                    for(let x=0;x<keys.length;x++){
+
+                                        if(data[keys[x]]!==''){
+
+                                            stateKeys=true
+
+                                        }
+
+                                    }
+
+                                    if(stateKeys){
+
+                                        let loading = Waiting()
+
+                                        document.body.appendChild(loading)
+
+                                        const remove = () => {
+
+                                            loading.remove()
+
+                                        }
+
+                                        const form = new FormData();
+
+                                        form.append('comment', 'true')
+
+                                        form.append('intro', (data.intro)?data.intro:'')
+
+                                        form.append('abstract',(data.abstract)? data.abstract:'')
+
+                                        form.append('objective',(data.objective)? data.objective:'')
+
+                                        form.append('methodology',(data.methodology)? data.methodology:'')
+
+                                        form.append('results',(data.results)? data.results:'')
+
+                                        form.append('recommendation',(data.recommendation)? data.recommendation:'')
+
+                                        form.append('literature',(data.literature)? data.literature:'')
+
+                                        form.append('other',(data.other)? data.other:'')
+
+                                        form.append('docsId', fileId)
+
+                                        form.append('updateReview', 'true')
+
+                                        await fetch('/uploadResearchFile', {
+
+                                            method: 'POST',
+
+                                            body: form
+
+                                        }).then(res => {
+
+                                            if (res.ok) {
+
+                                                remove()
+
+                                                return res.json()
+
+                                            }
+
+                                        }).then(dat => {
+
+                                            if (dat.status) {
+
+                                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
+
+                                                    window.location.reload()
+
+                                                }))
+
+                                            } else {
+
+                                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
+
+                                                    window.location.reload()
+
+                                                }))
+
+                                            }
+
+                                        })
+
+                                    }else {
+
+                                        alert("No new comments added...!")
+
+                                        window.location.reload()
+
+                                    }
+                                }
+
+                            }
+
+                        }),
+                        $({
+                            tag:'div',
+                            att:{
+                                className:'SubmitComment'
+                            },
+                            style:{
+                                width:'40%',
+                                color:'red',
+                                fontSize:'1vw',
+                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                backgroundColor:'#111'
+                            },
+                            text:'RESET COMMENTS',
+                            event:{
+                                type:'click',
+                                method:()=>{
+                                    if(confirm("Do you want to delete all of your comments for this document?")){
+                                        const req= new Request('/uploadResearchFile')
+                                        req.Post([
+                                            {
+                                                name:'resetComments',
+                                                value:'1'
+                                            },
+                                            {
+                                                name:'docId',
+                                                value: fileId
+                                            }
+                                        ])
+                                        req.Json()
+                                        req.Send().then(data=>{
+                                            if(data.status){
+                                                alert("Comments deleted successfully...!")
+                                                window.location.reload()
+                                            }else {
+                                                alert(data.message)
+                                            }
+
+                                        })
+                                    }
+                                }
+                            },
+                        }),
+                    ]
+                }))
+
+            }
+
+
+
+            return($({
+
+                tag:'div',
+
+
+
+                att:{
+
+                    className:'categoryCon'
+
+                },
+
+                style:{
+
+                    height: 'fit-content',
+
+                    maxHeight: '90vh',
+
+                    border: 'solid thin deepskyblue',
+
+                    boxShadow:'-.5vw 1vh .5rem black'
+
+                },
+
+                elementHandler:getCat,
+
+                child:[
+
+                    $({
+
+                        tag:'div',
+
+                        style:{
+
+                            width:'98%',
+
+                            height:'fit-content',
+
+                            fontFamily:'monospace',
+
+                            fontSize:'1.2vw',
+
+                            margin:'1vh auto',
+
+                            backgroundColor: '#333',
+
+                            color:'#bbb',
+
+                            textAlign:'center',
+
+                            paddingTop:'1vh',
+
+                            paddingBottom:'1vh',
+
+                            border:'solid thin deepskyblue',
+
+                            borderRadius:'.5vw'
+
+                        },
+
+                        text:`" ${title} "`,
+
+                    }),
+                    CommentContain({
+
+                        labelButton:'Abstract',
+
+                        Get:getData.abstract,
+
+                        comment:data.abstract,
+
+                        id:'abstractDiv'
+
+                    }),
+                    CommentContain({
+
+                        labelButton:'Introduction',
+
+                        Get:getData.intro,
+
+                        comment:data.intro,
+
+                        id:'introDiv'
+
+                    }),
+                    CommentContain({
+
+                        labelButton:'Objectives',
+
+                        Get:getData.objective,
+
+                        comment:data.objective,
+
+                        id:'objectiveDiv'
+
+                    }),
+                    CommentContain({
+
+                        labelButton:'Methodology',
+
+                        Get:getData.methodology,
+
+                        comment:data.methodology,
+
+                        id:'methodDiv'
+
+                    }),
+                    CommentContain({
+
+                        labelButton:'Results and Discussion',
+
+                        Get:getData.results,
+
+                        comment:data.results,
+
+                        id:'resultDiv'
+
+                    }),
+                    CommentContain({
+
+                        labelButton:' Conclusions and Recommendations',
+
+                        Get:getData.recommendation,
+
+                        comment:data.recommendation,
+
+                        id:'recomDiv'
+
+                    }),
+                    CommentContain({
+
+                        labelButton:'References',
+
+                        Get:getData.literature,
+
+                        comment:data.literature,
+
+                        id:'litDiv'
+
+                    }),
+                    CommentContain({
+
+                        labelButton:'Other',
+
+                        Get:getData.other,
+
+                        comment:data.other,
+
+                        id:'otherDiv'
+
+                    }),
+                    Submit()
+
+
+
+                ]
+
+            }))
+
+        }
+
+        const ControlViewer=()=>{
+
+
+
+            const close=$({
+
+                tag:'div',
+
+                att:{
+
+                    className:'closeView'
+
+                },
+
+                style:{
+
+                    borderRadius:'50vw',
+
+                    width:'50%',
+
+                    height:'fit-content',
+
+                    padding:'.5rem'
+
+                },
+
+                event:{
+
+                    type:'click',
+
+                    method:()=>{
+
+                        let saveSta=true
+                        if(baseCheck(baseData,data)){
+                            saveSta=confirm("Do you want to exit without saving your data?")
+                        }
+
+                        if(saveSta){
+                            viewPanel.remove()
+                        }
+
+
+                    }
+
+                },
+
+                child:[
+
+                    $({
+
+                        tag:'div',
+
+                        att:{
+
+                            className:'fa-solid fa-circle-xmark'
+
+                        },
+
+                        style:{
+
+
+
+                        }
+
+                    })
+
+                ]
+
+            })
+
+
+
+            const Comments=()=>{
+
+
+
+                return($({
+
+                    tag:'div',
+
+                    att:{
+
+                        className:'CommentsBot'
+
+                    },
+
+                    event:{
+
+                        type:'click',
+
+                        method:Changer
+
+                    },
+
+
+
+                    child:[
+
+                        $({
+
+                            tag:'span',
+
+                            att:{
+
+                                className:'fa-solid fa-message'
+
+                            },
+
+
+
+                        }),
+
+                    ]
+
+                }))
+
+            }
+
+            const ScoreBoard=()=>{
+                return($({
+                    tag:'div',
+                    style:{
+                        display:'flex',
+                        width:'100%',
+                        height:'fit-content',
+                        marginBottom: '1vh',
+                        marginTop: '1vh'
+                    },
+                    child:[
+                        $({
+                            tag:'div',
+                            att:{
+                                className:'fa-solid fa-chart-column scrClas'
+                            },
+                            style:{
+                                fontSize:'3vw',
+                                margin:'auto',
+                                cursor:'pointer'
+                            }
+                        })
+                    ]
+                }))
+            }
+
+            return($({
+
+                tag:'div',
+
+                att:{
+
+                    className:'closePanelViewer'
+
+                },
+
+                child:[
+
+                    close,
+
+                    Comments(),
+                    ScoreBoard()
+                ]
+
+            }))
+
+        }
+
+
+
+        const frame=$({
+
+            tag:'object',
+
+            att:{
+
+                className:'frameViewerEval',
+
+                data:file,
+
+                type:'application/pdf'
+
+            }
+
+        })
+
+        return($({
+
+            tag:'div',
+
+            att:{
+
+                className:'viewPanel'
+
+            },
+
+
+
+            elementHandler:getPanel,
+
+            child:[
+
+                frame,
+
+                ControlViewer(),
+
+                Category()
+
+            ]
+
+        }))
+
+    }
+
+
+
+    const listTable=({date,title,author,campus,file,docID,comments,status})=>{
+
+        const R1=()=>{
+
+            const data=({className,content})=>{
+
+                return($({
+
+                    tag:'td',
+
+                    att:{
+
+                        className:className
+
+                    },
+
+                    text:content
+
+                }))
+
+            }
+
+            return($({
+                tag:'tr',
+                child:[
+                    data({
+                        className:'dateListEval',
+                        content:date
+                    }),
+                    data({
+                        className:'authorListEval',
+                        content:author
+                    }),
+                    data({
+                        className:'campusListEval',
+                        content:campus
+                    }),
+
+                ]
+
+            }))
+
+        }
+
+        const R2=()=>{
+
+            return($({
+
+                tag:'tr',
+
+                style:{
+
+                    backgroundColor:'rgba(0,0,0,0.3)'
+
+                },
+
+                child:[
+
+                    $({
+
+                        tag:'td',
+
+                        att:{
+
+                            className:'titleEvalLabel',
+
+                            colSpan:'3',
+
+                            innerHTML:'<span style="font-family: Arial,sans-serif;font-weight: bolder;color: ghostwhite">Title: </span> '+title
+
+                        },
+
+                        text:'Title: '+title
+
+                    }),
+
+
+
+                ]
+
+            }))
+
+        }
+
+        return($({
+
+            tag:'table',
+
+            att:{
+
+                className:`listTableEval ${(status===null)?"borderHigh":""}`
+
+            },
+
+            event:{
+
+                type: 'click',
+
+                method:()=>{
+
+                    panelBox.appendChild(viewResearch(file,docID,comments,title))
+
+                }
+
+            },
+
+            child:[
+
+                R1(),
+
+                R2()
+
+            ]
+
+        }))
+
+    }
+
+
+
+    const getListPanel= async (panel)=>{
+
+        getBody(panel)
+
+        panelBox=panel
+
+        const form=new FormData()
+
+        form.append('researchSubmit','true')
+
+        await fetch('/uploadResearchFile',{
+
+            method:'POST',
+
+            body:form
+
+        }).then(res=>res.json())
+
+            .then(data=>{
+
+                data.list.forEach(val=>{
+
+                    if(val.status!==null){
+
+                        panel.appendChild(listTable({
+
+                            date:val.date,
+
+                            title:val.title,
+
+                            author:val.author,
+
+                            campus:val.campus,
+
+                            file:val.file,
+
+                            docID:val.id,
+
+                            comments:{
+
+                                intro:val.intro,
+
+                                abstract:val.abstract,
+
+                                objective:val.objective,
+
+                                methodology:val.methodology,
+
+                                results:val.results,
+
+                                recommendation:val.recommendation,
+
+                                literature:val.literature,
+
+                                other:val.other
+
+                            },
+
+                            status:val.status
+
+                        }))
+
+                    }else {
+
+                        panel.insertBefore(listTable({
+
+                            date:val.date,
+
+                            title:val.title,
+
+                            author:val.author,
+
+                            campus:val.campus,
+
+                            file:val.file,
+
+                            docID:val.id,
+
+                            comments:{
+
+                                intro:val.intro,
+
+                                abstract:val.abstract,
+
+                                objective:val.objective,
+
+                                methodology:val.methodology,
+
+                                results:val.results,
+
+                                recommendation:val.recommendation,
+
+                                literature:val.literature,
+
+                                other:val.other
+
+                            },
+
+                            status:val.status
+
+                        }),panel.childNodes[0])
+
+                    }
+
+                })
+
+            })
+
+    }
+
+
+
+
+
+    return($({
+
+        tag:'div',
+
+        att:{
+
+            className:'listBox'
+
+        },
+
+        elementHandler:getListPanel
+
+    }))
+
+}
+

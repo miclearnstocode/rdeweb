@@ -1,0 +1,205 @@
+.mainLoaderBase{
+    position: absolute;
+    top: 0;
+    left:0;
+    display: flex;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+ background-image: radial-gradient(rgba(100,100,100,0.5),black);
+}
+
+
+#loading-wrapper {
+
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+}
+
+#loading-text {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    color: deepskyblue;
+    width: 100px;
+    height: 30px;
+    text-align: center;
+    font-family: 'PT Sans Narrow', sans-serif;
+    font-size: 30px;
+    margin: -60px 0 0 -85px;
+}
+
+#loading-content {
+    display: block;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    width: 300px;
+    height: 300px;
+    margin: -200px 0 0 -200px;
+    border: 3px solid #F00;
+    background-color:rgba(0,0,0,0.3)
+}
+
+#loading-content:after {
+    content: "";
+    position: absolute;
+    border: 3px solid #0F0;
+    left: 15px;
+    right: 15px;
+    top: 15px;
+    bottom: 15px;
+}
+
+#loading-content:before {
+    content: "";
+    position: absolute;
+    border: 3px solid #00F;
+    left: 5px;
+    right: 5px;
+    top: 5px;
+    bottom: 5px;
+}
+
+#loading-content {
+    border: 1rem solid transparent;
+    border-top-color: blue;
+    border-bottom-color: blue;
+    border-radius: 50%;
+    -webkit-animation: loader 2s linear infinite;
+    -moz-animation: loader 2s linear infinite;
+    -o-animation: loader 2s linear infinite;
+    animation: loader 2s linear infinite;
+}
+
+#loading-content:before {
+    border:3px solid transparent;
+    border-top-color: orange;
+    border-bottom-color: orange;
+    border-radius: 50%;
+    -webkit-animation: loader 3s linear infinite;
+    -moz-animation: loader 2s linear infinite;
+    -o-animation: loader 2s linear infinite;
+    animation: loader 3s linear infinite;
+}
+
+#loading-content:after {
+    border: 1rem solid transparent;
+    border-top-color: green;
+    border-bottom-color: green;
+    border-radius: 50%;
+    -webkit-animation: loader 1.5s linear infinite;
+    animation: loader 1.5s linear infinite;
+    -moz-animation: loader 2s linear infinite;
+    -o-animation: loader 2s linear infinite;
+}
+
+@-webkit-keyframes loaders {
+    0% {
+        -webkit-transform: rotate(0deg);
+        -ms-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        -ms-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes loader {
+    0% {
+        -webkit-transform: rotate(0deg);
+        -ms-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        -ms-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+
+#content-wrapper {
+    color: #FFF;
+    position: fixed;
+    left: 0;
+    top: 20px;
+    width: 100%;
+    height: 100%;
+}
+
+#header
+{
+    width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    height: 100px;
+    background-color: #666;
+}
+
+#content
+{
+    width: 800px;
+    height: 1000px;
+    margin: 0 auto;
+    text-align: center;
+    background-color: #888;
+}
+.coverMOdal{
+    z-index: 6;
+    position: absolute;
+    justify-content: center;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-image: radial-gradient(rgba(100,100,100,0.5),black);
+}
+.confirmAlert{
+    background-color: #222;
+    border: solid thin ghostwhite;
+    border-radius: 1vw;
+    padding-top: 1vh;
+    padding-bottom: 1vh;
+    margin: auto;
+    width: 50%;
+    height: fit-content;
+    box-shadow: 0 0 .3vw black;
+}
+.messageBox{
+    font-weight: bolder;
+    font-family: Arial,sans-serif;
+    color: deepskyblue;
+    font-size: 1.2vw;
+    width: 100%;
+    text-align: center;
+}
+.textClose{
+    font-family: "Arial Black",sans-serif;
+    font-size: 1.2vw;
+    width: fit-content;
+    padding-left: 1vw;
+    padding-right: 1vw;
+    color: deepskyblue;
+    background-color: black;
+    text-align: center;
+    margin: auto;
+    border-radius: 1vw;
+    cursor: pointer;
+    border: solid thin lightgrey;
+}
+.textClose:hover{
+    border-color: deepskyblue;
+    background-color: #111;
+    transition: .3s;
+}
+.textClose:active{
+    border-color: deepskyblue;
+    background-color: #333;
+    transition: .3s;
+}

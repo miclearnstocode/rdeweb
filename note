@@ -1,0 +1,168 @@
+HOST: rde.capsu.edu.ph
+USER:programmer@rde.capsu.edu.ph
+PASSWORD: capsurde123456
+
+
+
+Please check session
+
+Identify user type.
+Bugs on direct input of url.
+System cannot detect user type and cannot render user interface
+
+
+
+april 18
+Please fix evaluator log in.
+additional users failed was added. (event type)
+create a session for that
+
+XD
+
+
+
+
+
+comment request for print all has bug.
+no value return. check the queries
+
+during approval, must reload after putting E-sign
+
+
+rejected proposal must save to rejected table
+
+
+fontFB== Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif
+
+===================d=================== =
+Dashboard
+
+
+
+
+files classification
+# per Campus
+    types (communication / symposium)
+        users
+            status  (accepted / rejected)
+#per Months and year
+
+// Time format
+ const month=new Date(date.split(' ')[0]).toLocaleString('default', { month: 'long' });
+                const dt=date.split(' ')[0].split('-')
+                const timeFormat=date.split(' ')[1].split(':')
+
+
+
+add server side
+only document log and admin navigation added.
+
+ALTER TABLE `approval` ADD `doc_type` TEXT NULL AFTER `info`;
+
+
+
+CREATE TABLE `rdedb`.`document_type` (`id` BIGINT NOT NULL AUTO_INCREMENT , `name` TEXT NULL , `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP , PRIMARY KEY (`id`)) ENGINE = InnoDB;
+
+
+// june 20-2022
+ALTER TABLE `documenttravel` DROP INDEX `documenttravel_ibfk_2`;  // to drop foreign key
+ALTER TABLE rdedb.documenttravel DROP FOREIGN KEY documenttravel_ibfk_2; // distroy relationship
+ALTER TABLE `approval` CHANGE `id` `id` BIGINT(200) NOT NULL AUTO_INCREMENT=100; to change id to encreament
+ALTER TABLE `documenttravel` ADD INDEX(`docid`); // add new index to travel
+
+ALTER TABLE `documenttravel`
+  ADD CONSTRAINT `documenttravel_ibfk_1` FOREIGN KEY (`docid`) REFERENCES `approval` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+
+
+
+
+
+
+june 21
+Please fix the query during aproval when saving to user approval in line 83 approval.php
+
+
+
+june 22
+ALTER TABLE `communication` CHANGE `doc_type` `doc_type` TEXT NULL DEFAULT NULL;
+
+
+JUNE 26
+    ALTER TABLE `admin` CHANGE `id` `id` BIGINT(200) NOT NULL AUTO_INCREMENT;
+
+
+
+
+July 19
+event on getsignLoc should from the canvas dimention based on the e-signed location of the
+
+
+Aug 24 2022 updated file
+
+admin event
+
+server
+
+Augost 25 2022
+new database table name=category
+new folder added, scoiresheet
+
+August 26 2022
+new database table added name=score_sheet
+
+new update on campus.php
+
+August 27 2022
+new database table added name=criteria
+
+AUGUST 30 2022
+new server update onm entry.php
+other UI update
+
+sept 5 2022
+
+new column added on comments table
+ALTER TABLE `comments` ADD `title` TEXT NULL DEFAULT NULL AFTER `eventType`;
+
+september 12 2022
+ new table update
+ ALTER TABLE `criteria` ADD `event_id` BIGINT(200) NULL DEFAULT NULL AFTER `id`, ADD `category_id` INT(200) NULL DEFAULT NULL AFTER `event_id`, ADD INDEX `event_id_index` (`event_id`);
+ALTER TABLE `criteria` ADD INDEX(`event_id`);ALTER TABLE `criteria` ADD INDEX(`event_id`);
+
+january 14, 2025
+CREATE TABLE center (
+    id        INT AUTO_INCREMENT PRIMARY KEY,
+    code      VARCHAR(20)  NOT NULL,  -- e.g. 'CSRDC'
+    name      VARCHAR(255) NOT NULL   -- optional full name
+);
+Insered the values for center check the table in XAMMPP phpmyadmin
+
+CREATE TABLE center_category (
+    center_id   INT NOT NULL,
+    category_id INT NOT NULL,
+    PRIMARY KEY (center_id, category_id),
+    CONSTRAINT fk_center_category_center
+        FOREIGN KEY (center_id) REFERENCES center(id),
+    CONSTRAINT fk_center_category_category
+        FOREIGN KEY (category_id) REFERENCES category(id)
+);
+
+
+cd D:\documents\rdeweb
+C:\xampp\php\php.exe -S localhost:8000 index.php
+
+make the php api only sends a  JSON response at the end of execution and no html tags
+
+january 2026
+Evaluators account created successfully.
+Fix the evaluators route. done
+
+
+cd d:\documents\rdeweb\server ; powershell "(Get-Content researchFile.php) -replace [regex]::Escape('echo json_encode(\$response);'), 'outputJSON(\$response);' | Set-Content researchFile.php"
+
+
+account_detail upon creation of account if it is capsu user
+two database where it send the data account_detail and capsu user.
+
+capsu_user.id is a foreign key in account_detail.id were to determine the email 
+of the capsu user use the capsu_user.id to get the account_detail.id to get the account_detail.email

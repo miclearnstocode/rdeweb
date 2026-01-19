@@ -1,0 +1,124 @@
+.userFrame{
+    width: 84%;
+    height: 93vh;
+    margin: auto;
+    border-left: solid thin rgba(50,50,50,0.5);
+
+}
+
+.inboxFrame{
+    width: 100%;
+    height: 100%;
+}
+.inboxPanel{
+    height: 99%;
+    width: 95%;
+    background-color: rgba(0,0,0,0.2);
+    margin: auto;
+    padding-top: 1%;
+}
+.searchDiv{
+    width: auto;
+    padding-left: .5vw;
+    padding-right: .5vw;
+    border: solid thin rgba(100,100,100,0.3);
+    margin: auto  auto auto 2vw;
+    border-radius: 1vw;
+    background-color: rgba(0,0,0,0.2);
+    height: 5%;
+}
+.searchInboxInput{
+    background-color:transparent;
+    border: none;
+    outline: none;
+    font-family: Arial,sans-serif;
+    font-size: 1.2vw;
+    font-weight: bolder;
+    color: #999999;
+    height: 100%;
+    width: 15vw;
+}
+.searchInboxInput:focus{
+    width: 25vw;
+    animation: searchBox .3s;
+}
+@keyframes searchBox {
+    from{
+        width: 15vw;
+    }
+    to{
+        width: 25vw;
+    }
+}
+.searchIconInbox{
+    color: #555;
+    font-size: 1.5vw;
+}
+.inboxHead{
+    width: 99%;
+    height: 5vh;
+    background-color: rgba(50,50,50,0.5);
+    margin: .5vh auto auto;
+}
+.allTabs{
+    color: skyblue;
+    font-family: Arial,sans-serif;
+    font-weight: bold;
+    font-size: 1.2vw;
+}
+.tabsDate{
+    width: 10%;
+}
+.tabsSender{
+    width:30% ;
+}
+.tabsTitle{
+    width:50%
+}
+.tabsDelete{
+    width: 10%;
+    text-align: center;
+    font-size: 1.7vw;
+}
+.messageContainer{
+    width: 99%;
+    height: 88%;
+    margin: auto;
+    overflow-y: auto;
+}
+.listMessage{
+    width: 100%;
+    height: 5vh;
+    background-color: rgba(100,100,100,0.4);
+    margin: .5vh auto auto;
+    cursor: pointer;
+}
+.listMessage:hover{
+    background-color: rgba(100,100,100,0.6);
+}
+.listMessage td{
+    color: rgba(250,250,250,0.7);
+}
+.inboxView{
+    width: 100%;
+    height: 100vh;
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: rgba(0,0,0,0.8);
+    display: flex;justify-content: center;
+}
+.inboxFrameViewer{
+    width: 80%;
+    margin: auto;
+    height: 95%;
+}
+.closeInboxView{
+    position: absolute;
+    right: 1vw;
+    top: 40vh;
+    font-family: "Arial Black",sans-serif;
+    font-size: 1.5vw;
+    color: deepskyblue;
+    cursor: pointer;
+}
