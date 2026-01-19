@@ -44,7 +44,9 @@ export const Search=(method)=>{
 
                         placeholder:'Search Research Paper',
 
-                        className:'searchInputEval'
+                        className:'searchInputEval',
+                        id: 'search-input-evaluation',
+                        name: 'searchInputEvaluation'
 
                     },
 

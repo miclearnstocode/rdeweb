@@ -1180,6 +1180,8 @@ const Submitted = () => {
                         att: {
                             type: 'search',
                             className: 'searchInputRes',
+                            id: 'search-input-res',
+                            name: 'searchInputres',
                             placeholder:'Search documents'
                         },
                         event:{
@@ -2766,7 +2768,9 @@ const Submitted = () => {
                             tag: 'input',
                             att: {
                                 className: 'searchAll',
-                                placeholder: 'search file name'
+                                placeholder: 'search file name',
+                                id: 'search-All-File',
+                                name: 'searchAllFile'
                             },
                         })
                     ]

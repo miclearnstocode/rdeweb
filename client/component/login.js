@@ -439,7 +439,7 @@ const LoginPanel = (prop) => {
                             $({
                                 tag:'div',
                                 att:{
-                                    className:'input-group mb-3'
+                                    className:'input-group mb-3 input-group-floating'
                                 },
                                 child:[
                                     $({
@@ -462,46 +462,40 @@ const LoginPanel = (prop) => {
                                         }
                                     }),
                                     $({
-                                        tag:'div',
+                                        tag:'input',
                                         att:{
-                                            className:'form-floating',
+                                            type:'text',
+                                            className:'form-control',
+                                            name:'username',
+                                            id:'userNid',
+                                            placeholder:' ',
+                                            required:true,
+                                            autocomplete: 'username'
                                         },
-                                        child:[
-                                            $({
-                                                tag:'input',
-                                                att:{
-                                                    type:'text',
-                                                    className:'form-control',
-                                                    name:'username',
-                                                    id:'userNid',
-                                                    placeholder:'Username or email address',
-                                                    required:true,
-                                                    autocomplete: 'username'
-                                                },
-                                                style:{
-                                                    backgroundColor:'rgba(0,0,0,0.3)',
-                                                    color:'#ddd'
-                                                }
-                                            }),
-                                            $({
-                                                tag:'label',
-                                                att:{
-                                                    for: 'userNid',
-                                                },
-                                                text:'Username or email address',
-                                                style:{
-                                                    color:'#999'
-                                                }
-                                            })
-                                        ]
+                                        style:{
+                                            backgroundColor:'rgba(0,0,0,0.3)',
+                                            color:'#ddd',
+                                            border: 'none'
+                                        }
                                     }),
+                                    $({
+                                        tag:'username-label',
+                                        att:{
+                                            for: 'userNid'
+                                        },
+                                        text:'Username or email address',
+                                        style:{
+                                            color:'#999',
+                                            backgroundColor: 'transparent'
+                                        }
+                                    })
                                 ]
                             }),
 
                             $({
                                 tag:'div',
                                 att:{
-                                    className:'input-group mb-3'
+                                    className:'input-group mb-3 input-group-floating'
                                 },
                                 child:[
                                     $({
@@ -524,39 +518,33 @@ const LoginPanel = (prop) => {
                                         }
                                     }),
                                     $({
-                                        tag:'div',
+                                        tag:'input',
                                         att:{
-                                            className:'form-floating',
+                                            type:'password',
+                                            className:'form-control',
+                                            name:'password',
+                                            id:'userPid',
+                                            placeholder:' ',
+                                            required:true,
+                                            autocomplete: 'current-password'
                                         },
-                                        child:[
-                                            $({
-                                                tag:'input',
-                                                att:{
-                                                    type:'password',
-                                                    className:'form-control',
-                                                    name:'password',
-                                                    id:'userPid',
-                                                    placeholder:'Password',
-                                                    required:true,
-                                                    autocomplete: 'current-password'
-                                                },
-                                                style:{
-                                                    backgroundColor:'rgba(0,0,0,0.3)',
-                                                    color:'#ddd'
-                                                }
-                                            }),
-                                            $({
-                                                tag:'label',
-                                                att:{
-                                                    for: 'userPid',
-                                                },
-                                                text:'Password',
-                                                style:{
-                                                    color:'#999'
-                                                }
-                                            })
-                                        ]
+                                        style:{
+                                            backgroundColor:'rgba(0,0,0,0.3)',
+                                            color:'#ddd',
+                                            border: 'none'
+                                        }
                                     }),
+                                    $({
+                                        tag:'password-label',
+                                        att:{
+                                            for: 'userPid'
+                                        },
+                                        text:'Password',
+                                        style:{
+                                            color:'#999',
+                                            backgroundColor: 'transparent'
+                                        }
+                                    })
                                 ]
                             }),
 
@@ -786,7 +774,7 @@ const Signup = (prop) => {
                 },
 
                 att: {
-
+                    id: 'select-sign',
                     className: 'selectSign'
 
                 },
@@ -804,12 +792,9 @@ const Signup = (prop) => {
                 tag: 'input',
 
                 att: {
-
                     className: 'signInput',
-
                     placeholder: 'xxxx@capsu.edu.ph',
                     id: 'signup-email',
-                    name: 'email',
                     autocomplete: 'email'
 
                 },
@@ -839,9 +824,8 @@ const Signup = (prop) => {
                 tag: 'input',
 
                 att: {
-
+                    id: 'signinput-fullname',
                     className: 'signInput',
-
                     placeholder: 'Enter full name'
 
                 },
@@ -871,9 +855,8 @@ const Signup = (prop) => {
                 tag: 'input',
 
                 att: {
-
+                    id: 'signinput-Username',
                     className: 'signInput',
-
                     placeholder: 'Enter username'
 
                 },

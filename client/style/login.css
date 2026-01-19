@@ -213,3 +213,45 @@
 .submit:active{
     background-color: rgba(0,0,0,0.8);
 }
+/* Floating label animation */
+.input-group-floating {
+    position: relative;
+}
+
+.input-group-floating .form-control {
+    height: calc(3.5rem + 2px);
+    padding: 1rem 0.75rem;
+}
+
+/* In your login.css */
+username-label, password-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.input-group-floating username-label,
+.input-group-floating password-label {
+    position: absolute;
+    top: 0;
+    left: 49px;
+    height: 100%;
+    padding: 1rem 0.75rem;
+    pointer-events: none;
+    border: 1px solid transparent;
+    transform-origin: 0 0;
+    transition: opacity .1s ease-in-out, transform .1s ease-in-out;
+    color: #6c757d;
+    z-index: 5;
+    margin-left: 48px;
+}
+
+.input-group-floating .form-control:focus ~ username-label,
+.input-group-floating .form-control:not(:placeholder-shown) ~ username-label,
+.input-group-floating .form-control:focus ~ password-label,
+.input-group-floating .form-control:not(:placeholder-shown) ~ password-label {
+    transform: scale(.85) translateY(-0.5rem) translateX(0.15rem);
+    opacity: 0.65;
+    padding-top: 0.2rem;
+}
+

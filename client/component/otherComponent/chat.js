@@ -966,9 +966,9 @@ export const ChatBoxDisplay = ({close, convoID, user, office}) => {
                                    display:'none',
                                },
                                 att:{
-                                   type:'file',
+                                    type:'file',
                                     accept:'.pdf,.jpeg,.png',
-                                    multiple:true
+                                    multiple:true,
                                 },
                                 elementHandler:(el)=>{
                                    inputFileDiv=el
@@ -1496,7 +1496,9 @@ export const Chat = ({get, chatContainer}) => {
                                 tag: 'input',
                                 att: {
                                     type: 'search',
-                                    placeholder: 'Search'
+                                    placeholder: 'Search',
+                                    id: 'search-input',
+                                    name: 'searchInput'
                                 },
                                 style: {
                                     border: 'none',

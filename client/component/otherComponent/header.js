@@ -378,7 +378,9 @@ export const Header = () => {
                                             fontFamily:'monospace'
                                         },
                                         att:{
-                                            placeholder:'Insert text here..!'
+                                            placeholder:'Insert text here..!',
+                                            id: 'insert-text',
+                                            name: 'insertText'
                                         },
                                         event:{
                                             type:'input',
