@@ -1,4 +1,6 @@
     <?php
+error_reporting(0);
+ini_set('display_errors', 0);
 
 // Set header FIRST before any output
 header('Content-Type: application/json; charset=utf-8');
@@ -467,147 +469,237 @@ FROM comments WHERE comments.resid = ? AND comments.evalid = ? AND comments.even
 
 
 if (isset($_POST['updateReview'])) {
-
     $response = new stdClass();
-
     $response->status = false;
-
     $response->message = '';
+    $response->emailStatus = '';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
-        //   $dataUser = unserialize($_SESSION['isLog']);
-
         $category = $_SESSION['category'];
-
         $response->userName = $_SESSION['userName'];
-
         $evalId = $_SESSION['userId'];
-
         $evalName = $_SESSION['userFulname'];
-
-        $docsId = $_POST['docsId'];
-
+        $docsId = $_POST['docId'];
         $title = $_POST['title'];
-
         $intro = $_POST['intro'];
-
         $abstract = $_POST['abstract'];
-
         $objective = $_POST['objective'];
-
         $methodology = $_POST['methodology'];
-
         $results = $_POST['results'];
-
         $recommendation = $_POST['recommendation'];
-
         $literature = $_POST['literature'];
-
         $other = $_POST['other'];
-
-
-
-        $eventTYpe = $_SESSION['eventTYpe'];
-
+        $eventType = $_SESSION['eventTYpe'];
         $eventId = $_SESSION['eventId'];
 
+        // Get document details for email
+        $documentDetails = $con->prepare("SELECT 
+            researchfile.title, 
+            researchfile.author, 
+            researchfile.event, 
+            endorsement.campus,
+            account_detail.email,
+            account_detail.fullName
+        FROM researchfile 
+        LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+        LEFT JOIN account_detail ON researchfile.senderid = account_detail.id
+        WHERE researchfile.id = ?");
+        
+        $documentDetails->bind_param("s", $docsId);
+        $documentDetails->execute();
+        $docResult = $documentDetails->get_result();
+        $docInfo = $docResult->fetch_assoc();
 
-
-        $found = mysqli_num_rows($con->query("SELECT * FROM `comments` WHERE  `evalid`='$evalId' AND  `resid`='$docsId'"));
-
+        $found = mysqli_num_rows($con->query("SELECT * FROM `comments` WHERE `evalid`='$evalId' AND `resid`='$docsId'"));
+        
         if ($found) {
-
-       //     $commentQuery = "UPDATE comments SET `intro`='$intro',`abstract`='$abstract',`objective`='$objective',`methodology`='$methodology',`results`='$results',`recommendation`='$recommendation',`literature`='$literature',`other`='$other' WHERE `resid`='$docsId' AND `evalid`='$evalId'";
-            $comQ="UPDATE comments SET 
-comments.title=?,
-comments.intro=?,
-comments.abstract=?,
-comments.objective=?,
-comments.methodology=?,
-comments.results=?,
-comments.recommendation=?,
-comments.literature=?,
-comments.other=?
-WHERE comments.resid=? AND comments.evalid=?";
-            $statement=$con->prepare($comQ);
-            $statement->bind_param("sssssssssss",$title,$intro,$abstract,$objective,$methodology,$results,$recommendation,$literature,$other,$docsId,$evalId);
-            $status=$statement->execute();
-            if($status){
+            $comQ = "UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?
+                WHERE comments.resid = ? AND comments.evalid = ?";
+            
+            $statement = $con->prepare($comQ);
+            $statement->bind_param("sssssssssss", $title, $intro, $abstract, $objective, $methodology, 
+                                  $results, $recommendation, $literature, $other, $docsId, $evalId);
+            $status = $statement->execute();
+            
+            if ($status) {
                 $response->status = true;
                 $response->message = "Comments Updated successfully..!";
-            }else{
+                
+                // Send email notification for updated comments
+                $response->emailStatus = sendCommentEmail($con, $evalName, $docInfo, [
+                    'title' => $title,
+                    'intro' => $intro,
+                    'abstract' => $abstract,
+                    'objective' => $objective,
+                    'methodology' => $methodology,
+                    'results' => $results,
+                    'recommendation' => $recommendation,
+                    'literature' => $literature,
+                    'other' => $other
+                ], $docsId, $evalId, $rdeEmail, $emailPassword);
+                
+            } else {
                 $response->message = $statement->error;
             }
-            /*
-             * if ($con->query($commentQuery)) {
-
-                $response->status = true;
-
-                $response->message = "Comments Updated successfully..!";
-
-            } else {
-
-                $response->message = $con->error;
-            }
-             */
-
         } else {
+            $comQuery = "INSERT INTO comments (
+                comments.resid,
+                comments.evalid,
+                comments.eventType,
+                comments.title,
+                comments.intro,
+                comments.abstract,
+                comments.objective,
+                comments.methodology,
+                comments.results,
+                comments.recommendation,
+                comments.literature,
+                comments.other
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-           // $commentQuery = "INSERT INTO `comments`(`resid`, `evalid`,`eventTYpe`,`intro`, `abstract`, `objective`, `methodology`, `results`,`recommendation`, `literature`, `other`) VALUES ('$docsId','$evalId','$eventTYpe','$intro','$abstract','$objective','$methodology','$results','$recommendation','$literature','$other')";
-            $comQuery="INSERT INTO comments
-(
-    comments.resid,
-    comments.evalid,
-    comments.eventType,
-    comments.title,
-    comments.intro,
-    comments.abstract,
-    comments.objective,
-    comments.methodology,
-    comments.results,
-    comments.recommendation,
-    comments.literature,
-    comments.other
-) VALUES
-(?,?,?,?,?,?,?,?,?,?,?,?)";
-
-            $statementQ=$con->prepare($comQuery);
-            $statementQ->bind_param("ssssssssssss",$docsId , $evalId , $eventTYpe , $title, $intro , $abstract , $objective , $methodology , $results , $recommendation , $literature , $other );
-            $statusIn=$statementQ->execute();
-            if($statusIn){
+            $statementQ = $con->prepare($comQuery);
+            $statementQ->bind_param("ssssssssssss", $docsId, $evalId, $eventType, $title, $intro, 
+                                   $abstract, $objective, $methodology, $results, $recommendation, 
+                                   $literature, $other);
+            $statusIn = $statementQ->execute();
+            
+            if ($statusIn) {
                 $response->status = true;
-
-                $response->message = "Comments Save successfully..!";
-            }else{
+                $response->message = "Comments Saved successfully..!";
+                
+                // Send email notification for new comments
+                $response->emailStatus = sendCommentEmail($con, $evalName, $docInfo, [
+                    'title' => $title,
+                    'intro' => $intro,
+                    'abstract' => $abstract,
+                    'objective' => $objective,
+                    'methodology' => $methodology,
+                    'results' => $results,
+                    'recommendation' => $recommendation,
+                    'literature' => $literature,
+                    'other' => $other
+                ], $docsId, $evalId, $rdeEmail, $emailPassword);
+                
+            } else {
                 $response->message = $statementQ->error;
             }
-            /*
-             * if ($con->query($commentQuery)) {
-
-                $response->status = true;
-
-                $response->message = "Comments Save successfully..!";
-
-            } else {
-
-                $response->message = $con->error;
-
-            }
-             */
-
         }
-
-
-
     } else {
-
         $response->message = $con->error;
-
     }
-
+    
     echo json_encode($response);
+    exit();
+}
 
+function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $evalId, $rdeEmail, $emailPassword) {
+    
+    if (empty($docInfo) || empty($docInfo['email'])) {
+        return "Could not send email: No author email found.";
+    }
+    
+    // Clean the comments before sending
+    $cleanedComments = [];
+    foreach ($comments as $key => $comment) {
+        $cleanedComments[$key] = cleanCommentHtml($comment);
+    }
+    
+    // Check if there are any actual comments after cleaning
+    $hasComments = false;
+    foreach ($cleanedComments as $comment) {
+        if (!empty(trim($comment))) {
+            $hasComments = true;
+            break;
+        }
+    }
+    
+    if (!$hasComments) {
+        return "No email sent: No comments were added.";
+    }
+    
+    // Get the system base URL
+    $baseUrl = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
+    $baseUrl .= $_SERVER['HTTP_HOST'];
+    $documentUrl = $baseUrl . "/user/create/share?tab=viewMyResearch";
+    
+    // Prepare the email
+    $from = new stdClass();
+    $from->email = $rdeEmail;
+    $from->password = $emailPassword;
+    $from->name = 'CAPSU RDE Evaluation System';
+    
+    $to = new stdClass();
+    $to->name = $docInfo['fullName'];
+    $to->email = $docInfo['email'];
+    
+    // Generate email content using CLEANED comments
+    $emailContent = CommentNotification(
+        $evaluatorName,
+        $docInfo['event'],
+        $docInfo['title'],
+        $docInfo['campus'],
+        $docInfo['author'],
+        $cleanedComments, // Use cleaned comments here
+        $documentUrl
+    );
+    
+    // Send email
+    $mailResult = SendEmail($from, $to, $emailContent);
+    
+    if ($mailResult->status) {
+        // Log the email sending
+        $logQuery = "INSERT INTO email_log (document_id, evaluator_id, author_email, sent_date, email_type) 
+                     VALUES (?, ?, ?, NOW(), 'comment_notification')";
+        $logStmt = $con->prepare($logQuery);
+        $logStmt->bind_param("sss", $docsId, $evalId, $to->email);
+        $logStmt->execute();
+        
+        return "Email notification sent to author.";
+    } else {
+        return "Failed to send email: " . $mailResult->message;
+    }
+}
+
+// Helper function to clean HTML comments
+function cleanCommentHtml($html) {
+    if (empty($html)) {
+        return '';
+    }
+    
+    // Decode HTML entities
+    $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    
+    // Remove &nbsp; (non-breaking spaces) and replace with regular spaces
+    $html = str_replace('&nbsp;', ' ', $html);
+    
+    // Remove multiple spaces
+    $html = preg_replace('/\s+/', ' ', $html);
+    
+    // Trim whitespace
+    $html = trim($html);
+    
+    // Remove empty tags
+    $html = preg_replace('/<(\w+)[^>]*>\s*<\/\1>/', '', $html);
+    
+    // Remove tags that only contain whitespace or &nbsp;
+    $html = preg_replace('/<(\w+)[^>]*>(\s|&nbsp;)*<\/\1>/', '', $html);
+    
+    // Convert <br> tags to newlines for plain text display in email
+    $html = str_replace(['<br>', '<br/>', '<br />'], "\n", $html);
+    
+    // Remove other HTML tags but keep the content (for plain text in email preview)
+    $plainText = strip_tags($html);
+    
+    return $plainText;
 }
 
 
@@ -2835,5 +2927,5 @@ WHERE comments.resid=? AND comments.evalid=?";
     }
 
     echo json_encode($response);
-
+    exit();
 }

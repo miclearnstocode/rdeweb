@@ -254,4 +254,60 @@ username-label, password-label {
     opacity: 0.65;
     padding-top: 0.2rem;
 }
+/* Dropdown wrapper */
+.dropdown-wrapper {
+    position: relative;
+}
 
+/* Custom dropdown arrow */
+#userTypeSelect {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+}
+
+/* Hover effect for options */
+#userTypeSelect option:hover {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Helper text */
+.dropdown-helper {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* Auto-detection notification */
+.auto-detect-notice {
+    background-color: rgba(0, 123, 255, 0.1);
+    border-left: 3px solid #007bff;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.85rem;
+    display: none;
+}
+
+.auto-detect-notice.show {
+    display: block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .dropdown-indicator {
+        right: 0.75rem !important;
+    }
+    
+    #userTypeSelect {
+        font-size: 14px;
+    }
+}

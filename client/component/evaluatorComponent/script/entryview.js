@@ -173,7 +173,8 @@ export const EntryView=({docId,title,eventId,catId})=>{
                 att:{
                     className:'fa-solid fa-file-pen',
                     title:'comments',
-                    name:'comment'
+                    name:'comment',
+                    'aria-hidden': 'false'
                 },
                 style:{
                     backgroundColor:'#333',
@@ -209,7 +210,8 @@ export const EntryView=({docId,title,eventId,catId})=>{
                 att:{
                     className:'fa-solid fa-chalkboard',
                     title:'ScoreBoard',
-                    name:'score'
+                    name:'score',
+                    'aria-hidden': 'false'
                 },
                 event:{
                     type:'click',

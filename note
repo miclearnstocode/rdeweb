@@ -148,7 +148,7 @@ CREATE TABLE center_category (
 );
 
 
-cd D:\documents\rdeweb
+cd C:\Users\Cogito\Documents\rdeweb - sir john laptop
 C:\xampp\php\php.exe -S localhost:8000 index.php
 
 make the php api only sends a  JSON response at the end of execution and no html tags
@@ -166,3 +166,29 @@ two database where it send the data account_detail and capsu user.
 
 capsu_user.id is a foreign key in account_detail.id were to determine the email 
 of the capsu user use the capsu_user.id to get the account_detail.id to get the account_detail.email
+
+Januar 20, 2026
+New Implementation is added
+ send email notification whenever an evaluator saves comments 
+ include all comment sections in the email (only showing sections that have comments)
+ show document details (title, author, event, campus)
+ Log email sends to the database for tracking 
+ handle both comments and new comments 
+ Only send emails when there is actual comments (not empty)
+
+ Here is the new table 
+ CREATE TABLE IF NOT EXISTS email_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    document_id VARCHAR(50),
+    evaluator_id VARCHAR(50),
+    author_email VARCHAR(255),
+    sent_date DATETIME,
+    email_type VARCHAR(50),
+    status VARCHAR(50)
+);
+
+Evaluators - comments on the paper submitted 
+RDE staff - directors, research center directors , URA, URE, add si Center directors supposed to be - accept and reject proposal 
+Capsu Users - Sila ang ga submit proposal or papers - campuses, satellite college kag research centers
+
+research centers - equivalent power as research center director to accept and reject they have account both on capsu users and rde staff.

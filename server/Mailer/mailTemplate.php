@@ -211,3 +211,138 @@ function RejectedEntry($correction, $eventName, $title){
     </div>
     ");
 }
+function CommentNotification($evaluatorName, $eventName, $title, $campus, $author, $comments, $documentUrl) {
+    // Prepare comment sections
+    $commentSections = "";
+    
+    $sections = [
+        'title' => 'Title',
+        'abstract' => 'Abstract',
+        'intro' => 'Introduction',
+        'objective' => 'Objectives',
+        'methodology' => 'Methodology',
+        'results' => 'Results and Discussion',
+        'recommendation' => 'Conclusion and Recommendation',
+        'literature' => 'Literature Cited',
+        'other' => 'Other Comments'
+    ];
+    
+    foreach ($sections as $key => $label) {
+        if (!empty($comments[$key]) && trim($comments[$key]) !== '') {
+            // Convert newlines to <br> for HTML display
+            $commentText = nl2br(htmlspecialchars($comments[$key]));
+            
+            $commentSections .= "
+            <div style='margin: 15px 0; border-bottom: 1px solid #eee; padding-bottom: 10px;'>
+                <h3 style='color: #2c3e50; font-size: 16px; margin-bottom: 5px;'>$label:</h3>
+                <div style='background-color: #f8f9fa; padding: 10px; border-left: 3px solid #3498db; font-size: 14px; line-height: 1.5; white-space: pre-wrap;'>
+                    $commentText
+                </div>
+            </div>";
+        }
+    }
+    
+    // If no comments were added, show a message
+    if (empty($commentSections)) {
+        $commentSections = "<div style='color: #7f8c8d; font-style: italic; padding: 20px; text-align: center;'>
+            No specific comments were added. The evaluator may have reviewed without detailed feedback.
+        </div>";
+    }
+    
+    // Rest of the function remains the same...
+    return "
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset='UTF-8'>
+        <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 700px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; }
+            .header { background-color: #2c3e50; color: white; padding: 25px; text-align: center; }
+            .content { padding: 30px; }
+            .section { margin-bottom: 25px; background-color: #f8f9fa; padding: 20px; border-radius: 5px; }
+            .details-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            .details-table td { padding: 10px; border-bottom: 1px solid #eee; }
+            .details-table td:first-child { font-weight: bold; width: 35%; color: #2c3e50; }
+            .button { display: inline-block; background-color: #3498db; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+            .footer { background-color: #ecf0f1; padding: 20px; text-align: center; font-size: 12px; color: #7f8c8d; }
+            .comment-section { background-color: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 10px 0; }
+            .status-badge { background-color: #3498db; color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px; font-weight: bold; display: inline-block; }
+            .comment-text { white-space: pre-wrap; word-wrap: break-word; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1 style='margin: 0; font-size: 24px;'>CAPSU Research, Development & Extension</h1>
+                <p style='margin: 5px 0 0 0; opacity: 0.9;'>Comment Notification</p>
+            </div>
+            
+            <div class='content'>
+                <div style='text-align: center; margin-bottom: 25px;'>
+                    <span class='status-badge'>NEW COMMENTS ADDED</span>
+                    <h2 style='color: #2c3e50; margin-top: 10px;'>Research Paper Evaluation Update</h2>
+                </div>
+                
+                <div class='section'>
+                    <h3 style='color: #2c3e50; margin-top: 0;'>Document Details</h3>
+                    <table class='details-table'>
+                        <tr>
+                            <td>Evaluator:</td>
+                            <td>$evaluatorName</td>
+                        </tr>
+                        <tr>
+                            <td>Event:</td>
+                            <td>$eventName</td>
+                        </tr>
+                        <tr>
+                            <td>Campus:</td>
+                            <td>$campus</td>
+                        </tr>
+                        <tr>
+                            <td>Author(s):</td>
+                            <td>$author</td>
+                        </tr>
+                        <tr>
+                            <td>Title:</td>
+                            <td><strong>$title</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Date Reviewed:</td>
+                            <td>" . date('F j, Y g:i A') . "</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class='section'>
+                    <h3 style='color: #2c3e50; margin-top: 0;'>Evaluation Comments</h3>
+                    <p style='color: #7f8c8d; font-size: 14px; margin-bottom: 20px;'>
+                        The following comments have been provided by the evaluator for your research paper:
+                    </p>
+                    $commentSections
+                </div>
+                
+                <div style='text-align: center; margin: 30px 0;'>
+                    <a href='$documentUrl' class='button'>View Document in RDE System</a>
+                    <p style='font-size: 12px; color: #7f8c8d; margin-top: 10px;'>
+                        Note: You need to log in to the RDE system to view the complete document.
+                    </p>
+                </div>
+                
+                <div style='background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #3498db;'>
+                    <p style='margin: 0; font-size: 14px;'>
+                        <strong>Next Steps:</strong> Please review the evaluator's comments and revise proposal
+                        as recommended and resubmit for possible funding using the submit button below.
+                    </p>
+                </div>
+            </div>
+            
+            <div class='footer'>
+                <p>This is an automated notification from the CAPSU RDE System.</p>
+                <p>© " . date('Y') . " Capiz State University - Research, Development & Extension Office</p>
+                <p>If you have any questions, please contact the RDE Office.</p>
+            </div>
+        </div>
+    </body>
+    </html>";
+}

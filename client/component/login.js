@@ -173,86 +173,150 @@ const LoginPanel = (prop) => {
         })
 
     }
-    const sel=()=>{
-        return($({
-            tag:'select',
-            att:{
-                className:'form-select mb-2 text-center',
-                name:'userType',
-                required:true,
+
+    const detectUserType = (username) => {
+        if (!username) return null;
+        
+        const userLower = username.toLowerCase();
+        
+        // Detect admin users (could be based on pattern or common admin emails)
+        if (userLower.includes('admin') || userLower.includes('administrator')) {
+            return 'ADMIN';
+        }
+        
+        // Detect CAPSU users (capsu.edu.ph domain)
+        if (userLower.includes('@capsu.edu.ph')) {
+            return 'CAPSUUSERS';
+        }
+        
+        // Detect evaluators (could be based on pattern)
+        if (userLower.includes('eval') || userLower.includes('evaluator')) {
+            return 'EVALUATOR';
+        }
+        
+        // Detect RDE office
+        if (userLower.includes('rde') || userLower.includes('office') || userLower.includes('staff')) {
+            return 'RDEOFFICE';
+        }
+        
+        return null; // Couldn't detect
+    }
+
+    // Function to auto-select based on username input
+    const autoSelectUserType = (username) => {
+        if (!username || !selType) return;
+        
+        const detectedType = detectUserType(username);
+        if (detectedType && selType) {
+            selType.value = detectedType;
+            
+            // Show a subtle notification that we auto-selected
+            if (prop.onAutoDetect) {
+                prop.onAutoDetect(detectedType);
+            }
+        }
+    }
+
+    const sel = () => {
+        return $({
+            tag: 'div',
+            att: {
+                className: 'dropdown-wrapper mb-2'
             },
-            style:{
-                backgroundColor:'rgba(0,0,0,0.3)',
-                color:'#ddd'
+            style: {
+                position: 'relative'
             },
-            elementHandler:(el)=>{
-                selType=el
-            },
-            child:[
+            child: [
                 $({
-
-                    tag: 'option',
-
-                    text: 'Select User',
-
+                    tag: 'select',
                     att: {
-                        disabled: true,
-                        selected: true,
-                        value:'',
-                        className:'bg-dark'
-
-                    }
-
-                }),
-
-                $({
-
-                    tag: 'option',
-
-                    text: 'Admin',
-                    att:{
-                        value:'ADMIN',
-                        className:'bg-dark'
+                        className: 'form-select mb-2 text-center',
+                        name: 'userType',
+                        required: true,
+                        id: 'userTypeSelect'
                     },
-
-                }),
-
-                $({
-
-                    tag: 'option',
-
-                    text: 'CAPSU Users',
-                    att:{
-                        value:'CAPSUUSERS',
-                        className:'bg-dark'
+                    style: {
+                        backgroundColor: 'rgba(0,0,0,0.3)',
+                        color: '#ddd',
+                        paddingRight: '2.5rem', // Space for icon
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        backgroundImage: 'none' // Remove default arrow
                     },
-
-                }),
-
-                $({
-
-                    tag: 'option',
-
-                    text: 'Evaluators',
-                    att:{
-                        value:'EVALUATOR',
-                        className:'bg-dark'
+                    elementHandler: (el) => {
+                        selType = el;
                     },
-
+                    child: [
+                        $({
+                            tag: 'option',
+                            text: 'Select User Type',
+                            att: {
+                                disabled: true,
+                                selected: true,
+                                value: '',
+                                className: 'bg-dark text-muted'
+                            }
+                        }),
+                        $({
+                            tag: 'option',
+                            text: 'Admin',
+                            att: {
+                                value: 'ADMIN',
+                                className: 'bg-dark'
+                            },
+                        }),
+                        $({
+                            tag: 'option',
+                            text: 'CAPSU Users',
+                            att: {
+                                value: 'CAPSUUSERS',
+                                className: 'bg-dark'
+                            },
+                        }),
+                        $({
+                            tag: 'option',
+                            text: 'Evaluators',
+                            att: {
+                                value: 'EVALUATOR',
+                                className: 'bg-dark'
+                            },
+                        }),
+                        $({
+                            tag: 'option',
+                            text: 'RDE Office',
+                            att: {
+                                value: 'RDEOFFICE',
+                                className: 'bg-dark'
+                            },
+                        }),
+                    ]
                 }),
-
+                // Dropdown indicator icon
                 $({
-
-                    tag: 'option',
-                    text: 'RDE Office',
-                    att:{
-                        value:'RDEOFFICE',
-                        className:'bg-dark'
+                    tag: 'div',
+                    att: {
+                        className: 'dropdown-indicator'
                     },
-
-                }),
+                    style: {
+                        position: 'absolute',
+                        right: '1rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        pointerEvents: 'none',
+                        color: '#999',
+                        fontSize: '1.2rem'
+                    },
+                    child: [
+                        $({
+                            tag: 'i',
+                            att: {
+                                className: 'fa-solid fa-chevron-down'
+                            }
+                        })
+                    ]
+                })
             ]
-        }))
+        })
     }
 
     return ($({
@@ -281,6 +345,16 @@ const LoginPanel = (prop) => {
                             type:'submit',
                             method:async (ev)=>{
                                 ev.preventDefault()
+
+                                // Auto-detect if no selection made
+                                if (!selType.value && ev.target.username.value) {
+                                    selType.removeAttribute
+                                    const detectedType = detectUserType(ev.target.username.value);
+                                    if (detectedType) {
+                                        selType.value = detectedType;
+                                    }
+                                }
+
                                 if(selType.value===''){
                                     let form= new FormData(ev.target)
                                     form.append('auth','login')
@@ -325,30 +399,30 @@ const LoginPanel = (prop) => {
                                             })
 
 
-
-                                    } else if (selType.value === 'CAPSUUSERS' || selType.value === 'ADMIN') {
+                                    } else if (selType.value === 'CAPSUUSERS' || selType.value === 'ADMIN' || !selType.value) {
                                         let form= new FormData(ev.target)
                                         form.append('auth','login')
+                                        
+                                        // Auto-detect user type if not selected
+                                        if (!selType.value) {
+                                            const detectedType = detectUserType(ev.target.username.value);
+                                            if (detectedType) {
+                                                form.append('userType', detectedType);
+                                            } else {
+                                                // Default to CAPSUUSERS if no detection
+                                                form.append('userType', 'CAPSUUSERS');
+                                            }
+                                        }
                                         await fetch('/server/authToken.php', {
-
                                             method: 'POST',
-
                                             body: form
-
                                         }).then(res => res.json())
-
                                             .then(data => {
-
                                                 if (data.status) {
-
                                                     window.location.replace(data.message)
-
                                                 } else {
-
                                                     alert(data.message)
-
                                                 }
-
                                             })
 
                                     } else if (selType.value==="RDEOFFICE") {
@@ -471,6 +545,17 @@ const LoginPanel = (prop) => {
                                             placeholder:' ',
                                             required:true,
                                             autocomplete: 'username'
+                                        },
+                                        event: {
+                                            type: 'input',
+                                            method: (event) => {
+                                                // Auto-detect user type when typing
+                                                if (event.target.value && !selType.value) {
+                                                    setTimeout(() => {
+                                                        autoSelectUserType(event.target.value);
+                                                    }, 500); // Delay to avoid frequent updates
+                                                }
+                                            }
                                         },
                                         style:{
                                             backgroundColor:'rgba(0,0,0,0.3)',

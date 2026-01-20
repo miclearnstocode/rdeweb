@@ -550,79 +550,75 @@ export const CommentBoard=({title,docId,closeState})=>{
                                 text:'Save Changes',
                                 event:{
                                     type:'click',
-                                    method:()=>{
-
-                                        const req= new Request('/uploadResearchFile')
-                                        req.Post([
-                                            {
-                                                name:'comment',
-                                                value:'1'
-                                            },
-                                            {
-                                                name:'title',
-                                                value:data.title
-                                            },
-                                            {
-                                                name:'intro',
-                                                value:data.intro
-                                            },
-                                            {
-                                                name:'abstract',
-                                                value:data.abstract
-                                            },
-                                            {
-                                                name:'objective',
-                                                value:data.objective
-                                            },
-                                            {
-                                                name:'methodology',
-                                                value:data.methodology
-                                            },
-                                            {
-                                                name:'results',
-                                                value:data.results
-                                            },
-                                            {
-                                                name:'recommendation',
-                                                value:data.recommendation
-                                            },
-                                            {
-                                                name:'literature',
-                                                value:data.literature
-                                            },
-                                            {
-                                                name:'other',
-                                                value:data.other
-                                            },
-                                            {
-                                                name:'docsId',
-                                                value:docId
-                                            },
-
-                                            {
-                                                name:'updateReview',
-                                                value:'true'
-                                            },
-
-                                        ])
-                                        req.Json()
-                                        req.Send().then(dat=>{
-                                            alert(dat.message)
-                                            if(dat.status){
-                                                let basekey= Object.keys(baseData)
-                                                let rawdata= Object.keys(data)
-                                               basekey.forEach(key=>{
-                                                   baseData[key]=data[key]
-                                                   closeState({
-                                                       base:baseData,
-                                                       raw:data
-                                                   })
-                                               })
+                                    method:async ()=>{
+                                        try {
+                                            // Validate
+                                            if (!docId) {
+                                                alert('Document ID is required');
+                                                return;
                                             }
-                                        }).catch(err=>{
-                                            console.error('Error updating review:', err)
-                                            alert('Error updating review. Please try again.')
-                                        })
+
+                                            // Create FormData instead of object array
+                                            const formData = new FormData();
+                                            formData.append('updateReview', 'true');
+                                            formData.append('title', data.title || '');
+                                            formData.append('intro', data.intro || '');
+                                            formData.append('abstract', data.abstract || '');
+                                            formData.append('objective', data.objective || '');
+                                            formData.append('methodology', data.methodology || '');
+                                            formData.append('results', data.results || '');
+                                            formData.append('recommendation', data.recommendation || '');
+                                            formData.append('literature', data.literature || '');
+                                            formData.append('other', data.other || '');
+                                            formData.append('docId', docId);
+
+                                            // Send request
+                                            const response = await fetch('/uploadResearchFile', {
+                                                method: 'POST',
+                                                body: formData
+                                            });
+
+                                            // Check if response is OK
+                                            if (!response.ok) {
+                                                throw new Error(`HTTP error! status: ${response.status}`);
+                                            }
+
+                                            // Parse JSON response
+                                            const result = await response.json();
+                                            
+                                            // Show message
+                                            alert(result.message || (result.status ? 'Changes saved successfully' : 'Failed to save changes'));
+                                            
+                                            if (result.status) {
+                                                alert(result.message + (result.emailStatus ? '\n' + result.emailStatus : ''));
+                                                
+                                                // Update base data
+                                                Object.keys(baseData).forEach(key => {
+                                                    baseData[key] = data[key];
+                                                });
+                                                closeState({
+                                                    base: {...baseData},
+                                                    raw: {...data}
+                                                });
+                                            } else {
+                                                alert(result.message || 'Failed to save comments');
+                                            }
+                                            
+                                        } catch (error) {
+                                            console.error('Error saving comments:', error);
+                                            
+                                            // Try to get response text for debugging
+                                            if (error.response) {
+                                                try {
+                                                    const text = await error.response.text();
+                                                    console.error('Response text:', text);
+                                                } catch (e) {
+                                                    // Ignore if we can't get text
+                                                }
+                                            }
+                                            
+                                            alert(`Error saving comments: ${error.message}`);
+                                        }
                                     }
                                 }
                             }),

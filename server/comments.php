@@ -1,4 +1,8 @@
 <?php
+ob_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 include('db.php');
 /** @var TYPE_NAME $host */
 /** @var TYPE_NAME $username */
@@ -6,6 +10,7 @@ include('db.php');
 /** @var TYPE_NAME $dbName */
 $con = new mysqli($host, $username, $pass, $dbName);
 
+header('Content-Type: application/json; charset=utf-8');
 
 if(isset($_POST['commentRequest..'])){
     $filter=$_POST['eventType'];
