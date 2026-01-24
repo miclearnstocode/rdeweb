@@ -211,6 +211,7 @@ function RejectedEntry($correction, $eventName, $title){
     </div>
     ");
 }
+
 function CommentNotification($evaluatorName, $eventName, $title, $campus, $author, $comments, $documentUrl) {
     // Prepare comment sections
     $commentSections = "";

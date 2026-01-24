@@ -802,3 +802,156 @@
     text-shadow: 0 0 .3vw ghostwhite;
     background-color: black;
 }
+/* Floating popup container - Stack like messenger */
+.popup-container {
+    position: fixed;
+    top: 10vh;
+    right: 2vw;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.8vw; /* Consistent gap between popups */
+}
+
+/* Base popup styles - all popups same size */
+.status-popup {
+    background: var(--popup-bg);
+    color: white;
+    padding: 1vw 1.5vw;
+    border-radius: 0.5vw;
+    box-shadow: var(--popup-shadow);
+    max-width: 25vw;
+    min-width: 20vw;
+    border-left: 0.5vw solid var(--popup-border);
+    font-family: 'arial', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 1vw;
+    animation: slideInRight 0.3s ease-out;
+    transform-origin: right center;
+    margin: 0;
+    position: relative;
+}
+
+/* Specific popup types with consistent sizing */
+.rejected-popup {
+    --popup-bg: linear-gradient(45deg, #ff4444, #cc0000);
+    --popup-shadow: 0 0.5vw 1vw rgba(255, 68, 68, 0.3);
+    --popup-border: #ff8888;
+}
+
+.success-popup {
+    --popup-bg: linear-gradient(45deg, #4CAF50, #2E7D32);
+    --popup-shadow: 0 0.5vw 1vw rgba(76, 175, 80, 0.3);
+    --popup-border: #81C784;
+}
+
+.pending-popup {
+    --popup-bg: linear-gradient(45deg, #FF9800, #F57C00);
+    --popup-shadow: 0 0.5vw 1vw rgba(255, 152, 0, 0.3);
+    --popup-border: #FFB74D;
+}
+
+/* Icon styles */
+.status-popup:before {
+    font-size: 1.5vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5vw;
+}
+
+.rejected-popup:before {
+    content: '⚠️';
+}
+
+.success-popup:before {
+    content: '✓';
+}
+
+.pending-popup:before {
+    content: '⏳';
+}
+
+/* Content styling */
+.popup-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
+}
+
+.popup-title {
+    font-weight: bold;
+    font-size: 1.1vw;
+    margin-bottom: 0.2vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.popup-message {
+    font-size: 0.9vw;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Close button */
+.popup-close {
+    margin-left: auto;
+    cursor: pointer;
+    font-size: 1vw;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    min-width: 1vw;
+}
+
+.popup-close:hover {
+    opacity: 1;
+}
+
+/* Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+.status-popup.fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+/* Different status styles for the event type display */
+.event-type-accepted {
+    background: linear-gradient(to right, #4CAF50, transparent) !important;
+    color: #2E7D32 !important;
+}
+
+.event-type-rejected {
+    background: linear-gradient(to right, #faa, transparent) !important;
+    color: #d32f2f !important;
+}
+
+.event-type-pending {
+    background: linear-gradient(to right, #FF9800, transparent) !important;
+    color: #FF9800 !important;
+}

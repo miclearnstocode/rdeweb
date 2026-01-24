@@ -41,9 +41,7 @@ export const ResearchMain = () => {
                 margin: '1vh auto auto',
                 fontSize: '1.2vw',
             },
-
             text: 'Endorsement Letter'
-
         })
 
         const search = $({
@@ -74,320 +72,162 @@ export const ResearchMain = () => {
                                 className: 'fa-solid fa-magnifying-glass'
                             },
                             style: {
-
                                 color: 'deepskyblue',
-
                                 fontSize: '1.5vw'
-
                             }
-
                         }),
-
                         $({
-
                             tag: 'input',
-
                             att: {
-
                                 type: 'text',
-
                                 className: 'searchInput',
-
                                 placeholder: 'Search docs',
-
                             },
-
-
                             style: {
-
                                 backgroundColor: 'transparent',
-
-
                                 border: 'none',
-
                                 outline: 'none',
-
                                 paddingLeft: '.5vw',
-
                                 paddingRight: '.5vw',
-
                                 color: '#bbb',
-
                                 height: '100%',
-
                                 fontSize: '1.1vw'
-
                             },
-
                             event: {
-
                                 type: 'input',
-
                                 method: (ev) => {
                                     SearchMethod({
                                         nodeList:bodyContent.childNodes,
                                         textArray:ev.target.value.toUpperCase().split(' '),
                                         display:'flex'
                                     })
-
-
-
                                 }
-
                             }
-
                         })
-
                     ]
-
                 }),
-
             ]
-
         })
-
-
         const bodyPanel = () => {
-
-
             const docs = ({date, campus, eventType, file, research, docId, status, sender, smail}) => {
-
                 let category
                 research.forEach(val=>{
                     category=val.category
                 })
-
                 const viewDocs = () => {
-
                     let frm, viewerPanel
-
                     const object = ({dataURL, title}) => {
-
                         let object
-
                         const getObject = (el) => {
-
                             object = el
-
                         }
-
                         return ($({
-
                             tag: 'div',
-
                             style: {
-
                                 position: 'absolute',
-
                                 left: '0',
-
                                 top: '0',
-
                                 width: '100%',
-
                                 height: '99.5%',
-
                                 textAlign: 'center',
-
                                 backgroundColor: '#222'
-
                             },
-
                             elementHandler: getObject,
-
                             child: [
-
                                 $({
-
                                     tag: 'div',
-
                                     style: {
-
                                         width: '100%',
-
                                         height: '5%',
-
                                         backgroundColor: '#444',
-
                                         justifyContent: 'center',
-
                                         color: '#bbb',
-
                                         display: 'flex'
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             style: {
-
                                                 width: 'fit-content',
-
                                                 height: 'fit-content',
-
                                                 margin: 'auto',
-
                                                 display: 'flex'
-
                                             },
-
                                             event: {
-
                                                 type: 'click',
-
                                                 method: () => {
-
                                                     object.remove()
-
                                                 }
-
                                             },
-
                                             child: [
-
                                                 $({
-
                                                     tag: 'div',
-
                                                     att: {
-
                                                         className: 'fa-solid fa-caret-left'
-
                                                     },
-
                                                     style: {
-
                                                         fontSize: '2vw',
-
                                                         margin: 'auto',
-
                                                         height: 'fit-content',
-
                                                         width: 'fit-content',
-
                                                         color: 'deepskyblue',
-
                                                     }
-
                                                 }),
-
                                                 $({
-
                                                     tag: 'div',
-
                                                     style: {
-
                                                         fontSize: '1.2vw',
-
                                                         color: 'deepskyblue',
-
                                                         fontFamily: 'arial black,sans-serif',
-
                                                         cursor: 'pointer',
-
                                                         margin: 'auto'
-
                                                     },
-
                                                     text: 'Back'
-
                                                 }),
-
                                             ]
-
                                         }),
-
-
                                         $({
-
                                             tag: 'div',
-
                                             style: {
-
                                                 margin: 'auto',
-
                                                 marginLeft: '2vw',
-
                                                 height: 'fit-content',
-
                                                 width: '80%',
-
                                                 textAlign: 'left',
-
                                                 display: 'flex',
-
-
                                             },
-
                                             child: [
-
                                                 $({
-
                                                     tag: 'div',
-
                                                     style: {
-
                                                         fontFamily: 'monospace',
-
                                                         fontSize: '1vw',
-
                                                         color: 'deepskyblue',
-
                                                         fontWeight: 'bold',
-
                                                         margin: 'auto'
-
                                                     },
-
                                                     text: 'Title: '
-
                                                 }),
-
                                                 $({
-
                                                     tag: 'div',
-
                                                     text: `"${title}"`,
-
                                                     style: {
-
                                                         fontFamily: 'monospace',
-
                                                         fontSize: '1vw',
-
                                                         color: '#bbb',
-
                                                         textOverflow: 'ellipsis',
-
                                                         whiteSpace: 'nowrap',
-
                                                         overflow: 'hidden',
-
                                                         width: '100%',
-
                                                         margin: 'auto'
-
                                                     }
-
                                                 })
-
                                             ]
-
                                         }),
-
-
                                     ]
-
                                 }),
-
                                 $({
-
                                     tag: 'object',
-
                                     att: {
                                         data: dataURL,
                                         type: 'application/pdf',
@@ -541,79 +381,41 @@ export const ResearchMain = () => {
                                     ],
 
                                     event: {
-
                                         type: 'click',
-
                                         method: () => {
-
                                             viewerPanel.remove()
-
                                         }
-
                                     }
-
                                 }),
-
                                 $({
-
                                     tag: 'div',
-
                                     text: 'Endorsement Letter',
-
                                     style: {
-
                                         width: 'fit-content',
-
                                         height: 'fit-content',
-
                                         margin: 'auto',
-
                                         fontFamily: 'arial black,san-serif',
-
                                         fontSize: '1.4vw',
-
                                         color: '#bbb',
-
                                     }
-
                                 })
-
                             ]
-
-
                         })
-
-
                         const researchBot = ({id, dataURLResearch, title, category, author, coAuthor}) => {
-
                             const labelDetails = (label, data) => {
-
                                 return ($({
-
                                     tag: 'div',
-
                                     att: {
-
                                         innerHTML: `<span style="font-family: 'Arial Black',sans-serif; color: lightblue">${label}</span> <span>${data}</span>`
-
                                     },
-
                                     style: {
-
                                         fontSize: '1vw',
-
                                         fontFamily: 'monospace',
-
                                         color: '#ccc',
-
                                     }
-
                                 }))
-
                             }
-
                             const CoAuthorList = () => {
-
                                 return ($({
 
                                     tag: 'div',
@@ -776,454 +578,225 @@ export const ResearchMain = () => {
                                             userSelect: 'none'
 
                                         },
-
                                         event: {
-
                                             type: 'click',
-
                                             method: () => {
-
                                                 mainFrame.appendChild(object({dataURL: dataURLResearch, title: title}))
-
                                             }
-
                                         },
-
                                     })
-
                                 ]
-
                             }))
-
                         }
-
                         const Button = ({Label, Event}) => {
-
                             return ($({
-
                                 tag: 'div',
-
                                 style: {
-
                                     height: '99%',
-
                                     width: '49%',
-
                                     display: 'flex',
-
                                     justifyContent: 'center',
-
                                     margin: 'auto'
-
                                 },
-
                                 att: {
-
                                     className: 'botControllStaff'
-
                                 },
-
                                 event: {
-
                                     type: 'click',
-
                                     method: Event
-
                                 },
-
                                 child: [
-
                                     $({
-
                                         tag: 'div',
-
                                         text: Label,
-
                                         style: {
-
                                             margin: 'auto',
-
                                             width: 'fit-content',
-
                                             height: 'fit-content',
-
                                             fontFamily: 'arial black,sans-serif',
-
                                             color: 'deepskyblue'
-
                                         }
-
                                     })
-
                                 ]
-
                             }))
-
                         }
-
                         const Controller = () => {
-
-
                             const rejectReason = () => {
-
                                 let resJ, inputres
-
-
                                 const Cancel = () => {
-
                                     resJ.remove()
-
                                 }
-
-
                                 const resBot = ({label, eventHandler}) => {
-
                                     return ($({
-
                                         tag: 'div',
-
                                         style: {
-
                                             width: '50%',
-
                                             height: '100%',
-
                                             margin: 'auto',
-
                                             display: 'flex',
-
                                             justifyContent: 'center',
-
                                             cursor: 'pointer'
-
                                         },
-
                                         event: {
-
                                             type: 'click',
-
                                             method: eventHandler
-
                                         },
-
                                         child: [
-
                                             $({
-
                                                 tag: 'div',
-
                                                 text: label,
-
                                                 style: {
-
                                                     width: 'fit-content',
-
                                                     height: 'fit-content',
-
                                                     margin: 'auto',
-
                                                     fontFamily: 'arial black, sans-serif'
-
                                                 }
-
                                             })
-
                                         ],
-
                                         att: {
-
                                             className: 'resBotCan'
-
                                         }
-
                                     }))
-
                                 }
-
-
                                 return ($({
-
                                     tag: 'div',
-
                                     style: {
-
                                         position: 'absolute',
-
                                         width: '100%',
-
                                         height: '100%',
-
                                         left: '0',
-
                                         top: '0',
-
                                         backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-
                                         display: 'flex',
-
                                         justifyContent: 'center',
-
                                     },
-
                                     elementHandler: (el) => {
-
                                         resJ = el
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             style: {
-
                                                 height: 'fit-content',
-
                                                 width: 'fit-content',
-
                                                 margin: 'auto',
-
                                                 border: 'solid thin deepskyblue',
-
                                                 backgroundColor: '#333',
-
                                                 textAlign: 'center',
-
                                                 padding: '.5rem'
-
                                             },
-
                                             child: [
-
                                                 $({
-
                                                     tag: 'textarea',
-
                                                     style: {
-
                                                         outline: 'none',
-
                                                         border: 'none',
-
                                                         backgroundColor: 'rgba(0,0,0,0.2)',
-
                                                         resize: 'none',
-
                                                         height: '40vh',
-
                                                         width: '45vw',
-
                                                         margin: '1vh auto auto',
-
                                                         color: '#bbb',
-
                                                         fontFamily: 'monospace',
-
                                                         fontSize: '1.1vw',
-
                                                         padding: '.5rem'
-
                                                     },
-
                                                     att: {
-
                                                         placeholder: 'Enter text here...'
-
                                                     },
-
                                                     event: {
-
                                                         type: 'input',
-
                                                         method: (event) => {
-
                                                             inputres = event.target.value
-
                                                         }
-
                                                     }
-
                                                 }),
-
                                                 $({
-
                                                     tag: 'div',
-
                                                     style: {
-
                                                         height: '5vh',
-
                                                         width: '45vw',
-
                                                         padding: '.5rem',
-
                                                         margin: 'auto',
-
                                                         display: 'flex',
-
                                                         justifyContent: 'center',
-
-
                                                     },
-
                                                     child: [
-
                                                         resBot({
-
                                                             label: 'CANCEL',
-
                                                             eventHandler: Cancel
-
                                                         }),
-
                                                         resBot({
-
                                                             label: 'SUBMIT   ',
-
                                                             eventHandler: async () => {
-
-
                                                                 if (confirm("Click OK to confirm")) {
-
                                                                     let loading = Waiting()
-
                                                                     document.body.appendChild(loading)
-
                                                                     const remove = () => {
-
                                                                         loading.remove()
-
                                                                     }
-
                                                                     const form = new FormData()
-
                                                                     form.append('docId', docId)
-
                                                                     form.append('fileUrl', file)
-
                                                                     form.append('reasonEnd', inputres)
-
                                                                     form.append('rejectIndorse', 'true')
-
                                                                     form.append('fileType', `EndorsementLetter:${eventType}`)
-
                                                                     await fetch('/getresearch', {
-
                                                                         method: 'POST',
-
                                                                         body: form
-
                                                                     }).then(res => {
-
                                                                         if (res.ok) {
-
                                                                             remove()
-
                                                                             return res.json()
-
                                                                         }
-
                                                                     })
-
                                                                         .then(dat => {
-
                                                                             if (dat.status) {
-
                                                                                 document.body.appendChild(ConfirmationAlert(dat.message, () => {
-
                                                                                     window.location.reload()
-
                                                                                 }))
-
                                                                             } else {
-
                                                                                 document.body.appendChild(ConfirmationAlert(dat.message, () => {
-
                                                                                     window.location.reload()
-
                                                                                 }))
-
                                                                             }
-
                                                                         })
-
                                                                 }
-
                                                             }
-
                                                         }),
-
                                                     ]
-
                                                 })
-
                                             ]
-
                                         })
-
                                     ]
-
                                 }))
-
                             }
-
-
                             return ($({
-
                                 tag: 'div',
-
                                 style: {
-
                                     width: '100%',
-
                                     height: '20%',
-
                                     position: 'absolute',
-
                                     bottom: '0',
-
                                     backgroundColor: 'deepskyblue',
-
                                 },
-
-
                                 child: [
-
                                     $({
-
                                         tag: 'div',
-
                                         style: {
-
                                             width: '100%',
-
                                             height: '50%',
-
                                             display: 'flex',
-
                                             justifyContent: 'center',
-
                                         },
-
                                         child: [
-
                                             Button({
-
                                                 Label: 'ACCEPT',
-
                                                 Event: async () => {
-
                                                     if (confirm("Are you sure you want to accept this documents?")) {
-
-
                                                         let loading = Waiting()
-
                                                         document.body.appendChild(loading)
-
                                                         const req = new Request('/uploadResearchFile')
-
                                                         req.Post([
 
                                                             {
@@ -1352,17 +925,12 @@ export const ResearchMain = () => {
                                                     margin: '1% auto auto'
 
                                                 },
-
                                                 event: {
-
                                                     type: 'click',
-
                                                     method: () => {
-
                                                         viewerPanel.remove()
                                                         // window.location.reload()
                                                     }
-
                                                 },
 
                                                 child: [
@@ -1665,713 +1233,354 @@ export const ResearchMain = () => {
                     let TimeFormat=TimeConvert(Time.split(":"))
 
                     return ($({
-
                         tag: 'div',
-
                         style: {
-
                             margin: 'auto',
-
                             width: '90%',
-
                         },
-
                         child: [
-
                             details("Date: ", Date+" || "+TimeFormat),
-
                             details("Campus: ", campus),
-
                             details("Sender: ", sender),
-
                             details("Sender email: ", smail),
-
                             details("Event type: ", eventType),
-
-                            details("Category: ", category),
-                        ]
-
-
+                            details("Category: ", category),]
                     }))
-
                 }
-
                 return ($({
-
                     tag: 'button',
-
                     style: {
-
                         width: '95%',
-
                         margin: '.5vw auto',
-
                         padding: '.3rem',
-
                         display: 'flex',
-
                         justifyContent: 'center',
-
                         border: 'solid thin #999'
-
                     },
-
                     att: {
-
                         className: 'endorseIncoming'
-
                     },
-
                     child: [
-
                         icon,
-
                         leftBox()
-
                     ],
 
                     event: {
-
                         type: 'click',
-
                         method: () => {
-
                             mainFrame.appendChild(viewDocs())
-
                         }
-
                     },
-
-
                 }))
-
             }
-
-
             return ($({
-
                 tag: 'div',
-
                 style: {
-
                     width: '98%',
-
                     margin: '1vh auto auto',
-
                     height: '86%',
-
                     backgroundColor: 'rgb(10,10,10,0.3)',
-
                     overflowY: 'auto',
-
                     boxShadow: 'inset .3vw .3vw 2vh .5vh black'
-
                 },
 
                 elementHandler: async (el) => {
-
                     bodyContent = el
-
                     const form = new FormData()
-
                     form.append('incomingEndorsement', 'true')
-
                     await fetch('/uploadResearchFile', {
-
                         method: 'POST',
-
                         body: form
-
                     }).then(res => res.json())
-
                         .then(data => {
-
                             docQue.innerText = `  ${data.length}  `
-
-
                             data.forEach(val => {
-
                                 el.appendChild(docs({
-
                                     date: val.date,
-
                                     campus: val.campus,
-
                                     eventType: val.event,
-
                                     file: val.file,
-
                                     research: val.researchDocs,
-
                                     docId: val.id,
-
                                     sender: val.senderType,
-
                                     smail: val.senderEmail
-
                                 }))
-
                             })
-
                         })
-
                 }
-
-
             }))
-
         }
-
-
         return ($({
-
             tag: 'div',
-
             style: {
-
                 width: '49.9%',
-
                 height: '100%',
-
                 backgroundColor: 'rgba(100,100,100,0.2)',
-
                 margin: 'auto',
-
                 marginLeft: '0',
-
             },
-
             child: [
-
                 label,
-
                 $({
-
                     tag: 'div',
-
                     style: {
-
                         width: '100%',
-
                         display: 'flex',
-
                         height: 'fit-content',
-
                         marginTop: '1vh'
-
                     },
-
                     child: [
-
                         search,
-
                         $({
-
                             tag: 'div',
-
                             style: {
-
                                 width: '15vw',
-
                                 height: 'fit-content',
-
                                 margin: "auto",
-
                                 marginRight: '1vw',
-
                                 whiteSpace: 'nowrap',
-
                                 fontSize: '1vw',
-
                                 color: 'deepskyblue',
-
                                 fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif'
-
                             },
-
                             child: [
-
                                 $({
-
                                     tag: 'span',
-
                                     text: 'Submitted document(s):',
-
                                     style: {
-
                                         fontSize: '1.2vw'
-
                                     }
-
                                 }),
-
                                 $({
-
                                     tag: 'span',
-
                                     style: {
-
                                         color: '#bbb'
-
                                     },
-
                                     elementHandler: (el) => {
-
                                         docQue = el
-
                                     }
-
                                 }),
-
                             ]
-
                         })
-
                     ],
-
-
                 }),
-
                 bodyPanel()
-
             ]
-
-
         }))
-
     }
-
     const Forwarded = () => {
-
         let researchBody, endorseBody
-
         const ResearchDocs = ({category, file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId}) => {
-
-
             const resDetails = () => {
-
                 const details = (label, data) => {
-
                     return ($({
-
                         tag: 'div',
-
                         text: label,
-
                         style: {
-
-
                             width: '100%',
-
                             fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
                             fontSize: '1vw',
-
                             color: 'deepskyblue',
-
                             display: 'flex'
-
                         },
-
                         child: [
-
                             $({
-
                                 tag: 'div',
-
                                 text: data,
-
                                 style: {
-
                                     fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif ',
-
                                     color: '#ddd',
-
                                     fontSize: '1vw',
-
                                     marginLeft: '.5vw',
-
                                     fontWeight: 'normal',
                                     width: '100%',
                                     textOverflow: 'ellipsis',
-
                                     whiteSpace: 'nowrap',
-
                                     overflow: 'hidden',
-
                                 }
-
                             })
-
                         ]
-
                     }))
-
                 }
-
                 const bot = ({label, event,tooltip}) => {
-
                     return ($({
-
                         tag: 'div',
-
                         style: {
-
                             width: 'fit-content',
-
                             paddingRight: '1vw',
-
                             paddingLeft: '1vw',
-
                             //     fontFamily: 'arial black,sans-serif',
-
                             cursor: 'pointer',
-
                             fontSize: '1.5vw'
-
                         },
-
                         att: {
-
                             className: `botMe ${label}`,
                             title:tooltip
-
                         },
-
-
                         event: {
-
                             type: 'click',
-
                             method: event
-
                         }
-
                     }))
-
                 }
-
                 const getDel = (el) => {
-
                     if (deleteRequest !== null) {
-
                         el.style.color = 'ghostwhite'
-
                     }
-
                 }
-
                 let recDelP
-
                 const getrecDel = (el) => {
-
                     recDelP = el
-
                 }
-
                 const deletePanel = () => {
-
                     const messagePanel = () => {
-
                         const Reason = $({
-
                             tag: 'textarea',
-
                             style: {
-
                                 height: '40vh',
-
                                 width: '40vw',
-
                                 color: '#bbb',
-
                                 fontSize: '1.2vw',
-
                                 fontFamily: 'monospace',
-
                                 backgroundColor: '#333',
-
                                 border: 'none',
-
                                 outline: 'none',
-
                                 resize: 'none',
-
                                 padding: '.5rem'
-
                             },
-
                             att: {
-
                                 placeholder: 'Insert text here'
-
                             }
-
-
                         })
-
                         const Controller = () => {
-
                             const Button = ({label, method}) => {
-
                                 return ($({
-
                                     tag: 'div',
-
                                     style: {
-
                                         display: 'flex',
-
                                         justifyContent: 'center',
-
                                         width: '50%',
-
                                         margin: 'auto',
-
                                         cursor: 'pointer',
-
                                     },
-
                                     att: {
-
                                         className: 'delRecBot'
-
                                     },
-
                                     event: {
-
                                         type: 'click',
-
                                         method: method
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             style: {
-
                                                 margin: 'auto',
-
                                                 height: 'fit-content',
-
                                                 width: 'ft-content',
-
                                                 fontFamily: 'arial black,sans-serif',
-
                                                 fontSize: '1.3vw',
-
                                                 color: 'deepskyblue'
-
                                             },
-
-
                                             text: label
-
                                         })
-
                                     ]
-
                                 }))
-
                             }
-
                             return ($({
-
                                 tag: 'div',
-
                                 style: {
-
                                     height: '7vh',
-
                                     width: '100%',
-
                                     display: 'flex',
-
                                     justifyContent: 'center',
-
                                     margin: '.5vh auto auto'
-
                                 },
-
                                 child: [
-
                                     Button({
-
                                         label: 'Cancel',
-
                                         method: () => {
-
                                             recDelP.remove()
-
                                         }
-
                                     }),
-
                                     Button({
-
                                         label: 'Submit',
-
                                         method: async () => {
-
                                             if (confirm("Are you sure you want to permanently delete this file?...")) {
-
                                                 let loading = Waiting()
-
                                                 document.body.appendChild(loading)
-
                                                 const remove = () => {
-
                                                     loading.remove()
-
                                                 }
-
                                                 const form = new FormData()
-
                                                 form.append('docId', docId)
-
                                                 form.append('fileLocation', file)
-
                                                 form.append('reason', '')
-
                                                 form.append('title', title)
-
                                                 form.append('eventName', eventTYpe)
-
                                                 form.append('campus', campus)
-
                                                 form.append('grantDeleteResearchRequest', 'true')
-
                                                 await fetch('/uploadResearchFile', {
-
                                                     method: 'POST',
-
                                                     body: form
-
                                                 }).then(res => {
-
                                                     if (res.ok) {
-
                                                         remove()
-
                                                         return res.json()
-
                                                     }
-
                                                 }).then(dat => {
-
                                                     if (dat.status) {
-
                                                         document.body.appendChild(ConfirmationAlert("Saved successfully...!", () => {
-
                                                             window.location.reload()
-
                                                         }))
-
                                                     } else {
-
                                                         alert(dat.message)
-
                                                     }
-
                                                 })
-
                                             }
-
                                         }
-
                                     }),
-
-
                                 ]
-
                             }))
-
                         }
-
                         return ($({
-
                             tag: 'div',
-
                             style: {
-
                                 width: 'fit-content',
-
                                 height: 'fit-content',
-
                                 margin: 'auto',
-
                                 backgroundColor: '#555',
-
                                 border: 'solid thin #999',
-
                                 padding: '.3rem'
-
                             },
-
                             child: [
-
                                 Reason,
-
                                 Controller()
-
                             ]
-
                         }))
-
                     }
-
                     return ($({
-
                         tag: 'div',
-
                         style: {
-
                             position: 'absolute',
-
                             left: '0',
-
                             top: '0',
-
                             width: '100%',
-
                             height: '100%',
-
                             backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-
                             display: 'flex',
-
                             justifyContent: 'center'
-
                         },
-
                         elementHandler: getrecDel,
-
                         child: [
-
                             messagePanel()
-
                         ]
-
                     }))
-
                 }
-
-
                 return ($({
-
                     tag: 'div',
-
                     style: {
-
                         width: '82%',
-
                         margin: 'auto',
-
-
                     },
 
                     child: [
@@ -2578,435 +1787,215 @@ export const ResearchMain = () => {
                                  })
 
                                  */
-
                             ]
-
                         })
-
                     ]
-
                 }))
-
             }
-
-
             const viewer = () => {
-
-
                 let viewPan
-
-
                 const container = $({
-
                     tag: 'div',
-
                     style: {
-
                         width: '90%',
-
                         height: '90%'
-
                     },
-
                     child: [
-
                         $({
-
                             tag: 'object',
-
                             style: {
-
                                 width: '100%',
-
                                 height: '100%'
-
                             },
-
                             att: {
-
                                 type: 'application/pdf',
-
                                 data: file.replace('..', '')
-
                             }
-
                         }),
-
                         $({
-
                             tag: 'div',
-
                             style: {
-
                                 height: '10%',
-
                                 width: '100%',
-
                                 display: 'flex',
-
                                 justifyContent: 'center'
-
                             },
-
                             child: [
-
                                 $({
-
                                     tag: 'div',
-
                                     style: {
-
                                         display: 'flex',
-
                                         justifyContent: 'center',
-
                                         height: '100%',
-
                                         width: 'fit-content',
-
                                         paddingLeft: '1vw',
-
                                         paddingRight: '1vw',
-
                                         cursor: 'pointer'
-
                                     },
-
                                     att: {
-
                                         className: 'exitView'
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             att: {
-
                                                 className: 'fa-solid fa-right-from-bracket'
-
                                             },
-
                                             style: {
-
                                                 margin: 'auto',
-
                                                 marginRight: '1vw',
-
                                                 fontSize: '2vw'
-
                                             }
-
                                         }),
-
                                         $({
-
                                             tag: 'div',
-
                                             text: 'Exit',
-
                                             style: {
-
                                                 fontFamily: 'arial black,sans-serif',
-
                                                 fontSize: '1.5vw',
-
                                                 margin: 'auto',
-
                                             }
-
                                         })
-
                                     ],
-
                                     event: {
-
                                         type: 'click',
-
                                         method: () => {
-
                                             viewPan.remove()
-
                                         }
-
                                     }
-
                                 })
-
                             ]
-
                         })
-
                     ]
-
                 })
-
                 return ($({
-
                     tag: 'div',
-
                     style: {
-
                         position: 'absolute',
-
                         left: '0',
-
                         top: '0',
-
                         width: '100%',
-
                         height: '99.5%',
-
                         backgroundColor: '#222',
-
                         display: 'flex',
-
                         justifyContent: 'center'
-
                     },
-
                     elementHandler: (el) => {
-
                         viewPan = el
-
                     },
-
                     child: [
-
                         container
-
                     ]
-
                 }))
-
             }
-
             const comments = (Review) => {
-
-
                 let comm
-
                 const getComment = (el) => {
-
                     comm = el
-
                 }
-
                 let printBody
-
-
                 const Controller = () => {
-
-
                     const bot = ({label, eventHandler, style}) => {
-
                         return ($({
-
                             tag: 'div',
-
                             style: style,
-
                             event: {
-
                                 type: 'click',
-
                                 method: eventHandler
-
                             },
-
                             att: {
-
                                 className: 'botPr'
-
                             },
-
                             child: [
-
                                 $({
-
                                     tag: 'div',
-
                                     text: label,
-
                                     style: {
-
                                         margin: 'auto',
-
                                         width: 'fit-content',
-
                                         height: 'fit-content'
-
                                     }
-
                                 })
-
                             ]
-
                         }))
-
                     }
-
-
                     return ($({
-
                         tag: 'div',
-
                         style: {
-
                             backgroundColor: '#555',
-
                             width: '10%',
-
                             height: '100%',
-
                             margin: 'auto',
-
                             marginLeft: '0',
-
                             position: 'relative'
-
                         },
-
                         child: [
-
                             bot({
-
                                 label: 'Printout',
-
                                 eventHandler: () => {
-
                                     const printPage = document.getElementById('commentPDF')
-
                                     let WinPrint = window.open('', '', 'toolbar=0,scrollbars=0,status=0');
-
                                     WinPrint.document.write('<head><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/review.css"></head>')
-
                                     WinPrint.document.write(printPage.innerHTML);
-
                                     WinPrint.document.close();
-
                                     WinPrint.focus();
-
                                     WinPrint.print();
-
                                     WinPrint.close();
-
                                 },
-
                                 style: {
-
                                     display: 'flex',
-
                                     justifyContent: 'center',
-
                                     position: 'absolute',
-
                                     bottom: '5vh',
-
                                     top: 'auto',
-
                                     height: '5vh',
-
                                     backgroundColor: '#444',
-
                                     width: '100%',
-
                                     cursor: 'pointer'
-
                                 }
-
-
                             }),
-
                             bot({
-
                                 label: 'CLOSE',
-
                                 eventHandler: () => {
-
                                     comm.remove()
-
                                 },
-
                                 style: {
-
                                     display: 'flex',
-
                                     justifyContent: 'center',
-
                                     position: 'absolute',
-
                                     bottom: '0',
-
                                     top: 'auto',
-
                                     height: '5vh',
-
                                     backgroundColor: '#444',
-
                                     width: '100%',
-
                                     cursor: 'pointer'
-
                                 },
-
                             })
-
                         ]
-
                     }))
-
                 }
-
-
                 const print = $({
-
                     tag: 'div',
-
                     style: {
-
                         height: '100%',
-
                         justifyContent: 'center',
-
                         display: 'flex',
-
                         width: '100%',
-
                         overflowY: 'auto',
-
                         userSelect: 'text'
-
                     },
-
-
                     child: [
-
                         Print({
-
                             title: title,
-
                             campus: campus,
-
                             author: author,
-
                             category: category,
-
                             date: '1-21-2022',
-
                             review: Review,
-
                             getHandler: (el) => {
-
                                 printBody = el
-
                             }
-
                         }),
-
                         /*
 
                         Main({
@@ -3289,64 +2278,34 @@ export const ResearchMain = () => {
                                         tag: 'input',
 
                                         att: {
-
                                             type: 'text',
-
                                             className: 'searchInput',
-
                                             placeholder: 'Search docs'
-
                                         },
-
                                         event: {
-
                                             type: 'input',
-
                                             method: searchEvent
-
                                         },
-
-
                                         style: {
-
                                             backgroundColor: 'transparent',
-
                                             border: 'none',
-
                                             outline: 'none',
-
                                             paddingLeft: '.5vw',
-
                                             paddingRight: '.5vw',
-
                                             color: '#bbb',
-
                                             height: '100%',
-
                                             fontSize: '1.1vw'
-
                                         },
-
                                         elementHandler: (el) => {
-
                                             serch = el
-
                                         }
-
                                     })
-
                                 ]
-
                             })
-
                         ]
-
                     }))
-
                     if (tools) {
-
                         el.appendChild(tools)
-
                     }
 
                 }
@@ -3565,41 +2524,23 @@ export const ResearchMain = () => {
                                             },
 
                                             event: {
-
                                                 type: 'change',
-
                                                 method: (event) => {
-
                                                     getFilter(event.target.value)
-
                                                 }
-
                                             }
-
                                         })
-
                                     ]
-
                                 }),
-
                                 $({
-
                                     tag: 'div',
-
                                     style: {
-
                                         width: '100%',
-
                                         height: '5vh',
-
                                         margin: '1vh auto'
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'select',
 
                                             style: {
@@ -5945,104 +4886,58 @@ export const ResearchMain = () => {
             const ButtonsTabs = []
             let enBot, resBot
             const getBot = {
-
                 getEndorse: (el) => {
-
                     enBot = el
-
                 },
-
                 getResdoc: (el) => {
-
                     resBot = el
-
                 }
-
             }
             const bot = ({label, Method, getEl}) => {
-
                 return ($({
-
                     tag: 'div',
-
                     style: {
-
                         cursor: 'pointer',
-
                         width: 'fit-content',
-
                         paddingRight: '1vw',
-
                         paddingLeft: '1vw',
-
                         display: 'flex',
-
                         justifyContent: 'center'
-
                     },
-
                     elementHandler: getEl,
-
                     child: [
-
                         $({
-
                             tag: 'div',
-
                             style: {
-
                                 fontFamily: 'arial black,sans-serif',
-
                                 fontSize: '1vw',
-
                                 margin: 'auto',
-
                             },
-
                             text: label
-
                         })
-
                     ],
-
                     event: {
-
                         type: 'click',
-
                         method: Method
-
                     }
-
                 }))
-
             }
             ButtonsTabs.push({
-
                 button: bot({
-
                     label: "Entry List",
-
                     getEl: getBot.getResdoc,
-
                     Method: () => {
-
                         Bod.innerHTML = ''
-
                         Bod.appendChild(search({
-
                             tools: tools(),
-
                             searchEvent: searchInput
-
                         }))
-
                         Bod.appendChild($({
                             tag:'div',
                             style:{
                                 display:'flex',
                                 width:'100%',
                                 height:'fit-content',
-
                                 marginTop: '1vh',
                             },
                             child:[
@@ -6051,161 +4946,87 @@ export const ResearchMain = () => {
                                 Report()
                             ]
                         }))
-
                         Bod.appendChild(ResearchPanel())
-
                         resBot.style.backgroundColor = 'rgba(0,0,0,0.1)'
-
                         resBot.style.color = 'deepskyblue'
-
                         enBot.style.color = '#999'
-
                         enBot.style.backgroundColor = 'transparent'
-
                     }
-
                 }),
-
             })
             ButtonsTabs.push({
-
                 button: bot({
-
                     label: "Endorsement",
-
                     getEl: getBot.getEndorse,
-
                     Method: () => {
-
                         Bod.innerHTML = ''
-
                         Bod.appendChild(search({
                             searchEvent: (value) => {
-
-
                                 let input = value.target.value.toUpperCase().replace(' ', '')
-
                                 const child = endorseBody.childNodes
-
                                 for (let x = 0; x < child.length; x++) {
-
                                     let chl = child[x].innerText.toUpperCase().replace(' ', '')
-
                                     if (!chl.includes(input)) {
-
                                         child[x].style.display = 'none'
-
                                     } else {
-
                                         child[x].style.display = 'block'
-
                                     }
-
                                     if (input.value === '') {
-
                                         child[x].style.display = 'block'
-
                                     }
-
                                 }
                             }
                         }))
-
                         Bod.appendChild(EndorsementPanel())
-
                         enBot.style.backgroundColor = 'rgba(0,0,0,0.1)'
-
                         enBot.style.color = 'deepskyblue'
-
                         resBot.style.color = '#999'
-
                         resBot.style.backgroundColor = 'transparent'
-
                     }
-
                 }),
-
             })
             const Tabs = () => {
-
-
                 return ($({
-
                     tag: 'div',
-
                     style: {
-
                         width: '100%',
-
                         height: '5%',
-
                         backgroundColor: '#444',
-
                         display: 'flex',
-
                     },
-
-
                     elementHandler: (el) => {
-
                         ButtonsTabs.forEach(val => {
-
                             el.appendChild(val.button)
-
                         })
-
                     }
-
                 }))
-
             }
             return ($({
-
                 tag: 'div',
-
                 style: {
-
                     height: '95%',
-
                     width: '100%',
-
                 },
-
                 child: [
-
                     Tabs(),
-
                     $({
-
                         tag: 'div',
-
                         style: {
-
                             width: '100%',
-
                             height: '94%',
-
                         },
-
                         elementHandler: (el) => {
-
                             Bod = el
-
                             el.appendChild(search({
-
                                 tools: tools(),
-
                                 searchEvent: searchInput
-
                             }))
-
                             el.appendChild($({
                                 tag:'div',
                                 style:{
                                     display:'flex',
                                     width:'100%',
                                     height:'fit-content',
-
                                     marginTop: '1vh',
                                 },
                                 child:[
@@ -6214,58 +5035,33 @@ export const ResearchMain = () => {
                                     Report()
                                 ]
                             }))
-
                             el.appendChild(ResearchPanel())
-
                             resBot.style.backgroundColor = 'rgba(0,0,0,0.1)'
-
                             resBot.style.color = 'deepskyblue'
-
                             enBot.style.color = '#999'
-
                         }
-
                     })
-
                 ]
-
             }))
-
         }
-
-
         return ($({
-
             tag: 'div',
-
             style: {
-
                 width: '49.9%',
-
                 height: '100%',
-
                 backgroundColor: 'rgba(100,100,100,0.2)',
-
                 margin: 'auto',
-
                 marginRight: '0',
                 position:'relative'
-
             },
             elementHandler:(el)=>{
                 leftPdiv=el
             },
-
             child: [
-
                 label,
-
                 Content(),
-
             ]
-
         }))
-
     }
 
     const ScoreSummary=()=>{

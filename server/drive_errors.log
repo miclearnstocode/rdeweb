@@ -1,0 +1,419 @@
+[21-Jan-2026 12:40:36 Asia/Manila] PHP Fatal error:  Uncaught TypeError: file_exists(): Argument #1 ($filename) must be of type string, mysqli given in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:46
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(46): file_exists(Object(mysqli))
+#1 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(171): uploadResearchToDrive(Object(mysqli), 'C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement', 40, 'endorsement')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#5 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#6 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 46
+[21-Jan-2026 12:51:32 Asia/Manila] PHP Fatal error:  Uncaught TypeError: file_exists(): Argument #1 ($filename) must be of type string, mysqli given in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:58
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(58): file_exists(Object(mysqli))
+#1 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(146): uploadResearchToDrive(Object(mysqli), 'C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement', 40, 'endorsement')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#5 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#6 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 58
+[21-Jan-2026 13:04:56 Asia/Manila] PHP Fatal error:  Uncaught TypeError: file_exists(): Argument #1 ($filename) must be of type string, mysqli given in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:58
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(58): file_exists(Object(mysqli))
+#1 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(146): uploadResearchToDrive(Object(mysqli), 'C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement', 40, 'endorsement')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#5 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#6 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 58
+[21-Jan-2026 13:11:41 Asia/Manila] PHP Warning:  Undefined variable $v in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:11:41 Asia/Manila] PHP Fatal error:  Uncaught Error: Attempt to assign property "file" on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:147
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 147
+[21-Jan-2026 13:12:07 Asia/Manila] PHP Warning:  Undefined variable $v in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:12:07 Asia/Manila] PHP Fatal error:  Uncaught Error: Attempt to assign property "file" on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:147
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 147
+[21-Jan-2026 13:20:53 Asia/Manila] PHP Warning:  Undefined variable $v in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:20:53 Asia/Manila] PHP Warning:  Undefined variable $v in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 147
+[21-Jan-2026 13:20:53 Asia/Manila] PHP Fatal error:  Uncaught Error: Attempt to assign property "file" on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:147
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 147
+[21-Jan-2026 13:21:22 Asia/Manila] PHP Warning:  Undefined variable $v in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:21:22 Asia/Manila] PHP Fatal error:  Uncaught Error: Attempt to assign property "file" on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:146
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:21:46 Asia/Manila] PHP Warning:  Undefined variable $v in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:21:46 Asia/Manila] PHP Fatal error:  Uncaught Error: Attempt to assign property "file" on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:146
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:22:38 Asia/Manila] PHP Warning:  Undefined variable $v in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:22:38 Asia/Manila] PHP Fatal error:  Uncaught Error: Attempt to assign property "file" on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:146
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 146
+[21-Jan-2026 13:37:16 Asia/Manila] Google Drive upload failed: Drive config not found at: C:\Users\Cogito\Documents\rdeweb\server/../config/drive_config.php
+[21-Jan-2026 13:37:16 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(169): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement', 'endorsement')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+[21-Jan-2026 13:39:45 Asia/Manila] Google Drive upload failed: Drive config not found at: C:\Users\Cogito\Documents\rdeweb\server/../config/drive_config.php
+[21-Jan-2026 13:39:45 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(169): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement', 'endorsement')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+[21-Jan-2026 13:43:07 Asia/Manila] Google Drive upload failed: Drive config not found at: C:\Users\Cogito\Documents\rdeweb\server/../config/drive_config.php
+[21-Jan-2026 13:43:07 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(182): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement', 'endorsement')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+[21-Jan-2026 13:51:30 Asia/Manila] Attempting to upload: pdf-sample_0.pdf, Type: endorsement, Event: 38th University Faculty In-House Review, Center: Dayao_Endorsement
+[21-Jan-2026 13:51:30 Asia/Manila] Looking for drive config at: C:\Users\Cogito\Documents\rdeweb\server/../../../config/drive_config.php
+[21-Jan-2026 13:51:30 Asia/Manila] Trying alternative path: C:\Users\Cogito\Documents\rdeweb\server/../config/drive_config.php
+[21-Jan-2026 13:51:30 Asia/Manila] Google Drive upload failed: Drive config not found. Tried: C:\Users\Cogito\Documents\rdeweb\server/../../../config/drive_config.php and C:\Users\Cogito\Documents\rdeweb\server/../config/drive_config.php
+[21-Jan-2026 13:51:30 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(214): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Dayao_Endorseme...', 'endorsement')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+[21-Jan-2026 13:53:50 Asia/Manila] Attempting to upload: pdf-sample_0.pdf, Type: endorsement, Event: 38th University Faculty In-House Review, Center: Endorsement
+[21-Jan-2026 13:53:50 Asia/Manila] Looking for drive config at: C:\Users\Cogito\Documents\rdeweb\server/../../../config/drive_config.php
+[21-Jan-2026 13:53:50 Asia/Manila] Trying alternative path: C:\Users\Cogito\Documents\rdeweb\server/../config/drive_config.php
+[21-Jan-2026 13:53:50 Asia/Manila] Google Drive upload failed: Drive config not found. Tried: C:\Users\Cogito\Documents\rdeweb\server/../../../config/drive_config.php and C:\Users\Cogito\Documents\rdeweb\server/../config/drive_config.php
+[21-Jan-2026 13:53:50 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(214): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement', 'endorsement')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+[21-Jan-2026 14:04:01 Asia/Manila] Google Drive upload failed: Drive config not found at: C:\Users\Cogito\Documents\rdeweb\server/../config/drive_config.php
+[21-Jan-2026 14:04:01 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(192): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement_let...', 'endorsement')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+[21-Jan-2026 14:06:44 Asia/Manila] Creating endorsement folder structure for: 38th University Faculty In-House Review
+[21-Jan-2026 14:06:48 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 1bhn-Jl2a9Q4Gt5xiGAiLeySiAmNMQri0
+[21-Jan-2026 14:06:49 Asia/Manila] Google Drive upload failed: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 14:06:49 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Http\REST.php(94): Google\Http\REST::decodeHttpResponse(Object(GuzzleHttp\Psr7\Response), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#1 [internal function]: Google\Http\REST::doExecute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#2 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Task\Runner.php(187): call_user_func_array(Array, Array)
+#3 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Http\REST.php(66): Google\Task\Runner->run()
+#4 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Client.php(969): Google\Http\REST::execute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...', Array, NULL)
+#5 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Service\Resource.php(248): Google\Client->execute(Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#6 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient-services\src\Drive\Resource\Files.php(134): Google\Service\Resource->call('create', Array, 'Google\\Service\\...')
+#7 C:\Users\Cogito\Documents\rdeweb\config\driver_config.php(75): Google\Service\Drive\Resource\Files->create(Object(Google\Service\Drive\DriveFile), Array)
+#8 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(101): GoogleDriveService->uploadFile('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '1bhn-Jl2a9Q4Gt5...')
+#9 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(192): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement_let...', 'endorsement')
+#10 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#11 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#12 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#13 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#14 {main}
+[21-Jan-2026 14:17:20 Asia/Manila] Creating endorsement folder structure for: 38th University Faculty In-House Review
+[21-Jan-2026 14:17:21 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 1bhn-Jl2a9Q4Gt5xiGAiLeySiAmNMQri0
+[21-Jan-2026 14:17:23 Asia/Manila] Google Drive upload failed: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 14:17:23 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Http\REST.php(94): Google\Http\REST::decodeHttpResponse(Object(GuzzleHttp\Psr7\Response), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#1 [internal function]: Google\Http\REST::doExecute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#2 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Task\Runner.php(187): call_user_func_array(Array, Array)
+#3 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Http\REST.php(66): Google\Task\Runner->run()
+#4 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Client.php(969): Google\Http\REST::execute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...', Array, NULL)
+#5 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Service\Resource.php(248): Google\Client->execute(Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#6 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient-services\src\Drive\Resource\Files.php(134): Google\Service\Resource->call('create', Array, 'Google\\Service\\...')
+#7 C:\Users\Cogito\Documents\rdeweb\config\driver_config.php(90): Google\Service\Drive\Resource\Files->create(Object(Google\Service\Drive\DriveFile), Array)
+#8 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(104): GoogleDriveService->uploadFile('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '1bhn-Jl2a9Q4Gt5...')
+#9 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(222): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement_Let...', 'endorsement')
+#10 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#11 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#12 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#13 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#14 {main}
+[21-Jan-2026 14:17:23 Asia/Manila] Endorsement upload error: Failed to upload to Google Drive: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 14:35:02 Asia/Manila] Creating endorsement folder structure for: 38th University Faculty In-House Review
+[21-Jan-2026 14:35:05 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 13UXfNYAP79Ozcyq6y8EanFat6OHbHzo-
+[21-Jan-2026 14:35:07 Asia/Manila] Google Drive upload failed: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 14:35:07 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Http\REST.php(94): Google\Http\REST::decodeHttpResponse(Object(GuzzleHttp\Psr7\Response), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#1 [internal function]: Google\Http\REST::doExecute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#2 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Task\Runner.php(187): call_user_func_array(Array, Array)
+#3 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Http\REST.php(66): Google\Task\Runner->run()
+#4 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Client.php(969): Google\Http\REST::execute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...', Array, NULL)
+#5 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Service\Resource.php(248): Google\Client->execute(Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#6 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient-services\src\Drive\Resource\Files.php(134): Google\Service\Resource->call('create', Array, 'Google\\Service\\...')
+#7 C:\Users\Cogito\Documents\rdeweb\config\driver_config.php(90): Google\Service\Drive\Resource\Files->create(Object(Google\Service\Drive\DriveFile), Array)
+#8 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(104): GoogleDriveService->uploadFile('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '13UXfNYAP79Ozcy...')
+#9 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(222): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement_Let...', 'endorsement')
+#10 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#11 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#12 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#13 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#14 {main}
+[21-Jan-2026 14:35:07 Asia/Manila] Endorsement upload error: Failed to upload to Google Drive: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 14:51:28 Asia/Manila] Creating endorsement folder structure for: 38th University Faculty In-House Review
+[21-Jan-2026 14:51:30 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 13UXfNYAP79Ozcyq6y8EanFat6OHbHzo-
+[21-Jan-2026 14:51:32 Asia/Manila] Google Drive upload failed: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 14:51:32 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Http\REST.php(94): Google\Http\REST::decodeHttpResponse(Object(GuzzleHttp\Psr7\Response), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#1 [internal function]: Google\Http\REST::doExecute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#2 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Task\Runner.php(187): call_user_func_array(Array, Array)
+#3 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Http\REST.php(66): Google\Task\Runner->run()
+#4 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Client.php(969): Google\Http\REST::execute(Object(GuzzleHttp\Client), Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...', Array, NULL)
+#5 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient\src\Service\Resource.php(248): Google\Client->execute(Object(GuzzleHttp\Psr7\Request), 'Google\\Service\\...')
+#6 C:\Users\Cogito\Documents\rdeweb\config\vendor\google\apiclient-services\src\Drive\Resource\Files.php(134): Google\Service\Resource->call('create', Array, 'Google\\Service\\...')
+#7 C:\Users\Cogito\Documents\rdeweb\config\driver_config.php(90): Google\Service\Drive\Resource\Files->create(Object(Google\Service\Drive\DriveFile), Array)
+#8 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(104): GoogleDriveService->uploadFile('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '13UXfNYAP79Ozcy...')
+#9 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(222): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement_Let...', 'endorsement')
+#10 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#11 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#12 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#13 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#14 {main}
+[21-Jan-2026 14:51:32 Asia/Manila] Endorsement upload error: Failed to upload to Google Drive: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 16:37:14 Asia/Manila] Creating endorsement folder structure for: 38th University Faculty In-House Review
+[21-Jan-2026 16:37:15 Asia/Manila] Event folder created: 1-CkIqphSWeWDds7ShtRE18-Kvbpvc1av for 38th University Faculty In-House Review
+[21-Jan-2026 16:37:15 Asia/Manila] Center folder created: 13UXfNYAP79Ozcyq6y8EanFat6OHbHzo- for Endorsement_Letters
+[21-Jan-2026 16:37:15 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 13UXfNYAP79Ozcyq6y8EanFat6OHbHzo-
+[21-Jan-2026 16:37:18 Asia/Manila] Google Drive upload error: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 16:37:18 Asia/Manila] Google Drive upload failed: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 16:37:18 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(223): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement_Let...', 'endorsement')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+[21-Jan-2026 16:37:18 Asia/Manila] Endorsement upload error: Failed to upload to Google Drive: {
+  "error": {
+    "code": 403,
+    "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+    "errors": [
+      {
+        "message": "Service Accounts do not have storage quota. Leverage shared drives (https://developers.google.com/workspace/drive/api/guides/about-shareddrives), or use OAuth delegation (http://support.google.com/a/answer/7281227) instead.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 17:02:35 Asia/Manila] Creating endorsement folder structure for: 38th University Faculty In-House Review
+[21-Jan-2026 17:02:37 Asia/Manila] Failed to create folder structure: {
+  "error": {
+    "code": 404,
+    "message": "File not found: 1vRybnzQkOy-fUm2dLOcvGe6QUFv6opYp.",
+    "errors": [
+      {
+        "message": "File not found: 1vRybnzQkOy-fUm2dLOcvGe6QUFv6opYp.",
+        "domain": "global",
+        "reason": "notFound",
+        "location": "fileId",
+        "locationType": "parameter"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 17:02:37 Asia/Manila] Google Drive upload failed: Failed to create folder structure: {
+  "error": {
+    "code": 404,
+    "message": "File not found: 1vRybnzQkOy-fUm2dLOcvGe6QUFv6opYp.",
+    "errors": [
+      {
+        "message": "File not found: 1vRybnzQkOy-fUm2dLOcvGe6QUFv6opYp.",
+        "domain": "global",
+        "reason": "notFound",
+        "location": "fileId",
+        "locationType": "parameter"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 17:02:37 Asia/Manila] Stack trace: #0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(84): GoogleDriveService->createResearchFolderStructure('38th University...', 'Endorsement_Let...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(223): uploadResearchToDrive('C:\\xampp\\tmp\\ph...', 'pdf-sample_0.pd...', '38th University...', 'Endorsement_Let...', 'endorsement')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#5 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#6 {main}
+[21-Jan-2026 17:02:37 Asia/Manila] Endorsement upload error: Failed to upload to Google Drive: Failed to create folder structure: {
+  "error": {
+    "code": 404,
+    "message": "File not found: 1vRybnzQkOy-fUm2dLOcvGe6QUFv6opYp.",
+    "errors": [
+      {
+        "message": "File not found: 1vRybnzQkOy-fUm2dLOcvGe6QUFv6opYp.",
+        "domain": "global",
+        "reason": "notFound",
+        "location": "fileId",
+        "locationType": "parameter"
+      }
+    ]
+  }
+}
+
+[21-Jan-2026 17:06:17 Asia/Manila] Creating endorsement folder structure for: 38th University Faculty In-House Review
+[21-Jan-2026 17:06:19 Asia/Manila] Event folder created: 1b9Zg1h9qP2gePB9nkIqaXUJWLV0GX3kt for 38th University Faculty In-House Review
+[21-Jan-2026 17:06:21 Asia/Manila] Center folder created: 11-JH2330JVMppS0fJM2r1YP7UrrI88A4 for Endorsement_Letters
+[21-Jan-2026 17:06:21 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 11-JH2330JVMppS0fJM2r1YP7UrrI88A4
+[21-Jan-2026 17:06:24 Asia/Manila] Making file public: 1uob-nMmOVQqJU2qCdggL0mbNpwad3k4i
+[21-Jan-2026 17:06:26 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 258
+[21-Jan-2026 17:06:26 Asia/Manila] Creating research folder structure for: 38th University Faculty In-House Review / Coconut Research and Development Center Coco RDC
+[21-Jan-2026 17:06:27 Asia/Manila] Event folder created: 1b9Zg1h9qP2gePB9nkIqaXUJWLV0GX3kt for 38th University Faculty In-House Review
+[21-Jan-2026 17:06:29 Asia/Manila] Center folder created: 10UCHSptK5ncRW-LWYMMnToCqmv93XcpD for Coconut Research and Development Center Coco RDC
+[21-Jan-2026 17:06:29 Asia/Manila] Uploading file: sample-local-pdf.pdf to folder: 10UCHSptK5ncRW-LWYMMnToCqmv93XcpD
+[21-Jan-2026 17:06:32 Asia/Manila] Making file public: 15sf5ikTuYI-JbJKup4L3yrk8kSmqOIfY
+[24-Jan-2026 08:46:13 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 847

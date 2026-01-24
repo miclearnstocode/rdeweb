@@ -192,3 +192,106 @@ RDE staff - directors, research center directors , URA, URE, add si Center direc
 Capsu Users - Sila ang ga submit proposal or papers - campuses, satellite college kag research centers
 
 research centers - equivalent power as research center director to accept and reject they have account both on capsu users and rde staff.
+
+january 20, 2026
+Accept Button
+Location: Inside Incoming() → viewDocs() → DetailsViewer() → Controller()
+
+Functionality:
+
+When clicked, it sends a POST request to /uploadResearchFile
+
+Updates the document status by setting acceptRequest: '1'
+
+Passes parameters: docId, campus, eventType
+
+Reloads the page after successful acceptance
+
+Reject Button
+Location: Same component as Accept button
+
+Functionality:
+
+When clicked, opens a textarea panel for entering rejection reason
+
+Submits the rejection reason via POST to /getresearch
+
+Updates the document status with rejectIndorse: 'true'
+
+Includes parameters: docId, fileUrl, reasonEnd, fileType
+
+New table relationship
+ALTER TABLE researchfile 
+ADD COLUMN rejected_by BIGINT(200) NULL,
+ADD COLUMN accepted_by BIGINT(200) NULL,
+ADD COLUMN rejected_date DATETIME NULL,
+ADD COLUMN accepted_date DATETIME NULL,
+ADD FOREIGN KEY (rejected_by) REFERENCES rdestaff(id),
+ADD FOREIGN KEY (accepted_by) REFERENCES rdestaff(id);
+
+January 21, 2025
+plan: root folder → event subfolder → center subfolder → PDF file, while MySQL DB stores only metadata (file ID, path, title, etc.)
+
+root folder rde_system
+Automatically create a folder when there is new event added 
+Automatically create a folder for each center naming CSRDC, LRDC, FRDC, FITRDC, SSRDC, MATEC, COCO RDC, Extension Office
+
+Database schema for local storage
+researchfile
+endorsement
+files 
+chat_file   
+
+migration to drive
+-- migration_drive.sql
+ALTER TABLE researchfile 
+ADD COLUMN drive_file_id VARCHAR(255),
+ADD COLUMN drive_view_url VARCHAR(500),
+ADD COLUMN drive_download_url VARCHAR(500),
+ADD COLUMN drive_folder_id VARCHAR(255),
+ADD COLUMN drive_event_folder_id VARCHAR(255),
+ADD COLUMN drive_center_folder_id VARCHAR(255);
+
+ALTER TABLE endorsement 
+ADD COLUMN drive_file_id VARCHAR(255),
+ADD COLUMN drive_view_url VARCHAR(500),
+ADD COLUMN drive_download_url VARCHAR(500);
+
+ALTER TABLE files 
+ADD COLUMN drive_file_id VARCHAR(255),
+ADD COLUMN drive_view_url VARCHAR(500);
+
+ALTER TABLE chat_file 
+ADD COLUMN drive_file_id VARCHAR(255),
+ADD COLUMN drive_view_url VARCHAR(500);
+
+ALTER TABLE systemfiles 
+ADD COLUMN drive_file_id VARCHAR(255),
+ADD COLUMN drive_view_url VARCHAR(500);
+
+-- Add indexes for faster lookups
+CREATE INDEX idx_drive_file_id ON researchfile(drive_file_id);
+CREATE INDEX idx_drive_folder_id ON researchfile(drive_folder_id);
+CREATE INDEX idx_drive_file_id_endorsement ON endorsement(drive_file_id);
+
+
+gdrive to be look like
+rde_system/ (Root)
+├── Event 1 - Research Summit 2024/
+│   ├── CSRDC/
+│   │   ├── research_paper_1.pdf
+│   │   └── research_paper_2.pdf
+│   ├── LRDC/
+│   │   └── research_paper_3.pdf
+│   └── Extension Office/
+│       └── extension_paper_1.pdf
+├── Event 2 - Extension Congress 2024/
+│   ├── CSRDC/
+│   │   └── research_paper_4.pdf
+│   └── COCO RDC/
+│       └── coco_paper_1.pdf
+└── Event 3 - Annual Research Forum/
+    ├── FITRDC/
+    │   └── tech_paper_1.pdf
+    └── SSRDC/
+        └── social_paper_1.pdf

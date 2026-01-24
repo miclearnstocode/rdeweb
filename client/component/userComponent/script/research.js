@@ -905,6 +905,7 @@ const CreateNew = () => {
             ]
         }))
     }
+    
     const Filter=(dataM)=>{
         const fil={
             message:'',
@@ -1011,56 +1012,79 @@ const CreateNew = () => {
                     
                     /* Adding a method to the Array object. */
                     addMethod()
-                    const fl=Filter(data)
-                    if(fl.state){
+                    // Find this section in research.js (around lines 1040-1080)
+                    const fl = Filter(data)
+                    if (fl.state) {
                         data.research.push(Temp)
                         const form = new FormData();
                         form.append('uploadedFileEndorsement', data.endorsement)
                         form.append('eventType', data.event)
-
+                        
                         data.research.forEach(val => {
                             form.append('researchDocs[]', val.attachment)
                             form.append('title[]', val.title)
                             form.append('category[]', val.category)
                             form.append('author[]', val.author)
-                            form.append('coAuthor[]',JSON.stringify(val.coAuhtor))
+                            form.append('coAuthor[]', JSON.stringify(val.coAuhtor))
                         })
-
-
+                        
                         form.append('uploadResearch', 'true')
                         let loading = Waiting()
                         document.body.appendChild(loading)
+                        
                         const remove = () => {
                             loading.remove()
                         }
-                        await fetch('/getresearch', {
-                            method: 'POST',
-                            body: form
-                        }).then(res => {
-                            if (res.ok) {
-                                remove()
-                                return res.json()
+                        
+                        try {
+                            const response = await fetch('/getresearch', {
+                                method: 'POST',
+                                body: form
+                            });
+                            
+                            // First check if response is OK
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
                             }
-                        })
-                            .then(dat => {
-                                if (dat.status) {
-                                    document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                        window.location.reload()
-                                    }))
-                                } else {
-                                    document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                        window.location.reload()
-                                    }))
-                                }
-                            }).catch(err => {
-                                remove()
-                                console.error('Error uploading research:', err)
-                                alert('Error uploading document. Please try again.')
-                            })
-                    }else{
+                            
+                            // Try to parse as JSON
+                            const contentType = response.headers.get('content-type');
+                            if (!contentType || !contentType.includes('application/json')) {
+                                // If not JSON, read as text to see what we got
+                                const text = await response.text();
+                                console.error('Non-JSON response:', text.substring(0, 500));
+                                throw new Error('Server returned non-JSON response. Please check server logs.');
+                            }
+                            
+                            const dat = await response.json();
+                            
+                            remove();
+                            
+                            if (dat.status) {
+                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                    window.location.reload()
+                                }))
+                            } else {
+                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                    window.location.reload()
+                                }))
+                            }
+                        } catch (err) {
+                            remove();
+                            console.error('Error uploading research:', err);
+                            
+                            // Provide user-friendly error message
+                            if (err.message.includes('non-JSON') || err.message.includes('<br />')) {
+                                alert('Server error: Please contact administrator. The system returned an invalid response.');
+                            } else if (err.message.includes('HTTP error')) {
+                                alert('Network error: Please check your connection and try again.');
+                            } else {
+                                alert('Error uploading document. Please try again.');
+                            }
+                        }
+                    } else {
                         alert(fl.message)
                     }
-
                 }
             }
         }))
@@ -1895,17 +1919,210 @@ const Submitted = () => {
                 },
                 text:dt[0]+' '+month+', '+dt[2]+' | '+TimeConvert(time)
             })
-            const EventType=$({
-                tag:'div',
-                style:{
-                    color:'black',
-                    textShadow:'0 0 .5vw white',
-                    fontFamily:'arial black,sans-serif',
-                    fontSize:'1.3vw',
+            const EventType = $({
+                tag: 'div',
+                style: {
+                    color: 'black',
+                    textShadow: '0 0 .5vw white',
+                    fontFamily: 'arial black,sans-serif',
+                    fontSize: '1.3vw',
                 },
-                text:eventType
+                text: eventType,
+                elementHandler: (el) => {
+                    if (status === 'rejected') {
+                        el.style.backgroundImage = 'linear-gradient(to right,#faa,transparent)';
+                        el.style.color = '#d32f2f';
+                    } else if (status === null || status === '') {
+                        el.style.backgroundImage = 'linear-gradient(to right,#FF9800,transparent)';
+                        el.style.color = '#FF9800';
+                    } else {
+                        el.style.backgroundImage = 'linear-gradient(to right,#4CAF50,transparent)';
+                        el.style.color = '#2E7D32';
+                    }
+                }
             })
 
+            //notification based on status
+            setTimeout(() => {
+                // Check if popup container exists, if not create it
+                let popupContainer = document.querySelector('.popup-container');
+                if (!popupContainer) {
+                    popupContainer = $({
+                        tag: 'div',
+                        att: {
+                            className: 'popup-container'
+                        },
+                        style: {
+                            position: 'fixed',
+                            top: '10vh',
+                            right: '2vw',
+                            zIndex: '10000',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-end',
+                            gap: '0.8vw'
+                        }
+                    });
+                    document.body.appendChild(popupContainer);
+                }
+                
+                // Remove any existing popup for this document (to avoid duplicates)
+                const existingPopups = document.querySelectorAll('.status-popup');
+                existingPopups.forEach(popup => {
+                    if (popup.getAttribute('data-doc-id') === docId) {
+                        popup.remove();
+                    }
+                });
+                
+                if (status === 'rejected') {
+                    const popup = createPopup({
+                        type: 'rejected',
+                        title: 'Document Rejected',
+                        message: 'View your correction and resubmit',
+                        docId: docId
+                    });
+                    popupContainer.appendChild(popup);
+                    
+                } else if (status === 'accepted' || status === 'approved') {
+                    const successPopup = createPopup({
+                        type: 'success',
+                        title: 'Document Accepted',
+                        message: 'Your document has been approved',
+                        docId: docId
+                    });
+                    popupContainer.appendChild(successPopup);
+                    
+                } else if (status === null || status === '') {
+                    const pendingPopup = createPopup({
+                        type: 'pending',
+                        title: 'Document Pending',
+                        message: 'Waiting for review and acceptance',
+                        docId: docId
+                    });
+                    popupContainer.appendChild(pendingPopup);
+                }
+            }, 300);
+
+            // Helper function to create consistent popups
+            function createPopup({ type, title, message, icon, docId }) {
+                const popup = $({
+                    tag: 'div',
+                    att: {
+                        className: `status-popup ${type}-popup`,
+                        'data-doc-id': docId
+                    },
+                    style: {
+                        background: (type === 'rejected') ? 'linear-gradient(45deg, #ff4444, #cc0000)' :
+                                (type === 'success') ? 'linear-gradient(45deg, #4CAF50, #2E7D32)' :
+                                'linear-gradient(45deg, #FF9800, #F57C00)',
+                        color: 'white',
+                        padding: '1vw 1.5vw',
+                        borderRadius: '0.5vw',
+                        boxShadow: (type === 'rejected') ? '0 0.5vw 1vw rgba(255, 68, 68, 0.3)' :
+                                (type === 'success') ? '0 0.5vw 1vw rgba(76, 175, 80, 0.3)' :
+                                '0 0.5vw 1vw rgba(255, 152, 0, 0.3)',
+                        maxWidth: '25vw',
+                        minWidth: '20vw',
+                        borderLeft: (type === 'rejected') ? '0.5vw solid #ff8888' :
+                                    (type === 'success') ? '0.5vw solid #81C784' :
+                                    '0.5vw solid #FFB74D',
+                        fontFamily: "'arial', sans-serif",
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1vw',
+                        animation: 'slideInRight 0.3s ease-out',
+                        margin: '0'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                fontSize: '1.5vw',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                minWidth: '1.5vw'
+                            },
+                            text: icon
+                        }),
+                        $({
+                            tag: 'div',
+                            att: {
+                                className: 'popup-content'
+                            },
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                flex: '1',
+                                minWidth: '0'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'popup-title'
+                                    },
+                                    style: {
+                                        fontWeight: 'bold',
+                                        fontSize: '1.1vw',
+                                        marginBottom: '0.2vw',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    },
+                                    text: title
+                                }),
+                                $({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'popup-message'
+                                    },
+                                    style: {
+                                        fontSize: '0.9vw',
+                                        opacity: '0.9',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    },
+                                    text: message
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            att: {
+                                className: 'fa-solid fa-xmark popup-close'
+                            },
+                            style: {
+                                marginLeft: 'auto',
+                                cursor: 'pointer',
+                                fontSize: '1vw',
+                                opacity: '0.8',
+                                transition: 'opacity 0.2s',
+                                minWidth: '1vw'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    popup.classList.add('fade-out');
+                                    setTimeout(() => popup.remove(), 500);
+                                }
+                            }
+                        })
+                    ]
+                });
+                
+                // Auto-remove after appropriate time
+                const autoRemoveTime = (type === 'rejected') ? 10000 : 5000;
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        popup.classList.add('fade-out');
+                        setTimeout(() => popup.remove(), 500);
+                    }
+                }, autoRemoveTime);
+                
+                return popup;
+            }
 
             const ViewEndorsement=$({
                 tag:'div',
@@ -1923,25 +2140,37 @@ const Submitted = () => {
                         mainPanel.appendChild(ViewEn())
                     }
                 },
-                child:[
+                child: [
                     $({
-                        tag:'div',
-                        text:(status!=='rejected')?'View Endorsement':"View Correction",
-                        style:{
-                            fontFamily:'arial,sans-serif',
-                            marginLeft:'.5vw',
+                        tag: 'div',
+                        text: (status === 'rejected') ? 'View Correction' : 
+                            (status === null || status === '') ? 'Waiting for Acceptance' : "Accepted",
+                        style: {
+                            fontFamily: 'arial,sans-serif',
+                            marginLeft: '.5vw',
                         },
-                        elementHandler:(el)=>{
-                            if(status==='rejected'){
-                                el.style.color='#f33'
+                        elementHandler: (el) => {
+                            if (status === 'rejected') {
+                                el.style.color = '#f33';
+                                el.style.fontWeight = 'bold';
+                                el.style.animation = 'shake 0.5s ease-in-out';
+                                setTimeout(() => {
+                                    el.style.animation = '';
+                                }, 500);
+                            } else if (status === null || status === '') {
+                                el.style.color = '#FF9800'; // Orange color for waiting
+                                el.style.fontWeight = 'bold';
+                                el.style.textShadow = '0 0 0.5vw rgba(255, 152, 0, 0.5)';
+                                el.style.fontStyle = 'italic';
+                            } else {
+                                el.style.color = '#4CAF50'; // Green color for accepted
+                                el.style.fontWeight = 'bold';
+                                el.style.textShadow = '0 0 0.5vw rgba(76, 175, 80, 0.5)';
                             }
                         }
                     })
                 ]
             })
-
-
-
 
             const researchDocs=({resTitle,author,coAuthor,category,file,resId})=>{
 
@@ -1971,19 +2200,14 @@ const Submitted = () => {
                     }))
                 }
                 let resDo
-
                 const getResDo=async (el)=>{
-
                     resDo=el
                 }
-
                 const control=()=>{
                     let resNode
                     const getResason=(el)=>{
                         resNode=el
                     }
-
-
                     const button=({icon,text,method})=>{
                         return($({
                             tag:'div',
@@ -2040,9 +2264,7 @@ const Submitted = () => {
                                                 overflowWrap:'break-word'
                                             },
                                             elementHandler: (el)=>{
-
                                                 const comment=(data)=>{
-
                                                     return($({
                                                         tag:'div',
                                                         elementHandler:(elCom)=>{
