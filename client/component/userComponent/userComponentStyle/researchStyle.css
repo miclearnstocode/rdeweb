@@ -955,3 +955,12 @@
     background: linear-gradient(to right, #FF9800, transparent) !important;
     color: #FF9800 !important;
 }
+.drive-open-link:hover {
+    background-color: #3367d6 !important;
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+}
+
+.drive-open-link:active {
+    transform: scale(0.95);
+}

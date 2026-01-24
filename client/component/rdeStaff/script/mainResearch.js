@@ -1654,7 +1654,7 @@ export const ResearchMain = () => {
 
                                     event: () => {
 
-                                        mainFrame.appendChild(viewer())
+                                        mainFrame.appendChild(Viewer())
 
                                     },
                                     tooltip:'Open File'
@@ -1792,99 +1792,178 @@ export const ResearchMain = () => {
                     ]
                 }))
             }
-            const viewer = () => {
-                let viewPan
-                const container = $({
+            const Viewer = () => {
+                let viewerMain
+                const getViewer = (el) => {
+                    viewerMain = el
+                }
+
+                const closeView = $({
                     tag: 'div',
                     style: {
-                        width: '90%',
-                        height: '90%'
+                        width: '80%',
+                        margin: 'auto',
+                        marginTop: '1vh'
                     },
                     child: [
                         $({
-                            tag: 'object',
-                            style: {
-                                width: '100%',
-                                height: '100%'
-                            },
-                            att: {
-                                type: 'application/pdf',
-                                data: file.replace('..', '')
-                            }
-                        }),
-                        $({
                             tag: 'div',
-                            style: {
-                                height: '10%',
-                                width: '100%',
-                                display: 'flex',
-                                justifyContent: 'center'
+                            text: ' Close',
+                            att: {
+                                className: 'fa-solid fa-right-from-bracket',
                             },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        height: '100%',
-                                        width: 'fit-content',
-                                        paddingLeft: '1vw',
-                                        paddingRight: '1vw',
-                                        cursor: 'pointer'
-                                    },
-                                    att: {
-                                        className: 'exitView'
-                                    },
-                                    child: [
-                                        $({
-                                            tag: 'div',
-                                            att: {
-                                                className: 'fa-solid fa-right-from-bracket'
-                                            },
-                                            style: {
-                                                margin: 'auto',
-                                                marginRight: '1vw',
-                                                fontSize: '2vw'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'div',
-                                            text: 'Exit',
-                                            style: {
-                                                fontFamily: 'arial black,sans-serif',
-                                                fontSize: '1.5vw',
-                                                margin: 'auto',
-                                            }
-                                        })
-                                    ],
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            viewPan.remove()
-                                        }
-                                    }
-                                })
-                            ]
+                            style: {
+                                fontSize: '2vw',
+                                cursor: 'pointer',
+                                color: 'deepskyblue'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    viewerMain.remove()
+                                }
+                            }
                         })
-                    ]
+                    ],
                 })
+                
+                // Check if it's a Google Drive URL
+                const isGoogleDriveUrl = file && file.includes('drive.google.com')
+                
+                let frame
+                
+                if (isGoogleDriveUrl) {
+                    // Create a container for the viewer
+                    frame = $({
+                        tag: 'div',
+                        style: {
+                            width: '80%',
+                            height: '90%',
+                            margin: 'auto',
+                            marginTop: '1vh'
+                        },
+                        elementHandler: (el) => {
+                            // Create the embed URL properly
+                            const fileIdMatch = file.match(/\/d\/([a-zA-Z0-9_-]+)/)
+                            
+                            if (fileIdMatch && fileIdMatch[1]) {
+                                const fileId = fileIdMatch[1]
+                                const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
+                                
+                                // Create iframe with proper attributes
+                                const iframe = document.createElement('iframe')
+                                iframe.src = embedUrl
+                                iframe.style.width = '100%'
+                                iframe.style.height = '100%'
+                                iframe.style.border = 'none'
+                                iframe.allow = 'autoplay'
+                                iframe.title = 'Google Drive Document Viewer'
+                                
+                                // Add error handling
+                                iframe.onload = () => {
+                                    console.log('Google Drive iframe loaded')
+                                }
+                                
+                                iframe.onerror = () => {
+                                    // If iframe fails, show alternative options
+                                    el.innerHTML = `
+                                        <div style="
+                                            color: white; 
+                                            font-family: Arial, sans-serif; 
+                                            padding: 20px;
+                                            text-align: center;
+                                            background: rgba(0,0,0,0.7);
+                                            border-radius: 10px;
+                                            margin: 20px;
+                                        ">
+                                            <h3>Document Access Required</h3>
+                                            <p>This Google Drive document requires permission to view.</p>
+                                            <div style="margin: 20px 0;">
+                                                <a href="${file}" 
+                                                target="_blank" 
+                                                style="
+                                                    display: inline-block;
+                                                    padding: 10px 20px;
+                                                    background: deepskyblue;
+                                                    color: white;
+                                                    text-decoration: none;
+                                                    border-radius: 5px;
+                                                    margin: 5px;
+                                                ">
+                                                    Open in Google Drive
+                                                </a>
+                                                <button onclick="location.reload()" 
+                                                        style="
+                                                            padding: 10px 20px;
+                                                            background: #555;
+                                                            color: white;
+                                                            border: none;
+                                                            border-radius: 5px;
+                                                            margin: 5px;
+                                                            cursor: pointer;
+                                                        ">
+                                                    Try Again
+                                                </button>
+                                            </div>
+                                            <p><small>You may need to request access or sign in with the appropriate account</small></p>
+                                        </div>
+                                    `
+                                }
+                                
+                                el.appendChild(iframe)
+                            } else {
+                                // Invalid Google Drive URL format
+                                el.innerHTML = `
+                                    <div style="
+                                        color: white; 
+                                        text-align: center;
+                                        padding: 20px;
+                                    ">
+                                        <p>Invalid Google Drive URL format</p>
+                                        <a href="${file}" 
+                                        target="_blank" 
+                                        style="color: deepskyblue;">
+                                            Open link directly
+                                        </a>
+                                    </div>
+                                `
+                            }
+                        }
+                    })
+                } else {
+                    // For local PDF files
+                    frame = $({
+                        tag: 'object',
+                        att: {
+                            className: 'frameViewer',
+                            data: '/' + file,
+                            type: 'application/pdf'
+                        },
+                        style: {
+                            width: '80%',
+                            height: '90%',
+                            margin: 'auto',
+                            marginTop: '1vh'
+                        }
+                    })
+                }
+                
                 return ($({
                     tag: 'div',
                     style: {
-                        position: 'absolute',
-                        left: '0',
-                        top: '0',
                         width: '100%',
-                        height: '99.5%',
-                        backgroundColor: '#222',
-                        display: 'flex',
-                        justifyContent: 'center'
+                        height: '100%',
+                        position: 'absolute',
+                        zIndex: '3',
+                        backgroundColor: '#333',
+                        top: '0',
+                        left: '0',
+                        textAlign: 'center'
                     },
-                    elementHandler: (el) => {
-                        viewPan = el
-                    },
+                    elementHandler: getViewer,
                     child: [
-                        container
+                        frame,
+                        closeView,
                     ]
                 }))
             }

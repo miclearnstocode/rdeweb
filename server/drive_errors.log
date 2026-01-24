@@ -417,3 +417,84 @@ Stack trace:
 [21-Jan-2026 17:06:29 Asia/Manila] Uploading file: sample-local-pdf.pdf to folder: 10UCHSptK5ncRW-LWYMMnToCqmv93XcpD
 [21-Jan-2026 17:06:32 Asia/Manila] Making file public: 15sf5ikTuYI-JbJKup4L3yrk8kSmqOIfY
 [24-Jan-2026 08:46:13 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 847
+[24-Jan-2026 09:23:44 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 815
+[24-Jan-2026 09:23:52 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 815
+[24-Jan-2026 09:24:03 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2128
+[24-Jan-2026 09:24:05 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2128
+[24-Jan-2026 14:56:05 Asia/Manila] === START rejectIndorse ===
+[24-Jan-2026 14:56:05 Asia/Manila] POST data: Array
+(
+    [docId] => 502
+    [fileUrl] => https://drive.google.com/file/d/1uob-nMmOVQqJU2qCdggL0mbNpwad3k4i/view?usp=drivesdk
+    [reasonEnd] => indi pwd
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[24-Jan-2026 14:56:05 Asia/Manila] Session ID: 1657588904430
+[24-Jan-2026 14:56:05 Asia/Manila] Database connected successfully
+[24-Jan-2026 14:56:05 Asia/Manila] Column 'rejected_by' EXISTS in researchfile table
+[24-Jan-2026 14:56:05 Asia/Manila] PHP Warning:  Undefined variable $detailedReason in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2747
+[24-Jan-2026 14:56:09 Asia/Manila] Email sent successfully to estorque.michael@student.capsu.edu.ph
+[24-Jan-2026 14:56:41 Asia/Manila] PHP Warning:  unlink(): http does not allow unlinking in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2813
+[24-Jan-2026 15:21:25 Asia/Manila] Endorsement upload error: Unknown column 'cat.center_id' in 'on clause'
+[24-Jan-2026 15:24:58 Asia/Manila] PHP Warning:  Undefined variable $folderName in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 106
+[24-Jan-2026 15:24:58 Asia/Manila] Creating endorsement folder:  for event: 38th University Faculty In-House Review
+[24-Jan-2026 15:24:58 Asia/Manila] PHP Warning:  Undefined variable $folderName in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 109
+[24-Jan-2026 15:25:01 Asia/Manila] Event folder created: 1b9Zg1h9qP2gePB9nkIqaXUJWLV0GX3kt for 38th University Faculty In-House Review
+[24-Jan-2026 15:25:01 Asia/Manila] PHP Deprecated:  str_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\Users\Cogito\Documents\rdeweb\config\driver_config.php on line 50
+[24-Jan-2026 15:25:02 Asia/Manila] Center folder created: 1H_UGXGFL5eBpzjxiZSI_s-Xdad2f2DKl for 
+[24-Jan-2026 15:25:02 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 1H_UGXGFL5eBpzjxiZSI_s-Xdad2f2DKl
+[24-Jan-2026 15:25:06 Asia/Manila] Making file public: 1i6Juqgac7lUm5nL4YvWEWYuRuOrXJ2nh
+[24-Jan-2026 15:25:06 Asia/Manila] File 1i6Juqgac7lUm5nL4YvWEWYuRuOrXJ2nh is already public
+[24-Jan-2026 15:25:06 Asia/Manila] Test embed URL: https://drive.google.com/file/d/1i6Juqgac7lUm5nL4YvWEWYuRuOrXJ2nh/preview
+[24-Jan-2026 15:25:06 Asia/Manila] Generated URLs for file 1i6Juqgac7lUm5nL4YvWEWYuRuOrXJ2nh:
+[24-Jan-2026 15:25:06 Asia/Manila] - Embed URL: https://drive.google.com/file/d/1i6Juqgac7lUm5nL4YvWEWYuRuOrXJ2nh/preview
+[24-Jan-2026 15:25:06 Asia/Manila] - View URL: https://drive.google.com/file/d/1i6Juqgac7lUm5nL4YvWEWYuRuOrXJ2nh/view
+[24-Jan-2026 15:25:06 Asia/Manila] - Direct download: https://drive.google.com/uc?id=1i6Juqgac7lUm5nL4YvWEWYuRuOrXJ2nh&export=download
+[24-Jan-2026 15:25:06 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 305
+[24-Jan-2026 15:25:06 Asia/Manila] PHP Warning:  Undefined variable $folderName in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 116
+[24-Jan-2026 15:25:06 Asia/Manila] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 182
+[24-Jan-2026 15:25:06 Asia/Manila] Creating research folder structure for: 38th University Faculty In-House Review / Research_1769239506
+[24-Jan-2026 15:25:07 Asia/Manila] Event folder created: 1b9Zg1h9qP2gePB9nkIqaXUJWLV0GX3kt for 38th University Faculty In-House Review
+[24-Jan-2026 15:25:08 Asia/Manila] Center folder created: 1LxQYjDoxCEZ5tBi1O5dHGvYD6qPs_K1X for Research_1769239506
+[24-Jan-2026 15:25:08 Asia/Manila] Uploading file: sample-local-pdf.pdf to folder: 1LxQYjDoxCEZ5tBi1O5dHGvYD6qPs_K1X
+[24-Jan-2026 15:25:12 Asia/Manila] Making file public: 1GrEkvdTYEJ02pyY3VoJyOitYss_h8dUL
+[24-Jan-2026 15:25:12 Asia/Manila] File 1GrEkvdTYEJ02pyY3VoJyOitYss_h8dUL is already public
+[24-Jan-2026 15:25:12 Asia/Manila] Test embed URL: https://drive.google.com/file/d/1GrEkvdTYEJ02pyY3VoJyOitYss_h8dUL/preview
+[24-Jan-2026 15:25:12 Asia/Manila] Generated URLs for file 1GrEkvdTYEJ02pyY3VoJyOitYss_h8dUL:
+[24-Jan-2026 15:25:12 Asia/Manila] - Embed URL: https://drive.google.com/file/d/1GrEkvdTYEJ02pyY3VoJyOitYss_h8dUL/preview
+[24-Jan-2026 15:25:12 Asia/Manila] - View URL: https://drive.google.com/file/d/1GrEkvdTYEJ02pyY3VoJyOitYss_h8dUL/view
+[24-Jan-2026 15:25:12 Asia/Manila] - Direct download: https://drive.google.com/uc?id=1GrEkvdTYEJ02pyY3VoJyOitYss_h8dUL&export=download
+[24-Jan-2026 15:44:17 Asia/Manila] First category for endorsement: Coconut Research and Development Center (Coco RDC)
+[24-Jan-2026 15:44:17 Asia/Manila] All categories: Array
+(
+    [0] => Coconut Research and Development Center (Coco RDC)
+)
+
+[24-Jan-2026 15:44:17 Asia/Manila] Creating endorsement folder structure for: 38th University Faculty In-House Review - Center: Coconut Research and Development Center (Coco RDC) - Code: CocoRDC - Folder: CocoRDC_Endorsement_Letter
+[24-Jan-2026 15:44:19 Asia/Manila] Event folder created: 1-Do6LdPlKF0dUUZHbz7duD_HCEQGyR8y for 38th University Faculty In-House Review
+[24-Jan-2026 15:44:20 Asia/Manila] Center folder created: 1kI2AwsmR8NR52f83OoSAGJloP-BCHhBP for CocoRDC_Endorsement_Letter
+[24-Jan-2026 15:44:20 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 1kI2AwsmR8NR52f83OoSAGJloP-BCHhBP
+[24-Jan-2026 15:44:23 Asia/Manila] Making file public: 1ULfMw1SXKCc8qh7l_-5Y8BzOCYpD6Rr4
+[24-Jan-2026 15:44:23 Asia/Manila] File 1ULfMw1SXKCc8qh7l_-5Y8BzOCYpD6Rr4 is already public
+[24-Jan-2026 15:44:23 Asia/Manila] Test embed URL: https://drive.google.com/file/d/1ULfMw1SXKCc8qh7l_-5Y8BzOCYpD6Rr4/preview
+[24-Jan-2026 15:44:23 Asia/Manila] Generated URLs for file 1ULfMw1SXKCc8qh7l_-5Y8BzOCYpD6Rr4:
+[24-Jan-2026 15:44:23 Asia/Manila] - Embed URL: https://drive.google.com/file/d/1ULfMw1SXKCc8qh7l_-5Y8BzOCYpD6Rr4/preview
+[24-Jan-2026 15:44:23 Asia/Manila] - View URL: https://drive.google.com/file/d/1ULfMw1SXKCc8qh7l_-5Y8BzOCYpD6Rr4/view
+[24-Jan-2026 15:44:23 Asia/Manila] - Direct download: https://drive.google.com/uc?id=1ULfMw1SXKCc8qh7l_-5Y8BzOCYpD6Rr4&export=download
+[24-Jan-2026 15:44:23 Asia/Manila] Endorsement folder created with center code: CocoRDC
+[24-Jan-2026 15:44:23 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 335
+[24-Jan-2026 15:44:23 Asia/Manila] Creating research folder structure for: 38th University Faculty In-House Review / Coconut Research and Development Center Coco RDC
+[24-Jan-2026 15:44:24 Asia/Manila] Event folder created: 1-Do6LdPlKF0dUUZHbz7duD_HCEQGyR8y for 38th University Faculty In-House Review
+[24-Jan-2026 15:44:25 Asia/Manila] Center folder created: 13VwodxMQnbvkY7LUSmqmvYPMA3KvM3dl for Coconut Research and Development Center Coco RDC
+[24-Jan-2026 15:44:25 Asia/Manila] Uploading file: sample-local-pdf.pdf to folder: 13VwodxMQnbvkY7LUSmqmvYPMA3KvM3dl
+[24-Jan-2026 15:44:28 Asia/Manila] Making file public: 14HajOYTknHZCAXaPPBekci01M4mZJfv6
+[24-Jan-2026 15:44:28 Asia/Manila] File 14HajOYTknHZCAXaPPBekci01M4mZJfv6 is already public
+[24-Jan-2026 15:44:28 Asia/Manila] Test embed URL: https://drive.google.com/file/d/14HajOYTknHZCAXaPPBekci01M4mZJfv6/preview
+[24-Jan-2026 15:44:28 Asia/Manila] Generated URLs for file 14HajOYTknHZCAXaPPBekci01M4mZJfv6:
+[24-Jan-2026 15:44:28 Asia/Manila] - Embed URL: https://drive.google.com/file/d/14HajOYTknHZCAXaPPBekci01M4mZJfv6/preview
+[24-Jan-2026 15:44:28 Asia/Manila] - View URL: https://drive.google.com/file/d/14HajOYTknHZCAXaPPBekci01M4mZJfv6/view
+[24-Jan-2026 15:44:28 Asia/Manila] - Direct download: https://drive.google.com/uc?id=14HajOYTknHZCAXaPPBekci01M4mZJfv6&export=download
+[24-Jan-2026 16:51:59 Asia/Manila] PHP Warning:  Undefined array key "category" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 656
+[24-Jan-2026 16:56:02 Asia/Manila] PHP Warning:  Undefined array key "category" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 656

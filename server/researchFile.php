@@ -49,6 +49,55 @@ include('db.php');
     include_once('Mailer/MailSender.php');
 date_default_timezone_set('Asia/Manila');
 
+// Function to get center code from center name (fixed mapping)
+function getCenterCode($centerName) {
+    // Mapping of full center names to their codes
+    $centerMapping = [
+        'Crop Science Research & Developement Center' => 'CSRDC',
+        'Crop Science Research & Development Center' => 'CSRDC', // Alternative spelling
+        'Livestock Research & Development Center' => 'LRDC',
+        'Fisheries Research & Development Center' => 'FRDC',
+        'Food and Industrial Technology Research & Development Center' => 'FIRDC',
+        'Food and Industrial Technology Research & Developm...' => 'FIRDC', // Truncated version
+        'Social Science Research & Development Center' => 'SSRDC',
+        'Machinery and Agricultural Technology Engineering Center' => 'MATEC',
+        'Coconut Research and Development Center' => 'CocoRDC',
+        'Coconut Research and Development Center (Coco RDC)' => 'CocoRDC',
+        'Extension' => 'EXT'
+    ];
+    
+    // Try exact match first
+    if (isset($centerMapping[$centerName])) {
+        return $centerMapping[$centerName];
+    }
+    
+    // Try partial match for truncated names
+    foreach ($centerMapping as $key => $code) {
+        if (strpos($centerName, substr($key, 0, 20)) !== false) {
+            return $code;
+        }
+    }
+    
+    // Try to extract code from name (e.g., "Coconut Research and Development Center (Coco RDC)")
+    if (preg_match('/\(([^)]+)\)/', $centerName, $matches)) {
+        $code = preg_replace('/[^a-zA-Z]/', '', $matches[1]);
+        if (!empty($code)) {
+            return $code;
+        }
+    }
+    
+    // Extract initials as fallback
+    $words = explode(' ', $centerName);
+    $code = '';
+    foreach ($words as $word) {
+        if (ctype_upper(substr($word, 0, 1))) {
+            $code .= substr($word, 0, 1);
+        }
+    }
+    
+    return !empty($code) ? $code : 'END';
+}
+
 function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $type = 'research') {
     try {
         // Check if file exists
@@ -63,32 +112,33 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         }
         
         // Include Drive config
-        $driveConfigPath = __DIR__ . '/../config/driver_config.php'; // Fixed filename
+        $driveConfigPath = __DIR__ . '/../config/driver_config.php';
         if (!file_exists($driveConfigPath)) {
             throw new Exception("Google Drive configuration not found at: $driveConfigPath");
         }
         
         require_once $driveConfigPath;
         
-        // Check if GoogleDriveService class exists
         if (!class_exists('GoogleDriveService')) {
             throw new Exception("GoogleDriveService class not found");
         }
         
         $drive = new GoogleDriveService();
         
-        // For endorsement letters, use a different folder structure
+        // For endorsement letters, use center code for folder name
         if ($type === 'endorsement') {
-            // Create folder structure: Event → Endorsement_Letters
-            error_log("Creating endorsement folder structure for: $eventName");
-            $folders = $drive->createResearchFolderStructure($eventName, 'Endorsement_Letters');
+            // Get center code from mapping
+            $centerCode = getCenterCode($centerName);
+            $endorsementFolderName = $centerCode . '_Endorsement_Letter';
+            
+            error_log("Creating endorsement folder structure for: $eventName - Center: $centerName - Code: $centerCode - Folder: $endorsementFolderName");
+            $folders = $drive->createResearchFolderStructure($eventName, $endorsementFolderName);
             
             if (empty($folders['center_folder_id'])) {
                 throw new Exception("Failed to create endorsement folder structure");
             }
         } else {
-            // For research papers: Event → Center (using category)
-            // Clean the center name for Google Drive compatibility
+            // For research papers: Event → Center (using category name)
             $cleanCenterName = cleanFolderNameForDrive($centerName);
             error_log("Creating research folder structure for: $eventName / $cleanCenterName");
             
@@ -107,7 +157,7 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
             $folders['center_folder_id']
         );
 
-        // Check if upload was successful (new format includes 'success' key)
+        // Check if upload was successful
         if (!$uploadResult['success'] || empty($uploadResult['id'])) {
             $errorMsg = $uploadResult['error'] ?? "Upload failed: No file ID returned from Google Drive";
             throw new Exception($errorMsg);
@@ -117,24 +167,37 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         error_log("Making file public: " . $uploadResult['id']);
         $drive->makeFilePublic($uploadResult['id']);
         
-        // 4. Return success with all metadata
+        // Test if the file is actually accessible
+        $testUrl = "https://drive.google.com/file/d/{$uploadResult['id']}/preview";
+        error_log("Test embed URL: " . $testUrl);
+        
+        // 4. Generate proper URLs
+        $fileId = $uploadResult['id'];
+        $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $viewUrl = "https://drive.google.com/file/d/{$fileId}/view";
+        
+        // Log all URLs for debugging
+        error_log("Generated URLs for file $fileId:");
+        error_log("- Embed URL: $embedUrl");
+        error_log("- View URL: $viewUrl");
+        error_log("- Direct download: https://drive.google.com/uc?id={$fileId}&export=download");
+        
+        // 5. Return success with all metadata
         return [
             'success' => true,
             'drive_file_id' => $uploadResult['id'],
-            'drive_view_url' => $uploadResult['view_url'],
-            'drive_download_url' => $uploadResult['download_url'],
+            'drive_view_url' => $embedUrl,
+            'drive_download_url' => "https://drive.google.com/uc?id={$fileId}&export=download",
             'drive_folder_id' => $folders['center_folder_id'],
             'drive_event_folder_id' => $folders['event_folder_id'],
             'drive_center_folder_id' => $folders['center_folder_id'],
             'file_size' => $uploadResult['size'] ?? 0,
-            'file_name' => $uploadResult['name'] ?? $fileName
+            'file_name' => $uploadResult['name'] ?? $fileName,
+            'center_code' => $centerCode ?? null
         ];
         
     } catch (Exception $e) {
         error_log("Google Drive upload failed: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
-        
-        // DO NOT fall back to local storage - throw exception to fail the upload
         throw new Exception("Failed to upload to Google Drive: " . $e->getMessage());
     }
 }
@@ -220,13 +283,27 @@ if (isset($_POST['uploadResearch'])) {
                 
                 // Upload endorsement to Drive - ONLY Google Drive, no local fallback
                 try {
+                    // Get the first research category to determine the center
+                    $firstCategory = isset($_POST['category'][0]) ? $_POST['category'][0] : 'Extension';
+                    
+                    // Log for debugging
+                    error_log("First category for endorsement: $firstCategory");
+                    error_log("All categories: " . print_r($_POST['category'], true));
+                    
                     $endorsementDriveResult = uploadResearchToDrive(
                         $tempEndorsementPath,
                         $endorsementFileName,
                         $eventType,
-                        'Endorsement_Letters', // Simple folder name
+                        $firstCategory, // Use the first category to determine center
                         'endorsement'
                     );
+                    
+                    if (!$endorsementDriveResult['success']) {
+                        throw new Exception($endorsementDriveResult['error'] ?? 'Unknown error');
+                    }
+                    
+                    // Log the center code that was used
+                    error_log("Endorsement folder created with center code: " . ($endorsementDriveResult['center_code'] ?? 'Unknown'));
                     
                     if (!$endorsementDriveResult['success']) {
                         throw new Exception($endorsementDriveResult['error'] ?? 'Unknown error');
@@ -462,11 +539,8 @@ if (isset($_POST['acceptRequest'])) {
 
 
 if (isset($_POST['researchSubmit'])) {
-
     $response = new stdClass();
-
     $response->list = [];
-
     $response->userName = '';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
@@ -476,11 +550,13 @@ if (isset($_POST['researchSubmit'])) {
         $response->userName = $_SESSION['userName'];
         $evalId = $_SESSION['userId'];
 
-        // Always use eventId since we always have it UPDATED QUERY
+        // UPDATED QUERY to use Google Drive URLs
         $sqlQueries = "SELECT 
             researchfile.id,
             researchfile.author,
-            COALESCE(researchfile.drive_view_url, researchfile.file) as file,  // Fallback
+            researchfile.drive_view_url as file,
+            researchfile.drive_file_id,
+            researchfile.drive_download_url,
             researchfile.title,
             researchfile.event,
             researchfile.category,
@@ -497,104 +573,73 @@ if (isset($_POST['researchSubmit'])) {
         AND event_list.dead_line > CURRENT_TIMESTAMP";
 
         $stm = $con->prepare($sqlQueries);
-
         $stat = 'accepted';
-
-        // Bind parameters: status, category (5 times), eventId
         $stm->bind_param("ssssss", $stat, $category, $category, $category, $category, $eventId);
-
         $stm->execute();
-
         $resultRes = $stm->get_result();
 
         while ($val = $resultRes->fetch_assoc()) {
-
             $data = new stdClass();
-
             $data->status = NULL;
-
             $data->id = $val['id'];
-
             $data->author = $val['author'];
-
-            $data->file = $val['file'];
-
+            
+            // Use Google Drive URLs
+            $data->file = $val['file']; // drive_view_url
+            $data->drive_file_id = $val['drive_file_id'];
+            $data->drive_download_url = $val['drive_download_url'];
+            
             $data->title = $val['title'];
-
             $data->event = $val['event'];
-
             $data->category = $val['category'];
-
             $data->campus = $val['campus'];
             $data->eventId = $val['eventId'];
             $data->catId = $val['catId'];
 
+            // Initialize comment fields
             $data->intro = '';
-
             $data->abstract = '';
-
             $data->objective = '';
-
             $data->methodology = '';
-
             $data->results = '';
-
             $data->recommendation = '';
-
             $data->literature = '';
-
             $data->other = '';
 
             $comquery = "SELECT 
-    comments.intro,
-    comments.abstract,
-    comments.objective,
-    comments.methodology,
-    comments.results,
-    comments.recommendation,
-    comments.literature,
-    comments.other,
-    comments.date
-FROM comments WHERE comments.resid = ? AND comments.evalid = ? AND comments.eventType = ?";
+                comments.intro,
+                comments.abstract,
+                comments.objective,
+                comments.methodology,
+                comments.results,
+                comments.recommendation,
+                comments.literature,
+                comments.other,
+                comments.date
+            FROM comments WHERE comments.resid = ? AND comments.evalid = ? AND comments.eventType = ?";
 
             $statement = $con->prepare($comquery);
-
             $statement->bind_param('sss', $val['id'], $evalId, $val['event']);
-
             $statement->execute();
-
             $res = $statement->get_result();
 
             while ($v = $res->fetch_assoc()) {
-
                 $data->status = 'updated';
-
                 $data->intro = $v['intro'];
-
                 $data->abstract = $v['abstract'];
-
                 $data->objective = $v['objective'];
-
                 $data->methodology = $v['methodology'];
-
                 $data->results = $v['results'];
-
                 $data->recommendation = $v['recommendation'];
-
                 $data->literature = $v['literature'];
-
                 $data->other = $v['other'];
-
             }
 
             $response->list[] = $data;
-
         }
-
     }
 
     echo json_encode($response);
-
 }
 
 
@@ -835,10 +880,6 @@ function cleanCommentHtml($html) {
     return $plainText;
 }
 
-
-
-
-
 if (isset($_POST['researchReviewed'])) {
     $response = new stdClass();
     $response->list = [];
@@ -851,6 +892,8 @@ if (isset($_POST['researchReviewed'])) {
         foreach ($con->query($queryEndorsement) as $val) {
             $endorsement = new stdClass();
             $endorsement->endorsementFile = $val['drive_view_url']; // Use Drive URL
+            $endorsement->drive_file_id = $val['drive_file_id'] ?? null;
+            $endorsement->drive_download_url = $val['drive_download_url'] ?? null;
             $endorsement->eventType = $val['event'];
             $endorsement->date = $val['date'];
             $endorsement->status = $val['status'];
@@ -858,7 +901,7 @@ if (isset($_POST['researchReviewed'])) {
             $endorsement->ResearchDocs = [];
             $enID = $val['id'];
             
-            // UPDATED QUERY
+            // UPDATED QUERY for Google Drive
             $queryResearch = "SELECT 
                 researchfile.author,
                 researchfile.coauthor,
@@ -866,7 +909,12 @@ if (isset($_POST['researchReviewed'])) {
                 researchfile.id as docId,
                 researchfile.category,
                 researchfile.reviews,
-                COALESCE(researchfile.drive_view_url, researchfile.file) as file,  // Fallback
+                researchfile.drive_view_url as file,
+                researchfile.drive_file_id,
+                researchfile.drive_download_url,
+                researchfile.drive_folder_id,
+                researchfile.drive_event_folder_id,
+                researchfile.drive_center_folder_id,
                 researchfile.deletestate
             FROM `researchfile` WHERE `senderid`='$userId' AND `endorsementid`='$enID'";
             
@@ -878,7 +926,12 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->docId = $res['docId'];
                 $researchDocs->category = $res['category'];
                 $researchDocs->comment = $res['reviews'];
-                $researchDocs->researchFile = $res['file']; // This is now the Drive URL
+                $researchDocs->researchFile = $res['file']; // Google Drive URL
+                $researchDocs->drive_file_id = $res['drive_file_id'];
+                $researchDocs->drive_download_url = $res['drive_download_url'];
+                $researchDocs->drive_folder_id = $res['drive_folder_id'];
+                $researchDocs->drive_event_folder_id = $res['drive_event_folder_id'];
+                $researchDocs->drive_center_folder_id = $res['drive_center_folder_id'];
                 $researchDocs->deleteState = $res['deletestate'];
                 
                 $endorsement->ResearchDocs[] = $researchDocs;
@@ -1187,18 +1240,22 @@ if (isset($_POST['removeAccessRes'])) {
 
 
 //This method was used befor for viewing of endorsement letter
-
 if (isset($_POST['researchFileAdmin'])) {
     $response = new stdClass();
     $response->list = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         
-        // UPDATED QUERY
+        // UPDATED QUERY for Google Drive
         $queryAd = "SELECT 
             researchfile.id,
             researchfile.senderid,
             researchfile.author,
-            COALESCE(researchfile.drive_view_url, researchfile.file) as file,  // Fallback
+            researchfile.drive_view_url as file,
+            researchfile.drive_file_id,
+            researchfile.drive_download_url,
+            researchfile.drive_folder_id,
+            researchfile.drive_event_folder_id,
+            researchfile.drive_center_folder_id,
             researchfile.title,
             researchfile.category,
             researchfile.campus,
@@ -1215,7 +1272,12 @@ if (isset($_POST['researchFileAdmin'])) {
             $data->id = $val['id'];
             $data->senderId = $val['senderid'];
             $data->author = $val['author'];
-            $data->file = $val['file']; // This is now the Drive URL
+            $data->file = $val['file']; // Google Drive URL
+            $data->drive_file_id = $val['drive_file_id'];
+            $data->drive_download_url = $val['drive_download_url'];
+            $data->drive_folder_id = $val['drive_folder_id'];
+            $data->drive_event_folder_id = $val['drive_event_folder_id'];
+            $data->drive_center_folder_id = $val['drive_center_folder_id'];
             $data->title = $val['title'];
             $data->category = $val['category'];
             $data->campus = $val['campus'];
@@ -1250,14 +1312,17 @@ if (isset($_POST['getResearch'])) {
             if ($val['researchaccess'] !== null) {
                 $response->message = 'something';
                 
-                // Query for users with research access
+                // Query for users with research access - UPDATED for Google Drive
                 $query = "SELECT 
                     researchfile.id,
                     researchfile.author,
-                    COALESCE(researchfile.drive_view_url, researchfile.file) as file_url,
+                    researchfile.drive_view_url as file_url,
                     researchfile.drive_file_id,
                     researchfile.drive_view_url,
                     researchfile.drive_download_url,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id,
                     researchfile.title,
                     researchfile.category,
                     researchfile.campus,
@@ -1279,10 +1344,13 @@ if (isset($_POST['getResearch'])) {
                     $data = new stdClass();
                     $data->id = $row['id'];
                     $data->author = $row['author'];
-                    $data->file = $row['file_url'];
+                    $data->file = $row['file_url']; // Google Drive URL
                     $data->drive_file_id = $row['drive_file_id'];
                     $data->drive_view_url = $row['drive_view_url'];
                     $data->drive_download_url = $row['drive_download_url'];
+                    $data->drive_folder_id = $row['drive_folder_id'];
+                    $data->drive_event_folder_id = $row['drive_event_folder_id'];
+                    $data->drive_center_folder_id = $row['drive_center_folder_id'];
                     $data->title = $row['title'];
                     $data->category = $row['category'];
                     $data->campus = $row['campus'];
@@ -1298,21 +1366,24 @@ if (isset($_POST['getResearch'])) {
                     $data->accepted_by_email = null;
                     $data->rejected_date = $row['rejected_date'];
                     $data->accepted_date = $row['accepted_date'];
-                    $data->file_type = ($row['drive_view_url'] !== null) ? 'drive' : 'local';
+                    $data->file_type = 'drive'; // Always drive now
                     
                     $response->list[] = $data;
                 }
             } else {
                 $response->message = 'something';
                 
-                // Query for regular users (only their own files)
+                // Query for regular users - UPDATED for Google Drive
                 $query = "SELECT 
                     researchfile.id,
                     researchfile.author,
-                    COALESCE(researchfile.drive_view_url, researchfile.file) as file_url,
+                    researchfile.drive_view_url as file_url,
                     researchfile.drive_file_id,
                     researchfile.drive_view_url,
                     researchfile.drive_download_url,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id,
                     researchfile.title,
                     researchfile.category,
                     researchfile.campus,
@@ -1334,10 +1405,13 @@ if (isset($_POST['getResearch'])) {
                     $data = new stdClass();
                     $data->id = $row['id'];
                     $data->sender = $row['author'];
-                    $data->file = $row['file_url'];
+                    $data->file = $row['file_url']; // Google Drive URL
                     $data->drive_file_id = $row['drive_file_id'];
                     $data->drive_view_url = $row['drive_view_url'];
                     $data->drive_download_url = $row['drive_download_url'];
+                    $data->drive_folder_id = $row['drive_folder_id'];
+                    $data->drive_event_folder_id = $row['drive_event_folder_id'];
+                    $data->drive_center_folder_id = $row['drive_center_folder_id'];
                     $data->title = $row['title'];
                     $data->category = $row['category'];
                     $data->campus = $row['campus'];
@@ -1353,7 +1427,7 @@ if (isset($_POST['getResearch'])) {
                     $data->accepted_by_email = null;
                     $data->rejected_date = $row['rejected_date'];
                     $data->accepted_date = $row['accepted_date'];
-                    $data->file_type = ($row['drive_view_url'] !== null) ? 'drive' : 'local';
+                    $data->file_type = 'drive'; // Always drive now
                     
                     $response->list[] = $data;
                 }
@@ -1375,11 +1449,13 @@ if (isset($_POST['getEndorse'])) {
         foreach ($con->query("SELECT  `endorsement` FROM `account` WHERE `id`='$serderId'") as $val) {
             if ($val['endorsement'] !== null) {
                 
-                // UPDATED QUERY
+                // UPDATED QUERY for Google Drive
                 foreach ($con->query("SELECT 
                     researchfile.id,
                     researchfile.author,
-                    COALESCE(researchfile.drive_view_url, researchfile.file) as file,  // Fallback
+                    researchfile.drive_view_url as file,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
                     researchfile.endorsement,
                     researchfile.title,
                     researchfile.category,
@@ -1396,7 +1472,9 @@ if (isset($_POST['getEndorse'])) {
                     $data = new stdClass();
                     $data->id = $v['id'];
                     $data->author = $v['author'];
-                    $data->file = $v['file']; // This is now the Drive URL
+                    $data->file = $v['file']; // Google Drive URL
+                    $data->drive_file_id = $v['drive_file_id'];
+                    $data->drive_download_url = $v['drive_download_url'];
                     $data->endorsement = $v['endorsement'];
                     $data->userId = $serderId;
                     $data->signurl = $_SESSION['userEsign'];
@@ -2301,103 +2379,79 @@ if (isset($_POST['acceptDel'])) {
 
 
 //new Request
-
 if (isset($_POST['incomingEndorsement'])) {
-
     $response = [];
-
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $queries = "SELECT endorsement.id, 
-
-       endorsement.senderid,
-
-       endorsement.campus, 
-
-       endorsement.file, 
-
-       endorsement.event, 
-
-       endorsement.date,
-
-       account_detail.usertype,
-
-       account_detail.email
-
-FROM endorsement
-
-LEFT JOIN account_detail ON endorsement.senderid=account_detail.id
-
-WHERE `status`='forwarded' OR `status` IS NULL";
-
+            endorsement.senderid,
+            endorsement.campus, 
+            endorsement.drive_view_url as file, 
+            endorsement.drive_file_id,
+            endorsement.drive_download_url,
+            endorsement.event, 
+            endorsement.date,
+            account_detail.usertype,
+            account_detail.email
+        FROM endorsement
+        LEFT JOIN account_detail ON endorsement.senderid=account_detail.id
+        WHERE `status`='forwarded' OR `status` IS NULL";
+        
         foreach ($con->query($queries) as $val) {
-
             $data = new stdClass();
-
             $data->id = $val['id'];
-
             $data->senderid = $val['senderid'];
-
             $data->campus = $val['campus'];
-
-            $data->file = $val['file'];
-
+            $data->file = $val['file']; // Google Drive URL
+            $data->drive_file_id = $val['drive_file_id'];
+            $data->drive_download_url = $val['drive_download_url'];
             $data->event = $val['event'];
-
             $data->date = $val['date'];
-
-            $data->senderType=$val['usertype'];
-
-            $data->senderEmail=$val['email'];
-
-
-
+            $data->senderType = $val['usertype'];
+            $data->senderEmail = $val['email'];
             $data->researchDocs = [];
-
-
-
-
-
-//SELECT `id`, `senderid`, `author`, `title`, `file`, `event`,  `status`, `campus`,  `category` FROM `researchfile` WHERE `endorsementid`
-
-            $que = "";
-
-            foreach ($con->query("SELECT `id`, `senderid`, `author`, `title`, `file`, `event`,  `status`, `campus`, `coauthor`, `category` FROM `researchfile` WHERE `endorsementid`='$data->id'") as $v) {
-
+            
+            // UPDATED QUERY for research files
+            foreach ($con->query("SELECT 
+                `id`, 
+                `senderid`, 
+                `author`, 
+                `title`, 
+                `drive_view_url` as file,
+                `drive_file_id`,
+                `drive_download_url`,
+                `drive_folder_id`,
+                `drive_event_folder_id`,
+                `drive_center_folder_id`,
+                `event`,  
+                `status`, 
+                `campus`, 
+                `coauthor`, 
+                `category` 
+            FROM `researchfile` WHERE `endorsementid`='$data->id'") as $v) {
+                
                 $research = new stdClass();
-
                 $research->id = $v['id'];
-
                 $research->senderid = $v['senderid'];
-
                 $research->author = $v['author'];
-
                 $research->title = $v['title'];
-
-                $research->file = $v['file'];
-
+                $research->file = $v['file']; // Google Drive URL
+                $research->drive_file_id = $v['drive_file_id'];
+                $research->drive_download_url = $v['drive_download_url'];
+                $research->drive_folder_id = $v['drive_folder_id'];
+                $research->drive_event_folder_id = $v['drive_event_folder_id'];
+                $research->drive_center_folder_id = $v['drive_center_folder_id'];
                 $research->event = $v['event'];
-
                 $research->status = $v['status'];
-
                 $research->campus = $v['campus'];
-
                 $research->coauthor = $v['coauthor'];
-
                 $research->category = $v['category'];
-
                 $data->researchDocs[] = $research;
-
             }
-
             $response[] = $data;
-
         }
-
     }
-
     echo json_encode($response);
-
 }
 
 
@@ -2407,71 +2461,57 @@ WHERE `status`='forwarded' OR `status` IS NULL";
 if (isset($_POST['researchDocsNew'])) {
     $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // EXPLICITLY LIST COLUMNS to avoid any issues
+        // UPDATED QUERY for Google Drive
         $query = "
             SELECT
-        researchfile.id,
-        researchfile.senderid,
-        researchfile.author,
-        researchfile.title,
-        researchfile.file,
-        researchfile.status,
-        researchfile.category,
-        researchfile.deletestate,           
-        endorsement.campus,
-        endorsement.event,
-        endorsement.date,
-        researchfile.endorsementid,
-        researchfile.rejected_by,
-        researchfile.accepted_by,
-        researchfile.rejected_date,
-        researchfile.accepted_date
-        FROM
-        researchfile
-        LEFT JOIN 
-        endorsement
-        ON endorsement.id=researchfile.endorsementid
-        WHERE endorsement.status='accepted' ";
-
+                researchfile.id,
+                researchfile.senderid,
+                researchfile.author,
+                researchfile.title,
+                researchfile.drive_view_url as file,
+                researchfile.drive_file_id,
+                researchfile.drive_download_url,
+                researchfile.drive_folder_id,
+                researchfile.drive_event_folder_id,
+                researchfile.drive_center_folder_id,
+                researchfile.status,
+                researchfile.category,
+                researchfile.deletestate,           
+                endorsement.campus,
+                endorsement.event,
+                endorsement.date,
+                researchfile.endorsementid,
+                researchfile.rejected_by,
+                researchfile.accepted_by,
+                researchfile.rejected_date,
+                researchfile.accepted_date
+            FROM researchfile
+            LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
+            WHERE endorsement.status='accepted'";
+        
         foreach ($con->query($query) as $val) {
-
             $data = new stdClass();
-
             $data->id = $val['id'];
-
             $data->senderid = $val['senderid'];
-
             $data->deletestate = $val['deletestate'];
-
             $data->author = $val['author'];
-
             $data->title = $val['title'];
-
-            $data->file = $val['file'];
-
+            $data->file = $val['file']; // Google Drive URL
+            $data->drive_file_id = $val['drive_file_id'];
+            $data->drive_download_url = $val['drive_download_url'];
+            $data->drive_folder_id = $val['drive_folder_id'];
+            $data->drive_event_folder_id = $val['drive_event_folder_id'];
+            $data->drive_center_folder_id = $val['drive_center_folder_id'];
             $data->status = $val['status'];
-
             $data->category = $val['category'];
-
             $data->campus = $val['campus'];
-
             $data->event = $val['event'];
-
             $data->date = $val['date'];
-            $data->endorsId=$val['endorsementid'];
-
+            $data->endorsId = $val['endorsementid'];
             $response[] = $data;
-
         }
-
     }
-
-
-
-
-
     echo json_encode($response);
-
 }
 
 
@@ -2796,233 +2836,145 @@ if (isset($_POST['rejectIndorse'])) {
     } else {
         $response->message = "Database connection error";
     }
-    
     echo json_encode($response);
 }
 
 if (isset($_POST['deleteEndorsement'])) {
-
     $response = new stdClass();
-
     $response->message = '';
-
     $response->status = false;
-
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $query = "DELETE FROM endorsement WHERE endorsement.status=? AND endorsement.id=?";
-
         $statement = $con->prepare($query);
-
         $status = 'rejected';
-
         $docId = $_POST['docId'];
-
         $file = $_POST['fileUrl'];
-
         $resUrl = json_decode($_POST['researchFileUrl']);
-
         $statement->bind_param('ss', $status, $docId);
-
         $statusStatement = $statement->execute();
-
         if ($statusStatement) {
-
             if ($statement->affected_rows > 0) {
-
                 $response->status = true;
-
                 $response->message = 'Document deleted successfully..!';
-
                 if (!unlink($file)) {
-
                     $response->message .= "\n But failed to remove file from web storage...";
-
                 }
-
                 for ($x = 0; $x < sizeof($resUrl); $x++) {
-
                     if (!unlink($resUrl[$x])) {
-
                         $response->message .= "\n But failed to remove file from web storage...";
-
                     }
-
                 }
-
             } else {
-
                 $response->message = 'Unable to delete this document...!';
-
             }
-
         } else {
-
             $response->message = $statement->error;
-
         }
-
     } else {
-
         $response->message = $con->error;
-
     }
-
     echo json_encode($response);
-
 }
-
 
 
 if (isset($_POST['rejectRequest'])) {
-
     $response = new stdClass();
-
     $response->message = '';
-
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $docId = $_POST['dicId'];
-
         $query = "SELECT rejecteddocs.rejectedby,rejecteddocs.reason FROM rejecteddocs WHERE rejecteddocs.docid=?";
-
         $statement = $con->prepare($query);
-
         $statement->bind_param("s", $docId);
-
         $statement->execute();
-
         $result = $statement->get_result();
-
         while ($val = $result->fetch_assoc()) {
-
             $response->message = $val['reason'];
-
         }
-
     } else {
-
         $response->message = $con->error;
-
     }
-
     echo json_encode($response);
-
 }
 
 
-
 if (isset($_POST['fileReqRes'])) {
-
     $response = '';
-
     $docId = $_POST['docId'];
-
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $query = "SELECT researchallfile.researchfile FROM researchallfile WHERE researchallfile.docid=?";
-
         $statement = $con->prepare($query);
-
         $statement->bind_param('s', $docId);
-
         $statement->execute();
-
         $result = $statement->get_result();
-
         while ($val = $result->fetch_assoc()) {
-
             $response = $val['researchfile'];
-
         }
-
     }
-
-
-
     echo $response;
-
 }
 
 
 
 if (isset($_POST['viewDocReq'])) {
-
     $response = new stdClass();
-
     $response->status = false;
-
     $response->data = '';
-
+    $response->drive_file_id = '';
+    $response->drive_view_url = '';
+    $response->drive_download_url = '';
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
-        $query = "SELECT researchfile.file FROM researchfile WHERE researchfile.id=? LIMIT 1";
-
+        // UPDATED QUERY for Google Drive
+        $query = "SELECT 
+            researchfile.drive_view_url as file,
+            researchfile.drive_file_id,
+            researchfile.drive_view_url,
+            researchfile.drive_download_url,
+            researchfile.drive_folder_id,
+            researchfile.drive_event_folder_id,
+            researchfile.drive_center_folder_id
+        FROM researchfile WHERE researchfile.id=? LIMIT 1";
+        
         $docId = $_POST['docId'];
-
         $statement = $con->prepare($query);
-
         $statement->bind_param('s', $docId);
-
         $statement->execute();
-
         $res = $statement->get_result();
-
+        
         while ($val = $res->fetch_assoc()) {
-
-            $response->data = $val['file'];
-
+            $response->data = $val['file']; // Google Drive URL
+            $response->drive_file_id = $val['drive_file_id'];
+            $response->drive_view_url = $val['drive_view_url'];
+            $response->drive_download_url = $val['drive_download_url'];
+            $response->drive_folder_id = $val['drive_folder_id'];
+            $response->drive_event_folder_id = $val['drive_event_folder_id'];
+            $response->drive_center_folder_id = $val['drive_center_folder_id'];
             $response->status = true;
-
         }
-
     } else {
-
         $response->message = $con->error;
-
     }
-
     echo json_encode($response);
-
 }
 
 if(isset($_POST['resetComments'])){
-
     $response = new stdClass();
-
     $response->status = false;
-
     $response->message = '';
-
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $query="DELETE FROM comments
-
         WHERE comments.resid=? AND comments.evalid=?";
-
         $statement=$con->prepare($query);
-
         $statement->bind_param("ss",$_POST['docId'],$_SESSION['userId']);
-
         $status=$statement->execute();
-
         if($status){
-
             $response->status=true;
-
         }else{
-
             $response->message=$statement->error;
-
         }
-
     }else{
-
         $response->message=$con->error;
-
     }
-
     echo json_encode($response);
     exit();
-    
 }

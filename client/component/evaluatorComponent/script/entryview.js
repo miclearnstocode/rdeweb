@@ -1,6 +1,7 @@
 import {$, baseCheck, Request} from '../../../lib/lib.js'
 import {ScoreBoard} from "./score.js";
 import {CommentBoard} from "./commentpanel.js";
+
 export const EntryView=({docId,title,eventId,catId})=>{
     let mainPanel,sidePanelScore,sidePanelComment
     const panelState={
@@ -54,6 +55,20 @@ export const EntryView=({docId,title,eventId,catId})=>{
 
 
     const MainPanel=(fileUrl)=>{
+        // Check if this is a Google Drive URL
+        const isGoogleDrive = fileUrl.includes('drive.google.com');
+        
+        // Use Google Drive embed URL if it's a Google Drive file
+        let embedUrl = fileUrl;
+        if (isGoogleDrive) {
+            // Extract file ID from Google Drive URL if needed
+            if (fileUrl.includes('/file/d/')) {
+                const match = fileUrl.match(/\/file\/d\/([^\/]+)/);
+                if (match && match[1]) {
+                    embedUrl = `https://drive.google.com/file/d/${match[1]}/preview`;
+                }
+            }
+        }
 
         return($({
             tag:'div',
@@ -71,8 +86,7 @@ export const EntryView=({docId,title,eventId,catId})=>{
                 $({
                     tag:'embed',
                     att:{
-                       // src:`https://docs.google.com/viewer?url=http://rde.capsu.edu.ph${fileUrl.replace('..','')}&embedded=true`,
-                        src:fileUrl.replace('..',''),
+                        src: embedUrl,
                         type:'application/pdf',
                     },
                     style:{
@@ -120,6 +134,7 @@ export const EntryView=({docId,title,eventId,catId})=>{
             ]
         }))
     }
+    
     const SideTools=()=>{
         let BotComState=false;
         const Close=()=>{
@@ -269,6 +284,7 @@ export const EntryView=({docId,title,eventId,catId})=>{
             ]
         }))
     }
+    
     return($({
         tag:'div',
         style:{
@@ -281,11 +297,11 @@ export const EntryView=({docId,title,eventId,catId})=>{
             backgroundColor:'#333'
         },
         elementHandler:(el)=>{
-
-            const req= new Request('/entrycount')
+            // Changed endpoint from '/entrycount' to match backend
+            const req= new Request('/uploadResearchFile')
             req.Post([
                 {
-                    name:'entryView',
+                    name:'viewDocReq', // Changed to match backend POST parameter
                     value:'1'
                 },
                 {
@@ -295,14 +311,10 @@ export const EntryView=({docId,title,eventId,catId})=>{
             ])
             req.Json()
             req.Send().then(data=>{
-
-                if(data.length>0){
-
-                    data.forEach(val=>{
-                        el.appendChild(MainPanel(val.file))
-                        el.appendChild(SideTools())
-                    })
-
+                if(data.status && data.data){
+                    // data.data contains the Google Drive URL from backend
+                    el.appendChild(MainPanel(data.data))
+                    el.appendChild(SideTools())
                 }else {
                     window.location.replace('/evaluator')
                 }

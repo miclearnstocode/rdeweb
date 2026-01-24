@@ -2,11 +2,38 @@ import {$, CapsuOffice, ConfirmationAlert, Request, TimeConvert, Waiting} from '
 import {Error} from "../../../error.js";
 import {Print} from "../../otherComponent/comment.js";
 
+const isGoogleDriveUrl = (url) => {
+    if (!url) return false
+    return url.includes('drive.google.com') || 
+           url.includes('drive.google.com/file/d/') ||
+           (url.startsWith('https://') && url.includes('google.com'))
+}
+
+const getGoogleDriveEmbedUrl = (url) => {
+    // Convert Google Drive share link to embed URL if needed
+    if (url.includes('/file/d/')) {
+        const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+        if (fileIdMatch) {
+            return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
+        }
+    }
+    return url
+}
+
+const isDevelopment = () => {
+    return window.location.hostname === 'localhost' || 
+           window.location.hostname === '127.0.0.1' ||
+           window.location.hostname.includes('.local') ||
+           window.location.port !== '' // Has a port number
+}
+
+const isProduction = () => {
+    return !isDevelopment()
+}
 
 const getUrl = (url) => {
     sessionStorage.setItem('viewFile', '/' + url)
 }
-
 
 const CreateNew = () => {
 
@@ -1292,7 +1319,7 @@ const Submitted = () => {
                 ]
             }))
         }
-        const listDiv = ({date, author, category, title, status, file, id, eventType}) => {
+        const listDiv = ({date, author, category, title, status, file, id, eventType, drive_view_url, drive_file_id, drive_download_url}) => {
             const Row = ({span, label, text}) => {
                 const getRowmin = (rw) => {
                     if (span) {
@@ -1372,7 +1399,6 @@ const Submitted = () => {
                 }))
             }
 
-
             const Viewer = () => {
                 let viewerMain
                 const getViewer = (el) => {
@@ -1406,20 +1432,129 @@ const Submitted = () => {
                             }
                         })
                     ],
-
                 })
-                const frame = $({
-                    tag: 'iframe',
-                    att: {
-                        src: '/' + file
-                    },
-                    style: {
-                        width: '80%',
-                        height: '90%',
-                        margin: 'auto',
-                        marginTop: '1vh'
-                    }
-                })
+                
+                // Check if it's a Google Drive URL
+                const isGoogleDriveUrl = file && file.includes('drive.google.com')
+                
+                let frame
+                
+                if (isGoogleDriveUrl) {
+                    // Create a container for the viewer
+                    frame = $({
+                        tag: 'div',
+                        style: {
+                            width: '80%',
+                            height: '90%',
+                            margin: 'auto',
+                            marginTop: '1vh'
+                        },
+                        elementHandler: (el) => {
+                            // Create the embed URL properly
+                            const fileIdMatch = file.match(/\/d\/([a-zA-Z0-9_-]+)/)
+                            
+                            if (fileIdMatch && fileIdMatch[1]) {
+                                const fileId = fileIdMatch[1]
+                                const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
+                                
+                                // Create iframe with proper attributes
+                                const iframe = document.createElement('iframe')
+                                iframe.src = embedUrl
+                                iframe.style.width = '100%'
+                                iframe.style.height = '100%'
+                                iframe.style.border = 'none'
+                                iframe.allow = 'autoplay'
+                                iframe.title = 'Google Drive Document Viewer'
+                                
+                                // Add error handling
+                                iframe.onload = () => {
+                                    console.log('Google Drive iframe loaded')
+                                }
+                                
+                                iframe.onerror = () => {
+                                    // If iframe fails, show alternative options
+                                    el.innerHTML = `
+                                        <div style="
+                                            color: white; 
+                                            font-family: Arial, sans-serif; 
+                                            padding: 20px;
+                                            text-align: center;
+                                            background: rgba(0,0,0,0.7);
+                                            border-radius: 10px;
+                                            margin: 20px;
+                                        ">
+                                            <h3>Document Access Required</h3>
+                                            <p>This Google Drive document requires permission to view.</p>
+                                            <div style="margin: 20px 0;">
+                                                <a href="${file}" 
+                                                target="_blank" 
+                                                style="
+                                                    display: inline-block;
+                                                    padding: 10px 20px;
+                                                    background: deepskyblue;
+                                                    color: white;
+                                                    text-decoration: none;
+                                                    border-radius: 5px;
+                                                    margin: 5px;
+                                                ">
+                                                    Open in Google Drive
+                                                </a>
+                                                <button onclick="location.reload()" 
+                                                        style="
+                                                            padding: 10px 20px;
+                                                            background: #555;
+                                                            color: white;
+                                                            border: none;
+                                                            border-radius: 5px;
+                                                            margin: 5px;
+                                                            cursor: pointer;
+                                                        ">
+                                                    Try Again
+                                                </button>
+                                            </div>
+                                            <p><small>You may need to request access or sign in with the appropriate account</small></p>
+                                        </div>
+                                    `
+                                }
+                                
+                                el.appendChild(iframe)
+                            } else {
+                                // Invalid Google Drive URL format
+                                el.innerHTML = `
+                                    <div style="
+                                        color: white; 
+                                        text-align: center;
+                                        padding: 20px;
+                                    ">
+                                        <p>Invalid Google Drive URL format</p>
+                                        <a href="${file}" 
+                                        target="_blank" 
+                                        style="color: deepskyblue;">
+                                            Open link directly
+                                        </a>
+                                    </div>
+                                `
+                            }
+                        }
+                    })
+                } else {
+                    // For local PDF files
+                    frame = $({
+                        tag: 'object',
+                        att: {
+                            className: 'frameViewer',
+                            data: '/' + file,
+                            type: 'application/pdf'
+                        },
+                        style: {
+                            width: '80%',
+                            height: '90%',
+                            margin: 'auto',
+                            marginTop: '1vh'
+                        }
+                    })
+                }
+                
                 return ($({
                     tag: 'div',
                     style: {
@@ -1465,26 +1600,27 @@ const Submitted = () => {
                         }),
                     ]
                 })
+                
                 const View = $({
                     tag: 'div',
                     att: {
                         className: 'fa-solid fa-eye  viewListRes'
                     },
-                    style:{
+                    style: {
                         fontSize: '1vw',
                         margin: 'auto',
                         display: 'flex',
                         justifyContent: 'center',
-                        cursor:'pointer'
+                        cursor: 'pointer'
                     },
-                    child:[
+                    child: [
                         $({
                             tag: 'span',
                             style: {
                                 fontFamily: 'arial,sanserif',
                                 fontWeight: 'bold',
-                                margin:'auto',
-                                marginLeft:'.5vw'
+                                margin: 'auto',
+                                marginLeft: '.5vw'
                             },
                             text: 'View Docs'
                         }),
@@ -1492,11 +1628,21 @@ const Submitted = () => {
                     event: {
                         type: 'click',
                         method: () => {
-                            mainPanel.appendChild(Viewer())
+                            // Check if we have the data object
+                            if (typeof fileData === 'object' && fileData.drive_view_url) {
+                                mainPanel.appendChild(Viewer(fileData))
+                            } else {
+                                // Fallback: try to construct data object
+                                mainPanel.appendChild(Viewer({ 
+                                    file: file,
+                                    drive_view_url: file,
+                                    drive_file_id: null
+                                }))
+                            }
                         }
                     }
-
                 })
+
                 const Delete = $({
                     tag: 'div',
                     att: {
@@ -1510,12 +1656,12 @@ const Submitted = () => {
                     event: {
                         type: 'click',
                         method: async () => {
-
                             if (confirm("Delete this File?")) {
                                 const form = new FormData()
                                 form.append('delResearch', 'true')
                                 form.append('docId', id)
-                                form.append('fileUrl', file)
+                                // Use Google Drive URL instead of local file
+                                form.append('fileUrl', drive_view_url || file)
                                 let loading = Waiting()
                                 document.body.appendChild(loading)
                                 const remove = () => {
@@ -1542,7 +1688,6 @@ const Submitted = () => {
                                     }
                                 })
                             }
-
                         }
                     }
                 })
@@ -1555,7 +1700,6 @@ const Submitted = () => {
                             att: {
                                 colSpan: '3'
                             },
-
                             child: [
                                 $({
                                     tag: 'div',
@@ -1623,28 +1767,45 @@ const Submitted = () => {
 
             const ViewEn=()=>{
 
-                const endorsementFile=(file)=>{
-
-                    return($({
-                        tag:'div',
-                        style:{
-                            margin:'1vh auto',
-                            width:'80%',
-                            height:'90%',
+                const endorsementFile = (file) => {
+                    const isGoogleDriveUrl = file.includes('drive.google.com')
+                    
+                    let fileViewer
+                    if (isGoogleDriveUrl) {
+                        fileViewer = $({
+                            tag: 'iframe',
+                            att: {
+                                src: '/' + file,
+                                type: 'application/pdf'
+                            },
+                            style: {
+                                width: '100%',
+                                height: '100%',
+                                border: 'none'
+                            }
+                        })
+                    } else {
+                        fileViewer = $({
+                            tag: 'object',
+                            att: {
+                                data: '/' + file,
+                                type: 'application/pdf'
+                            },
+                            style: {
+                                width: '100%',
+                                height: '100%'
+                            }
+                        })
+                    }
+                    
+                    return ($({
+                        tag: 'div',
+                        style: {
+                            margin: '1vh auto',
+                            width: '80%',
+                            height: '90%',
                         },
-                        child:[
-                            $({
-                                tag:'object',
-                                att:{
-                                    data:'/'+file,
-                                    type:'application/pdf'
-                                },
-                                style:{
-                                    width:'100%',
-                                    height:'100%',
-                                }
-                            })
-                        ]
+                        child: [fileViewer]
                     }))
                 }
                 let endorseBody,resb,resState=false
@@ -2172,8 +2333,7 @@ const Submitted = () => {
                 ]
             })
 
-            const researchDocs=({resTitle,author,coAuthor,category,file,resId})=>{
-
+            const researchDocs=({resTitle,author,coAuthor,category,file,resId, drive_view_url, drive_file_id, drive_download_url})=>{
                 let mainIndiv
                 const getlistIndiv=(el)=>{
                     mainIndiv=el
@@ -2234,7 +2394,48 @@ const Submitted = () => {
                         }))
                     }
 
-                    const ResearchDocPan=(fileHolder)=>{
+                    const ResearchDocPan = (fileHolder, isGoogleDrive = false, driveFileId = null) => {
+                        let docViewer;
+                        
+                        if (isGoogleDrive && isGoogleDriveUrl(fileHolder)) {
+                            // Get embed URL for Google Drive
+                            let embedUrl = fileHolder;
+                            if (!fileHolder.includes('/preview')) {
+                                const fileId = driveFileId || (fileHolder.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1]);
+                                if (fileId) {
+                                    embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                                }
+                            }
+                            
+                            docViewer = $({
+                                tag: 'iframe',
+                                att: {
+                                    src: embedUrl,
+                                    type: 'application/pdf',
+                                    sandbox: 'allow-same-origin allow-scripts allow-popups allow-forms',
+                                    allow: 'autoplay'
+                                },
+                                style: {
+                                    width: '65%',
+                                    height: '100%',
+                                    border: 'none',
+                                    backgroundColor: 'white'
+                                }
+                            });
+                        } else {
+                            // Local file (fallback)
+                            docViewer = $({
+                                tag: 'object',
+                                att: {
+                                    data: '/' + fileHolder,
+                                    type: 'application/pdf'
+                                },
+                                style: {
+                                    width: '65%',
+                                    height: '100%',
+                                }
+                            });
+                        }
 
                         return($({
                             tag:'div',
@@ -2271,7 +2472,7 @@ const Submitted = () => {
                                                             const evalName=$({
                                                                 tag:'div',
                                                                 style:{
-                                                                  color:'black',
+                                                                    color:'black',
                                                                     marginTop:'2vh',
                                                                     marginBottom:'1vh',
                                                                     borderBottom:'solid thin rgba(200,200,200,0.5)',
@@ -2367,7 +2568,7 @@ const Submitted = () => {
                                                 const form=new FormData()
                                                 form.append('commentRequest','true')
                                                 form.append('docId',resId)
-                                                 fetch('/uploadResearchFile',{
+                                                fetch('/uploadResearchFile',{
                                                     method:'POST',
                                                     body:form
                                                 }).then(res=>res.json())
@@ -2407,31 +2608,18 @@ const Submitted = () => {
                                         })
                                     ]
                                 }),
-                                $({
-                                    tag:'object',
-                                    att:{
-                                        data:'/'+fileHolder,
-                                        type:'application/pdf'
-                                    },
-                                    style:{
-                                        width:'65%',
-                                        height:'100%',
-                                    }
-                                })
+                                docViewer
                             ]
                         }))
                     }
                     const comments = (Review) => {
-
                         let comm
                         const getComment = (el) => {
                             comm = el
                         }
                         let printBody
 
-
                         const Controller = () => {
-
                             const bot = ({label, eventHandler, style,icon}) => {
                                 return ($({
                                     tag: 'div',
@@ -2709,6 +2897,10 @@ const Submitted = () => {
 
                             ]
                         })
+                        // Determine if it's a Google Drive file
+                        const fileUrl = drive_view_url || file
+                        const isDriveFile = isGoogleDriveUrl(fileUrl)
+
                         return($({
                             tag:'div',
                             style:{
@@ -2721,7 +2913,7 @@ const Submitted = () => {
                             },
                             elementHandler:getResDo,
                             child:[
-                                ResearchDocPan(file),
+                                ResearchDocPan(fileUrl, isDriveFile, drive_file_id),
                                 remover,
                             ]
                         }))
@@ -2746,6 +2938,7 @@ const Submitted = () => {
                                     type:'click',
                                     method:()=>{
                                         mainPanel.appendChild(resBody())
+                                        
                                     }
                                 }
                             }),
@@ -2790,12 +2983,15 @@ const Submitted = () => {
                                 getResPanelHideEl.className+=' resHiderOpen'
                                 researchPaper.forEach(val=>{
                                     getResPanelHideEl.appendChild(researchDocs({
-                                        resTitle:val.title,
-                                        author:val.author,
-                                        coAuthor:val.coauthor,
-                                        category:val.category,
-                                        resId:val.docId,
-                                        file:val.researchFile
+                                        resTitle: val.title,
+                                        author: val.author,
+                                        coAuthor: val.coauthor,
+                                        category: val.category,
+                                        resId: val.docId,
+                                        file: val.researchFile,
+                                        drive_view_url: val.drive_view_url || val.researchFile, // Add this
+                                        drive_file_id: val.drive_file_id, // Add this
+                                        drive_download_url: val.drive_download_url // Add this
                                     }))
                                 })
                                 event.target.style.color='red'
@@ -2907,9 +3103,7 @@ const Submitted = () => {
                 body: form
             }).then(res => res.json())
                 .then(data => {
-
                     data.list.forEach(val => {
-
                         panel.insertBefore(Endorsement({
                             date:val.date,
                             eventType:val.eventType,
@@ -2918,8 +3112,6 @@ const Submitted = () => {
                             endorsement:val.endorsementFile,
                             docId:val.id,
                         }), panel.childNodes[0])
-
-
                     })
                 })
         }
@@ -3112,163 +3304,211 @@ const Submitted = () => {
                     let StateBot=false,lebBot,bod
 
                     const ListCampus=(content,resList)=>{
-                        const Panel=(docID)=>{
-                            let mainP
-                            const file=(url)=>{
-                                return($({
-                                    tag:'div',
-                                    style:{
-                                        margin:'auto',
-                                        width:'80%',
-                                        height:'98%',
-                                        position:'relative',
+                    const Panel = (docID, fileUrl = null) => {
+                        let mainP
+                        const file = (url) => {
+                            const isGoogleDriveUrl = url.includes('drive.google.com')
+                            
+                            let fileViewer
+                            if (isGoogleDriveUrl) {
+                                fileViewer = $({
+                                    tag: 'iframe',
+                                    att: {
+                                        src: url,
+                                        type: 'application/pdf'
                                     },
-                                    child:[
-                                        $({
-                                            tag:'div',
-                                            att:{
-                                                className:'fa-solid fa-circle-xmark'
-                                            },
-                                            style:{
-                                                fontSize:'3vw',
-                                                position:'absolute',
-                                                left:'-4vw',
-                                                color:'deepskyblue',
-                                                cursor:'pointer'
-                                            },
-                                            event:{
-                                                type:'click',
-                                                method:()=>{
-                                                    mainP.remove()
-                                                }
-                                            },
-                                        }),
-                                        $({
-                                            tag:'object',
-                                            att:{
-                                                data:'/'+url,
-                                                type:'application/pdf'
-                                            },
-                                            style:{
-                                                width:'100%',
-                                                height:'100%'
-                                            }
-                                        })
-                                    ]
-                                }))
+                                    style: {
+                                        width: '100%',
+                                        height: '100%',
+                                        border: 'none'
+                                    }
+                                })
+                            } else {
+                                fileViewer = $({
+                                    tag: 'object',
+                                    att: {
+                                        data: '/' + url,
+                                        type: 'application/pdf'
+                                    },
+                                    style: {
+                                        width: '100%',
+                                        height: '100%'
+                                    }
+                                })
                             }
-
-                            return($({
-                                tag:'div',
-                                style:{
-                                    width:'100%',
-                                    height:'100%',
-                                    position:'absolute',
-                                    top:'0',
-                                    left:'0',
-                                    backgroundImage:'radial-gradient(rgba(100,100,100,0.5),black)',
-                                    display:'flex',
-                                    justifyContent:'center'
+                            
+                            return ($({
+                                tag: 'div',
+                                style: {
+                                    margin: 'auto',
+                                    width: '80%',
+                                    height: '98%',
+                                    position: 'relative',
                                 },
-                                elementHandler:(el)=>{
-                                    mainP=el
-                                    const req=new Request('/uploadResearchFile')
-                                    const reqList=[]
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        att: {
+                                            className: 'fa-solid fa-circle-xmark'
+                                        },
+                                        style: {
+                                            fontSize: '3vw',
+                                            position: 'absolute',
+                                            left: '-4vw',
+                                            color: 'deepskyblue',
+                                            cursor: 'pointer'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                mainP.remove()
+                                            }
+                                        },
+                                    }),
+                                    fileViewer
+                                ]
+                            }))
+                        }
+                        
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                width: '100%',
+                                height: '100%',
+                                position: 'absolute',
+                                top: '0',
+                                left: '0',
+                                backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
+                                display: 'flex',
+                                justifyContent: 'center'
+                            },
+                            elementHandler: (el) => {
+                                mainP = el
+                                
+                                if (fileUrl) {
+                                    // If file URL is provided directly, use it
+                                    el.appendChild(file(fileUrl))
+                                } else {
+                                    // Otherwise fetch from server
+                                    const req = new Request('/uploadResearchFile')
+                                    const reqList = []
                                     reqList.push({
-                                        name:'fileReqRes',
-                                        value:'true'
+                                        name: 'fileReqRes',
+                                        value: 'true'
                                     })
                                     reqList.push({
-                                        name:'docId',
-                                        value:docID
+                                        name: 'docId',
+                                        value: docID
                                     })
                                     req.Post(reqList)
-
-                                    /* Sending a request to the server and then appending the response to the DOM. */
-                                    req.Send().then(data=>{
+                                    req.Send().then(data => {
                                         el.appendChild(file(data))
-                                    }).catch(res=>{
+                                    }).catch(res => {
                                         console.log(res)
                                     })
                                 }
-
-                            }))
-                        }
+                            }
+                        }))
+                    }
 
                         let bodEl,campState=false
-                        const fileListName=({author,name,id})=>{
-                            return($({
-                                tag:'div',
-                                style:{
-                                    textAlign:'left',
-                                    width:'98%',
-                                    margin:'auto',
-                                    whiteSpace:'nowrap',
-                                    textOverflow:'ellipsis',
-                                    overflow:'hidden',
-                                    paddingTop:'.5vh',
-                                    paddingBottom:'.5vh'
+                        const fileListName = ({author, name, id}) => {
+                            return ($({
+                                tag: 'div',
+                                style: {
+                                    textAlign: 'left',
+                                    width: '98%',
+                                    margin: 'auto',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    paddingTop: '.5vh',
+                                    paddingBottom: '.5vh'
                                 },
-                                att:{
-                                    title:author,
-                                    className:'perRes',
-                                    innerHTML:'<span style="font-size: 1.4vw" class="fa-solid fa-file-pdf"> &nbsp</span> '+name
+                                att: {
+                                    title: author,
+                                    className: 'perRes',
+                                    innerHTML: '<span style="font-size: 1.4vw" class="fa-solid fa-file-pdf"> &nbsp</span> ' + name
                                 },
-                                event:{
-                                    type:'click',
-                                    method:async ()=>{
+                                event: {
+                                    type: 'click',
+                                    method: async () => {
                                         let loading = Waiting()
                                         bodEl.appendChild(loading)
                                         const remove = () => {
                                             loading.remove()
                                         }
-                                        const form= new FormData()
-                                        form.append("checkAccess","true")
-                                        form.append("docId",id)
-                                        await fetch('/requestDocs',{
-                                            method:'POST',
-                                            body:form
-                                        }).then(res => {
-                                            if (res.ok) {
+                                        
+                                        const form = new FormData()
+                                        form.append("checkAccess", "true")
+                                        form.append("docId", id)
+                                        
+                                        try {
+                                            const response = await fetch('/requestDocs', {
+                                                method: 'POST',
+                                                body: form
+                                            })
+                                            
+                                            if (response.ok) {
+                                                const dat = await response.json()
                                                 remove()
-                                                return res.json()
-                                            }
-                                        }).then(dat => {
-
-                                            if (dat.status==='allowed') {
-                                                bodEl.appendChild(Panel(id))
-                                            } else if(dat.status==='requested'){
-                                                bodEl.appendChild(ConfirmationAlert("Request was sent. please wait for the respond..!", () => {
-                                                    window.location.reload()
-                                                }))
-                                            }
-                                            else {
-                                                remove()
-                                                setTimeout( ()=>{
-                                                    if(confirm("You don't have permission to open this file.\n Do you want to send a request?")){
-                                                        /* Creating a new request object. */
-                                                        const req= new Request('/requestDocs')
-                                                        const formReq=[]
-                                                        formReq.push({
-                                                            name:'sendRequest',
-                                                            value:'true'
-                                                        })
-                                                        formReq.push({
-                                                            name:'docId',
-                                                            value:id
-                                                        })
-                                                        req.Post(formReq)
-                                                        req.Json()
-                                                        req.Send().then(data=>{
-                                                            bodEl.appendChild(ConfirmationAlert(data.message, () => {
-                                                                window.location.reload()
-                                                            }))
-                                                        })
+                                                
+                                                if (dat.status === 'allowed') {
+                                                    // Get file URL from server
+                                                    const fileReq = new FormData()
+                                                    fileReq.append('viewDocReq', 'true')
+                                                    fileReq.append('docId', id)
+                                                    
+                                                    const fileResponse = await fetch('/uploadResearchFile', {
+                                                        method: 'POST',
+                                                        body: fileReq
+                                                    })
+                                                    
+                                                    if (fileResponse.ok) {
+                                                        const fileData = await fileResponse.json()
+                                                        if (fileData.status) {
+                                                            // Check if it's a Google Drive URL
+                                                            if (fileData.drive_view_url && fileData.drive_view_url.includes('drive.google.com')) {
+                                                                // Open Google Drive viewer in new tab
+                                                                window.open(fileData.drive_view_url, '_blank')
+                                                            } else if (fileData.data) {
+                                                                // Open local file in viewer
+                                                                bodEl.appendChild(Panel(id))
+                                                            }
+                                                        }
                                                     }
-                                                },50)
+                                                } else if (dat.status === 'requested') {
+                                                    bodEl.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
+                                                        window.location.reload()
+                                                    }))
+                                                } else {
+                                                    setTimeout(() => {
+                                                        if (confirm("You don't have permission to open this file.\nDo you want to send a request?")) {
+                                                            const req = new Request('/requestDocs')
+                                                            const formReq = []
+                                                            formReq.push({
+                                                                name: 'sendRequest',
+                                                                value: 'true'
+                                                            })
+                                                            formReq.push({
+                                                                name: 'docId',
+                                                                value: id
+                                                            })
+                                                            req.Post(formReq)
+                                                            req.Json()
+                                                            req.Send().then(data => {
+                                                                bodEl.appendChild(ConfirmationAlert(data.message, () => {
+                                                                    window.location.reload()
+                                                                }))
+                                                            })
+                                                        }
+                                                    }, 50)
+                                                }
                                             }
-                                        })
-
+                                        } catch (error) {
+                                            remove()
+                                            console.error('Error checking access:', error)
+                                        }
                                     }
                                 }
                             }))

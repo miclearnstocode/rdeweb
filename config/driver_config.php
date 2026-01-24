@@ -120,13 +120,19 @@ class GoogleDriveService {
                 'supportsAllDrives' => true
             ]);
             
+            $fileId = $file->getId();
+            
+            // Generate proper embed URL (the /preview URL for iframes)
+            $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+            
             return [
                 'success' => true,
-                'id' => $file->getId(),
+                'id' => $fileId,
                 'name' => $file->getName(),
                 'size' => $file->getSize(),
-                'view_url' => $file->getWebViewLink(),
-                'download_url' => $file->getWebContentLink(),
+                'view_url' => $embedUrl,  // Use embed URL for iframe
+                'direct_url' => $file->getWebViewLink(),  // Original Google Drive URL
+                'download_url' => "https://drive.google.com/uc?id={$fileId}&export=download",
                 'thumbnail_url' => $file->getThumbnailLink()
             ];
             
@@ -167,18 +173,49 @@ class GoogleDriveService {
         $service = $this->service;
         
         try {
-            // Set permission to anyone can view
-            $permission = new Google_Service_Drive_Permission([
-                'type' => 'anyone',
-                'role' => 'reader'
-            ]);
-            
-            $service->permissions->create($fileId, $permission, [
+            // First, check if the file already has public permission
+            $permissions = $service->permissions->listPermissions($fileId, [
+                'fields' => 'permissions(type,role)',
                 'supportsAllDrives' => true
             ]);
-            return true;
+            
+            $alreadyPublic = false;
+            foreach ($permissions->getPermissions() as $permission) {
+                if ($permission->getType() === 'anyone' && $permission->getRole() === 'reader') {
+                    $alreadyPublic = true;
+                    error_log("File $fileId is already public");
+                    break;
+                }
+            }
+            
+            if (!$alreadyPublic) {
+                // Set permission to anyone can view
+                $permission = new Google_Service_Drive_Permission([
+                    'type' => 'anyone',
+                    'role' => 'reader',
+                    'allowFileDiscovery' => false
+                ]);
+                
+                $result = $service->permissions->create($fileId, $permission, [
+                    'supportsAllDrives' => true,
+                    'fields' => 'id'
+                ]);
+                
+                error_log("File $fileId made public successfully, permission ID: " . $result->getId());
+                return true;
+            }
+            
+            return true; // Already public
+            
         } catch (Exception $e) {
             error_log("Error making file public: " . $e->getMessage());
+            // Log the full error for debugging
+            error_log("Error details: " . json_encode([
+                'fileId' => $fileId,
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'trace' => $e->getTraceAsString()
+            ]));
             return false;
         }
     }
