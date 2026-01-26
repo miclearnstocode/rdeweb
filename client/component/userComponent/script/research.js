@@ -2530,6 +2530,9 @@ const Submitted = () => {
                                                             }
                                                             elCom.appendChild(evalName)
                                                             if(typeof data==='object'){
+                                                                if(data.title!==null&&data.title!==''){
+                                                                    elCom.appendChild(perCommentBody("Title",data.title.replace('<br>','')))
+                                                                }
                                                                 if(data.intro!==null&&data.intro!==''){
                                                                     elCom.appendChild(perCommentBody("Introduction",data.intro.replace('<br>','')))
                                                                 }

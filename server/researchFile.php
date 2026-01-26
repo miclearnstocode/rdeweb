@@ -704,8 +704,7 @@ if (isset($_POST['updateReview'])) {
                 WHERE comments.resid = ? AND comments.evalid = ?";
             
             $statement = $con->prepare($comQ);
-            $statement->bind_param("sssssssssss", $title, $intro, $abstract, $objective, $methodology, 
-                                  $results, $recommendation, $literature, $other, $docsId, $evalId);
+            $statement->bind_param("sssssssssss", $title, $intro, $abstract, $objective, $methodology, $results, $recommendation, $literature, $other, $docsId, $evalId);
             $status = $statement->execute();
             
             if ($status) {
@@ -2515,87 +2514,49 @@ if (isset($_POST['researchDocsNew'])) {
 }
 
 
-
-
-
 if (isset($_POST['commentRequest'])) {
-
     $response = [];
-
     $docId = $_POST['docId'];
-
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $query = "SELECT
+        comments.title,
+        comments.intro,
+        comments.abstract,
+        comments.objective,
+        comments.methodology,
+        comments.results,
+        comments.recommendation,
+        comments.literature,
+        comments.other,
+        comments.date,
+        evaluator.fullname
 
-comments.intro,
-
-comments.abstract,
-
-comments.objective,
-
-comments.methodology,
-
-comments.results,
-
-comments.recommendation,
-
-comments.literature,
-
-comments.other,
-
-comments.date,
-
-evaluator.fullname
-
-FROM
-
-comments
-
-LEFT JOIN
-
-evaluator
-
-ON evaluator.id=comments.evalid
-
-WHERE comments.resid='$docId'";
+        FROM
+        comments
+        LEFT JOIN
+        evaluator
+        ON evaluator.id=comments.evalid
+        WHERE comments.resid='$docId'";
 
         foreach ($con->query($query) as $val) {
 
             $data = new stdClass();
-
+            $data->title = $val['title'];
             $data->intro = $val['intro'];
-
             $data->abstract = $val['abstract'];
-
             $data->objective = $val['objective'];
-
             $data->methodology = $val['methodology'];
-
             $data->results = $val['results'];
-
             $data->recommendation = $val['recommendation'];
-
             $data->literature = $val['literature'];
-
             $data->other = $val['other'];
-
             $data->date = $val['date'];
-
             $data->evalName = $val['fullname'];
-
             $response[] = $data;
-
         }
-
-
-
     }
-
     echo json_encode($response);
-
 }
-
 
 
 if (isset($_POST['getDeleteRequest'])) {

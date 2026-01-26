@@ -498,3 +498,30 @@ Stack trace:
 [24-Jan-2026 15:44:28 Asia/Manila] - Direct download: https://drive.google.com/uc?id=14HajOYTknHZCAXaPPBekci01M4mZJfv6&export=download
 [24-Jan-2026 16:51:59 Asia/Manila] PHP Warning:  Undefined array key "category" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 656
 [24-Jan-2026 16:56:02 Asia/Manila] PHP Warning:  Undefined array key "category" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 656
+[26-Jan-2026 08:12:38 Asia/Manila] PHP Warning:  Undefined array key "eventId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 549
+[26-Jan-2026 08:12:38 Asia/Manila] PHP Warning:  Undefined array key "userName" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 550
+[26-Jan-2026 08:12:38 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 551
+[26-Jan-2026 08:59:55 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.intro,
+        comments.abstract,
+        comments.objective,
+        com...' at line 3 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2545
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2545): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2545
+[26-Jan-2026 09:04:55 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.intro,
+        comments.abstract,
+        comments.objective,
+        com...' at line 3 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2544
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2544): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2544
