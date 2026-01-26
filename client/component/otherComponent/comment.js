@@ -1,1 +1,393 @@
-import {$} from '../../lib/lib.js'export const headerFooter=({content})=>{    const TableHeader=()=>{        return($({            tag:'table',            style:{                width:'100%'            },            att:{                className:'printContainer'            },            child:[                $({                    tag:'thead',                    child:[                        $({                            tag:'tr',                            child:[                                $({                                    tag:'td',                                    child:[                                        $({                                            tag:'div',                                            att:{                                                className: 'empty-header'                                            }                                        })                                    ]                                })                            ]                        })                    ]                }),                $({                    tag:'tbody',                    child:[                        $({                            tag:'tr',                            child:[                                $({                                    tag:'td',                                    child:[                                        $({                                            tag:'div',                                            att:{                                                className: 'contentPrinter'                                            },                                            child:content                                        })                                    ]                                })                            ]                        })                    ]                }),                $({                    tag:'tfoot',                    child:[                        $({                            tag:'div',                            att:{                                className:'empty-footer'                            }                        })                    ]                })            ]        }))    }    return($({        tag:'div',        style:{            width: '51vw',            height: 'fit-content'        },        child:[            TableHeader(),            $({                tag:'div',                att:{                    className:'header'                },                text:'asd'            }),            $({                tag:'div',                att:{                    className:'footer'                },                text:'asdkjhg'            })        ]    }))}export const Print=({title,category,campus,date,author,review,getHandler,all})=>{    //intro,abstract,objective,methodology,results,recommendation,literature,other,evalName    const details=()=>{        const tdData=({data,width})=>{            const getme=(el)=>{                if(data){                    el.innerHTML=data                }                if(width){                    el.style.width=width                }            }            return($({                tag:'td',                elementHandler:getme            }))        }       const row=({leb1,leb2})=>{            return($({                tag:'tr',                child:[                    leb1,                    leb2                ]            }))       }        return($({            tag:'table',            style:{                width:'51vw',            },            child:[                row({                    leb1:tdData({                        data:'<b>Campus</b>',                        width:'5vw'                    }),                    leb2:tdData({                        data:': '+campus,                        width:'100%'                    }),                }),                row({                    leb1:tdData({                        data:'<b>Title </b>',                        width:'5vw',                    }),                    leb2:tdData({                        data:': '+title,                        width:'100%'                    }),                }),                row({                    leb1:tdData({                        data:'<b>Category</b>',                        width:'5vw'                    }),                    leb2:tdData({                        data:': '+category,                        width:'100%'                    }),                }),                row({                    leb1:tdData({                        data:'<b>Author</b>',                        width:'5vw'                    }),                    leb2:tdData({                        data:': '+author,                        width:'100%'                    }),                }),                /*                row({                    leb1:tdData({                        data:'<b>Date</b>',                        width:'5vw'                    }),                    leb2:tdData({                        data:': '+date,                        width:'100%'                    }),                }),                */            ]        }))    }    const getCont=(el)=>{        getHandler(el)        el.appendChild($({            tag:'div',            style:{                height:'13vh',                width:'100%',            },            child:[                $({                    tag:'img',                    style:{                        height:'100%',                        width:'100%'                    },                    att:{                        src:"/client/images/header.png"                    }                })            ]        }))        el.appendChild(details())        if(review){            review.forEach(val=>{                let state=true;                if(all){                    if(val.evalName.toUpperCase().includes("TECHNICAL")){                        state=false                    }                }                 if(state){                     const perComment=()=>{                         const evaluatorName=$({                             tag:'div',                             style:{                                 width:'100%',                                 height:'fit-content',                                 fontSize:'1vw'                             },                             child:[                                 $({                                     tag:'table',                                     style:{                                         width:'100%',                                     },                                     child:[                                         $({                                             tag:'tr',                                             att:{                                                 innerHTML:`<td style="font-size: 1vw">EVALUATOR </td> `                                             }                                         })                                     ]                                 })                             ]                         })                         const dataLeb=(label,data)=>{                             return($({                                 tag:'table',                                 style:{                                     width:'100%',                                     tableLayout:'fixed'                                 },                                 child:[                                     $({                                         tag:'tr',                                         att:{                                             innerHTML:`<td><b>${label}</b></td>`                                         }                                     }),                                     $({                                         tag:'tr',                                         att:{                                             innerHTML:`<td style="word-break: break-word">${data}</td>`                                         }                                     })                                 ]                             }))                         }                         const getPerDocs=(pr)=>{                             pr.appendChild(dataLeb(`<b>EVALUATOR : </b>${val.evalName}`,""))                             if(val.intro){                                 pr.appendChild(dataLeb("Introduction",val.intro))                             }                             if(val.abstract){                                 pr.appendChild(dataLeb("Abstract",val.abstract))                             }                             if(val.objective){                                 pr.appendChild(dataLeb("Objectives",val.objective))                             }                             if(val.methodology){                                 pr.appendChild(dataLeb("Methodology",val.methodology))                             }                             if(val.results){                                 pr.appendChild(dataLeb("Results and Discussion",val.results))                             }                             if(val.recommendation){                                 pr.appendChild(dataLeb("Conclusion and Recommendation",val.recommendation))                             }                             if(val.literature){                                 pr.appendChild(dataLeb("Literature Cited",val.literature))                             }                             if(val.other){                                 pr.appendChild(dataLeb("Other comments",val.other))                             }                         }                         return($({                             tag:'div',                             style:{                                 width:'100%',                                 height:'fit-content',                             },                             child:[                                 $({                                     tag:'div',                                     style:{                                         width:'100%',                                         height:'fit-content',                                         fontSize:'1vw'                                     },                                     elementHandler:getPerDocs                                 })                             ]                         }))                     }                     el.appendChild(perComment())                     el.appendChild($({                         tag:'div',                         att:{                             innerHTML:'<br><br>'                         }                     }))                 }            })        }        el.appendChild($({            tag:'p',            att:{                className:'breaker',            },            style:{                pageBreakAfter:'always'            }        }))    }    return($({        tag:'div',        style:{            width:'51vw',            backgroundColor:'white',            fontSize:'1vw',            paddingLeft:'1in',            height:'fit-content',            paddingRight:'1in',            paddingTop:'.5cm',            paddingBottom:'.5cm',            position:'relative',            border:'solid thin black'        },        att:{            id:'commentPDF'        },        externalStyle:'/client/component/otherComponent/style/comment.css',        elementHandler:getCont    }))}
+import {$} from '../../lib/lib.js'
+
+export const headerFooter=({content})=>{
+    const TableHeader=()=>{
+        return($({
+            tag:'table',
+            style:{
+                width:'100%'
+            },
+            att:{
+                className:'printContainer'
+            },
+            child:[
+                $({
+                    tag:'thead',
+                    child:[
+                        $({
+                            tag:'tr',
+                            child:[
+                                $({
+                                    tag:'td',
+                                    child:[
+                                        $({
+                                            tag:'div',
+                                            att:{
+                                                className: 'empty-header'
+                                            }
+                                        })
+                                    ]
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                $({
+                    tag:'tbody',
+                    child:[
+                        $({
+                            tag:'tr',
+                            child:[
+                                $({
+                                    tag:'td',
+                                    child:[
+                                        $({
+                                            tag:'div',
+                                            att:{
+                                                className: 'contentPrinter'
+                                            },
+                                            child:content
+                                        })
+                                    ]
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                $({
+                    tag:'tfoot',
+                    child:[
+                        $({
+                            tag:'div',
+                            att:{
+                                className:'empty-footer'
+                            }
+                        })
+                    ]
+                })
+            ]
+        }))
+    }
+
+    return($({
+        tag:'div',
+        style:{
+            width: '210mm', // A4 width
+            height: '297mm', // A4 height
+            position: 'relative'
+        },
+        child:[
+            $({
+                tag:'div',
+                att:{
+                    className:'header-image-container'
+                },
+                style:{
+                    position: 'absolute',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    zIndex: '0',
+                    pointerEvents: 'none'
+                },
+                child:[
+                    $({
+                        tag:'img',
+                        att:{
+                            src:"/client/images/header.png",
+                            className: 'header-footer-image'
+                        },
+                        style:{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain'
+                        }
+                    })
+                ]
+            }),
+            $({
+                tag:'div',
+                att:{
+                    className:'content-overlay'
+                },
+                style:{
+                    position: 'relative',
+                    zIndex: '1',
+                    width: '100%',
+                    height: '100%',
+                    padding: '10mm 15mm 15mm 15mm', // Adjust padding for content area
+                    boxSizing: 'border-box'
+                },
+                child:[
+                    TableHeader()
+                ]
+            })
+        ]
+    }))
+}
+
+export const Print=({title,category,campus,date,author,review,getHandler,all})=>{
+    console.log('Print function received campus:', campus);
+    const details=()=>{
+        const tdData=({data,width})=>{
+            const getme=(el)=>{
+                if(data){
+                    el.innerHTML=data
+                }
+                if(width){
+                    el.style.width=width
+                }
+            }
+            return($({
+                tag:'td',
+                elementHandler:getme
+            }))
+        }
+        
+        const row=({leb1,leb2})=>{
+            return($({
+                tag:'tr',
+                child:[ // This should be an array
+                    leb1,
+                    leb2
+                ]
+            }))
+        }
+
+        return($({
+            tag:'table',
+            style:{
+                width:'100%',
+                marginTop: '10mm',
+                marginBottom: '10mm'
+            },
+            child:[
+                row({
+                    leb1:tdData({
+                        data:'<b>Campus</b>',
+                        width:'15%'
+                    }),
+                    leb2:tdData({
+                        data:': '+campus,
+                        width:'85%'
+                    }),
+                }),
+                row({
+                    leb1:tdData({
+                        data:'<b>Title </b>',
+                        width:'15%',
+                    }),
+                    leb2:tdData({
+                        data:': '+title,
+                        width:'85%'
+                    }),
+                }),
+                row({
+                    leb1:tdData({
+                        data:'<b>Category</b>',
+                        width:'15%'
+                    }),
+                    leb2:tdData({
+                        data:': '+category,
+                        width:'85%'
+                    }),
+                }),
+                row({
+                    leb1:tdData({
+                        data:'<b>Author</b>',
+                        width:'15%'
+                    }),
+                    leb2:tdData({
+                        data:': '+author,
+                        width:'85%'
+                    }),
+                }),
+            ]
+        }))
+    }
+
+    const getCont=(el)=>{
+        getHandler(el)
+        
+        // Main container with header image background
+        el.style.cssText = `
+            width: 210mm;
+            min-height: 297mm;
+            background-image: url("/client/images/header.png");
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            font-size: 11pt;
+            padding: 30mm 20mm 30mm 20mm; /* Adjusted padding to fit within header/footer */
+            box-sizing: border-box;
+            position: relative;
+            border: 1px solid #ccc;
+            font-family: 'Arial', sans-serif;
+        `;
+        
+        // Content wrapper to ensure text stays within safe area
+        const contentWrapper = $({
+            tag:'div',
+            style:{
+                width: '100%',
+                minHeight: 'calc(297mm - 70mm)', // Full height minus top/bottom padding
+                position: 'relative'
+            }
+        });
+        
+        // Add details section
+        contentWrapper.appendChild(details());
+        
+        // Add a separator
+        contentWrapper.appendChild($({
+            tag:'hr',
+            style:{
+                border: '1px solid #ccc',
+                margin: '10mm 0'
+            }
+        }));
+
+        // Add reviews/comments
+        if(review && Array.isArray(review)){
+            review.forEach((val, index)=>{
+                // Check if val is an object and has required properties
+                if (!val || typeof val !== 'object') {
+                    console.warn('Invalid review item:', val);
+                    return;
+                }
+                
+                let state=true;
+                if(all){
+                    if(val.evalName && val.evalName.toUpperCase().includes("TECHNICAL")){
+                        state=false
+                    }
+                }
+                
+                if(state){
+                    const perComment=()=>{
+                        // Check for page break before new evaluator (except first)
+                        const pageBreakStyle = index > 0 ? {
+                            pageBreakBefore: 'always',
+                            paddingTop: '10mm'
+                        } : {};
+                        
+                        const commentContainer = $({
+                            tag:'div',
+                            style:{
+                                width:'100%',
+                                marginBottom: '15mm',
+                                ...pageBreakStyle
+                            }
+                        });
+                        
+                        // Evaluator header - only if evalName exists
+                        if (val.evalName) {
+                            // FIX: Ensure child is an array
+                            const evaluatorDiv = $({
+                                tag:'div',
+                                style:{
+                                    width:'100%',
+                                    fontSize: '12pt',
+                                    fontWeight: 'bold',
+                                    color: '#2c3e50',
+                                    marginBottom: '5mm',
+                                    borderBottom: '2px solid #3498db',
+                                    paddingBottom: '2mm'
+                                },
+                                child: [ // Make sure this is an array
+                                    $({
+                                        tag:'table',
+                                        style:{
+                                            width:'100%',
+                                        },
+                                        child: [ // Make sure this is an array
+                                            $({
+                                                tag:'tr',
+                                                att:{
+                                                    innerHTML:`<td style="font-size: 12pt; font-weight: bold;">EVALUATOR: ${val.evalName}</td>`
+                                                }
+                                            })
+                                        ]
+                                    })
+                                ]
+                            });
+                            commentContainer.appendChild(evaluatorDiv);
+                        }
+                        
+                        // Function to add comment sections
+                        const addCommentSection = (label, data) => {
+                            if (data && data.trim() !== '') {
+                                const section = $({
+                                    tag:'div',
+                                    style:{
+                                        marginBottom: '5mm'
+                                    },
+                                    child: [ // Make sure this is an array
+                                        $({
+                                            tag:'div',
+                                            style:{
+                                                fontWeight: 'bold',
+                                                fontSize: '11pt',
+                                                color: '#34495e',
+                                                marginBottom: '2mm'
+                                            },
+                                            text: label + ':'
+                                        }),
+                                        $({
+                                            tag:'div',
+                                            style:{
+                                                fontSize: '10pt',
+                                                lineHeight: '1',
+                                                color: '#2c3e50',
+                                                padding: '2mm',
+                                                backgroundColor: '#f8f9fa',
+                                                borderRadius: '3px',
+                                                borderLeft: '3px solid #3498db',
+                                                wordBreak: 'break-word',
+                                                whiteSpace: 'pre-wrap'
+                                            },
+                                            att:{
+                                                innerHTML: data.replace(/\n/g, '<br>')
+                                            }
+                                        })
+                                    ]
+                                });
+                                
+                                commentContainer.appendChild(section);
+                            }
+                        };
+                        
+                        // Add all comment sections - check if each property exists
+                        if (val.intro) addCommentSection("Introduction", val.intro);
+                        if (val.abstract) addCommentSection("Abstract", val.abstract);
+                        if (val.objective) addCommentSection("Objectives", val.objective);
+                        if (val.methodology) addCommentSection("Methodology", val.methodology);
+                        if (val.results) addCommentSection("Results and Discussion", val.results);
+                        if (val.recommendation) addCommentSection("Conclusion and Recommendation", val.recommendation);
+                        if (val.literature) addCommentSection("Literature Cited", val.literature);
+                        if (val.other) addCommentSection("Other comments", val.other);
+                        
+                        return commentContainer;
+                    }
+                    
+                    contentWrapper.appendChild(perComment());
+                }
+            })
+        }
+        
+        el.appendChild(contentWrapper);
+    }
+
+    return($({
+        tag:'div',
+        style:{
+            backgroundColor:'white'
+        },
+        att:{
+            id:'commentPDF'
+        },
+        externalStyle:'/client/component/otherComponent/style/comment.css',
+        elementHandler:getCont
+    }))
+}

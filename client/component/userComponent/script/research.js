@@ -2615,7 +2615,7 @@ const Submitted = () => {
                             ]
                         }))
                     }
-                    const comments = (Review) => {
+                    const comments = (Review, campusName) => {
                         let comm
                         const getComment = (el) => {
                             comm = el
@@ -2752,7 +2752,7 @@ const Submitted = () => {
                             child: [
                                 Print({
                                     title: resTitle,
-                                    campus: "",
+                                    campus: campusName,
                                     author: author,
                                     category: category,
                                     date: '1-21-2022',
@@ -2858,34 +2858,25 @@ const Submitted = () => {
                                     event:{
                                         type:'click',
                                         method:()=>{
-                                            /*
-                                            const form = new FormData()
-                                        form.append('commentRequest', 'true')
-                                        form.append('docId', docId)
-                                        fetch('/uploadResearchFile', {
-                                            method: "POST",
-                                            body: form
-                                        }).then(res => res.json())
-                                            .then(data => {
-                                                mainFrame.appendChild(comments(data))
-                                            })
-                                             */
-                                            const req= new Request('/uploadResearchFile')
-                                            req.Post([
-                                                {
-                                                    name:'commentRequest',
-                                                    value:'true'
-                                                },
-                                                {
-                                                    name:'docId',
-                                                    value:resId
-                                                }
-                                            ])
-                                            req.Json()
-                                            req.Send().then(data=>{
-                                                bodCo.appendChild(comments(data))
-                                            })
-                                        }
+                                                
+                                                const req= new Request('/uploadResearchFile')
+                                                req.Post([
+                                                    {
+                                                        name:'commentRequest',
+                                                        value:'true'
+                                                    },
+                                                    {
+                                                        name:'docId',
+                                                        value:resId
+                                                    }
+                                                ])
+                                                req.Json()
+                                                req.Send().then(data=>{
+                                                    console.log('API Response:', data);
+                                                    const campusName = data.length > 0 ? data[0].campus : "No campus specified";
+                                                    bodCo.appendChild(comments(data, campusName))
+                                                })
+                                            }
                                     },
                                     child:[
                                         $({
@@ -2897,7 +2888,6 @@ const Submitted = () => {
                                         })
                                     ]
                                 }),
-
                             ]
                         })
                         // Determine if it's a Google Drive file

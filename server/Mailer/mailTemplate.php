@@ -250,7 +250,6 @@ function CommentNotification($evaluatorName, $eventName, $title, $campus, $autho
         </div>";
     }
     
-    // Rest of the function remains the same...
     return "
     <!DOCTYPE html>
     <html>
@@ -324,9 +323,9 @@ function CommentNotification($evaluatorName, $eventName, $title, $campus, $autho
                 </div>
                 
                 <div style='text-align: center; margin: 30px 0;'>
-                    <a href='$documentUrl' class='button'>View Document in RDE System</a>
+                    <a href='https://rde1.capsu.edu.ph/account/Login?redirect=<?php echo urlencode($documentUrl); ?>' class='button'>Login to View Document</a>
                     <p style='font-size: 12px; color: #7f8c8d; margin-top: 10px;'>
-                        Note: You need to log in to the RDE system to view the complete document.
+                        You will be redirected to the document after successful login.
                     </p>
                 </div>
                 

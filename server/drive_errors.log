@@ -525,3 +525,89 @@ Stack trace:
 #4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
 #5 {main}
   thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2544
+[26-Jan-2026 11:58:58 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.e...' at line 13 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2538
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2538): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2538
+[26-Jan-2026 11:59:05 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.e...' at line 13 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2538
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2538): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2538
+[26-Jan-2026 11:59:05 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.e...' at line 13 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2538
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2538): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2538
+[26-Jan-2026 11:59:14 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.e...' at line 13 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2538
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2538): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2538
+[26-Jan-2026 11:59:14 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.e...' at line 13 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2538
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2538): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2538
+[26-Jan-2026 12:00:26 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.e...' at line 13 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2538
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2538): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2538
+[26-Jan-2026 12:00:30 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.e...' at line 13 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2538
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2538): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2538
+[26-Jan-2026 12:00:30 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.e...' at line 13 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2538
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2538): mysqli->query('SELECT\r\n       ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2538
+[26-Jan-2026 13:13:55 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
+[26-Jan-2026 13:14:09 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
+[26-Jan-2026 13:14:38 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
+[26-Jan-2026 13:14:41 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
+[26-Jan-2026 13:14:45 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
+[26-Jan-2026 13:14:48 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887

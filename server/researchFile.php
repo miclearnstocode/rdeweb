@@ -806,7 +806,7 @@ function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $e
     // Get the system base URL
     $baseUrl = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
     $baseUrl .= $_SERVER['HTTP_HOST'];
-    $documentUrl = $baseUrl . "/user/create/share?tab=viewMyResearch";
+    $documentUrl = $baseUrl . "/account/Login?redirect=" . urlencode("/user/research/submittedDocs/submittedFiles");
     
     // Prepare the email
     $from = new stdClass();
@@ -2529,13 +2529,10 @@ if (isset($_POST['commentRequest'])) {
         comments.literature,
         comments.other,
         comments.date,
-        evaluator.fullname
-
-        FROM
-        comments
-        LEFT JOIN
-        evaluator
-        ON evaluator.id=comments.evalid
+        evaluator.fullname,
+        researchfile.campus FROM comments
+        LEFT JOIN evaluator ON evaluator.id=comments.evalid
+        LEFT JOIN researchfile ON researchfile.id = comments.resid
         WHERE comments.resid='$docId'";
 
         foreach ($con->query($query) as $val) {
@@ -2552,6 +2549,7 @@ if (isset($_POST['commentRequest'])) {
             $data->other = $val['other'];
             $data->date = $val['date'];
             $data->evalName = $val['fullname'];
+            $data->campus = $val['campus'];
             $response[] = $data;
         }
     }
