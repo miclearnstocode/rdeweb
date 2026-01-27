@@ -385,21 +385,22 @@ if (isset($_POST['uploadResearch'])) {
                                     researchfile.drive_folder_id,
                                     researchfile.drive_event_folder_id,
                                     researchfile.drive_center_folder_id,
-                                    researchfile.event,
+                                    researchfile.event,           
+                                    researchfile.event_id,     
                                     researchfile.campus,
                                     researchfile.coauthor,
                                     researchfile.category, 
                                     researchfile.reviews) 
-                                SELECT ?, endorsement.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                                SELECT ?, endorsement.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
+                                    (SELECT id FROM event_list WHERE name = ? LIMIT 1),  // GET event_id
+                                    ?, ?, ?, ?
                                 FROM endorsement 
                                 WHERE endorsement.senderid=? 
                                 ORDER BY endorsement.id DESC LIMIT 1";
-                                
-                                $stementResNew = $con->prepare($querV2);
-                                $rev = "[]";
-                                
+
+                                // Update the bind_param to include event_id parameter:
                                 $stementResNew->bind_param(
-                                    'sssssssssssssss',
+                                    'ssssssssssssssss', 
                                     $serderId,
                                     $author,
                                     $title,
@@ -409,7 +410,8 @@ if (isset($_POST['uploadResearch'])) {
                                     $researchDriveResult['drive_folder_id'],
                                     $researchDriveResult['drive_event_folder_id'],
                                     $researchDriveResult['drive_center_folder_id'],
-                                    $eventType,
+                                    $eventType,     
+                                    $eventType,      
                                     $campus,
                                     $coAuthor,
                                     $category,
@@ -559,17 +561,18 @@ if (isset($_POST['researchSubmit'])) {
             researchfile.drive_download_url,
             researchfile.title,
             researchfile.event,
+            researchfile.event_id,      
             researchfile.category,
             endorsement.campus,
             event_list.id as eventId,
             category.id as catId
         FROM researchfile
         LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
-        LEFT JOIN event_list ON researchfile.event = event_list.name
+        LEFT JOIN event_list ON researchfile.event_id = event_list.id
         LEFT JOIN category ON researchfile.category = category.name
         WHERE endorsement.status = ? 
         AND (researchfile.category = ? OR researchfile.category LIKE CONCAT(?, '%') OR category.name = ? OR category.name LIKE CONCAT(?, '%')) 
-        AND event_list.id = ? 
+        AND researchfile.event_id = ?
         AND event_list.dead_line > CURRENT_TIMESTAMP";
 
         $stm = $con->prepare($sqlQueries);

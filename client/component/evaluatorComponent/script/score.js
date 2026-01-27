@@ -1,4 +1,4 @@
-    import {$, Request} from '../../../lib/lib.js'
+import {$, Request} from '../../../lib/lib.js'
 
 
 export const ScoreBoard=({resId,eventId,category})=>{
@@ -16,7 +16,6 @@ description:val.percentage,
 score:0
  */
     const Submit= ()=>{
-
         setTimeout(async ()=>{
             const form= new FormData()
             form.append('category',category)
@@ -35,16 +34,13 @@ score:0
                     alert(data.message);
                 })
         },100)
-
     }
     const InputEvent=({id,value})=>{
-
         for(let x=0;x<dataArray.length;x++){
             if(dataArray[x].criteriaId==id){
                 dataArray[x].score=value
             }
         }
-
     }
     const scoreBoardCriPanel=()=>{
         const PerCritScore=({name,description,percentage,crit_id})=>{
@@ -121,11 +117,9 @@ score:0
                                         readOnly:AbstainState
                                        // pattern:'\d*',
                                     },
-
                                     event:{
                                         type:'change',
                                         method:function (){
-
                                             this.value=this.value.slice(0,this.maxLength)
                                             if(this.value>100){
                                                 this.value=this.value.slice(0,2)
@@ -163,7 +157,6 @@ score:0
                                             ])
                                             req.Json()
                                             req.Send().then(data=>{
-
                                                 data.forEach((val)=>{
                                                     for(let x=0;x<dataArray.length;x++){
                                                         if(val.criteria_id===dataArray[x].criteriaId){
@@ -187,7 +180,6 @@ score:0
                                         marginLeft:'1vw',
                                         color:'deepskyblue'
                                     },
-
                                 })
                             ]
                         })
@@ -225,8 +217,7 @@ score:0
             elementHandler:async (el)=>{
                 let form= new FormData();
                 form.append('scoreboard_req','1')
-                form.append('eventId',eventId)
-                form.append('categoryId',category)
+                form.append('docId', resId)
                 await fetch('/scoreboard',{
                     method:'post',
                     body:form
@@ -247,13 +238,9 @@ score:0
                             }))
                         })
                     })
-
             }
-
         }))
     }
-
-
     return($({
         tag:'div',
         style:{
@@ -342,14 +329,11 @@ score:0
                                                 let promp
                                                 if(AbstainState){
                                                     promp=confirm("You will be remove from being abstain for this document. Do you want to proceed?")
-
                                                 }else{
                                                     promp=confirm("Your score for this document will not be include for computation. Do you want to proceed?")
                                                 }
                                                 if(promp){
-
                                                     const req= new Request('/abstain')
-
                                                     if(AbstainState){
                                                         // Delete Abstain
                                                         req.Post([
@@ -379,7 +363,6 @@ score:0
                                                             }
                                                         ])
                                                     }
-
                                                     req.Json()
                                                     req.Send().then(data=>{
                                                         if(data.status){
@@ -390,7 +373,6 @@ score:0
                                                         alert('Error submitting score. Please try again.')
                                                     })
                                                 }
-
                                             }
                                         },
                                         elementHandler:(el)=>{
@@ -408,11 +390,8 @@ score:0
                                             req.Json()
                                             req.Send().then(data=>{
                                                 AbstainState=(data.status !== 0)
-
                                                 if(AbstainState){
-
                                                     el.style.backgroundColor='red'
-
                                                 }else {
                                                     el.style.backgroundColor='#aaa'
                                                 }

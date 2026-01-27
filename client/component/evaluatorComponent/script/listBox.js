@@ -1507,27 +1507,16 @@ export const Box=  (getBody)=>{
 
 
     const listTable=({date,title,author,campus,file,docID,comments,status})=>{
-
         const R1=()=>{
-
             const data=({className,content})=>{
-
                 return($({
-
                     tag:'td',
-
                     att:{
-
                         className:className
-
                     },
-
                     text:content
-
                 }))
-
             }
-
             return($({
                 tag:'tr',
                 child:[
@@ -1543,92 +1532,49 @@ export const Box=  (getBody)=>{
                         className:'campusListEval',
                         content:campus
                     }),
-
                 ]
-
             }))
-
         }
-
         const R2=()=>{
-
             return($({
-
                 tag:'tr',
-
                 style:{
-
                     backgroundColor:'rgba(0,0,0,0.3)'
-
                 },
-
                 child:[
-
                     $({
-
                         tag:'td',
-
                         att:{
-
                             className:'titleEvalLabel',
-
                             colSpan:'3',
-
                             innerHTML:'<span style="font-family: Arial,sans-serif;font-weight: bolder;color: ghostwhite">Title: </span> '+title
-
                         },
-
                         text:'Title: '+title
-
                     }),
-
-
-
                 ]
-
             }))
-
         }
-
         return($({
-
             tag:'table',
-
             att:{
-
                 className:`listTableEval ${(status===null)?"borderHigh":""}`
-
             },
-
             event:{
-
                 type: 'click',
-
                 method:()=>{
-
-
                     panelBox.appendChild(viewResearch(file,docID,comments,title))
-
                 }
-
             },
-
             child:[
-
                 R1(),
-
                 R2()
-
             ]
-
         }))
-
     }
     const Listv2=()=>{
         return($({
             tag:'div',
             style:{
-
             }
         }))
     }
@@ -1636,11 +1582,8 @@ export const Box=  (getBody)=>{
 
 
     const getListPanel= async (panel)=>{
-
         getBody(panel)
-
         panelBox=panel
-
         try {
             // First fetch the category and event
             const evalReq = new FormData()
@@ -1669,7 +1612,7 @@ export const Box=  (getBody)=>{
                         author:val.author,
                         campus:val.campus,
                         docId:val.id,
-                        eventId:val.eventId,
+                        eventId:val.eventId || val.event_id,
                         catId:val.catId
                     }))
                 }else {
@@ -1679,7 +1622,7 @@ export const Box=  (getBody)=>{
                         campus:val.campus,
                         docId:val.id,
                         status:true,
-                        eventId:val.eventId,
+                        eventId:val.eventId || val.event_id,
                         catId:val.catId
                     }),panel.childNodes[0])
                 }
@@ -1688,29 +1631,16 @@ export const Box=  (getBody)=>{
             console.error('Error loading research list:', err)
             panel.innerHTML='<div style="color:red;padding:20px">Error loading entries. Please refresh the page.</div>'
         }
-
     }
-
-
-
-
-
     return($({
-
         tag:'div',
-
         att:{
-
             className:'listBox'
-
         },
         style:{
             backgroundColor:'black'
         },
-
         elementHandler:getListPanel
-
     }))
-
 }
 

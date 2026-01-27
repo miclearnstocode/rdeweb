@@ -7,10 +7,11 @@ include('db.php');
 /** @var TYPE_NAME $pass */
 /** @var TYPE_NAME $dbName */
 
+// this post changes the center from category so to create a new list of criteria
 if(isset($_POST['requestCat'])){
     $response=[];
     if($con=new mysqli($host,$username,$pass,$dbName)){
-        $query="SELECT * FROM `category`";
+        $query="SELECT * FROM `center`";
         $statement=$con->prepare($query);
         $statement->execute();
         $result=$statement->get_result();
@@ -23,7 +24,7 @@ if(isset($_POST['requestCat'])){
 
 if(isset($_POST['getCatName'])){
     if($con=new mysqli($host,$username,$pass,$dbName)){
-        $query="SELECT category.name FROM category WHERE category.id=?";
+        $query="SELECT center.name FROM center WHERE center.id=?";
         $statement=$con->prepare($query);
         $statement->bind_param('s',$_POST['catId']);
         $statement->execute();

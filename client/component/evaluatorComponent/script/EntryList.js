@@ -75,7 +75,6 @@ export const EntryList=({title,author,docId,index,campus,status,eventId,catId})=
                             margin: 'auto',
                             marginLeft: '1vw',
                             marginRight:'auto',
-
                         },
                         child:[
                             $({
@@ -103,10 +102,7 @@ export const EntryList=({title,author,docId,index,campus,status,eventId,catId})=
                     color:status?'deepskyblue':'#bbb'
                 }
             }),
-
-
         ],
-
         event:{
             type:'click',
             method:(eve)=>{

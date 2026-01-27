@@ -611,3 +611,8 @@ Stack trace:
 [26-Jan-2026 13:14:41 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
 [26-Jan-2026 13:14:45 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
 [26-Jan-2026 13:14:48 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
+[27-Jan-2026 08:39:31 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
+[27-Jan-2026 08:39:34 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 887
+[27-Jan-2026 10:01:42 Asia/Manila] PHP Warning:  Undefined array key "eventId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 551
+[27-Jan-2026 10:01:42 Asia/Manila] PHP Warning:  Undefined array key "userName" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 552
+[27-Jan-2026 10:01:42 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 553

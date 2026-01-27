@@ -10,7 +10,7 @@ include('db.php');
 if (isset($_POST['criteriaList'])) {
     $response=[];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query="SELECT category.id , category.name FROM category";
+        $query="SELECT center.id , center.name FROM center";
         $statement=$con->prepare($query);
         $statement->execute();
         $result=$statement->get_result();
@@ -33,8 +33,8 @@ criteria.description,
 criteria.percentage
 FROM criteria
 LEFT JOIN score_sheet ON criteria.score_sheet_id=score_sheet.id
-LEFT JOIN category ON criteria.category_id=category.id
-WHERE category.id=? AND criteria.event_id=?";
+LEFT JOIN center ON criteria.center_id=center.id
+WHERE center.id=? AND criteria.event_id=?";
 
         $statement=$con->prepare($query);
         $statement->bind_param('ss',$catId,$eventId);

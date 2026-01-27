@@ -1,21 +1,11 @@
 import {$} from '../lib/lib.js'
-
 import {AddUser} from "./adminComponent/script/addUser.js";
-
 import {Header} from "./otherComponent/header.js";
-
 import {AccountList} from "./adminComponent/script/account.js";
-
 import {Files} from "./adminComponent/script/file.js";
-
 import {Events} from "./adminComponent/script/events.js";
-
 import {Recommendation} from "./adminComponent/script/recommendation.js";
-
-
-
 import {DocumentLog} from "./adminComponent/script/documentLog.js";
-
 import {Override} from "./adminComponent/script/override.js";
 import {ExternalAccount} from "./adminComponent/script/externalUser.js";
 
@@ -464,119 +454,60 @@ pages.push({
 })
 
 pages.push({
-
     url: '/admin/events',
-
     button: $({
-
         tag: 'div',
-
         att: {
-
             className: 'botTabsDiv'
-
         },
-
-
-
         child: [
-
             $({
-
                 tag: 'table',
-
                 att: {
-
                     className: 'botTable'
-
                 },
-
                 child: [
-
                     $({
-
                         tag: 'tr',
-
                         child: [
-
                             $({
-
                                 tag: 'td',
-
                                 att: {
-
                                     className: 'iconBot'
-
                                 },
-
                                 child: [
-
                                     $({
-
                                         tag: 'span',
-
                                         att: {
-
                                             className: "fa-solid fa-calendar-plus"
-
                                         },
-
                                     })
-
                                 ]
-
                             }),
-
                             $({
-
                                 tag: 'td',
-
                                 att: {
-
                                     className: 'labelBot'
-
                                 },
-
                                 style:{
-
                                     fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif'
-
                                 },
-
                                 text: 'Events'
-
                             })
-
                         ]
-
                     })
-
                 ]
-
             })
-
         ],
-
         event: {
-
             type: 'click',
-
             method: () => {
-
                 window.location.assign('/admin/events')
-
             }
-
         }
-
     }),
-
     page: Events
-
-
-
 })
-
 pages.push({
 
     url: '/admin/files/endorsement',
