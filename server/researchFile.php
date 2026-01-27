@@ -2457,9 +2457,6 @@ if (isset($_POST['incomingEndorsement'])) {
 }
 
 
-
-
-
 if (isset($_POST['researchDocsNew'])) {
     $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {

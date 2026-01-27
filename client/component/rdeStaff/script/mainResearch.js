@@ -69,7 +69,8 @@ export const ResearchMain = () => {
                         $({
                             tag: 'span',
                             att: {
-                                className: 'fa-solid fa-magnifying-glass'
+                                className: 'fa-solid fa-magnifying-glass',
+                                title: 'Search Endorsement Docs'
                             },
                             style: {
                                 color: 'deepskyblue',
@@ -81,7 +82,7 @@ export const ResearchMain = () => {
                             att: {
                                 type: 'text',
                                 className: 'searchInput',
-                                placeholder: 'Search docs',
+                                placeholder: 'Search Endorsement Docs',
                             },
                             style: {
                                 backgroundColor: 'transparent',
@@ -2284,8 +2285,6 @@ export const ResearchMain = () => {
                 },
 
                 elementHandler: (el) => {
-
-
                     el.appendChild($({
 
                         tag: 'div',
@@ -2335,11 +2334,9 @@ export const ResearchMain = () => {
                                     $({
 
                                         tag: 'span',
-
                                         att: {
-
-                                            className: 'fa-solid fa-magnifying-glass'
-
+                                            className: 'fa-solid fa-magnifying-glass',
+                                            title: 'Search Event Document'
                                         },
 
                                         style: {
@@ -2359,7 +2356,7 @@ export const ResearchMain = () => {
                                         att: {
                                             type: 'text',
                                             className: 'searchInput',
-                                            placeholder: 'Search docs'
+                                            placeholder: 'Search Event Document'
                                         },
                                         event: {
                                             type: 'input',
@@ -2812,7 +2809,8 @@ export const ResearchMain = () => {
 
                                             att: {
 
-                                                className: 'fa-solid fa-arrow-rotate-right'
+                                                className: 'fa-solid fa-arrow-rotate-right',
+                                                title: 'Refresh'
 
                                             },
 
@@ -3072,7 +3070,8 @@ export const ResearchMain = () => {
 
                                             att: {
 
-                                                className: 'fa-solid fa-arrow-left'
+                                                className: 'fa-solid fa-arrow-left',
+                                                title: 'Refresh'
 
                                             },
 
@@ -3234,31 +3233,20 @@ export const ResearchMain = () => {
                 child: [
 
                     $({
-
                         tag: 'div',
-
                         style: {
-
                             fontSize: '1vw',
-
                             cursor: 'pointer',
-
-                            fontFamily: 'arial black,sans-serif'
-
+                            fontFamily: 'arial black,sans-serif',
+                            color: 'grey'
                         },
-
                         text: 'Print All Comments',
                     })
                 ],
-
                 event: {
-
                     type: 'click',
-
                     method: () => {
-
                         mainFrame.appendChild(printPane())
-
                     }
                 }
             }))
@@ -3298,7 +3286,8 @@ export const ResearchMain = () => {
                                             tag:'div',
                                             att:{
                                                 //<i class="fa-solid fa-square-caret-up"></i>
-                                                className:'fa-solid fa-square-caret-up'
+                                                className:'fa-solid fa-square-caret-up',
+                                                
                                             },
                                             style:{
                                                 width:'5%',
@@ -3605,7 +3594,8 @@ export const ResearchMain = () => {
                                 $({
                                     tag:"button",
                                     att:{
-                                        className:'fa-solid fa-rotate'
+                                        className:'fa-solid fa-rotate',
+                                        title: 'Refresh'
                                     },
                                     style:{
                                         color:"deepskyblue",
@@ -3810,6 +3800,7 @@ export const ResearchMain = () => {
                             tag:'button',
                             att:{
                                 className:'fa-solid fa-chart-bar',
+                                title: 'View Summary'
                             },
                             style:{
                                 fontSize:'1.4vw',
@@ -3921,21 +3912,13 @@ export const ResearchMain = () => {
                                         const req = new Request('/eventRequest')
 
                                         req.Post([
-
                                             {
-
                                                 name: 'getEventAdmin',
-
                                                 value: '1'
-
                                             }
-
                                         ])
-
                                         req.Json()
-
                                         req.Send().then(data => {
-
                                             data.forEach(val => {
 
                                                 el.appendChild($({
@@ -3986,7 +3969,8 @@ export const ResearchMain = () => {
 
                                     att: {
 
-                                        className: 'fa-solid fa-arrows-rotate'
+                                        className: 'fa-solid fa-arrows-rotate',
+                                        title: 'Refresh Event Documents'
 
                                     },
 
@@ -4017,25 +4001,15 @@ export const ResearchMain = () => {
                                             const req = new Request('/eventRequest')
 
                                             req.Post([
-
                                                 {
-
                                                     name: 'requestEventRDE',
-
                                                     value: '0'
-
                                                 },
-
                                                 {
-
                                                     name: 'eventId',
-
                                                     value: request
-
                                                 }
-
                                             ])
-
                                             req.Json()
 
                                             req.Send().then(data => {
@@ -4104,6 +4078,7 @@ export const ResearchMain = () => {
                             tag:'a',
                             att:{
                                 className:'fa-solid fa-ranking-star',
+                                title: 'View Score Summary',
                                 href:'/rdeOffice/research/scoreSummary'
                             },
                             style:{
@@ -4121,6 +4096,7 @@ export const ResearchMain = () => {
                     ]
                 }))
             }
+
             const EndorsementPanel = () => {
 
 
@@ -5193,7 +5169,8 @@ export const ResearchMain = () => {
                                     },
                                     att:{
                                         className:'fa-solid fa-rotate',
-                                        href:'/rdeOffice/research/scoreSummary'
+                                        href:'/rdeOffice/research/scoreSummary',
+                                        title: 'Refresh'
                                     },
                                     elementHandler:(el)=>{
                                         Anchor=el
@@ -5227,7 +5204,7 @@ export const ResearchMain = () => {
                                         selected:true,
                                         disabled:true,
                                     },
-                                    text:'Select Event '
+                                    text:'Select Event' //this is my problem here
                                 })
                             ],
                             elementHandler:(el)=>{
@@ -5397,6 +5374,10 @@ export const ResearchMain = () => {
                                     {
                                         name:'getCatIdName',
                                         value:text
+                                    },
+                                    {
+                                        name: 'eventId',
+                                        value: Path(4) || '0' // Pass the event ID to determine new/old system
                                     }
                                 ])
                                 req.Json()
@@ -5406,7 +5387,8 @@ export const ResearchMain = () => {
                                         tag:'a',
                                         att:{
                                             href:Current().replace(Base(),'').split('/').slice(0,5).join('/'),
-                                            className:'fa-solid fa-arrow-left'
+                                            className:'fa-solid fa-arrow-left',
+                                            title: 'Refresh'
                                         },
                                         style:{
                                             color:'deepskyblue',
@@ -5467,8 +5449,6 @@ export const ResearchMain = () => {
                                 request.Send().then((data)=>{
                                     let Titles=[]
                                     let docSet
-                                    console.log('Raw data from server:', data);
-        
                                     data.forEach(val => {
                                         console.log('Evaluator data:', val.evaluator?.fullname);
                                         console.log('Docs count:', val.docs?.length);
