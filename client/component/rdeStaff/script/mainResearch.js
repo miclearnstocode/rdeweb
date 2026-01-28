@@ -2357,199 +2357,104 @@ export const ResearchMain = () => {
             let toolBox
 
             const printPane = () => {
-
                 let filter = null
-
                 let category = null
-
                 const getCategory = (value) => {
-
                     category = value
-
                 }
-
                 const getFilter = (value) => {
-
                     filter = value
-
                 }
-
                 let print
-
                 const getPrintable = (el) => {
-
                     print = el
-
                 }
-
                 let samp
-
-
                 const left = $({
-
                     tag: 'div',
-
                     style: {
-
                         width: '20%',
-
                         height: '100%%',
-
                         backgroundColor: '#555',
-
                         justifyContent: 'center',
-
                         display: 'flex'
-
                     },
-
                     child: [
-
                         $({
-
                             tag: 'div',
-
                             style: {
-
                                 width: '90%',
-
                                 height: 'fit-content',
-
                                 margin: 'auto'
-
                             },
-
                             child: [
-
                                 $({
-
                                     tag: 'div',
-
                                     text: 'Filter',
-
                                     style: {
-
                                         fontFamily: 'arial black,sans-serif',
-
                                         fontSize: '1.2vw'
-
                                     }
-
                                 }),
-
                                 $({
-
                                     tag: 'div',
-
                                     style: {
-
                                         width: '100%',
-
                                         height: '5vh',
-
                                         margin: 'auto'
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'select',
-
                                             style: {
-
                                                 width: '100%',
-
                                                 backgroundColor: 'transparent',
-
                                                 height: '100%',
-
                                                 fontFamily: '1.1vw',
-
                                                 outline: 'none',
-
                                                 textAlign: 'center',
-
                                                 color: '#ddd',
-
-                                                border: 'solid thin rgba(200,200,200,0.5)'
-
+                                                border: 'solid thin rgba(200,200,200,0.5)',
+                                                borderRadius: '15px'
                                             },
-
                                             elementHandler: async (el) => {
-
                                                 el.appendChild($({
-
                                                     tag: 'option',
-
                                                     text: '-- Select Event type --',
-
                                                     att: {
-
                                                         disabled: true,
-
                                                         selected: true
-
                                                     },
-
                                                     style: {
-
-                                                        backgroundColor: '#333',
-
+                                                        backgroundColor: '#333'
+                                                        
                                                     }
-
                                                 }))
-
                                                 const req = new Request('/eventRequest')
-
                                                 req.Post([{
-
                                                     name: 'getEventAdmin',
-
                                                     value: '1'
-
                                                 }])
-
                                                 req.Json()
-
                                                 req.Send().then(data => {
-
                                                     data.forEach(val => {
-
                                                         el.appendChild($({
-
                                                             tag: 'option',
-
                                                             text: val.name,
-
                                                             att: {
-
                                                                 id: val.id
-
                                                             },
-
                                                             style: {
-
                                                                 backgroundColor: '#333',
-
                                                                 color: '#bbb',
-
                                                                 height: '4vh',
-
                                                                 fontSize: '1.1vw'
-
+                                                                
                                                             }
-
                                                         }))
-
                                                     })
-
                                                 })
-
-
                                             },
-
                                             event: {
                                                 type: 'change',
                                                 method: (event) => {
@@ -2569,363 +2474,210 @@ export const ResearchMain = () => {
                                     child: [
                                         $({
                                             tag: 'select',
-
                                             style: {
-
                                                 width: '100%',
-
                                                 backgroundColor: 'transparent',
-
                                                 height: '100%',
-
                                                 fontFamily: '1.1vw',
-
                                                 outline: 'none',
-
                                                 textAlign: 'center',
-
                                                 color: '#ddd',
-
-                                                border: 'solid thin rgba(200,200,200,0.5)'
-
+                                                border: 'solid thin rgba(200,200,200,0.5)',
+                                                borderRadius: '15px'
                                             },
-
                                             child: [
-
                                                 $({
-
                                                     tag: 'option',
-
-                                                    text: '-- Select Category --',
-
+                                                    text: '-- Select Center --',
                                                     att: {
-
                                                         disabled: true,
-
                                                         selected: true
-
                                                     }
-
                                                 }),
-
                                                 $({
-
                                                     tag: 'option',
-
                                                     text: 'Print All Category',
-
                                                     style: {
-
                                                         backgroundColor: '#333',
-
                                                         fontSize: '1.1vw'
-
                                                     }
-
                                                 }),
-
-
                                                 $({
-
                                                     tag: 'option',
-
-                                                    text: 'Social Science',
-
+                                                    text: 'Crop Science Research & Developement Center (CSRDC)',
                                                     style: {
-
                                                         backgroundColor: '#333',
-
                                                         fontSize: '1.1vw'
-
                                                     }
-
                                                 }),
-
                                                 $({
-
                                                     tag: 'option',
-
-                                                    text: 'Natural / Biological',
-
+                                                    text: 'Livestock Research & Development Center (LRDC)',
                                                     style: {
-
                                                         backgroundColor: '#333',
-
                                                         fontSize: '1.1vw'
-
                                                     }
-
                                                 }),
-
                                                 $({
-
                                                     tag: 'option',
-
-                                                    text: 'Food',
-
+                                                    text: 'Fisheries Research & Development Center (FRDC)',
                                                     style: {
-
                                                         backgroundColor: '#333',
-
                                                         fontSize: '1.1vw'
-
                                                     }
-
                                                 }),
-
                                                 $({
-
                                                     tag: 'option',
-
-                                                    text: 'Development',
-
+                                                    text: 'Food and Industrial Technology Research & Development Center (FIRDC) ',
                                                     style: {
-
                                                         backgroundColor: '#333',
-
                                                         fontSize: '1.1vw'
-
                                                     }
-
                                                 }),
-
                                                 $({
-
                                                     tag: 'option',
-
-                                                    text: 'Extension',
-
+                                                    text: 'Social Science Research & Development Center (SSRDC)',
                                                     style: {
-
                                                         backgroundColor: '#333',
-
                                                         fontSize: '1.1vw'
-
                                                     }
-
                                                 }),
-
-
+                                                $({
+                                                    tag: 'option',
+                                                    text: 'Machinery and Agricultural Technology Engineering Center (MATEC)     ',
+                                                    style: {
+                                                        backgroundColor: '#333',
+                                                        fontSize: '1.1vw'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'option',
+                                                    text: 'Coconut Research and Development Center (Coco RDC)',
+                                                    style: {
+                                                        backgroundColor: '#333',
+                                                        fontSize: '1.1vw'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'option',
+                                                    text: 'Extension ',
+                                                    style: {
+                                                        backgroundColor: '#333',
+                                                        fontSize: '1.1vw'
+                                                    }
+                                                }),
                                             ],
-
                                             event: {
-
                                                 type: 'change',
-
                                                 method: (event) => {
-
                                                     getCategory(event.target.value)
-
                                                 }
-
                                             }
-
                                         })
-
                                     ]
-
                                 }),
-
                                 $({
-
                                     tag: 'div',
-
                                     style: {
-
                                         width: '100%',
-
                                         height: '5vh',
-
                                         margin: '2vh auto auto',
-
                                         display: 'flex',
-
                                         justifyContent: 'center',
-
                                         cursor: 'pointer'
-
                                     },
-
                                     att: {
-
                                         className: 'printAllReload'
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             att: {
-
                                                 className: 'fa-solid fa-arrow-rotate-right',
-                                                title: 'Refresh'
-
+                                                title: 'Load Request'
                                             },
-
                                             style: {
-
                                                 fontSize: '1.3vw',
-
                                                 height: 'fit-content',
-
                                                 width: 'fit-content',
-
                                                 margin: 'auto',
-
                                                 marginLeft: '1vw',
-
                                             }
-
                                         }),
-
                                         $({
-
                                             tag: 'div',
-
                                             style: {
-
                                                 height: 'fit-content',
-
                                                 width: '100%',
-
                                                 fontFamily: 'arial  black,sans-serif',
-
                                                 margin: 'auto',
-
                                                 marginLeft: '1vw',
-
                                             },
-
                                             text: 'Load Request'
-
                                         })
-
                                     ],
-
                                     event: {
-
                                         type: 'click',
-
                                         method: async () => {
-
                                             const form = new FormData()
-
                                             form.append('commentRequest', 'true')
-
                                             form.append('eventType', filter)
-
                                             form.append('category', category)
-
                                             await fetch('/comments', {
-
                                                 method: 'POST',
-
                                                 body: form
-
                                             }).then(res => res.json())
-
                                                 .then(data => {
-
                                                     print.innerHTML = ''
-
                                                     data.forEach(val => {
                                                         if(val.comments.length > 0){
                                                             print.appendChild(Print({
-
                                                                 title: val.title,
-
                                                                 review: val.comments,
-
                                                                 category: val.category,
-
                                                                 campus: val.campus,
-
                                                                 date: val.date.split(' ')[0],
-
                                                                 author: val.author,
                                                                 all:true,
-
                                                                 getHandler: (el) => {
-
                                                                     samp = el
-
                                                                 }
-
                                                             }))
                                                         }
-
-
-
                                                     })
-
                                                 })
-
                                         }
-
                                     }
-
                                 }),
-
                                 $({
-
                                     tag: 'div',
-
                                     style: {
-
                                         width: '100%',
-
                                         height: '5vh',
-
                                         margin: ' auto',
-
                                         display: 'flex',
-
                                         justifyContent: 'center',
-
                                         cursor: 'pointer'
-
                                     },
-
                                     att: {
-
                                         className: 'printAllReload'
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             att: {
-
-                                                className: 'fa-solid fa-print'
-
+                                                className: 'fa-solid fa-print',
+                                                title: 'Print'
                                             },
-
                                             style: {
-
                                                 fontSize: '1.3vw',
-
                                                 height: 'fit-content',
-
                                                 width: 'fit-content',
-
                                                 margin: 'auto',
-
                                                 marginLeft: '1vw',
-
-
                                             }
-
                                         }),
-
                                         $({
-
                                             tag: 'div',
 
                                             style: {
@@ -2947,144 +2699,157 @@ export const ResearchMain = () => {
                                         })
 
                                     ],
-
                                     event: {
-
                                         type: 'click',
-
                                         method: () => {
-
-                                            const printPage = document.getElementById('commentPDF')
-
-                                            let WinPrint = window.open('', '', 'toolbar=0,scrollbars=0,status=0');
-
-                                            WinPrint.document.write('<head><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/review.css"></head>')
-
-
-                                            const nodes = print.childNodes
-
-                                            for (let x = 0; x < nodes.length; x++) {
-
-                                                const frag = document.createDocumentFragment()
-
-                                                WinPrint.document.write(nodes[x].innerHTML);
-
+                                            // Get all the printable content
+                                            let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
+                                            
+                                            // Start building the HTML document
+                                            let htmlContent = `
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                        <title>Print Comments</title>
+                                        <style>
+                                            body {
+                                                margin: 0;
+                                                padding: 0;
+                                                font-family: Arial, sans-serif;
+                                                -webkit-print-color-adjust: exact !important;
+                                                print-color-adjust: exact !important;
+                                                color-adjust: exact !important;
                                             }
-
-
+                                            @page {
+                                                margin: 0;
+                                                size: letter;
+                                            }
+                                            .page-container {
+                                                position: relative;
+                                                width: 100%;
+                                                height: 100vh;
+                                                page-break-after: always;
+                                                page-break-inside: avoid;
+                                            }
+                                            .page-container:last-child {
+                                                page-break-after: auto;
+                                            }
+                                            .page-background {
+                                                position: absolute;
+                                                top: 0;
+                                                left: 0;
+                                                width: 100%;
+                                                height: 100%;
+                                                z-index: 0;
+                                            }
+                                            .page-background img {
+                                                width: 100%;
+                                                height: 100%;
+                                                object-fit: fill;
+                                                display: block;
+                                            }
+                                            .page-content {
+                                                position: absolute;
+                                                top: 95px;
+                                                left: 0.75in;
+                                                right: 0.75in;
+                                                bottom: 93px;
+                                                z-index: 1;
+                                                overflow: visible;
+                                            }
+                                            * {
+                                                box-sizing: border-box;
+                                            }
+                                        </style>
+                                    </head>
+                                    <body>
+                                    `;
+                                            
+                                            // Get all the nodes to print
+                                            const nodes = print.childNodes;
+                                            
+                                            // Add each document with its own page container and header
+                                            for (let x = 0; x < nodes.length; x++) {
+                                                htmlContent += `
+                                        <div class="page-container">
+                                            <div class="page-background">
+                                                <img src="/client/images/header.png" alt="Header and Footer">
+                                            </div>
+                                            <div class="page-content">
+                                                ${nodes[x].innerHTML}
+                                            </div>
+                                        </div>`;
+                                            }
+                                            
+                                            // Close HTML document
+                                            htmlContent += `
+                                    </body>
+                                    </html>`;
+                                            
+                                            // Write to print window
+                                            WinPrint.document.write(htmlContent);
                                             WinPrint.document.close();
-
-                                            WinPrint.focus();
-
-                                            WinPrint.print();
-
-                                            WinPrint.close();
-
+                                            
+                                            // Wait for images to load, then print
+                                            WinPrint.onload = function() {
+                                                setTimeout(() => {
+                                                    WinPrint.focus();
+                                                    WinPrint.print();
+                                                    WinPrint.close();
+                                                }, 1000);
+                                            };
                                         }
-
                                     }
-
-
                                 }),
-
                                 $({
-
                                     tag: 'div',
-
                                     style: {
-
                                         width: '100%',
-
                                         height: '5vh',
-
                                         margin: ' auto',
-
                                         display: 'flex',
-
                                         justifyContent: 'center',
-
                                         cursor: 'pointer'
-
                                     },
-
                                     att: {
-
                                         className: 'printAllReload'
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             att: {
-
                                                 className: 'fa-solid fa-arrow-left',
                                                 title: 'Refresh'
-
                                             },
-
                                             style: {
-
                                                 margin: 'auto',
-
                                                 width: 'fit-content',
-
                                                 marginLeft: '1vw',
-
                                                 marginRight: '.3vw'
-
                                             }
-
                                         }),
-
                                         $({
-
                                             tag: 'div',
-
                                             style: {
-
                                                 fontFamily: 'arial black,sans-serif',
-
                                                 margin: 'auto',
-
                                                 width: '100%',
-
                                                 marginLeft: '1vw',
-
-
                                             },
-
                                             text: 'Back'
-
                                         })
-
                                     ],
-
                                     event: {
-
                                         type: 'click',
-
                                         method: () => {
-
                                             printerPanel.remove()
-
                                         }
-
                                     }
-
                                 })
-
                             ]
-
                         })
-
                     ]
-
                 })
-
                 const right = $({
 
                     tag: 'div',
@@ -3145,7 +2910,6 @@ export const ResearchMain = () => {
                 }))
 
             }
-
 
             return ($({
 
