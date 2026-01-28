@@ -7,8 +7,7 @@ import {
     Request,
     SearchMethod,
     TimeConvert,
-    Waiting
-} from "../../../lib/lib.js";
+    Waiting } from "../../../lib/lib.js";
 
 import {Print} from "../../otherComponent/comment.js";
 import {PrintSummary} from "../../otherComponent/ReviewTemplate.js";
@@ -117,11 +116,38 @@ export const ResearchMain = () => {
                 })
                 const viewDocs = () => {
                     let frm, viewerPanel
+                    // Parse the file data - it could be JSON string or direct URL
+                    let fileData = file;
+                    let driveViewUrl = file;
+                    
+                    // Try to parse as JSON first
+                    try {
+                        if (typeof file === 'string' && file.includes('{')) {
+                            const parsed = JSON.parse(file);
+                            if (parsed.drive_view_url) {
+                                fileData = parsed;
+                                driveViewUrl = parsed.drive_view_url;
+                            }
+                        }
+                    } catch (e) {
+                        console.log("Could not parse file as JSON, using as direct URL:", e);
+                    }
+                    
+                    // If it's already an object with drive_view_url
+                    if (typeof file === 'object' && file.drive_view_url) {
+                        fileData = file;
+                        driveViewUrl = file.drive_view_url;
+                    }
+                    
+                    // Clean up the URL (remove double slashes from your example)
+                    driveViewUrl = driveViewUrl.replace(/\/\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com');
+
                     const object = ({dataURL, title}) => {
                         let object
                         const getObject = (el) => {
                             object = el
                         }
+                        
                         return ($({
                             tag: 'div',
                             style: {
@@ -228,159 +254,159 @@ export const ResearchMain = () => {
                                     ]
                                 }),
                                 $({
-                                    tag: 'object',
+                                    tag: 'iframe',
                                     att: {
-                                        data: dataURL,
+                                        src: dataURL,
                                         type: 'application/pdf',
+                                        sandbox: 'allow-same-origin allow-scripts allow-popups allow-forms',
+                                        allow: 'autoplay'
                                     },
                                     style: {
                                         width: '80%',
                                         height: '95%',
-                                        margin: 'auto'
+                                        margin: 'auto',
+                                        border: 'none'
                                     }
                                 }),
-
-
                             ]
-
                         }))
-
                     }
-
-
-
                     const getViewer = (el) => {
-
                         viewerPanel = el
-
                     }
-
                     const frameView = $({
-
                         tag: 'div',
-
                         style: {
-
                             width: '70%',
-
                             height: '100%',
                         },
-                        elementHandler: async (el)=>{
-
-                            frm = el
-                            el.appendChild($({
-
-
-                                tag: 'embed',
-
-                                att: {
-                                    //  src:`https://docs.google.com/viewer?url=${window.location.origin+file.replace('..','')}&embedded=true`,
-                                    // src:`https://docs.google.com/viewerng/viewer?url=${window.location.origin+file.replace('..','')}&hl=bn&embedded=true`,
-                                    type: 'application/pdf',
-                                    src:file.replace('..','')
-                                },
-                                style: {
-                                    width: '98%',
-                                    height: '99%',
-                                },
-                            }))
+                        elementHandler: async (el) => {
+                            frm = el;
+                            
+                            let fileId = null;
+                            
+                            // Extract file ID from the JSON string
+                            if (typeof file === 'string') {
+                                // Method 1: Try to parse as JSON first
+                                try {
+                                    const cleanJson = file.replace(/\\\//g, '/');
+                                    const parsed = JSON.parse(cleanJson);
+                                    
+                                    if (parsed.drive_file_id) {
+                                        fileId = parsed.drive_file_id;
+                                    } else if (parsed.drive_view_url) {
+                                        // Extract from drive_view_url
+                                        const match = parsed.drive_view_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                        if (match) fileId = match[1];
+                                    }
+                                } catch (e) {
+                                    // Method 2: Direct regex extraction
+                                    const idMatch = file.match(/"drive_file_id"\s*:\s*"([^"]+)"/);
+                                    if (idMatch) {
+                                        fileId = idMatch[1];
+                                    } else {
+                                        // Method 3: Look for any file ID pattern
+                                        const patternMatch = file.match(/(1[a-zA-Z0-9_-]{10,})/);
+                                        if (patternMatch) {
+                                            fileId = patternMatch[1];
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if (fileId) {
+                                const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                                console.log("Loading:", embedUrl);
+                                
+                                el.appendChild($({
+                                    tag: 'iframe',
+                                    att: {
+                                        src: embedUrl,
+                                        type: 'application/pdf',
+                                        sandbox: 'allow-same-origin allow-scripts allow-popups allow-forms',
+                                        allow: 'autoplay'
+                                    },
+                                    style: {
+                                        width: '98%',
+                                        height: '99%',
+                                        border: 'none',
+                                        backgroundColor: '#fff'
+                                    }
+                                }));
+                            } else {
+                                // Show error
+                                el.appendChild($({
+                                    tag: 'div',
+                                    style: {
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        color: '#fff'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            text: 'Could not extract Google Drive file ID',
+                                            style: {
+                                                fontSize: '1.5vw',
+                                                color: '#f44'
+                                            }
+                                        })
+                                    ]
+                                }));
+                            }
                         }
-
                     })
-
 
                     const DetailsViewer = () => {
 
                         const endorsement = $({
-
                             tag: 'div',
-
                             style: {
-
                                 display: 'flex',
-
                                 justifyContent: 'center',
-
                                 height: '5%',
-
                                 width: '100%',
-
                                 backgroundColor: '#666',
-
                                 borderBottom: 'solid thin #999'
-
                             },
-
                             child: [
-
                                 $({
-
                                     tag: 'div',
-
                                     style: {
-
                                         margin: 'auto',
-
                                         color: 'deepskyblue',
-
                                         display: 'flex',
-
                                         height: 'fit-content',
-
                                         width: 'fit-content',
-
                                         cursor: 'pointer',
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             att: {
-
                                                 className: 'fa-solid fa-caret-left'
-
                                             },
-
                                             style: {
-
                                                 fontSize: '1.7vw',
-
                                                 margin: 'auto'
-
                                             }
-
                                         }),
-
                                         $({
-
                                             tag: 'div',
-
                                             text: 'Back',
-
                                             style: {
-
                                                 fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
                                                 fontSize: '1.5vw',
-
                                                 fontWeight: 'bold',
-
                                                 height: 'fit-content',
-
                                                 width: 'fit-content',
-
                                                 margin: 'auto',
-
                                             }
-
                                         })
-
                                     ],
-
                                     event: {
                                         type: 'click',
                                         method: () => {
@@ -582,7 +608,19 @@ export const ResearchMain = () => {
                                         event: {
                                             type: 'click',
                                             method: () => {
-                                                mainFrame.appendChild(object({dataURL: dataURLResearch, title: title}))
+                                                // Handle Google Drive URL
+                                                const researchFile = dataURLResearch;
+                                                let embedUrl = researchFile;
+                                                
+                                                // If it's a Google Drive URL, convert to embed URL
+                                                if (researchFile.includes('drive.google.com') && !researchFile.includes('/preview')) {
+                                                    const fileIdMatch = researchFile.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                                    if (fileIdMatch && fileIdMatch[1]) {
+                                                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                                                    }
+                                                }
+                                                
+                                                mainFrame.appendChild(object({dataURL: embedUrl, title: title}))
                                             }
                                         },
                                     })
@@ -738,7 +776,7 @@ export const ResearchMain = () => {
                                                                     }
                                                                     const form = new FormData()
                                                                     form.append('docId', docId)
-                                                                    form.append('fileUrl', file)
+                                                                    form.append('fileUrl', drive_view_url)
                                                                     form.append('reasonEnd', inputres)
                                                                     form.append('rejectIndorse', 'true')
                                                                     form.append('fileType', `EndorsementLetter:${eventType}`)
@@ -976,70 +1014,37 @@ export const ResearchMain = () => {
 
 
                         const getClickBot = (el) => {
-
-
                             const holder = $({
-
                                 tag: 'div',
-
                                 style: {
-
                                     width: '100%',
-
                                     height: '65%',
-
                                     overflowY: 'auto',
-
                                     backgroundColor: '#333'
-
                                 }
-
                             })
-
                             el.appendChild(endorsement)
-
                             el.appendChild($({
-
                                 tag: 'div',
-
                                 text: 'Documents',
-
                                 style: {
-
                                     margin: '1vh auto',
-
                                     fontFamily: 'arial black, sans-serif',
-
                                     fontSize: '1.2vw',
-
                                     color: '#bbb'
-
                                 }
-
                             }))
-
                             el.appendChild($({
-
                                 tag: 'div',
-
                                 style: {
-
                                     color: '#bbb',
-
                                     fontWeight: 'bold',
-
                                     fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif'
-
                                 },
-
                                 att: {
-
                                     innerHTML: `<span style="font-size:1vw;color:deepskyblue">Entries:</span> ${research.length}`
-
                                 }
-
                             }))
-
                             //    $research->id=$v['id'];
 
                             //                 $research->senderid=$v['senderid'];
@@ -1059,103 +1064,54 @@ export const ResearchMain = () => {
                             //                 $research->category=$v['category'];
 
                             research.forEach(val => {
-
                                 holder.appendChild(researchBot({
-
                                     dataURLResearch: val.file,
-
                                     title: val.title,
-
                                     category: val.category,
-
                                     author: val.author,
-
                                     coAuthor: val.coauthor
-
                                 }))
-
                             })
-
                             el.appendChild(holder)
-
                             el.appendChild(Controller())
-
-
                         }
-
-
                         return ($({
-
                             tag: 'div',
-
                             style: {
-
                                 width: '29.5%',
-
                                 height: '100%',
-
                                 margin: 'auto',
-
                                 borderRight: 'solid thin #bbb',
-
                                 position: 'relative'
-
                             },
-
                             elementHandler: getClickBot
-
                         }))
-
                     }
-
                     return ($({
-
                         tag: 'div',
-
                         style: {
-
                             width: '100%',
-
                             height: '100%',
-
                             position: 'absolute',
-
                             left: '0',
-
                             top: '0',
-
                             display: 'flex',
-
                             justifyContent: 'center',
-
                             backgroundColor: '#555'
-
-
                         },
-
                         elementHandler: getViewer,
-
                         child: [
-
                             DetailsViewer(),
-
                             frameView
-
                         ]
-
                     }))
-
                 }
 
 
                 const icon = $({
-
                     tag: 'div',
-
                     att: {
-
                         className: 'fa-solid fa-file-pdf'
-
                     },
 
                     style: {
@@ -1650,16 +1606,11 @@ export const ResearchMain = () => {
                                 }),
 
                                 bot({
-
                                     label: 'fa-solid fa-folder-open',
-
                                     event: () => {
-
                                         mainFrame.appendChild(Viewer())
-
                                     },
                                     tooltip:'Open File'
-
                                 }),
                                 bot({
 
@@ -4109,97 +4060,104 @@ export const ResearchMain = () => {
                         let main
 
                         const innerPanel = (src) => {
-
                             const Remove = $({
-
                                 tag: 'div',
-
                                 att: {
-
                                     className: 'fa-solid fa-circle-xmark'
-
                                 },
-
                                 style: {
-
                                     fontSize: '3vw',
-
                                     color: 'deepskyblue',
-
                                     position: 'absolute',
-
                                     left: '-5vw',
-
                                     top: '0',
-
                                     padding: '.5rem',
-
                                     borderRadius: '40vw',
-
                                     cursor: 'pointer'
-
                                 },
-
                                 event: {
-
                                     type: 'click',
-
                                     method: () => {
-
                                         main.remove()
-
                                     }
-
                                 }
-
                             })
 
-                            return ($({
-
-                                tag: 'div',
-
-                                style: {
-
-                                    width: '100%',
-
-                                    height: '100%',
-
-                                    border: 'solid thin grey',
-
-                                    position: 'relative'
-
-                                },
-
-                                child: [
-
-                                    Remove,
-
-                                    $({
-
-                                        tag: 'object',
-
-                                        style: {
-
-                                            width: '100%',
-
-                                            height: '100%'
-
-                                        },
-
-                                        att: {
-
-                                            data: '/' + src,
-
-                                            type: 'application/pdf'
-
+                            // Check if it's a Google Drive URL
+                            const isGoogleDriveUrl = src && (src.includes('drive.google.com') || (typeof src === 'object' && src.drive_view_url));
+                            
+                            let fileViewer;
+                            
+                            if (isGoogleDriveUrl) {
+                                let embedUrl = src;
+                                
+                                // Handle both string URL and object format
+                                if (typeof src === 'object' && src.drive_view_url) {
+                                    embedUrl = src.drive_view_url;
+                                } else if (typeof src === 'string' && src.includes('{')) {
+                                    try {
+                                        const parsed = JSON.parse(src);
+                                        if (parsed.drive_view_url) {
+                                            embedUrl = parsed.drive_view_url;
                                         }
+                                    } catch (e) {
+                                        console.log("JSON parse error:", e);
+                                    }
+                                }
+                                
+                                // Ensure it's an embed URL
+                                if (embedUrl.includes('drive.google.com') && !embedUrl.includes('/preview')) {
+                                    const fileIdMatch = embedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                    if (fileIdMatch && fileIdMatch[1]) {
+                                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                                    }
+                                }
+                                
+                                // Clean URL
+                                embedUrl = embedUrl.replace(/\/\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com');
+                                
+                                fileViewer = $({
+                                    tag: 'iframe',
+                                    att: {
+                                        src: embedUrl,
+                                        type: 'application/pdf',
+                                        sandbox: 'allow-same-origin allow-scripts allow-popups allow-forms',
+                                        allow: 'autoplay'
+                                    },
+                                    style: {
+                                        width: '100%',
+                                        height: '100%',
+                                        border: 'none'
+                                    }
+                                });
+                            } else {
+                                // Local file fallback (for old files)
+                                fileViewer = $({
+                                    tag: 'object',
+                                    style: {
+                                        width: '100%',
+                                        height: '100%'
+                                    },
+                                    att: {
+                                        data: '/' + src,
+                                        type: 'application/pdf'
+                                    }
+                                })
+                            }
 
-                                    })
-
+                            return ($({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    border: 'solid thin grey',
+                                    position: 'relative'
+                                },
+                                child: [
+                                    Remove,
+                                    fileViewer
                                 ]
-
                             }))
-
                         }
 
 
@@ -5011,7 +4969,7 @@ export const ResearchMain = () => {
             })
             ButtonsTabs.push({
                 button: bot({
-                    label: "Endorsement",
+                    label: "Endorsement", // here were the gdrive view will change
                     getEl: getBot.getEndorse,
                     Method: () => {
                         Bod.innerHTML = ''
@@ -5292,7 +5250,7 @@ export const ResearchMain = () => {
                     }),
                     $({
                         tag:'div',
-                        text:'Score Summary and Ranking',
+                        text:'Score Summary and Ranking',// here the summary and ranking page
                         style:{
                             margin:'auto',
                             marginLeft:'1vw',

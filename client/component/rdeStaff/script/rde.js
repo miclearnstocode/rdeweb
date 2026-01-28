@@ -31,68 +31,37 @@ const button=({label,event,url})=>{
     }
 
     return($({
-
         tag:'div',
-
         style:{
-
             height:'10vh',
-
             width:'100%',
-
             display: 'flex',
-
             justifyContent: 'center',
-
             marginBottom:'1px',
-
             cursor:'pointer',
-
         },
-
         att:{
-
             className:'mainButton'
-
         },
-
         event:{
-
             type:'click',
-
             method:event
-
         },
-
         elementHandler:getB,
-
         child:[
-
             $({
-
                 tag:'div',
-
                 style:{
-
                     width:'fit-content',
-
                     height:'fit-content',
-
                     margin:'auto',
-
                     fontFamily: 'arial black,sans-serif',
                     fontSize: '15px'
-
                 },
-
                 text:label
-
             })
-
         ]
-
     }))
-
 }
 
 const Body=()=>{
@@ -122,9 +91,6 @@ const Body=()=>{
         button:button,
 
         page:ResearchMain
-
-
-
     })
     botArray.push({
 

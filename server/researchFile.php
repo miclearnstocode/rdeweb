@@ -471,6 +471,12 @@ if (isset($_POST['acceptRequest'])) {
         $campus = $_POST['campus'];
 
         if ($con->query("UPDATE `endorsement` SET `status`='accepted'  WHERE `id`='$docId'")) {
+            //Update ALL researchfile records under this endorsement
+            $updateResearchQuery = "UPDATE `researchfile` SET `status`='accepted', `accepted_by`=?, `accepted_date`=NOW() WHERE `endorsementid`=?";
+            $updateStmt = $con->prepare($updateResearchQuery);
+            $updateStmt->bind_param("ss", $_SESSION['userId'], $docId);
+            $updateStmt->execute();
+
             $details = "RDE staff: $rdeStaff accepted endorsement letter for $event from $campus";
             $userId = $_SESSION['userId'];
             $logQuery = "INSERT INTO document_log (document_log.user_id,document_log.doc_id,document_log.details,document_log.date) VALUES (?,?,?,?)";
@@ -2388,8 +2394,9 @@ if (isset($_POST['incomingEndorsement'])) {
         $queries = "SELECT endorsement.id, 
             endorsement.senderid,
             endorsement.campus, 
-            endorsement.drive_view_url as file, 
+            endorsement.file,  
             endorsement.drive_file_id,
+            endorsement.drive_view_url,  
             endorsement.drive_download_url,
             endorsement.event, 
             endorsement.date,
@@ -2397,14 +2404,27 @@ if (isset($_POST['incomingEndorsement'])) {
             account_detail.email
         FROM endorsement
         LEFT JOIN account_detail ON endorsement.senderid=account_detail.id
-        WHERE `status`='forwarded' OR `status` IS NULL";
+        WHERE `status`='' OR `status` IS NULL"; //WHERE `status`='forwarded' OR `status` IS NULL";
         
         foreach ($con->query($queries) as $val) {
             $data = new stdClass();
             $data->id = $val['id'];
             $data->senderid = $val['senderid'];
             $data->campus = $val['campus'];
-            $data->file = $val['file']; // Google Drive URL
+            
+            // Try to parse the file column as JSON first
+            $fileData = $val['file'];
+            $driveViewUrl = $val['drive_view_url']; // Direct column
+            
+            // If file column is JSON, extract drive_view_url
+            if (strpos($fileData, '{') === 0) {
+                $jsonData = json_decode($fileData, true);
+                if ($jsonData && isset($jsonData['drive_view_url'])) {
+                    $driveViewUrl = $jsonData['drive_view_url'];
+                }
+            }
+            
+            $data->file = $driveViewUrl; // Send the parsed URL
             $data->drive_file_id = $val['drive_file_id'];
             $data->drive_download_url = $val['drive_download_url'];
             $data->event = $val['event'];
@@ -2634,7 +2654,7 @@ if (isset($_POST['rejectIndorse'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         error_log("Database connected successfully");
         
-        // TEST: Check if columns exist
+        // Test Logging: Check if columns exist
         $testQuery = "SHOW COLUMNS FROM researchfile LIKE 'rejected_by'";
         $testResult = $con->query($testQuery);
         if ($testResult->num_rows > 0) {
