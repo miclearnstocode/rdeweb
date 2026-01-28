@@ -616,3 +616,715 @@ Stack trace:
 [27-Jan-2026 10:01:42 Asia/Manila] PHP Warning:  Undefined array key "eventId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 551
 [27-Jan-2026 10:01:42 Asia/Manila] PHP Warning:  Undefined array key "userName" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 552
 [27-Jan-2026 10:01:42 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 553
+[28-Jan-2026 13:40:54 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Kru
+[28-Jan-2026 13:40:54 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Kru
+[28-Jan-2026 13:41:00 Asia/Manila] Event folder created/retrieved: 1hbSTAAF5JsJe61Ok0IgdXsZj2QWqMSpv for 38th University Faculty In-House Review
+[28-Jan-2026 13:41:01 Asia/Manila] Center folder created/retrieved: 1KuXUcXrTD2oHRBb3_lLg5TS4jiD28Zxx for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 13:41:03 Asia/Manila] Category folder created/retrieved: 1s43CnReLbJw88CFAmtsx7kqskR__6qbw for Natural Biological
+[28-Jan-2026 13:41:06 Asia/Manila] Entry folder created: 1kAcZzz9RkAoKhQEjl_HDNGwMG76zwxeg for Kanor_Ang_Probinsyano_Kru
+[28-Jan-2026 13:41:06 Asia/Manila] Uploading file: pdf-sample_0.pdf to folder: 1kAcZzz9RkAoKhQEjl_HDNGwMG76zwxeg
+[28-Jan-2026 13:41:08 Asia/Manila] Making file public: 1IN5KDdejN5gucyiUrpCVpsoEiFGueY_L
+[28-Jan-2026 13:41:09 Asia/Manila] File 1IN5KDdejN5gucyiUrpCVpsoEiFGueY_L is already public
+[28-Jan-2026 13:41:09 Asia/Manila] Endorsement upload error: Unknown column 'endorsement.drive_event_folder_id' in 'field list'
+[28-Jan-2026 13:50:38 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:50:38 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:50:40 Asia/Manila] Event folder created/retrieved: 1DmG2x6OszcN3YRpMgGizyAkJ3SYNP9OV for 38th University Faculty In-House Review
+[28-Jan-2026 13:50:42 Asia/Manila] Center folder created/retrieved: 1nntA7o4GM-IdSg2Z2khW4H70s7T5D03g for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 13:50:44 Asia/Manila] Category folder created/retrieved: 16iO6MukJi6DD3_ln7fIUVyiZSkIeJKBq for Natural Biological
+[28-Jan-2026 13:50:46 Asia/Manila] Entry folder created: 1l4KZxrBG0NbJ7jibv1rtcm-sLYtMhCwm for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:50:46 Asia/Manila] Uploading file: endorsement.pdf to folder: 1l4KZxrBG0NbJ7jibv1rtcm-sLYtMhCwm
+[28-Jan-2026 13:50:48 Asia/Manila] Making file public: 1Ept2QYBcRLAd2h66pqYAmeFQIg31-Fwq
+[28-Jan-2026 13:50:49 Asia/Manila] File 1Ept2QYBcRLAd2h66pqYAmeFQIg31-Fwq is already public
+[28-Jan-2026 13:50:49 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 352
+[28-Jan-2026 13:50:49 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #8 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:356
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 356
+[28-Jan-2026 13:57:44 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:57:44 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:57:46 Asia/Manila] Event folder created/retrieved: 1g58T7NIoumZkU4hCMhm4rVowX9850dFh for 38th University Faculty In-House Review
+[28-Jan-2026 13:57:48 Asia/Manila] Center folder created/retrieved: 1sLofdyBVnrpSss16u_FuF9mW8QsxKSGL for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 13:57:49 Asia/Manila] Category folder created/retrieved: 16LcNLx7nFv5c9JoYXx7b-ab6Dc6UvtS0 for Natural Biological
+[28-Jan-2026 13:57:51 Asia/Manila] Entry folder created: 1mfjvLsdYtjR2uqgopZamCxQpEyA3a-b_ for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:57:51 Asia/Manila] Uploading file: endorsement.pdf to folder: 1mfjvLsdYtjR2uqgopZamCxQpEyA3a-b_
+[28-Jan-2026 13:57:53 Asia/Manila] Making file public: 1eoWGminDx3HPO57Vp63WgsDzQ7TGLhtj
+[28-Jan-2026 13:57:54 Asia/Manila] File 1eoWGminDx3HPO57Vp63WgsDzQ7TGLhtj is already public
+[28-Jan-2026 13:57:54 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 354
+[28-Jan-2026 13:57:54 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:358
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 358
+[28-Jan-2026 13:58:02 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:58:02 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:58:03 Asia/Manila] Event folder created/retrieved: 1g58T7NIoumZkU4hCMhm4rVowX9850dFh for 38th University Faculty In-House Review
+[28-Jan-2026 13:58:03 Asia/Manila] Center folder created/retrieved: 1sLofdyBVnrpSss16u_FuF9mW8QsxKSGL for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 13:58:04 Asia/Manila] Category folder created/retrieved: 16LcNLx7nFv5c9JoYXx7b-ab6Dc6UvtS0 for Natural Biological
+[28-Jan-2026 13:58:04 Asia/Manila] Entry folder created: 1mfjvLsdYtjR2uqgopZamCxQpEyA3a-b_ for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:58:04 Asia/Manila] Uploading file: endorsement.pdf to folder: 1mfjvLsdYtjR2uqgopZamCxQpEyA3a-b_
+[28-Jan-2026 13:58:07 Asia/Manila] Making file public: 1xezDVaOHI4OAXcBbL0B1ilr9bQrFb2bN
+[28-Jan-2026 13:58:07 Asia/Manila] File 1xezDVaOHI4OAXcBbL0B1ilr9bQrFb2bN is already public
+[28-Jan-2026 13:58:07 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 354
+[28-Jan-2026 13:58:07 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:358
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 358
+[28-Jan-2026 13:58:33 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:58:33 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:58:34 Asia/Manila] Event folder created/retrieved: 1g58T7NIoumZkU4hCMhm4rVowX9850dFh for 38th University Faculty In-House Review
+[28-Jan-2026 13:58:34 Asia/Manila] Center folder created/retrieved: 1sLofdyBVnrpSss16u_FuF9mW8QsxKSGL for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 13:58:35 Asia/Manila] Category folder created/retrieved: 16LcNLx7nFv5c9JoYXx7b-ab6Dc6UvtS0 for Natural Biological
+[28-Jan-2026 13:58:35 Asia/Manila] Entry folder created: 1mfjvLsdYtjR2uqgopZamCxQpEyA3a-b_ for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 13:58:35 Asia/Manila] Uploading file: endorsement.pdf to folder: 1mfjvLsdYtjR2uqgopZamCxQpEyA3a-b_
+[28-Jan-2026 13:58:38 Asia/Manila] Making file public: 1wjahRzdpUlWj10ON1AohY3oXO-9Zv69X
+[28-Jan-2026 13:58:38 Asia/Manila] File 1wjahRzdpUlWj10ON1AohY3oXO-9Zv69X is already public
+[28-Jan-2026 13:58:38 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 354
+[28-Jan-2026 13:58:38 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:358
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 358
+[28-Jan-2026 14:20:19 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_pagkabuhay
+[28-Jan-2026 14:20:19 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_pagkabuhay
+[28-Jan-2026 14:20:20 Asia/Manila] Event folder created/retrieved: 1g58T7NIoumZkU4hCMhm4rVowX9850dFh for 38th University Faculty In-House Review
+[28-Jan-2026 14:20:21 Asia/Manila] Center folder created/retrieved: 1sLofdyBVnrpSss16u_FuF9mW8QsxKSGL for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 14:20:21 Asia/Manila] Category folder created/retrieved: 16LcNLx7nFv5c9JoYXx7b-ab6Dc6UvtS0 for Natural Biological
+[28-Jan-2026 14:20:23 Asia/Manila] Entry folder created: 1i70aQfl9dcCxerqDs6uW7Pq27RMU-Aj0 for Kanor_Ang_Probinsyano_pagkabuhay
+[28-Jan-2026 14:20:23 Asia/Manila] Uploading file: endorsement.pdf to folder: 1i70aQfl9dcCxerqDs6uW7Pq27RMU-Aj0
+[28-Jan-2026 14:20:26 Asia/Manila] Making file public: 1aI5mWxQOLXDCGLzKKVxKbQN5op4GBqy4
+[28-Jan-2026 14:20:27 Asia/Manila] File 1aI5mWxQOLXDCGLzKKVxKbQN5op4GBqy4 is already public
+[28-Jan-2026 14:20:27 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 354
+[28-Jan-2026 14:20:27 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:358
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 358
+[28-Jan-2026 14:21:10 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_pagkabuhay
+[28-Jan-2026 14:21:10 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_pagkabuhay
+[28-Jan-2026 14:21:12 Asia/Manila] Event folder created/retrieved: 1vJ0wkKFj7wLBrxRFxvTeeZR0aLOpjUvq for 38th University Faculty In-House Review
+[28-Jan-2026 14:21:13 Asia/Manila] Center folder created/retrieved: 1QpjsU97PzLAfGxIUTQM07f8kR-am_mLf for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 14:21:15 Asia/Manila] Category folder created/retrieved: 1BjZb9F7KupZXCPxZFLuXR8XKejnLQvUI for Natural Biological
+[28-Jan-2026 14:21:17 Asia/Manila] Entry folder created: 121MhfoXJ1l25EfKxXM8pqIMHsrAtD-lP for Kanor_Ang_Probinsyano_pagkabuhay
+[28-Jan-2026 14:21:17 Asia/Manila] Uploading file: endorsement.pdf to folder: 121MhfoXJ1l25EfKxXM8pqIMHsrAtD-lP
+[28-Jan-2026 14:21:20 Asia/Manila] Making file public: 1i0GHzyejCT5beyDAmN0g9asVFCBChRXj
+[28-Jan-2026 14:21:21 Asia/Manila] File 1i0GHzyejCT5beyDAmN0g9asVFCBChRXj is already public
+[28-Jan-2026 14:21:21 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 354
+[28-Jan-2026 14:21:21 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:358
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 358
+[28-Jan-2026 14:30:15 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:30:15 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:30:16 Asia/Manila] Event folder created/retrieved: 1vJ0wkKFj7wLBrxRFxvTeeZR0aLOpjUvq for 38th University Faculty In-House Review
+[28-Jan-2026 14:30:17 Asia/Manila] Center folder created/retrieved: 1QpjsU97PzLAfGxIUTQM07f8kR-am_mLf for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 14:30:17 Asia/Manila] Category folder created/retrieved: 1BjZb9F7KupZXCPxZFLuXR8XKejnLQvUI for Natural Biological
+[28-Jan-2026 14:30:21 Asia/Manila] Entry folder created: 1N94miZtmUSLrGKCr7j57ngE9JL6Yrfv3 for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:30:21 Asia/Manila] Uploading file: endorsement.pdf to folder: 1N94miZtmUSLrGKCr7j57ngE9JL6Yrfv3
+[28-Jan-2026 14:30:24 Asia/Manila] Making file public: 1WNTF1ICs8zUEIxIh2VnInm7zRK0Tv0Vi
+[28-Jan-2026 14:30:25 Asia/Manila] File 1WNTF1ICs8zUEIxIh2VnInm7zRK0Tv0Vi is already public
+[28-Jan-2026 14:30:25 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 345
+[28-Jan-2026 14:30:25 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:349
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 349
+[28-Jan-2026 14:32:07 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:32:07 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:32:09 Asia/Manila] Event folder created/retrieved: 1GaKhgBGmeFIfl9mYN8UzZGFb76sl0tAu for 38th University Faculty In-House Review
+[28-Jan-2026 14:32:11 Asia/Manila] Center folder created/retrieved: 1uNJDRyMnW8TcMMOwunB7bCY0ROAJ5aV2 for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 14:32:13 Asia/Manila] Category folder created/retrieved: 11qyEJiNkOePf4KiT7b9nQyVA2OsffSXP for Natural Biological
+[28-Jan-2026 14:32:15 Asia/Manila] Entry folder created: 1QnjgQxzF7-rQy5ahjP77lb2Cm2WdCnhq for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:32:15 Asia/Manila] Uploading file: endorsement.pdf to folder: 1QnjgQxzF7-rQy5ahjP77lb2Cm2WdCnhq
+[28-Jan-2026 14:32:17 Asia/Manila] Making file public: 1o5A-Oyuz--w6yOrrqJyfyyd0gSY2x0BM
+[28-Jan-2026 14:32:18 Asia/Manila] File 1o5A-Oyuz--w6yOrrqJyfyyd0gSY2x0BM is already public
+[28-Jan-2026 14:32:18 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 345
+[28-Jan-2026 14:32:18 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:349
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 349
+[28-Jan-2026 14:41:21 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:41:21 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:41:23 Asia/Manila] Event folder created/retrieved: 1PFsJcHRKz_vW3v2AReBXFRW4blLLfAK4 for 38th University Faculty In-House Review
+[28-Jan-2026 14:41:25 Asia/Manila] Center folder created/retrieved: 1zuHMYzS1jRHoHoJekD-Bbyx6toyCeGLa for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 14:41:27 Asia/Manila] Category folder created/retrieved: 14Z5eDQThIpk4X548SDf3elukicLKZ_zQ for Natural Biological
+[28-Jan-2026 14:41:29 Asia/Manila] Entry folder created: 1QxJfqHDhrCRJg0LJ25BnGHguSByGsiiG for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:41:29 Asia/Manila] Uploading file: endorsement.pdf to folder: 1QxJfqHDhrCRJg0LJ25BnGHguSByGsiiG
+[28-Jan-2026 14:41:31 Asia/Manila] Making file public: 1uk6R8dSskty7RcQoUEBxIWr1vNTOC0ZN
+[28-Jan-2026 14:41:32 Asia/Manila] File 1uk6R8dSskty7RcQoUEBxIWr1vNTOC0ZN is already public
+[28-Jan-2026 14:41:32 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 345
+[28-Jan-2026 14:41:32 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:349
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 349
+[28-Jan-2026 14:49:48 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_ANg_Probinsyano_Chronicles
+[28-Jan-2026 14:49:48 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_ANg_Probinsyano_Chronicles
+[28-Jan-2026 14:49:49 Asia/Manila] Event folder created/retrieved: 1PFsJcHRKz_vW3v2AReBXFRW4blLLfAK4 for 38th University Faculty In-House Review
+[28-Jan-2026 14:49:50 Asia/Manila] Center folder created/retrieved: 1zuHMYzS1jRHoHoJekD-Bbyx6toyCeGLa for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 14:49:51 Asia/Manila] Category folder created/retrieved: 14Z5eDQThIpk4X548SDf3elukicLKZ_zQ for Natural Biological
+[28-Jan-2026 14:49:51 Asia/Manila] Entry folder created: 1QxJfqHDhrCRJg0LJ25BnGHguSByGsiiG for Kanor_ANg_Probinsyano_Chronicles
+[28-Jan-2026 14:49:51 Asia/Manila] Uploading file: endorsement.pdf to folder: 1QxJfqHDhrCRJg0LJ25BnGHguSByGsiiG
+[28-Jan-2026 14:49:54 Asia/Manila] Making file public: 1dLeouNQctOEA6VK7SdXSglfcUwyU3Szq
+[28-Jan-2026 14:49:54 Asia/Manila] File 1dLeouNQctOEA6VK7SdXSglfcUwyU3Szq is already public
+[28-Jan-2026 14:49:54 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 345
+[28-Jan-2026 14:49:54 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:349
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 349
+[28-Jan-2026 14:51:31 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_ANg_Probinsyano_Chronicles
+[28-Jan-2026 14:51:31 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_ANg_Probinsyano_Chronicles
+[28-Jan-2026 14:51:34 Asia/Manila] Event folder created/retrieved: 1rKcHOxX7_K_l1E1je0z_ccX-Re2_CSz_ for 38th University Faculty In-House Review
+[28-Jan-2026 14:51:35 Asia/Manila] Center folder created/retrieved: 1eh67Zk0cqQtcaUxbDl-KPDYVD0Hrfc1U for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 14:51:37 Asia/Manila] Category folder created/retrieved: 18Q1am4VYQgUivOYe5C3LWsKhGzxTAOY8 for Natural Biological
+[28-Jan-2026 14:51:39 Asia/Manila] Entry folder created: 14U6ZhiqtRHDN1w0PHviLYqSOyNAyayuV for Kanor_ANg_Probinsyano_Chronicles
+[28-Jan-2026 14:51:39 Asia/Manila] Uploading file: endorsement.pdf to folder: 14U6ZhiqtRHDN1w0PHviLYqSOyNAyayuV
+[28-Jan-2026 14:51:42 Asia/Manila] Making file public: 11LLm7ZSzMiyA9Pkgjw3-yPXdJuoQp5ha
+[28-Jan-2026 14:51:42 Asia/Manila] File 11LLm7ZSzMiyA9Pkgjw3-yPXdJuoQp5ha is already public
+[28-Jan-2026 14:51:42 Asia/Manila] PHP Notice:  Only variables should be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 345
+[28-Jan-2026 14:51:42 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:349
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 349
+[28-Jan-2026 14:56:54 Asia/Manila] Uploading endorsement to Google Drive...
+[28-Jan-2026 14:56:54 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:56:54 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:56:55 Asia/Manila] Event folder created/retrieved: 1rKcHOxX7_K_l1E1je0z_ccX-Re2_CSz_ for 38th University Faculty In-House Review
+[28-Jan-2026 14:56:56 Asia/Manila] Center folder created/retrieved: 1eh67Zk0cqQtcaUxbDl-KPDYVD0Hrfc1U for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 14:56:56 Asia/Manila] Category folder created/retrieved: 18Q1am4VYQgUivOYe5C3LWsKhGzxTAOY8 for Natural Biological
+[28-Jan-2026 14:56:57 Asia/Manila] Entry folder created: 14U6ZhiqtRHDN1w0PHviLYqSOyNAyayuV for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 14:56:57 Asia/Manila] Uploading file: endorsement.pdf to folder: 14U6ZhiqtRHDN1w0PHviLYqSOyNAyayuV
+[28-Jan-2026 14:57:00 Asia/Manila] Making file public: 1HOKY1vbQ7p1p2r-eTDULTzcbTPICVDD9
+[28-Jan-2026 14:57:00 Asia/Manila] File 1HOKY1vbQ7p1p2r-eTDULTzcbTPICVDD9 is already public
+[28-Jan-2026 14:57:00 Asia/Manila] Endorsement uploaded to Drive: Array
+(
+    [success] => 1
+    [drive_file_id] => 1HOKY1vbQ7p1p2r-eTDULTzcbTPICVDD9
+    [drive_view_url] => https://drive.google.com/file/d/1HOKY1vbQ7p1p2r-eTDULTzcbTPICVDD9/preview
+    [drive_download_url] => https://drive.google.com/uc?id=1HOKY1vbQ7p1p2r-eTDULTzcbTPICVDD9&export=download
+    [drive_folder_id] => 14U6ZhiqtRHDN1w0PHviLYqSOyNAyayuV
+    [drive_event_folder_id] => 1rKcHOxX7_K_l1E1je0z_ccX-Re2_CSz_
+    [drive_center_folder_id] => 1eh67Zk0cqQtcaUxbDl-KPDYVD0Hrfc1U
+    [drive_category_folder_id] => 18Q1am4VYQgUivOYe5C3LWsKhGzxTAOY8
+    [drive_entry_folder_id] => 14U6ZhiqtRHDN1w0PHviLYqSOyNAyayuV
+    [file_size] => 13264
+    [file_name] => endorsement.pdf
+    [center_name] => Coconut Research and Development Center (Coco RDC)
+    [category_name] => Natural / Biological
+    [entry_folder_name] => Kanor_Ang_Probinsyano_Chronicles
+)
+
+[28-Jan-2026 14:57:00 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:370
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 370
+[28-Jan-2026 14:57:00 Asia/Manila] HTML error in output buffer: <br />
+<b>Fatal error</b>:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:370
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\r
+[28-Jan-2026 15:05:34 Asia/Manila] Uploading endorsement to Google Drive...
+[28-Jan-2026 15:05:34 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_ng
+[28-Jan-2026 15:05:34 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_ng
+[28-Jan-2026 15:05:36 Asia/Manila] Event folder created/retrieved: 1StGT1c-_BCC0Pk7PjVXDQAg-6U1KTNuJ for 38th University Faculty In-House Review
+[28-Jan-2026 15:05:38 Asia/Manila] Center folder created/retrieved: 1Q1VaLq_QnuXF0jl0kQ9rfbEcH3VQgm8i for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 15:05:39 Asia/Manila] Category folder created/retrieved: 1FJ4ACiokbFvqSjryLH43SQTFxrfBKxer for Natural Biological
+[28-Jan-2026 15:05:41 Asia/Manila] Entry folder created: 1mqE3UHCKvLMKrXtfcRWKq9CkpgCKePO3 for Kanor_Ang_Probinsyano_ng
+[28-Jan-2026 15:05:41 Asia/Manila] Uploading file: endorsement.pdf to folder: 1mqE3UHCKvLMKrXtfcRWKq9CkpgCKePO3
+[28-Jan-2026 15:05:44 Asia/Manila] Making file public: 1AU_-Ro0qpGWTD8EYRNHaEHAreTcDUheq
+[28-Jan-2026 15:05:44 Asia/Manila] File 1AU_-Ro0qpGWTD8EYRNHaEHAreTcDUheq is already public
+[28-Jan-2026 15:05:44 Asia/Manila] Endorsement uploaded to Drive: Array
+(
+    [success] => 1
+    [drive_file_id] => 1AU_-Ro0qpGWTD8EYRNHaEHAreTcDUheq
+    [drive_view_url] => https://drive.google.com/file/d/1AU_-Ro0qpGWTD8EYRNHaEHAreTcDUheq/preview
+    [drive_download_url] => https://drive.google.com/uc?id=1AU_-Ro0qpGWTD8EYRNHaEHAreTcDUheq&export=download
+    [drive_folder_id] => 1mqE3UHCKvLMKrXtfcRWKq9CkpgCKePO3
+    [drive_event_folder_id] => 1StGT1c-_BCC0Pk7PjVXDQAg-6U1KTNuJ
+    [drive_center_folder_id] => 1Q1VaLq_QnuXF0jl0kQ9rfbEcH3VQgm8i
+    [drive_category_folder_id] => 1FJ4ACiokbFvqSjryLH43SQTFxrfBKxer
+    [drive_entry_folder_id] => 1mqE3UHCKvLMKrXtfcRWKq9CkpgCKePO3
+    [file_size] => 13264
+    [file_name] => endorsement.pdf
+    [center_name] => Coconut Research and Development Center (Coco RDC)
+    [category_name] => Natural / Biological
+    [entry_folder_name] => Kanor_Ang_Probinsyano_ng
+)
+
+[28-Jan-2026 15:05:44 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:371
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 371
+[28-Jan-2026 15:05:44 Asia/Manila] HTML error in output buffer: <br />
+<b>Fatal error</b>:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:371
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\r
+[28-Jan-2026 15:14:45 Asia/Manila] Uploading endorsement to Google Drive...
+[28-Jan-2026 15:14:45 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 15:14:45 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 15:14:46 Asia/Manila] Event folder created/retrieved: 1StGT1c-_BCC0Pk7PjVXDQAg-6U1KTNuJ for 38th University Faculty In-House Review
+[28-Jan-2026 15:14:47 Asia/Manila] Center folder created/retrieved: 1Q1VaLq_QnuXF0jl0kQ9rfbEcH3VQgm8i for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 15:14:47 Asia/Manila] Category folder created/retrieved: 1FJ4ACiokbFvqSjryLH43SQTFxrfBKxer for Natural Biological
+[28-Jan-2026 15:14:50 Asia/Manila] Entry folder created: 1XbeWOkuVGOOtSM1YF5s3egqama23PuJF for Kanor_Ang_Probinsyano_Chronicles
+[28-Jan-2026 15:14:50 Asia/Manila] Uploading file: endorsement.pdf to folder: 1XbeWOkuVGOOtSM1YF5s3egqama23PuJF
+[28-Jan-2026 15:14:53 Asia/Manila] Making file public: 1x6kndpgHDEWSFfVFNDclXg-rxFCRWZ7X
+[28-Jan-2026 15:14:54 Asia/Manila] File 1x6kndpgHDEWSFfVFNDclXg-rxFCRWZ7X is already public
+[28-Jan-2026 15:14:54 Asia/Manila] Endorsement uploaded to Drive: Array
+(
+    [success] => 1
+    [drive_file_id] => 1x6kndpgHDEWSFfVFNDclXg-rxFCRWZ7X
+    [drive_view_url] => https://drive.google.com/file/d/1x6kndpgHDEWSFfVFNDclXg-rxFCRWZ7X/preview
+    [drive_download_url] => https://drive.google.com/uc?id=1x6kndpgHDEWSFfVFNDclXg-rxFCRWZ7X&export=download
+    [drive_folder_id] => 1XbeWOkuVGOOtSM1YF5s3egqama23PuJF
+    [drive_event_folder_id] => 1StGT1c-_BCC0Pk7PjVXDQAg-6U1KTNuJ
+    [drive_center_folder_id] => 1Q1VaLq_QnuXF0jl0kQ9rfbEcH3VQgm8i
+    [drive_category_folder_id] => 1FJ4ACiokbFvqSjryLH43SQTFxrfBKxer
+    [drive_entry_folder_id] => 1XbeWOkuVGOOtSM1YF5s3egqama23PuJF
+    [file_size] => 13264
+    [file_name] => endorsement.pdf
+    [center_name] => Coconut Research and Development Center (Coco RDC)
+    [category_name] => Natural / Biological
+    [entry_folder_name] => Kanor_Ang_Probinsyano_Chronicles
+)
+
+[28-Jan-2026 15:14:54 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:371
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 371
+[28-Jan-2026 15:14:54 Asia/Manila] HTML error in output buffer: <br />
+<b>Fatal error</b>:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:371
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\r
+[28-Jan-2026 15:17:47 Asia/Manila] Uploading endorsement to Google Drive...
+[28-Jan-2026 15:17:47 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Darna_ng_buhay
+[28-Jan-2026 15:17:47 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Darna_ng_buhay
+[28-Jan-2026 15:17:49 Asia/Manila] Event folder created/retrieved: 1Og3KfHtXgI2ulbHDpODMh8PYhq-C8koy for 38th University Faculty In-House Review
+[28-Jan-2026 15:17:51 Asia/Manila] Center folder created/retrieved: 1RJL4bAADHGnhBXkJ_zxJHdZEAFmodRPL for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 15:17:52 Asia/Manila] Category folder created/retrieved: 1ewavXZ8H8wwNWspMCCqRxCHgr-9sML0Z for Natural Biological
+[28-Jan-2026 15:17:54 Asia/Manila] Entry folder created: 17ohtoRNe7hxuI6MorUhFmhzkeALbNLax for Kanor_Darna_ng_buhay
+[28-Jan-2026 15:17:54 Asia/Manila] Uploading file: endorsement.pdf to folder: 17ohtoRNe7hxuI6MorUhFmhzkeALbNLax
+[28-Jan-2026 15:17:57 Asia/Manila] Making file public: 1au7SnUvBoUny_wx6b5kydoaS9qxe1nSU
+[28-Jan-2026 15:17:57 Asia/Manila] File 1au7SnUvBoUny_wx6b5kydoaS9qxe1nSU is already public
+[28-Jan-2026 15:17:57 Asia/Manila] Endorsement uploaded to Drive: Array
+(
+    [success] => 1
+    [drive_file_id] => 1au7SnUvBoUny_wx6b5kydoaS9qxe1nSU
+    [drive_view_url] => https://drive.google.com/file/d/1au7SnUvBoUny_wx6b5kydoaS9qxe1nSU/preview
+    [drive_download_url] => https://drive.google.com/uc?id=1au7SnUvBoUny_wx6b5kydoaS9qxe1nSU&export=download
+    [drive_folder_id] => 17ohtoRNe7hxuI6MorUhFmhzkeALbNLax
+    [drive_event_folder_id] => 1Og3KfHtXgI2ulbHDpODMh8PYhq-C8koy
+    [drive_center_folder_id] => 1RJL4bAADHGnhBXkJ_zxJHdZEAFmodRPL
+    [drive_category_folder_id] => 1ewavXZ8H8wwNWspMCCqRxCHgr-9sML0Z
+    [drive_entry_folder_id] => 17ohtoRNe7hxuI6MorUhFmhzkeALbNLax
+    [file_size] => 13264
+    [file_name] => endorsement.pdf
+    [center_name] => Coconut Research and Development Center (Coco RDC)
+    [category_name] => Natural / Biological
+    [entry_folder_name] => Kanor_Darna_ng_buhay
+)
+
+[28-Jan-2026 15:17:57 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:371
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 371
+[28-Jan-2026 15:17:57 Asia/Manila] HTML error in output buffer: <br />
+<b>Fatal error</b>:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:371
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\r
+[28-Jan-2026 15:25:31 Asia/Manila] Uploading endorsement to Google Drive...
+[28-Jan-2026 15:25:31 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Darna_ng_buhay
+[28-Jan-2026 15:25:31 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Darna_ng_buhay
+[28-Jan-2026 15:25:33 Asia/Manila] Event folder created/retrieved: 1Z0RC2xpvAXkaSvbj5rc9a9dj3yiYYeVt for 38th University Faculty In-House Review
+[28-Jan-2026 15:25:35 Asia/Manila] Center folder created/retrieved: 1JDPK2kiYNy24pzu3lcxOdxWPfdyIilCN for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 15:25:36 Asia/Manila] Category folder created/retrieved: 1beETXk7bpB_deHz1YsQrSgiIi14B1y9L for Natural Biological
+[28-Jan-2026 15:25:38 Asia/Manila] Entry folder created: 1ZfybUloO7jhCbE-qebNsD2zbvQWrySai for Kanor_Darna_ng_buhay
+[28-Jan-2026 15:25:38 Asia/Manila] Uploading file: endorsement.pdf to folder: 1ZfybUloO7jhCbE-qebNsD2zbvQWrySai
+[28-Jan-2026 15:25:40 Asia/Manila] Making file public: 1-xtsyBDAZONlKoCxnTYP_tPsp1ba6rq0
+[28-Jan-2026 15:25:41 Asia/Manila] File 1-xtsyBDAZONlKoCxnTYP_tPsp1ba6rq0 is already public
+[28-Jan-2026 15:25:41 Asia/Manila] Endorsement uploaded to Drive: Array
+(
+    [success] => 1
+    [drive_file_id] => 1-xtsyBDAZONlKoCxnTYP_tPsp1ba6rq0
+    [drive_view_url] => https://drive.google.com/file/d/1-xtsyBDAZONlKoCxnTYP_tPsp1ba6rq0/preview
+    [drive_download_url] => https://drive.google.com/uc?id=1-xtsyBDAZONlKoCxnTYP_tPsp1ba6rq0&export=download
+    [drive_folder_id] => 1ZfybUloO7jhCbE-qebNsD2zbvQWrySai
+    [drive_event_folder_id] => 1Z0RC2xpvAXkaSvbj5rc9a9dj3yiYYeVt
+    [drive_center_folder_id] => 1JDPK2kiYNy24pzu3lcxOdxWPfdyIilCN
+    [drive_category_folder_id] => 1beETXk7bpB_deHz1YsQrSgiIi14B1y9L
+    [drive_entry_folder_id] => 1ZfybUloO7jhCbE-qebNsD2zbvQWrySai
+    [file_size] => 13264
+    [file_name] => endorsement.pdf
+    [center_name] => Coconut Research and Development Center (Coco RDC)
+    [category_name] => Natural / Biological
+    [entry_folder_name] => Kanor_Darna_ng_buhay
+)
+
+[28-Jan-2026 15:25:41 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:370
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 370
+[28-Jan-2026 15:25:41 Asia/Manila] HTML error in output buffer: <br />
+<b>Fatal error</b>:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:370
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\r
+[28-Jan-2026 15:39:42 Asia/Manila] PHP Warning:  Undefined array key "researchDocs" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 291
+[28-Jan-2026 15:39:42 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 291
+[28-Jan-2026 15:39:42 Asia/Manila] PHP Fatal error:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:291
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 291
+[28-Jan-2026 15:39:42 Asia/Manila] HTML error in output buffer: <br />
+<b>Warning</b>:  Undefined array key "researchDocs" in <b>C:\Users\Cogito\Documents\rdeweb\server\researchFile.php</b> on line <b>291</b><br />
+<br />
+<b>Warning</b>:  Trying to access array offset on value of type null in <b>C:\Users\Cogito\Documents\rdeweb\server\researchFile.php</b> on line <b>291</b><br />
+<br />
+<b>Fatal error</b>:  Uncaught TypeError: count(): Argument #1 ($value) must be of type Countable|array, null given in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php
+[28-Jan-2026 15:46:18 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Trial_ng_buhay
+[28-Jan-2026 15:46:18 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Trial_ng_buhay
+[28-Jan-2026 15:46:21 Asia/Manila] Event folder created/retrieved: 1upkZpMc6yH93cZLB2p9QmzsyrKtGoghE for 38th University Faculty In-House Review
+[28-Jan-2026 15:46:23 Asia/Manila] Center folder created/retrieved: 1PNNqRdcvBVLCj9WbxnCIrTco_ysLD4fs for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 15:46:25 Asia/Manila] Category folder created/retrieved: 1_4y4IkaFOJ3D4NwlOhEs5pVbkLfVQjkv for Natural Biological
+[28-Jan-2026 15:46:27 Asia/Manila] Entry folder created: 1xI-NZmwDp-6TMppw5GlqNgXDwhwpEI22 for Kanor_Trial_ng_buhay
+[28-Jan-2026 15:46:27 Asia/Manila] Uploading file: endorsement.pdf to folder: 1xI-NZmwDp-6TMppw5GlqNgXDwhwpEI22
+[28-Jan-2026 15:46:29 Asia/Manila] Making file public: 1pGf0l0VrcqzMMax90p8bMUmOX0UqP-RK
+[28-Jan-2026 15:46:30 Asia/Manila] File 1pGf0l0VrcqzMMax90p8bMUmOX0UqP-RK is already public
+[28-Jan-2026 15:46:30 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:365
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 365
+[28-Jan-2026 15:46:30 Asia/Manila] HTML error in output buffer: <br />
+<b>Fatal error</b>:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:365
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\r
+[28-Jan-2026 15:56:43 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Darna_ng_buhay
+[28-Jan-2026 15:56:43 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Darna_ng_buhay
+[28-Jan-2026 15:56:44 Asia/Manila] Event folder created/retrieved: 1upkZpMc6yH93cZLB2p9QmzsyrKtGoghE for 38th University Faculty In-House Review
+[28-Jan-2026 15:56:45 Asia/Manila] Center folder created/retrieved: 1PNNqRdcvBVLCj9WbxnCIrTco_ysLD4fs for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 15:56:45 Asia/Manila] Category folder created/retrieved: 1_4y4IkaFOJ3D4NwlOhEs5pVbkLfVQjkv for Natural Biological
+[28-Jan-2026 15:56:47 Asia/Manila] Entry folder created: 1HP8aVTDKsuCmNMe0mQGG7DnZrLUPRxeF for Kanor_Darna_ng_buhay
+[28-Jan-2026 15:56:47 Asia/Manila] Uploading file: endorsement.pdf to folder: 1HP8aVTDKsuCmNMe0mQGG7DnZrLUPRxeF
+[28-Jan-2026 15:56:50 Asia/Manila] Making file public: 1fV0u6Cv92sd_Guu8BWNCF5dGoYYDF-jj
+[28-Jan-2026 15:56:50 Asia/Manila] File 1fV0u6Cv92sd_Guu8BWNCF5dGoYYDF-jj is already public
+[28-Jan-2026 15:56:50 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:365
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 365
+[28-Jan-2026 15:56:50 Asia/Manila] HTML error in output buffer: <br />
+<b>Fatal error</b>:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:365
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\r
+[28-Jan-2026 16:07:51 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Trial_lang_ari
+[28-Jan-2026 16:07:51 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Trial_lang_ari
+[28-Jan-2026 16:07:52 Asia/Manila] Event folder created/retrieved: 1upkZpMc6yH93cZLB2p9QmzsyrKtGoghE for 38th University Faculty In-House Review
+[28-Jan-2026 16:07:53 Asia/Manila] Center folder created/retrieved: 1PNNqRdcvBVLCj9WbxnCIrTco_ysLD4fs for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:07:54 Asia/Manila] Category folder created/retrieved: 1_4y4IkaFOJ3D4NwlOhEs5pVbkLfVQjkv for Natural Biological
+[28-Jan-2026 16:07:55 Asia/Manila] Entry folder created: 1lOFSAq7-2YuImPihKZWyoHC5X_dQuHz4 for Kanor_Trial_lang_ari
+[28-Jan-2026 16:07:55 Asia/Manila] Uploading file: endorsement.pdf to folder: 1lOFSAq7-2YuImPihKZWyoHC5X_dQuHz4
+[28-Jan-2026 16:07:58 Asia/Manila] Making file public: 1FtuGB1jNdDW3bqgiaDkOt71XpHZ3E6Ij
+[28-Jan-2026 16:07:59 Asia/Manila] File 1FtuGB1jNdDW3bqgiaDkOt71XpHZ3E6Ij is already public
+[28-Jan-2026 16:07:59 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:361
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 361
+[28-Jan-2026 16:07:59 Asia/Manila] HTML error in output buffer: <br />
+<b>Fatal error</b>:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:361
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\r
+[28-Jan-2026 16:13:42 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[28-Jan-2026 16:13:42 Asia/Manila] Title: Ang probinsyano kuno eh
+[28-Jan-2026 16:13:42 Asia/Manila] Author: Mang Kanor
+[28-Jan-2026 16:13:42 Asia/Manila] Event: 38th University Faculty In-House Review
+[28-Jan-2026 16:13:42 Asia/Manila] Center: Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:13:42 Asia/Manila] Category: Natural / Biological
+[28-Jan-2026 16:13:42 Asia/Manila] Uploading endorsement: endorsement.pdf
+[28-Jan-2026 16:13:42 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_probinsyano_kuno
+[28-Jan-2026 16:13:42 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_probinsyano_kuno
+[28-Jan-2026 16:13:43 Asia/Manila] Event folder created/retrieved: 1upkZpMc6yH93cZLB2p9QmzsyrKtGoghE for 38th University Faculty In-House Review
+[28-Jan-2026 16:13:44 Asia/Manila] Center folder created/retrieved: 1PNNqRdcvBVLCj9WbxnCIrTco_ysLD4fs for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:13:44 Asia/Manila] Category folder created/retrieved: 1_4y4IkaFOJ3D4NwlOhEs5pVbkLfVQjkv for Natural Biological
+[28-Jan-2026 16:13:47 Asia/Manila] Entry folder created: 1_ofW4qjDvkIlfgm2kYyZ0qvYBgcfJsIM for Kanor_Ang_probinsyano_kuno
+[28-Jan-2026 16:13:47 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1_ofW4qjDvkIlfgm2kYyZ0qvYBgcfJsIM
+[28-Jan-2026 16:13:50 Asia/Manila] Making file public: 1Z8sA1BopHxN_65OI3Bi1ObBYRyGo3en4
+[28-Jan-2026 16:13:51 Asia/Manila] File 1Z8sA1BopHxN_65OI3Bi1ObBYRyGo3en4 is already public
+[28-Jan-2026 16:13:51 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[28-Jan-2026 16:13:51 Asia/Manila] Endorsement uploaded successfully: 1Z8sA1BopHxN_65OI3Bi1ObBYRyGo3en4
+[28-Jan-2026 16:13:51 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:384
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 384
+[28-Jan-2026 16:17:41 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[28-Jan-2026 16:17:41 Asia/Manila] Title: ang priobinsyana ni halo
+[28-Jan-2026 16:17:41 Asia/Manila] Author: Mang kanor
+[28-Jan-2026 16:17:41 Asia/Manila] Event: 38th University Faculty In-House Review
+[28-Jan-2026 16:17:41 Asia/Manila] Center: Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:17:41 Asia/Manila] Category: Natural / Biological
+[28-Jan-2026 16:17:41 Asia/Manila] Uploading endorsement: endorsement.pdf
+[28-Jan-2026 16:17:41 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> kanor_ang_priobinsyana_ni
+[28-Jan-2026 16:17:41 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> kanor_ang_priobinsyana_ni
+[28-Jan-2026 16:17:42 Asia/Manila] Event folder created/retrieved: 1upkZpMc6yH93cZLB2p9QmzsyrKtGoghE for 38th University Faculty In-House Review
+[28-Jan-2026 16:17:42 Asia/Manila] Center folder created/retrieved: 1PNNqRdcvBVLCj9WbxnCIrTco_ysLD4fs for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:17:43 Asia/Manila] Category folder created/retrieved: 1_4y4IkaFOJ3D4NwlOhEs5pVbkLfVQjkv for Natural Biological
+[28-Jan-2026 16:17:45 Asia/Manila] Entry folder created: 18uwjB9jvk2Bjkv1NkgnaIGKUSihGyyo7 for kanor_ang_priobinsyana_ni
+[28-Jan-2026 16:17:45 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 18uwjB9jvk2Bjkv1NkgnaIGKUSihGyyo7
+[28-Jan-2026 16:17:49 Asia/Manila] Making file public: 1GgvbxGO_fyDRIrjPHHWkAsm38_r0pcQM
+[28-Jan-2026 16:17:49 Asia/Manila] File 1GgvbxGO_fyDRIrjPHHWkAsm38_r0pcQM is already public
+[28-Jan-2026 16:17:49 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[28-Jan-2026 16:17:49 Asia/Manila] Endorsement uploaded successfully: 1GgvbxGO_fyDRIrjPHHWkAsm38_r0pcQM
+[28-Jan-2026 16:17:49 Asia/Manila] PHP Fatal error:  Uncaught Error: mysqli_stmt::bind_param(): Argument #9 cannot be passed by reference in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:380
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 380
+[28-Jan-2026 16:23:40 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[28-Jan-2026 16:23:40 Asia/Manila] Title: Ang probinsyano Chronicles
+[28-Jan-2026 16:23:40 Asia/Manila] Author: Mang Kanor
+[28-Jan-2026 16:23:40 Asia/Manila] Event: 38th University Faculty In-House Review
+[28-Jan-2026 16:23:40 Asia/Manila] Center: Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:23:40 Asia/Manila] Category: Natural / Biological
+[28-Jan-2026 16:23:40 Asia/Manila] Uploading endorsement: endorsement.pdf
+[28-Jan-2026 16:23:40 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:23:40 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:23:42 Asia/Manila] Event folder created/retrieved: 1qwkPY6Td9q7gMrkghi4qxpIxzE86XDcn for 38th University Faculty In-House Review
+[28-Jan-2026 16:23:44 Asia/Manila] Center folder created/retrieved: 1IXnULL3EDt-oFjVTI21bEHTvH6vNdknT for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:23:46 Asia/Manila] Category folder created/retrieved: 1Ms8dtcYsmnjGJSsaDu0-HBIvqgKc57V9 for Natural Biological
+[28-Jan-2026 16:23:48 Asia/Manila] Entry folder created: 1ljYMCEjKJjD6f-zyvIqbXjcYeObi4E60 for Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:23:48 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1ljYMCEjKJjD6f-zyvIqbXjcYeObi4E60
+[28-Jan-2026 16:23:51 Asia/Manila] Making file public: 1jIo3QWublq9gN8kiahKWbGIuIFK--4ON
+[28-Jan-2026 16:23:51 Asia/Manila] File 1jIo3QWublq9gN8kiahKWbGIuIFK--4ON is already public
+[28-Jan-2026 16:23:51 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[28-Jan-2026 16:23:51 Asia/Manila] Endorsement uploaded successfully: 1jIo3QWublq9gN8kiahKWbGIuIFK--4ON
+[28-Jan-2026 16:23:51 Asia/Manila] Endorsement saved to DB with ID: 505
+[28-Jan-2026 16:23:51 Asia/Manila] Uploading research: research_paper.pdf
+[28-Jan-2026 16:23:51 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:23:51 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:23:52 Asia/Manila] Event folder created/retrieved: 1qwkPY6Td9q7gMrkghi4qxpIxzE86XDcn for 38th University Faculty In-House Review
+[28-Jan-2026 16:23:53 Asia/Manila] Center folder created/retrieved: 1IXnULL3EDt-oFjVTI21bEHTvH6vNdknT for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:23:54 Asia/Manila] Category folder created/retrieved: 1Ms8dtcYsmnjGJSsaDu0-HBIvqgKc57V9 for Natural Biological
+[28-Jan-2026 16:23:55 Asia/Manila] Entry folder created: 1ljYMCEjKJjD6f-zyvIqbXjcYeObi4E60 for Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:23:55 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1ljYMCEjKJjD6f-zyvIqbXjcYeObi4E60
+[28-Jan-2026 16:23:58 Asia/Manila] Making file public: 1gE0wHLvQo6-MF3YJ3gRAhSSaCztARbtk
+[28-Jan-2026 16:23:58 Asia/Manila] File 1gE0wHLvQo6-MF3YJ3gRAhSSaCztARbtk is already public
+[28-Jan-2026 16:23:58 Asia/Manila] research file upload successful: research_paper.pdf
+[28-Jan-2026 16:23:58 Asia/Manila] Research uploaded successfully: 1gE0wHLvQo6-MF3YJ3gRAhSSaCztARbtk
+[28-Jan-2026 16:23:58 Asia/Manila] Uploading program: program_inHouse.pdf
+[28-Jan-2026 16:23:58 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:23:58 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:23:59 Asia/Manila] Event folder created/retrieved: 1qwkPY6Td9q7gMrkghi4qxpIxzE86XDcn for 38th University Faculty In-House Review
+[28-Jan-2026 16:24:00 Asia/Manila] Center folder created/retrieved: 1IXnULL3EDt-oFjVTI21bEHTvH6vNdknT for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:24:00 Asia/Manila] Category folder created/retrieved: 1Ms8dtcYsmnjGJSsaDu0-HBIvqgKc57V9 for Natural Biological
+[28-Jan-2026 16:24:01 Asia/Manila] Entry folder created: 1ljYMCEjKJjD6f-zyvIqbXjcYeObi4E60 for Kanor_Ang_probinsyano_Chronicles
+[28-Jan-2026 16:24:01 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1ljYMCEjKJjD6f-zyvIqbXjcYeObi4E60
+[28-Jan-2026 16:24:04 Asia/Manila] Making file public: 1VbI2Jlugzh5vzcdX1OvxCASxFZ92cdWl
+[28-Jan-2026 16:24:05 Asia/Manila] File 1VbI2Jlugzh5vzcdX1OvxCASxFZ92cdWl is already public
+[28-Jan-2026 16:24:05 Asia/Manila] program file upload successful: program_inHouse.pdf
+[28-Jan-2026 16:24:05 Asia/Manila] Program uploaded successfully: 1VbI2Jlugzh5vzcdX1OvxCASxFZ92cdWl
+[28-Jan-2026 16:24:05 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:537
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(537): mysqli_stmt->bind_param('sssssssssssssss...', 40, 505, 'Mang Kanor', 'Ang probinsyano...', 'Coconut Researc...', 'Natural / Biolo...', '1gE0wHLvQo6-MF3...', 'https://drive.g...', 'https://drive.g...', '1ljYMCEjKJjD6f-...', '1qwkPY6Td9q7gMr...', '1IXnULL3EDt-oFj...', '1Ms8dtcYsmnjGJS...', '1ljYMCEjKJjD6f-...', '{"success":true...', '1VbI2Jlugzh5vzc...', 'https://drive.g...', '38th University...', 13, 'Dayao', '["Juan Tamad"]', NULL, '2026-01-28 16:2...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 537
+[28-Jan-2026 16:26:12 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[28-Jan-2026 16:26:12 Asia/Manila] Title: Bulag Pipi Bingi
+[28-Jan-2026 16:26:12 Asia/Manila] Author: Coco Martin
+[28-Jan-2026 16:26:12 Asia/Manila] Event: 38th University Faculty In-House Review
+[28-Jan-2026 16:26:12 Asia/Manila] Center: Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:26:12 Asia/Manila] Category: Natural / Biological
+[28-Jan-2026 16:26:12 Asia/Manila] Uploading endorsement: endorsement.pdf
+[28-Jan-2026 16:26:12 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:12 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:14 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[28-Jan-2026 16:26:16 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:26:18 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[28-Jan-2026 16:26:19 Asia/Manila] Entry folder created: 1y4FGVu7SaM4slVIEktNFcxsUqv_0UsQ7 for Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:19 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1y4FGVu7SaM4slVIEktNFcxsUqv_0UsQ7
+[28-Jan-2026 16:26:22 Asia/Manila] Making file public: 1JumzIfwaHws5olR8U5cgloDZE9ecURw1
+[28-Jan-2026 16:26:22 Asia/Manila] File 1JumzIfwaHws5olR8U5cgloDZE9ecURw1 is already public
+[28-Jan-2026 16:26:22 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[28-Jan-2026 16:26:22 Asia/Manila] Endorsement uploaded successfully: 1JumzIfwaHws5olR8U5cgloDZE9ecURw1
+[28-Jan-2026 16:26:22 Asia/Manila] Endorsement saved to DB with ID: 506
+[28-Jan-2026 16:26:22 Asia/Manila] Uploading research: research_paper.pdf
+[28-Jan-2026 16:26:22 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:22 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:25 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[28-Jan-2026 16:26:25 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:26:26 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[28-Jan-2026 16:26:28 Asia/Manila] Entry folder created: 1y4FGVu7SaM4slVIEktNFcxsUqv_0UsQ7 for Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:28 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1y4FGVu7SaM4slVIEktNFcxsUqv_0UsQ7
+[28-Jan-2026 16:26:31 Asia/Manila] Making file public: 1ezzxw1Iaz5ghN2_D5M-7LrSRVAyM2_-p
+[28-Jan-2026 16:26:31 Asia/Manila] File 1ezzxw1Iaz5ghN2_D5M-7LrSRVAyM2_-p is already public
+[28-Jan-2026 16:26:31 Asia/Manila] research file upload successful: research_paper.pdf
+[28-Jan-2026 16:26:31 Asia/Manila] Research uploaded successfully: 1ezzxw1Iaz5ghN2_D5M-7LrSRVAyM2_-p
+[28-Jan-2026 16:26:31 Asia/Manila] Uploading program: program_inHouse.pdf
+[28-Jan-2026 16:26:31 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:31 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:32 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[28-Jan-2026 16:26:33 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:26:33 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[28-Jan-2026 16:26:34 Asia/Manila] Entry folder created: 1y4FGVu7SaM4slVIEktNFcxsUqv_0UsQ7 for Martin_Bulag_Pipi_Bingi
+[28-Jan-2026 16:26:34 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1y4FGVu7SaM4slVIEktNFcxsUqv_0UsQ7
+[28-Jan-2026 16:26:36 Asia/Manila] Making file public: 1PFSLRSDmFOfEovax7YdP1SO1bzv0Bgv7
+[28-Jan-2026 16:26:37 Asia/Manila] File 1PFSLRSDmFOfEovax7YdP1SO1bzv0Bgv7 is already public
+[28-Jan-2026 16:26:37 Asia/Manila] program file upload successful: program_inHouse.pdf
+[28-Jan-2026 16:26:37 Asia/Manila] Program uploaded successfully: 1PFSLRSDmFOfEovax7YdP1SO1bzv0Bgv7
+[28-Jan-2026 16:26:37 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:541
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(541): mysqli_stmt->bind_param('sssssssssssssss...', 40, 506, 'Coco Martin', 'Bulag Pipi Bing...', 'Coconut Researc...', 'Natural / Biolo...', '1ezzxw1Iaz5ghN2...', 'https://drive.g...', 'https://drive.g...', '1y4FGVu7SaM4slV...', '1SdLZSS8bW5w6ea...', '1eufncq1zm5xeMB...', '1l8-ZXzcTC3rkoa...', '1y4FGVu7SaM4slV...', '{"success":true...', '1PFSLRSDmFOfEov...', 'https://drive.g...', '38th University...', 13, 'Dayao', '["Angel Locsin"...', NULL, '2026-01-28 16:2...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(100): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 541
+[28-Jan-2026 16:30:21 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[28-Jan-2026 16:30:21 Asia/Manila] Title: Ang bulag pipi kag bingi
+[28-Jan-2026 16:30:21 Asia/Manila] Author: Mang Kanor
+[28-Jan-2026 16:30:21 Asia/Manila] Event: 38th University Faculty In-House Review
+[28-Jan-2026 16:30:21 Asia/Manila] Center: Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:30:21 Asia/Manila] Category: Natural / Biological
+[28-Jan-2026 16:30:21 Asia/Manila] Uploading endorsement: endorsement.pdf
+[28-Jan-2026 16:30:21 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:21 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:22 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[28-Jan-2026 16:30:23 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:30:23 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[28-Jan-2026 16:30:25 Asia/Manila] Entry folder created: 1dZZHaDkIXxYJ53SzVj5uFIXoNEx3Sc6j for Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:25 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1dZZHaDkIXxYJ53SzVj5uFIXoNEx3Sc6j
+[28-Jan-2026 16:30:28 Asia/Manila] Making file public: 1RWFTE1OuZDO0qcrVjZJknTFJn2wOBOqn
+[28-Jan-2026 16:30:28 Asia/Manila] File 1RWFTE1OuZDO0qcrVjZJknTFJn2wOBOqn is already public
+[28-Jan-2026 16:30:28 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[28-Jan-2026 16:30:28 Asia/Manila] Endorsement uploaded successfully: 1RWFTE1OuZDO0qcrVjZJknTFJn2wOBOqn
+[28-Jan-2026 16:30:28 Asia/Manila] Endorsement saved to DB with ID: 507
+[28-Jan-2026 16:30:28 Asia/Manila] Uploading research: research_paper.pdf
+[28-Jan-2026 16:30:28 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:28 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:29 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[28-Jan-2026 16:30:30 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:30:30 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[28-Jan-2026 16:30:31 Asia/Manila] Entry folder created: 1dZZHaDkIXxYJ53SzVj5uFIXoNEx3Sc6j for Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:31 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1dZZHaDkIXxYJ53SzVj5uFIXoNEx3Sc6j
+[28-Jan-2026 16:30:34 Asia/Manila] Making file public: 1tu01dfW_khlIVeRT9stFd7VzP6f3JVtR
+[28-Jan-2026 16:30:34 Asia/Manila] File 1tu01dfW_khlIVeRT9stFd7VzP6f3JVtR is already public
+[28-Jan-2026 16:30:34 Asia/Manila] research file upload successful: research_paper.pdf
+[28-Jan-2026 16:30:34 Asia/Manila] Research uploaded successfully: 1tu01dfW_khlIVeRT9stFd7VzP6f3JVtR
+[28-Jan-2026 16:30:34 Asia/Manila] Uploading program: program_inHouse.pdf
+[28-Jan-2026 16:30:34 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:34 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:35 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[28-Jan-2026 16:30:36 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[28-Jan-2026 16:30:36 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[28-Jan-2026 16:30:37 Asia/Manila] Entry folder created: 1dZZHaDkIXxYJ53SzVj5uFIXoNEx3Sc6j for Kanor_Ang_bulag_pipi
+[28-Jan-2026 16:30:37 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1dZZHaDkIXxYJ53SzVj5uFIXoNEx3Sc6j
+[28-Jan-2026 16:30:40 Asia/Manila] Making file public: 1vbHtpw0RovHBM4mla6bs2s4LyaQRbRQw
+[28-Jan-2026 16:30:40 Asia/Manila] File 1vbHtpw0RovHBM4mla6bs2s4LyaQRbRQw is already public
+[28-Jan-2026 16:30:40 Asia/Manila] program file upload successful: program_inHouse.pdf
+[28-Jan-2026 16:30:40 Asia/Manila] Program uploaded successfully: 1vbHtpw0RovHBM4mla6bs2s4LyaQRbRQw
+[28-Jan-2026 16:30:40 Asia/Manila] Number of columns in query: 23
+[28-Jan-2026 16:30:40 Asia/Manila] Number of variables to bind: 23

@@ -1,5 +1,5 @@
 import {$, CapsuOffice, ConfirmationAlert, Request, TimeConvert, Waiting} from '../../../lib/lib.js'
-import {Error} from "../../../error.js";
+import {Error as ErrorComponent} from "../../../error.js";
 import {Print} from "../../otherComponent/comment.js";
 
 const isGoogleDriveUrl = (url) => {
@@ -36,12 +36,12 @@ const getUrl = (url) => {
 }
 
 const CreateNew = () => {
-
     const data = {
         endorsement: '',
         event: '',
         research: []
     }
+    
     const getDataMethod = {
         getEndorsement: (value) => {
             data.endorsement = value
@@ -54,35 +54,59 @@ const CreateNew = () => {
         }
     }
 
-    let Temp = {
-        title: '',
-        category: '',
-        author: '',
-        attachment: '',
-        coAuhtor:[]
+    const resetTemp = () => {
+        return {
+            title: '',
+            category: '',
+            center: '',
+            author: '',
+            attachment: '', 
+            program: '',     
+            coAuhtor: []
+        }
+    }
+    
+    let Temp = resetTemp();
+
+    // UI Elements references
+    let TitleEl, SelCat, getAuth, coAuth, coAuthList, centerSelect
+    let researchCover, programCover, researchFileInput, programFileInput
+
+    // Handler functions
+    const getResearchCover = (el) => {
+        researchCover = el
     }
 
-
-    let TitleEl, SelCat, getAuth, attache,coAuth,coAuthList
-    const getAttache = (el) => {
-        attache = el
+    const getProgramCover = (el) => {
+        programCover = el
     }
+    
+    const getResearchFileInput = (el) => {
+        researchFileInput = el
+    }
+    
+    const getProgramFileInput = (el) => {
+        programFileInput = el
+    }
+    
+    const getCenter = (el) => {
+        centerSelect = el
+    }
+    
+    const getCategory = (el) => {
+        SelCat = el
+    }
+    
     const getTitle = (el) => {
         TitleEl = el
     }
+    
     const getAuthor = (el) => {
         getAuth = el
     }
-    const getcoAuth=(el)=>{
-        coAuth=el
-    }
-
-    let cove
-    const getCo = (el) => {
-        cove = el
-    }
-    const getListTab = (tab) => {
-        listTableRes = tab
+    
+    const getCoAuth = (el) => {
+        coAuth = el
     }
 
     const labelRes = $({
@@ -96,6 +120,7 @@ const CreateNew = () => {
         },
         text: 'Add Document'
     })
+    
     const addResearch = () => {
         const Title = () => {
             const leb = $({
@@ -107,9 +132,9 @@ const CreateNew = () => {
                     color: '#bbb',
                     margin: 'auto 0 auto auto',
                     fontSize: '1.1vw',
-
                 }
             })
+            
             const input = $({
                 tag: 'textarea',
                 style: {
@@ -135,6 +160,7 @@ const CreateNew = () => {
                 },
                 elementHandler: getTitle
             })
+            
             return ($({
                 tag: 'div',
                 style: {
@@ -145,49 +171,23 @@ const CreateNew = () => {
                     padding: '.4rem',
                     borderRadius: '.5vw'
                 },
-                child: [
-                    leb,
-                    input
-                ]
+                child: [leb, input]
             }))
         }
+        
         const Category = () => {
-            const getSelect = (el) => {
-                SelCat = el
-                const option = (val) => {
-                    return ($({
-                        tag: 'option',
-                        text: val,
-                        style: {
-                            color: 'black',
-                            fontSize: '1.1vw',
-                            backgroundColor: 'grey'
-                        }
-                    }))
-                }
-                el.append($({
+            const option = (val) => {
+                return ($({
                     tag: 'option',
-                    text: '- - Select Center - -',
+                    text: val,
                     style: {
                         color: 'black',
                         fontSize: '1.1vw',
-                    },
-                    att: {
-                        disabled: true,
-                        selected: true
+                        backgroundColor: 'grey'
                     }
                 }))
-                el.append(option("Crop Science Research & Developement Center (CSRDC)"))
-                el.append(option("Livestock Research & Development Center (LRDC)"))
-                el.append(option("Fisheries Research & Development Center (FRDC)"))
-                el.append(option("Food and Industrial Technology Research & Development Center (FITRDC)"))
-                el.append(option("Social Science Research & Development Center (SSRDC)"))
-                el.append(option("Machinery and Agricultural Technology Engineering Center (MATEC)"))
-                el.append(option("Coconut Research and Development Center (Coco RDC)"))
-                el.append(option("Extension Office"))
-
-
             }
+            
             const select = $({
                 tag: 'select',
                 style: {
@@ -204,17 +204,50 @@ const CreateNew = () => {
                 att: {
                     required: true
                 },
-                elementHandler: getSelect,
                 event: {
                     type: 'change',
                     method: (event) => {
                         Temp.category = event.target.value
                     }
+                },
+                elementHandler: (el) => {
+                    // Populate options
+                    el.appendChild($({
+                        tag: 'option',
+                        text: '- - Select Category - -',
+                        style: {
+                            color: 'black',
+                            fontSize: '1.1vw',
+                        },
+                        att: {
+                            disabled: true,
+                            selected: true
+                        }
+                    }))
+                    
+                    const categories = [
+                        "Social Science",
+                        "Natural / Biological", 
+                        "Food",
+                        "Development",
+                        "Extension",
+                        "Agricultural Machinery",
+                        "Industrial",
+                        "Engineering",
+                        "Information Technology"
+                    ]
+                    
+                    categories.forEach(cat => {
+                        el.appendChild(option(cat))
+                    })
+                    
+                    getCategory(el)
                 }
             })
+            
             const leb = $({
                 tag: 'div',
-                text: 'Select Center',
+                text: 'Select Category',
                 style: {
                     fontFamily: 'arial,sans-serif',
                     fontWeight: 'bolder',
@@ -223,6 +256,7 @@ const CreateNew = () => {
                     fontSize: '1.1vw',
                 }
             })
+            
             return ($({
                 tag: 'div',
                 style: {
@@ -234,12 +268,102 @@ const CreateNew = () => {
                     borderRadius: '.5vw',
                     textAlign: 'center'
                 },
-                child: [
-                    leb,
-                    select
-                ]
+                child: [leb, select]
             }))
         }
+        
+        const Center = () => {
+            const select = $({
+                tag: 'select',
+                style: {
+                    width: '60%',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    textAlign: 'center',
+                    color: 'deepskyblue',
+                    fontSize: '1vw',
+                    marginTop: '1vh',
+                    cursor: 'pointer'
+                },
+                att: {
+                    required: true
+                },
+                event: {
+                    type: 'change',
+                    method: (event) => {
+                        Temp.center = event.target.value
+                    }
+                },
+                elementHandler: (el) => {
+                    // Populate options
+                    el.appendChild($({
+                        tag: 'option',
+                        text: '- - Select Center - -',
+                        style: {
+                            color: 'black',
+                            fontSize: '1.1vw',
+                        },
+                        att: {
+                            disabled: true,
+                            selected: true
+                        }
+                    }))
+                    
+                    const centers = [
+                        "Crop Science Research & Developement Center (CSRDC)",
+                        "Livestock Research & Development Center (LRDC)",
+                        "Fisheries Research & Development Center (FRDC)",
+                        "Food and Industrial Technology Research & Development Center (FITRDC)",
+                        "Social Science Research & Development Center (SSRDC)",
+                        "Machinery and Agricultural Technology Engineering Center (MATEC)",
+                        "Coconut Research and Development Center (Coco RDC)",
+                        "Extension Office"
+                    ]
+                    
+                    centers.forEach(center => {
+                        el.appendChild($({
+                            tag: 'option',
+                            text: center,
+                            style: {
+                                color: 'black',
+                                fontSize: '1.1vw',
+                                backgroundColor: 'grey'
+                            }
+                        }))
+                    })
+                    
+                    getCenter(el)
+                }
+            })
+            
+            const leb = $({
+                tag: 'div',
+                text: 'Select Center',
+                style: {
+                    fontFamily: 'arial,sans-serif',
+                    fontWeight: 'bolder',
+                    color: '#bbb',
+                    margin: 'auto 0 auto auto',
+                    fontSize: '1.1vw',
+                }
+            })
+            
+            return ($({
+                tag: 'div',
+                style: {
+                    height: 'fit-content',
+                    width: '95%',
+                    margin: '1vh auto',
+                    backgroundColor: 'rgba(200,200,200,0.1)',
+                    padding: '.4rem',
+                    borderRadius: '.5vw',
+                    textAlign: 'center'
+                },
+                child: [leb, select]
+            }))
+        }
+        
         const Author = () => {
             const leb = $({
                 tag: 'div',
@@ -280,6 +404,7 @@ const CreateNew = () => {
                 },
                 elementHandler: getAuthor
             })
+            
             return ($({
                 tag: 'div',
                 style: {
@@ -293,68 +418,64 @@ const CreateNew = () => {
                     display: 'flex',
                     whiteSpace: 'nowrap'
                 },
-                child: [
-                    leb,
-                    authorInput
-                ]
+                child: [leb, authorInput]
             }))
         }
-        const CoAuthor=()=>{
-            let listCo,coInput
-            const perListCo=(val)=>{
-
+        
+        const CoAuthor = () => {
+            let listCo, coInput
+            
+            const perListCo = (val) => {
                 let main
-
-                return($({
-                    tag:'div',
-                    style:{
-                        margin:'1vh auto auto',
-                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                        fontSize:'1.3vw',
-                        color:'#bbb',
-                        width:'90%',
-                        textAlign:'left',
-                        display:'flex',
-                        border:'solid thin rgba(200,200,200,0.3)',
-                        paddingRight:'.5vw',
-                        paddingLeft:'.5vw',
-                        height:'fit-content'
+                return ($({
+                    tag: 'div',
+                    style: {
+                        margin: '1vh auto auto',
+                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                        fontSize: '1.3vw',
+                        color: '#bbb',
+                        width: '90%',
+                        textAlign: 'left',
+                        display: 'flex',
+                        border: 'solid thin rgba(200,200,200,0.3)',
+                        paddingRight: '.5vw',
+                        paddingLeft: '.5vw',
+                        height: 'fit-content'
                     },
-                    elementHandler:(el)=>{
-                        main=el
+                    elementHandler: (el) => {
+                        main = el
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'div',
-                            text:val,
-                            style:{
-                                width:'100%',
-                                textAlign:'left',
-                                margin:'auto'
+                            tag: 'div',
+                            text: val,
+                            style: {
+                                width: '100%',
+                                textAlign: 'left',
+                                margin: 'auto'
                             }
                         }),
                         $({
-                            tag:'div',
-                            att:{
-                                className:'fa-solid fa-trash-can',
-                                required: true
+                            tag: 'div',
+                            att: {
+                                className: 'fa-solid fa-trash-can'
                             },
-                            style:{
-                                margin:'auto',
-                                cursor:'pointer'
+                            style: {
+                                margin: 'auto',
+                                cursor: 'pointer'
                             },
-                            event:{
-                                type:'click',
-                                method:()=>{
+                            event: {
+                                type: 'click',
+                                method: () => {
                                     main.remove()
-                                    Temp.coAuhtor=Temp.coAuhtor.filter((item)=>{return item!==val})
+                                    Temp.coAuhtor = Temp.coAuhtor.filter((item) => { return item !== val })
                                 }
                             }
-                        }),
-
+                        })
                     ]
                 }))
             }
+            
             const leb = $({
                 tag: 'div',
                 text: 'Co-Author : ',
@@ -367,33 +488,36 @@ const CreateNew = () => {
                     marginBottom: 'auto'
                 }
             })
-            const bot=$({
-                tag:'div',
-                att:{
-                    className:'fa-solid fa-user-plus addCo',
+            
+            const bot = $({
+                tag: 'div',
+                att: {
+                    className: 'fa-solid fa-user-plus addCo',
                     title: 'Add as co-author?'
                 },
-                style:{
-                    fontSize:'1.2vw',
-                    margin:'auto',
-                    marginLeft:'1vw',
-                    border:'solid thin deepskyblue',
-                    padding:'.3rem',
-                    cursor:'pointer'
+                style: {
+                    fontSize: '1.2vw',
+                    margin: 'auto',
+                    marginLeft: '1vw',
+                    border: 'solid thin deepskyblue',
+                    padding: '.3rem',
+                    cursor: 'pointer'
                 },
-                event:{
-                    type:'click',
-                    method:()=>{
-
-                       Temp.coAuhtor.push(coInput.value)
-                        listCo.innerHTML=''
-                        Temp.coAuhtor.forEach(val=>{
-                            listCo.appendChild(perListCo(val))
-                        })
-                        coInput.value=''
+                event: {
+                    type: 'click',
+                    method: () => {
+                        if (coInput.value.trim()) {
+                            Temp.coAuhtor.push(coInput.value.trim())
+                            listCo.innerHTML = ''
+                            Temp.coAuhtor.forEach(val => {
+                                listCo.appendChild(perListCo(val))
+                            })
+                            coInput.value = ''
+                        }
                     }
                 }
             })
+            
             const CoauthorInput = $({
                 tag: 'input',
                 style: {
@@ -412,10 +536,12 @@ const CreateNew = () => {
                     placeholder: 'Input all authors here',
                     title: 'To add more authors click the add icon'
                 },
-                elementHandler: (el)=>{
-                    coInput=el
+                elementHandler: (el) => {
+                    coInput = el
+                    getCoAuth(el)
                 }
             })
+            
             return ($({
                 tag: 'div',
                 style: {
@@ -430,36 +556,31 @@ const CreateNew = () => {
                 },
                 child: [
                     $({
-                        tag:'div',
-                        style:{
-                            display:'flex',
-                            width:'100%',
-                            borderBottom:'solid thin grey',
-                            paddingBottom:'.5vw'
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            width: '100%',
+                            borderBottom: 'solid thin grey',
+                            paddingBottom: '.5vw'
                         },
-                        child:[
-                            leb,
-                            CoauthorInput,
-                            bot
-                        ]
+                        child: [leb, CoauthorInput, bot]
                     }),
                     $({
-                        tag:'div',
-                        style:{
-                            width:'100%',
+                        tag: 'div',
+                        style: {
+                            width: '100%',
                         },
-                        elementHandler:(el)=>{
-                            listCo=el
-                            coAuthList=el
+                        elementHandler: (el) => {
+                            listCo = el
+                            coAuthList = el
                         }
                     })
                 ]
             }))
         }
-
+        
+        // Research file attachment
         const Attachment = () => {
-
-
             const file = $({
                 tag: 'input',
                 att: {
@@ -481,15 +602,39 @@ const CreateNew = () => {
                 },
                 event: {
                     type: 'input',
-                    /* A function that is called when a file is selected. It sets the attachment to the file selected and
-                    displays the file name. */
                     method: (event) => {
-                        Temp.attachment = event.target.files[0]
-                        cove.innerHTML = `<div style="margin: auto;  font-family: monospace" class="fa-solid fa-file-pdf"> ${event.target.files[0].name}</div>`
+                        if (event.target.files.length > 0) {
+                            const file = event.target.files[0];
+                            // Validate file type
+                            if (file.type !== 'application/pdf') {
+                                alert('Please upload only PDF files!');
+                                event.target.value = ''; // Clear the input
+                                if (researchCover) {
+                                    researchCover.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload research or extension proposal/paper in pdf format</div>`
+                                }
+                                return;
+                            }
+                            
+                            // Validate file size (optional: max 10MB)
+                            if (file.size > 10 * 1024 * 1024) {
+                                alert('File size too large! Maximum size is 10MB.');
+                                event.target.value = '';
+                                if (researchCover) {
+                                    researchCover.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload research or extension proposal/paper in pdf format</div>`
+                                }
+                                return;
+                            }
+                            
+                            Temp.attachment = file;
+                            if (researchCover) {
+                                researchCover.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> ${file.name}</div>`
+                            }
+                        }
                     }
                 },
-                elementHandler: getAttache
+                elementHandler: getResearchFileInput
             })
+            
             const cover = $({
                 tag: 'div',
                 style: {
@@ -503,10 +648,9 @@ const CreateNew = () => {
                     justifyContent: 'center',
                 },
                 att: {
-                    innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> upload research or extension proposal/paper in pdf format</div>`
+                    innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload research or extension proposal/paper in pdf format</div>`
                 },
-                elementHandler: getCo
-
+                elementHandler: getResearchCover
             })
 
             return ($({
@@ -517,18 +661,84 @@ const CreateNew = () => {
                 style: {
                     height: '6vh',
                     width: '70%',
-                    margin: ' 2vh auto',
+                    margin: '2vh auto',
                     borderRadius: '.5vw',
                     position: 'relative',
-                    backgroundColor:'#333'
+                    backgroundColor: '#333'
                 },
-                child: [
-                    cover,
-                    file
-                ]
+                child: [cover, file]
             }))
         }
 
+        // Program file attachment
+        const Program = () => {
+            const file = $({
+                tag: 'input',
+                att: {
+                    type: 'file',
+                    accept: '.pdf',
+                    required: true
+                },
+                style: {
+                    opacity: '0',
+                    position: 'absolute',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    outline: 'none',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                },
+                event: {
+                    type: 'input',
+                    method: (event) => {
+                        if (event.target.files.length > 0) {
+                            Temp.program = event.target.files[0]
+                            if (programCover) {
+                                programCover.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> ${event.target.files[0].name}</div>`
+                            }
+                        }
+                    }
+                },
+                elementHandler: getProgramFileInput
+            })
+            
+            const cover = $({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    fontFamily: 'monospace',
+                    color: 'deepskyblue',
+                    fontSize: '1vw',
+                    textAlign: 'center',
+                    display: 'flex',
+                    justifyContent: 'center',
+                },
+                att: {
+                    innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload Program in pdf format</div>`
+                },
+                elementHandler: getProgramCover
+            })
+
+            return ($({
+                tag: 'div',
+                att: {
+                    className: 'resAtt'
+                },
+                style: {
+                    height: '6vh',
+                    width: '70%',
+                    margin: '2vh auto',
+                    borderRadius: '.5vw',
+                    position: 'relative',
+                    backgroundColor: '#333'
+                },
+                child: [cover, file]
+            }))
+        }
 
         return ($({
             tag: 'div',
@@ -544,203 +754,26 @@ const CreateNew = () => {
             child: [
                 Title(),
                 Category(),
+                Center(),
                 Author(),
                 CoAuthor(),
                 Attachment(),
+                Program()
             ]
         }))
     }
-    let listTableRes
-    const listAuthor = (name, category, title) => {
-        let mainListPan
-        /**
-         * It returns the mainListPan element.
-         * @param el - the element that is being dragged
-         */
-        const getMain = (el) => {
-            mainListPan = el
-        }
-
-        const nameList = $({
-            tag: 'div',
-            text: name,
-            style: {
-                fontSize: '1vw',
-                fontFamily: 'arial,sans-serif',
-                width: '30%',
-                margin: 'auto',
-                fontWeight: 'bolder'
-            }
-
-        })
-        const categoryList = $({
-            tag: 'div',
-            text: category,
-            style: {
-                fontSize: '1vw',
-                fontFamily: 'arial,sans-serif',
-                width: '20%',
-                margin: 'auto',
-                fontWeight: 'bolder',
-                borderLeft:'solid thin rgba(100,100,100,0.5)'
-            }
-        })
-        const TitleList = $({
-            tag: 'div',
-            text: title,
-            style: {
-                fontSize: '1vw',
-                fontFamily: 'arial,sans-serif',
-                width: '43%',
-                margin: 'auto',
-                fontWeight: 'bolder',
-                whiteSpace:'nowrap',
-                textOverflow:'ellipsis',
-                overflow: 'hidden',
-                borderLeft:'solid thin rgba(100,100,100,0.5)',
-                borderRight:'solid thin rgba(100,100,100,0.5)'
-            }
-        })
-        const deleteBot = $({
-            tag: 'div',
-            style: {
-                fontSize: '1vw',
-                width: '5%',
-                textAlign: 'center',
-                margin: 'auto'
-            },
-            att: {
-                className: 'fa-solid fa-trash-can'
-            },
-            event: {
-                type: 'click',
-                method: () => {
-                    for (let x = 0; x < data.research.length; x++) {
-                        if (data.research[x].author === name && data.research[x].title === title) {
-                            data.research.splice(x, 1)
-                            break;
-                        }
-                    }
-                    mainListPan.remove()
-                }
-            }
-        })
-        return ($({
-            tag: 'div',
-            style: {
-                height: '4vh',
-                justifyContent: 'center',
-                display: 'flex',
-                paddingRight: '1vw',
-                paddingLeft: '1vw',
-                backgroundColor: 'rgba(0,0,0,0.2)',
-                margin: '.5vh auto auto'
-            },
-            elementHandler: getMain,
-            child: [
-                nameList,
-                categoryList,
-                TitleList,
-                deleteBot
-            ]
-        }))
-    }
-    const addMethod = () => {
-
-       // getDataMethod.getResearch(Temp)
-
-        /* Appending the listAuthor function to the listTableRes variable.
-        listTableRes.appendChild(listAuthor(Temp.author, Temp.category, Temp.title))
-         */
-        /*
-        cove.innerHTML = `<div style="margin: auto;  font-family: monospace" class="fa-solid fa-file-pdf"> upload attachment in pdf format</div>`
-        Temp = {
-            title: '',
-            category: '',
-            author: '',
-            attachment: '',
-            coAuhtor: []
-        }
-        TitleEl.value = ''
-        SelCat.selectedIndex = 0
-        getAuth.value = ''
-        attache.value = ''
-        coAuthList.innerHTML=''
-         */
-
-    }
-    const AddBot = () => {
-        return ($({
-            tag: 'div',
-            style: {
-                fontSize: '1.2vw',
-                margin: '1vh  auto',
-                width: 'fit-content',
-                height: '4vh',
-                paddingLeft: '1vw',
-                paddingRight: '1vw',
-            },
-            att: {
-                className: 'addBotRes'
-            },
-            text: 'Add to List',
-            event: {
-                type: 'click',
-                method: () => {
-
-                    /* The above code is checking if the title, category, author and attachment are empty. If they are
-                    empty, it will alert the user that the title, category, author and attachment are missing. */
-                    if (Temp.title === '') {
-
-                        alert("Title is missing..!")
-                        return;
-                    }
-                    if (Temp.category === '') {
-
-                        alert("Category is missing..!")
-                        return;
-                    }
-                    if (Temp.author === '') {
-
-                        alert("Author is missing..!")
-                        return;
-                    }
-                    if (Temp.attachment === '') {
-
-                        alert("Attachment is missing..!")
-                        return;
-                    }
-                    /* Adding a method to the Array object. */
-                    addMethod();
-
-                }
-            }
-
-        }))
-    }
-
-
-    const ListTable = () => {
-        return ($({
-            tag: 'div',
-            style: {
-                height: 'fit-content',
-                backgroundColor: '#222',
-                width: '80%',
-                margin: 'auto',
-                overflowY: 'auto',
-                border:'solid thin deepskyblue',
-                color:'deepskyblue'
-            },
-            elementHandler: getListTab
-        }))
-    }
-
+    
     const attachContainer = () => {
-        let cov
-        let getcover = (el) => {
+        let cov, endorsementFileInput
+        
+        const getcover = (el) => {
             cov = el
         }
+        
+        const getEndorsementFileInput = (el) => {
+            endorsementFileInput = el
+        }
+        
         const file = $({
             tag: 'input',
             att: {
@@ -764,11 +797,17 @@ const CreateNew = () => {
             event: {
                 type: 'input',
                 method: (event) => {
-                    cov.innerHTML = `<div style="margin: auto;  font-family: monospace" class="fa-solid fa-file-pdf"> ${event.target.files[0].name}</div>`
-                    getDataMethod.getEndorsement(event.target.files[0])
+                    if (event.target.files.length > 0) {
+                        if (cov) {
+                            cov.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> ${event.target.files[0].name}</div>`
+                        }
+                        getDataMethod.getEndorsement(event.target.files[0])
+                    }
                 }
-            }
+            },
+            elementHandler: getEndorsementFileInput
         })
+        
         const cover = $({
             tag: 'div',
             style: {
@@ -780,16 +819,15 @@ const CreateNew = () => {
                 textAlign: 'center',
                 display: 'flex',
                 justifyContent: 'center',
-                backgroundColor:'#333',
+                backgroundColor: '#333',
                 borderRadius: '.5vw'
             },
             att: {
-                innerHTML: `<div style="margin: auto;  font-family: monospace" class="fa-solid fa-file-pdf"> upload attachment in pdf format</div>`,
-
-
+                innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> upload attachment in pdf format</div>`,
             },
             elementHandler: getcover
         })
+        
         const label = $({
             tag: 'div',
             att: {
@@ -819,8 +857,8 @@ const CreateNew = () => {
                     }
                 })
             ]
-
         })
+        
         return ($({
             tag: 'div',
             style: {
@@ -837,24 +875,19 @@ const CreateNew = () => {
                 $({
                     tag: 'div',
                     style: {
-
                         height: '4vh',
                         width: '100%',
-                        margin: ' auto',
+                        margin: 'auto',
                         marginLeft: '0',
                         position: 'relative',
                         backgroundImage: 'linear-gradient(to right,transparent,rgba(0,0,0,0.5),black)'
                     },
-                    child: [
-                        cover,
-                        file
-                    ]
-                }),
-
-
+                    child: [cover, file]
+                })
             ]
         }))
     }
+    
     const EventType = () => {
         return ($({
             tag: 'div',
@@ -893,8 +926,8 @@ const CreateNew = () => {
                             getDataMethod.getEvent(event.target.value)
                         }
                     },
-                    elementHandler:async (el)=>{
-                        el.appendChild(  $({
+                    elementHandler: async (el) => {
+                        el.appendChild($({
                             tag: 'option',
                             text: '-- Select Event Name --',
                             att: {
@@ -902,59 +935,59 @@ const CreateNew = () => {
                                 selected: true
                             }
                         }))
-                        const form=new FormData()
-                        // former   getEvent
-                        //getEventAdmin
-                        form.append('getEvent','true')
-                        await fetch('/eventRequest',{
-                            method:'POST',
-                            body:form
-                        }).then(res=>res.json())
-                            .then(data=>{
-
-                                data.forEach(val=>{
+                        
+                        const form = new FormData()
+                        form.append('getEvent', 'true')
+                        
+                        try {
+                            const response = await fetch('/eventRequest', {
+                                method: 'POST',
+                                body: form
+                            })
+                            
+                            if (response.ok) {
+                                const data = await response.json()
+                                data.forEach(val => {
                                     el.appendChild($({
                                         tag: 'option',
-                                        text:val.name,
-                                        style:{
-                                            backgroundColor:'#222',
-                                            fontSize:'1.4vw'
+                                        text: val.name,
+                                        style: {
+                                            backgroundColor: '#222',
+                                            fontSize: '1.4vw'
                                         },
-                                        att:{
-                                            id:val.id
+                                        att: {
+                                            id: val.id
                                         }
                                     }))
                                 })
-                            })
-                    },
-
+                            }
+                        } catch (error) {
+                            console.error('Error fetching events:', error)
+                        }
+                    }
                 })
             ]
         }))
     }
     
-    const Filter=(dataM)=>{
-        const fil={
-            message:'',
-            state:true
+    const Filter = (dataM) => {
+        const fil = {
+            message: '',
+            state: true
         }
-        if(dataM.endorsement===null||dataM.endorsement===''){
-            fil.message="Endorsement is missing..!"
-            fil.state=false
+        
+        if (!dataM.endorsement) {
+            fil.message = "Endorsement is missing..!"
+            fil.state = false
             return fil
         }
-        if(dataM.event===null||dataM.event===''){
-            fil.message="Event Type is missing..!"
-            fil.state=false
+        
+        if (!dataM.event) {
+            fil.message = "Event Type is missing..!"
+            fil.state = false
             return fil
         }
-       /*
-        if(attachment.length===0){
-            fil.message="No Entries found..!"
-            fil.state=false
-            return fil
-        }
-        */
+        
         return fil
     }
 
@@ -980,7 +1013,7 @@ const CreateNew = () => {
             event: {
                 type: 'click',
                 method: async () => {
-                                        // Get all required fields
+                    // Get all required fields
                     const requiredInputs = document.querySelectorAll('[required]');
                     let isValid = true;
                     let firstInvalidField = null;
@@ -1016,46 +1049,79 @@ const CreateNew = () => {
                         alert("Please fill all required fields!");
                         return;
                     }
-                    if (Temp.title === '') {
-
+                    
+                    // Additional validations
+                    if (!Temp.title) {
                         alert("Title is missing..!")
+                        TitleEl.focus();
                         return;
                     }
-                    if (Temp.category === '') {
-
+                    if (!Temp.category) {
                         alert("Category is missing..!")
                         return;
                     }
-                    if (Temp.author === '') {
-
-                        alert("Author is missing..!")
+                    if (!Temp.center) {
+                        alert("Center is missing")
                         return;
                     }
-                    if (Temp.attachment === '') {
-
-                        alert("Attachment is missing..!")
+                    if (!Temp.author) {
+                        alert("Author is missing..!")
+                        getAuth.focus();
+                        return;
+                    }
+                    if (!Temp.attachment) {
+                        alert("Research attachment is missing..!")
+                        return;
+                    }
+                    if (!Temp.program) {
+                        alert("Program attachment is missing")
                         return;
                     }
                     
-                    /* Adding a method to the Array object. */
-                    addMethod()
-                    // Find this section in research.js (around lines 1040-1080)
+                    // Validate co-authors (if any)
+                    if (Temp.coAuhtor && Temp.coAuhtor.length > 0) {
+                        const invalidCoAuthors = Temp.coAuhtor.filter(coAuth => !coAuth.trim());
+                        if (invalidCoAuthors.length > 0) {
+                            alert("Some co-authors have empty names. Please fix or remove them.");
+                            return;
+                        }
+                    }
+                    
                     const fl = Filter(data)
                     if (fl.state) {
-                        data.research.push(Temp)
+                        // Add the current research entry to data
+                        data.research.push({...Temp}) // Create a copy
+                        
+                        // Prepare form data for submission
                         const form = new FormData();
+                        
+                        // Add endorsement file
                         form.append('uploadedFileEndorsement', data.endorsement)
                         form.append('eventType', data.event)
                         
-                        data.research.forEach(val => {
-                            form.append('researchDocs[]', val.attachment)
-                            form.append('title[]', val.title)
-                            form.append('category[]', val.category)
-                            form.append('author[]', val.author)
-                            form.append('coAuthor[]', JSON.stringify(val.coAuhtor))
-                        })
+                        // Add research and program files (SINGLE FILES, not arrays)
+                        // Since we only have one research entry now
+                        const researchEntry = data.research[0];
+                        
+                        // Debug logging
+                        console.log('Research file:', researchEntry.attachment);
+                        console.log('Program file:', researchEntry.program);
+                        console.log('Endorsement file:', data.endorsement);
+                        
+                        // Add single research file
+                        form.append('researchDoc', researchEntry.attachment)
+                        form.append('programFile', researchEntry.program)
+                        
+                        // Add research metadata
+                        form.append('title', researchEntry.title)
+                        form.append('category', researchEntry.category)
+                        form.append('center', researchEntry.center)
+                        form.append('author', researchEntry.author)
+                        form.append('coAuthor', JSON.stringify(researchEntry.coAuhtor || []))
                         
                         form.append('uploadResearch', 'true')
+                        
+                        // Show loading indicator
                         let loading = Waiting()
                         document.body.appendChild(loading)
                         
@@ -1069,20 +1135,12 @@ const CreateNew = () => {
                                 body: form
                             });
                             
-                            // First check if response is OK
+                            // Check if response is OK
                             if (!response.ok) {
                                 throw new Error(`HTTP error! Status: ${response.status}`);
                             }
                             
-                            // Try to parse as JSON
-                            const contentType = response.headers.get('content-type');
-                            if (!contentType || !contentType.includes('application/json')) {
-                                // If not JSON, read as text to see what we got
-                                const text = await response.text();
-                                console.error('Non-JSON response:', text.substring(0, 500));
-                                throw new Error('Server returned non-JSON response. Please check server logs.');
-                            }
-                            
+                            // Parse response as JSON
                             const dat = await response.json();
                             
                             remove();
@@ -1100,14 +1158,8 @@ const CreateNew = () => {
                             remove();
                             console.error('Error uploading research:', err);
                             
-                            // Provide user-friendly error message
-                            if (err.message.includes('non-JSON') || err.message.includes('<br />')) {
-                                alert('Server error: Please contact administrator. The system returned an invalid response.');
-                            } else if (err.message.includes('HTTP error')) {
-                                alert('Network error: Please check your connection and try again.');
-                            } else {
-                                alert('Error uploading document. Please try again.');
-                            }
+                            // User-friendly error message
+                            alert('Error uploading document: ' + (err.message || 'Unknown error'));
                         }
                     } else {
                         alert(fl.message)
@@ -1116,6 +1168,7 @@ const CreateNew = () => {
             }
         }))
     }
+    
     const newContent = () => {
         return ($({
             tag: 'div',
@@ -1124,31 +1177,24 @@ const CreateNew = () => {
                 height: '100%',
                 backgroundColor: 'rgba(0,0,0,0.5)',
                 margin: 'auto',
-                overflowY:'auto',
+                overflowY: 'auto',
             },
             child: [
                 labelRes,
                 addResearch(),
-                /*
-                AddBot(),
-                ListTable(),
-                 */
                 attachContainer(),
                 EventType(),
                 Submit()
             ]
         }))
     }
-
-
+    
     return ($({
         tag: 'div',
         att: {
             className: 'createPan'
         },
         child: [newContent()]
-
-
     }))
 }
 
@@ -1167,7 +1213,7 @@ const Submitted = () => {
                 mainPanel.appendChild(FilePanel(sessionStorage.getItem('viewFile')))
                 break;
             default:
-                mainPanel.appendChild(Error())
+                mainPanel.appendChild(ErrorComponent())
         }
     }
 
@@ -1201,12 +1247,8 @@ const Submitted = () => {
                 frame,
                 controlBar()
             ]
-
         }))
     }
-
-
-
     // For submitted files list
     const MessagePanel = () => {
         let bodCo

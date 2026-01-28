@@ -2819,7 +2819,7 @@ export const ResearchMain = () => {
                                             tag: 'div',
                                             att: {
                                                 className: 'fa-solid fa-arrow-left',
-                                                title: 'Refresh'
+                                                title: 'Go back'
                                             },
                                             style: {
                                                 margin: 'auto',
@@ -3527,6 +3527,7 @@ export const ResearchMain = () => {
                                 cursor:'pointer',
                                 color:'deepskyblue'
                             },
+                            text: 'View Summary',
                             event:{
                                 type:'click',
                                 method:()=>{
@@ -3571,61 +3572,32 @@ export const ResearchMain = () => {
                                 backgroundColor: 'rgba(0,0,0,0.3)'
 
                             },
-
                             child: [
-
-
                                 $({
-
                                     tag: 'select',
-
                                     style: {
-
                                         backgroundColor: 'transparent',
-
                                         fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
                                         fontSize: '1vw',
-
                                         border: 'none',
-
                                         outline: 'none',
-
                                         color: '#bbb',
-
-                                        width: '25vw',
-
+                                        width: '15vw',
                                         textAlign: 'center'
-
                                     },
-
                                     elementHandler: (el) => {
-
-
                                         el.appendChild($({
-
                                             tag: 'option',
-
                                             text: 'All Event',
-
                                             style: {
-
                                                 backgroundColor: 'rgba(0,0,0,0.8)',
-
                                                 color: '#bbb'
-
                                             },
-
                                             att: {
-
                                                 id: '0'
-
                                             }
-
                                         }))
-
                                         const req = new Request('/eventRequest')
-
                                         req.Post([
                                             {
                                                 name: 'getEventAdmin',
@@ -3635,86 +3607,46 @@ export const ResearchMain = () => {
                                         req.Json()
                                         req.Send().then(data => {
                                             data.forEach(val => {
-
                                                 el.appendChild($({
-
                                                     tag: 'option',
-
                                                     text: val.name,
-
                                                     style: {
-
                                                         backgroundColor: 'rgba(0,0,0,0.8)',
-
                                                         color: '#bbb'
-
                                                     },
-
                                                     att: {
-
                                                         id: val.id
-
                                                     }
-
                                                 }))
-
                                             })
-
                                         })
-
                                     },
-
                                     event: {
-
                                         type: 'change',
-
                                         method: (eve) => {
-
                                             request = eve.target.childNodes[eve.target.selectedIndex].id
-
                                         }
-
                                     }
-
                                 }),
-
                                 $({
-
                                     tag: 'div',
-
                                     att: {
-
                                         className: 'fa-solid fa-arrows-rotate',
                                         title: 'Refresh Event Documents'
-
                                     },
-
                                     style: {
-
                                         margin: 'auto',
-
                                         marginLeft: '2vw',
-
                                         marginRight: '1vw',
-
                                         fontSize: '1.2vw',
-
                                         color: 'deepskyblue',
-
                                         cursor: 'pointer'
-
                                     },
-
                                     event: {
-
                                         type: 'click',
-
                                         method: () => {
-
                                             serch.value = ''
-
                                             const req = new Request('/eventRequest')
-
                                             req.Post([
                                                 {
                                                     name: 'requestEventRDE',
@@ -3726,54 +3658,29 @@ export const ResearchMain = () => {
                                                 }
                                             ])
                                             req.Json()
-
                                             req.Send().then(data => {
-
                                                 researchBody.innerHTML = ''
-
                                                 data.forEach(val => {
-
                                                     researchBody.appendChild(ResearchDocs({
-
                                                         category: val.category,
-
                                                         title: val.title,
-
                                                         author: val.author,
-
                                                         file: val.file,
-
                                                         eventTYpe: val.event,
-
                                                         campus: val.campus,
-
                                                         deleteRequest: val.deletestate,
-
                                                         docId: val.id,
                                                         endorseId:val.endorsId
-
                                                     }))
-
                                                 })
-
                                             })
-
                                         }
-
                                     }
-
                                 })
-
                             ]
-
-
                         })
-
                     ],
-
-
                 }))
-
             }
             const Score=()=>{
                 return($({
@@ -3793,6 +3700,7 @@ export const ResearchMain = () => {
                             tag:'a',
                             att:{
                                 className:'fa-solid fa-ranking-star',
+                                name: 'Score Summary',
                                 title: 'View Score Summary',
                                 href:'/rdeOffice/research/scoreSummary'
                             },
@@ -3806,7 +3714,7 @@ export const ResearchMain = () => {
                                 color:'deepskyblue',
                                 cursor:'pointer',
                             },
-
+                            text: 'Score Summary'
                         })
                     ]
                 }))

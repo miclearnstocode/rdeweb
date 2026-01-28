@@ -219,7 +219,40 @@ class GoogleDriveService {
             return false;
         }
     }
-    
+    // Method to create complete folder structure
+    public function createCompleteFolderStructure($eventName, $centerName, $categoryName, $entryFolderName) {
+        try {
+            error_log("Starting folder structure creation: $eventName -> $centerName -> $categoryName -> $entryFolderName");
+            
+            // 1. Create or get event folder inside root
+            $eventFolderId = $this->findOrCreateFolder($eventName, $this->rootFolderId);
+            error_log("Event folder created/retrieved: $eventFolderId for $eventName");
+            
+            // 2. Create or get center folder inside event folder
+            $centerFolderId = $this->findOrCreateFolder($centerName, $eventFolderId);
+            error_log("Center folder created/retrieved: $centerFolderId for $centerName");
+            
+            // 3. Create or get category folder inside center folder
+            $categoryFolderId = $this->findOrCreateFolder($categoryName, $centerFolderId);
+            error_log("Category folder created/retrieved: $categoryFolderId for $categoryName");
+            
+            // 4. Create entry folder inside category folder
+            $entryFolderId = $this->findOrCreateFolder($entryFolderName, $categoryFolderId);
+            error_log("Entry folder created: $entryFolderId for $entryFolderName");
+            
+            return [
+                'event_folder_id' => $eventFolderId,
+                'center_folder_id' => $centerFolderId,
+                'category_folder_id' => $categoryFolderId,
+                'entry_folder_id' => $entryFolderId
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Failed to create complete folder structure: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            throw new Exception("Failed to create folder structure: " . $e->getMessage());
+        }
+    }
     // Helper method to get drive ID from folder ID (not always needed)
     private function getDriveId($folderId) {
         try {
@@ -235,4 +268,3 @@ class GoogleDriveService {
         }
     }
 }
-?>

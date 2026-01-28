@@ -98,10 +98,11 @@ function getCenterCode($centerName) {
     return !empty($code) ? $code : 'END';
 }
 
-function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $type = 'research') {
+function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $category, $author, $title, $type = 'research', $isProgram = false, $isEndorsement = false) {
     try {
         // Check if file exists
         if (!file_exists($tempFilePath)) {
+            error_log("File not found: $tempFilePath");
             throw new Exception("Temporary file not found: $tempFilePath");
         }
         
@@ -112,12 +113,7 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         }
         
         // Include Drive config
-        $driveConfigPath = __DIR__ . '/../config/driver_config.php';
-        if (!file_exists($driveConfigPath)) {
-            throw new Exception("Google Drive configuration not found at: $driveConfigPath");
-        }
-        
-        require_once $driveConfigPath;
+        require_once __DIR__ . '/../config/driver_config.php';
         
         if (!class_exists('GoogleDriveService')) {
             throw new Exception("GoogleDriveService class not found");
@@ -125,41 +121,54 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         
         $drive = new GoogleDriveService();
         
-        // For endorsement letters, use center code for folder name
-        if ($type === 'endorsement') {
-            // Get center code from mapping
-            $centerCode = getCenterCode($centerName);
-            $endorsementFolderName = $centerCode . '_Endorsement_Letter';
-            
-            error_log("Creating endorsement folder structure for: $eventName - Center: $centerName - Code: $centerCode - Folder: $endorsementFolderName");
-            $folders = $drive->createResearchFolderStructure($eventName, $endorsementFolderName);
-            
-            if (empty($folders['center_folder_id'])) {
-                throw new Exception("Failed to create endorsement folder structure");
-            }
-        } else {
-            // For research papers: Event → Center (using category name)
-            $cleanCenterName = cleanFolderNameForDrive($centerName);
-            error_log("Creating research folder structure for: $eventName / $cleanCenterName");
-            
-            $folders = $drive->createResearchFolderStructure($eventName, $cleanCenterName);
-            
-            if (empty($folders['center_folder_id'])) {
-                throw new Exception("Failed to create research folder structure for center: $cleanCenterName");
-            }
+        // Clean names for Google Drive
+        $cleanEventName = cleanFolderNameForDrive($eventName);
+        $cleanCenterName = cleanFolderNameForDrive($centerName);
+        $cleanCategoryName = cleanFolderNameForDrive($category);
+        
+        // Get author's last name for folder naming
+        $authorParts = explode(' ', trim($author));
+        $authorLastName = end($authorParts);
+        $authorLastName = cleanFolderNameForDrive($authorLastName);
+        
+        // Get first three words of title for keyword
+        $titleWords = explode(' ', trim($title));
+        $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
+        $titleKeywords = cleanFolderNameForDrive($titleKeywords);
+        
+        // Create entry folder name: lastname_keyword
+        $entryFolderName = $authorLastName . '_' . $titleKeywords;
+        
+        error_log("Creating folder structure for: $eventName -> $centerName -> $category -> $entryFolderName");
+        
+        // Create complete folder structure
+        $folders = $drive->createCompleteFolderStructure(
+            $cleanEventName,
+            $cleanCenterName,
+            $cleanCategoryName,
+            $entryFolderName
+        );
+        
+        if (empty($folders['entry_folder_id'])) {
+            error_log("Failed to create entry folder structure: " . json_encode($folders));
+            throw new Exception("Failed to create entry folder structure");
         }
         
+        // Determine which folder to upload to based on file type
+        $targetFolderId = $folders['entry_folder_id'];
+        
         // 2. Upload the file to appropriate folder
-        error_log("Uploading file: $fileName to folder: " . $folders['center_folder_id']);
+        error_log("Uploading $type file: $fileName to folder: $targetFolderId");
         $uploadResult = $drive->uploadFile(
             $tempFilePath,
             $fileName,
-            $folders['center_folder_id']
+            $targetFolderId
         );
 
         // Check if upload was successful
         if (!$uploadResult['success'] || empty($uploadResult['id'])) {
             $errorMsg = $uploadResult['error'] ?? "Upload failed: No file ID returned from Google Drive";
+            error_log("Google Drive upload failed for $fileName: $errorMsg");
             throw new Exception($errorMsg);
         }
         
@@ -167,45 +176,45 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         error_log("Making file public: " . $uploadResult['id']);
         $drive->makeFilePublic($uploadResult['id']);
         
-        // Test if the file is actually accessible
-        $testUrl = "https://drive.google.com/file/d/{$uploadResult['id']}/preview";
-        error_log("Test embed URL: " . $testUrl);
-        
         // 4. Generate proper URLs
         $fileId = $uploadResult['id'];
         $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
-        $viewUrl = "https://drive.google.com/file/d/{$fileId}/view";
-        
-        // Log all URLs for debugging
-        error_log("Generated URLs for file $fileId:");
-        error_log("- Embed URL: $embedUrl");
-        error_log("- View URL: $viewUrl");
-        error_log("- Direct download: https://drive.google.com/uc?id={$fileId}&export=download");
         
         // 5. Return success with all metadata
-        return [
+        $result = [
             'success' => true,
             'drive_file_id' => $uploadResult['id'],
             'drive_view_url' => $embedUrl,
             'drive_download_url' => "https://drive.google.com/uc?id={$fileId}&export=download",
-            'drive_folder_id' => $folders['center_folder_id'],
-            'drive_event_folder_id' => $folders['event_folder_id'],
-            'drive_center_folder_id' => $folders['center_folder_id'],
+            'drive_folder_id' => $targetFolderId, // This is the entry folder ID
+            'drive_event_folder_id' => $folders['event_folder_id'] ?? null,
+            'drive_center_folder_id' => $folders['center_folder_id'] ?? null,
+            'drive_category_folder_id' => $folders['category_folder_id'] ?? null,
+            'drive_entry_folder_id' => $folders['entry_folder_id'] ?? null,
             'file_size' => $uploadResult['size'] ?? 0,
             'file_name' => $uploadResult['name'] ?? $fileName,
-            'center_code' => $centerCode ?? null
+            'center_name' => $centerName,
+            'category_name' => $category,
+            'entry_folder_name' => $entryFolderName
         ];
         
+        error_log("$type file upload successful: " . $fileName);
+        return $result;
+        
     } catch (Exception $e) {
-        error_log("Google Drive upload failed: " . $e->getMessage());
-        throw new Exception("Failed to upload to Google Drive: " . $e->getMessage());
+        error_log("Google Drive upload failed for $fileName: " . $e->getMessage());
+        throw new Exception("Failed to upload $fileName to Google Drive: " . $e->getMessage());
     }
 }
 
 // Helper function to clean folder names for Google Drive
 function cleanFolderNameForDrive($name) {
+    if (empty($name)) {
+        return 'Untitled_' . time();
+    }
+    
     // Remove special characters that Google Drive doesn't like
-    $clean = preg_replace('/[^\w\s\-_]/', '', $name);
+    $clean = preg_replace('/[^\w\s\-_.,()&]/', '', $name);
     
     // Replace multiple spaces with single space
     $clean = preg_replace('/\s+/', ' ', $clean);
@@ -213,14 +222,16 @@ function cleanFolderNameForDrive($name) {
     // Trim whitespace
     $clean = trim($clean);
     
-    // If empty after cleaning, use default
-    if (empty($clean)) {
-        $clean = 'Research_' . time();
+    // Remove trailing periods and commas
+    $clean = rtrim($clean, '.,');
+    
+    // If too long, truncate (Google Drive has 255 char limit)
+    if (strlen($clean) > 200) {
+        $clean = substr($clean, 0, 197) . '...';
     }
     
     return $clean;
 }
-
 function getResearchFileUrl($researchRecord) {
     // Priority: 1. Drive URL, 2. Local file path, 3. Empty string
     if (!empty($researchRecord['drive_view_url'])) {
@@ -248,94 +259,137 @@ function getResearchFileUrl($researchRecord) {
 }
 
 if (isset($_POST['uploadResearch'])) {
+    // Temporarily disable the error-catching output buffer
+    ob_end_clean();
+    
+    // Start new buffer without callback
+    ob_start();
+    
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
+    
     $campus = $_SESSION['userOffice'];
     $serderId = $_SESSION['userId'];
     $response = new stdClass();
     $response->message = '';
     $response->serverMessage = "";
     $response->status = false;
+    $response->debug = [];
     
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $eventType = $_POST['eventType'];
-        $checkQuery = "SELECT COUNT(*) FROM event_list WHERE event_list.name=? AND event_list.dead_line>CURRENT_TIMESTAMP";
-        $checkStatement = $con->prepare($checkQuery);
-        $checkStatement->bind_param("s", $eventType);
-        $checkStatement->execute();
-        $resss = $checkStatement->get_result()->fetch_row();
+    try {
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            // Test connection
+            if ($con->connect_error) {
+                throw new Exception("Database connection failed: " . $con->connect_error);
+            }
+            
+            $eventType = $_POST['eventType'];
+            $checkQuery = "SELECT COUNT(*) FROM event_list WHERE event_list.name=? AND event_list.dead_line>CURRENT_TIMESTAMP";
+            $checkStatement = $con->prepare($checkQuery);
+            if (!$checkStatement) {
+                throw new Exception("Prepare failed: " . $con->error);
+            }
+            
+            $checkStatement->bind_param("s", $eventType);
+            $checkStatement->execute();
+            $resss = $checkStatement->get_result()->fetch_row();
 
-        if ($resss[0] !== 0) {
-            $userDisignation = $_SESSION['userDesignation'];
-            // if ($userDisignation === 'Research Chair' || $userDisignation === 'Extension Chair') {
-            if(true) {
-                $countResearch = count($_FILES['researchDocs']['name']);
-                
-                // 1. Upload Endorsement Letter to Google Drive
-                $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
-                $endorsementFileName = $_FILES['uploadedFileEndorsement']['name'];
-                
-                // Validate file upload
-                if (empty($tempEndorsementPath) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
-                    $response->message = 'Endorsement letter upload failed.';
-                    ob_clean();
-                    echo json_encode($response);
-                    exit();
-                }
-                
-                // Upload endorsement to Drive - ONLY Google Drive, no local fallback
-                try {
-                    // Get the first research category to determine the center
-                    $firstCategory = isset($_POST['category'][0]) ? $_POST['category'][0] : 'Extension';
+            if ($resss[0] !== 0) {
+                $userDisignation = $_SESSION['userDesignation'];
+                if(true) { // Temporarily bypass permission check
                     
-                    // Log for debugging
-                    error_log("First category for endorsement: $firstCategory");
-                    error_log("All categories: " . print_r($_POST['category'], true));
+                    // Get research data from POST (single entry)
+                    $title = $_POST['title'];
+                    $author = $_POST['author'];
+                    $category = $_POST['category'];
+                    $center = $_POST['center'];
+                    $coAuthor = $_POST['coAuthor'] ?? '[]';
                     
+                    // Debug log
+                    error_log("=== STARTING UPLOAD PROCESS ===");
+                    error_log("Title: $title");
+                    error_log("Author: $author");
+                    error_log("Event: $eventType");
+                    error_log("Center: $center");
+                    error_log("Category: $category");
+                    
+                    // 1. Upload Endorsement Letter to Google Drive
+                    if (!isset($_FILES['uploadedFileEndorsement']) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
+                        throw new Exception('Endorsement letter upload failed. Error code: ' . ($_FILES['uploadedFileEndorsement']['error'] ?? 'NO_FILE'));
+                    }
+                    
+                    $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
+                    $endorsementFileName = $_FILES['uploadedFileEndorsement']['name'];
+                    
+                    error_log("Uploading endorsement: $endorsementFileName");
+                    
+                    // Upload endorsement to Drive
                     $endorsementDriveResult = uploadResearchToDrive(
                         $tempEndorsementPath,
                         $endorsementFileName,
                         $eventType,
-                        $firstCategory, // Use the first category to determine center
-                        'endorsement'
+                        $center,
+                        $category,
+                        $author,
+                        $title,
+                        'endorsement',
+                        false,
+                        true
                     );
                     
                     if (!$endorsementDriveResult['success']) {
-                        throw new Exception($endorsementDriveResult['error'] ?? 'Unknown error');
+                        throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
                     }
                     
-                    // Log the center code that was used
-                    error_log("Endorsement folder created with center code: " . ($endorsementDriveResult['center_code'] ?? 'Unknown'));
-                    
-                    if (!$endorsementDriveResult['success']) {
-                        throw new Exception($endorsementDriveResult['error'] ?? 'Unknown error');
-                    }
+                    error_log("Endorsement uploaded successfully: " . $endorsementDriveResult['drive_file_id']);
                     
                     // Insert endorsement record with Drive metadata
-                    $idEn = round(microtime(true) * 1000) . '';
                     $defaultTime = date('Y-m-d H:i:s');
-                    $endorsementId = $idEn;
                     
                     $query2 = "INSERT INTO endorsement (
                         endorsement.senderid,
                         endorsement.campus,
+                        endorsement.center,
                         endorsement.file, 
                         endorsement.drive_file_id,
                         endorsement.drive_view_url,
                         endorsement.drive_download_url,
+                        endorsement.drive_event_folder_id,
+                        endorsement.drive_center_folder_id,
+                        endorsement.drive_category_folder_id,
+                        endorsement.drive_entry_folder_id,
                         endorsement.event,
                         endorsement.status,
                         endorsement.date
-                    ) VALUES (?,?,?,?,?,?,?,?,?)";
-                    
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
                     $stateM = $con->prepare($query2);
+                    if (!$stateM) {
+                        throw new Exception("Prepare failed for endorsement: " . $con->error);
+                    }
+                    
                     $sta = NULL;
+                    $endorsementFileJson = json_encode($endorsementDriveResult);
+                    
+                    // Extract values to avoid reference issues with null
+                    $drive_event_folder_id = $endorsementDriveResult['drive_event_folder_id'] ?? null;
+                    $drive_center_folder_id = $endorsementDriveResult['drive_center_folder_id'] ?? null;
+                    $drive_category_folder_id = $endorsementDriveResult['drive_category_folder_id'] ?? null;
+                    $drive_entry_folder_id = $endorsementDriveResult['drive_entry_folder_id'] ?? null;
+                    
                     $stateM->bind_param(
-                        'sssssssss', 
+                        'ssssssssssssss', 
                         $serderId, 
                         $campus, 
-                        json_encode($endorsementDriveResult), // Store all metadata as JSON
+                        $center,
+                        $endorsementFileJson,
                         $endorsementDriveResult['drive_file_id'],
                         $endorsementDriveResult['drive_view_url'],
                         $endorsementDriveResult['drive_download_url'],
+                        $drive_event_folder_id,
+                        $drive_center_folder_id,
+                        $drive_category_folder_id,
+                        $drive_entry_folder_id,
                         $eventType, 
                         $sta,
                         $defaultTime
@@ -343,120 +397,216 @@ if (isset($_POST['uploadResearch'])) {
                     
                     $st = $stateM->execute();
                     
-                    if ($st) {
-                        // Upload all research papers
-                        for ($x = 0; $x < $countResearch; $x++) {
-                            $tempFilePath = $_FILES['researchDocs']['tmp_name'][$x];
-                            $fileName = $_FILES['researchDocs']['name'][$x];
-                            $title = $_POST['title'][$x];
-                            $category = $_POST['category'][$x]; // CSRDC, LRDC, etc.
-                            $author = $_POST['author'][$x];
-                            $coAuthor = $_POST['coAuthor'][$x];
-                            
-                            // Validate research file
-                            if (empty($tempFilePath) || $_FILES['researchDocs']['error'][$x] !== UPLOAD_ERR_OK) {
-                                $response->serverMessage .= "Failed to upload $fileName: File upload error\n";
-                                continue;
-                            }
-                            
-                            // Upload research paper to Google Drive - ONLY Google Drive
-                            try {
-                                $researchDriveResult = uploadResearchToDrive(
-                                    $tempFilePath,
-                                    $fileName,
-                                    $eventType,
-                                    $category, // Use category as center name
-                                    'research'
-                                );
-                                
-                                if (!$researchDriveResult['success']) {
-                                    throw new Exception($researchDriveResult['error'] ?? 'Unknown error');
-                                }
-                                
-                                // Insert research record with Drive metadata
-                                $querV2 = "INSERT INTO researchfile(
-                                    researchfile.senderid,
-                                    researchfile.endorsementid,
-                                    researchfile.author,
-                                    researchfile.title,
-                                    researchfile.drive_file_id,
-                                    researchfile.drive_view_url,
-                                    researchfile.drive_download_url,
-                                    researchfile.drive_folder_id,
-                                    researchfile.drive_event_folder_id,
-                                    researchfile.drive_center_folder_id,
-                                    researchfile.event,           
-                                    researchfile.event_id,     
-                                    researchfile.campus,
-                                    researchfile.coauthor,
-                                    researchfile.category, 
-                                    researchfile.reviews) 
-                                SELECT ?, endorsement.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
-                                    (SELECT id FROM event_list WHERE name = ? LIMIT 1),  // GET event_id
-                                    ?, ?, ?, ?
-                                FROM endorsement 
-                                WHERE endorsement.senderid=? 
-                                ORDER BY endorsement.id DESC LIMIT 1";
-
-                                // Update the bind_param to include event_id parameter:
-                                $stementResNew->bind_param(
-                                    'ssssssssssssssss', 
-                                    $serderId,
-                                    $author,
-                                    $title,
-                                    $researchDriveResult['drive_file_id'],
-                                    $researchDriveResult['drive_view_url'],
-                                    $researchDriveResult['drive_download_url'],
-                                    $researchDriveResult['drive_folder_id'],
-                                    $researchDriveResult['drive_event_folder_id'],
-                                    $researchDriveResult['drive_center_folder_id'],
-                                    $eventType,     
-                                    $eventType,      
-                                    $campus,
-                                    $coAuthor,
-                                    $category,
-                                    $rev,
-                                    $serderId
-                                );
-                                
-                                $state = $stementResNew->execute();
-                                
-                                if ($state) {
-                                    $response->message .= "$fileName uploaded to Google Drive successfully.\n";
-                                    $response->status = true;
-                                } else {
-                                    $response->serverMessage .= "Database error for $fileName: " . $con->error . "\n";
-                                }
-                                
-                            } catch (Exception $e) {
-                                $response->serverMessage .= "Failed to upload $fileName to Google Drive: " . $e->getMessage() . "\n";
-                                error_log("Research file upload error: " . $e->getMessage());
-                            }
-                        }
-                        
-                    } else {
-                        $response->serverMessage .= "Failed to save endorsement: " . $con->error . "\n";
+                    if (!$st) {
+                        throw new Exception("Failed to execute endorsement insert: " . $stateM->error);
                     }
                     
-                } catch (Exception $e) {
-                    $response->message = 'Failed to upload endorsement letter to Google Drive: ' . $e->getMessage();
-                    error_log("Endorsement upload error: " . $e->getMessage());
+                    $endorsementId = $con->insert_id;
+                    error_log("Endorsement saved to DB with ID: $endorsementId");
+                    
+                    // 2. Upload Research File (SINGLE FILE)
+                    if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
+                        $errorCode = $_FILES['researchDoc']['error'] ?? 'NO_FILE';
+                        $errorMsg = "Research file upload failed. Error code: $errorCode";
+                        if ($errorCode == 1 || $errorCode == 2) {
+                            $errorMsg .= " (File too large)";
+                        } elseif ($errorCode == 3) {
+                            $errorMsg .= " (File only partially uploaded)";
+                        } elseif ($errorCode == 4) {
+                            $errorMsg .= " (No file selected)";
+                        }
+                        throw new Exception($errorMsg);
+                    }
+                    
+                    $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
+                    $researchFileName = $_FILES['researchDoc']['name'];
+                    
+                    error_log("Uploading research: $researchFileName");
+                    
+                    // Check if research file exists before uploading
+                    if (!file_exists($tempResearchPath)) {
+                        throw new Exception("Research file not found on server. Temp path: $tempResearchPath");
+                    }
+                    
+                    // Upload research paper to Google Drive
+                    $researchDriveResult = uploadResearchToDrive(
+                        $tempResearchPath,
+                        $researchFileName,
+                        $eventType,
+                        $center,
+                        $category,
+                        $author,
+                        $title,
+                        'research',
+                        false,
+                        false
+                    );
+                    
+                    if (!$researchDriveResult['success']) {
+                        throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
+                    }
+                    
+                    error_log("Research uploaded successfully: " . $researchDriveResult['drive_file_id']);
+                    
+                    // 3. Upload Program File (SINGLE FILE - OPTIONAL)
+                    $programDriveResult = null;
+                    $programFile = null;
+                    $programDriveFileId = null;
+                    $programDriveViewUrl = null;
+                    
+                    if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                        $tempProgramPath = $_FILES['programFile']['tmp_name'];
+                        $programFileName = $_FILES['programFile']['name'];
+                        
+                        error_log("Uploading program: $programFileName");
+                        
+                        // Check if program file exists before uploading
+                        if (file_exists($tempProgramPath)) {
+                            $programDriveResult = uploadResearchToDrive(
+                                $tempProgramPath,
+                                $programFileName,
+                                $eventType,
+                                $center,
+                                $category,
+                                $author,
+                                $title,
+                                'program',
+                                true,
+                                false
+                            );
+                            
+                            if ($programDriveResult && $programDriveResult['success']) {
+                                $programFile = json_encode($programDriveResult);
+                                $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
+                                $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
+                                error_log("Program uploaded successfully: " . $programDriveResult['drive_file_id']);
+                            }
+                        }
+                    } else {
+                        error_log("Program file not uploaded or has error: " . ($_FILES['programFile']['error'] ?? 'NOT_SET'));
+                    }
+                    
+                    // Get event_id
+                    $eventId = null;
+                    $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
+                    $eventStmt = $con->prepare($eventIdQuery);
+                    $eventStmt->bind_param("s", $eventType);
+                    $eventStmt->execute();
+                    $eventResult = $eventStmt->get_result();
+                    $eventRow = $eventResult->fetch_assoc();
+                    $eventId = $eventRow ? $eventRow['id'] : null;
+                    
+                    // Insert research record with Drive metadata
+                    $querV2 = "INSERT INTO researchfile(
+                        researchfile.senderid,
+                        researchfile.endorsementid,
+                        researchfile.author,
+                        researchfile.title,
+                        researchfile.center,
+                        researchfile.category,
+                        researchfile.drive_file_id,
+                        researchfile.drive_view_url,
+                        researchfile.drive_download_url,
+                        researchfile.drive_folder_id,
+                        researchfile.drive_event_folder_id,
+                        researchfile.drive_center_folder_id,
+                        researchfile.drive_category_folder_id,
+                        researchfile.drive_entry_folder_id,
+                        researchfile.program,
+                        researchfile.program_drive_file_id,
+                        researchfile.program_drive_view_url,
+                        researchfile.event,
+                        researchfile.event_id,
+                        researchfile.campus,
+                        researchfile.coauthor,
+                        researchfile.reviews,
+                        researchfile.date
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // 23 placeholders
+
+                    $rev = NULL;
+
+                    $stementResNew = $con->prepare($querV2);
+                    if (!$stementResNew) {
+                        throw new Exception("Prepare failed for researchfile: " . $con->error);
+                    }
+
+                    // Extract values to avoid reference issues with null
+                    $drive_folder_id = $researchDriveResult['drive_folder_id'] ?? null;
+                    $drive_event_folder_id = $researchDriveResult['drive_event_folder_id'] ?? null;
+                    $drive_center_folder_id = $researchDriveResult['drive_center_folder_id'] ?? null;
+                    $drive_category_folder_id = $researchDriveResult['drive_category_folder_id'] ?? null;
+                    $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
+
+                    // Debug: Count parameters
+                    error_log("Number of columns in query: 23");
+                    error_log("Number of variables to bind: 23");
+
+                    // Bind parameters - count should match: 23 parameters
+                    $bound = $stementResNew->bind_param(
+                        'sssssssssssssssssssssss', // 23 's' for strings (including NULL values)
+                        $serderId,
+                        $endorsementId,
+                        $author,
+                        $title,
+                        $center,
+                        $category,
+                        $researchDriveResult['drive_file_id'],
+                        $researchDriveResult['drive_view_url'],
+                        $researchDriveResult['drive_download_url'],
+                        $drive_folder_id,
+                        $drive_event_folder_id,
+                        $drive_center_folder_id,
+                        $drive_category_folder_id,
+                        $drive_entry_folder_id,
+                        $programFile,
+                        $programDriveFileId,
+                        $programDriveViewUrl,
+                        $eventType,
+                        $eventId,
+                        $campus,
+                        $coAuthor,
+                        $rev,
+                        $defaultTime
+                    );
+
+                    if (!$bound) {
+                        throw new Exception("Bind failed for researchfile: " . $stementResNew->error);
+                    }
+
+                    $state = $stementResNew->execute();
+
+                    if (!$state) {
+                        throw new Exception("Database error for $researchFileName: " . $stementResNew->error);
+                    }
+                    
+                    $researchFileId = $con->insert_id;
+                    $response->message = "$researchFileName uploaded to Google Drive successfully.\n";
+                    if ($programDriveResult && $programDriveResult['success']) {
+                        $response->message .= "Program attachment uploaded successfully.\n";
+                    }
+                    $response->status = true;
+                    
+                } else {
+                    $response->message = "This account is currently unable to submit endorsement letter.\n Please contact system administrator for permission...!";
                 }
-                
             } else {
-                $response->message = "This account is currently unable to submit endorsement letter.\n Please contact system administrator for permission...!";
+                $response->message = "Sorry..., The event has closed.";
             }
         } else {
-            $response->message = "Sorry..., The event has closed.";
+            throw new Exception("Database connection failed: " . $con->error);
         }
-    } else {
-        $response->serverMessage .= "Database connection failed: " . $con->error . "\n";
+    } catch (Exception $e) {
+        error_log("Exception in uploadResearch: " . $e->getMessage());
+        $response->message = "Error: " . $e->getMessage();
+        $response->status = false;
     }
     
     ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
 }
+
 
 if (isset($_POST['acceptRequest'])) {
     $response = new stdClass();
@@ -542,9 +692,6 @@ if (isset($_POST['acceptRequest'])) {
     
     echo json_encode($response);
 }
-
-
-
 
 if (isset($_POST['researchSubmit'])) {
     $response = new stdClass();
@@ -650,9 +797,6 @@ if (isset($_POST['researchSubmit'])) {
 
     echo json_encode($response);
 }
-
-
-
 
 
 if (isset($_POST['updateReview'])) {
@@ -951,8 +1095,6 @@ if (isset($_POST['researchReviewed'])) {
     exit();
 }
 
-
-
 if (isset($_POST['accessPermission'])) {
 
     $response = new stdClass();
@@ -989,8 +1131,6 @@ if (isset($_POST['accessPermission'])) {
 
 }
 
-
-
 if (isset($_POST['endorsementApproval'])) {
 
     $response = new stdClass();
@@ -1026,8 +1166,6 @@ if (isset($_POST['endorsementApproval'])) {
     echo json_encode($response);
 
 }
-
-
 
 if (isset($_POST['accessGrantEndorsement'])) {
 
@@ -1077,8 +1215,6 @@ if (isset($_POST['accessGrantEndorsement'])) {
 
 }
 
-
-
 if (isset($_POST['accessGrant'])) {
 
     $response = new stdClass();
@@ -1124,7 +1260,6 @@ if (isset($_POST['accessGrant'])) {
 }
 
 
-
 if (isset($_POST['allaccount'])) {
 
     $response = new stdClass();
@@ -1166,8 +1301,6 @@ if (isset($_POST['allaccount'])) {
     echo json_encode($response);
 
 }
-
-
 
 if (isset($_POST['removeAccess'])) {
 
@@ -2088,19 +2221,12 @@ endorsement.date
 FROM researchfile 
 
 LEFT JOIN endorsement ON researchfile.endorsementid=endorsement.id
-
 WHERE researchfile.endorsementid=?";
-
         $endorId = $_POST['endorseId'];
-
         $statement = $con->prepare($query);
-
         $statement->bind_param("s", $endorId);
-
         $result = $statement->execute();
-
         if ($result) {
-
             $logReq = "INSERT INTO document_log (document_log.user_id,document_log.doc_id,document_log.details)
 
 SELECT 

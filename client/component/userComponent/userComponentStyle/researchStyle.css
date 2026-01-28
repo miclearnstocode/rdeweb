@@ -964,3 +964,27 @@
 .drive-open-link:active {
     transform: scale(0.95);
 }
+/* File upload status indicators */
+.file-upload-status {
+    display: flex;
+    align-items: center;
+    margin-top: 0.5vh;
+    font-size: 0.9vw;
+    color: #bbb;
+}
+
+.file-upload-status.success {
+    color: #4CAF50;
+}
+
+.file-upload-status.error {
+    color: #f44336;
+}
+
+.file-upload-status .fa-check-circle {
+    margin-right: 0.5vw;
+}
+
+.file-upload-status .fa-times-circle {
+    margin-right: 0.5vw;
+}
