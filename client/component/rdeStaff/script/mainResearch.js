@@ -4740,16 +4740,15 @@ export const ResearchMain = () => {
         }
 
         const BodySum=()=>{
-
             const LabelEvent=(text,url)=>{
                 return($({
                     tag:'div',
                     style: {
                         width:'fit-content',
                         height: 'fit-content',
-                        fontSize:'2vw',
+                        fontSize:'1.5vw',
                         fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                        margin:'3vh auto auto'
+                        margin:'2vh auto'
                     },
                     child:[
                         $({
@@ -4760,18 +4759,21 @@ export const ResearchMain = () => {
                             text:text,
                             style:{
                                 textDecoration:'none',
-                                color: 'deepskyblue'
+                                color: 'deepskyblue',
+                                padding: '10px 20px',
+                                border: 'solid 1px deepskyblue',
+                                borderRadius: '5px',
+                                display: 'inline-block',
+                                transition: 'all 0.3s'
                             }
                         })
                     ]
                 }))
             }
-
+            
             const SummaryPanel=(text)=>{
-
-
                 let Report,ReportData
-
+                
                 const getReport=({scoreRank,rankAve,RankPerCrit})=>{
                     Report.addEventListener('click',()=>{
                         mainFrame.appendChild(Summary({
@@ -4794,11 +4796,14 @@ export const ResearchMain = () => {
                             style: {
                                 width:'100%',
                                 height:'fit-content',
-                                backgroundColor:'#555',
+                                backgroundColor:'#2c3e50',
                                 fontFamily:'Helvetica',
-                                display:'flex'
+                                display:'flex',
+                                padding: '10px',
+                                alignItems: 'center'
                             },
                             elementHandler:(el)=>{
+                                // Get event and category/center info
                                 const req= new Request('/score_rank')
                                 req.Post([
                                     {
@@ -4807,47 +4812,88 @@ export const ResearchMain = () => {
                                     },
                                     {
                                         name: 'eventId',
-                                        value: Path(4) || '0' // Pass the event ID to determine new/old system
+                                        value: Path(4) || '0'
                                     }
                                 ])
                                 req.Json()
                                 req.Send().then(data=>{
-
-                                    el.appendChild($({
+                                    // Create back button
+                                    const backBtn = $({
                                         tag:'a',
                                         att:{
                                             href:Current().replace(Base(),'').split('/').slice(0,5).join('/'),
                                             className:'fa-solid fa-arrow-left',
-                                            title: 'Refresh'
+                                            title: 'Back'
                                         },
                                         style:{
                                             color:'deepskyblue',
                                             textDecoration:'none',
-                                            marginLeft:'1vw',
-                                            fontSize: '1vw'
+                                            marginRight:'20px',
+                                            fontSize: '1.2vw',
+                                            padding: '5px 10px',
+                                            border: 'solid 1px deepskyblue',
+                                            borderRadius: '3px'
                                         },
                                         child:[
                                             $({
                                                 tag:'span',
-                                                text:'Back',
+                                                text:' Back',
                                                 style:{
                                                     fontFamily:'Helvetica',
                                                     fontWeight:'normal',
-                                                    marginLeft:'.5vw',
                                                     fontSize: '1vw'
                                                 }
                                             })
                                         ]
-                                    }))
-                                    el.appendChild($({
-                                        tag:'div',
-                                        text:`"${data.length>0 &&data[0]['name']}"`,
-                                        style:{
-                                            marginLeft:'4.5vw',
-                                            fontSize: '1vw'
+                                    });
+                                    
+                                    // Get event name
+                                    const getEventNameReq = new Request('/score_rank');
+                                    getEventNameReq.Post([
+                                        {
+                                            name: 'getEventName',
+                                            value: '1'
+                                        },
+                                        {
+                                            name: 'eventId',
+                                            value: Path(4)
                                         }
-                                    }))
-                                })
+                                    ]);
+                                    getEventNameReq.Json();
+                                    getEventNameReq.Send().then(eventData => {
+                                        const eventName = eventData.length > 0 ? eventData[0].name : 'Unknown Event';
+                                        
+                                        // Create header
+                                        const headerText = $({
+                                            tag:'div',
+                                            style:{
+                                                fontSize: '1.2vw',
+                                                color: 'white',
+                                                fontWeight: 'bold',
+                                                marginLeft: '20px'
+                                            },
+                                            child:[
+                                                $({
+                                                    tag:'span',
+                                                    text: eventName + ' - ',
+                                                    style: {
+                                                        color: '#bbb'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag:'span',
+                                                    text: data.length > 0 ? `"${data[0]['name']}"` : 'Unknown Category/Center',
+                                                    style: {
+                                                        color: 'deepskyblue'
+                                                    }
+                                                })
+                                            ]
+                                        });
+                                        
+                                        el.appendChild(backBtn);
+                                        el.appendChild(headerText);
+                                    });
+                                });
                             }
                         }),
                         $({
@@ -4856,23 +4902,22 @@ export const ResearchMain = () => {
                                 width:'100%',
                                 height:'87%',
                                 overflowY:'auto',
-                                backgroundColor:'#222'
+                                backgroundColor:'#767575'
                             },
                             elementHandler:(el)=>{
-
-                                const request= new Request('/ranking')
+                                const request = new Request('/ranking')
                                 request.Post([
                                     {
-                                        name:'getEval',
-                                        value:'1'
+                                        name: 'getEval',
+                                        value: '1'
                                     },
                                     {
-                                        name:'eventId',
-                                        value:Path(4)+''
+                                        name: 'eventId',
+                                        value: Path(4) ? parseInt(Path(4)) : 0
                                     },
                                     {
-                                        name:'categoryId',
-                                        value:Path(6)+''
+                                        name: 'categoryId',
+                                        value: Path(6) ? Path(6) : '0'
                                     }
                                 ])
                                 request.Json()
@@ -4933,41 +4978,14 @@ export const ResearchMain = () => {
                                         RankPerCrit:Titles
                                     })
                                 })
-                                /*
-                                 const req= new Request('/score_rank')
-                                   req.Post([
-                                       {
-                                           name:'eventId',
-                                           value:Path(4)
-                                       },
-                                       {
-                                           name:'categoryId',
-                                           value:Path(6)
-                                       },
-                                       {
-                                           name:'getDocPerRank',
-                                           value:'1'
-                                       }
-                                   ])
-                                  req.Json()
-                                   req.Send().then(data=>{
-                                       data.forEach(val=>{
-                                         //  el.appendChild(TableScore(val.name,val.criteria))
-                                       })
-                                   })
-
-                                 */
-
-
                             },
-
                         }),
                         $({
                             tag:'div',
                             style:{
                                 height:'7vh',
                                 width:'100%',
-                                backgroundColor:'#555',
+                                backgroundColor:'#2c3e50',
                                 display:'flex',
                                 justifyContent:'center'
                             },
@@ -4985,14 +5003,16 @@ export const ResearchMain = () => {
                                             style:{
                                                 width:'fit-content',
                                                 height:'fit-content',
-                                                fontSize:'1.5vw',
+                                                fontSize:'1.2vw',
                                                 borderRadius:'.5rem',
                                                 border:'none',
                                                 cursor:'pointer',
-                                                color:'deepskyblue',
-                                                backgroundColor:'#333'
+                                                color:'white',
+                                                backgroundColor:'#3498db',
+                                                padding: '10px 20px',
+                                                fontWeight: 'bold'
                                             },
-                                            text:'Generate Summary',
+                                            text:'Generate Summary Report',
                                             elementHandler:(el)=>{
                                                 Report=el
                                             }
@@ -5002,7 +5022,6 @@ export const ResearchMain = () => {
                             ]
                         })
                     ]
-
                 }))
             }
 
@@ -5018,31 +5037,41 @@ export const ResearchMain = () => {
                         style:{
                             height:'fit-content',
                             width:'100%',
-                            paddingTop:'2.5vh',
-                            fontSize:'1.2vw',
-                            textIndent:'7.5vw',
-                            color:'#bbb',
+                            padding:'1.5vh',
+                            fontSize:'1.5vw',
+                            color:'white',
                             fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            borderBottom: 'solid thin rgba(100,100,100,0.9)'
+                            backgroundColor:'#2c3e50',
+                            textAlign: 'center',
+                            borderBottom: 'solid 2px deepskyblue'
                         },
-                        text:'No event selected ...',
                         elementHandler:(el)=>{
-
-                            const req= new Request('/score_rank')
+                            const req  = new Request('/score_rank')
                             req.Post([
                                 {
-                                    name:'getEventName',
-                                    value:Path(4)+""
+                                    name:'scoreRank',
+                                    value:'1'
+                                },
+                                {
+                                    name:'getEventId',
+                                    value:Path(4)+''
                                 }
                             ])
                             req.Json()
                             req.Send().then(data=>{
-
-                                el.innerText=data[0]['name']
-                            })
+                                if (data && data.event) {
+                                    // Show event name from the new response format
+                                    el.innerText = data.event.name;
+                                    el.style.fontWeight = 'bold';
+                                } else {
+                                    el.innerText = 'Event Not Found';
+                                }
+                            }).catch(err => {
+                                console.error('Error loading event:', err);
+                                el.innerText = 'Error Loading Event';
+                                el.style.color = '#e74c3c';
+                            });
                         },
-
-
                     }),
                     $({
                         tag:'div',
@@ -5050,8 +5079,8 @@ export const ResearchMain = () => {
                             height:'80vh',
                             width:'83vw',
                             margin:'auto',
-                            borderLeft:  'solid thin rgba(100,100,100,0.9)',
-                            borderRight: 'solid thin rgba(100,100,100,0.9)'
+                            backgroundColor: '#d6d7d8',
+                            padding: '20px'
                         },
                         child:[
                             Router({
@@ -5063,17 +5092,48 @@ export const ResearchMain = () => {
                                             width: '100%',
                                             height:'100%',
                                             margin:'auto',
-                                            display: 'flex',
                                         },
                                         elementHandler:(el)=>{
-                                            const div=$({
+                                            // Create container for categories/centers
+                                            const container = $({
                                                 tag:'div',
                                                 style: {
-                                                    width: 'fit-content',
-                                                    height:  'fit-content',
-                                                    margin:'auto',
+                                                    width: '90%',
+                                                    margin: 'auto',
+                                                    padding: '20px'
                                                 }
-                                            })
+                                            });
+                                            
+                                            // Create header
+                                            const header = $({
+                                                tag:'div',
+                                                style: {
+                                                    textAlign: 'center',
+                                                    marginBottom: '30px',
+                                                    color: '#2c3e50'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag:'h2',
+                                                        style: {
+                                                            fontSize: '1.8vw',
+                                                            marginBottom: '10px'
+                                                        },
+                                                        text: 'Select Category/Center'
+                                                    }),
+                                                    $({
+                                                        tag:'p',
+                                                        style: {
+                                                            fontSize: '1vw',
+                                                            color: '#7f8c8d'
+                                                        },
+                                                        text: 'Click on a category or center to view scores and rankings'
+                                                    })
+                                                ]
+                                            });
+                                            
+                                            container.appendChild(header);
+                                            
                                             const req  = new Request('/score_rank')
                                             req.Post([
                                                 {
@@ -5087,11 +5147,81 @@ export const ResearchMain = () => {
                                             ])
                                             req.Json()
                                             req.Send().then(data=>{
-                                                data.forEach(val=>{
-                                                    div.appendChild(LabelEvent(val.name,val.id))
-                                                })
-                                                el.appendChild(div)
-                                            })
+                                                if (data && data.items && data.items.length > 0) {
+                                                    const itemsContainer = $({
+                                                        tag:'div',
+                                                        style: {
+                                                            display: 'flex',
+                                                            flexWrap: 'wrap',
+                                                            justifyContent: 'center',
+                                                            gap: '20px'
+                                                        }
+                                                    });
+                                                    
+                                                    data.items.forEach(val=>{
+                                                        itemsContainer.appendChild(LabelEvent(val.name, val.id));
+                                                    });
+                                                    
+                                                    container.appendChild(itemsContainer);
+                                                } else {
+                                                    // Show message if no categories/centers found
+                                                    container.appendChild($({
+                                                        tag: 'div',
+                                                        style: {
+                                                            textAlign: 'center',
+                                                            color: '#7f8c8d',
+                                                            fontSize: '1.2vw',
+                                                            padding: '40px',
+                                                            backgroundColor: 'white',
+                                                            borderRadius: '5px',
+                                                            border: 'dashed 2px #bdc3c7'
+                                                        },
+                                                        child: [
+                                                            $({
+                                                                tag:'div',
+                                                                att: {
+                                                                    className: 'fa-solid fa-folder-open'
+                                                                },
+                                                                style: {
+                                                                    fontSize: '3vw',
+                                                                    color: '#bdc3c7',
+                                                                    marginBottom: '20px'
+                                                                }
+                                                            }),
+                                                            $({
+                                                                tag:'h3',
+                                                                text: 'No Data Available',
+                                                                style: {
+                                                                    marginBottom: '10px'
+                                                                }
+                                                            }),
+                                                            $({
+                                                                tag:'p',
+                                                                text: data && data.isNewSystem ? 
+                                                                    'No centers found for this event.' : 
+                                                                    'No categories found for this event.'
+                                                            })
+                                                        ]
+                                                    }));
+                                                }
+                                                el.appendChild(container);
+                                            }).catch(err => {
+                                                console.error('Error loading categories:', err);
+                                                container.appendChild($({
+                                                    tag: 'div',
+                                                    style: {
+                                                        textAlign: 'center',
+                                                        color: '#e74c3c',
+                                                        fontSize: '1.2vw',
+                                                        padding: '40px',
+                                                        backgroundColor: 'white',
+                                                        borderRadius: '5px',
+                                                        border: 'solid 2px #e74c3c'
+                                                    },
+                                                    text: 'Error loading data. Please try again.'
+                                                }));
+                                                el.appendChild(container);
+                                            });
                                         }
                                     })),
                                     Route('category',SummaryPanel(Path(6))),
@@ -5100,7 +5230,6 @@ export const ResearchMain = () => {
                         ]
                     }),
                 ],
-
             }))
         }
 
