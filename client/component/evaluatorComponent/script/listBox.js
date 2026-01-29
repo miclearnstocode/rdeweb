@@ -1596,7 +1596,7 @@ export const Box=  (getBody)=>{
 
             const form=new FormData()
             form.append('researchSubmit','true')
-            form.append('category', evalData.category)
+            form.append('center', evalData.center)
             form.append('event', evalData.event)
             
             const res = await fetch('/uploadResearchFile',{
@@ -1613,7 +1613,7 @@ export const Box=  (getBody)=>{
                         campus:val.campus,
                         docId:val.id,
                         eventId:val.eventId || val.event_id,
-                        catId:val.catId
+                        centerId:val.centerId
                     }))
                 }else {
                     panel.insertBefore(EntryList({

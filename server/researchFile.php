@@ -699,13 +699,14 @@ if (isset($_POST['researchSubmit'])) {
     $response->userName = '';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $category = isset($_POST['category']) ? $_POST['category'] : (isset($_SESSION['category']) ? $_SESSION['category'] : $_SESSION['center']);
+        // Get center from POST or session (changed from category)
+        $center = isset($_POST['center']) ? $_POST['center'] : (isset($_SESSION['centerId']) ? $_SESSION['centerId'] : $_SESSION['center']);
         $event = isset($_POST['event']) ? $_POST['event'] : $_SESSION['eventTYpe'];
         $eventId = isset($_POST['eventId']) ? $_POST['eventId'] : $_SESSION['eventId'];
         $response->userName = $_SESSION['userName'];
         $evalId = $_SESSION['userId'];
 
-        // UPDATED QUERY to use Google Drive URLs
+        // UPDATED QUERY to filter by center instead of category
         $sqlQueries = "SELECT 
             researchfile.id,
             researchfile.author,
@@ -716,6 +717,7 @@ if (isset($_POST['researchSubmit'])) {
             researchfile.event,
             researchfile.event_id,      
             researchfile.category,
+            researchfile.center,
             endorsement.campus,
             event_list.id as eventId,
             category.id as catId
@@ -724,13 +726,13 @@ if (isset($_POST['researchSubmit'])) {
         LEFT JOIN event_list ON researchfile.event_id = event_list.id
         LEFT JOIN category ON researchfile.category = category.name
         WHERE endorsement.status = ? 
-        AND (researchfile.category = ? OR researchfile.category LIKE CONCAT(?, '%') OR category.name = ? OR category.name LIKE CONCAT(?, '%')) 
+        AND (researchfile.center = ? OR researchfile.center LIKE CONCAT(?, '%')) 
         AND researchfile.event_id = ?
         AND event_list.dead_line > CURRENT_TIMESTAMP";
 
         $stm = $con->prepare($sqlQueries);
         $stat = 'accepted';
-        $stm->bind_param("ssssss", $stat, $category, $category, $category, $category, $eventId);
+        $stm->bind_param("ssss", $stat, $center, $center, $eventId); // Changed to 4 parameters
         $stm->execute();
         $resultRes = $stm->get_result();
 
@@ -751,6 +753,7 @@ if (isset($_POST['researchSubmit'])) {
             $data->campus = $val['campus'];
             $data->eventId = $val['eventId'];
             $data->catId = $val['catId'];
+            $data->center = $val['center']; // Add center to response
 
             // Initialize comment fields
             $data->intro = '';
@@ -2329,103 +2332,74 @@ WHERE researchfile.endorsementid=?";
 
 
 if (isset($_POST['researchFile'])) {
-
     // $dataUser = unserialize($_SESSION['isLog']);
-
     $userId = $_SESSION['userId'];
-
     $response = new stdClass();
-
     $response->status = false;
-
     $response->list = [];
-
     $response->message = '';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
+        $eventType = $_POST['eventType'];
+        
+        // UPDATED QUERY: Get from researchfile table instead of researchallfile
         $query = "SELECT 
-
-researchfile.campus,
-
-researchallfile.title,
-
-researchallfile.author,
-
-researchallfile.docid,
-
-researchfile.category,
-
-researchfile.file,
-
-researchallfile.date
-
-FROM
-
-researchfile
-
-INNER JOIN researchallfile ON researchfile.id=researchallfile.docid
-
-WHERE researchfile.campus=? AND researchfile.event=? AND researchfile.senderid <> ? ";
+            researchfile.id,
+            researchfile.author,
+            researchfile.title,
+            researchfile.drive_view_url as file,
+            researchfile.drive_file_id,
+            researchfile.drive_download_url,
+            researchfile.category,
+            researchfile.campus,
+            endorsement.date
+        FROM researchfile
+        LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+        WHERE endorsement.status = 'accepted'
+        AND researchfile.event = ?
+        AND researchfile.campus = ?
+        AND researchfile.senderid <> ?";
 
         $statement = $con->prepare($query);
-
         $reqCount = count($_POST['capName']);
 
-        $eventType = $_POST['eventType'];
-
         for ($x = 0; $x < $reqCount; $x++) {
-
             $perCamp = new stdClass();
-
             $perCamp->name = $_POST['capName'][$x];
-
             $perCamp->list = [];
-
             $campName = $_POST['capName'][$x];
-
-            $statement->bind_param('sss', $campName, $eventType, $userId);
-
+            
+            $statement->bind_param('sss', $eventType, $campName, $userId);
             $statement->execute();
-
             $res = $statement->get_result();
 
             while ($val = $res->fetch_assoc()) {
-
                 $data = new stdClass();
-
                 $data->author = $val['author'];
-
                 $data->title = $val['title'];
-
-                $data->id = $val['docid'];
-
-                $data->file = $val['file'];
-
+                $data->id = $val['id'];
+                $data->file = $val['file']; // Google Drive URL
+                $data->drive_file_id = $val['drive_file_id'];
+                $data->drive_download_url = $val['drive_download_url'];
                 $data->category = $val['category'];
-
                 $perCamp->list[] = $data;
-
             }
 
             if (sizeof($perCamp->list) > 0) {
-
                 $response->list[] = $perCamp;
-
             }
-
         }
-
-
+        
+        $response->status = true;
 
     } else {
-
         $response->message = $con->error;
-
     }
-
+    
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
-
+    exit();
 }
 
 
@@ -2571,6 +2545,8 @@ if (isset($_POST['incomingEndorsement'])) {
                 `drive_folder_id`,
                 `drive_event_folder_id`,
                 `drive_center_folder_id`,
+                `program_drive_view_url`,
+                `center`,
                 `event`,  
                 `status`, 
                 `campus`, 
@@ -2589,6 +2565,8 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->drive_folder_id = $v['drive_folder_id'];
                 $research->drive_event_folder_id = $v['drive_event_folder_id'];
                 $research->drive_center_folder_id = $v['drive_center_folder_id'];
+                $research->program_drive_view_url = $v['program_drive_view_url']; // program URL
+                $research->center = $v['center']; 
                 $research->event = $v['event'];
                 $research->status = $v['status'];
                 $research->campus = $v['campus'];
@@ -2621,6 +2599,7 @@ if (isset($_POST['researchDocsNew'])) {
                 researchfile.drive_center_folder_id,
                 researchfile.status,
                 researchfile.category,
+                researchfile.center,
                 researchfile.deletestate,           
                 endorsement.campus,
                 endorsement.event,
@@ -2647,6 +2626,7 @@ if (isset($_POST['researchDocsNew'])) {
             $data->drive_folder_id = $val['drive_folder_id'];
             $data->drive_event_folder_id = $val['drive_event_folder_id'];
             $data->drive_center_folder_id = $val['drive_center_folder_id'];
+            $data->center = $val['center'];
             $data->status = $val['status'];
             $data->category = $val['category'];
             $data->campus = $val['campus'];
@@ -3005,17 +2985,75 @@ if (isset($_POST['rejectRequest'])) {
 if (isset($_POST['fileReqRes'])) {
     $response = '';
     $docId = $_POST['docId'];
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query = "SELECT researchallfile.researchfile FROM researchallfile WHERE researchallfile.docid=?";
+        // Updated query to get Google Drive URL from researchfile table
+        $query = "SELECT 
+            researchfile.drive_view_url as researchfile,
+            researchfile.drive_file_id,
+            researchfile.drive_download_url,
+            researchfile.drive_folder_id,
+            researchfile.author,
+            researchfile.title
+        FROM researchfile WHERE researchfile.id=?";
+        
         $statement = $con->prepare($query);
         $statement->bind_param('s', $docId);
         $statement->execute();
         $result = $statement->get_result();
-        while ($val = $result->fetch_assoc()) {
-            $response = $val['researchfile'];
+        
+        if ($result->num_rows > 0) {
+            $val = $result->fetch_assoc();
+            
+            // Return JSON with all Google Drive metadata
+            $response = [
+                'drive_view_url' => $val['researchfile'],
+                'drive_file_id' => $val['drive_file_id'],
+                'drive_download_url' => $val['drive_download_url'],
+                'drive_folder_id' => $val['drive_folder_id'],
+                'author' => $val['author'],
+                'title' => $val['title']
+            ];
+            
+            // If no drive_view_url exists, check if there's a local file
+            if (empty($val['researchfile'])) {
+                // Fallback to old logic (for backward compatibility)
+                $fallbackQuery = "SELECT researchallfile.researchfile FROM researchallfile WHERE researchallfile.docid=?";
+                $fallbackStatement = $con->prepare($fallbackQuery);
+                $fallbackStatement->bind_param('s', $docId);
+                $fallbackStatement->execute();
+                $fallbackResult = $fallbackStatement->get_result();
+                
+                if ($fallbackResult->num_rows > 0) {
+                    $fallbackVal = $fallbackResult->fetch_assoc();
+                    $response = [
+                        'local_file' => $fallbackVal['researchfile'],
+                        'type' => 'local'
+                    ];
+                }
+            }
+        } else {
+            // Check researchallfile as fallback (for older records)
+            $fallbackQuery = "SELECT researchallfile.researchfile FROM researchallfile WHERE researchallfile.docid=?";
+            $fallbackStatement = $con->prepare($fallbackQuery);
+            $fallbackStatement->bind_param('s', $docId);
+            $fallbackStatement->execute();
+            $fallbackResult = $fallbackStatement->get_result();
+            
+            if ($fallbackResult->num_rows > 0) {
+                $fallbackVal = $fallbackResult->fetch_assoc();
+                $response = [
+                    'local_file' => $fallbackVal['researchfile'],
+                    'type' => 'local'
+                ];
+            }
         }
     }
-    echo $response;
+    
+    // Return JSON response
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
 }
 
 

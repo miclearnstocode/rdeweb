@@ -81,7 +81,7 @@ export const Evaluator=()=>{
                                 ])
                                 req.Json()
                                 req.Send().then(data=>{
-                                    ev.innerHTML=`<span style="color:deepskyblue">CENTER :</span> ${data.category}`
+                                    ev.innerHTML=`<span style="color:deepskyblue">CENTER :</span> ${data.center}`
                                 }).catch(err=>{
                                     console.error('Error loading center info:', err)
                                     ev.innerHTML=`<span style="color:deepskyblue">CENTER :</span> <span style="color:red">Error loading</span>`

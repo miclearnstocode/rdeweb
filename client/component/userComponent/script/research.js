@@ -3428,7 +3428,7 @@ const Submitted = () => {
                                     const req = new Request('/uploadResearchFile')
                                     const reqList = []
                                     reqList.push({
-                                        name: 'fileReqRes',
+                                        name: 'researchFile',
                                         value: 'true'
                                     })
                                     reqList.push({

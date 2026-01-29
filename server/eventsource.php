@@ -273,8 +273,8 @@ if(isset($_POST['deleteEvent'])){
 if(isset($_POST['collectEntries'])){
     $data=0;
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Get category with code format
-        $category = '';
+        // Get center name with code format for filtering
+        $centerFilter = '';
         $centerId = $_SESSION['centerId'] ?? '';
         
         if (!empty($centerId)) {
@@ -285,29 +285,31 @@ if(isset($_POST['collectEntries'])){
             $resultCenter = $stmtCenter->get_result();
             
             if ($rowCenter = $resultCenter->fetch_assoc()) {
-                $category = $rowCenter['name'] . " (" . $rowCenter['code'] . ")";
+                // Format: "Center Name (CODE)" to match researchfile.center column
+                $centerFilter = $rowCenter['name'] . " (" . $rowCenter['code'] . ")";
             }
         }
         
-        // Fallback to session category if center not found
-        if (empty($category)) {
-            $category = $_SESSION['category'] ?? $_SESSION['center'] ?? '';
+        // Fallback to session center if center not found
+        if (empty($centerFilter)) {
+            $centerFilter = $_SESSION['center'] ?? '';
         }
         
-        error_log("DEBUG - Full category with code: $category");
+        error_log("DEBUG - Center filter for researchfile.center: $centerFilter");
         
         $eventId = $_SESSION['eventId'] ?? '';
         
+        // UPDATED QUERY: Changed researchfile.category to researchfile.center
         $query="SELECT COUNT(*) as count FROM researchfile 
-LEFT JOIN endorsement ON researchfile.endorsementid=endorsement.id
-LEFT JOIN event_list ON researchfile.event=event_list.name
-WHERE endorsement.status='accepted' 
-  AND researchfile.category = ?
-  AND event_list.id=?
-  AND event_list.dead_line > CURRENT_TIMESTAMP";
+            LEFT JOIN endorsement ON researchfile.endorsementid=endorsement.id
+            LEFT JOIN event_list ON researchfile.event_id=event_list.id
+            WHERE endorsement.status='accepted' 
+            AND researchfile.center = ?  -- Changed from researchfile.category
+            AND event_list.id=?
+            AND event_list.dead_line > CURRENT_TIMESTAMP";
 
         $statement= $con->prepare($query);
-        $statement->bind_param("ss", $category, $eventId);
+        $statement->bind_param("ss", $centerFilter, $eventId);
         $statement->execute();
         $result = $statement->get_result();
         $row = $result->fetch_assoc();

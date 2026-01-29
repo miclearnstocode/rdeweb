@@ -1,7 +1,7 @@
 import {$, Request} from '../../../lib/lib.js'
 
 
-export const ScoreBoard=({resId,eventId,category})=>{
+export const ScoreBoard=({resId,eventId,center})=>{
     let AbstainState=false;
 
     let panelPer
@@ -18,7 +18,7 @@ score:0
     const Submit= ()=>{
         setTimeout(async ()=>{
             const form= new FormData()
-            form.append('category',category)
+            form.append('center',center)
             form.append('docId',resId)
             form.append('scoreSave','1')
             dataArray.forEach(val=>{

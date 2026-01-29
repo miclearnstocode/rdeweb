@@ -361,7 +361,6 @@ export const ResearchMain = () => {
                     })
 
                     const DetailsViewer = () => {
-
                         const endorsement = $({
                             tag: 'div',
                             style: {
@@ -428,7 +427,7 @@ export const ResearchMain = () => {
                                 })
                             ]
                         })
-                        const researchBot = ({id, dataURLResearch, title, category, author, coAuthor}) => {
+                        const researchBot = ({id, dataURLResearch, title, category, author, coAuthor, center, programFile, programDriveViewUrl}) => {
                             const labelDetails = (label, data) => {
                                 return ($({
                                     tag: 'div',
@@ -442,187 +441,183 @@ export const ResearchMain = () => {
                                     }
                                 }))
                             }
+                            
                             const CoAuthorList = () => {
                                 return ($({
-
                                     tag: 'div',
-
                                     style: {
-
                                         width: '100%',
-
                                         height: 'fit-content'
-
                                     },
-
                                     child: [
-
                                         $({
-
                                             tag: 'div',
-
                                             text: "Co-Author :",
-
                                             style: {
-
                                                 fontFamily: 'arial black,sans-serif',
-
                                                 color: 'lightblue',
-
                                                 fontSize: '1vw',
-
                                             }
-
                                         }),
-
                                         $({
-
                                             tag: 'ul',
-
                                             style: {
-
                                                 marginTop: '0'
-
                                             },
-
                                             elementHandler: (el) => {
-
                                                 JSON.parse(coAuthor).forEach(val => {
-
                                                     el.appendChild($({
-
                                                         tag: 'li',
-
                                                         text: val,
-
                                                         style: {
-
                                                             color: '#bbb',
-
                                                             fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
                                                             fontSize: '1vw',
-
                                                             fontWeight: 'bolder',
-
-
                                                         }
-
                                                     }))
-
                                                 })
-
                                             }
-
                                         })
-
                                     ]
-
-
                                 }))
-
                             }
-
+                            
+                            // Function to open Google Drive files
+                            const openDriveFile = (fileUrl, fileTitle) => {
+                                let embedUrl = fileUrl;
+                                
+                                // If it's a Google Drive URL, convert to embed URL
+                                if (fileUrl && fileUrl.includes('drive.google.com') && !fileUrl.includes('/preview')) {
+                                    const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                    if (fileIdMatch && fileIdMatch[1]) {
+                                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                                    }
+                                }
+                                
+                                if (embedUrl) {
+                                    mainFrame.appendChild(object({dataURL: embedUrl, title: fileTitle}));
+                                } else {
+                                    alert('No file available');
+                                }
+                            }
+                            
                             return ($({
-
                                 tag: 'div',
-
                                 style: {
-
                                     width: '95%',
-
                                     margin: '1vh auto',
-
                                     paddingLeft: '.2rem',
-
                                     paddingRight: '.2rem',
-
                                     backgroundColor: '#555',
-
                                     paddingBottom: '1vh',
-
                                     paddingTop: '1vh',
-
                                     borderRadius: '.5rem',
-
                                     userSelect: 'text'
-
                                 },
-
                                 att: {
-
                                     className: 'botRes..'
-
                                 },
-
-
                                 child: [
-
                                     labelDetails("Title : ", title),
-
                                     labelDetails("Author : ", author),
-
                                     CoAuthorList(),
-
+                                    labelDetails("Center : ", center),
                                     labelDetails("Category : ", category),
 
                                     $({
-
                                         tag: 'div',
-
-                                        text: 'Open document',
-
-                                        att: {
-
-                                            className: 'botRes'
-
-                                        },
-
                                         style: {
-
-                                            fontSize: '1vw',
-
-                                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
-                                            marginLeft: '1.2vw',
-
-                                            width: 'fit-content',
-
-                                            marginBottom: '1vh',
-
+                                            display: 'flex',
+                                            flexDirection: 'row', // Align horizontally
+                                            gap: '2vw', // Space between buttons
                                             marginTop: '1vh',
-
-                                            fontWeight: 'bold',
-
-                                            color: 'deepskyblue',
-
-                                            cursor: 'pointer',
-
-                                            paddingLeft: '1vw',
-
-                                            paddingRight: '1vw',
-
-                                            userSelect: 'none'
-
+                                            marginBottom: '1vh',
+                                            marginLeft: '3vw'
                                         },
-                                        event: {
-                                            type: 'click',
-                                            method: () => {
-                                                // Handle Google Drive URL
-                                                const researchFile = dataURLResearch;
-                                                let embedUrl = researchFile;
-                                                
-                                                // If it's a Google Drive URL, convert to embed URL
-                                                if (researchFile.includes('drive.google.com') && !researchFile.includes('/preview')) {
-                                                    const fileIdMatch = researchFile.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                                                    if (fileIdMatch && fileIdMatch[1]) {
-                                                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                                        child: [
+                                            // Open Entry Button
+                                            $({
+                                                tag: 'div',
+                                                text: 'Open entry',
+                                                att: {
+                                                    className: 'botRes'
+                                                },
+                                                style: {
+                                                    fontSize: '1vw',
+                                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                                    width: 'fit-content',
+                                                    fontWeight: 'bold',
+                                                    color: 'deepskyblue',
+                                                    cursor: 'pointer',
+                                                    padding: '0.5vh 1vw',
+                                                    userSelect: 'none',
+                                                    border: 'solid thin deepskyblue',
+                                                    borderRadius: '0.3vw',
+                                                    backgroundColor: 'rgba(0, 191, 255, 0.1)'
+                                                },
+                                                event: {
+                                                    type: 'click',
+                                                    method: () => {
+                                                        // Handle Google Drive URL
+                                                        const researchFile = dataURLResearch;
+                                                        let embedUrl = researchFile;
+                                                        
+                                                        // If it's a Google Drive URL, convert to embed URL
+                                                        if (researchFile.includes('drive.google.com') && !researchFile.includes('/preview')) {
+                                                            const fileIdMatch = researchFile.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                                            if (fileIdMatch && fileIdMatch[1]) {
+                                                                embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                                                            }
+                                                        }
+                                                        
+                                                        mainFrame.appendChild(object({dataURL: embedUrl, title: title}))
                                                     }
-                                                }
-                                                
-                                                mainFrame.appendChild(object({dataURL: embedUrl, title: title}))
-                                            }
-                                        },
+                                                },
+                                            }),
+                                            
+                                            // Open Program Button (conditionally shown)
+                                            ...(programDriveViewUrl ? [
+                                                $({
+                                                    tag: 'div',
+                                                    text: 'Open program',
+                                                    att: {
+                                                        className: 'botRes'
+                                                    },
+                                                    style: {
+                                                        fontSize: '1vw',
+                                                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                                        width: 'fit-content',
+                                                        fontWeight: 'bold',
+                                                        color: '#FF9800', // Orange color
+                                                        cursor: 'pointer',
+                                                        padding: '0.5vh 1vw',
+                                                        userSelect: 'none',
+                                                        border: 'solid thin #FF9800',
+                                                        borderRadius: '0.3vw',
+                                                        backgroundColor: 'rgba(255, 152, 0, 0.1)'
+                                                    },
+                                                    event: {
+                                                        type: 'click',
+                                                        method: () => {
+                                                            // Handle Google Drive URL for program
+                                                            const programFile = programDriveViewUrl;
+                                                            let embedUrl = programFile;
+                                                            
+                                                            // If it's a Google Drive URL, convert to embed URL
+                                                            if (programFile.includes('drive.google.com') && !programFile.includes('/preview')) {
+                                                                const fileIdMatch = programFile.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                                                if (fileIdMatch && fileIdMatch[1]) {
+                                                                    embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                                                                }
+                                                            }
+                                                            
+                                                            mainFrame.appendChild(object({dataURL: embedUrl, title: `Program: ${title}`}))
+                                                        }
+                                                    },
+                                                })
+                                            ] : [])
+                                        ]
                                     })
                                 ]
                             }))
@@ -1069,7 +1064,10 @@ export const ResearchMain = () => {
                                     title: val.title,
                                     category: val.category,
                                     author: val.author,
-                                    coAuthor: val.coauthor
+                                    coAuthor: val.coauthor,
+                                    center: val.center,
+                                    programFile: val.programFile,
+                                    programDriveViewUrl: val.program_drive_view_url 
                                 }))
                             })
                             el.appendChild(holder)
@@ -1113,82 +1111,44 @@ export const ResearchMain = () => {
                     att: {
                         className: 'fa-solid fa-file-pdf'
                     },
-
                     style: {
-
                         fontSize: '3vw',
-
                         margin: 'auto',
-
                         color: '#999',
-
                         textShadow: '-.2vw .5vh .5vw black'
-
                     }
-
                 })
-
                 const leftBox = () => {
-
                     const details = (label, data) => {
-
                         return ($({
-
                             tag: 'div',
-
                             style: {
-
                                 width: 'fit-content',
-
-
                             },
-
                             child: [
-
                                 $({
-
                                     tag: 'span',
-
                                     text: label,
-
                                     style: {
-
                                         color: 'lightskyblue',
-
                                         fontSize: '1vw',
-
                                         fontFamily: 'arial black'
-
                                     }
-
                                 }),
-
                                 $({
-
                                     tag: 'span',
-
                                     text: data,
-
                                     style: {
-
                                         color: '#bbb',
-
                                         fontSize: '1vw',
-
                                         fontFamily: 'arial,sans-serif'
-
                                     }
-
                                 })
-
                             ]
-
                         }))
-
                     }
                     let [Date,Time]=date.split(' ')
                     let TimeFormat=TimeConvert(Time.split(":"))
-
                     return ($({
                         tag: 'div',
                         style: {
@@ -1327,7 +1287,7 @@ export const ResearchMain = () => {
     }
     const Forwarded = () => {
         let researchBody, endorseBody
-        const ResearchDocs = ({category, file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId}) => {
+        const ResearchDocs = ({category, center,file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId}) => {
             const resDetails = () => {
                 const details = (label, data) => {
                     return ($({
@@ -1543,68 +1503,37 @@ export const ResearchMain = () => {
                     child: [
 
                         details("Category : ", category),
-
+                        details("Center : ", center),
                         details("Title : ", `" ${title}  "`),
-
                         details("Author : ", author),
                         details("Campus : ", campus),
-
                         details("Event : ", eventTYpe),
-
                         $({
-
                             tag: 'div',
-
                             style: {
-
                                 width: 'fit-content',
-
                                 height: '100%',
-
                                 display: 'flex',
-
                                 marginLeft: 'auto',
-
                                 marginRight: '0'
-
                             },
-
                             child: [
-
-
                                 bot({
-
                                     label: 'fa-solid fa-comment-dots',
-
                                     event: () => {
-
-
                                         const form = new FormData()
-
                                         form.append('commentRequest', 'true')
-
                                         form.append('docId', docId)
-
                                         fetch('/uploadResearchFile', {
-
                                             method: "POST",
-
                                             body: form
-
                                         }).then(res => res.json())
-
                                             .then(data => {
-
                                                 mainFrame.appendChild(comments(data))
-
                                             })
-
-
                                     },
                                     tooltip:'View Comments'
-
                                 }),
-
                                 bot({
                                     label: 'fa-solid fa-folder-open',
                                     event: () => {
@@ -1613,132 +1542,32 @@ export const ResearchMain = () => {
                                     tooltip:'Open File'
                                 }),
                                 bot({
-
                                     label: 'fa-solid fa-file-excel',
-
                                     event:() => {
-
                                         if(confirm("This entry will be transfer for re-evaluation. Do you want to continue?")){
                                             const req = new Request('/endorsement')
-
                                             req.Post([
-
                                                 {
-
                                                     name: 'returnDocs',
-
                                                     value: '1'
-
                                                 },
-
                                                 {
-
                                                     name: 'docId',
-
                                                     value: endorseId
-
                                                 }
-
                                             ])
-
                                             req.Json()
-
                                             req.Send().then(res => {
-
                                                 if (res.status) {
-
                                                     window.location.reload();
-
                                                 } else {
-
                                                     alert(res.message)
-
                                                 }
-
                                             })
                                         }
                                     },
                                     tooltip:'Cancel Docs'
-
                                 }),
-
-                                /*
-
-                                 $({
-
-                                     tag: 'div',
-
-                                     style: {
-
-                                         width: 'fit-content',
-
-                                         paddingRight: '1vw',
-
-                                         paddingLeft: '1vw',
-
-                                         fontFamily: 'arial black,sans-serif',
-
-                                         cursor: 'pointer'
-
-                                     },
-
-                                     att: {
-
-                                         className: 'botMe',
-
-                                     },
-
-                                     event: {
-
-                                         type: 'click',
-
-                                         method: async () => {
-
-                                             if (confirm("Are you sure you want to delete this document?")) {
-
-                                                 const form = new FormData()
-
-                                                 form.append("getDeleteRequest", "true")
-
-                                                 form.append("docId", docId)
-
-                                                 await fetch("/uploadResearchFile", {
-
-                                                     method: 'POST',
-
-                                                     body: form
-
-                                                 }).then(res => res.json())
-
-                                                     .then(data => {
-
-                                                         if(data.message!==null){
-
-                                                             mainFrame.appendChild(deletePanel())
-
-                                                         }
-
-
-
-                                                     })
-
-                                             }
-
-
-
-                                         }
-
-                                     },
-
-                                     elementHandler: getDel,
-
-                                     text: 'Delete Documents'
-
-
-
-                                 })
-
-                                 */
                             ]
                         })
                     ]
@@ -3503,12 +3332,12 @@ export const ResearchMain = () => {
                     style:{
                         margin: 'auto',
                         border:'solid thin rgba(153,153,153)',
-                        padding: '.2rem',
-                        borderRadius:'.2rem',
+                        padding: '.4rem',
+                        borderRadius:'1rem',
                         backgroundColor: 'rgba(34,34,34)',
                         width: 'fit-content',
                         height: 'fit-content',
-                        marginRight:'1vw'
+                        marginRight:'3vw'
                     },
                     child:[
                         $({
@@ -3518,7 +3347,7 @@ export const ResearchMain = () => {
                                 title: 'View Summary'
                             },
                             style:{
-                                fontSize:'1.4vw',
+                                fontSize:'1vw',
                                 backgroundColor:'transparent',
                                 border:'none',
                                 outline: 'none',
@@ -3548,29 +3377,17 @@ export const ResearchMain = () => {
                     },
                     child: [
                         $({
-
                             tag: 'div',
-
                             style: {
-
                                 display: 'flex',
-
                                 width: 'fit-content',
-
                                 height: 'fit-content',
-
                                 border: 'solid thin #555',
-
                                 margin: 'auto',
-
                                 padding: '.3rem',
-
                                 marginLeft: '.56vw',
-
                                 borderRadius: '.5vw',
-
                                 backgroundColor: 'rgba(0,0,0,0.3)'
-
                             },
                             child: [
                                 $({
@@ -3578,17 +3395,19 @@ export const ResearchMain = () => {
                                     style: {
                                         backgroundColor: 'transparent',
                                         fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                        fontSize: '1vw',
+                                        fontSize: '1.1vw',
                                         border: 'none',
                                         outline: 'none',
                                         color: '#bbb',
-                                        width: '15vw',
+                                        width: '17vw',
+                                        height: '3vw',
                                         textAlign: 'center'
                                     },
                                     elementHandler: (el) => {
                                         el.appendChild($({
                                             tag: 'option',
                                             text: 'All Event',
+                                            fontSize: '18px',
                                             style: {
                                                 backgroundColor: 'rgba(0,0,0,0.8)',
                                                 color: '#bbb'
@@ -3638,7 +3457,7 @@ export const ResearchMain = () => {
                                         margin: 'auto',
                                         marginLeft: '2vw',
                                         marginRight: '1vw',
-                                        fontSize: '1.2vw',
+                                        fontSize: '2vw',
                                         color: 'deepskyblue',
                                         cursor: 'pointer'
                                     },
@@ -3688,8 +3507,8 @@ export const ResearchMain = () => {
                     style:{
                         margin: 'auto',
                         border:'solid thin rgba(153,153,153)',
-                        padding: '.3rem',
-                        borderRadius:'.2rem',
+                        padding: '.5rem',
+                        borderRadius:'1rem',
                         backgroundColor: 'rgba(34,34,34)',
                         width: 'fit-content',
                         height: 'fit-content',
@@ -3705,32 +3524,27 @@ export const ResearchMain = () => {
                                 href:'/rdeOffice/research/scoreSummary'
                             },
                             style:{
-                                fontSize:'1.4vw',
+                                fontSize:'1vw',
                                 backgroundColor:'transparent',
                                 border:'none',
                                 outline: 'none',
                                 width: 'fit-content',
+                                textDecoration: 'none',
                                 height: 'fit-content',
                                 color:'deepskyblue',
                                 cursor:'pointer',
+                                
                             },
-                            text: 'Score Summary'
+                            text: ' Score Summary'
                         })
                     ]
                 }))
             }
-
             const EndorsementPanel = () => {
-
-
                 const File = ({camp, eventName, date, id, research,resStat}) => {
-
                     let dropList, stateDrop = false
-
                     const ViewEn = () => {
-
                         let main
-
                         const innerPanel = (src) => {
                             const Remove = $({
                                 tag: 'div',
@@ -4537,35 +4351,21 @@ export const ResearchMain = () => {
                                 data.forEach(val => {
 
                                     el.appendChild(ResearchDocs({
-
                                         category: val.category,
-
+                                        center: val.center,
                                         title: val.title,
-
                                         author: val.author,
-
                                         file: val.file,
-
                                         eventTYpe: val.event,
-
                                         campus: val.campus,
-
                                         deleteRequest: val.deletestate,
-
                                         docId: val.id,
                                         endorseId:val.endorsId
-
                                     }))
-
                                 })
-
                             })
-
                     },
-
-
                 }))
-
             }
             let Bod
             const ButtonsTabs = []

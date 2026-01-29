@@ -355,11 +355,10 @@ if(isset($_POST['evalLeb'])){
     $res->event = $_SESSION['eventTYpe'] ?? '';
     $res->eventId = $_SESSION['eventId'] ?? '';
     
-    // Get category/center info with code
+    // Get evaluator's center info
     $centerId = $_SESSION['centerId'] ?? '';
-    $category = $_SESSION['center'] ?? '';
     
-    // If we have centerId, fetch the full center name with code from database
+    // Fetch center details from database to get name and code
     if (!empty($centerId) && $con = new mysqli($host, $username, $pass, $dbName)) {
         $query = "SELECT name, code FROM center WHERE id = ?";
         $stmt = $con->prepare($query);
@@ -368,12 +367,30 @@ if(isset($_POST['evalLeb'])){
         $result = $stmt->get_result();
         
         if ($row = $result->fetch_assoc()) {
-            // Format: "Coconut Research and Development Center (Coco RDC)"
-            $category = $row['name'] . " (" . $row['code'] . ")";
+            // Format: "Center Name (CODE)"
+            $centerName = $row['name'] . " (" . $row['code'] . ")";
+            
+            // Store both formats for different uses
+            $res->center = $centerName; // Full display name: "Center Name (CODE)"
+            $res->centerId = $centerId; // Center ID for database queries
+            $res->centerName = $row['name']; // Just the name
+            $res->centerCode = $row['code']; // Just the code
+            
+            // This is what should be used to filter researchfile by center column
+            // Since researchfile.center should match the formatted center name
+            $res->filterCenter = $centerName;
+        } else {
+            // Fallback if center not found
+            $res->center = $_SESSION['center'] ?? '';
+            $res->centerId = $centerId;
+            $res->filterCenter = $_SESSION['center'] ?? '';
         }
+    } else {
+        // Fallback if no connection or no centerId
+        $res->center = $_SESSION['center'] ?? '';
+        $res->centerId = $centerId;
+        $res->filterCenter = $_SESSION['center'] ?? '';
     }
-    
-    $res->category = $category;
     
     ob_clean();
     echo json_encode($res);
