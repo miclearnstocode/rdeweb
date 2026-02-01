@@ -17,38 +17,53 @@ if (isset($_POST['scoreRank'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $eventId = $_POST['getEventId'];
         
+        // First, get event information
+        $eventQuery = "SELECT name FROM event_list WHERE id = ?";
+        $eventStmt = $con->prepare($eventQuery);
+        $eventStmt->bind_param("i", $eventId);
+        $eventStmt->execute();
+        $eventResult = $eventStmt->get_result();
+        $eventRow = $eventResult->fetch_assoc();
+        $eventName = $eventRow ? $eventRow['name'] : 'Unknown Event';
+        
+        // Add event info to response
+        $response['event'] = [
+            'id' => $eventId,
+            'name' => $eventName
+        ];
+        
+        // Get categories/centers based on event type
         if ($eventId >= 13) {
-            // NEW SYSTEM: Use center table and handle display format
+            // NEW SYSTEM: Use center for events 13 and above
             $query = "SELECT 
                 center.id,
                 center.name,
                 center.code,
-                COUNT(researchfile.category) as total 
+                COUNT(researchfile.id) as total 
             FROM center
-            LEFT JOIN researchfile ON (
-                researchfile.category = CONCAT(center.name, ' (', center.code, ')') OR
-                researchfile.category = center.name
-            )
+            LEFT JOIN researchfile ON researchfile.center = CONCAT(center.name, ' (', center.code, ')')
             LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-            LEFT JOIN event_list ON researchfile.event = event_list.name
+            LEFT JOIN event_list ON researchfile.event_id = event_list.id
             WHERE endorsement.status = 'accepted' 
             AND event_list.id = ?
+            AND researchfile.center IS NOT NULL
             GROUP BY center.id, center.name, center.code
             ORDER BY center.name";
         } else {
-            // OLD SYSTEM: Use category table
+            // OLD SYSTEM: Use category for events below 13
             $query = "SELECT 
                 category.id,
                 category.name,
                 '' as code,
-                COUNT(researchfile.category) as total 
+                COUNT(researchfile.id) as total 
             FROM category
-            LEFT JOIN researchfile ON category.name = researchfile.category
+            LEFT JOIN researchfile ON researchfile.category = category.name
             LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-            LEFT JOIN event_list ON researchfile.event = event_list.name
+            LEFT JOIN event_list ON researchfile.event_id = event_list.id
             WHERE endorsement.status = 'accepted' 
             AND event_list.id = ?
-            GROUP BY researchfile.category
+            AND researchfile.category IS NOT NULL
+            GROUP BY category.id, category.name
             ORDER BY category.name";
         }
         
@@ -57,9 +72,13 @@ if (isset($_POST['scoreRank'])) {
         $statement->execute();
         $result = $statement->get_result();
         
+        $items = [];
         while ($row = $result->fetch_assoc()) {
-            $response[] = $row;
+            $items[] = $row;
         }
+        
+        $response['items'] = $items;
+        $response['isNewSystem'] = ($eventId >= 13);
     }
     
     ob_clean();
@@ -100,26 +119,34 @@ if (isset($_POST['getEventName'])) {
 if (isset($_POST['getCatIdName'])) {
     $response = [];
     
-    $categoryId = $_POST['getCatIdName'];
-    $eventId = $_POST['eventId'] ?? null; // Need eventId to determine if new or old
+    $itemId = $_POST['getCatIdName'];
+    $eventId = $_POST['eventId'] ?? 0;
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Check if this is for a new event (eventId >= 13)
-        if ($eventId && $eventId >= 13) {
-            // New system: get center name
-            $query = "SELECT name FROM center WHERE id = ?";
+        // Determine if this is center or category based on event ID
+        if ($eventId >= 13) {
+            // Get center name
+            $query = "SELECT name, code FROM center WHERE id = ?";
+            $statement = $con->prepare($query);
+            $statement->bind_param("i", $itemId);
+            $statement->execute();
+            $result = $statement->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                // Return formatted center name for new system
+                $response[] = ['name' => $row['name'] . " (" . $row['code'] . ")"];
+            }
         } else {
-            // Old system: get category name
+            // Get category name
             $query = "SELECT name FROM category WHERE id = ?";
-        }
-        
-        $statement = $con->prepare($query);
-        $statement->bind_param("i", $categoryId);
-        $statement->execute();
-        $result = $statement->get_result();
-        
-        while ($row = $result->fetch_assoc()) {
-            $response[] = $row;
+            $statement = $con->prepare($query);
+            $statement->bind_param("i", $itemId);
+            $statement->execute();
+            $result = $statement->get_result();
+            
+            while ($row = $result->fetch_assoc()) {
+                $response[] = $row;
+            }
         }
     }
     
@@ -134,85 +161,141 @@ if (isset($_POST['getDocPerRank'])) {
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $eventId = $_POST['eventId'];
-        $centerId = $_POST['categoryId'];
+        $itemId = $_POST['categoryId'];
         
         if ($eventId >= 13) {
-            // NEW SYSTEM: Get center info and handle display format
-            $centerQuery = "SELECT name, code FROM center WHERE id = ?";
-            $centerStmt = $con->prepare($centerQuery);
-            $centerStmt->bind_param("i", $centerId);
-            $centerStmt->execute();
-            $centerResult = $centerStmt->get_result();
-            $centerRow = $centerResult->fetch_assoc();
-            
-            if ($centerRow) {
-                $centerName = $centerRow['name'];
-                $centerCode = $centerRow['code'];
-                $displayFormat = $centerName . " (" . $centerCode . ")";
-                
-                // Try both formats: display format and plain name
-                $queryA = "SELECT researchfile.title, researchfile.id, researchfile.category as name 
-                    FROM researchfile
-                    LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                    LEFT JOIN event_list ON researchfile.event = event_list.name
-                    WHERE endorsement.status = 'accepted' 
-                    AND event_list.id = ?
-                    AND (researchfile.category = ? OR researchfile.category = ?)";
-                    
-                $statement = $con->prepare($queryA);
-                $statement->bind_param("sss", $eventId, $displayFormat, $centerName);
-            } else {
-                // Center not found
-                echo json_encode($response);
-                exit();
-            }
-        } else {
-            // OLD SYSTEM
-            $queryA = "SELECT researchfile.title, researchfile.id, category.name 
+            // NEW SYSTEM: Get by center
+            // If itemId is 0 or empty, get all centers for this event
+            if ($itemId == 0 || empty($itemId)) {
+                // Get all documents for this event (new system)
+                $query = "SELECT 
+                    researchfile.id,
+                    researchfile.title,
+                    researchfile.author,
+                    researchfile.campus,
+                    researchfile.center as name
                 FROM researchfile
                 LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                LEFT JOIN event_list ON researchfile.event = event_list.name
-                LEFT JOIN category ON researchfile.category = category.name
+                LEFT JOIN event_list ON researchfile.event_id = event_list.id
                 WHERE endorsement.status = 'accepted' 
-                AND category.id = ? 
-                AND event_list.id = ?";
+                AND event_list.id = ?
+                AND researchfile.center IS NOT NULL
+                AND researchfile.center != ''";
+                    
+                $statement = $con->prepare($query);
+                $statement->bind_param("i", $eventId);
+            } else {
+                // Get by specific center
+                $centerQuery = "SELECT name, code FROM center WHERE id = ?";
+                $centerStmt = $con->prepare($centerQuery);
+                $centerStmt->bind_param("i", $itemId);
+                $centerStmt->execute();
+                $centerResult = $centerStmt->get_result();
+                $centerRow = $centerResult->fetch_assoc();
                 
-            $statement = $con->prepare($queryA);
-            $statement->bind_param("ss", $centerId, $eventId);
+                if ($centerRow) {
+                    $centerDisplay = $centerRow['name'] . " (" . $centerRow['code'] . ")";
+                    
+                    $query = "SELECT 
+                        researchfile.id,
+                        researchfile.title,
+                        researchfile.author,
+                        researchfile.campus,
+                        researchfile.center as name
+                    FROM researchfile
+                    LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+                    LEFT JOIN event_list ON researchfile.event_id = event_list.id
+                    WHERE endorsement.status = 'accepted' 
+                    AND event_list.id = ?
+                    AND researchfile.center = ?";
+                        
+                    $statement = $con->prepare($query);
+                    $statement->bind_param("is", $eventId, $centerDisplay);
+                }
+            }
+        } else {
+            // OLD SYSTEM: Get by category
+            // If itemId is 0 or empty, get all categories for this event
+            if ($itemId == 0 || empty($itemId)) {
+                $query = "SELECT 
+                    researchfile.id,
+                    researchfile.title,
+                    researchfile.author,
+                    researchfile.campus,
+                    researchfile.category as name
+                FROM researchfile
+                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+                LEFT JOIN event_list ON researchfile.event_id = event_list.id
+                WHERE endorsement.status = 'accepted' 
+                AND event_list.id = ?
+                AND researchfile.category IS NOT NULL
+                AND researchfile.category != ''";
+                    
+                $statement = $con->prepare($query);
+                $statement->bind_param("i", $eventId);
+            } else {
+                // Get by specific category
+                $query = "SELECT 
+                    researchfile.id,
+                    researchfile.title,
+                    researchfile.author,
+                    researchfile.campus,
+                    researchfile.category as name
+                FROM researchfile
+                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+                LEFT JOIN event_list ON researchfile.event_id = event_list.id
+                WHERE endorsement.status = 'accepted' 
+                AND event_list.id = ?
+                AND researchfile.category IN (
+                    SELECT name FROM category WHERE id = ?
+                    UNION
+                    SELECT ? as name
+                )";
+                    
+                $statement = $con->prepare($query);
+                $statement->bind_param("iis", $eventId, $itemId, $itemId);
+            }
         }
         
-        $statement->execute();
-        $result = $statement->get_result();
+        if (isset($statement)) {
+            $statement->execute();
+            $result = $statement->get_result();
 
-        while ($row = $result->fetch_assoc()) {
-            $doc = new stdClass();
-            $doc->name = $row['title'];
-            $doc->criteria = [];
-            
-            $queryB = "SELECT 
-                evaluator.fullname,
-                score_board.id,
-                criteria.name,
-                criteria.description,
-                concat(criteria.percentage,'%') as percentage,
-                score_board.score,
-                round(score_board.score*(criteria.percentage/100),2) as scorePercent 
+            while ($row = $result->fetch_assoc()) {
+                $doc = new stdClass();
+                $doc->title = $row['title'];
+                $doc->id = $row['id'];
+                $doc->author = $row['author'];
+                $doc->campus = $row['campus'];
+                $doc->name = $row['name'];
+                $doc->criteria = [];
+                
+                // Get scores for this document
+                $queryB = "SELECT 
+                    evaluator.fullname,
+                    score_board.id,
+                    criteria.name,
+                    criteria.description,
+                    CONCAT(criteria.percentage,'%') as percentage,
+                    score_board.score,
+                    ROUND(score_board.score*(criteria.percentage/100),2) as scorePercent 
                 FROM score_board
                 LEFT JOIN criteria ON score_board.criteria_id = criteria.id
                 LEFT JOIN evaluator ON score_board.eval_id = evaluator.id
                 WHERE score_board.doc_id = ? 
                 ORDER BY evaluator.id";
+                    
+                $statement2 = $con->prepare($queryB);
+                $statement2->bind_param("s", $row['id']);
+                $statement2->execute();
+                $resultScoreBoard = $statement2->get_result();
                 
-            $statement2 = $con->prepare($queryB);
-            $statement2->bind_param("s", $row['id']);
-            $statement2->execute();
-            $resultScoreBoard = $statement2->get_result();
-            
-            while ($row2 = $resultScoreBoard->fetch_assoc()) {
-                $doc->criteria[] = $row2;
+                while ($row2 = $resultScoreBoard->fetch_assoc()) {
+                    $doc->criteria[] = $row2;
+                }
+                
+                $response[] = $doc;
             }
-            
-            $response[] = $doc;
         }
     }
     

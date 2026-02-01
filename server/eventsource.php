@@ -66,159 +66,122 @@ if(isset($_POST['getEventName'])){
 
 
 if(isset($_POST['getEventAdmin'])){
-
     $response=[];
-
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
-        $query="SELECT event_list.id, event_list.name, event_list.dead_line, event_list.status, event_list.date,score_sheet.id as scID FROM event_list
-LEFT JOIN score_sheet ON event_list.id=score_sheet.event_id
-ORDER BY event_list.dead_line DESC";
-
+        $query="SELECT 
+        event_list.id, 
+        event_list.name, 
+        event_list.dead_line, 
+        event_list.status, 
+        event_list.date,
+        score_sheet.id as scID FROM event_list
+            LEFT JOIN score_sheet ON event_list.id=score_sheet.event_id
+            ORDER BY event_list.dead_line DESC";
         foreach ($con->query($query) as $val) {
-
             $response[]=$val;
-
         }
-
     }
-
     ob_clean();
     echo json_encode($response);
     ob_end_flush();
     exit();
-
 }
 
 
 
 if(isset($_POST['requestEventRDE'])) {
-
     $res=[];
-
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $eventId=$_POST['eventId'];
-
         $query="";
-
         $statement="";
-
+        
+        // UPDATED QUERY to include Google Drive fields
         if($_POST['eventId']==='0'){
-
             $query="
-
-    SELECT
-
-researchfile.id,
-
-researchfile.senderid,
-
-researchfile.author,
-
-researchfile.title,
-
-researchfile.file,
-
-researchfile.status,
-
-researchfile.category,
-
-researchfile.deletestate,           
-
-endorsement.campus,
-
-endorsement.event,
-
-endorsement.date,
-endorsement.id as endorsId
-
-FROM
-
-researchfile
-
-LEFT JOIN 
-
-endorsement
-
-ON endorsement.id=researchfile.endorsementid
-
-WHERE endorsement.status='accepted'";
-
+                SELECT
+                    researchfile.id,
+                    researchfile.senderid,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.file,                    -- Local file path
+                    researchfile.drive_view_url,          -- Google Drive view URL
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id,
+                    researchfile.status,
+                    researchfile.category,
+                    researchfile.deletestate,           
+                    endorsement.campus,
+                    endorsement.event,
+                    endorsement.date,
+                    endorsement.id as endorsId
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
+                WHERE endorsement.status='accepted'";
             $statement=$con->prepare($query);
-
         }else{
-
             $query="
-
-    SELECT
-
-    event_list.id as eventId,
-
-researchfile.id,
-
-researchfile.senderid,
-
-researchfile.author,
-
-researchfile.title,
-
-researchfile.file,
-
-researchfile.status,
-
-researchfile.category,
-
-researchfile.deletestate,           
-
-endorsement.campus,
-
-endorsement.event,
-
-endorsement.date,
-endorsement.id as endorsId
-
-FROM
-
-researchfile
-
-LEFT JOIN 
-
-endorsement
-
-ON endorsement.id=researchfile.endorsementid
-
-LEFT JOIN event_list ON researchfile.event=event_list.name
-
-WHERE endorsement.status='accepted' AND event_list.id=?";
-
+                SELECT
+                    event_list.id as eventId,
+                    researchfile.id,
+                    researchfile.senderid,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.file,                    -- Local file path
+                    researchfile.drive_view_url,          -- Google Drive view URL
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id,
+                    researchfile.status,
+                    researchfile.category,
+                    researchfile.deletestate,           
+                    endorsement.campus,
+                    endorsement.event,
+                    endorsement.date,
+                    endorsement.id as endorsId
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event=event_list.name
+                WHERE endorsement.status='accepted' AND event_list.id=?";
             $statement=$con->prepare($query);
-
             $statement->bind_param('s',$eventId);
-
         }
-
-
-
-
-
+        
         $statement->execute();
-
         $result=$statement->get_result();
-
+        
         while ($val=$result->fetch_assoc()){
-
-            $res[]=$val;
-
+            // Create a new array with backward compatibility
+            $item = $val;
+            
+            // For backward compatibility: 
+            // If Google Drive URL exists, use it in the 'file' field
+            // Otherwise, use the local file path
+            if (!empty($val['drive_view_url'])) {
+                $item['file'] = $val['drive_view_url'];  // Google Drive URL
+            } else {
+                $item['file'] = $val['file'];  // Local file path
+            }
+            
+            // Add Google Drive fields for reference (optional)
+            $item['drive_view_url'] = $val['drive_view_url'];
+            $item['drive_file_id'] = $val['drive_file_id'];
+            $item['drive_download_url'] = $val['drive_download_url'];
+            
+            $res[]=$item;
         }
-
     }
-
+    
     ob_clean();
     echo json_encode($res);
     ob_end_flush();
     exit();
-
 }
 
 

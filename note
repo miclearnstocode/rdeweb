@@ -146,7 +146,9 @@ CREATE TABLE center_category (
     CONSTRAINT fk_center_category_category
         FOREIGN KEY (category_id) REFERENCES category(id)
 );
-
+SELECT sb.* FROM score_board sb WHERE sb.doc_id IN (329, 302, 303, 309, 315, 318, 322, 323, 325, 329, 340, 341, 342, 367, 371, 372);
+SELECT * FROM researchfile WHERE category = 'Development' AND event = '36th In-House Review';
+SELECT * FROM researchfile WHERE author = 'Prof. Princess Lydia Fuentes';
 
 cd C:\Users\Cogito\Documents\rdeweb - sir john laptop
 C:\xampp\php\php.exe -S localhost:8000 index.php

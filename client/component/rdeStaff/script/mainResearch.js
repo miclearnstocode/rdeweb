@@ -1285,7 +1285,7 @@ export const ResearchMain = () => {
             ]
         }))
     }
-    const Forwarded = () => {
+    const Forwarded = () => { //position at the right panel
         let researchBody, endorseBody
         const ResearchDocs = ({category, center,file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId}) => {
             const resDetails = () => {
@@ -1499,9 +1499,7 @@ export const ResearchMain = () => {
                         width: '82%',
                         margin: 'auto',
                     },
-
                     child: [
-
                         details("Category : ", category),
                         details("Center : ", center),
                         details("Title : ", `" ${title}  "`),
@@ -1578,7 +1576,6 @@ export const ResearchMain = () => {
                 const getViewer = (el) => {
                     viewerMain = el
                 }
-
                 const closeView = $({
                     tag: 'div',
                     style: {
@@ -1607,107 +1604,272 @@ export const ResearchMain = () => {
                         })
                     ],
                 })
-                
+
                 // Check if it's a Google Drive URL
-                const isGoogleDriveUrl = file && file.includes('drive.google.com')
+                const isGoogleDriveUrl = file && (file.includes('drive.google.com') || file.includes('/d/'))
                 
                 let frame
                 
                 if (isGoogleDriveUrl) {
-                    // Create a container for the viewer
+                    // Create a container for the viewer with loading indicator
                     frame = $({
                         tag: 'div',
                         style: {
                             width: '80%',
                             height: '90%',
                             margin: 'auto',
-                            marginTop: '1vh'
+                            marginTop: '1vh',
+                            position: 'relative',
+                            backgroundColor: '#f5f5f5'
                         },
                         elementHandler: (el) => {
-                            // Create the embed URL properly
-                            const fileIdMatch = file.match(/\/d\/([a-zA-Z0-9_-]+)/)
+                            // Create the embed URL properly - handle multiple URL formats
+                            let fileId = null;
+                            let embedUrl = file;
                             
-                            if (fileIdMatch && fileIdMatch[1]) {
-                                const fileId = fileIdMatch[1]
-                                const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
+                            console.log('Google Drive URL:', file);
+                            
+                            // Try different patterns to extract file ID
+                            const patterns = [
+                                /\/d\/([a-zA-Z0-9_-]+)/,                     // /d/FILE_ID/
+                                /id=([a-zA-Z0-9_-]+)/,                       // id=FILE_ID
+                                /open\?id=([a-zA-Z0-9_-]+)/,                 // open?id=FILE_ID
+                                /\/file\/d\/([a-zA-Z0-9_-]+)/,               // /file/d/FILE_ID/
+                                /([a-zA-Z0-9_-]{25,})/                       // Any long ID (Google Drive IDs are usually long)
+                            ];
+                            
+                            for (let pattern of patterns) {
+                                const match = file.match(pattern);
+                                if (match && match[1]) {
+                                    fileId = match[1];
+                                    console.log('File ID found:', fileId);
+                                    break;
+                                }
+                            }
+                            
+                            // If no fileId found in patterns, try to extract from URL path
+                            if (!fileId && file.includes('drive.google.com')) {
+                                const urlParts = file.split('/');
+                                for (let i = 0; i < urlParts.length; i++) {
+                                    if (urlParts[i] === 'd' && urlParts[i + 1]) {
+                                        fileId = urlParts[i + 1];
+                                        console.log('File ID from path:', fileId);
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (isGoogleDriveUrl) {
+                                // Clean the fileId (remove query parameters if any)
+                                fileId = fileId.split('?')[0].split('&')[0];
+                                embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
+                                
+                                console.log('Final Embed URL:', embedUrl);
+                                
+                                // Add loading indicator
+                                const loadingIndicator = document.createElement('div');
+                                loadingIndicator.innerHTML = `
+                                    <div style="
+                                        position: absolute;
+                                        top: 50%;
+                                        left: 50%;
+                                        transform: translate(-50%, -50%);
+                                        text-align: center;
+                                        color: #666;
+                                        font-family: Arial, sans-serif;
+                                    ">
+                                        <div style="
+                                            font-size: 24px;
+                                            margin-bottom: 10px;
+                                            animation: spin 1s linear infinite;
+                                        ">⏳</div>
+                                        <div>Loading Google Drive document...</div>
+                                        <div style="font-size: 12px; margin-top: 10px; color: #999;">
+                                            If this takes too long, the document may require permission
+                                        </div>
+                                    </div>
+                                `;
+                                el.appendChild(loadingIndicator);
                                 
                                 // Create iframe with proper attributes
-                                const iframe = document.createElement('iframe')
-                                iframe.src = embedUrl
-                                iframe.style.width = '100%'
-                                iframe.style.height = '100%'
-                                iframe.style.border = 'none'
-                                iframe.allow = 'autoplay'
-                                iframe.title = 'Google Drive Document Viewer'
+                                const iframe = document.createElement('iframe');
+                                iframe.src = embedUrl;
+                                iframe.style.width = '100%';
+                                iframe.style.height = '100%';
+                                iframe.style.border = 'none';
+                                iframe.style.position = 'absolute';
+                                iframe.style.top = '0';
+                                iframe.style.left = '0';
+                                iframe.allow = 'autoplay; fullscreen';
+                                iframe.allowFullscreen = true;
+                                iframe.referrerPolicy = 'no-referrer';
+                                iframe.title = 'Google Drive Document Viewer';
                                 
-                                // Add error handling
+                                
+                                // Add style for spinner animation
+                                const style = document.createElement('style');
+                                style.textContent = `
+                                    @keyframes spin {
+                                        0% { transform: rotate(0deg); }
+                                        100% { transform: rotate(360deg); }
+                                    }
+                                `;
+                                document.head.appendChild(style);
+                                
+                                // Handle successful load
                                 iframe.onload = () => {
-                                    console.log('Google Drive iframe loaded')
-                                }
+                                    console.log('Google Drive iframe loaded successfully');
+                                    // Remove loading indicator
+                                    if (loadingIndicator.parentNode === el) {
+                                        el.removeChild(loadingIndicator);
+                                    }
+                                    
+                                    // Don't try to access iframe content due to CORS
+                                    // Instead, listen for postMessage from iframe if needed
+                                    window.addEventListener('message', (event) => {
+                                        // Handle messages from Google Drive iframe if any
+                                        console.log('Message from iframe:', event.data);
+                                    });
+                                };
                                 
+                                // Handle load error
                                 iframe.onerror = () => {
-                                    // If iframe fails, show alternative options
-                                    el.innerHTML = `
-                                        <div style="
-                                            color: white; 
-                                            font-family: Arial, sans-serif; 
-                                            padding: 20px;
-                                            text-align: center;
-                                            background: rgba(0,0,0,0.7);
-                                            border-radius: 10px;
-                                            margin: 20px;
-                                        ">
-                                            <h3>Document Access Required</h3>
-                                            <p>This Google Drive document requires permission to view.</p>
-                                            <div style="margin: 20px 0;">
-                                                <a href="${file}" 
-                                                target="_blank" 
-                                                style="
-                                                    display: inline-block;
-                                                    padding: 10px 20px;
-                                                    background: deepskyblue;
-                                                    color: white;
-                                                    text-decoration: none;
-                                                    border-radius: 5px;
-                                                    margin: 5px;
-                                                ">
-                                                    Open in Google Drive
-                                                </a>
-                                                <button onclick="location.reload()" 
-                                                        style="
-                                                            padding: 10px 20px;
-                                                            background: #555;
-                                                            color: white;
-                                                            border: none;
-                                                            border-radius: 5px;
-                                                            margin: 5px;
-                                                            cursor: pointer;
-                                                        ">
-                                                    Try Again
-                                                </button>
-                                            </div>
-                                            <p><small>You may need to request access or sign in with the appropriate account</small></p>
-                                        </div>
-                                    `
-                                }
+                                    console.log('Google Drive iframe failed to load');
+                                    // Remove loading indicator
+                                    if (loadingIndicator.parentNode === el) {
+                                        el.removeChild(loadingIndicator);
+                                    }
+                                    // Show alternative options
+                                    showAlternativeOptions(el, file, fileId);
+                                };
                                 
-                                el.appendChild(iframe)
+                                // Add timeout in case iframe hangs
+                                setTimeout(() => {
+                                    if (loadingIndicator.parentNode === el) {
+                                        console.log('Google Drive iframe loading timeout');
+                                        el.removeChild(loadingIndicator);
+                                        // Show alternative options
+                                        showAlternativeOptions(el, file, fileId);
+                                    }
+                                }, 10000); // 10 second timeout
+                                
+                                el.appendChild(iframe);
+                                
                             } else {
                                 // Invalid Google Drive URL format
+                                console.log('Invalid Google Drive URL format:', file);
                                 el.innerHTML = `
                                     <div style="
-                                        color: white; 
+                                        color: #666; 
                                         text-align: center;
-                                        padding: 20px;
+                                        padding: 40px;
+                                        font-family: Arial, sans-serif;
                                     ">
-                                        <p>Invalid Google Drive URL format</p>
-                                        <a href="${file}" 
-                                        target="_blank" 
-                                        style="color: deepskyblue;">
-                                            Open link directly
-                                        </a>
+                                        <h3>Unable to load document</h3>
+                                        <p>Invalid Google Drive URL format.</p>
+                                        <div style="margin: 20px 0;">
+                                            <a href="${file}" 
+                                            target="_blank" 
+                                            style="
+                                                display: inline-block;
+                                                padding: 10px 20px;
+                                                background: deepskyblue;
+                                                color: white;
+                                                text-decoration: none;
+                                                border-radius: 5px;
+                                                margin: 5px;
+                                            ">
+                                                Open in Google Drive
+                                            </a>
+                                        </div>
                                     </div>
-                                `
+                                `;
+                            }
+                            
+                            // Function to show alternative options
+                            function showAlternativeOptions(containerElement, originalUrl, fileId) {
+                                const directUrl = `https://drive.google.com/uc?id=${fileId}&export=download`;
+                                const viewUrl = `https://drive.google.com/file/d/${fileId}/view`;
+                                
+                                containerElement.innerHTML = `
+                                    <div style="
+                                        color: white; 
+                                        font-family: Arial, sans-serif; 
+                                        padding: 40px;
+                                        text-align: center;
+                                        background: rgba(0,0,0,0.8);
+                                        border-radius: 10px;
+                                        position: absolute;
+                                        top: 50%;
+                                        left: 50%;
+                                        transform: translate(-50%, -50%);
+                                        width: 80%;
+                                        max-width: 500px;
+                                    ">
+                                        <h3>Document Access Required</h3>
+                                        <p>This Google Drive document may require permission to view.</p>
+                                        <div style="margin: 30px 0;">
+                                            <a href="${originalUrl}" 
+                                            target="_blank" 
+                                            style="
+                                                display: block;
+                                                padding: 12px 24px;
+                                                background: deepskyblue;
+                                                color: white;
+                                                text-decoration: none;
+                                                border-radius: 5px;
+                                                margin: 10px;
+                                            ">
+                                                🔗 Open in Google Drive (New Tab)
+                                            </a>
+                                            <a href="${viewUrl}" 
+                                            target="_blank" 
+                                            style="
+                                                display: block;
+                                                padding: 12px 24px;
+                                                background: #4CAF50;
+                                                color: white;
+                                                text-decoration: none;
+                                                border-radius: 5px;
+                                                margin: 10px;
+                                            ">
+                                                👁️ View Document (Alternative)
+                                            </a>
+                                            <a href="${directUrl}" 
+                                            target="_blank" 
+                                            style="
+                                                display: block;
+                                                padding: 12px 24px;
+                                                background: #FF9800;
+                                                color: white;
+                                                text-decoration: none;
+                                                border-radius: 5px;
+                                                margin: 10px;
+                                            ">
+                                                ⬇️ Download Document
+                                            </a>
+                                            <button onclick="location.reload()" 
+                                                    style="
+                                                        padding: 12px 24px;
+                                                        background: #555;
+                                                        color: white;
+                                                        border: none;
+                                                        border-radius: 5px;
+                                                        margin: 10px;
+                                                        cursor: pointer;
+                                                        width: 100%;
+                                                    ">
+                                                🔄 Try Again
+                                            </button>
+                                        </div>
+                                        <p style="font-size: 12px; color: #ccc; margin-top: 20px;">
+                                            <strong>Note:</strong> You may need to:<br>
+                                            1. Sign in with the appropriate Google account<br>
+                                            2. Request access from the document owner<br>
+                                            3. Check your internet connection
+                                        </p>
+                                    </div>
+                                `;
                             }
                         }
                     })
@@ -1935,154 +2097,82 @@ export const ResearchMain = () => {
                 }))
 
             }
-
-
             return ($({
-
                 tag: 'div',
-
                 style: {
-
                     display: 'flex',
-
                     justifyContent: 'center',
-
                     margin: '1vh auto',
-
                     width: '94%',
-
                     padding: '.5rem',
-
                     backgroundColor: 'rgba(0,0,0,0.3)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-
                 },
-
                 att: {
-
                     className: 'resFilist'
-
                 },
-
-
                 child: [
-
                     $({
-
                         tag: 'div',
-
                         att: {
-
                             className: 'fa-solid fa-file-pdf'
-
                         },
-
                         style: {
                             margin: 'auto',
-
                             fontSize: '3vw',
-
                             width: 'fit-content',
-
                             height: 'fit-content',
-
                             paddingLeft: '1vw',
-
                             paddingRight: '1vw',
-
                             color: '#555',
-
                             textShadow: '-.2vw .2vh .5vw black',
-
                         }
-
                     }),
-
                     resDetails()
-
                 ]
-
             }))
-
         }
-
         const label = $({
-
             tag: 'div',
-
             style: {
-
                 height: 'fit-content',
-
                 width: 'fit-content',
-
                 fontFamily: 'arial black,sans-serif',
-
                 color: '#bbb',
-
                 margin: '1vh auto auto',
-
                 fontSize: '1.2vw'
-
             },
-
             text: 'Accepted Documents'
-
         })
-
         const searchInput = (value) => {
-
-
-
             SearchMethod({
                 nodeList:researchBody.childNodes,
                 textArray:value.target.value.toUpperCase().split(' '),
                 display: 'flex',
             })
-
         }
-
         const search = ({tools, searchEvent}) => {
-
             return ($({
-
                 tag: 'div',
-
                 style: {
-
                     width: '100%',
-
                     height: 'fit-content',
-
                     display: 'flex',
-
                     position: 'relative',
-
                     justifyContent: 'center'
-
                 },
-
                 elementHandler: (el) => {
                     el.appendChild($({
-
                         tag: 'div',
-
                         style: {
-
                             height: '4vh',
-
                             width: 'fit-content',
-
                             margin: '1vh auto auto',
-
                             marginLeft: '2vw',
-
                             borderBottom: 'solid thin rgba(100,100,100,0.3)',
-
                             backgroundColor: 'rgba(0,0,0,0.2)',
-
                             padding: '.2rem',
 
                             borderRadius: '1vw',
@@ -4158,54 +4248,33 @@ export const ResearchMain = () => {
                         },
                         child: [
                             $({
-
                                 tag: 'div',
-
                                 style: {
-
                                     width: '95%',
-
                                     height: 'fit-content',
-
                                     margin: '.5vh auto',
-
                                     padding: '.3rem',
-
                                     display: 'flex',
-
                                     fontSize: '1vw',
-
                                     fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
                                     position: 'relative',
                                     cursor: '',
-
                                 },
-
                                 att: {
-
                                     className: 'endorsFile'
-
                                 },
-
                                 child: [
                                     dropDown(),
                                     open(),
                                     campus,
-
                                     eventType,
-
                                     dateEn
-
                                 ],
                                 elementHandler:(ev)=>{
-
                                     if(resStat*1!==0){
                                         ev.style.backgroundColor= '#222'
                                     }
                                 }
-
-
                             }),
                             $({
                                 tag: 'div',
@@ -4216,140 +4285,75 @@ export const ResearchMain = () => {
                                 elementHandler: (el) => {
                                     dropList = el
                                 },
-
                             })
                         ]
                     }))
-
                 }
-
-
                 return ($({
-
                     tag: 'div',
-
                     style: {
-
                         width: '98%',
-
                         margin: '1vh auto auto',
-
                         height: '92%',
-
                         backgroundColor: 'rgb(10,10,10,0.3)',
-
                         boxShadow: 'inset .3vw .3vw 2vh .1vh black',
-
                         overflowY: 'auto'
-
                     },
-
-
                     elementHandler: async (el) => {
                         endorseBody = el
-
                         const form = new FormData()
-
                         form.append('endorsementList', 'true')
-
                         await fetch('/endorsement', {
-
                             method: 'POST',
-
                             body: form
-
                         }).then(res => res.json())
-
                             .then(data => {
-
                                 data.forEach(val => {
                                     if(val.resStat*1===0){
                                         el.insertBefore(File({
-
                                             camp: val.campus,
-
                                             eventName: val.event,
-
                                             date: val.date.split(' ')[0],
-
                                             id: val.id,
                                             research: val.research,
                                             resStat:val.resStat
-
                                         }), el.childNodes[0])
                                     }else {
                                         el.appendChild(File({
-
                                             camp: val.campus,
-
                                             eventName: val.event,
-
                                             date: val.date.split(' ')[0],
-
                                             id: val.id,
                                             research: val.research,
                                             resStat:val.resStat
-
                                         }))
                                     }
-
-
-
-
                                 })
-
-
                             })
-
                     }
-
                 }))
-
             }
             const ResearchPanel = () => {
-
-
                 return ($({
-
                     tag: 'div',
-
                     style: {
-
                         width: '98%',
-
                         margin: '1vh auto auto',
-
                         height: '82%',
-
                         backgroundColor: 'rgb(10,10,10,0.3)',
-
                         overflowY: 'auto',
-
                         boxShadow: 'inset .3vw .3vw 2vh .1vh black',
-
                     },
-
                     elementHandler: async (el) => {
-
                         researchBody = el
-
                         const form = new FormData()
-
                         form.append('researchDocsNew', 'true')
-
                         await fetch('/uploadResearchFile', {
-
                             method: 'POST',
-
                             body: form
-
                         }).then(res => res.json())
-
                             .then(data => {
-
-
                                 data.forEach(val => {
-
                                     el.appendChild(ResearchDocs({
                                         category: val.category,
                                         center: val.center,
@@ -4548,7 +4552,6 @@ export const ResearchMain = () => {
             ]
         }))
     }
-
     const ScoreSummary=()=>{
         let Anchor,EventName
         // Add validation for Path()
@@ -4922,60 +4925,144 @@ export const ResearchMain = () => {
                                 ])
                                 request.Json()
                                 request.Send().then((data)=>{
-                                    let Titles=[]
-                                    let docSet
+                                    console.log('Received evaluator data for category/center:', data);
+                                    
+                                    let Titles = []
+                                    let docSet = []
+                                    let allDocs = [] // Collect all documents for this category/center
+                                    
+                                    // First, display each evaluator's scores
                                     data.forEach(val => {
-                                        console.log('Evaluator data:', val.evaluator?.fullname);
-                                        console.log('Docs count:', val.docs?.length);
-                                        const Order=val.docs.sort((a,b)=>{
-                                            if ( a.TotalScore > b.TotalScore ){
-                                                return -1;
-                                            }
-                                            if ( a.TotalScore < b.TotalScore ){
-                                                return 1;
-                                            }
-                                            return 0;
-                                        })
+                                        if (val.docs && val.docs.length > 0) {
+                                            console.log(`Evaluator ${val.evaluator?.fullname} has ${val.docs.length} documents`);
+                                            
+                                            // Sort documents by TotalScore descending
+                                            const Order = val.docs.sort((a,b) => {
+                                                const scoreA = parseFloat(a.TotalScore) || 0;
+                                                const scoreB = parseFloat(b.TotalScore) || 0;
+                                                return scoreB - scoreA; // Descending
+                                            })
 
-                                        let SortCrit=RankPerCriteria(Order,val.evaluator.fullname)
-                                        Titles.push(SortCrit)
-                                        docSet=Order.map(val => {
-                                            return{
-                                                title:val.file.title,
-                                                docId:val.file.id,
-                                                author:val.file.author,
-                                                campus:val.file.campus
+                                            // Rank per evaluator within this category/center
+                                            let SortCrit = RankPerCriteria(Order, val.evaluator.fullname)
+                                            Titles.push(SortCrit)
+                                            
+                                            // Collect unique documents for this category/center
+                                            Order.forEach(doc => {
+                                                if (doc.file && doc.file.id) {
+                                                    const existingDoc = allDocs.find(d => d.docId === doc.file.id);
+                                                    if (!existingDoc) {
+                                                        allDocs.push({
+                                                            docId: doc.file.id,
+                                                            title: doc.file.title,
+                                                            author: doc.file.author,
+                                                            campus: doc.file.campus,
+                                                            category: doc.file.category,
+                                                            center: doc.file.center
+                                                        })
+                                                    }
+                                                    
+                                                    // Add to docSet for this evaluator
+                                                    docSet.push({
+                                                        docId: doc.file.id,
+                                                        title: doc.file.title,
+                                                        author: doc.file.author,
+                                                        campus: doc.file.campus,
+                                                        totalScore: doc.TotalScore,
+                                                        evaluatorName: val.evaluator.fullname
+                                                    })
+                                                }
+                                            })
+                                            
+                                            // Display this evaluator's scores
+                                            el.appendChild(RankDocs({
+                                                evalName: val.evaluator.fullname,
+                                                docList: Order
+                                            }))
+                                        }
+                                    })
+
+                                    // Calculate ranking ONLY within this category/center
+                                    if (allDocs.length > 0) {
+                                        console.log(`Total unique documents in this category/center: ${allDocs.length}`);
+                                        
+                                        // Calculate average scores per document across all evaluators
+                                        const docAverages = allDocs.map(doc => {
+                                            // Get all scores for this document from all evaluators
+                                            const docScores = docSet.filter(d => d.docId === doc.docId);
+                                            const totalScore = docScores.reduce((sum, d) => sum + (parseFloat(d.totalScore) || 0), 0);
+                                            const averageScore = docScores.length > 0 ? totalScore / docScores.length : 0;
+                                            
+                                            return {
+                                                ...doc,
+                                                averageScore: averageScore,
+                                                totalEvaluators: docScores.length
                                             }
                                         })
-                                        el.appendChild(RankDocs({
-                                            evalName:val.evaluator.fullname,
-                                            docList:Order
+                                        
+                                        // Calculate ranking based on average score (descending)
+                                        const rankedByScore = docAverages
+                                            .sort((a, b) => b.averageScore - a.averageScore)
+                                            .map((doc, index) => ({
+                                                ...doc,
+                                                scoreRank: index + 1
+                                            }))
+                                        
+                                        // Prepare data for summary display
+                                        const FinalRank = rankedByScore.map(doc => ({
+                                            title: doc,
+                                            averageScore: doc.averageScore,
+                                            rankAverage: doc.scoreRank
                                         }))
-                                    })
-
-                                    const FinalRank=  SummaryDocs(Titles,docSet).sort((a,b)=>{
-                                        if ( a.rankAverage > b.rankAverage ){
-                                            return -1;
-                                        }
-                                        if ( a.rankAverage < b.rankAverage ){
-                                            return 1;
-                                        }
-                                        return 0;
-                                    })
-                                    const RankAve=FinalRanking(FinalRank.reverse())
-                                    const ScoreRank=ScoreRankAVe(FinalRank.sort((a,b)=>{
-                                        if ( a.averageScore > b.averageScore ){
-                                            return -1;
-                                        }
-                                        if ( a.averageScore < b.averageScore ){
-                                            return 1;
-                                        }
-                                        return 0;
-                                    }))
+                                        
+                                        const RankAve = FinalRanking(FinalRank);
+                                        const ScoreRank = ScoreRankAVe(FinalRank);
+                                        
+                                        getReport({
+                                            scoreRank: ScoreRank,
+                                            rankAve: RankAve,
+                                            RankPerCrit: Titles
+                                        })
+                                    } else {
+                                        // No documents found for this category/center
+                                        el.appendChild($({
+                                            tag: 'div',
+                                            style: {
+                                                padding: '20px',
+                                                backgroundColor: '#fff3cd',
+                                                color: '#856404',
+                                                borderRadius: '5px',
+                                                margin: '20px',
+                                                textAlign: 'center'
+                                            },
+                                            text: 'No documents found for this category/center. Please select a different category/center or check if documents have been scored.'
+                                        }))
+                                        
+                                        // Still create empty report
+                                        getReport({
+                                            scoreRank: [],
+                                            rankAve: [],
+                                            RankPerCrit: []
+                                        })
+                                    }
+                                }).catch(error => {
+                                    console.error('Error fetching ranking data:', error);
+                                    el.appendChild($({
+                                        tag: 'div',
+                                        style: {
+                                            padding: '20px',
+                                            backgroundColor: '#ffe6e6',
+                                            color: '#cc0000',
+                                            borderRadius: '5px',
+                                            margin: '20px'
+                                        },
+                                        text: `Error loading ranking data: ${error.message}`
+                                    }));
+                                    
                                     getReport({
-                                        scoreRank:ScoreRank,
-                                        rankAve:RankAve,
-                                        RankPerCrit:Titles
+                                        scoreRank: [],
+                                        rankAve: [],
+                                        RankPerCrit: []
                                     })
                                 })
                             },
@@ -5258,7 +5345,6 @@ export const ResearchMain = () => {
             ]
         }))
     }
-
     return ($({
         tag: 'div',
         style: {
@@ -5269,17 +5355,12 @@ export const ResearchMain = () => {
             justifyContent: 'center',
             position: 'relative'
         },
-
         elementHandler: getMainFrame,
-
         child: [
             Incoming(),
             Forwarded(),
             ScoreSummary()
         ]
-
-
     }))
-
 }
 

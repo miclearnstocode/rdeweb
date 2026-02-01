@@ -809,7 +809,7 @@ if (isset($_POST['updateReview'])) {
     $response->emailStatus = '';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $category = $_SESSION['category'];
+        $category = $_SESSION['category'] ?? $_SESSION['center'] ?? '';
         $response->userName = $_SESSION['userName'];
         $evalId = $_SESSION['userId'];
         $evalName = $_SESSION['userFulname'];
@@ -831,6 +831,8 @@ if (isset($_POST['updateReview'])) {
             researchfile.title, 
             researchfile.author, 
             researchfile.event, 
+            researchfile.category,
+            researchfile.center,
             endorsement.campus,
             account_detail.email,
             account_detail.fullName
@@ -2584,14 +2586,15 @@ if (isset($_POST['incomingEndorsement'])) {
 if (isset($_POST['researchDocsNew'])) {
     $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // UPDATED QUERY for Google Drive
+        // Query remains the same
         $query = "
             SELECT
                 researchfile.id,
                 researchfile.senderid,
                 researchfile.author,
                 researchfile.title,
-                researchfile.drive_view_url as file,
+                researchfile.file,                    -- Local file path
+                researchfile.drive_view_url,          -- Google Drive view URL
                 researchfile.drive_file_id,
                 researchfile.drive_download_url,
                 researchfile.drive_folder_id,
@@ -2620,7 +2623,18 @@ if (isset($_POST['researchDocsNew'])) {
             $data->deletestate = $val['deletestate'];
             $data->author = $val['author'];
             $data->title = $val['title'];
-            $data->file = $val['file']; // Google Drive URL
+            
+            // For backward compatibility with existing frontend
+            // Use Google Drive URL if available, otherwise local file
+            if (!empty($val['drive_view_url'])) {
+                $data->file = $val['drive_view_url'];  // Google Drive URL
+            } else {
+                $data->file = $val['file'];  // Local file path
+            }
+            
+            // Add separate fields for clarity
+            $data->local_file = $val['file'];
+            $data->drive_view_url = $val['drive_view_url'];
             $data->drive_file_id = $val['drive_file_id'];
             $data->drive_download_url = $val['drive_download_url'];
             $data->drive_folder_id = $val['drive_folder_id'];
