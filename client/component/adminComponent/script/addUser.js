@@ -310,7 +310,7 @@ const encodeUser=()=>{
 
                                 tag:'td',
 
-                                text:`CAPSU User's`,
+                                text:`CAPSU Center User's`,
 
                                 style:{
 
@@ -644,14 +644,6 @@ const encodeUser=()=>{
 
                                         }
 
-
-
-
-
-
-
-
-
                                     }
 
                                 },
@@ -659,13 +651,12 @@ const encodeUser=()=>{
                                 tag:'td',
 
                                 text:'Submit',
-
+                                style: {
+                                    borderRadius: '15px'
+                                },
                                 att:{
-
                                     className:'submitAddUser'
-
                                 }
-
                             })
 
                         ]
@@ -1615,9 +1606,10 @@ const encodeEvaluator=()=>{
                                 tag:'td',
 
                                 att:{
-
                                     className:'submitEval'
-
+                                },
+                                style: {
+                                    borderRadius: '15px' 
                                 },
 
                                 text:'Submit',
@@ -1903,31 +1895,19 @@ const rdeUser=()=>{
 
 
         return($({
-
             tag:'div',
-
             style:{
-
                 width:'86%',
-
                 paddingRight: '.5vw',
-
                 paddingLeft: '.5vw',
-
                 paddingTop:'.5vh',
-
                 paddingBottom:'.5vh',
-
                 fontFamily:'arial black,sans-serf',
-
                 margin:'.3vw auto auto',
-
                 fontSize:'1.5vw',
-
                 height:'5vh',
-
                 textAlign:'center',
-
+                borderRadius: '15px',
                 cursor:'pointer'
 
             },
@@ -2020,16 +2000,11 @@ const rdeUser=()=>{
 
         style:{
 
-            height:'48%',
-
-            width:'98%',
-
+            height:'50%',
+            width:'100%',
             margin:'auto',
-
             backgroundColor:'rgba(100,100,100,0.2)',
-
             border:'solid thin rgba(100,100,100,.5)'
-
         },
 
         child:[

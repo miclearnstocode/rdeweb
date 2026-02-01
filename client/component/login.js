@@ -267,7 +267,7 @@ const LoginPanel = (prop) => {
                         }),
                         $({
                             tag: 'option',
-                            text: 'CAPSU Users',
+                            text: 'CAPSU Center Users',
                             att: {
                                 value: 'CAPSUUSERS',
                                 className: 'bg-dark'
@@ -1314,7 +1314,7 @@ export const LoginPage = () => {
 
             case '/account/Login?':
 
-                val.innerHTML = "<span>Create an account?&nbsp&nbsp</span><i style='font-size:1vw;color: deepskyblue;font-family: Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif;font-weight: bold'>( for Capsu user's only )</i>"
+                val.innerHTML = "<span>Create an account?&nbsp&nbsp</span><i style='font-size:1vw;color: deepskyblue;font-family: Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif;font-weight: bold'>( for Capsu Center user's only )</i>"
 
                 break;
 

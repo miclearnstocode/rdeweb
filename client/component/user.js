@@ -10,7 +10,6 @@ import {Research} from "./userComponent/script/research.js";
 
 import {Error} from "../error.js";
 
-
 import {Header} from "./otherComponent/header.js";
 
 import {Settings} from "./userComponent/script/settings.js";
