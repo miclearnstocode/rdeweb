@@ -78,27 +78,66 @@ WHERE researchfile.endorsementid=?";
 }
 
 if(isset($_POST['requestFileEndorse'])){
-    $response=new stdClass();
-    $response->status=false;
-    $response->res='';
-    $response->message='';
+    $response = new stdClass();
+    $response->status = false;
+    $response->res = '';
+    $response->message = '';
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $docsId=$_POST['docId'];
-        $query=" SELECT endorsement.file,endorsement.event FROM endorsement WHERE endorsement.id=? ";
-        $statement=$con->prepare($query);
-        $statement->bind_param("s",$docsId);
+        $docsId = $_POST['docId'];
+        
+        // Updated query to include both legacy and new Google Drive fields
+        $query = "SELECT 
+                    endorsement.file,
+                    endorsement.event,
+                    endorsement.drive_file_id,
+                    endorsement.drive_download_url,
+                    endorsement.drive_view_url,
+                    endorsement.status
+                  FROM endorsement 
+                  WHERE endorsement.id = ?";
+        
+        $statement = $con->prepare($query);
+        $statement->bind_param("s", $docsId);
         $statement->execute();
-        $result=$statement->get_result();
-        while ($val=$result->fetch_assoc()){
-            $data=new stdClass();
-            $data->fileUrl=$val['file'];
-            $data->eventName=$val['event'];
-            $response->status=true;
-            $response->res=$data;
+        $result = $statement->get_result();
+        
+        if ($result->num_rows > 0) {
+            $val = $result->fetch_assoc();
+            $data = new stdClass();
+            $data->eventName = $val['event'];
+            
+            // Determine which file URL to use (Google Drive takes priority)
+            if (!empty($val['drive_download_url']) || !empty($val['drive_view_url'])) {
+                // Use Google Drive URLs
+                $data->fileUrl = !empty($val['drive_download_url']) 
+                    ? $val['drive_download_url'] 
+                    : $val['drive_view_url'];
+                $data->viewUrl = !empty($val['drive_view_url']) 
+                    ? $val['drive_view_url'] 
+                    : $val['drive_download_url'];
+                $data->driveFileId = $val['drive_file_id'];
+                $data->isGoogleDrive = true;
+            } else {
+                // Fallback to legacy file URL
+                $data->fileUrl = $val['file'];
+                $data->viewUrl = $val['file']; // Same URL for view/download in legacy
+                $data->isGoogleDrive = false;
+            }
+            
+            $data->status = $val['status'];
+            
+            $response->status = true;
+            $response->res = $data;
+        } else {
+            $response->message = "Document not found";
         }
-    }else{
-        $response->message=$con->error;
+        
+        $statement->close();
+    } else {
+        $response->message = $con->error;
     }
+    
     echo json_encode($response);
 }
 

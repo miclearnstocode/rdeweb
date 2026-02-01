@@ -297,3 +297,6 @@ rde_system/ (Root)
     │   └── tech_paper_1.pdf
     └── SSRDC/
         └── social_paper_1.pdf
+
+Feb 1, 2026 
+ a backward compatibility with the frontend. add the google drive url

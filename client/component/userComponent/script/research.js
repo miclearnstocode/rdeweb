@@ -1807,18 +1807,64 @@ const Submitted = () => {
 
 
 
-            const ViewEn=()=>{
+            const ViewEn = () => {
+                let viewerMain
+                
+                const getViewer = (el) => {
+                    viewerMain = el
+                }
 
-                const endorsementFile = (file) => {
-                    const isGoogleDriveUrl = file.includes('drive.google.com')
+                const closeView = $({
+                    tag: 'div',
+                    style: {
+                        width: '80%',
+                        margin: 'auto',
+                        marginTop: '1vh'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            text: ' Close',
+                            att: {
+                                className: 'fa-solid fa-right-from-bracket',
+                            },
+                            style: {
+                                fontSize: '2vw',
+                                cursor: 'pointer',
+                                color: 'deepskyblue'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    viewerMain.remove()
+                                }
+                            }
+                        })
+                    ],
+                })
+                
+                // Create a function to render the file viewer based on file type
+                const renderFileViewer = (fileUrl) => {
+                    // Check if it's a Google Drive URL
+                    const isGoogleDrive = isGoogleDriveUrl(fileUrl)
                     
-                    let fileViewer
-                    if (isGoogleDriveUrl) {
-                        fileViewer = $({
+                    if (isGoogleDrive) {
+                        // Handle Google Drive URL
+                        const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
+                        let embedUrl = fileUrl
+                        
+                        // If not already an embed URL, convert it
+                        if (fileIdMatch && fileIdMatch[1] && !fileUrl.includes('/preview')) {
+                            const fileId = fileIdMatch[1]
+                            embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
+                        }
+                        
+                        // Create iframe for Google Drive
+                        return $({
                             tag: 'iframe',
                             att: {
-                                src: '/' + file,
-                                type: 'application/pdf'
+                                src: embedUrl,
+                                title: 'Google Drive Document Viewer'
                             },
                             style: {
                                 width: '100%',
@@ -1827,11 +1873,15 @@ const Submitted = () => {
                             }
                         })
                     } else {
-                        fileViewer = $({
+                        // Handle local file (prepend '/' if needed)
+                        const localFileUrl = fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl
+                        
+                        return $({
                             tag: 'object',
                             att: {
-                                data: '/' + file,
-                                type: 'application/pdf'
+                                data: localFileUrl,
+                                type: 'application/pdf',
+                                className: 'frameViewer'
                             },
                             style: {
                                 width: '100%',
@@ -1839,16 +1889,6 @@ const Submitted = () => {
                             }
                         })
                     }
-                    
-                    return ($({
-                        tag: 'div',
-                        style: {
-                            margin: '1vh auto',
-                            width: '80%',
-                            height: '90%',
-                        },
-                        child: [fileViewer]
-                    }))
                 }
                 let endorseBody,resb,resState=false
 
@@ -1972,43 +2012,42 @@ const Submitted = () => {
                                                 })
                                         }
                                     },
-                                    child:[
+                                    child: [
                                         $({
-                                            tag:'div',
-                                            text:'View Correction',
-                                            style:{
-                                                fontFamily:'arial black,sans-serif',
-                                                fontSize:'1.3vw',
-                                                width:'fit-content',
-                                                height:'fit-content',
-                                                margin:'auto'
+                                            tag: 'div',
+                                            text: 'View Correction',
+                                            style: {
+                                                fontFamily: 'arial black,sans-serif',
+                                                fontSize: '1.3vw',
+                                                width: 'fit-content',
+                                                height: 'fit-content',
+                                                margin: 'auto'
                                             }
                                         }),
-
                                     ]
                                 }),
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        width:'40%',
-                                        height:'90%',
-                                        margin:'auto',
-                                        paddingRight:'1vw',
-                                        paddingLeft:'1vw',
-                                        display:'flex',
-                                        justifyContent:'center',
-                                        cursor:'pointer',
-                                        borderRadius:'.5vw'
+                                    tag: 'div',
+                                    style: {
+                                        width: '40%',
+                                        height: '90%',
+                                        margin: 'auto',
+                                        paddingRight: '1vw',
+                                        paddingLeft: '1vw',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        borderRadius: '.5vw'
                                     },
-                                    att:{
-                                        className:'endorsCnt'
+                                    att: {
+                                        className: 'endorsCnt'
                                     },
-                                    event:{
-                                        type:'click',
-                                        method:async ()=>{
-                                            if(confirm("Are you sure you want to delete this file?")){
-                                                const filrUrl=[];
-                                                researchPaper.forEach(val=>{
+                                    event: {
+                                        type: 'click',
+                                        method: async () => {
+                                            if (confirm("Are you sure you want to delete this file?")) {
+                                                const filrUrl = [];
+                                                researchPaper.forEach(val => {
                                                     filrUrl.push(val.researchFile)
                                                 })
                                                 let loading = Waiting()
@@ -2016,14 +2055,14 @@ const Submitted = () => {
                                                 const remove = () => {
                                                     loading.remove()
                                                 }
-                                                const form= new FormData()
-                                                form.append('docId',docId)
-                                                form.append('fileUrl',endorsement)
-                                                form.append('researchFileUrl',JSON.stringify(filrUrl))
-                                                form.append('deleteEndorsement','true')
-                                                await fetch('/getresearch',{
-                                                    method:'POST',
-                                                    body:form
+                                                const form = new FormData()
+                                                form.append('docId', docId)
+                                                form.append('fileUrl', endorsement)
+                                                form.append('researchFileUrl', JSON.stringify(filrUrl))
+                                                form.append('deleteEndorsement', 'true')
+                                                await fetch('/getresearch', {
+                                                    method: 'POST',
+                                                    body: form
                                                 }).then(res => {
                                                     if (res.ok) {
                                                         remove()
@@ -2044,45 +2083,44 @@ const Submitted = () => {
                                             }
                                         }
                                     },
-                                    child:[
+                                    child: [
                                         $({
-                                            tag:'div',
-                                            text:'Delete',
-                                            style:{
-                                                fontFamily:'arial black,sans-serif',
-                                                fontSize:'1.3vw',
-                                                width:'fit-content',
-                                                height:'fit-content',
-                                                margin:'auto'
+                                            tag: 'div',
+                                            text: 'Delete',
+                                            style: {
+                                                fontFamily: 'arial black,sans-serif',
+                                                fontSize: '1.3vw',
+                                                width: 'fit-content',
+                                                height: 'fit-content',
+                                                margin: 'auto'
                                             }
                                         }),
-
                                     ]
                                 }),
                             ]
                         }),
                         $({
-                            tag:'div',
-                            att:{
-                                className:'fa-solid fa-right-from-bracket'
+                            tag: 'div',
+                            att: {
+                                className: 'fa-solid fa-right-from-bracket'
                             },
-                            style:{
-                                fontSize:'2vw',
-                                width:'fit-content',
-                                margin:'auto'
+                            style: {
+                                fontSize: '2vw',
+                                width: 'fit-content',
+                                margin: 'auto'
                             },
-                            event:{
-                                type:'click',
-                                method:()=>{
-                                    endo.remove()
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    viewerMain.remove()
                                 }
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'span',
-                                    text:'Exit',
-                                    style:{
-                                        fontFamily:'arial black,sans-serif'
+                                    tag: 'span',
+                                    text: 'Exit',
+                                    style: {
+                                        fontFamily: 'arial black,sans-serif'
                                     }
                                 })
                             ]
@@ -2090,20 +2128,35 @@ const Submitted = () => {
                     ]
                 })
 
-                return($({
-                    tag:'div',
-                    style:{
-                        width:'100%',
-                        height:'100%',
-                        backgroundImage:'radial-gradient(rgba(100,100,100,0.5),black)',
-                        position:'absolute',
-                        top:'0',
-                        left:'0',
+                return ($({
+                    tag: 'div',
+                    style: {
+                        width: '100%',
+                        height: '100%',
+                        backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
+                        position: 'absolute',
+                        top: '0',
+                        left: '0',
+                        display: 'flex',
+                        flexDirection: 'column'
                     },
-                    elementHandler:getEnd,
-                    child:[
-                        endorsementFile(endorsement),
-                        Contrl,
+                    elementHandler: getViewer,
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                height: '92%',
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'center'
+                            },
+                            elementHandler: (el) => {
+                                // Directly use the endorsement URL passed to the function
+                                // The URL should already be correct (either Google Drive or local)
+                                el.appendChild(renderFileViewer(endorsement))
+                            }
+                        }),
+                        Contrl
                     ]
                 }))
             }
