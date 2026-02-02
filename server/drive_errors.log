@@ -690,3 +690,4 @@ Stack trace:
 [28-Jan-2026 16:30:40 Asia/Manila] Number of columns in query: 23
 [28-Jan-2026 16:30:40 Asia/Manila] Number of variables to bind: 23
 [29-Jan-2026 12:02:31 Asia/Manila] PHP Warning:  Undefined array key "category" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 812
+[02-Feb-2026 08:01:08 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1045

@@ -118,29 +118,46 @@ export const ResearchMain = () => {
                     let frm, viewerPanel
                     // Parse the file data - it could be JSON string or direct URL
                     let fileData = file;
-                    let driveViewUrl = file;
+                    let driveViewUrl = '';
                     
-                    // Try to parse as JSON first
-                    try {
-                        if (typeof file === 'string' && file.includes('{')) {
-                            const parsed = JSON.parse(file);
-                            if (parsed.drive_view_url) {
-                                fileData = parsed;
-                                driveViewUrl = parsed.drive_view_url;
-                            }
+                    // Handle the new object format
+                    if (typeof file === 'object' && file !== null) {
+                        // Get the view URL from the object
+                        if (file.viewUrl) {
+                            driveViewUrl = file.viewUrl;
+                        } else if (file.fileUrl) {
+                            driveViewUrl = file.fileUrl;
+                        } else if (file.legacyFile) {
+                            driveViewUrl = file.legacyFile;
                         }
-                    } catch (e) {
-                        console.log("Could not parse file as JSON, using as direct URL:", e);
-                    }
-                    
-                    // If it's already an object with drive_view_url
-                    if (typeof file === 'object' && file.drive_view_url) {
+                        
+                        // Store the full object for reference
                         fileData = file;
-                        driveViewUrl = file.drive_view_url;
+                    } else if (typeof file === 'string') {
+                        // Old string format - try to parse as JSON or use as is
+                        try {
+                            if (file.includes('{')) {
+                                const parsed = JSON.parse(file);
+                                if (parsed.viewUrl || parsed.fileUrl || parsed.legacyFile) {
+                                    fileData = parsed;
+                                    driveViewUrl = parsed.viewUrl || parsed.fileUrl || parsed.legacyFile || file;
+                                } else {
+                                    driveViewUrl = file;
+                                }
+                            } else {
+                                driveViewUrl = file;
+                            }
+                        } catch (e) {
+                            console.log("Could not parse file as JSON, using as direct URL:", e);
+                            driveViewUrl = file;
+                        }
                     }
                     
                     // Clean up the URL (remove double slashes from your example)
-                    driveViewUrl = driveViewUrl.replace(/\/\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com');
+                    if (typeof driveViewUrl === 'string') {
+                        driveViewUrl = driveViewUrl.replace(/\/\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com');
+                    }
+                    
 
                     const object = ({dataURL, title}) => {
                         let object
@@ -771,7 +788,7 @@ export const ResearchMain = () => {
                                                                     }
                                                                     const form = new FormData()
                                                                     form.append('docId', docId)
-                                                                    form.append('fileUrl', drive_view_url)
+                                                                    form.append('fileUrl', drive_view_url || file)
                                                                     form.append('reasonEnd', inputres)
                                                                     form.append('rejectIndorse', 'true')
                                                                     form.append('fileType', `EndorsementLetter:${eventType}`)
@@ -2260,21 +2277,13 @@ export const ResearchMain = () => {
             }))
 
         }
-
-
         let printerPanel
-
-
         const getPrinterPanel = (el) => {
-
             printerPanel = el
-
         }
 
         const tools = () => {
-
             let toolBox
-
             const printPane = () => {
                 let filter = null
                 let category = null
@@ -2829,43 +2838,24 @@ export const ResearchMain = () => {
                 }))
 
             }
-
             return ($({
-
                 tag: 'div',
-
                 style: {
-
                     position: 'absolute',
-
                     right: '2vw',
-
                     top: '0',
-
                     bottom: '0',
-
                     margin: 'auto',
-
                     height: 'fit-content',
-
                     width: 'fit-content',
-
                     backgroundColor: '#333',
-
                     padding: '.3rem',
-
                     borderRadius: '.5vw'
-
                 },
-
                 elementHandler: (el) => {
-
                     toolBox = el
-
                 },
-
                 child: [
-
                     $({
                         tag: 'div',
                         style: {
@@ -2885,10 +2875,8 @@ export const ResearchMain = () => {
                 }
             }))
         }
-
         const Content = () => {
             const Report=()=>{
-
                 const ReportPanel=()=>{
                     let panBo
                     let bodCon
@@ -2904,7 +2892,6 @@ export const ResearchMain = () => {
                                 height:'fit-content',
                                 marginTop:'.5vh',
                                 marginBottom:'.5vh',
-
                             },
                             child:[
                                 $({
@@ -2931,7 +2918,6 @@ export const ResearchMain = () => {
                                                 color:'deepskyblue'
                                             },
                                             elementHandler:(el)=>{
-
                                             },
                                             event:{
                                                 type:'click',
@@ -3659,55 +3645,285 @@ export const ResearchMain = () => {
                                 }
                             })
 
-                            // Check if it's a Google Drive URL
-                            const isGoogleDriveUrl = src && (src.includes('drive.google.com') || (typeof src === 'object' && src.drive_view_url));
+                            // Check if it's a Google Drive URL - FIXED: use src instead of file
+                            const isGoogleDriveUrl = src && (src.includes('drive.google.com') || src.includes('/d/') || (typeof src === 'object' && src.drive_view_url));
                             
                             let fileViewer;
                             
                             if (isGoogleDriveUrl) {
-                                let embedUrl = src;
-                                
-                                // Handle both string URL and object format
-                                if (typeof src === 'object' && src.drive_view_url) {
-                                    embedUrl = src.drive_view_url;
-                                } else if (typeof src === 'string' && src.includes('{')) {
-                                    try {
-                                        const parsed = JSON.parse(src);
-                                        if (parsed.drive_view_url) {
-                                            embedUrl = parsed.drive_view_url;
-                                        }
-                                    } catch (e) {
-                                        console.log("JSON parse error:", e);
-                                    }
-                                }
-                                
-                                // Ensure it's an embed URL
-                                if (embedUrl.includes('drive.google.com') && !embedUrl.includes('/preview')) {
-                                    const fileIdMatch = embedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                                    if (fileIdMatch && fileIdMatch[1]) {
-                                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
-                                    }
-                                }
-                                
-                                // Clean URL
-                                embedUrl = embedUrl.replace(/\/\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com');
-                                
+                                // Create a container for the viewer with loading indicator
                                 fileViewer = $({
-                                    tag: 'iframe',
-                                    att: {
-                                        src: embedUrl,
-                                        type: 'application/pdf',
-                                        sandbox: 'allow-same-origin allow-scripts allow-popups allow-forms',
-                                        allow: 'autoplay'
-                                    },
+                                    tag: 'div',
                                     style: {
                                         width: '100%',
                                         height: '100%',
-                                        border: 'none'
+                                        margin: 'auto',
+                                        position: 'relative',
+                                        backgroundColor: '#f5f5f5'
+                                    },
+                                    elementHandler: (el) => {
+                                        // Extract the actual file URL from the source
+                                        let fileUrl = src;
+                                        
+                                        // Handle both string URL and object format
+                                        if (typeof src === 'object' && src.drive_view_url) {
+                                            fileUrl = src.drive_view_url;
+                                        } else if (typeof src === 'string' && src.includes('{')) {
+                                            try {
+                                                const parsed = JSON.parse(src);
+                                                if (parsed.drive_view_url) {
+                                                    fileUrl = parsed.drive_view_url;
+                                                }
+                                            } catch (e) {
+                                                console.log("JSON parse error:", e);
+                                            }
+                                        }
+                                        
+                                        // Create the embed URL properly - handle multiple URL formats
+                                        let fileId = null;
+                                        let embedUrl = fileUrl;
+                                        
+                                        console.log('Google Drive URL:', fileUrl);
+                                        
+                                        // Try different patterns to extract file ID
+                                        const patterns = [
+                                            /\/d\/([a-zA-Z0-9_-]+)/,                     // /d/FILE_ID/
+                                            /id=([a-zA-Z0-9_-]+)/,                       // id=FILE_ID
+                                            /open\?id=([a-zA-Z0-9_-]+)/,                 // open?id=FILE_ID
+                                            /\/file\/d\/([a-zA-Z0-9_-]+)/,               // /file/d/FILE_ID/
+                                            /([a-zA-Z0-9_-]{25,})/                       // Any long ID (Google Drive IDs are usually long)
+                                        ];
+                                        
+                                        for (let pattern of patterns) {
+                                            const match = fileUrl.match(pattern);
+                                            if (match && match[1]) {
+                                                fileId = match[1];
+                                                console.log('File ID found:', fileId);
+                                                break;
+                                            }
+                                        }
+                                        
+                                        // If no fileId found in patterns, try to extract from URL path
+                                        if (!fileId && fileUrl.includes('drive.google.com')) {
+                                            const urlParts = fileUrl.split('/');
+                                            for (let i = 0; i < urlParts.length; i++) {
+                                                if (urlParts[i] === 'd' && urlParts[i + 1]) {
+                                                    fileId = urlParts[i + 1];
+                                                    console.log('File ID from path:', fileId);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        
+                                        if (fileId) {
+                                            // Clean the fileId (remove query parameters if any)
+                                            fileId = fileId.split('?')[0].split('&')[0];
+                                            embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
+                                            
+                                            console.log('Final Embed URL:', embedUrl);
+                                            
+                                            // Add loading indicator
+                                            const loadingIndicator = document.createElement('div');
+                                            loadingIndicator.innerHTML = `
+                                                <div style="
+                                                    position: absolute;
+                                                    top: 50%;
+                                                    left: 50%;
+                                                    transform: translate(-50%, -50%);
+                                                    text-align: center;
+                                                    color: #666;
+                                                    font-family: Arial, sans-serif;
+                                                ">
+                                                    <div style="
+                                                        font-size: 24px;
+                                                        margin-bottom: 10px;
+                                                        animation: spin 1s linear infinite;
+                                                    ">⏳</div>
+                                                    <div>Loading Google Drive document...</div>
+                                                    <div style="font-size: 12px; margin-top: 10px; color: #999;">
+                                                        If this takes too long, the document may require permission
+                                                    </div>
+                                                </div>
+                                            `;
+                                            el.appendChild(loadingIndicator);
+                                            
+                                            // Add style for spinner animation
+                                            const style = document.createElement('style');
+                                            style.textContent = `
+                                                @keyframes spin {
+                                                    0% { transform: rotate(0deg); }
+                                                    100% { transform: rotate(360deg); }
+                                                }
+                                            `;
+                                            document.head.appendChild(style);
+                                            
+                                            // Create iframe with proper attributes
+                                            const iframe = document.createElement('iframe');
+                                            iframe.src = embedUrl;
+                                            iframe.style.width = '100%';
+                                            iframe.style.height = '100%';
+                                            iframe.style.border = 'none';
+                                            iframe.style.position = 'absolute';
+                                            iframe.style.top = '0';
+                                            iframe.style.left = '0';
+                                            iframe.allow = 'autoplay; fullscreen';
+                                            iframe.allowFullscreen = true;
+                                            iframe.referrerPolicy = 'no-referrer';
+                                            iframe.title = 'Google Drive Document Viewer';
+                                            
+                                            // Handle successful load
+                                            iframe.onload = () => {
+                                                console.log('Google Drive iframe loaded successfully');
+                                                // Remove loading indicator
+                                                if (loadingIndicator.parentNode === el) {
+                                                    el.removeChild(loadingIndicator);
+                                                }
+                                            };
+                                            
+                                            // Handle load error
+                                            iframe.onerror = () => {
+                                                console.log('Google Drive iframe failed to load');
+                                                // Remove loading indicator
+                                                if (loadingIndicator.parentNode === el) {
+                                                    el.removeChild(loadingIndicator);
+                                                }
+                                                // Show alternative options
+                                                showAlternativeOptions(el, fileUrl, fileId);
+                                            };
+                                            
+                                            // Add timeout in case iframe hangs
+                                            setTimeout(() => {
+                                                if (loadingIndicator.parentNode === el) {
+                                                    console.log('Google Drive iframe loading timeout');
+                                                    el.removeChild(loadingIndicator);
+                                                    // Show alternative options
+                                                    showAlternativeOptions(el, fileUrl, fileId);
+                                                }
+                                            }, 10000); // 10 second timeout
+                                            
+                                            el.appendChild(iframe);
+                                            
+                                        } else {
+                                            // Invalid Google Drive URL format
+                                            console.log('Invalid Google Drive URL format:', fileUrl);
+                                            el.innerHTML = `
+                                                <div style="
+                                                    color: #666; 
+                                                    text-align: center;
+                                                    padding: 40px;
+                                                    font-family: Arial, sans-serif;
+                                                ">
+                                                    <h3>Unable to load document</h3>
+                                                    <p>Invalid Google Drive URL format.</p>
+                                                    <div style="margin: 20px 0;">
+                                                        <a href="${fileUrl}" 
+                                                        target="_blank" 
+                                                        style="
+                                                            display: inline-block;
+                                                            padding: 10px 20px;
+                                                            background: deepskyblue;
+                                                            color: white;
+                                                            text-decoration: none;
+                                                            border-radius: 5px;
+                                                            margin: 5px;
+                                                        ">
+                                                            Open in Google Drive
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }
+                                        
+                                        // Function to show alternative options
+                                        function showAlternativeOptions(containerElement, originalUrl, fileId) {
+                                            const directUrl = `https://drive.google.com/uc?id=${fileId}&export=download`;
+                                            const viewUrl = `https://drive.google.com/file/d/${fileId}/view`;
+                                            
+                                            containerElement.innerHTML = `
+                                                <div style="
+                                                    color: white; 
+                                                    font-family: Arial, sans-serif; 
+                                                    padding: 40px;
+                                                    text-align: center;
+                                                    background: rgba(0,0,0,0.8);
+                                                    border-radius: 10px;
+                                                    position: absolute;
+                                                    top: 50%;
+                                                    left: 50%;
+                                                    transform: translate(-50%, -50%);
+                                                    width: 80%;
+                                                    max-width: 500px;
+                                                ">
+                                                    <h3>Document Access Required</h3>
+                                                    <p>This Google Drive document may require permission to view.</p>
+                                                    <div style="margin: 30px 0;">
+                                                        <a href="${originalUrl}" 
+                                                        target="_blank" 
+                                                        style="
+                                                            display: block;
+                                                            padding: 12px 24px;
+                                                            background: deepskyblue;
+                                                            color: white;
+                                                            text-decoration: none;
+                                                            border-radius: 5px;
+                                                            margin: 10px;
+                                                        ">
+                                                            🔗 Open in Google Drive (New Tab)
+                                                        </a>
+                                                        <a href="${viewUrl}" 
+                                                        target="_blank" 
+                                                        style="
+                                                            display: block;
+                                                            padding: 12px 24px;
+                                                            background: #4CAF50;
+                                                            color: white;
+                                                            text-decoration: none;
+                                                            border-radius: 5px;
+                                                            margin: 10px;
+                                                        ">
+                                                            👁️ View Document (Alternative)
+                                                        </a>
+                                                        <a href="${directUrl}" 
+                                                        target="_blank" 
+                                                        style="
+                                                            display: block;
+                                                            padding: 12px 24px;
+                                                            background: #FF9800;
+                                                            color: white;
+                                                            text-decoration: none;
+                                                            border-radius: 5px;
+                                                            margin: 10px;
+                                                        ">
+                                                            ⬇️ Download Document
+                                                        </a>
+                                                        <button onclick="location.reload()" 
+                                                                style="
+                                                                    padding: 12px 24px;
+                                                                    background: #555;
+                                                                    color: white;
+                                                                    border: none;
+                                                                    border-radius: 5px;
+                                                                    margin: 10px;
+                                                                    cursor: pointer;
+                                                                    width: 100%;
+                                                                ">
+                                                            🔄 Try Again
+                                                        </button>
+                                                    </div>
+                                                    <p style="font-size: 12px; color: #ccc; margin-top: 20px;">
+                                                        <strong>Note:</strong> You may need to:<br>
+                                                        1. Sign in with the appropriate Google account<br>
+                                                        2. Request access from the document owner<br>
+                                                        3. Check your internet connection
+                                                    </p>
+                                                </div>
+                                            `;
+                                        }
                                     }
                                 });
+                                
                             } else {
-                                // Local file fallback (for old files)
+                                // For local PDF files
                                 fileViewer = $({
                                     tag: 'object',
                                     style: {
@@ -3735,134 +3951,69 @@ export const ResearchMain = () => {
                                 ]
                             }))
                         }
-
-
                         const SaveResearch = () => {
-
                             return ($({
-
                                 tag: 'div',
-
                                 style: {
-
                                     width: 'fit-content',
-
                                     height: 'fit-content',
-
                                     paddingRight: '2vw',
-
                                     paddingLeft: '2vw',
-
                                     margin: 'auto',
-
                                     paddingTop: '1vh',
-
                                     paddingBottom: '1vh',
-
                                     borderRadius: '1vw',
-
                                     fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
                                     fontWeight: 'bolder',
-
                                     fontSize: '1.2vw',
-
                                     cursor: 'pointer'
-
                                 },
-
                                 att: {
-
                                     className: 'saveBotEn'
-
                                 },
-
                                 text: 'Save all documents ',
-
                                 event: {
-
                                     type: 'click',
-
                                     method: () => {
-
                                         (async function (endorsementId) {
-
                                             let loading = Waiting()
-
                                             document.body.appendChild(loading)
-
                                             const remove = () => {
-
                                                 loading.remove()
-
                                             }
-
                                             const form = new FormData()
-
                                             form.append('saveResearchPer', 'true')
-
                                             form.append('endorseId', endorsementId)
-
                                             form.append('campus', camp)
-
                                             form.append('eventType', eventName)
-
                                             await fetch('/uploadResearchFile', {
-
                                                 method: 'POST',
-
                                                 body: form
-
                                             }).then(res => {
-
                                                 if (res.ok) {
-
                                                     remove()
-
                                                     return res.json()
-
                                                 }
-
                                             })
-
                                                 .then(dat => {
-
                                                     if (dat && dat.status) {
-
                                                         document.body.appendChild(ConfirmationAlert("Success..!", () => {
-
                                                             window.location.reload()
-
                                                         }))
-
                                                     } else if (dat) {
-
                                                         alert(dat.message)
-
                                                     }
-
                                                 })
-
                                                 .catch(err => {
-
                                                     remove()
-
                                                     console.error('Error saving research documents:', err)
-
                                                     alert('Error saving documents. Please try again. Check console for details.')
-
                                                 })
-
                                         })(id)
-
                                     }
-
                                 }
-
                             }))
-
                         }
-
                         const Return = () => {
 
                             return ($({

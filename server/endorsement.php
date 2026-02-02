@@ -41,39 +41,163 @@ if(isset($_POST['researchFileAdmin'])){
 }
 
 if(isset($_POST['endorsementList'])){
-    $response= new stdClass();
-    $response->list=[];
+    $response = new stdClass();
+    $response->list = [];
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query="SELECT endorsement.id, endorsement.event,endorsement.campus,endorsement.date FROM endorsement WHERE endorsement.status='accepted'";
-        $enStatement=$con->prepare($query);
+        // Get endorsement list with proper Google Drive embed URLs
+        $query = "SELECT 
+                    endorsement.id, 
+                    endorsement.event,
+                    endorsement.campus,
+                    endorsement.date,
+                    endorsement.file as legacy_file,
+                    endorsement.drive_file_id,
+                    endorsement.drive_download_url,
+                    endorsement.drive_view_url,
+                    endorsement.status
+                  FROM endorsement 
+                  WHERE endorsement.status='accepted' 
+                  ORDER BY endorsement.date DESC";
+        
+        $enStatement = $con->prepare($query);
         $enStatement->execute();
-        $result=$enStatement->get_result();
+        $result = $enStatement->get_result();
 
-        while ($val= $result->fetch_assoc()){
-            $endorsement=new stdClass();
-            $endorsement->id=$val['id'];
-            $endorsement->event=$val['event'];
-            $endorsement->campus=$val['campus'];
-            $endorsement->date=$val['date'];
-            $endorsement->resStat=false;
-            $endorsement->research=[];
-            $requery="SELECT researchfile.id,researchfile.author,researchfile.title,researchfile.category, COUNT(researchallfile.docid) as resStat FROM researchfile 
-RIGHT JOIN endorsement ON endorsement.id=researchfile.endorsementid 
-LEFT JOIN researchallfile ON researchfile.id=researchallfile.docid
-WHERE researchfile.endorsementid=?";
-            $resState=$con->prepare($requery);
-            $resState->bind_param("s",$val['id']);
-            $resState->execute();
-            $res=$resState->get_result();
-            while ($v=$res->fetch_assoc()){
-                $endorsement->research[]=$v;
-                if($v['resStat']!==0){
-                    $endorsement->resStat=true;
+        while ($val = $result->fetch_assoc()) {
+            $endorsement = new stdClass();
+            $endorsement->id = $val['id'];
+            $endorsement->event = $val['event'];
+            $endorsement->campus = $val['campus'];
+            $endorsement->date = $val['date'];
+            $endorsement->status = $val['status'];
+            $endorsement->resStat = false;
+            $endorsement->research = [];
+            
+            // Generate proper Google Drive embed URL
+            $fileUrl = '';
+            $viewUrl = '';
+            $isGoogleDrive = false;
+            
+            if (!empty($val['drive_file_id'])) {
+                // Google Drive file - create embed URL
+                $fileUrl = "https://drive.google.com/file/d/" . $val['drive_file_id'] . "/preview";
+                $viewUrl = "https://drive.google.com/file/d/" . $val['drive_file_id'] . "/view";
+                $isGoogleDrive = true;
+            } elseif (!empty($val['drive_view_url'])) {
+                // Use existing view URL if it's already an embed URL
+                $fileUrl = $val['drive_view_url'];
+                $viewUrl = $val['drive_view_url'];
+                $isGoogleDrive = true;
+                
+                // Convert share URL to embed URL if needed
+                if (strpos($fileUrl, '/file/d/') !== false && strpos($fileUrl, '/preview') === false) {
+                    $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
+                    if (preg_match($pattern, $fileUrl, $matches)) {
+                        $fileUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
+                        $viewUrl = "https://drive.google.com/file/d/" . $matches[1] . "/view";
+                    }
+                }
+            } elseif (!empty($val['drive_download_url'])) {
+                // Convert download URL to embed URL
+                $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
+                if (preg_match($pattern, $val['drive_download_url'], $matches)) {
+                    $fileUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
+                    $viewUrl = "https://drive.google.com/file/d/" . $matches[1] . "/view";
+                    $isGoogleDrive = true;
                 }
             }
-            $response->list[]=$endorsement;
+            
+            // Legacy file fallback
+            if (empty($fileUrl) && !empty($val['legacy_file'])) {
+                $fileUrl = $val['legacy_file'];
+                $viewUrl = $val['legacy_file'];
+                $isGoogleDrive = false;
+            }
+            
+            $endorsement->fileUrl = $fileUrl;
+            $endorsement->viewUrl = $viewUrl;
+            $endorsement->isGoogleDrive = $isGoogleDrive;
+            $endorsement->driveFileId = !empty($val['drive_file_id']) ? $val['drive_file_id'] : null;
+            
+            // Get research files
+            $requery = "SELECT 
+                        researchfile.id,
+                        researchfile.author,
+                        researchfile.title,
+                        researchfile.category,
+                        researchfile.coauthor,
+                        researchfile.file as legacy_research_file,
+                        researchfile.drive_file_id,
+                        researchfile.drive_view_url,
+                        researchfile.drive_download_url,
+                        COUNT(researchallfile.docid) as resStat 
+                       FROM researchfile 
+                       RIGHT JOIN endorsement ON endorsement.id = researchfile.endorsementid 
+                       LEFT JOIN researchallfile ON researchfile.id = researchallfile.docid
+                       WHERE researchfile.endorsementid = ?
+                       GROUP BY researchfile.id";
+            
+            $resState = $con->prepare($requery);
+            $resState->bind_param("s", $val['id']);
+            $resState->execute();
+            $res = $resState->get_result();
+            
+            while ($v = $res->fetch_assoc()) {
+                $researchItem = new stdClass();
+                $researchItem->id = $v['id'];
+                $researchItem->author = $v['author'];
+                $researchItem->title = $v['title'];
+                $researchItem->category = $v['category'];
+                $researchItem->coauthor = $v['coauthor'];
+                $researchItem->resStat = $v['resStat'];
+                
+                // Generate research file URL
+                $researchFileUrl = '';
+                $researchIsGoogleDrive = false;
+                
+                if (!empty($v['drive_file_id'])) {
+                    $researchFileUrl = "https://drive.google.com/file/d/" . $v['drive_file_id'] . "/preview";
+                    $researchIsGoogleDrive = true;
+                } elseif (!empty($v['drive_view_url'])) {
+                    $researchFileUrl = $v['drive_view_url'];
+                    $researchIsGoogleDrive = true;
+                    
+                    if (strpos($researchFileUrl, '/file/d/') !== false && strpos($researchFileUrl, '/preview') === false) {
+                        $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
+                        if (preg_match($pattern, $researchFileUrl, $matches)) {
+                            $researchFileUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
+                        }
+                    }
+                } elseif (!empty($v['drive_download_url'])) {
+                    $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
+                    if (preg_match($pattern, $v['drive_download_url'], $matches)) {
+                        $researchFileUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
+                        $researchIsGoogleDrive = true;
+                    }
+                }
+                
+                if (empty($researchFileUrl) && !empty($v['legacy_research_file'])) {
+                    $researchFileUrl = $v['legacy_research_file'];
+                    $researchIsGoogleDrive = false;
+                }
+                
+                $researchItem->researchFile = $researchFileUrl;
+                $researchItem->isGoogleDrive = $researchIsGoogleDrive;
+                
+                $endorsement->research[] = $researchItem;
+                
+                if ($v['resStat'] != 0) {
+                    $endorsement->resStat = true;
+                }
+            }
+            
+            $response->list[] = $endorsement;
         }
+        
+        $enStatement->close();
     }
+    
     echo json_encode($response->list);
 }
 
