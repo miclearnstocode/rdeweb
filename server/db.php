@@ -21,6 +21,13 @@ $emailPassword='vuxbtbqimnjiawkw';
 //$rdeEmail='rdesystem@capsu.edu.ph';
 //$emailPassword='rd3LEAD$';
 
+//Capsu BlueHOST
+
+//$host='localhost';
+//$username='app_rdeweb';
+//$pass='we@re0neCapsu';
+//$dbName='app_rdeweb_db';
+
 //Capsu HOST
 
 //$host='localhost';

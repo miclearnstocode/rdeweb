@@ -1336,6 +1336,12 @@ export const ResearchMain = () => {
                         ]
                     }))
                 }
+                // Get the appropriate file display - handle both formats
+                const displayFile = file ? 
+                    (typeof file === 'string' ? file : 
+                        (file.drive_view_url || file.viewUrl || file.fileUrl || file.legacyFile || 'No file')) 
+                    : 'No file';
+
                 const bot = ({label, event,tooltip}) => {
                     return ($({
                         tag: 'div',
@@ -1621,9 +1627,29 @@ export const ResearchMain = () => {
                         })
                     ],
                 })
-
-                // Check if it's a Google Drive URL
-                const isGoogleDriveUrl = file && (file.includes('drive.google.com') || file.includes('/d/'))
+                // Handle different file formats
+                const getFileUrl = (fileData) => {
+                    if (!fileData) return null;
+                    
+                    // If it's already a string URL
+                    if (typeof fileData === 'string') {
+                        return fileData;
+                    }
+                    
+                    // If it's an object with Google Drive URLs
+                    if (typeof fileData === 'object') {
+                        // Check for Google Drive URLs first
+                        if (fileData.drive_view_url) return fileData.drive_view_url;
+                        if (fileData.viewUrl) return fileData.viewUrl;
+                        if (fileData.fileUrl) return fileData.fileUrl;
+                        if (fileData.legacyFile) return fileData.legacyFile;
+                    }
+                    
+                    return null;
+                }
+                
+                const fileUrl = getFileUrl(file);
+                const isGoogleDriveUrl = fileUrl && fileUrl.includes('drive.google.com');
                 
                 let frame
                 
@@ -3558,6 +3584,7 @@ export const ResearchMain = () => {
                                                 data.forEach(val => {
                                                     researchBody.appendChild(ResearchDocs({
                                                         category: val.category,
+                                                        center: val.center,
                                                         title: val.title,
                                                         author: val.author,
                                                         file: val.file,

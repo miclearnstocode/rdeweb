@@ -300,3 +300,20 @@ rde_system/ (Root)
 
 Feb 1, 2026 
  a backward compatibility with the frontend. add the google drive url
+
+feb 2, 2026
+public_html/ (app.capsurde.net root)
+├── client/                    #  frontend files
+├── server/                    # Backend PHP APIs  
+├── config/                    # Configuration files
+├── utils/                     # Utility files
+├── particle/                  # Particle files
+├── css/                       # CSS files
+├── external/                  # External files
+├── .htaccess                  # Main configuration
+├── index.html                 # SPA entry point (MAIN ENTRY)
+├── index.php                  # Router entry
+└── system_operation/          # System operation files
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7/pQanSeZDbI3RldKfS7LptHN6JOc7G44wKGZbyNItdApedCzMg/u51p7MquQrCWMKIyc2fnR5TFCQ9RxiKOU35E5nZXNR2yO/YLxUhO5W0pngYq86nDASjrXKNdfAmPWOcDYYgxL2fh+ZmDpqkF6llA57JcEqq2PgCdPLbXiXoLncRGWacYTqkDSqQYQyIfaptjuEC/gbluVKea6xBwo2aaxXLvafnpBjWrBAXOtkAi8dVJDvDAAnr1Nd1SpR80PX+IEuRT5E3CqzoLvd97/ysZNqRVs6LlPRXk/l1FFM/dO5AltO3hhzspDVFJCNVmyFPnD4wUZiRj4M+UvwfMB
+

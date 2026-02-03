@@ -28,12 +28,6 @@ function any($route, $path_to_include){ route($route, $path_to_include);
 function route($route, $path_to_include){
   $ROOT = $_SERVER['DOCUMENT_ROOT'];
 
-    // DEBUG: Log what's happening
-  // error_log("=== ROUTE DEBUG ===");
-  // error_log("Route: $route");
-  // error_log("Path to include: $path_to_include");
-  // error_log("Request URI: " . $_SERVER['REQUEST_URI']);
-
   $request_url = filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_URL);
   $request_url = rtrim($request_url, '/');
   $request_url = strtok($request_url, '?');

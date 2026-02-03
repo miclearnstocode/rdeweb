@@ -32,7 +32,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . '/../config/driver_config.php';
-include('db.php');
+include(__DIR__ . '/db.php');
 
 /** @var TYPE_NAME $host */
 
@@ -706,14 +706,15 @@ if (isset($_POST['researchSubmit'])) {
         $response->userName = $_SESSION['userName'];
         $evalId = $_SESSION['userId'];
 
-        // UPDATED QUERY to filter by center instead of category
+        // UPDATED QUERY with backward compatibility for file URLs and including comments.title
         $sqlQueries = "SELECT 
             researchfile.id,
             researchfile.author,
-            researchfile.drive_view_url as file,
+            researchfile.drive_view_url,
             researchfile.drive_file_id,
             researchfile.drive_download_url,
-            researchfile.title,
+            researchfile.file as local_file,
+            researchfile.title as research_title,
             researchfile.event,
             researchfile.event_id,      
             researchfile.category,
@@ -732,7 +733,7 @@ if (isset($_POST['researchSubmit'])) {
 
         $stm = $con->prepare($sqlQueries);
         $stat = 'accepted';
-        $stm->bind_param("ssss", $stat, $center, $center, $eventId); // Changed to 4 parameters
+        $stm->bind_param("ssss", $stat, $center, $center, $eventId);
         $stm->execute();
         $resultRes = $stm->get_result();
 
@@ -742,20 +743,29 @@ if (isset($_POST['researchSubmit'])) {
             $data->id = $val['id'];
             $data->author = $val['author'];
             
-            // Use Google Drive URLs
-            $data->file = $val['file']; // drive_view_url
-            $data->drive_file_id = $val['drive_file_id'];
-            $data->drive_download_url = $val['drive_download_url'];
+            // BACKWARD COMPATIBILITY: Use Google Drive URL if available, otherwise local file
+            if (!empty($val['drive_view_url'])) {
+                $data->file = $val['drive_view_url']; // Google Drive URL
+                $data->file_type = 'drive';
+                $data->drive_file_id = $val['drive_file_id'];
+                $data->drive_download_url = $val['drive_download_url'];
+            } else {
+                $data->file = $val['local_file']; 
+                $data->file_type = 'local';
+                $data->drive_file_id = null;
+                $data->drive_download_url = null;
+            }
             
-            $data->title = $val['title'];
+            $data->title = $val['research_title']; // Research document title
             $data->event = $val['event'];
             $data->category = $val['category'];
             $data->campus = $val['campus'];
             $data->eventId = $val['eventId'];
             $data->catId = $val['catId'];
-            $data->center = $val['center']; // Add center to response
+            $data->center = $val['center'];
 
             // Initialize comment fields
+            $data->comment_title = ''; // Separate field for comment title
             $data->intro = '';
             $data->abstract = '';
             $data->objective = '';
@@ -765,7 +775,9 @@ if (isset($_POST['researchSubmit'])) {
             $data->literature = '';
             $data->other = '';
 
+            // UPDATED query to include comments.title
             $comquery = "SELECT 
+                comments.title as comment_title, 
                 comments.intro,
                 comments.abstract,
                 comments.objective,
@@ -784,6 +796,7 @@ if (isset($_POST['researchSubmit'])) {
 
             while ($v = $res->fetch_assoc()) {
                 $data->status = 'updated';
+                $data->comment_title = $v['comment_title']; // Store comment title separately
                 $data->intro = $v['intro'];
                 $data->abstract = $v['abstract'];
                 $data->objective = $v['objective'];
@@ -2533,10 +2546,8 @@ if (isset($_POST['incomingEndorsement'])) {
             
             if ($hasGoogleDrive) {
                 // We have Google Drive files
-                $fileObject->fileUrl = !empty($driveDownloadUrl) ? $driveDownloadUrl : 
-                                      (!empty($driveViewUrl) ? $driveViewUrl : '');
-                $fileObject->viewUrl = !empty($driveViewUrl) ? $driveViewUrl : 
-                                      (!empty($driveDownloadUrl) ? $driveDownloadUrl : '');
+                $fileObject->fileUrl = !empty($driveDownloadUrl) ? $driveDownloadUrl : (!empty($driveViewUrl) ? $driveViewUrl : '');
+                $fileObject->viewUrl = !empty($driveViewUrl) ? $driveViewUrl : (!empty($driveDownloadUrl) ? $driveDownloadUrl : '');
                 $fileObject->driveFileId = $driveFileId;
                 $fileObject->driveViewUrl = $driveViewUrl;
                 $fileObject->driveDownloadUrl = $driveDownloadUrl;

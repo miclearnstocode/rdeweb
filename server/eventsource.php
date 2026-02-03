@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-include ('db.php');
+include($_SERVER['DOCUMENT_ROOT'] . '/server/db.php');
 
 /** @var TYPE_NAME $host */
 
@@ -114,6 +114,7 @@ if(isset($_POST['requestEventRDE'])) {
                     researchfile.drive_center_folder_id,
                     researchfile.status,
                     researchfile.category,
+                    researchfile.center,
                     researchfile.deletestate,           
                     endorsement.campus,
                     endorsement.event,
@@ -140,6 +141,7 @@ if(isset($_POST['requestEventRDE'])) {
                     researchfile.drive_center_folder_id,
                     researchfile.status,
                     researchfile.category,
+                    researchfile.center,
                     researchfile.deletestate,           
                     endorsement.campus,
                     endorsement.event,
@@ -221,9 +223,6 @@ if(isset($_POST['deleteEvent'])){
         $response->message=$con->error;
 
     }
-
-
-
     ob_clean();
     echo json_encode($response);
     ob_end_flush();
