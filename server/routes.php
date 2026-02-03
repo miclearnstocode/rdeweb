@@ -60,37 +60,37 @@ post('/filesUmd','server/umd_file.php');
 get('/','server/auth.php');  // This handles redirects based on login status
 
 // Account routes
-get('/account/Login','index.html');
-get('/account/Signup','index.html');
+get('/account/Login','/index.html');
+get('/account/Signup','/index.html');
 
 // Admin routes - ALL admin pages
-get('/admin/addAccount','index.html');
-get('/admin/$page','index.html');  // Catch-all for other admin pages
+get('/admin/addAccount','/index.html');
+get('/admin/$page','/index.html');  // Catch-all for other admin pages
 
 // User routes
-get('/user/create/share','index.html');
-get('/user/$page1/$page2/$page3','index.html');  // User has nested routes
-get('/user/$page1/$page2','index.html');
-get('/user/$page','index.html');
+get('/user/create/share','/index.html');
+get('/user/$page1/$page2/$page3','/index.html');  // User has nested routes
+get('/user/$page1/$page2','/index.html');
+get('/user/$page','/index.html');
 
 // Evaluator route
-get('/evaluator','index.html');
-get('/evaluator/$page','index.html');  // For evaluator sub-pages
+get('/evaluator','/index.html');
+get('/evaluator/$page','/index.html');  // For evaluator sub-pages
 
 // RDE Office routes
-get('/rdeOffice/communication','index.html');
-get('/rdeOffice/$page','index.html');
+get('/rdeOffice/communication','/index.html');
+get('/rdeOffice/$page','/index.html');
 
 // External routes
 get('/external/users/a/b/c/b/c/d/e/v1','external/index.php');
-get('/external/$path1/$path2/$path3/$path4/$path5/$path6/$path7/$path8','index.html');
+get('/external/$path1/$path2/$path3/$path4/$path5/$path6/$path7/$path8','/index.html');
 
 // Other routes
-get('/view','index.html');
-get('/view/$id','index.html');  // For viewing specific documents
-get('/accountSupport','index.html');
+get('/view','/index.html');
+get('/view/$id','/index.html');  // For viewing specific documents
+get('/accountSupport','/index.html');
 get('/barcode/a/b/c/d/e/f','barcode.html');
-get('/barcode/$path1/$path2/$path3/$path4/$path5/$path6','index.html');
+get('/barcode/$path1/$path2/$path3/$path4/$path5/$path6','/index.html');
 
 // ========== CATCH-ALL ROUTES ==========
 // These should be LAST and handle any unmatched routes
@@ -100,15 +100,15 @@ get('/testRoute','server/session.php');
 
 // Dynamic parameter routes (like /$id, /$id/$id)
 // Use these SPARINGLY and put them LAST
-get('/$id','index.html');
-get('/$id/$id2','index.html');
-get('/$id/$id2/$id3','index.html');
-get('/$id/$id2/$id3/$id4','index.html');
-get('/$id/$id2/$id3/$id4/$id5','index.html');
-get('/$id/$id2/$id3/$id4/$id5/$id6','index.html');
-get('/$id/$id2/$id3/$id4/$id5/$id6/$id7','index.html');
-get('/$id/$id2/$id3/$id4/$id5/$id6/$id7/$id8','index.html');
-get('/$id/$id2/$id3/$id4/$id5/$id6/$id7/$id8/$id9','index.html');
+get('/$id','/index.html');
+get('/$id/$id2','/index.html');
+get('/$id/$id2/$id3','/index.html');
+get('/$id/$id2/$id3/$id4','/index.html');
+get('/$id/$id2/$id3/$id4/$id5','/index.html');
+get('/$id/$id2/$id3/$id4/$id5/$id6','/index.html');
+get('/$id/$id2/$id3/$id4/$id5/$id6/$id7','/index.html');
+get('/$id/$id2/$id3/$id4/$id5/$id6/$id7/$id8','/index.html');
+get('/$id/$id2/$id3/$id4/$id5/$id6/$id7/$id8/$id9','/index.html');
 
 // 404 handler - MUST BE LAST
 any('/404','404.html');
