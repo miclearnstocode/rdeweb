@@ -691,3 +691,788 @@ Stack trace:
 [28-Jan-2026 16:30:40 Asia/Manila] Number of variables to bind: 23
 [29-Jan-2026 12:02:31 Asia/Manila] PHP Warning:  Undefined array key "category" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 812
 [02-Feb-2026 08:01:08 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1045
+[04-Feb-2026 14:25:16 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[04-Feb-2026 14:25:16 Asia/Manila] Title: Trial Document
+[04-Feb-2026 14:25:16 Asia/Manila] Author: Sample
+[04-Feb-2026 14:25:16 Asia/Manila] Event: 38th University Faculty In-House Review
+[04-Feb-2026 14:25:16 Asia/Manila] Center: Coconut Research and Development Center (Coco RDC)
+[04-Feb-2026 14:25:16 Asia/Manila] Category: Natural / Biological
+[04-Feb-2026 14:25:16 Asia/Manila] Uploading endorsement: Print Comments.pdf
+[04-Feb-2026 14:25:17 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Sample_Trial_Document
+[04-Feb-2026 14:25:17 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Sample_Trial_Document
+[04-Feb-2026 14:25:22 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[04-Feb-2026 14:25:23 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[04-Feb-2026 14:25:23 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[04-Feb-2026 14:25:25 Asia/Manila] Entry folder created: 1fu02-C8kFsxGQ7klY7AlGl5hb-mqAQ5a for Sample_Trial_Document
+[04-Feb-2026 14:25:25 Asia/Manila] Uploading endorsement file: Print Comments.pdf to folder: 1fu02-C8kFsxGQ7klY7AlGl5hb-mqAQ5a
+[04-Feb-2026 14:25:29 Asia/Manila] Making file public: 1p-9xMxZUQH_DgRc3TR6ewVrvrUHtE8B8
+[04-Feb-2026 14:25:29 Asia/Manila] File 1p-9xMxZUQH_DgRc3TR6ewVrvrUHtE8B8 is already public
+[04-Feb-2026 14:25:29 Asia/Manila] endorsement file upload successful: Print Comments.pdf
+[04-Feb-2026 14:25:29 Asia/Manila] Endorsement uploaded successfully: 1p-9xMxZUQH_DgRc3TR6ewVrvrUHtE8B8
+[04-Feb-2026 14:25:29 Asia/Manila] Endorsement saved to DB with ID: 508
+[04-Feb-2026 14:25:29 Asia/Manila] Uploading research: endorsement.pdf
+[04-Feb-2026 14:25:29 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Sample_Trial_Document
+[04-Feb-2026 14:25:29 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Sample_Trial_Document
+[04-Feb-2026 14:25:30 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[04-Feb-2026 14:25:31 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[04-Feb-2026 14:25:31 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[04-Feb-2026 14:25:32 Asia/Manila] Entry folder created: 1fu02-C8kFsxGQ7klY7AlGl5hb-mqAQ5a for Sample_Trial_Document
+[04-Feb-2026 14:25:32 Asia/Manila] Uploading research file: endorsement.pdf to folder: 1fu02-C8kFsxGQ7klY7AlGl5hb-mqAQ5a
+[04-Feb-2026 14:25:34 Asia/Manila] Making file public: 1P0LJOQPlH1WekfbQ6PAC1QhGl-u3Lamz
+[04-Feb-2026 14:25:35 Asia/Manila] File 1P0LJOQPlH1WekfbQ6PAC1QhGl-u3Lamz is already public
+[04-Feb-2026 14:25:35 Asia/Manila] research file upload successful: endorsement.pdf
+[04-Feb-2026 14:25:35 Asia/Manila] Research uploaded successfully: 1P0LJOQPlH1WekfbQ6PAC1QhGl-u3Lamz
+[04-Feb-2026 14:25:35 Asia/Manila] Uploading program: program_inHouse.pdf
+[04-Feb-2026 14:25:35 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Sample_Trial_Document
+[04-Feb-2026 14:25:35 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural Biological -> Sample_Trial_Document
+[04-Feb-2026 14:25:36 Asia/Manila] Event folder created/retrieved: 1SdLZSS8bW5w6eax9eFsll6RduBBXUrlH for 38th University Faculty In-House Review
+[04-Feb-2026 14:25:37 Asia/Manila] Center folder created/retrieved: 1eufncq1zm5xeMB3ub-Q1HG0cgIyHWsgp for Coconut Research and Development Center (Coco RDC)
+[04-Feb-2026 14:25:37 Asia/Manila] Category folder created/retrieved: 1l8-ZXzcTC3rkoabwbiY7xfUXdY7Dhs8G for Natural Biological
+[04-Feb-2026 14:25:38 Asia/Manila] Entry folder created: 1fu02-C8kFsxGQ7klY7AlGl5hb-mqAQ5a for Sample_Trial_Document
+[04-Feb-2026 14:25:38 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1fu02-C8kFsxGQ7klY7AlGl5hb-mqAQ5a
+[04-Feb-2026 14:25:40 Asia/Manila] Making file public: 13VxHtTg-bqnNqOHkXNYhaf8PC02kyJFR
+[04-Feb-2026 14:25:41 Asia/Manila] File 13VxHtTg-bqnNqOHkXNYhaf8PC02kyJFR is already public
+[04-Feb-2026 14:25:41 Asia/Manila] program file upload successful: program_inHouse.pdf
+[04-Feb-2026 14:25:41 Asia/Manila] Program uploaded successfully: 13VxHtTg-bqnNqOHkXNYhaf8PC02kyJFR
+[04-Feb-2026 14:25:41 Asia/Manila] Number of columns in query: 23
+[04-Feb-2026 14:25:41 Asia/Manila] Number of variables to bind: 23
+[05-Feb-2026 11:00:34 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:00:35 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:00:36 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:00:37 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:00:37 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:00:47 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:01:06 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:10:10 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:10:12 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:10:22 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:10:24 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:31:38 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:31:40 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:31:41 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:34:35 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:34:42 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:35:26 Asia/Manila] Search term received: 4
+[05-Feb-2026 11:35:26 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%4%'
+                    OR researchfile.author LIKE '%4%'
+                    OR researchfile.category LIKE '%4%'
+                    OR researchfile.center LIKE '%4%'
+                    OR researchfile.event LIKE '%4%'
+                    OR endorsement.campus LIKE '%4%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:35:26 Asia/Manila] Search successful: 5 events found
+[05-Feb-2026 11:35:27 Asia/Manila] Search term received: 42
+[05-Feb-2026 11:35:27 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%42%'
+                    OR researchfile.author LIKE '%42%'
+                    OR researchfile.category LIKE '%42%'
+                    OR researchfile.center LIKE '%42%'
+                    OR researchfile.event LIKE '%42%'
+                    OR endorsement.campus LIKE '%42%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:35:27 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:35:30 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:35:34 Asia/Manila] Search term received: 42
+[05-Feb-2026 11:35:34 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%42%'
+                    OR researchfile.author LIKE '%42%'
+                    OR researchfile.category LIKE '%42%'
+                    OR researchfile.center LIKE '%42%'
+                    OR researchfile.event LIKE '%42%'
+                    OR endorsement.campus LIKE '%42%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:35:34 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:35:40 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:35:41 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:36:31 Asia/Manila] Search term received: 42
+[05-Feb-2026 11:36:31 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%42%'
+                    OR researchfile.author LIKE '%42%'
+                    OR researchfile.category LIKE '%42%'
+                    OR researchfile.center LIKE '%42%'
+                    OR researchfile.event LIKE '%42%'
+                    OR endorsement.campus LIKE '%42%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:36:31 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:36:43 Asia/Manila] Search term received: 38
+[05-Feb-2026 11:36:43 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%38%'
+                    OR researchfile.author LIKE '%38%'
+                    OR researchfile.category LIKE '%38%'
+                    OR researchfile.center LIKE '%38%'
+                    OR researchfile.event LIKE '%38%'
+                    OR endorsement.campus LIKE '%38%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:36:43 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:37:39 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:37:42 Asia/Manila] Search term received: 38
+[05-Feb-2026 11:37:42 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%38%'
+                    OR researchfile.author LIKE '%38%'
+                    OR researchfile.category LIKE '%38%'
+                    OR researchfile.center LIKE '%38%'
+                    OR researchfile.event LIKE '%38%'
+                    OR endorsement.campus LIKE '%38%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:37:42 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:37:54 Asia/Manila] Search term received: 42
+[05-Feb-2026 11:37:54 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%42%'
+                    OR researchfile.author LIKE '%42%'
+                    OR researchfile.category LIKE '%42%'
+                    OR researchfile.center LIKE '%42%'
+                    OR researchfile.event LIKE '%42%'
+                    OR endorsement.campus LIKE '%42%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:37:54 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:45:25 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1983
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1983): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1983
+[05-Feb-2026 11:46:08 Asia/Manila] Search term received: 38
+[05-Feb-2026 11:46:08 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%38%'
+                    OR researchfile.author LIKE '%38%'
+                    OR researchfile.category LIKE '%38%'
+                    OR researchfile.center LIKE '%38%'
+                    OR researchfile.event LIKE '%38%'
+                    OR endorsement.campus LIKE '%38%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:46:08 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:47:14 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1998
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1998): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1998
+[05-Feb-2026 11:48:11 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1998
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1998): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1998
+[05-Feb-2026 11:48:17 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '// Google Drive URL
+            researchfile.drive_file_id,
+            res...' at line 5 in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1998
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1998): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1998
+[05-Feb-2026 11:52:14 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:14 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[05-Feb-2026 11:52:14 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:14 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:17 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:17 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:52:17 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:17 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:23 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:23 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[05-Feb-2026 11:52:23 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:23 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:23 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:23 Asia/Manila] Event: 36th In-House Review
+[05-Feb-2026 11:52:23 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:23 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:26 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:26 Asia/Manila] Event: 36th In-House Review
+[05-Feb-2026 11:52:26 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:26 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:28 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:28 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:52:28 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:28 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:28 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:28 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:52:28 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:28 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:29 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:29 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:52:29 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:29 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:48 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:48 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:52:48 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:48 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:52:54 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:52:54 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:52:54 Asia/Manila] User ID: 40
+[05-Feb-2026 11:52:54 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:55:37 Asia/Manila] Search term received: 3
+[05-Feb-2026 11:55:37 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%3%'
+                    OR researchfile.author LIKE '%3%'
+                    OR researchfile.category LIKE '%3%'
+                    OR researchfile.center LIKE '%3%'
+                    OR researchfile.event LIKE '%3%'
+                    OR endorsement.campus LIKE '%3%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:55:37 Asia/Manila] Search successful: 4 events found
+[05-Feb-2026 11:55:37 Asia/Manila] Search term received: 38
+[05-Feb-2026 11:55:37 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%38%'
+                    OR researchfile.author LIKE '%38%'
+                    OR researchfile.category LIKE '%38%'
+                    OR researchfile.center LIKE '%38%'
+                    OR researchfile.event LIKE '%38%'
+                    OR endorsement.campus LIKE '%38%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:55:37 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:55:43 Asia/Manila] Search term received: 4
+[05-Feb-2026 11:55:43 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%4%'
+                    OR researchfile.author LIKE '%4%'
+                    OR researchfile.category LIKE '%4%'
+                    OR researchfile.center LIKE '%4%'
+                    OR researchfile.event LIKE '%4%'
+                    OR endorsement.campus LIKE '%4%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:55:43 Asia/Manila] Search successful: 5 events found
+[05-Feb-2026 11:55:44 Asia/Manila] Search term received: 42
+[05-Feb-2026 11:55:44 Asia/Manila] Executing query: 
+                SELECT DISTINCT
+                    event_list.id as event_id,
+                    event_list.name as event_name,
+                    researchfile.id,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.drive_view_url as drive_view_url,
+                    researchfile.drive_file_id,
+                    researchfile.drive_download_url,
+                    researchfile.file as local_file,
+                    researchfile.category,
+                    researchfile.center,
+                    endorsement.campus,
+                    researchfile.event,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE endorsement.status = 'accepted'
+                AND (
+                    researchfile.title LIKE '%42%'
+                    OR researchfile.author LIKE '%42%'
+                    OR researchfile.category LIKE '%42%'
+                    OR researchfile.center LIKE '%42%'
+                    OR researchfile.event LIKE '%42%'
+                    OR endorsement.campus LIKE '%42%'
+                )
+                ORDER BY event_list.name, researchfile.title
+[05-Feb-2026 11:55:44 Asia/Manila] Search successful: 1 events found
+[05-Feb-2026 11:56:15 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:15 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:15 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:15 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:16 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:16 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:16 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:16 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:16 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:16 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:16 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:16 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:17 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:17 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:17 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:17 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:17 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:17 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:17 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:17 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:19 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:19 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:19 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:19 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:19 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:19 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:19 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:19 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:19 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:19 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:19 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:19 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:20 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:20 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:20 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:20 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA
+[05-Feb-2026 11:56:20 Asia/Manila] === researchFile API called ===
+[05-Feb-2026 11:56:20 Asia/Manila] Event: 38th University Faculty In-House Review
+[05-Feb-2026 11:56:20 Asia/Manila] User ID: 40
+[05-Feb-2026 11:56:20 Asia/Manila] Campuses: CENTRAL OFFICE, ROXAS CITY MAIN, DAYAO, PONTEVEDRA, PILAR, BURIAS, DUMARAO, MAMBUSAO, TAPAZ, SIGMA

@@ -988,3 +988,19 @@
 .file-upload-status .fa-times-circle {
     margin-right: 0.5vw;
 }
+.search-highlight {
+    background-color: #ffeb3b !important;
+    color: #000 !important;
+    padding: 0 2px !important;
+    border-radius: 2px !important;
+    font-weight: bold !important;
+}
+
+.no-results-message {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -45%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}

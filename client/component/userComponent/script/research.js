@@ -3230,15 +3230,392 @@ const Submitted = () => {
             }))
         }
         const allPanel = () => {
-
             let MainBody
-
-            const Files=$({
-                tag:'div',
-                style:{
-
+            
+            // Move group function to outer scope so loadAllEvents can use it
+            const group = ({text, id}) => {
+                let StateBot = false, lebBot, bod
+                
+                const ListCampus = (content, resList) => {
+                    const Panel = (docID, fileUrl = null, fileType = 'local') => {
+                        let mainP
+                        const file = (url, type) => {
+                            let fileViewer
+                            
+                            if (type === 'drive') {
+                                // For Google Drive files, open in new tab
+                                window.open(url, '_blank');
+                                return null;
+                            } else {
+                                // For local files, show in iframe/object
+                                const isGoogleDriveUrl = url.includes('drive.google.com')
+                                
+                                if (isGoogleDriveUrl) {
+                                    fileViewer = $({
+                                        tag: 'iframe',
+                                        att: {
+                                            src: url,
+                                            type: 'application/pdf'
+                                        },
+                                        style: {
+                                            width: '100%',
+                                            height: '100%',
+                                            border: 'none'
+                                        }
+                                    })
+                                } else {
+                                    fileViewer = $({
+                                        tag: 'object',
+                                        att: {
+                                            data: '/' + url,
+                                            type: 'application/pdf'
+                                        },
+                                        style: {
+                                            width: '100%',
+                                            height: '100%'
+                                        }
+                                    })
+                                }
+                                
+                                return ($({
+                                    tag: 'div',
+                                    style: {
+                                        margin: 'auto',
+                                        width: '80%',
+                                        height: '98%',
+                                        position: 'relative',
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            att: {
+                                                className: 'fa-solid fa-circle-xmark'
+                                            },
+                                            style: {
+                                                fontSize: '3vw',
+                                                position: 'absolute',
+                                                left: '-4vw',
+                                                color: 'deepskyblue',
+                                                cursor: 'pointer'
+                                            },
+                                            event: {
+                                                type: 'click',
+                                                method: () => {
+                                                    mainP.remove()
+                                                }
+                                            },
+                                        }),
+                                        fileViewer
+                                    ]
+                                }))
+                            }
+                        }
+                        
+                        if (fileType === 'drive') {
+                            // For drive files, just open in new tab
+                            window.open(fileUrl, '_blank');
+                            return null;
+                        }
+                        
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                width: '100%',
+                                height: '100%',
+                                position: 'absolute',
+                                top: '0',
+                                left: '0',
+                                backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
+                                display: 'flex',
+                                justifyContent: 'center'
+                            },
+                            elementHandler: (el) => {
+                                mainP = el
+                                
+                                if (fileUrl) {
+                                    // If file URL is provided directly, use it
+                                    const viewer = file(fileUrl, fileType)
+                                    if (viewer) el.appendChild(viewer)
+                                } else {
+                                    // Otherwise fetch from server
+                                    const req = new Request('/uploadResearchFile')
+                                    const reqList = []
+                                    reqList.push({
+                                        name: 'researchFile',
+                                        value: 'true'
+                                    })
+                                    reqList.push({
+                                        name: 'docId',
+                                        value: docID
+                                    })
+                                    req.Post(reqList)
+                                    req.Send().then(data => {
+                                        const viewer = file(data, fileType)
+                                        if (viewer) el.appendChild(viewer)
+                                    }).catch(res => {
+                                        console.log(res)
+                                    })
+                                }
+                            }
+                        }))
+                    }
+                    
+                    let bodEl, campState = false
+                    const fileListName = ({author, name, id, file, file_type, drive_file_id, drive_download_url}) => {
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                textAlign: 'left',
+                                width: '98%',
+                                margin: 'auto',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                overflow: 'hidden',
+                                paddingTop: '.5vh',
+                                paddingBottom: '.5vh',
+                                cursor: 'pointer'
+                            },
+                            att: {
+                                title: `${name} - ${author}`,
+                                className: 'perRes'
+                            },
+                            elementHandler: (el) => {
+                                el.innerHTML = `<span style="font-size: 1.4vw" class="fa-solid fa-file-pdf"> &nbsp</span> ${name}`;
+                            },
+                            event: {
+                                type: 'click',
+                                method: async () => {
+                                    let loading = Waiting()
+                                    bodEl.appendChild(loading)
+                                    const remove = () => {
+                                        loading.remove()
+                                    }
+                                    
+                                    const form = new FormData()
+                                    form.append("checkAccess", "true")
+                                    form.append("docId", id)
+                                    
+                                    try {
+                                        const response = await fetch('/requestDocs', {
+                                            method: 'POST',
+                                            body: form
+                                        })
+                                        
+                                        if (response.ok) {
+                                            const dat = await response.json();
+                                            remove();
+                                            
+                                            if (dat.status === 'allowed') {
+                                                // Handle file opening based on file type
+                                                if (file_type === 'drive' && file) {
+                                                    // Open Google Drive file in new tab
+                                                    window.open(file, '_blank');
+                                                } else if (file) {
+                                                    // Open local file in viewer
+                                                    bodEl.appendChild(Panel(id, file, file_type));
+                                                } else {
+                                                    alert('File not found or unavailable');
+                                                }
+                                            } else if (dat.status === 'requested') {
+                                                bodEl.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
+                                                    window.location.reload();
+                                                }));
+                                            } else {
+                                                setTimeout(() => {
+                                                    if (confirm("You don't have permission to open this file.\nDo you want to send a request?")) {
+                                                        const req = new Request('/requestDocs');
+                                                        const formReq = [];
+                                                        formReq.push({
+                                                            name: 'sendRequest',
+                                                            value: 'true'
+                                                        });
+                                                        formReq.push({
+                                                            name: 'docId',
+                                                            value: id
+                                                        });
+                                                        req.Post(formReq);
+                                                        req.Json();
+                                                        req.Send().then(data => {
+                                                            bodEl.appendChild(ConfirmationAlert(data.message, () => {
+                                                                window.location.reload();
+                                                            }))
+                                                        })
+                                                    }
+                                                }, 50)
+                                            }
+                                        }
+                                    } catch (error) {
+                                        remove()
+                                        console.error('Error checking access:', error)
+                                    }
+                                }
+                            }
+                        }))
+                    }
+                    
+                    return($({
+                        tag:'div',
+                        att:{
+                            className:'listCampEv'
+                        },
+                        child:[
+                            $({
+                                tag:'div',
+                                style:{
+                                    width:'100%',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                },
+                                text:content,
+                                event:{
+                                    type:'click',
+                                    method:()=>{
+                                        campState=!campState
+                                        if (campState) {
+                                            resList.forEach(val => {
+                                                bodEl.appendChild(fileListName({
+                                                    author: val.author,
+                                                    id: val.id,
+                                                    name: val.title,
+                                                    file: val.file,
+                                                    file_type: val.file_type,
+                                                    drive_file_id: val.drive_file_id,
+                                                    drive_download_url: val.drive_download_url
+                                                }));
+                                            });
+                                        }else {
+                                            bodEl.innerHTML=''
+                                        }
+                                    }
+                                }
+                            }),
+                            $({
+                                tag:'div',
+                                style:{
+                                    width:'100%',
+                                    height:'fit-content',
+                                },
+                                elementHandler:(el)=>{
+                                    bodEl=el
+                                },
+                            })
+                        ]
+                    }))
                 }
-            })
+                
+                return($({
+                    tag:'div',
+                    style:{
+                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                        width:'95%',
+                        paddingBottom:'1vh',
+                        paddingTop:'1vh',
+                        border:'solid thin grey',
+                        margin:'auto',
+                        marginTop:'2vh', 
+                        borderRadius: '.5vw'
+                    },
+                    att:{
+                        className:'campDivBot'
+                    },
+                    child:[
+                        $({
+                            tag:'div',
+                            style:{
+                                width:'100%',
+                                height:'100%',
+                                textAlign:'center',
+                                fontSize:'1vw',
+                                cursor: 'pointer'
+                            },
+                            text:text,
+                            elementHandler:(el)=>{
+                                lebBot=el
+                            },
+                            event:{
+                                type:'click',
+                                method:async (event)=>{
+                                    StateBot=!StateBot
+                                    
+                                    // Show loading
+                                    bod.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">Loading files...</div>';
+                                    
+                                    try {
+                                        // Use fetch instead of Request class for better error handling
+                                        const form = new FormData();
+                                        form.append('researchFile', 'true');
+                                        form.append('eventType', text);
+                                        
+                                        // Add all campuses
+                                        CapsuOffice.forEach(val => {
+                                            form.append('capName[]', val);
+                                        });
+                                        
+                                        console.log('Loading files for event:', text);
+                                        console.log('Campuses:', CapsuOffice);
+                                        
+                                        const response = await fetch('/uploadResearchFile', {
+                                            method: 'POST',
+                                            body: form
+                                        });
+                                        
+                                        console.log('Response status:', response.status);
+                                        
+                                        if (response.ok) {
+                                            const data = await response.json();
+                                            console.log('Response data:', data);
+                                            
+                                            bod.innerHTML = '';
+                                            
+                                            if(StateBot && data.status && data.list && data.list.length > 0){
+                                                data.list.forEach(val => {
+                                                    bod.style.marginTop='2vh';
+                                                    bod.appendChild(ListCampus(val.name, val.list));
+                                                });
+                                            } else if (StateBot) {
+                                                bod.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">No files found for this event</div>';
+                                                bod.style.marginTop='2vh';
+                                            } else {
+                                                bod.innerHTML='';
+                                                bod.style.marginTop='0';
+                                            }
+                                        } else {
+                                            // Try to get error message from response
+                                            let errorText = await response.text();
+                                            console.error('HTTP error response:', errorText);
+                                            
+                                            try {
+                                                // Try to parse as JSON in case it's an error response
+                                                const errorData = JSON.parse(errorText);
+                                                bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Error: ' + (errorData.message || 'Unknown error') + '</div>';
+                                            } catch {
+                                                // If not JSON, show raw error
+                                                bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Error loading files (HTTP ' + response.status + '). Please try again.</div>';
+                                            }
+                                        }
+                                    } catch (error) {
+                                        // Handle network or other errors
+                                        bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Network error: ' + error.message + '</div>';
+                                        console.error('Error:', error);
+                                    }
+                                }
+                            },
+                        }),
+                        $({
+                            tag:'div',
+                            style:{
+                                width:'100%',
+                                height:'fit-content',
+                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                color:'#bbb'
+                            },
+                            elementHandler:(el)=>{
+                                bod=el
+                            }
+                        })
+                    ]
+                }))
+            }
 
             const search = () => {
                 const searchBox = $({
@@ -3270,13 +3647,69 @@ const Submitted = () => {
                             tag: 'input',
                             att: {
                                 className: 'searchAll',
-                                placeholder: 'search file name',
+                                placeholder: 'search file name, author, category, campus',
                                 id: 'search-All-File',
                                 name: 'searchAllFile'
                             },
+                            event: {
+                                type: 'input',
+                                method: async (ev) => {
+                                    const searchTerm = ev.target.value.trim();
+                                    const searchInput = ev.target;
+                                    
+                                    // Add debouncing to prevent too many requests
+                                    clearTimeout(searchInput._searchTimeout);
+                                    
+                                    searchInput._searchTimeout = setTimeout(async () => {
+                                        // Clear existing content
+                                        if (MainBody) {
+                                            MainBody.innerHTML = '';
+                                        }
+                                        
+                                        if (searchTerm === '') {
+                                            // If search is empty, load all events
+                                            loadAllEvents();
+                                            return;
+                                        }
+                                        
+                                        // Show loading indicator
+                                        MainBody.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">Searching...</div>';
+                                        
+                                        try {
+                                            // Use the new searchResearch API
+                                            const searchForm = new FormData();
+                                            searchForm.append('searchResearch', 'true');
+                                            searchForm.append('searchTerm', searchTerm);
+                                            
+                                            const searchResponse = await fetch('/uploadResearchFile', {
+                                                method: 'POST',
+                                                body: searchForm
+                                            });
+                                            
+                                            if (searchResponse.ok) {
+                                                const searchData = await searchResponse.json();
+                                                MainBody.innerHTML = '';
+                                                
+                                                if (searchData.status && searchData.list && searchData.list.length > 0) {
+                                                    // For search results, use a different display function
+                                                    displaySearchResults(searchData.list, searchTerm);
+                                                } else {
+                                                    MainBody.innerHTML = `<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">No files found matching "${searchTerm}"</div>`;
+                                                }
+                                            } else {
+                                                MainBody.innerHTML = `<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Search failed. Please try again.</div>`;
+                                            }
+                                        } catch (error) {
+                                            console.error('Search error:', error);
+                                            MainBody.innerHTML = `<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Search error: ${error.message}</div>`;
+                                        }
+                                    }, 500); // 500ms debounce delay
+                                }
+                            }
                         })
                     ]
-                })
+                });
+                
                 return ($({
                     tag: 'div',
                     style: {
@@ -3290,455 +3723,452 @@ const Submitted = () => {
                     ]
                 }))
             }
-            const Select=()=>{
-                return($({
-                    tag:'div',
-                    style:{
-                        height:'fit-content',
-                        width:'70%',
-                        display:'flex',
-                        justifyContent:'center',
 
-                    },
-                    child:[
-                        $({
-                            tag:'select',
-                            style:{
-                                height:'5vh',
-                                width:'100%',
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                border:'solid thin gba(200,200,200,0.3)',
-                                outline:'none',
-                                backgroundColor:'rgba(0,0,0,0.1)',
-                                marginLeft:'0',
-                                marginRight:'auto',
-                                textAlign:'center',
-                                fontSize:'1.3vw',
-                                color:'#bbb',
-                                borderRadius:'.5vw',
-                                cursor:'pointer'
-                            },
-                            elementHandler:async (el)=>{
-                                el.appendChild($({
-                                    tag:'option',
-                                    att:{
-                                        innerText:'- - Select Event - -',
-                                        disabled:true,
-                                        selected:true
-                                    },
-                                    style:{
-                                        backgroundColor:'#333'
-                                    }
-                                }))
-                                el.appendChild($({
-                                    tag:'option',
-                                    att:{
-                                        innerText:'All Events',
-                                    },
-                                    style:{
-                                        backgroundColor:'#333'
-                                    }
-                                }))
-
-                            },
-                            event:{
-                                type:'change',
-                                method:async ()=>{
-                                    const form = new FormData();
-                                    form.append('researchFile', 'true')
-                                    await fetch('/getresearch', {
-                                        method: 'POST',
-                                        body: form
-                                    }).then(res => res.json())
-                                        .then(data => {
-
-                                        })
-                                }
+            // Helper function to display search results
+            const displaySearchResults = (searchResults, searchTerm) => {
+                searchResults.forEach(eventGroup => {
+                    if (eventGroup.list && eventGroup.list.length > 0) {
+                        // Group files by campus within each event
+                        const campusGroups = {};
+                        eventGroup.list.forEach(file => {
+                            const campus = file.campus || 'Unknown Campus';
+                            if (!campusGroups[campus]) {
+                                campusGroups[campus] = {
+                                    name: campus,
+                                    list: []
+                                };
                             }
-                        })
-                    ]
-                }))
-            }
-            const Load=()=>{
-                return($({
-                    tag:'div',
-                    style:{
-                        fontSize:'2vw',
-                        color:'deepskyblue',
-                        height:'5vh',
-                        width:'30%',
-                        display:'flex',
-                        justifyContent:'center',
-                    },
-                    child:[
-                        $({
-                            tag:'div',
-                            att:{
-                                className:'fa-solid fa-arrows-rotate'
+                            campusGroups[campus].list.push(file);
+                        });
+                        
+                        const campusArray = Object.values(campusGroups);
+                        const totalFiles = campusArray.reduce((sum, campus) => sum + campus.list.length, 0);
+                        
+                        // Create event group
+                        const eventGroupElement = $({
+                            tag: 'div',
+                            style: {
+                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                width: '95%',
+                                paddingBottom: '1vh',
+                                paddingTop: '1vh',
+                                border: 'solid thin grey',
+                                margin: 'auto',
+                                marginTop: '2vh',
+                                borderRadius: '.5vw'
                             },
-                            style:{
-                                width:'fit-content',
-                                height:'fit-content',
-                                margin:'auto'
-                            }
-                        })
-                    ]
-                }))
-            }
-
-            const bodyContainer = () => {
-
-                const group=({text,id})=>{
-                    let StateBot=false,lebBot,bod
-
-                    const ListCampus=(content,resList)=>{
-                    const Panel = (docID, fileUrl = null) => {
-                        let mainP
-                        const file = (url) => {
-                            const isGoogleDriveUrl = url.includes('drive.google.com')
-                            
-                            let fileViewer
-                            if (isGoogleDriveUrl) {
-                                fileViewer = $({
-                                    tag: 'iframe',
-                                    att: {
-                                        src: url,
-                                        type: 'application/pdf'
-                                    },
+                            att: {
+                                className: 'campDivBot'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
                                     style: {
                                         width: '100%',
                                         height: '100%',
-                                        border: 'none'
-                                    }
-                                })
-                            } else {
-                                fileViewer = $({
-                                    tag: 'object',
-                                    att: {
-                                        data: '/' + url,
-                                        type: 'application/pdf'
+                                        textAlign: 'center',
+                                        fontSize: '1vw',
+                                        fontWeight: 'bold',
+                                        color: 'deepskyblue',
+                                        cursor: 'pointer'
                                     },
-                                    style: {
-                                        width: '100%',
-                                        height: '100%'
-                                    }
-                                })
-                            }
-                            
-                            return ($({
-                                tag: 'div',
-                                style: {
-                                    margin: 'auto',
-                                    width: '80%',
-                                    height: '98%',
-                                    position: 'relative',
-                                },
-                                child: [
-                                    $({
-                                        tag: 'div',
-                                        att: {
-                                            className: 'fa-solid fa-circle-xmark'
-                                        },
-                                        style: {
-                                            fontSize: '3vw',
-                                            position: 'absolute',
-                                            left: '-4vw',
-                                            color: 'deepskyblue',
-                                            cursor: 'pointer'
-                                        },
-                                        event: {
-                                            type: 'click',
-                                            method: () => {
-                                                mainP.remove()
-                                            }
-                                        },
-                                    }),
-                                    fileViewer
-                                ]
-                            }))
-                        }
-                        
-                        return ($({
-                            tag: 'div',
-                            style: {
-                                width: '100%',
-                                height: '100%',
-                                position: 'absolute',
-                                top: '0',
-                                left: '0',
-                                backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-                                display: 'flex',
-                                justifyContent: 'center'
-                            },
-                            elementHandler: (el) => {
-                                mainP = el
-                                
-                                if (fileUrl) {
-                                    // If file URL is provided directly, use it
-                                    el.appendChild(file(fileUrl))
-                                } else {
-                                    // Otherwise fetch from server
-                                    const req = new Request('/uploadResearchFile')
-                                    const reqList = []
-                                    reqList.push({
-                                        name: 'researchFile',
-                                        value: 'true'
-                                    })
-                                    reqList.push({
-                                        name: 'docId',
-                                        value: docID
-                                    })
-                                    req.Post(reqList)
-                                    req.Send().then(data => {
-                                        el.appendChild(file(data))
-                                    }).catch(res => {
-                                        console.log(res)
-                                    })
-                                }
-                            }
-                        }))
-                    }
-
-                        let bodEl,campState=false
-                        const fileListName = ({author, name, id}) => {
-                            return ($({
-                                tag: 'div',
-                                style: {
-                                    textAlign: 'left',
-                                    width: '98%',
-                                    margin: 'auto',
-                                    whiteSpace: 'nowrap',
-                                    textOverflow: 'ellipsis',
-                                    overflow: 'hidden',
-                                    paddingTop: '.5vh',
-                                    paddingBottom: '.5vh'
-                                },
-                                att: {
-                                    title: author,
-                                    className: 'perRes',
-                                    innerHTML: '<span style="font-size: 1.4vw" class="fa-solid fa-file-pdf"> &nbsp</span> ' + name
-                                },
-                                event: {
-                                    type: 'click',
-                                    method: async () => {
-                                        let loading = Waiting()
-                                        bodEl.appendChild(loading)
-                                        const remove = () => {
-                                            loading.remove()
-                                        }
-                                        
-                                        const form = new FormData()
-                                        form.append("checkAccess", "true")
-                                        form.append("docId", id)
-                                        
-                                        try {
-                                            const response = await fetch('/requestDocs', {
-                                                method: 'POST',
-                                                body: form
-                                            })
-                                            
-                                            if (response.ok) {
-                                                const dat = await response.json()
-                                                remove()
-                                                
-                                                if (dat.status === 'allowed') {
-                                                    // Get file URL from server
-                                                    const fileReq = new FormData()
-                                                    fileReq.append('viewDocReq', 'true')
-                                                    fileReq.append('docId', id)
-                                                    
-                                                    const fileResponse = await fetch('/uploadResearchFile', {
-                                                        method: 'POST',
-                                                        body: fileReq
-                                                    })
-                                                    
-                                                    if (fileResponse.ok) {
-                                                        const fileData = await fileResponse.json()
-                                                        if (fileData.status) {
-                                                            // Check if it's a Google Drive URL
-                                                            if (fileData.drive_view_url && fileData.drive_view_url.includes('drive.google.com')) {
-                                                                // Open Google Drive viewer in new tab
-                                                                window.open(fileData.drive_view_url, '_blank')
-                                                            } else if (fileData.data) {
-                                                                // Open local file in viewer
-                                                                bodEl.appendChild(Panel(id))
-                                                            }
-                                                        }
-                                                    }
-                                                } else if (dat.status === 'requested') {
-                                                    bodEl.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
-                                                        window.location.reload()
-                                                    }))
+                                    text: `${eventGroup.name} (${totalFiles} results)`,
+                                    event: {
+                                        type: 'click',
+                                        method: (event) => {
+                                            const nextDiv = event.target.parentElement.querySelector('.search-results-container');
+                                            if (nextDiv) {
+                                                if (nextDiv.style.display === 'none') {
+                                                    nextDiv.style.display = 'block';
+                                                    event.target.style.color = 'red';
                                                 } else {
-                                                    setTimeout(() => {
-                                                        if (confirm("You don't have permission to open this file.\nDo you want to send a request?")) {
-                                                            const req = new Request('/requestDocs')
-                                                            const formReq = []
-                                                            formReq.push({
-                                                                name: 'sendRequest',
-                                                                value: 'true'
-                                                            })
-                                                            formReq.push({
-                                                                name: 'docId',
-                                                                value: id
-                                                            })
-                                                            req.Post(formReq)
-                                                            req.Json()
-                                                            req.Send().then(data => {
-                                                                bodEl.appendChild(ConfirmationAlert(data.message, () => {
-                                                                    window.location.reload()
-                                                                }))
-                                                            })
-                                                        }
-                                                    }, 50)
+                                                    nextDiv.style.display = 'none';
+                                                    event.target.style.color = 'deepskyblue';
                                                 }
                                             }
-                                        } catch (error) {
-                                            remove()
-                                            console.error('Error checking access:', error)
-                                        }
-                                    }
-                                }
-                            }))
-                        }
-                        return($({
-                            tag:'div',
-                            att:{
-                                className:'listCampEv'
-                            },
-                            child:[
-                                $({
-                                    tag:'div',
-                                    style:{
-                                        width:'100%',
-                                    },
-                                    text:content,
-                                    event:{
-                                        type:'click',
-                                        method:()=>{
-                                            campState=!campState
-                                            if(campState){
-                                                resList.forEach(val=>{
-                                                    bodEl.appendChild(fileListName({
-                                                        author:val.author,
-                                                        id:val.id,
-                                                        name:val.title
-                                                    }))
-                                                })
-                                            }else {
-                                                bodEl.innerHTML=''
-                                            }
-
                                         }
                                     }
                                 }),
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        width:'100%',
-                                        height:'fit-content',
+                                    tag: 'div',
+                                    style: {
+                                        width: '100%',
+                                        height: 'fit-content',
+                                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                        color: '#bbb',
+                                        display: 'none',
+                                        marginTop: '1vh'
                                     },
-                                    elementHandler:(el)=>{
-                                        bodEl=el
+                                    att: {
+                                        className: 'search-results-container'
                                     },
-                                })
-                            ],
-                            event:{
-                                type:'click',
-                                method:()=>{
-
-                                }
-                            }
-
-                        }))
-                    }
-
-
-                    return($({
-                        tag:'div',
-                        style:{
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            width:'95%',
-                            paddingBottom:'1vh',
-                            paddingTop:'1vh',
-                            border:'solid thin grey',
-                            margin:'auto',
-                            marginTop:'2vh', borderRadius: '.5vw'
-                            
-                        },
-                        att:{
-                            className:'campDivBot'
-                        },
-
-                        child:[
-                            $({
-                                tag:'div',
-                                style:{
-                                    width:'100%',
-                                    height:'100%',
-                                    textAlign:'center',
-                                    fontSize:'1vw',
-                                    
-                                },
-                                text:text,
-                                elementHandler:(el)=>{
-                                    lebBot=el
-                                },
-                                event:{
-                                    type:'click',
-                                    method:(event)=>{
-
-                                        StateBot=!StateBot
-                                        const me= new Request('/uploadResearchFile')
-                                        const req=[];
-                                        req.push({
-                                            name:'researchFile',
-                                            value:'true'
-                                        })
-                                        req.push({
-                                            name:'eventType',
-                                            value:text
-                                        })
-                                        CapsuOffice.forEach(val=>{
-                                            req.push({
-                                                name:'capName[]',
-                                                value:val
-                                            })
-                                        })
-                                        me.Post(req)
-                                        me.Json()
-                                        me.Send().then(data=>{
-                                            if(StateBot){
-                                                data.list.forEach(val=>{
-                                                    bod.style.marginTop='2vh'
-                                                    bod.appendChild(ListCampus(val.name,val.list))
-                                                })
-                                            }else {
-                                                bod.innerHTML=''
-                                                bod.style.marginTop='0'
-                                            }
-                                        })
-
-
+                                    elementHandler: (el) => {
+                                        // Add campus groups
+                                        campusArray.forEach(campusGroup => {
+                                            // Create campus section
+                                            const campusSection = $({
+                                                tag: 'div',
+                                                style: {
+                                                    marginBottom: '1vh',
+                                                    padding: '0.5vw',
+                                                    backgroundColor: 'rgba(0,0,0,0.2)',
+                                                    borderRadius: '0.5vw'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'div',
+                                                        style: {
+                                                            fontWeight: 'bold',
+                                                            color: '#bbb',
+                                                            marginBottom: '0.5vh',
+                                                            cursor: 'pointer'
+                                                        },
+                                                        text: `Campus: ${campusGroup.name} (${campusGroup.list.length} files)`,
+                                                        event: {
+                                                            type: 'click',
+                                                            method: (e) => {
+                                                                const fileList = e.target.parentElement.querySelector('.file-list-container');
+                                                                if (fileList) {
+                                                                    if (fileList.style.display === 'none') {
+                                                                        fileList.style.display = 'block';
+                                                                        e.target.style.color = 'orange';
+                                                                    } else {
+                                                                        fileList.style.display = 'none';
+                                                                        e.target.style.color = '#bbb';
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'div',
+                                                        style: {
+                                                            paddingLeft: '1vw',
+                                                            display: 'none'
+                                                        },
+                                                        att: {
+                                                            className: 'file-list-container'
+                                                        },
+                                                        elementHandler: (fileContainer) => {
+                                                            // Create a ListCampus function for search results
+                                                            const SearchListCampus = (content, resList) => {
+                                                                let bodEl, campState = false
+                                                                const fileListName = ({author, name, id, file, file_type, drive_file_id, drive_download_url}) => {
+                                                                    return ($({
+                                                                        tag: 'div',
+                                                                        style: {
+                                                                            textAlign: 'left',
+                                                                            width: '98%',
+                                                                            margin: 'auto',
+                                                                            whiteSpace: 'nowrap',
+                                                                            textOverflow: 'ellipsis',
+                                                                            overflow: 'hidden',
+                                                                            paddingTop: '.5vh',
+                                                                            paddingBottom: '.5vh',
+                                                                            cursor: 'pointer'
+                                                                        },
+                                                                        att: {
+                                                                            title: `${name} - ${author}`,
+                                                                            className: 'perRes'
+                                                                        },
+                                                                        elementHandler: (el) => {
+                                                                            el.innerHTML = `<span style="font-size: 1.4vw" class="fa-solid fa-file-pdf"> &nbsp</span> ${name}`;
+                                                                        },
+                                                                        event: {
+                                                                            type: 'click',
+                                                                            method: async () => {
+                                                                                let loading = Waiting()
+                                                                                bodEl.appendChild(loading)
+                                                                                const remove = () => {
+                                                                                    loading.remove()
+                                                                                }
+                                                                                
+                                                                                const form = new FormData()
+                                                                                form.append("checkAccess", "true")
+                                                                                form.append("docId", id)
+                                                                                
+                                                                                try {
+                                                                                    const response = await fetch('/requestDocs', {
+                                                                                        method: 'POST',
+                                                                                        body: form
+                                                                                    })
+                                                                                    
+                                                                                    if (response.ok) {
+                                                                                        const dat = await response.json();
+                                                                                        remove();
+                                                                                        
+                                                                                        if (dat.status === 'allowed') {
+                                                                                            // Handle file opening based on file type
+                                                                                            if (file_type === 'drive' && file) {
+                                                                                                // Open Google Drive file in new tab
+                                                                                                window.open(file, '_blank');
+                                                                                            } else if (file) {
+                                                                                                // Open local file in viewer
+                                                                                                const Panel = createPanelFunction();
+                                                                                                bodEl.appendChild(Panel(id, file, file_type));
+                                                                                            } else {
+                                                                                                alert('File not found or unavailable');
+                                                                                            }
+                                                                                        } else if (dat.status === 'requested') {
+                                                                                            bodEl.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
+                                                                                                window.location.reload();
+                                                                                            }));
+                                                                                        } else {
+                                                                                            setTimeout(() => {
+                                                                                                if (confirm("You don't have permission to open this file.\nDo you want to send a request?")) {
+                                                                                                    const req = new Request('/requestDocs');
+                                                                                                    const formReq = [];
+                                                                                                    formReq.push({
+                                                                                                        name: 'sendRequest',
+                                                                                                        value: 'true'
+                                                                                                    });
+                                                                                                    formReq.push({
+                                                                                                        name: 'docId',
+                                                                                                        value: id
+                                                                                                    });
+                                                                                                    req.Post(formReq);
+                                                                                                    req.Json();
+                                                                                                    req.Send().then(data => {
+                                                                                                        bodEl.appendChild(ConfirmationAlert(data.message, () => {
+                                                                                                            window.location.reload();
+                                                                                                        }))
+                                                                                                    })
+                                                                                                }
+                                                                                            }, 50)
+                                                                                        }
+                                                                                    }
+                                                                                } catch (error) {
+                                                                                    remove()
+                                                                                    console.error('Error checking access:', error)
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }))
+                                                                }
+                                                                
+                                                                return($({
+                                                                    tag:'div',
+                                                                    att:{
+                                                                        className:'listCampEv'
+                                                                    },
+                                                                    child:[
+                                                                        $({
+                                                                            tag:'div',
+                                                                            style:{
+                                                                                width:'100%',
+                                                                                cursor: 'pointer',
+                                                                                fontWeight: 'bold'
+                                                                            },
+                                                                            text:content,
+                                                                            event:{
+                                                                                type:'click',
+                                                                                method:()=>{
+                                                                                    campState=!campState
+                                                                                    if (campState) {
+                                                                                        resList.forEach(val => {
+                                                                                            bodEl.appendChild(fileListName({
+                                                                                                author: val.author,
+                                                                                                id: val.id,
+                                                                                                name: val.title,
+                                                                                                file: val.file,
+                                                                                                file_type: val.file_type,
+                                                                                                drive_file_id: val.drive_file_id,
+                                                                                                drive_download_url: val.drive_download_url
+                                                                                            }));
+                                                                                        });
+                                                                                    }else {
+                                                                                        bodEl.innerHTML=''
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag:'div',
+                                                                            style:{
+                                                                                width:'100%',
+                                                                                height:'fit-content',
+                                                                            },
+                                                                            elementHandler:(el)=>{
+                                                                                bodEl=el
+                                                                            },
+                                                                        })
+                                                                    ]
+                                                                }))
+                                                            }
+                                                            
+                                                            // Helper function to create Panel function
+                                                            const createPanelFunction = () => {
+                                                                return (docID, fileUrl = null, fileType = 'local') => {
+                                                                    let mainP
+                                                                    const file = (url, type) => {
+                                                                        let fileViewer
+                                                                        
+                                                                        if (type === 'drive') {
+                                                                            window.open(url, '_blank');
+                                                                            return null;
+                                                                        } else {
+                                                                            const isGoogleDriveUrl = url.includes('drive.google.com')
+                                                                            
+                                                                            if (isGoogleDriveUrl) {
+                                                                                fileViewer = $({
+                                                                                    tag: 'iframe',
+                                                                                    att: {
+                                                                                        src: url,
+                                                                                        type: 'application/pdf'
+                                                                                    },
+                                                                                    style: {
+                                                                                        width: '100%',
+                                                                                        height: '100%',
+                                                                                        border: 'none'
+                                                                                    }
+                                                                                })
+                                                                            } else {
+                                                                                fileViewer = $({
+                                                                                    tag: 'object',
+                                                                                    att: {
+                                                                                        data: '/' + url,
+                                                                                        type: 'application/pdf'
+                                                                                    },
+                                                                                    style: {
+                                                                                        width: '100%',
+                                                                                        height: '100%'
+                                                                                    }
+                                                                                })
+                                                                            }
+                                                                            
+                                                                            return ($({
+                                                                                tag: 'div',
+                                                                                style: {
+                                                                                    margin: 'auto',
+                                                                                    width: '80%',
+                                                                                    height: '98%',
+                                                                                    position: 'relative',
+                                                                                },
+                                                                                child: [
+                                                                                    $({
+                                                                                        tag: 'div',
+                                                                                        att: {
+                                                                                            className: 'fa-solid fa-circle-xmark'
+                                                                                        },
+                                                                                        style: {
+                                                                                            fontSize: '3vw',
+                                                                                            position: 'absolute',
+                                                                                            left: '-4vw',
+                                                                                            color: 'deepskyblue',
+                                                                                            cursor: 'pointer'
+                                                                                        },
+                                                                                        event: {
+                                                                                            type: 'click',
+                                                                                            method: () => {
+                                                                                                mainP.remove()
+                                                                                            }
+                                                                                        },
+                                                                                    }),
+                                                                                    fileViewer
+                                                                                ]
+                                                                            }))
+                                                                        }
+                                                                    }
+                                                                    
+                                                                    if (fileType === 'drive') {
+                                                                        window.open(fileUrl, '_blank');
+                                                                        return null;
+                                                                    }
+                                                                    
+                                                                    return ($({
+                                                                        tag: 'div',
+                                                                        style: {
+                                                                            width: '100%',
+                                                                            height: '100%',
+                                                                            position: 'absolute',
+                                                                            top: '0',
+                                                                            left: '0',
+                                                                            backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
+                                                                            display: 'flex',
+                                                                            justifyContent: 'center'
+                                                                        },
+                                                                        elementHandler: (el) => {
+                                                                            mainP = el
+                                                                            
+                                                                            if (fileUrl) {
+                                                                                const viewer = file(fileUrl, fileType)
+                                                                                if (viewer) el.appendChild(viewer)
+                                                                            } else {
+                                                                                const req = new Request('/uploadResearchFile')
+                                                                                const reqList = []
+                                                                                reqList.push({
+                                                                                    name: 'researchFile',
+                                                                                    value: 'true'
+                                                                                })
+                                                                                reqList.push({
+                                                                                    name: 'docId',
+                                                                                    value: docID
+                                                                                })
+                                                                                req.Post(reqList)
+                                                                                req.Send().then(data => {
+                                                                                    const viewer = file(data, fileType)
+                                                                                    if (viewer) el.appendChild(viewer)
+                                                                                }).catch(res => {
+                                                                                    console.log(res)
+                                                                                })
+                                                                            }
+                                                                        }
+                                                                    }))
+                                                                }
+                                                            }
+                                                            
+                                                            // Add files to container
+                                                            const fileGroup = SearchListCampus(`Files from ${campusGroup.name}`, campusGroup.list);
+                                                            fileContainer.appendChild(fileGroup);
+                                                        }
+                                                    })
+                                                ]
+                                            });
+                                            el.appendChild(campusSection);
+                                        });
                                     }
-                                },
-                            }),
-                            $({
-                                tag:'div',
-                                style:{
-                                    width:'100%',
-                                    height:'fit-content',
-                                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    color:'#bbb'
-                                },
-                                elementHandler:(el)=>{
-                                    bod=el
-                                }
-                            })
-                        ]
-                    }))
-                }
+                                })
+                            ]
+                        });
+                        
+                        MainBody.appendChild(eventGroupElement);
+                    }
+                });
+            }
 
+            // Helper function to load all events
+            const loadAllEvents = async () => {
+                if (!MainBody) return;
+                
+                MainBody.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">Loading...</div>';
+                
+                try {
+                    const form = new FormData();
+                    form.append('getEventAdmin', 'true');
+                    
+                    const response = await fetch('/eventRequest', {
+                        method: 'POST',
+                        body: form
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        MainBody.innerHTML = '';
+                        
+                        data.forEach(val => {
+                            MainBody.appendChild(group({
+                                text: val.name,
+                                id: val.id
+                            }));
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading events:', error);
+                    MainBody.innerHTML = `<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Error loading events</div>`;
+                }
+            }
+
+            const bodyContainer = () => {
                 return ($({
                     tag: 'div',
                     style: {
@@ -3750,19 +4180,7 @@ const Submitted = () => {
                     },
                     elementHandler: async (el)=>{
                         MainBody=el
-                        const form= new FormData()
-                        //getEvent
-                        //getEventAdmin
-                        form.append('getEventAdmin','true')
-                        await fetch('/eventRequest',{
-                            method:'POST',
-                            body:form
-                        }).then(res=>res.json())
-                            .then(data=>{
-                                data.forEach(val=>{
-                                    el.appendChild(group({text:val.name,id:val.id}))
-                                })
-                            })
+                        loadAllEvents();
                     }
                 }))
             }
@@ -3773,10 +4191,8 @@ const Submitted = () => {
                     width: '49%',
                     height: '100%',
                     margin: 'auto',
-
                 },
                 child: [
-
                     $({
                         tag:'div',
                         style:{
