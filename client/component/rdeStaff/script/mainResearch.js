@@ -3471,8 +3471,14 @@ export const ResearchMain = () => {
 
             }
             const Filter = () => {
-                let request
-                return ($({
+                // Track pagination state
+                let currentPage = 1;
+                let currentEventId = '0';
+                let isLoading = false;
+                let hasMore = true;
+                let totalDocuments = 0;
+                
+                return $({
                     tag: 'div',
                     style: {
                         width: '100%',
@@ -3494,6 +3500,9 @@ export const ResearchMain = () => {
                             child: [
                                 $({
                                     tag: 'select',
+                                    att: {
+                                        id: 'eventSelectFilter'
+                                    },
                                     style: {
                                         backgroundColor: 'transparent',
                                         fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
@@ -3506,6 +3515,7 @@ export const ResearchMain = () => {
                                         textAlign: 'center'
                                     },
                                     elementHandler: (el) => {
+                                        // Add default "All Event" option
                                         el.appendChild($({
                                             tag: 'option',
                                             text: 'All Event',
@@ -3515,17 +3525,20 @@ export const ResearchMain = () => {
                                                 color: '#bbb'
                                             },
                                             att: {
-                                                id: '0'
+                                                value: '0',
+                                                selected: true
                                             }
                                         }))
-                                        const req = new Request('/eventRequest')
+                                        
+                                        // Load events
+                                        const req = new Request('/eventRequest');
                                         req.Post([
                                             {
                                                 name: 'getEventAdmin',
                                                 value: '1'
                                             }
-                                        ])
-                                        req.Json()
+                                        ]);
+                                        req.Json();
                                         req.Send().then(data => {
                                             data.forEach(val => {
                                                 el.appendChild($({
@@ -3536,24 +3549,19 @@ export const ResearchMain = () => {
                                                         color: '#bbb'
                                                     },
                                                     att: {
-                                                        id: val.id
+                                                        value: val.id
                                                     }
                                                 }))
                                             })
                                         })
-                                    },
-                                    event: {
-                                        type: 'change',
-                                        method: (eve) => {
-                                            request = eve.target.childNodes[eve.target.selectedIndex].id
-                                        }
                                     }
                                 }),
                                 $({
                                     tag: 'div',
                                     att: {
                                         className: 'fa-solid fa-arrows-rotate',
-                                        title: 'Refresh Event Documents'
+                                        title: 'Refresh Event Documents',
+                                        id: 'refreshBtn'
                                     },
                                     style: {
                                         margin: 'auto',
@@ -3566,43 +3574,366 @@ export const ResearchMain = () => {
                                     event: {
                                         type: 'click',
                                         method: () => {
-                                            serch.value = ''
-                                            const req = new Request('/eventRequest')
-                                            req.Post([
-                                                {
-                                                    name: 'requestEventRDE',
-                                                    value: '0'
-                                                },
-                                                {
-                                                    name: 'eventId',
-                                                    value: request
-                                                }
-                                            ])
-                                            req.Json()
-                                            req.Send().then(data => {
-                                                researchBody.innerHTML = ''
-                                                data.forEach(val => {
-                                                    researchBody.appendChild(ResearchDocs({
-                                                        category: val.category,
-                                                        center: val.center,
-                                                        title: val.title,
-                                                        author: val.author,
-                                                        file: val.file,
-                                                        eventTYpe: val.event,
-                                                        campus: val.campus,
-                                                        deleteRequest: val.deletestate,
-                                                        docId: val.id,
-                                                        endorseId:val.endorsId
-                                                    }))
-                                                })
-                                            })
+                                            // Reset to page 1
+                                            currentPage = 1;
+                                            
+                                            console.log('Refresh button clicked');
+                                            
+                                            // Get the select element by ID
+                                            const eventSelect = document.getElementById('eventSelectFilter');
+                                            
+                                            if (!eventSelect) {
+                                                console.error('Could not find event select element!');
+                                                return;
+                                            }
+                                            
+                                            // Get the selected value
+                                            currentEventId = eventSelect.value || '0';
+                                            const selectedText = eventSelect.options[eventSelect.selectedIndex].text;
+                                            
+                                            console.log('Selected event:', selectedText, 'ID:', currentEventId);
+                                            
+                                            // Clear search if it exists
+                                            if (typeof serch !== 'undefined' && serch) {
+                                                serch.value = '';
+                                            }
+                                            
+                                            // Load first page (this will replace any existing content)
+                                            loadDocuments(currentEventId, 1);
                                         }
                                     }
                                 })
                             ]
                         })
                     ],
-                }))
+                });
+                
+                function loadDocuments(eventId, page) {
+                    if (isLoading) return;
+                    
+                    isLoading = true;
+                    
+                    // Always show loading indicator since we're replacing content
+                    researchBody.innerHTML = '';
+                    researchBody.appendChild($({
+                        tag: 'div',
+                        att: { id: 'loadingIndicator' },
+                        style: {
+                            textAlign: 'center',
+                            padding: '20px',
+                            color: '#bbb',
+                            fontSize: '1.2vw',
+                            backgroundColor: 'rgba(0,0,0,0.2)',
+                            borderRadius: '5px',
+                            margin: '20px'
+                        },
+                        text: 'Loading documents...'
+                    }));
+                    
+                    // Make the request
+                    const formData = new FormData();
+                    formData.append('requestEventRDE', '1');
+                    formData.append('eventId', eventId);
+                    formData.append('page', page);
+                    formData.append('limit', 10); // Load 10 at a time
+                    
+                    fetch('/eventRequest', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(response => {
+                        console.log('Response received:', response);
+                        
+                        // Remove loading indicator
+                        const loadingIndicator = document.getElementById('loadingIndicator');
+                        if (loadingIndicator) loadingIndicator.remove();
+                        
+                        if (response.error) {
+                            console.error('Server error:', response.error);
+                            showError('Server error: ' + response.error);
+                            return;
+                        }
+                        
+                        if (!response.data || !Array.isArray(response.data)) {
+                            console.error('Invalid response format:', response);
+                            showError('Invalid response format from server');
+                            return;
+                        }
+                        
+                        const data = response.data;
+                        hasMore = response.hasMore;
+                        totalDocuments = response.total;
+                        currentPage = page; // Update current page
+                        
+                        // Clear and show new content (REPLACE, not append)
+                        researchBody.innerHTML = '';
+                        
+                        if (data.length === 0) {
+                            const eventSelect = document.getElementById('eventSelectFilter');
+                            const selectedText = eventSelect ? eventSelect.options[eventSelect.selectedIndex].text : 'Selected event';
+                            
+                            researchBody.appendChild($({
+                                tag: 'div',
+                                style: {
+                                    textAlign: 'center',
+                                    padding: '20px',
+                                    color: '#bbb',
+                                    fontSize: '1.2vw',
+                                    backgroundColor: 'rgba(0,0,0,0.2)',
+                                    borderRadius: '5px',
+                                    margin: '20px'
+                                },
+                                text: `No documents found for "${selectedText}"`
+                            }));
+                        } else {
+                            // Show page navigation info
+                            const navDiv = $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '10px',
+                                    color: '#4CAF50',
+                                    fontSize: '1vw',
+                                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                    borderRadius: '5px',
+                                    margin: '10px',
+                                    marginBottom: '20px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        text: `Page ${page} of ${response.totalPages || '?'}`
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        text: `Total: ${totalDocuments} document(s)`
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        text: `Showing documents ${((page - 1) * 10) + 1} to ${Math.min(page * 10, totalDocuments)}`
+                                    })
+                                ]
+                            });
+                            researchBody.appendChild(navDiv);
+                            
+                            // Add documents (only current batch)
+                            data.forEach((val, index) => {
+                                researchBody.appendChild(ResearchDocs({
+                                    category: val.category,
+                                    center: val.center,
+                                    title: val.title,
+                                    author: val.author,
+                                    file: val.file,
+                                    eventTYpe: val.event,
+                                    campus: val.campus,
+                                    deleteRequest: val.deletestate,
+                                    docId: val.id,
+                                    endorseId: val.endorsId
+                                }));
+                            });
+                            
+                            // Add pagination controls
+                            const paginationDiv = $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    gap: '10px',
+                                    margin: '20px auto',
+                                    padding: '10px'
+                                },
+                                child: []
+                            });
+                            
+                            // Previous button
+                            if (page > 1) {
+                                const prevBtn = $({
+                                    tag: 'button',
+                                    style: {
+                                        padding: '10px 20px',
+                                        backgroundColor: 'rgba(0, 100, 255, 0.2)',
+                                        color: 'deepskyblue',
+                                        border: '1px solid deepskyblue',
+                                        borderRadius: '5px',
+                                        fontSize: '1vw',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s'
+                                    },
+                                    text: '← Previous',
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            loadDocuments(currentEventId, page - 1);
+                                        }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.3)';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.2)';
+                                    }
+                                });
+                                paginationDiv.appendChild(prevBtn);
+                            }
+                            
+                            // Page indicator
+                            const pageIndicator = $({
+                                tag: 'div',
+                                style: {
+                                    padding: '10px 20px',
+                                    color: '#bbb',
+                                    fontSize: '1vw'
+                                },
+                                text: `Page ${page}`
+                            });
+                            paginationDiv.appendChild(pageIndicator);
+                            
+                            // Next button
+                            if (hasMore) {
+                                const nextBtn = $({
+                                    tag: 'button',
+                                    style: {
+                                        padding: '10px 20px',
+                                        backgroundColor: 'rgba(0, 100, 255, 0.2)',
+                                        color: 'deepskyblue',
+                                        border: '1px solid deepskyblue',
+                                        borderRadius: '5px',
+                                        fontSize: '1vw',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s'
+                                    },
+                                    text: 'Next →',
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            loadDocuments(currentEventId, page + 1);
+                                        }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.3)';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.2)';
+                                    }
+                                });
+                                paginationDiv.appendChild(nextBtn);
+                            }
+                            
+                            researchBody.appendChild(paginationDiv);
+                            
+                            // Add page number input for direct navigation (optional)
+                            if (response.totalPages > 5) {
+                                const pageNavDiv = $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        marginTop: '10px'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            style: { color: '#bbb', fontSize: '0.9vw' },
+                                            text: 'Go to page:'
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'number',
+                                                min: '1',
+                                                max: response.totalPages,
+                                                value: page
+                                            },
+                                            style: {
+                                                width: '60px',
+                                                padding: '5px',
+                                                backgroundColor: 'rgba(0,0,0,0.3)',
+                                                color: '#bbb',
+                                                border: '1px solid #555',
+                                                borderRadius: '3px',
+                                                textAlign: 'center'
+                                            },
+                                            event: {
+                                                type: 'change',
+                                                method: (e) => {
+                                                    const goToPage = parseInt(e.target.value);
+                                                    if (goToPage >= 1 && goToPage <= response.totalPages) {
+                                                        loadDocuments(currentEventId, goToPage);
+                                                    } else {
+                                                        e.target.value = page;
+                                                    }
+                                                }
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            style: { color: '#888', fontSize: '0.9vw' },
+                                            text: `of ${response.totalPages}`
+                                        })
+                                    ]
+                                });
+                                researchBody.appendChild(pageNavDiv);
+                            }
+                        }
+                        
+                        isLoading = false;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        
+                        // Remove loading indicator
+                        const loadingIndicator = document.getElementById('loadingIndicator');
+                        if (loadingIndicator) loadingIndicator.remove();
+                        
+                        showError('Error: ' + error.message);
+                        isLoading = false;
+                    });
+                }
+                
+                function showError(message) {
+                    if (researchBody) {
+                        researchBody.innerHTML = '';
+                        researchBody.appendChild($({
+                            tag: 'div',
+                            style: {
+                                textAlign: 'center',
+                                padding: '20px',
+                                color: '#ff4444',
+                                fontSize: '1.2vw'
+                            },
+                            text: message
+                        }));
+                    }
+                }
+                
+                // Add scroll event listener for infinite scroll (optional)
+                function setupInfiniteScroll() {
+                    window.addEventListener('scroll', () => {
+                        if (isLoading || !hasMore) return;
+                        
+                        const scrollPosition = window.innerHeight + window.scrollY;
+                        const pageHeight = document.documentElement.scrollHeight;
+                        const threshold = 100; // pixels from bottom
+                        
+                        if (scrollPosition >= pageHeight - threshold) {
+                            currentPage++;
+                            loadDocuments(currentEventId, currentPage);
+                        }
+                    });
+                }
+                
+                // Initialize scroll listener
+                setTimeout(setupInfiniteScroll, 1000);
             }
             const Score=()=>{
                 return($({
@@ -5541,4 +5872,3 @@ export const ResearchMain = () => {
         ]
     }))
 }
-

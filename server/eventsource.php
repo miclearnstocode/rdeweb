@@ -90,23 +90,57 @@ if(isset($_POST['getEventAdmin'])){
 
 
 if(isset($_POST['requestEventRDE'])) {
-    $res=[];
+    // Clear all buffers
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    
+    // Start fresh
+    ob_start();
+    
+    // Set JSON header
+    header('Content-Type: application/json; charset=utf-8');
+    
+    $res = [];
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $eventId=$_POST['eventId'];
-        $query="";
-        $statement="";
+        $eventId = $_POST['eventId'] ?? '0';
+        $page = isset($_POST['page']) ? (int)$_POST['page'] : 1;
+        $limit = isset($_POST['limit']) ? (int)$_POST['limit'] : 10;
         
-        // UPDATED QUERY to include Google Drive fields
-        if($_POST['eventId']==='0'){
-            $query="
+        // Calculate offset for pagination
+        $offset = ($page - 1) * $limit;
+        
+        error_log("PHP: Processing requestEventRDE with eventId: " . $eventId . ", page: " . $page . ", limit: " . $limit . ", offset: " . $offset);
+        
+        // First, get total count for pagination info
+        $totalCount = 0;
+        
+        if($eventId === '0') {
+            // Get total count
+            $countQuery = "
+                SELECT COUNT(*) as total
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                WHERE endorsement.status = 'accepted'";
+            
+            $countStatement = $con->prepare($countQuery);
+            if ($countStatement->execute()) {
+                $countResult = $countStatement->get_result();
+                $countRow = $countResult->fetch_assoc();
+                $totalCount = $countRow['total'];
+                $countStatement->close();
+            }
+            
+            // Get paginated data
+            $query = "
                 SELECT
                     researchfile.id,
                     researchfile.senderid,
                     researchfile.author,
                     researchfile.title,
-                    researchfile.file,                    -- Local file path
-                    researchfile.drive_view_url,          -- Google Drive view URL
+                    researchfile.file,
+                    researchfile.drive_view_url,
                     researchfile.drive_file_id,
                     researchfile.drive_download_url,
                     researchfile.drive_folder_id,
@@ -115,25 +149,47 @@ if(isset($_POST['requestEventRDE'])) {
                     researchfile.status,
                     researchfile.category,
                     researchfile.center,
-                    researchfile.deletestate,           
+                    researchfile.deletestate,
                     endorsement.campus,
                     endorsement.event,
                     endorsement.date,
                     endorsement.id as endorsId
                 FROM researchfile
-                LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
-                WHERE endorsement.status='accepted'";
-            $statement=$con->prepare($query);
-        }else{
-            $query="
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                WHERE endorsement.status = 'accepted'
+                ORDER BY researchfile.id DESC
+                LIMIT ? OFFSET ?";
+            
+            $statement = $con->prepare($query);
+            $statement->bind_param('ii', $limit, $offset);
+        } else {
+            // Get total count for specific event
+            $countQuery = "
+                SELECT COUNT(*) as total
+                FROM researchfile
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE event_list.id = ?";
+            
+            $countStatement = $con->prepare($countQuery);
+            $countStatement->bind_param('s', $eventId);
+            if ($countStatement->execute()) {
+                $countResult = $countStatement->get_result();
+                $countRow = $countResult->fetch_assoc();
+                $totalCount = $countRow['total'];
+                $countStatement->close();
+            }
+            
+            // Get paginated data for specific event
+            $query = "
                 SELECT
                     event_list.id as eventId,
                     researchfile.id,
                     researchfile.senderid,
                     researchfile.author,
                     researchfile.title,
-                    researchfile.file,                    -- Local file path
-                    researchfile.drive_view_url,          -- Google Drive view URL
+                    researchfile.file,
+                    researchfile.drive_view_url,
                     researchfile.drive_file_id,
                     researchfile.drive_download_url,
                     researchfile.drive_folder_id,
@@ -142,47 +198,76 @@ if(isset($_POST['requestEventRDE'])) {
                     researchfile.status,
                     researchfile.category,
                     researchfile.center,
-                    researchfile.deletestate,           
+                    researchfile.deletestate,
                     endorsement.campus,
                     endorsement.event,
                     endorsement.date,
                     endorsement.id as endorsId
                 FROM researchfile
-                LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
-                LEFT JOIN event_list ON researchfile.event=event_list.name
-                WHERE endorsement.status='accepted' AND event_list.id=?";
-            $statement=$con->prepare($query);
-            $statement->bind_param('s',$eventId);
+                LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                LEFT JOIN event_list ON researchfile.event = event_list.name
+                WHERE event_list.id = ?
+                ORDER BY researchfile.id DESC
+                LIMIT ? OFFSET ?";
+            
+            $statement = $con->prepare($query);
+            $statement->bind_param('sii', $eventId, $limit, $offset);
         }
         
-        $statement->execute();
-        $result=$statement->get_result();
-        
-        while ($val=$result->fetch_assoc()){
-            // Create a new array with backward compatibility
-            $item = $val;
+        if ($statement->execute()) {
+            $result = $statement->get_result();
             
-            // For backward compatibility: 
-            // If Google Drive URL exists, use it in the 'file' field
-            // Otherwise, use the local file path
-            if (!empty($val['drive_view_url'])) {
-                $item['file'] = $val['drive_view_url'];  // Google Drive URL
-            } else {
-                $item['file'] = $val['file'];  // Local file path
+            error_log("PHP: Query executed, found " . $result->num_rows . " rows (page: " . $page . ")");
+            
+            $data = [];
+            while ($val = $result->fetch_assoc()) {
+                // Process file paths
+                if (!empty($val['drive_view_url'])) {
+                    $val['file'] = $val['drive_view_url'];
+                }
+                
+                // Add to data array
+                $data[] = $val;
             }
             
-            // Add Google Drive fields for reference (optional)
-            $item['drive_view_url'] = $val['drive_view_url'];
-            $item['drive_file_id'] = $val['drive_file_id'];
-            $item['drive_download_url'] = $val['drive_download_url'];
+            error_log("PHP: Added " . count($data) . " items to data array");
             
-            $res[]=$item;
+            // Calculate if there are more pages
+            $hasMore = ($page * $limit) < $totalCount;
+            
+            // Prepare complete response
+            $res = [
+                'data' => $data,
+                'hasMore' => $hasMore,
+                'total' => $totalCount,
+                'currentPage' => $page,
+                'totalPages' => ceil($totalCount / $limit)
+            ];
+            
+            $statement->close();
+        } else {
+            error_log("PHP: Query execution failed: " . $statement->error);
+            $res = ['error' => 'Query failed: ' . $statement->error];
         }
+        
+        $con->close();
+    } else {
+        error_log("PHP: Database connection failed");
+        $res = ['error' => 'Database connection failed'];
     }
     
+    // Clear output buffer and send JSON
     ob_clean();
-    echo json_encode($res);
-    ob_end_flush();
+    
+    $json = json_encode($res);
+    if ($json === false) {
+        error_log("PHP: json_encode failed: " . json_last_error_msg());
+        $json = json_encode(['error' => 'Failed to encode JSON: ' . json_last_error_msg()]);
+    } else {
+        error_log("PHP: JSON encoded successfully, length: " . strlen($json));
+    }
+    
+    echo $json;
     exit();
 }
 
