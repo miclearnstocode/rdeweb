@@ -3975,6 +3975,12 @@ export const ResearchMain = () => {
                 }))
             }
             const EndorsementPanel = () => {
+                // Track pagination state
+                let currentPage = 1
+                let isLoading = false
+                let hasMore = true
+                let totalEndorsements = 0
+                let totalPages = 1
                 const File = ({camp, eventName, date, id, research,resStat}) => {
                     let dropList, stateDrop = false
                     const ViewEn = () => {
@@ -4798,6 +4804,277 @@ export const ResearchMain = () => {
                         ]
                     }))
                 }
+                function loadEndorsements(page) {
+                    if (isLoading) return;
+                    
+                    isLoading = true;
+                    currentPage = page;
+                    
+                    // ALWAYS clear and show loading - REPLACE, don't append
+                    endorseBody.innerHTML = '';
+                    endorseBody.appendChild($({
+                        tag: 'div',
+                        att: { id: 'loadingIndicator' },
+                        style: {
+                            textAlign: 'center',
+                            padding: '20px',
+                            color: '#bbb',
+                            fontSize: '1.2vw',
+                            backgroundColor: 'rgba(0,0,0,0.2)',
+                            borderRadius: '5px',
+                            margin: '20px'
+                        },
+                        text: 'Loading endorsements...'
+                    }));
+                    
+                    // Make paginated request
+                    const form = new FormData();
+                    form.append('endorsementList', 'true');
+                    form.append('page', page);
+                    form.append('limit', 10); // Load exactly 10 per page
+                    
+                    fetch('/endorsement', {
+                        method: 'POST',
+                        body: form
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(response => {
+                        // Remove loading indicator
+                        const loadingIndicator = document.getElementById('loadingIndicator');
+                        if (loadingIndicator) loadingIndicator.remove();
+                        
+                        if (response.error) {
+                            showEndorsementError('Server error: ' + response.error);
+                            return;
+                        }
+                        
+                        if (!response.data || !Array.isArray(response.data)) {
+                            showEndorsementError('Invalid response format from server');
+                            return;
+                        }
+                        
+                        const data = response.data;
+                        totalPages = response.totalPages;
+                        totalEndorsements = response.total;
+                        
+                        // ALWAYS clear and replace content
+                        endorseBody.innerHTML = '';
+                        
+                        if (data.length === 0) {
+                            endorseBody.appendChild($({
+                                tag: 'div',
+                                style: {
+                                    textAlign: 'center',
+                                    padding: '20px',
+                                    color: '#bbb',
+                                    fontSize: '1.2vw',
+                                    backgroundColor: 'rgba(0,0,0,0.2)',
+                                    borderRadius: '5px',
+                                    margin: '20px'
+                                },
+                                text: 'No endorsements found'
+                            }));
+                        } else {
+                            // Add page navigation info at the TOP
+                            endorseBody.appendChild($({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '10px',
+                                    color: '#4CAF50',
+                                    fontSize: '1vw',
+                                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                    borderRadius: '5px',
+                                    margin: '10px',
+                                    marginBottom: '20px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        text: `Page ${currentPage} of ${totalPages}`
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        text: `Total: ${totalEndorsements} endorsement(s)`
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        text: `Showing ${((currentPage - 1) * 10) + 1} to ${Math.min(currentPage * 10, totalEndorsements)}`
+                                    })
+                                ]
+                            }));
+                            
+                            // Add ONLY the current page's endorsements
+                            data.forEach(val => {
+                                if(val.resStat*1===0){
+                                    endorseBody.appendChild(File({
+                                        camp: val.campus,
+                                        eventName: val.event,
+                                        date: val.date.split(' ')[0],
+                                        id: val.id,
+                                        research: val.research,
+                                        resStat: val.resStat
+                                    }));
+                                } else {
+                                    endorseBody.appendChild(File({
+                                        camp: val.campus,
+                                        eventName: val.event,
+                                        date: val.date.split(' ')[0],
+                                        id: val.id,
+                                        research: val.research,
+                                        resStat: val.resStat
+                                    }));
+                                }
+                            });
+                            
+                            // Add pagination controls at the BOTTOM
+                            const paginationDiv = $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    gap: '10px',
+                                    margin: '20px auto',
+                                    padding: '10px'
+                                },
+                                child: []
+                            });
+                            
+                            // Previous button
+                            if (currentPage > 1) {
+                                const prevBtn = $({
+                                    tag: 'button',
+                                    style: {
+                                        padding: '10px 20px',
+                                        backgroundColor: 'rgba(0, 100, 255, 0.2)',
+                                        color: 'deepskyblue',
+                                        border: '1px solid deepskyblue',
+                                        borderRadius: '5px',
+                                        fontSize: '1vw',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s'
+                                    },
+                                    text: '← Previous',
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            loadEndorsements(currentPage - 1);
+                                        }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.3)';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.2)';
+                                    }
+                                });
+                                paginationDiv.appendChild(prevBtn);
+                            }
+                            
+                            // Page indicator - with dropdown for quick navigation
+                            const pageSelect = $({
+                                tag: 'select',
+                                style: {
+                                    padding: '8px 15px',
+                                    backgroundColor: 'rgba(0,0,0,0.3)',
+                                    color: '#bbb',
+                                    border: '1px solid #555',
+                                    borderRadius: '3px',
+                                    fontSize: '1vw',
+                                    textAlign: 'center'
+                                },
+                                event: {
+                                    type: 'change',
+                                    method: (e) => {
+                                        const goToPage = parseInt(e.target.value);
+                                        if (goToPage >= 1 && goToPage <= totalPages) {
+                                            loadEndorsements(goToPage);
+                                        }
+                                    }
+                                }
+                            });
+                            
+                            for (let i = 1; i <= totalPages; i++) {
+                                const option = document.createElement('option');
+                                option.value = i;
+                                option.textContent = i;
+                                if (i === currentPage) {
+                                    option.selected = true;
+                                }
+                                pageSelect.appendChild(option);
+                            }
+                            
+                            paginationDiv.appendChild(pageSelect);
+                            
+                            // Next button
+                            if (currentPage < totalPages) {
+                                const nextBtn = $({
+                                    tag: 'button',
+                                    style: {
+                                        padding: '10px 20px',
+                                        backgroundColor: 'rgba(0, 100, 255, 0.2)',
+                                        color: 'deepskyblue',
+                                        border: '1px solid deepskyblue',
+                                        borderRadius: '5px',
+                                        fontSize: '1vw',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s'
+                                    },
+                                    text: 'Next →',
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            loadEndorsements(currentPage + 1);
+                                        }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.3)';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.2)';
+                                    }
+                                });
+                                paginationDiv.appendChild(nextBtn);
+                            }
+                            
+                            endorseBody.appendChild(paginationDiv);
+                        }
+                        
+                        isLoading = false;
+                    })
+                    .catch(error => {
+                        console.error('Error loading endorsements:', error);
+                        
+                        // Remove loading indicator
+                        const loadingIndicator = document.getElementById('loadingIndicator');
+                        if (loadingIndicator) loadingIndicator.remove();
+                        
+                        showEndorsementError('Error: ' + error.message);
+                        isLoading = false;
+                    });
+                }
+                
+                function showEndorsementError(message) {
+                    endorseBody.innerHTML = '';
+                    endorseBody.appendChild($({
+                        tag: 'div',
+                        style: {
+                            textAlign: 'center',
+                            padding: '20px',
+                            color: '#ff4444',
+                            fontSize: '1.2vw'
+                        },
+                        text: message
+                    }));
+                }
+                
                 return ($({
                     tag: 'div',
                     style: {
@@ -4808,37 +5085,10 @@ export const ResearchMain = () => {
                         boxShadow: 'inset .3vw .3vw 2vh .1vh black',
                         overflowY: 'auto'
                     },
-                    elementHandler: async (el) => {
-                        endorseBody = el
-                        const form = new FormData()
-                        form.append('endorsementList', 'true')
-                        await fetch('/endorsement', {
-                            method: 'POST',
-                            body: form
-                        }).then(res => res.json())
-                            .then(data => {
-                                data.forEach(val => {
-                                    if(val.resStat*1===0){
-                                        el.insertBefore(File({
-                                            camp: val.campus,
-                                            eventName: val.event,
-                                            date: val.date.split(' ')[0],
-                                            id: val.id,
-                                            research: val.research,
-                                            resStat:val.resStat
-                                        }), el.childNodes[0])
-                                    }else {
-                                        el.appendChild(File({
-                                            camp: val.campus,
-                                            eventName: val.event,
-                                            date: val.date.split(' ')[0],
-                                            id: val.id,
-                                            research: val.research,
-                                            resStat:val.resStat
-                                        }))
-                                    }
-                                })
-                            })
+                    elementHandler: (el) => {
+                        endorseBody = el;
+                        // Load first page
+                        loadEndorsements(1);
                     }
                 }))
             }

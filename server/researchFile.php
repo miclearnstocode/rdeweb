@@ -42,11 +42,12 @@ include(__DIR__ . '/db.php');
 
 /** @var TYPE_NAME $dbName */
 
-    /** @var TYPE_NAME $rdeEmail */
+/** @var TYPE_NAME $rdeEmail */
 
-    /** @var TYPE_NAME $emailPassword */
-    include_once('Mailer/mailTemplate.php');
-    include_once('Mailer/MailSender.php');
+/** @var TYPE_NAME $emailPassword */
+
+require_once __DIR__ . '/Mailer/mailTemplate.php';
+require_once __DIR__ . '/Mailer/MailSender.php';
 date_default_timezone_set('Asia/Manila');
 
 // Function to get center code from center name (fixed mapping)
