@@ -303,6 +303,7 @@ Feb 1, 2026
 
 feb 2, 2026
 home/app/public_html (app.capsurde.net root)
+    rdeweb/                        # root of my local web app project
         ├── client/                    #  frontend files
         ├── server/                    # Backend PHP APIs  
         ├── config/                    # Configuration files
@@ -310,10 +311,7 @@ home/app/public_html (app.capsurde.net root)
         ├── particle/                  # Particle files
         ├── css/                       # CSS files
         ├── external/                  # External files
-        ├── .htaccess                  # Main configuration
-        ├── .htaccess.phpupgrader.9d5346ef
-        ├── .htaccess.phpupgrader.0864852b
-        ├── .htaccess.phpupgrader.initial
+        ├── .htaccess                  # Nuclear optional
         ├── .composer.json            # Composer configuration
         ├── composer.lock              # Composer lock file
         ├── index.html                 # SPA entry point (MAIN ENTRY)
@@ -324,5 +322,10 @@ index.html → SPA front-end
 index.php → router/backend entry
 server/ → backend PHP APIs
 
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7/pQanSeZDbI3RldKfS7LptHN6JOc7G44wKGZbyNItdApedCzMg/u51p7MquQrCWMKIyc2fnR5TFCQ9RxiKOU35E5nZXNR2yO/YLxUhO5W0pngYq86nDASjrXKNdfAmPWOcDYYgxL2fh+ZmDpqkF6llA57JcEqq2PgCdPLbXiXoLncRGWacYTqkDSqQYQyIfaptjuEC/gbluVKea6xBwo2aaxXLvafnpBjWrBAXOtkAi8dVJDvDAAnr1Nd1SpR80PX+IEuRT5E3CqzoLvd97/ysZNqRVs6LlPRXk/l1FFM/dO5AltO3hhzspDVFJCNVmyFPnD4wUZiRj4M+UvwfMB
+Feb 5, 2026
+need to have balance between database and frontend
+Fix using keyset pagination to bypass memory limits
 
+In cPanel → SSL/TLS → Manage AutoSSL → Run AutoSSL manually.
+The problem of app.capsurde.net iya nga DNS wala pa ma resolve globally muna nga indi maka auto SSL kay indi pa ma verify ang domain ownership.
+It should succeed once DNS resolves globally.

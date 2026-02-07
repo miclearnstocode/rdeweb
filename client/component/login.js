@@ -1493,4 +1493,3 @@ export const LoginPage = () => {
     }))
 
 }
-

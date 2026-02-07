@@ -48,18 +48,31 @@ if(isset($_POST['endorsementList'])){
     $response->currentPage = 1;
     $response->totalPages = 0;
     $response->error = '';
+    $response->lastId = 0;
+    $response->nextLastId = 0;
     
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+    try {
+        // Clear buffers
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
+        ob_start();
+        header('Content-Type: application/json; charset=utf-8');
+        
         // Get pagination parameters
         $page = isset($_POST['page']) ? (int)$_POST['page'] : 1;
         $limit = isset($_POST['limit']) ? (int)$_POST['limit'] : 10;
-        $offset = ($page - 1) * $limit;
+        
+        // Keyset pagination parameter
+        $lastId = isset($_POST['lastId']) ? (int)$_POST['lastId'] : 0;
         
         // Validate pagination parameters
         if ($page < 1) $page = 1;
-        if ($limit < 1 || $limit > 100) $limit = 10; // Limit to max 100 per page
+        if ($limit < 1 || $limit > 100) $limit = 10;
         
         $response->currentPage = $page;
+        $response->lastId = $lastId;
         
         // First, get total count
         $countQuery = "SELECT COUNT(*) as total FROM endorsement WHERE endorsement.status='accepted'";
@@ -67,13 +80,12 @@ if(isset($_POST['endorsementList'])){
         if ($countResult) {
             $totalRow = $countResult->fetch_assoc();
             $response->total = (int)$totalRow['total'];
-            $response->totalPages = ceil($response->total / $limit);
-            
-            // Calculate if there are more pages
-            $response->hasMore = ($page * $limit) < $response->total;
+            $response->totalPages = $limit > 0 ? ceil($response->total / $limit) : 0;
+        } else {
+            throw new Exception('Failed to get total count');
         }
         
-        // Get endorsement list with proper Google Drive embed URLs with pagination
+        // Get endorsement list with KEYSET PAGINATION
         $query = "SELECT 
                     endorsement.id, 
                     endorsement.event,
@@ -85,16 +97,36 @@ if(isset($_POST['endorsementList'])){
                     endorsement.drive_view_url,
                     endorsement.status
                   FROM endorsement 
-                  WHERE endorsement.status='accepted' 
-                  ORDER BY endorsement.date DESC
-                  LIMIT ? OFFSET ?";
+                  WHERE endorsement.status='accepted' ";
+        
+        // KEYSET PAGINATION: Use WHERE id < lastId instead of OFFSET
+        if ($lastId > 0) {
+            $query .= "AND endorsement.id < ? ";
+        }
+        
+        $query .= "ORDER BY endorsement.id DESC LIMIT ?";
         
         $enStatement = $con->prepare($query);
-        $enStatement->bind_param("ii", $limit, $offset);
+        if (!$enStatement) {
+            throw new Exception('Prepare failed: ' . $con->error);
+        }
+        
+        if ($lastId > 0) {
+            $enStatement->bind_param("ii", $lastId, $limit);
+        } else {
+            $enStatement->bind_param("i", $limit);
+        }
         
         if ($enStatement->execute()) {
             $result = $enStatement->get_result();
+            
+            if (!$result) {
+                throw new Exception('Get result failed: ' . $enStatement->error);
+            }
 
+            $data = [];
+            $smallestId = PHP_INT_MAX; // Track the smallest ID in this batch
+            
             while ($val = $result->fetch_assoc()) {
                 $endorsement = new stdClass();
                 $endorsement->id = $val['id'];
@@ -104,6 +136,11 @@ if(isset($_POST['endorsementList'])){
                 $endorsement->status = $val['status'];
                 $endorsement->resStat = false;
                 $endorsement->research = [];
+                
+                // Track the smallest ID in this batch (for next page)
+                if ($val['id'] < $smallestId) {
+                    $smallestId = $val['id'];
+                }
                 
                 // Generate proper Google Drive embed URL
                 $fileUrl = '';
@@ -116,7 +153,7 @@ if(isset($_POST['endorsementList'])){
                     $viewUrl = "https://drive.google.com/file/d/" . $val['drive_file_id'] . "/view";
                     $isGoogleDrive = true;
                 } elseif (!empty($val['drive_view_url'])) {
-                    // Use existing view URL if it's already an embed URL
+                    // Use existing view URL
                     $fileUrl = $val['drive_view_url'];
                     $viewUrl = $val['drive_view_url'];
                     $isGoogleDrive = true;
@@ -151,7 +188,7 @@ if(isset($_POST['endorsementList'])){
                 $endorsement->isGoogleDrive = $isGoogleDrive;
                 $endorsement->driveFileId = !empty($val['drive_file_id']) ? $val['drive_file_id'] : null;
                 
-                // Get research files
+                // Get research files for this endorsement
                 $requery = "SELECT 
                             researchfile.id,
                             researchfile.author,
@@ -167,76 +204,111 @@ if(isset($_POST['endorsementList'])){
                            RIGHT JOIN endorsement ON endorsement.id = researchfile.endorsementid 
                            LEFT JOIN researchallfile ON researchfile.id = researchallfile.docid
                            WHERE researchfile.endorsementid = ?
-                           GROUP BY researchfile.id";
+                           GROUP BY researchfile.id
+                           LIMIT 100"; // Added LIMIT to prevent memory issues
                 
                 $resState = $con->prepare($requery);
-                $resState->bind_param("s", $val['id']);
-                $resState->execute();
-                $res = $resState->get_result();
-                
-                while ($v = $res->fetch_assoc()) {
-                    $researchItem = new stdClass();
-                    $researchItem->id = $v['id'];
-                    $researchItem->author = $v['author'];
-                    $researchItem->title = $v['title'];
-                    $researchItem->category = $v['category'];
-                    $researchItem->coauthor = $v['coauthor'];
-                    $researchItem->resStat = $v['resStat'];
-                    
-                    // Generate research file URL
-                    $researchFileUrl = '';
-                    $researchIsGoogleDrive = false;
-                    
-                    if (!empty($v['drive_file_id'])) {
-                        $researchFileUrl = "https://drive.google.com/file/d/" . $v['drive_file_id'] . "/preview";
-                        $researchIsGoogleDrive = true;
-                    } elseif (!empty($v['drive_view_url'])) {
-                        $researchFileUrl = $v['drive_view_url'];
-                        $researchIsGoogleDrive = true;
+                if ($resState) {
+                    $resState->bind_param("s", $val['id']);
+                    if ($resState->execute()) {
+                        $res = $resState->get_result();
                         
-                        if (strpos($researchFileUrl, '/file/d/') !== false && strpos($researchFileUrl, '/preview') === false) {
-                            $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
-                            if (preg_match($pattern, $researchFileUrl, $matches)) {
-                                $researchFileUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
+                        while ($v = $res->fetch_assoc()) {
+                            $researchItem = new stdClass();
+                            $researchItem->id = $v['id'];
+                            $researchItem->author = $v['author'];
+                            $researchItem->title = $v['title'];
+                            $researchItem->category = $v['category'];
+                            $researchItem->coauthor = $v['coauthor'];
+                            $researchItem->resStat = $v['resStat'];
+                            
+                            // Generate research file URL
+                            $researchFileUrl = '';
+                            $researchIsGoogleDrive = false;
+                            
+                            if (!empty($v['drive_file_id'])) {
+                                $researchFileUrl = "https://drive.google.com/file/d/" . $v['drive_file_id'] . "/preview";
+                                $researchIsGoogleDrive = true;
+                            } elseif (!empty($v['drive_view_url'])) {
+                                $researchFileUrl = $v['drive_view_url'];
+                                $researchIsGoogleDrive = true;
+                                
+                                if (strpos($researchFileUrl, '/file/d/') !== false && strpos($researchFileUrl, '/preview') === false) {
+                                    $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
+                                    if (preg_match($pattern, $researchFileUrl, $matches)) {
+                                        $researchFileUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
+                                    }
+                                }
+                            } elseif (!empty($v['drive_download_url'])) {
+                                $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
+                                if (preg_match($pattern, $v['drive_download_url'], $matches)) {
+                                    $researchFileUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
+                                    $researchIsGoogleDrive = true;
+                                }
+                            }
+                            
+                            if (empty($researchFileUrl) && !empty($v['legacy_research_file'])) {
+                                $researchFileUrl = $v['legacy_research_file'];
+                                $researchIsGoogleDrive = false;
+                            }
+                            
+                            $researchItem->researchFile = $researchFileUrl;
+                            $researchItem->isGoogleDrive = $researchIsGoogleDrive;
+                            
+                            $endorsement->research[] = $researchItem;
+                            
+                            if ($v['resStat'] != 0) {
+                                $endorsement->resStat = true;
                             }
                         }
-                    } elseif (!empty($v['drive_download_url'])) {
-                        $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
-                        if (preg_match($pattern, $v['drive_download_url'], $matches)) {
-                            $researchFileUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
-                            $researchIsGoogleDrive = true;
-                        }
                     }
-                    
-                    if (empty($researchFileUrl) && !empty($v['legacy_research_file'])) {
-                        $researchFileUrl = $v['legacy_research_file'];
-                        $researchIsGoogleDrive = false;
-                    }
-                    
-                    $researchItem->researchFile = $researchFileUrl;
-                    $researchItem->isGoogleDrive = $researchIsGoogleDrive;
-                    
-                    $endorsement->research[] = $researchItem;
-                    
-                    if ($v['resStat'] != 0) {
-                        $endorsement->resStat = true;
-                    }
+                    $resState->close();
                 }
                 
-                $response->data[] = $endorsement;
+                $data[] = $endorsement;
             }
             
+            $response->data = $data;
+            
+            // Set nextLastId for next page (keyset pagination)
+            if ($smallestId !== PHP_INT_MAX) {
+                $response->nextLastId = $smallestId;
+            }
+            
+            // Check if there are more records using KEYSET PAGINATION
+            if ($smallestId !== PHP_INT_MAX && $smallestId > 1) {
+                $hasMoreQuery = "SELECT 1 FROM endorsement 
+                                WHERE endorsement.status='accepted' 
+                                AND endorsement.id < ? 
+                                LIMIT 1";
+                $hasMoreStmt = $con->prepare($hasMoreQuery);
+                if ($hasMoreStmt) {
+                    $hasMoreStmt->bind_param("i", $smallestId);
+                    $hasMoreStmt->execute();
+                    $hasMoreResult = $hasMoreStmt->get_result();
+                    $response->hasMore = $hasMoreResult->num_rows > 0;
+                    $hasMoreResult->free();
+                    $hasMoreStmt->close();
+                }
+            }
+            
+            // Free memory
             $enStatement->close();
         } else {
-            $response->error = 'Query execution failed: ' . $enStatement->error;
+            throw new Exception('Query execution failed: ' . $enStatement->error);
         }
-    } else {
-        $response->error = 'Database connection failed';
+        
+    } catch (Exception $e) {
+        // Clean buffer and return proper error
+        ob_clean();
+        $response->error = $e->getMessage();
+        echo json_encode($response);
+        exit();
     }
     
-    // Clean output buffer and send response
-    ob_clean();
-    echo json_encode($response);
+    // Get clean output and send JSON
+    ob_end_clean();
+    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit();
 }
 
