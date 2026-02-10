@@ -10,7 +10,6 @@ export const EntryView=({docId,title,eventId,centerId})=>{
     }
 
     function ChangePanel({name}){
-
         if(name==='comment'){
             panelState.comment=!panelState.comment
             if(panelState.comment){

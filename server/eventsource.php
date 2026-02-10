@@ -85,7 +85,15 @@ if(isset($_POST['getEventAdmin'])){
             }
         }
     }
-    ob_clean();
+    
+    // FIX: Check if output buffering is active before cleaning
+    if (ob_get_level() > 0) {
+        ob_clean();
+    }
+    
+    // Also set proper headers for JSON response
+    header('Content-Type: application/json; charset=utf-8');
+    
     echo json_encode($response);
     exit();
 }
@@ -431,7 +439,6 @@ if (isset($_POST['requestEventRDE'])) {
     exit;
 }
 
-
 if(isset($_POST['deleteEvent'])){
     $response = new stdClass();
     $response->message = '';
@@ -499,8 +506,8 @@ if(isset($_POST['collectEntries'])){
         
         $count = $row['count'] ?? 0;
         
-        ob_clean();
-        echo $count;
-        exit();
     }
+
+    echo $count;
+    exit();
 }

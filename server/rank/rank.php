@@ -1,5 +1,5 @@
 <?php
-include(__DIR__ . '/../db.php');
+require_once(__DIR__ . '/../db.php');
 
 // DISABLE ALL OUTPUT EXCEPT JSON
 error_reporting(0);

@@ -323,7 +323,7 @@ function CommentNotification($evaluatorName, $eventName, $title, $campus, $autho
                 </div>
                 
                 <div style='text-align: center; margin: 30px 0;'>
-                    <a href='https://rde1.capsu.edu.ph/account/Login?redirect=<?php echo urlencode($documentUrl); ?>' class='button'>Login to View Document</a>
+                    <a href='https://rdedev.capsu.edu.ph/account/Login?php echo urlencode($documentUrl); ?>' class='button'>Login to View Document</a>
                     <p style='font-size: 12px; color: #7f8c8d; margin-top: 10px;'>
                         You will be redirected to the document after successful login.
                     </p>

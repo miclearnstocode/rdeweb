@@ -1,16 +1,32 @@
 <?php
-
 // Set header FIRST before any output
 header('Content-Type: application/json; charset=utf-8');
 
-// Start output buffering to catch any notices/warnings
-ob_start();
+// Turn off error reporting to prevent notices/warnings from polluting output
+error_reporting(0);
+ini_set('display_errors', 0);
 
-include('db.php');
-/** @var TYPE_NAME $host */
+// Start output buffering ONCE at the beginning
+if (ob_get_level() == 0) {
+    ob_start();
+}
+
+require_once( __DIR__ . '/db.php');
+/** @var TYP)E_NAME $host */
 /** @var TYPE_NAME $username */
 /** @var TYPE_NAME $pass */
 /** @var TYPE_NAME $dbName */
+
+// Helper function to safely output JSON
+function output_json($response) {
+    // Clear any output that might have been generated
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    
+    echo json_encode($response);
+    exit();
+}
 
 if (isset($_POST['scoreRank'])) {
     $response = [];
@@ -81,10 +97,7 @@ if (isset($_POST['scoreRank'])) {
         $response['isNewSystem'] = ($eventId >= 13);
     }
     
-    ob_clean();
-    echo json_encode($response);
-    ob_end_flush();
-    exit();
+    output_json($response);
 }
 
 if (isset($_POST['getEventName'])) {
@@ -93,27 +106,29 @@ if (isset($_POST['getEventName'])) {
         $query = "SELECT event_list.name FROM event_list WHERE event_list.id=?";
         $statement = $con->prepare($query);
     
-        $eventId = $_POST['eventId'] ?? $_POST['getEventName'] ?? '';// Fix: Use $_POST['eventId'] instead of $_POST['getEventName']
-        $statement->bind_param("s", $eventId);                     // Or check which parameter is actually being sent
+        // Get the event ID from the correct parameter
+        $eventId = isset($_POST['eventId']) ? $_POST['eventId'] : (isset($_POST['getEventName']) ? $_POST['getEventName'] : '');
         
-        $statement->execute();
-        $result = $statement->get_result();
-        
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $response[] = $row;
+        if (is_numeric($eventId)) {
+            $statement->bind_param("i", $eventId);
+            $statement->execute();
+            $result = $statement->get_result();
+            
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    $response[] = $row;
+                }
+            } else {
+                $response[] = ['name' => 'Unknown Event'];
             }
         } else {
-            $response[] = ['name' => 'Unknown Event'];
+            $response[] = ['name' => 'Invalid Event ID'];
         }
     } else {
         $response[] = ['name' => 'Database Error'];
     }
     
-    ob_clean();
-    echo json_encode($response);
-    ob_end_flush();
-    exit();
+    output_json($response);
 }
 
 if (isset($_POST['getCatIdName'])) {
@@ -150,10 +165,7 @@ if (isset($_POST['getCatIdName'])) {
         }
     }
     
-    ob_clean();
-    echo json_encode($response);
-    ob_end_flush();
-    exit();
+    output_json($response);
 }
 
 if (isset($_POST['getDocPerRank'])) {
@@ -299,8 +311,5 @@ if (isset($_POST['getDocPerRank'])) {
         }
     }
     
-    ob_clean();
-    echo json_encode($response);
-    ob_end_flush();
-    exit();
+    output_json($response);
 }

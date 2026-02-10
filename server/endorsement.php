@@ -321,14 +321,19 @@ if(isset($_POST['requestFileEndorse'])){
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $docsId = $_POST['docId'];
         
-        // Updated query to include both legacy and new Google Drive fields
+        // Updated query to include all Google Drive fields
         $query = "SELECT 
                     endorsement.file,
                     endorsement.event,
                     endorsement.drive_file_id,
                     endorsement.drive_download_url,
                     endorsement.drive_view_url,
-                    endorsement.status
+                    endorsement.status,
+                    endorsement.drive_folder_id,
+                    endorsement.drive_event_folder_id,
+                    endorsement.drive_center_folder_id,
+                    endorsement.drive_category_folder_id,
+                    endorsement.drive_entry_folder_id
                   FROM endorsement 
                   WHERE endorsement.id = ?";
         
@@ -339,28 +344,88 @@ if(isset($_POST['requestFileEndorse'])){
         
         if ($result->num_rows > 0) {
             $val = $result->fetch_assoc();
+            
+            // Create a comprehensive response object
             $data = new stdClass();
             $data->eventName = $val['event'];
+            $data->status = $val['status'];
             
-            // Determine which file URL to use (Google Drive takes priority)
-            if (!empty($val['drive_download_url']) || !empty($val['drive_view_url'])) {
-                // Use Google Drive URLs
-                $data->fileUrl = !empty($val['drive_download_url']) 
-                    ? $val['drive_download_url'] 
-                    : $val['drive_view_url'];
-                $data->viewUrl = !empty($val['drive_view_url']) 
-                    ? $val['drive_view_url'] 
-                    : $val['drive_download_url'];
+            // First priority: Google Drive view URL (for preview/embedding)
+            if (!empty($val['drive_view_url'])) {
+                $data->file = $val['drive_view_url'];  // MAIN FIELD FOR FRONTEND
+                $data->fileUrl = $val['drive_view_url'];
+                $data->viewUrl = $val['drive_view_url'];
                 $data->driveFileId = $val['drive_file_id'];
+                $data->driveDownloadUrl = $val['drive_download_url'];
                 $data->isGoogleDrive = true;
-            } else {
-                // Fallback to legacy file URL
-                $data->fileUrl = $val['file'];
-                $data->viewUrl = $val['file']; // Same URL for view/download in legacy
-                $data->isGoogleDrive = false;
+            } 
+            // Second priority: Google Drive download URL
+            elseif (!empty($val['drive_download_url'])) {
+                // Convert download URL to embed URL if possible
+                $pattern = '/\/file\/d\/([a-zA-Z0-9_-]+)/';
+                if (preg_match($pattern, $val['drive_download_url'], $matches)) {
+                    $embedUrl = "https://drive.google.com/file/d/" . $matches[1] . "/preview";
+                    $data->file = $embedUrl;  // MAIN FIELD FOR FRONTEND
+                    $data->fileUrl = $embedUrl;
+                    $data->viewUrl = $embedUrl;
+                } else {
+                    $data->file = $val['drive_download_url'];
+                    $data->fileUrl = $val['drive_download_url'];
+                    $data->viewUrl = $val['drive_download_url'];
+                }
+                $data->driveFileId = $val['drive_file_id'];
+                $data->driveDownloadUrl = $val['drive_download_url'];
+                $data->isGoogleDrive = true;
+            }
+            // Third priority: Legacy file field (might contain JSON)
+            elseif (!empty($val['file'])) {
+                // Check if it's a JSON string containing Google Drive data
+                if (strpos($val['file'], 'drive_file_id') !== false) {
+                    try {
+                        $fileData = json_decode($val['file'], true);
+                        if (isset($fileData['drive_view_url'])) {
+                            $data->file = $fileData['drive_view_url'];
+                            $data->fileUrl = $fileData['drive_view_url'];
+                            $data->viewUrl = $fileData['drive_view_url'];
+                            $data->driveFileId = $fileData['drive_file_id'] ?? null;
+                            $data->isGoogleDrive = true;
+                        } else {
+                            $data->file = $val['file'];
+                            $data->fileUrl = $val['file'];
+                            $data->viewUrl = $val['file'];
+                            $data->isGoogleDrive = false;
+                        }
+                    } catch (Exception $e) {
+                        // Not JSON, use as-is
+                        $data->file = $val['file'];
+                        $data->fileUrl = $val['file'];
+                        $data->viewUrl = $val['file'];
+                        $data->isGoogleDrive = false;
+                    }
+                } else {
+                    $data->file = $val['file'];
+                    $data->fileUrl = $val['file'];
+                    $data->viewUrl = $val['file'];
+                    $data->isGoogleDrive = false;
+                }
             }
             
-            $data->status = $val['status'];
+            // Add Google Drive folder IDs if available
+            if (!empty($val['drive_folder_id'])) {
+                $data->driveFolderId = $val['drive_folder_id'];
+            }
+            if (!empty($val['drive_event_folder_id'])) {
+                $data->driveEventFolderId = $val['drive_event_folder_id'];
+            }
+            if (!empty($val['drive_center_folder_id'])) {
+                $data->driveCenterFolderId = $val['drive_center_folder_id'];
+            }
+            if (!empty($val['drive_category_folder_id'])) {
+                $data->driveCategoryFolderId = $val['drive_category_folder_id'];
+            }
+            if (!empty($val['drive_entry_folder_id'])) {
+                $data->driveEntryFolderId = $val['drive_entry_folder_id'];
+            }
             
             $response->status = true;
             $response->res = $data;

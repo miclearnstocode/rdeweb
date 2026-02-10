@@ -2,12 +2,9 @@ import {$, ConfirmationAlert, Request, Waiting} from '../../../lib/lib.js'
 import {EntryList} from "./EntryList.js";
 
 
-
+//the search box and the header of the list and the container of the list
 
 export const Search=(method)=>{
-
-
-
     const searchBox=()=>{
 
         return($({
@@ -372,12 +369,6 @@ export const Box=  (getBody)=>{
         }
         const Category=()=>{
 
-
-
-
-
-
-
             const getData={
 
                 intro:(value)=>{data.intro=value},
@@ -397,8 +388,6 @@ export const Box=  (getBody)=>{
                 other:(value)=>{data.other=value},
 
             }
-
-
 
             const CommentContain=({labelButton,Get,comment,id})=>{
 
@@ -466,8 +455,6 @@ export const Box=  (getBody)=>{
                                     type:'click',
 
                                     method:()=>{
-
-
 
                                         /* Checking if the changeStateCom() function returns true. If it does, it adds the class
 

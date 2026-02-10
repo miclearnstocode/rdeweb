@@ -116,48 +116,63 @@ export const ResearchMain = () => {
                 })
                 const viewDocs = () => {
                     let frm, viewerPanel
+                    const getViewer = (el) => {
+                        viewerPanel = el
+                    }
                     // Parse the file data - it could be JSON string or direct URL
                     let fileData = file;
                     let driveViewUrl = '';
                     
-                    // Handle the new object format
-                    if (typeof file === 'object' && file !== null) {
-                        // Get the view URL from the object
-                        if (file.viewUrl) {
-                            driveViewUrl = file.viewUrl;
-                        } else if (file.fileUrl) {
-                            driveViewUrl = file.fileUrl;
-                        } else if (file.legacyFile) {
-                            driveViewUrl = file.legacyFile;
+                    // Handle different formats
+                    if (typeof fileData === 'object' && fileData !== null) {
+                        // Object format - check for various possible fields
+                        if (fileData.drive_view_url) {
+                            driveViewUrl = fileData.drive_view_url;
+                        } else if (fileData.viewUrl) {
+                            driveViewUrl = fileData.viewUrl;
+                        } else if (fileData.fileUrl) {
+                            driveViewUrl = fileData.fileUrl;
+                        } else if (fileData.file) {
+                            driveViewUrl = fileData.file;
+                        } else if (fileData.legacyFile) {
+                            driveViewUrl = fileData.legacyFile;
                         }
                         
-                        // Store the full object for reference
-                        fileData = file;
-                    } else if (typeof file === 'string') {
-                        // Old string format - try to parse as JSON or use as is
+                        // Also store the full object for reference
+                        fileData = fileData;
+                    } else if (typeof fileData === 'string') {
+                        // String format - could be JSON or direct URL
                         try {
-                            if (file.includes('{')) {
-                                const parsed = JSON.parse(file);
-                                if (parsed.viewUrl || parsed.fileUrl || parsed.legacyFile) {
-                                    fileData = parsed;
-                                    driveViewUrl = parsed.viewUrl || parsed.fileUrl || parsed.legacyFile || file;
+                            if (fileData.includes('{') && fileData.includes('}')) {
+                                // Try to parse as JSON
+                                const parsed = JSON.parse(fileData);
+                                if (parsed.drive_view_url) {
+                                    driveViewUrl = parsed.drive_view_url;
+                                } else if (parsed.viewUrl) {
+                                    driveViewUrl = parsed.viewUrl;
+                                } else if (parsed.fileUrl) {
+                                    driveViewUrl = parsed.fileUrl;
+                                } else if (parsed.file) {
+                                    driveViewUrl = parsed.file;
                                 } else {
-                                    driveViewUrl = file;
+                                    driveViewUrl = fileData; // Use as-is if can't extract
                                 }
+                                fileData = parsed; // Store parsed object
                             } else {
-                                driveViewUrl = file;
+                                // Direct URL
+                                driveViewUrl = fileData;
                             }
                         } catch (e) {
-                            console.log("Could not parse file as JSON, using as direct URL:", e);
-                            driveViewUrl = file;
+                            //console.log("Could not parse as JSON, using as direct URL:", e);
+                            driveViewUrl = fileData;
                         }
                     }
                     
-                    // Clean up the URL (remove double slashes from your example)
+                    // Clean up the URL (remove escaped slashes)
                     if (typeof driveViewUrl === 'string') {
-                        driveViewUrl = driveViewUrl.replace(/\/\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com');
+                        driveViewUrl = driveViewUrl.replace(/\\\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com');
                     }
-                    
+                    //console.log('Final driveViewUrl:', driveViewUrl);
 
                     const object = ({dataURL, title}) => {
                         let object
@@ -288,9 +303,7 @@ export const ResearchMain = () => {
                             ]
                         }))
                     }
-                    const getViewer = (el) => {
-                        viewerPanel = el
-                    }
+
                     const frameView = $({
                         tag: 'div',
                         style: {
@@ -302,38 +315,38 @@ export const ResearchMain = () => {
                             
                             let fileId = null;
                             
-                            // Extract file ID from the JSON string
-                            if (typeof file === 'string') {
-                                // Method 1: Try to parse as JSON first
-                                try {
-                                    const cleanJson = file.replace(/\\\//g, '/');
-                                    const parsed = JSON.parse(cleanJson);
-                                    
-                                    if (parsed.drive_file_id) {
-                                        fileId = parsed.drive_file_id;
-                                    } else if (parsed.drive_view_url) {
-                                        // Extract from drive_view_url
-                                        const match = parsed.drive_view_url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                                        if (match) fileId = match[1];
+                            if (driveViewUrl && driveViewUrl.includes('drive.google.com')) {
+                                // Try different patterns to extract file ID
+                                const patterns = [
+                                    /\/d\/([a-zA-Z0-9_-]+)/,                     // /d/FILE_ID/
+                                    /\/file\/d\/([a-zA-Z0-9_-]+)/,               // /file/d/FILE_ID/
+                                    /id=([a-zA-Z0-9_-]+)/,                       // id=FILE_ID
+                                    /open\?id=([a-zA-Z0-9_-]+)/,                 // open?id=FILE_ID
+                                    /([a-zA-Z0-9_-]{25,})/                       // Any long ID
+                                ];
+                                
+                                for (let pattern of patterns) {
+                                    const match = driveViewUrl.match(pattern);
+                                    if (match && match[1]) {
+                                        fileId = match[1];
+                                        //console.log('File ID found:', fileId);
+                                        break;
                                     }
-                                } catch (e) {
-                                    // Method 2: Direct regex extraction
-                                    const idMatch = file.match(/"drive_file_id"\s*:\s*"([^"]+)"/);
-                                    if (idMatch) {
-                                        fileId = idMatch[1];
-                                    } else {
-                                        // Method 3: Look for any file ID pattern
-                                        const patternMatch = file.match(/(1[a-zA-Z0-9_-]{10,})/);
-                                        if (patternMatch) {
-                                            fileId = patternMatch[1];
-                                        }
+                                }
+                                
+                                // If still no file ID, check if it's already a preview URL
+                                if (!fileId && driveViewUrl.includes('/preview')) {
+                                    // Extract from preview URL
+                                    const previewMatch = driveViewUrl.match(/\/([a-zA-Z0-9_-]+)\/preview/);
+                                    if (previewMatch) {
+                                        fileId = previewMatch[1];
                                     }
                                 }
                             }
                             
                             if (fileId) {
                                 const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-                                console.log("Loading:", embedUrl);
+                                //console.log("Loading:", embedUrl);
                                 
                                 el.appendChild($({
                                     tag: 'iframe',
@@ -500,24 +513,61 @@ export const ResearchMain = () => {
                                 }))
                             }
                             
-                            // Function to open Google Drive files
-                            const openDriveFile = (fileUrl, fileTitle) => {
-                                let embedUrl = fileUrl;
-                                
-                                // If it's a Google Drive URL, convert to embed URL
-                                if (fileUrl && fileUrl.includes('drive.google.com') && !fileUrl.includes('/preview')) {
-                                    const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                                    if (fileIdMatch && fileIdMatch[1]) {
-                                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                            const openDriveFile = (fileData, fileTitle) => {
+                                    let embedUrl = '';
+                                    
+                                    // Check the type of fileData
+                                    //console.log('openDriveFile received:', fileData, 'Type:', typeof fileData);
+                                    
+                                    // Handle different formats
+                                    if (typeof fileData === 'string') {
+                                        // String format
+                                        embedUrl = fileData;
+                                    } else if (typeof fileData === 'object' && fileData !== null) {
+                                        // Object format - check for various possible fields
+                                        if (fileData.drive_view_url) {
+                                            embedUrl = fileData.drive_view_url;
+                                        } else if (fileData.viewUrl) {
+                                            embedUrl = fileData.viewUrl;
+                                        } else if (fileData.fileUrl) {
+                                            embedUrl = fileData.fileUrl;
+                                        } else if (fileData.file) {
+                                            embedUrl = fileData.file;
+                                        } else if (fileData.legacyFile) {
+                                            embedUrl = fileData.legacyFile;
+                                        }
+                                    }
+                                    
+                                    // If we have a URL, check if it's Google Drive and format it properly
+                                    if (embedUrl) {
+                                        // If it's a Google Drive URL, ensure it's a preview URL
+                                        if (embedUrl.includes && embedUrl.includes('drive.google.com')) {
+                                            // If it's already a preview URL, use it directly
+                                            if (embedUrl.includes('/preview')) {
+                                                // Already a preview URL
+                                            } 
+                                            // If it's a file URL, convert to preview
+                                            else if (embedUrl.includes('/d/')) {
+                                                const fileIdMatch = embedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                                if (fileIdMatch && fileIdMatch[1]) {
+                                                    embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                                                }
+                                            }
+                                            // If it's just a file ID (like "1YckxqYaHiBZmqs3s1jTZ20JLhtGIrU4-")
+                                            else if (embedUrl.match(/^[a-zA-Z0-9_-]{25,}$/)) {
+                                                embedUrl = `https://drive.google.com/file/d/${embedUrl}/preview`;
+                                            }
+                                        }
+                                        
+                                        if (embedUrl) {
+                                            mainFrame.appendChild(object({dataURL: embedUrl, title: fileTitle}));
+                                        } else {
+                                            alert('No valid file URL available');
+                                        }
+                                    } else {
+                                        alert('No file data available to open');
                                     }
                                 }
-                                
-                                if (embedUrl) {
-                                    mainFrame.appendChild(object({dataURL: embedUrl, title: fileTitle}));
-                                } else {
-                                    alert('No file available');
-                                }
-                            }
                             
                             return ($({
                                 tag: 'div',
@@ -573,22 +623,11 @@ export const ResearchMain = () => {
                                                     borderRadius: '0.3vw',
                                                     backgroundColor: 'rgba(0, 191, 255, 0.1)'
                                                 },
-                                                event: {
+                                                event: { //here open the research entry file in a new viewer
                                                     type: 'click',
                                                     method: () => {
-                                                        // Handle Google Drive URL
-                                                        const researchFile = dataURLResearch;
-                                                        let embedUrl = researchFile;
-                                                        
-                                                        // If it's a Google Drive URL, convert to embed URL
-                                                        if (researchFile.includes('drive.google.com') && !researchFile.includes('/preview')) {
-                                                            const fileIdMatch = researchFile.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                                                            if (fileIdMatch && fileIdMatch[1]) {
-                                                                embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
-                                                            }
-                                                        }
-                                                        
-                                                        mainFrame.appendChild(object({dataURL: embedUrl, title: title}))
+                                                        //console.log('Open entry clicked, dataURLResearch:', dataURLResearch);
+                                                        openDriveFile(dataURLResearch, title);
                                                     }
                                                 },
                                             }),
@@ -614,22 +653,11 @@ export const ResearchMain = () => {
                                                         borderRadius: '0.3vw',
                                                         backgroundColor: 'rgba(255, 152, 0, 0.1)'
                                                     },
-                                                    event: {
+                                                    event: { // here open the program file in a new viewer
                                                         type: 'click',
                                                         method: () => {
-                                                            // Handle Google Drive URL for program
-                                                            const programFile = programDriveViewUrl;
-                                                            let embedUrl = programFile;
-                                                            
-                                                            // If it's a Google Drive URL, convert to embed URL
-                                                            if (programFile.includes('drive.google.com') && !programFile.includes('/preview')) {
-                                                                const fileIdMatch = programFile.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                                                                if (fileIdMatch && fileIdMatch[1]) {
-                                                                    embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
-                                                                }
-                                                            }
-                                                            
-                                                            mainFrame.appendChild(object({dataURL: embedUrl, title: `Program: ${title}`}))
+                                                            //console.log('Open program clicked, programDriveViewUrl:', programDriveViewUrl);
+                                                            openDriveFile(programDriveViewUrl, `Program: ${title}`);
                                                         }
                                                     },
                                                 })
@@ -1627,29 +1655,9 @@ export const ResearchMain = () => {
                         })
                     ],
                 })
-                // Handle different file formats
-                const getFileUrl = (fileData) => {
-                    if (!fileData) return null;
-                    
-                    // If it's already a string URL
-                    if (typeof fileData === 'string') {
-                        return fileData;
-                    }
-                    
-                    // If it's an object with Google Drive URLs
-                    if (typeof fileData === 'object') {
-                        // Check for Google Drive URLs first
-                        if (fileData.drive_view_url) return fileData.drive_view_url;
-                        if (fileData.viewUrl) return fileData.viewUrl;
-                        if (fileData.fileUrl) return fileData.fileUrl;
-                        if (fileData.legacyFile) return fileData.legacyFile;
-                    }
-                    
-                    return null;
-                }
-                
-                const fileUrl = getFileUrl(file);
-                const isGoogleDriveUrl = fileUrl && fileUrl.includes('drive.google.com');
+
+                // Check if it's a Google Drive URL
+                const isGoogleDriveUrl = file && (file.includes('drive.google.com') || file.includes('/d/'))
                 
                 let frame
                 
@@ -4047,7 +4055,7 @@ export const ResearchMain = () => {
                                         let fileId = null;
                                         let embedUrl = fileUrl;
                                         
-                                        console.log('Google Drive URL:', fileUrl);
+                                        //console.log('Google Drive URL:', fileUrl);
                                         
                                         // Try different patterns to extract file ID
                                         const patterns = [
@@ -4084,7 +4092,7 @@ export const ResearchMain = () => {
                                             fileId = fileId.split('?')[0].split('&')[0];
                                             embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
                                             
-                                            console.log('Final Embed URL:', embedUrl);
+                                            //console.log('Final Embed URL:', embedUrl);
                                             
                                             // Add loading indicator
                                             const loadingIndicator = document.createElement('div');
@@ -4137,7 +4145,7 @@ export const ResearchMain = () => {
                                             
                                             // Handle successful load
                                             iframe.onload = () => {
-                                                console.log('Google Drive iframe loaded successfully');
+                                                //console.log('Google Drive iframe loaded successfully');
                                                 // Remove loading indicator
                                                 if (loadingIndicator.parentNode === el) {
                                                     el.removeChild(loadingIndicator);
@@ -4146,7 +4154,7 @@ export const ResearchMain = () => {
                                             
                                             // Handle load error
                                             iframe.onerror = () => {
-                                                console.log('Google Drive iframe failed to load');
+                                                //console.log('Google Drive iframe failed to load');
                                                 // Remove loading indicator
                                                 if (loadingIndicator.parentNode === el) {
                                                     el.removeChild(loadingIndicator);
@@ -4158,7 +4166,7 @@ export const ResearchMain = () => {
                                             // Add timeout in case iframe hangs
                                             setTimeout(() => {
                                                 if (loadingIndicator.parentNode === el) {
-                                                    console.log('Google Drive iframe loading timeout');
+                                                    //console.log('Google Drive iframe loading timeout');
                                                     el.removeChild(loadingIndicator);
                                                     // Show alternative options
                                                     showAlternativeOptions(el, fileUrl, fileId);
@@ -4169,7 +4177,7 @@ export const ResearchMain = () => {
                                             
                                         } else {
                                             // Invalid Google Drive URL format
-                                            console.log('Invalid Google Drive URL format:', fileUrl);
+                                            //console.log('Invalid Google Drive URL format:', fileUrl);
                                             el.innerHTML = `
                                                 <div style="
                                                     color: #666; 
@@ -4370,7 +4378,7 @@ export const ResearchMain = () => {
                                                 })
                                                 .catch(err => {
                                                     remove()
-                                                    console.error('Error saving research documents:', err)
+                                                    //console.error('Error saving research documents:', err)
                                                     alert('Error saving documents. Please try again. Check console for details.')
                                                 })
                                         })(id)
@@ -5050,7 +5058,7 @@ export const ResearchMain = () => {
                         isLoading = false;
                     })
                     .catch(error => {
-                        console.error('Error loading endorsements:', error);
+                        //console.error('Error loading endorsements:', error);
                         
                         // Remove loading indicator
                         const loadingIndicator = document.getElementById('loadingIndicator');
@@ -5324,7 +5332,7 @@ export const ResearchMain = () => {
                 Anchor.href='/rdeOffice/research/scoreSummary/'+id
             } else {
                 // Handle the case where id is undefined
-                console.error('Event ID is undefined');
+                //console.error('Event ID is undefined');
                 Anchor.href='/rdeOffice/research/scoreSummary';
             }
         }
@@ -5684,7 +5692,7 @@ export const ResearchMain = () => {
                                 ])
                                 request.Json()
                                 request.Send().then((data)=>{
-                                    console.log('Received evaluator data for category/center:', data);
+                                    //console.log('Received evaluator data for category/center:', data);
                                     
                                     let Titles = []
                                     let docSet = []
@@ -5693,7 +5701,7 @@ export const ResearchMain = () => {
                                     // First, display each evaluator's scores
                                     data.forEach(val => {
                                         if (val.docs && val.docs.length > 0) {
-                                            console.log(`Evaluator ${val.evaluator?.fullname} has ${val.docs.length} documents`);
+                                            //console.log(`Evaluator ${val.evaluator?.fullname} has ${val.docs.length} documents`);
                                             
                                             // Sort documents by TotalScore descending
                                             const Order = val.docs.sort((a,b) => {
@@ -5701,7 +5709,6 @@ export const ResearchMain = () => {
                                                 const scoreB = parseFloat(b.TotalScore) || 0;
                                                 return scoreB - scoreA; // Descending
                                             })
-
                                             // Rank per evaluator within this category/center
                                             let SortCrit = RankPerCriteria(Order, val.evaluator.fullname)
                                             Titles.push(SortCrit)
@@ -5743,7 +5750,7 @@ export const ResearchMain = () => {
 
                                     // Calculate ranking ONLY within this category/center
                                     if (allDocs.length > 0) {
-                                        console.log(`Total unique documents in this category/center: ${allDocs.length}`);
+                                        //console.log(`Total unique documents in this category/center: ${allDocs.length}`);
                                         
                                         // Calculate average scores per document across all evaluators
                                         const docAverages = allDocs.map(doc => {
@@ -5895,11 +5902,7 @@ export const ResearchMain = () => {
                             const req  = new Request('/score_rank')
                             req.Post([
                                 {
-                                    name:'scoreRank',
-                                    value:'1'
-                                },
-                                {
-                                    name:'getEventId',
+                                    name:'getEventName',
                                     value:Path(4)+''
                                 }
                             ])
@@ -6052,7 +6055,7 @@ export const ResearchMain = () => {
                                                 }
                                                 el.appendChild(container);
                                             }).catch(err => {
-                                                console.error('Error loading categories:', err);
+                                                //console.error('Error loading categories:', err);
                                                 container.appendChild($({
                                                     tag: 'div',
                                                     style: {

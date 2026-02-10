@@ -288,3 +288,43 @@
 .borderHigh td{
     color: deepskyblue;
 }
+
+/* Add these animations to your global CSS */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Status indicator glow effects */
+.listClass:hover .status-indicator {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
+/* Color variations for different statuses */
+.status-complete {
+    animation: none;
+}
+
+.status-pending {
+    animation: pulse 2s infinite;
+}

@@ -152,7 +152,7 @@ SELECT * FROM researchfile WHERE author = 'Prof. Princess Lydia Fuentes';
 
 cd C:\Users\Cogito\Documents\rdeweb - sir john laptop
 C:\xampp\php\php.exe -S localhost:8000 index.php
-
+RDEdev!@#
 make the php api only sends a  JSON response at the end of execution and no html tags
 
 january 2026

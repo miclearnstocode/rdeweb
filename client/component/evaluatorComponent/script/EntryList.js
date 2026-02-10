@@ -1,6 +1,6 @@
 import {$} from '../../../lib/lib.js'
 import {EntryView} from "./entryview.js";
-
+//this will show the list of documents that are assigned to the evaluator
 export const EntryList=({title,author,docId,index,campus,status,eventId,catId})=>{
     const base=window.location.href
     const url=base.replace(window.location.origin,'').split('/')
@@ -53,7 +53,7 @@ export const EntryList=({title,author,docId,index,campus,status,eventId,catId})=
                         child:[
                             $({
                                 tag:'span',
-                                text:'Author: ',
+                                text:'Author : ',
                                 style:{
                                     color: 'deepskyblue'
                                 }
@@ -79,7 +79,7 @@ export const EntryList=({title,author,docId,index,campus,status,eventId,catId})=
                         child:[
                             $({
                                 tag:'span',
-                                text:"Campus :",
+                                text:"Campus : ",
                                 style:{
                                     color: 'deepskyblue'
                                 }
