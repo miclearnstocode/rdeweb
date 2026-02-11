@@ -1,8 +1,16 @@
 <?php
-// Clear ALL output buffers
+// Disable error display - critical for JSON responses
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT); // Enable logging but not display
+
+// Clear ALL output buffers safely
 while (ob_get_level() > 0) {
     ob_end_clean();
 }
+
+// Start fresh output buffer
+ob_start();
 
 // Check if session is already started before starting it
 if (session_status() === PHP_SESSION_NONE) {
@@ -11,15 +19,25 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Set JSON header ONCE
 header('Content-Type: application/json; charset=utf-8');
+header('X-Content-Type-Options: nosniff');
 
 // Include database config
 require_once(__DIR__ . '/db.php');
 
-// Prevent any other output
+// Error handler to catch any PHP errors/warnings/notices
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    // Log error but don't output
+    error_log("PHP Error [$errno]: $errstr in $errfile on line $errline");
+    return true; // Prevent default error handler
+});
+
+// Register shutdown function to catch fatal errors
 register_shutdown_function(function() {
     $error = error_get_last();
-    if ($error && ($error['type'] === E_ERROR || $error['type'] === E_WARNING || $error['type'] === E_PARSE)) {
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        // Clear any output
         ob_clean();
+        header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['error' => 'Internal server error', 'details' => $error['message']]);
         exit();
     }
@@ -40,9 +58,12 @@ if(isset($_POST['getEvent'])){
             while ($val = $result->fetch_assoc()) {
                 $response[]=$val;
             }
+            $result->free();
         }
+        $con->close();
     }
     
+    // Clear buffer and output JSON
     ob_clean();
     echo json_encode($response);
     exit();
@@ -53,12 +74,17 @@ if(isset($_POST['getEventName'])){
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $query="SELECT event_list.name FROM event_list WHERE event_list.id=?";
         $statement=$con->prepare($query);
-        $statement->bind_param("s", $_POST['eventId']);
-        $statement->execute();
-        $result=$statement->get_result();
-        while ($row=$result->fetch_assoc()){
-            $response[]=$row;
+        if ($statement) {
+            $statement->bind_param("s", $_POST['eventId']);
+            $statement->execute();
+            $result=$statement->get_result();
+            while ($row=$result->fetch_assoc()){
+                $response[]=$row;
+            }
+            $result->free();
+            $statement->close();
         }
+        $con->close();
     }
     ob_clean();
     echo json_encode($response);
@@ -83,38 +109,28 @@ if(isset($_POST['getEventAdmin'])){
             while ($val = $result->fetch_assoc()) {
                 $response[]=$val;
             }
+            $result->free();
         }
+        $con->close();
     }
     
     // FIX: Check if output buffering is active before cleaning
-    if (ob_get_level() > 0) {
-        ob_clean();
-    }
-    
-    // Also set proper headers for JSON response
-    header('Content-Type: application/json; charset=utf-8');
+    ob_clean();
     
     echo json_encode($response);
     exit();
 }
 
 if (isset($_POST['requestEventRDE'])) {
-    // Clear ALL buffers first
-    while (ob_get_level() > 0) {
-        ob_end_clean();
-    }
+    // Ensure clean buffer
+    ob_clean();
     
-    // Start fresh output buffer
-    ob_start();
-    
-    header('Content-Type: application/json; charset=utf-8');
-
     $eventId = $_POST['eventId'] ?? '0';
     $page  = max(1, (int)($_POST['page'] ?? 1));
     $limit = max(1, min(50, (int)($_POST['limit'] ?? 10)));
     
-    // NEW: Get lastId for keyset pagination
-    $lastId = max(0, (int)($_POST['lastId'] ?? 0));
+    // Get lastId for keyset pagination
+    $lastId = isset($_POST['lastId']) ? max(0, (int)$_POST['lastId']) : 0;
     
     $res = [
         'data' => [],
@@ -122,7 +138,7 @@ if (isset($_POST['requestEventRDE'])) {
         'total' => 0,
         'currentPage' => $page,
         'totalPages' => 0,
-        'lastId' => 0 // Will be updated with last fetched ID
+        'lastId' => 0
     ];
 
     try {
@@ -132,24 +148,34 @@ if (isset($_POST['requestEventRDE'])) {
             throw new Exception('Database connection failed: ' . $con->connect_error);
         }
 
-        // Disable mysqli error reporting to prevent output
+        // Disable mysqli error reporting
         mysqli_report(MYSQLI_REPORT_OFF);
         
-        /* ---------- COUNT (Optimized) ---------- */
-        if ($eventId === '0') {
+        // Set charset
+        $con->set_charset('utf8mb4');
+        
+        /* ---------- COUNT ---------- */
+        if ($eventId === '0' || $eventId === '') {
             $countSql = "
                 SELECT COUNT(*) as total
                 FROM researchfile
                 INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
                 WHERE endorsement.status = 'accepted'";
             $countStmt = $con->prepare($countSql);
+            
+            if (!$countStmt) {
+                throw new Exception('Count prepare failed: ' . $con->error);
+            }
+            
+            $countStmt->execute();
         } else {
             $countSql = "
                 SELECT COUNT(*) as total
                 FROM researchfile
                 INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
                 INNER JOIN event_list ON researchfile.event = event_list.name
-                WHERE event_list.id = ?";
+                WHERE endorsement.status = 'accepted'
+                AND event_list.id = ?";
             $countStmt = $con->prepare($countSql);
             
             if (!$countStmt) {
@@ -157,14 +183,7 @@ if (isset($_POST['requestEventRDE'])) {
             }
             
             $countStmt->bind_param('s', $eventId);
-        }
-
-        if (!$countStmt) {
-            throw new Exception('Count query preparation failed: ' . $con->error);
-        }
-
-        if (!$countStmt->execute()) {
-            throw new Exception('Count execution failed: ' . $countStmt->error);
+            $countStmt->execute();
         }
 
         $countResult = $countStmt->get_result();
@@ -176,7 +195,6 @@ if (isset($_POST['requestEventRDE'])) {
         $countRow = $countResult->fetch_assoc();
         $total = (int)($countRow['total'] ?? 0);
         
-        // IMPORTANT: Free the result and close statement before next query
         $countResult->free();
         $countStmt->close();
 
@@ -185,10 +203,9 @@ if (isset($_POST['requestEventRDE'])) {
 
         // Only fetch data if there are results
         if ($total > 0) {
-            /* ---------- KEYSET PAGINATION (Memory Efficient) ---------- */
-            if ($eventId === '0') {
+            /* ---------- KEYSET PAGINATION ---------- */
+            if ($eventId === '0' || $eventId === '') {
                 if ($lastId > 0) {
-                    // Continue from last ID (keyset pagination)
                     $sql = "
                         SELECT
                             researchfile.id,
@@ -213,18 +230,12 @@ if (isset($_POST['requestEventRDE'])) {
                         FROM researchfile
                         INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
                         WHERE endorsement.status = 'accepted'
-                        AND researchfile.id < ?  -- Changed from OFFSET to WHERE id < lastId
+                        AND researchfile.id < ?
                         ORDER BY researchfile.id DESC
                         LIMIT ?";
                     $stmt = $con->prepare($sql);
-                    
-                    if (!$stmt) {
-                        throw new Exception('Query preparation failed: ' . $con->error);
-                    }
-                    
                     $stmt->bind_param('ii', $lastId, $limit);
                 } else {
-                    // First page
                     $sql = "
                         SELECT
                             researchfile.id,
@@ -252,20 +263,12 @@ if (isset($_POST['requestEventRDE'])) {
                         ORDER BY researchfile.id DESC
                         LIMIT ?";
                     $stmt = $con->prepare($sql);
-                    
-                    if (!$stmt) {
-                        throw new Exception('Query preparation failed: ' . $con->error);
-                    }
-                    
                     $stmt->bind_param('i', $limit);
                 }
             } else {
-                // With event filter
                 if ($lastId > 0) {
-                    // Continue from last ID (keyset pagination)
                     $sql = "
                         SELECT
-                            event_list.id AS eventId,
                             researchfile.id,
                             researchfile.senderid,
                             researchfile.author,
@@ -289,21 +292,14 @@ if (isset($_POST['requestEventRDE'])) {
                         INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
                         INNER JOIN event_list ON researchfile.event = event_list.name
                         WHERE event_list.id = ?
-                        AND researchfile.id < ?  -- Changed from OFFSET to WHERE id < lastId
+                        AND researchfile.id < ?
                         ORDER BY researchfile.id DESC
                         LIMIT ?";
                     $stmt = $con->prepare($sql);
-                    
-                    if (!$stmt) {
-                        throw new Exception('Query preparation failed: ' . $con->error);
-                    }
-                    
                     $stmt->bind_param('sii', $eventId, $lastId, $limit);
                 } else {
-                    // First page
                     $sql = "
                         SELECT
-                            event_list.id AS eventId,
                             researchfile.id,
                             researchfile.senderid,
                             researchfile.author,
@@ -330,11 +326,6 @@ if (isset($_POST['requestEventRDE'])) {
                         ORDER BY researchfile.id DESC
                         LIMIT ?";
                     $stmt = $con->prepare($sql);
-                    
-                    if (!$stmt) {
-                        throw new Exception('Query preparation failed: ' . $con->error);
-                    }
-                    
                     $stmt->bind_param('si', $eventId, $limit);
                 }
             }
@@ -352,22 +343,23 @@ if (isset($_POST['requestEventRDE'])) {
             $data = [];
             $lastProcessedId = 0;
             
-            // Process rows one at a time to minimize memory usage
             while ($row = $result->fetch_assoc()) {
-                // Only modify if needed
+                // Process file URL
                 if (!empty($row['drive_view_url'])) {
                     $row['file'] = $row['drive_view_url'];
+                } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
+                    $row['file'] = 'https://drive.google.com/file/d/' . $row['drive_file_id'] . '/preview';
                 }
                 $data[] = $row;
                 $lastProcessedId = $row['id'];
             }
 
-            // Set lastId for next request
             $res['lastId'] = $lastProcessedId;
-            
-            // Calculate hasMore (check if there are more records after the last one)
+            $res['data'] = $data;
+
+            // Check if there are more records
             if ($lastProcessedId > 0) {
-                if ($eventId === '0') {
+                if ($eventId === '0' || $eventId === '') {
                     $hasMoreSql = "
                         SELECT 1 
                         FROM researchfile
@@ -396,13 +388,8 @@ if (isset($_POST['requestEventRDE'])) {
                 
                 $hasMoreResult->free();
                 $hasMoreStmt->close();
-            } else {
-                $res['hasMore'] = false;
             }
 
-            $res['data'] = $data;
-
-            // Clean up
             $result->free();
             $stmt->close();
         }
@@ -410,17 +397,13 @@ if (isset($_POST['requestEventRDE'])) {
         $con->close();
 
     } catch (Exception $e) {
-        // Clean buffer
-        ob_clean();
-        
-        // Log error
         error_log("requestEventRDE Error: " . $e->getMessage());
         
-        // Return error response
+        // Clear buffer and return error
+        ob_clean();
         echo json_encode([
             'error' => true,
             'message' => 'An error occurred while fetching documents',
-            'debug' => $e->getMessage(), // Remove this in production
             'data' => [],
             'total' => 0,
             'currentPage' => $page,
@@ -431,10 +414,8 @@ if (isset($_POST['requestEventRDE'])) {
         exit;
     }
 
-    // Get clean output
-    $output = ob_get_clean();
-    
-    // Send ONLY JSON response
+    // Clear buffer and output clean JSON
+    ob_clean();
     echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
@@ -447,17 +428,23 @@ if(isset($_POST['deleteEvent'])){
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $query = "DELETE FROM event_list WHERE event_list.id=?";
         $statement = $con->prepare($query);
-        $statement->bind_param("s", $_POST['eventId']);
-        $status = $statement->execute();
+        if ($statement) {
+            $statement->bind_param("s", $_POST['eventId']);
+            $status = $statement->execute();
 
-        if($status){
-            $response->status = true;
-            $response->message = "Event deleted..!";
+            if($status){
+                $response->status = true;
+                $response->message = "Event deleted..!";
+            } else {
+                $response->message = $statement->error;
+            }
+            $statement->close();
         } else {
-            $response->message = $statement->error;
+            $response->message = $con->error;
         }
+        $con->close();
     } else {
-        $response->message = $con->error;
+        $response->message = $con->error ?? 'Connection failed';
     }
     
     ob_clean();
@@ -466,7 +453,8 @@ if(isset($_POST['deleteEvent'])){
 }
 
 if(isset($_POST['collectEntries'])){
-    $data = 0;
+    $count = 0;
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         // Get center name with code format for filtering
         $centerFilter = '';
@@ -475,12 +463,16 @@ if(isset($_POST['collectEntries'])){
         if (!empty($centerId)) {
             $queryCenter = "SELECT name, code FROM center WHERE id = ?";
             $stmtCenter = $con->prepare($queryCenter);
-            $stmtCenter->bind_param("s", $centerId);
-            $stmtCenter->execute();
-            $resultCenter = $stmtCenter->get_result();
-            
-            if ($rowCenter = $resultCenter->fetch_assoc()) {
-                $centerFilter = $rowCenter['name'] . " (" . $rowCenter['code'] . ")";
+            if ($stmtCenter) {
+                $stmtCenter->bind_param("s", $centerId);
+                $stmtCenter->execute();
+                $resultCenter = $stmtCenter->get_result();
+                
+                if ($rowCenter = $resultCenter->fetch_assoc()) {
+                    $centerFilter = $rowCenter['name'] . " (" . $rowCenter['code'] . ")";
+                }
+                $resultCenter->free();
+                $stmtCenter->close();
             }
         }
         
@@ -499,15 +491,26 @@ if(isset($_POST['collectEntries'])){
             AND event_list.dead_line > CURRENT_TIMESTAMP";
 
         $statement = $con->prepare($query);
-        $statement->bind_param("ss", $centerFilter, $eventId);
-        $statement->execute();
-        $result = $statement->get_result();
-        $row = $result->fetch_assoc();
-        
-        $count = $row['count'] ?? 0;
-        
+        if ($statement) {
+            $statement->bind_param("ss", $centerFilter, $eventId);
+            $statement->execute();
+            $result = $statement->get_result();
+            $row = $result->fetch_assoc();
+            $count = $row['count'] ?? 0;
+            
+            $result->free();
+            $statement->close();
+        }
+        $con->close();
     }
 
+    // Clear buffer and output count
+    ob_clean();
     echo $count;
     exit();
 }
+
+// If no action matched, return error
+ob_clean();
+echo json_encode(['error' => 'Invalid request']);
+exit();

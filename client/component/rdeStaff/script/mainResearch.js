@@ -5327,13 +5327,28 @@ export const ResearchMain = () => {
             return path && path !== 'undefined' ? path : null;
         };
         
-        const ChangeId=(id,name)=>{
-            if (id) {
-                Anchor.href='/rdeOffice/research/scoreSummary/'+id
+        function ChangeId(eventId, eventName) {
+            // Get current URL path
+            const currentPath = window.location.pathname;
+            const pathParts = currentPath.split('/');
+            
+            // Find the position of 'scoreSummary' in the path
+            const scoreSummaryIndex = pathParts.indexOf('scoreSummary');
+            
+            if (scoreSummaryIndex !== -1) {
+                // Update event ID at position scoreSummaryIndex + 1
+                pathParts[scoreSummaryIndex + 1] = eventId;
+                
+                // Remove any category/center ID that follows
+                if (pathParts.length > scoreSummaryIndex + 2) {
+                    pathParts.splice(scoreSummaryIndex + 2, pathParts.length - (scoreSummaryIndex + 2));
+                }
+                
+                // Navigate to new URL
+                window.location.href = pathParts.join('/');
             } else {
-                // Handle the case where id is undefined
-                //console.error('Event ID is undefined');
-                Anchor.href='/rdeOffice/research/scoreSummary';
+                // If not on scoreSummary page, navigate to it
+                window.location.href = `/rdeOffice/research/scoreSummary/${eventId}`;
             }
         }
 
@@ -5377,7 +5392,6 @@ export const ResearchMain = () => {
                                     }
                                 })
                             ]
-
                         }),
                         $({
                             tag:'select',
@@ -5394,7 +5408,32 @@ export const ResearchMain = () => {
                             event:{
                                 type:'change',
                                 method:(ev)=>{
-                                    ChangeId(ev.target.childNodes[ev.target.selectedIndex].id,ev.target.value)
+                                    const eventId = ev.target.value;
+                                    const eventOption = ev.target.childNodes[ev.target.selectedIndex];
+                                    
+                                    if (eventId && eventId !== 'Select Event') {
+                                        // Update the URL to include the event ID
+                                        const currentPath = window.location.pathname;
+                                        const pathParts = currentPath.split('/');
+                                        
+                                        // If we're already on a scoreSummary page with an event ID
+                                        if (pathParts.includes('scoreSummary')) {
+                                            // Update the event ID in the URL (position 4)
+                                            pathParts[4] = eventId;
+                                            
+                                            // If there's a category/center after the event ID, remove it
+                                            // to go back to the main categories/centers view
+                                            if (pathParts.length > 5) {
+                                                pathParts.splice(5, pathParts.length - 5);
+                                            }
+                                            
+                                            const newUrl = pathParts.join('/');
+                                            window.location.href = newUrl;
+                                        } else {
+                                            // If not on scoreSummary page, navigate to it
+                                            window.location.href = `/rdeOffice/research/scoreSummary/${eventId}`;
+                                        }
+                                    }
                                 }
                             },
                             child:[
@@ -5403,12 +5442,13 @@ export const ResearchMain = () => {
                                     att:{
                                         selected:true,
                                         disabled:true,
+                                        value: ''
                                     },
-                                    text:'Select Event' //this is my problem here
+                                    text:'Select Event'
                                 })
                             ],
                             elementHandler:(el)=>{
-                                const req= new Request('/eventRequest')
+                                const req = new Request('/eventRequest')
                                 req.Post([
                                     {
                                         name:'getEventAdmin',
@@ -5418,19 +5458,40 @@ export const ResearchMain = () => {
                                 req.Json()
                                 req.Send().then(data=>{
                                     data.forEach(val=>{
-                                        el.appendChild($({
+                                        const option = $({
                                             tag:'option',
                                             att: {
-                                                id:val.id
+                                                value: val.id
                                             },
-                                            text:val.name,
+                                            text: val.name,
                                             style:{
                                                 backgroundColor: '#222',
                                                 color:'deepskyblue',
                                                 fontSize:'1vw',
                                             }
-                                        }))
+                                        })
+                                        
+                                        // If this option matches the current event ID in the URL, select it
+                                        const currentPath = window.location.pathname;
+                                        const pathParts = currentPath.split('/');
+                                        if (pathParts.includes('scoreSummary') && pathParts[4]) {
+                                            const currentEventId = pathParts[4];
+                                            if (currentEventId == val.id) {
+                                                option.selected = true;
+                                            }
+                                        }
+                                        
+                                        el.appendChild(option);
                                     })
+                                }).catch(err => {
+                                    console.error('Error loading events:', err);
+                                    el.appendChild($({
+                                        tag:'option',
+                                        att: {
+                                            disabled: true
+                                        },
+                                        text: 'Error loading events'
+                                    }));
                                 })
                             }
                         })
@@ -5837,10 +5898,15 @@ export const ResearchMain = () => {
                             tag:'div',
                             style:{
                                 height:'7vh',
-                                width:'100%',
+                                width:'1256px',
                                 backgroundColor:'#2c3e50',
                                 display:'flex',
-                                justifyContent:'center'
+                                justifyContent:'center',
+                                position: 'fixed',   
+                                bottom: '0',          
+                                left: '238px',   
+                                zIndex: '10',       
+                                padding: '10px 0'  
                             },
                             child:[
                                 $({
@@ -5888,7 +5954,7 @@ export const ResearchMain = () => {
                     $({
                         tag:'div',
                         style:{
-                            height:'fit-content',
+                            height:'10%',
                             width:'100%',
                             padding:'1.5vh',
                             fontSize:'1.5vw',
@@ -5897,30 +5963,7 @@ export const ResearchMain = () => {
                             backgroundColor:'#2c3e50',
                             textAlign: 'center',
                             borderBottom: 'solid 2px deepskyblue'
-                        },
-                        elementHandler:(el)=>{
-                            const req  = new Request('/score_rank')
-                            req.Post([
-                                {
-                                    name:'getEventName',
-                                    value:Path(4)+''
-                                }
-                            ])
-                            req.Json()
-                            req.Send().then(data=>{
-                                if (data && data.event) {
-                                    // Show event name from the new response format
-                                    el.innerText = data.event.name;
-                                    el.style.fontWeight = 'bold';
-                                } else {
-                                    el.innerText = 'Event Not Found';
-                                }
-                            }).catch(err => {
-                                console.error('Error loading event:', err);
-                                el.innerText = 'Error Loading Event';
-                                el.style.color = '#e74c3c';
-                            });
-                        },
+                        }
                     }),
                     $({
                         tag:'div',
@@ -6111,11 +6154,12 @@ export const ResearchMain = () => {
         tag: 'div',
         style: {
             width: '100%',
-            height: '100%',
+            height: '99%',
             margin: 'auto',
             display: 'flex',
             justifyContent: 'center',
-            position: 'relative'
+            position: 'relative',
+            overflow: 'hidden'
         },
         elementHandler: getMainFrame,
         child: [
