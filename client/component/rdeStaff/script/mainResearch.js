@@ -5605,13 +5605,9 @@ export const ResearchMain = () => {
             const SummaryPanel=(text)=>{
                 let Report,ReportData
                 
-                const getReport=({scoreRank,rankAve,RankPerCrit})=>{
-                    Report.addEventListener('click',()=>{
-                        mainFrame.appendChild(Summary({
-                            scoreRank:scoreRank,
-                            rankAve:rankAve,
-                            RankPerCrit:RankPerCrit,
-                        }))
+                const getReport = ({ scoreRank, rankAve, RankPerCrit }) => {
+                    Report.addEventListener('click', () => {
+                        mainFrame.appendChild(Summary());
                     })
                 }
 

@@ -10,10 +10,6 @@ export const SummaryDocs=(allDocs = [], uniqueDocs = [])=>{
 
     const Rank=allDocs.map(val=>{
 
-
-
-
-
        return  val.map((v,rank)=>{
 
 
