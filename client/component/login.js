@@ -14,8 +14,6 @@ import {$, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting} from '
 
 const LoginPanel = (prop) => {
 
-
-
     let username
 
     let password
@@ -654,7 +652,7 @@ const Signup = (prop) => {
 
     let email
 
-    let officeC
+    let center
 
     let username
 
@@ -682,9 +680,9 @@ const Signup = (prop) => {
 
 
 
-        office: (value) => {
+        center: (value) => {
 
-            officeC = value
+            center = value
 
         },
 
@@ -777,95 +775,67 @@ const Signup = (prop) => {
 
 
     const getContainer = (container) => {
-
-        const option = ({label, placeholder}) => {
-
+        const option = ({label, placeholder, value}) => {
             const getOpt = (opt) => {
-
                 if (label) {
-
                     opt.innerText = label
-
                 }
-
                 if (placeholder) {
-
                     opt.disabled = true
-
                     opt.selected = true
-
                 }
-
+                if (value) {
+                    opt.value = value
+                }
             }
-
             return ($({
-
                 tag: 'option',
-
                 elementHandler: getOpt
-
             }))
-
         }
-
+        
         const getSelect = (select) => {
-
             select.appendChild(option({
-
-                label: 'Select Office / Campus',
-
+                label: '-- Select Center --',
                 placeholder: true,
-
-            }),)
-
+            }))
+            
             CapsuOffice.forEach(val => {
-
-                select.appendChild(option({
-
-                    label: val
-
-                }))
-
-            })
-
-        }
-
-
-
-
-
-
-
-        container.appendChild(TableCont({
-
-            label: 'Office/Campus',
-
-            element: $({
-
-                tag: 'select',
-
-                elementHandler: getSelect,
-
-                event: {
-
-                    type: 'change',
-
-                    method: (event) => {
-
-                        get.office(event.target.value)
-
+                // Extract the code from parentheses or use the whole string if no parentheses
+                let code = val;
+                const match = val.match(/\(([^)]+)\)/);
+                if (match) {
+                    code = match[1]; // Gets "CSRDC", "LRDC", etc.
+                } else if (val === "EXTENSION") {
+                    code = "Extension"; // Match your database value
+                }
+                
+                select.appendChild($({
+                    tag: 'option',
+                    text: val,  // Display full name
+                    att: {
+                        value: code  // Send just the code to backend
                     }
-
+                }))
+            })
+        }
+        
+        container.appendChild(TableCont({
+            label: 'Research Center',
+            element: $({
+                tag: 'select',
+                elementHandler: getSelect,
+                event: {
+                    type: 'change',
+                    method: (event) => {
+                        get.center(event.target.value)  // This will now receive "SSRDC", not the full text
+                    }
                 },
-
                 att: {
                     id: 'select-sign',
                     className: 'selectSign'
-
                 },
-
             })
-
         }))
 
         container.appendChild(TableCont({
@@ -1076,9 +1046,9 @@ const Signup = (prop) => {
 
                     method: async () => {
 
-                        if (officeC === undefined) {
+                        if (center === undefined) {
 
-                            alert("Office/Campus is missing..!")
+                            alert("Please select a Research Center..!")
 
                             return
 
@@ -1132,7 +1102,7 @@ const Signup = (prop) => {
 
                             form.append('auth', 'signup')
 
-                            form.append('cName', officeC.toUpperCase())
+                            form.append('cName', center.toUpperCase())
 
                             form.append('userEmail', email)
 

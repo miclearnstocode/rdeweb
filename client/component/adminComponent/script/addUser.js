@@ -1,683 +1,228 @@
 import {$, ConfirmationAlert, Request, SpecialChar, Waiting} from '../../../lib/lib.js'
 
-
-
-
-
 const encodeUser=()=>{
-
-    let gmail
-
-    let campus
-
-    let adminPassword
-
+    let center
     let tableAcc
 
-    let userType
-
-
-
     const accountData={
-
+        center:'',
         gmail:'',
-
-        campus:'',
-
- //       adminPassword:'',
-
-        userType:''
-
-    }
-
-
-
-    let useTypeEl
-
-    let useTypeInput
-
-    const getUseType=(el)=>{
-
-        useTypeEl=el
-
+        userType: 'Center Chair' // Fixed value
     }
 
     const getData={
-
-        getGmail:(value)=>{accountData.gmail=value},
-
-        getCampus:(value)=>{accountData.campus=value},
-
-   //     getAminPass:(value)=>{accountData.adminPassword=value},
-
-        getUserType:(value)=>{accountData.userType=value},
-
+        getCenter:(value)=>{accountData.center=value},
+        getGmail:(value)=>{accountData.gmail=value}
     }
-
-    const getuserTypeInput=(el)=>{
-
-        useTypeInput=el
-
-    }
-
-
-
-
-
-    const userTYpeInput=()=>{
-
-
-
-        return($({
-
-            tag:'tr',
-
-            elementHandler:getUseType,
-
-            child:[
-
-                $({
-
-                    tag:'td',
-
-                    child:[
-
-                        $({
-
-                            tag:'input',
-
-                            att:{
-
-                                className:'inputAddUser',
-
-                                placeholder:'Specify user type'
-
-                            },
-
-
-
-                            event:{
-
-                                type:'input',
-
-                                method:(event)=>{
-
-                                    getData.getUserType(event.target.value)
-
-                                }
-
-                            },
-
-                            elementHandler:getuserTypeInput
-
-                        })
-
-                    ]
-
-                })
-
-            ]
-
-        }))
-
-    }
-
-    const selectUserType=()=>{
-
-
-
-        return($({
-
-            tag:'tr',
-
-            child:[
-
-                $({
-
-                    tag:'td',
-
-                    child:[
-
-                        $({
-
-                            tag:'select',
-
-                            event:{
-
-                                type:'change',
-
-                                method:(event)=>{
-
-                                    if(event.target.value==='Others'){
-
-                                        getData.getUserType('')
-
-                                        tableAcc.insertBefore(userTYpeInput(),tableAcc.childNodes[3])
-
-                                    }else {
-
-                                        if(useTypeEl!==undefined){
-
-                                            useTypeEl.remove()
-
-                                        }
-
-                                        getData.getUserType(event.target.value)
-
-                                    }
-
-                                }
-
-                            },
-
-                            att:{
-
-                                className:'selectAddUser'
-
-                            },
-
-                            child:[
-
-                                $({
-
-                                    tag:'option',
-
-                                    text:'Select User Type',
-
-                                    att:{
-
-                                        disabled:true,
-
-                                        selected:true
-
-                                    }
-
-                                }),
-
-                                $({
-
-                                    tag:'option',
-
-                                    att:{
-
-                                        innerText:`Research Chair`
-
-                                    }
-
-                                }),
-
-                                $({
-
-                                    tag:'option',
-
-                                    att:{
-
-                                        innerText:`Extension Chair`
-
-                                    }
-
-                                }),
-
-                                $({
-
-                                    tag:'option',
-
-                                    att:{
-
-                                        innerText:`Extension Chair`
-
-                                    }
-
-                                }),
-
-                                $({
-
-                                    tag:'option',
-
-                                    att:{
-
-                                        innerText:`Others`
-
-                                    }
-
-                                })
-
-                            ]
-
-
-
-                        })
-
-                    ]
-
-                })
-
-            ]
-
-        }))
-
-    }
-
-
-
-
-
-
-
-
 
     const getTableAc=(el)=>{
-
         tableAcc=el
-
     }
 
-
-
     return($({
-
         tag:'div',
-
         att:{
-
             className:'encodeP'
-
         },
-
         child:[
-
             $({
-
                 tag:'table',
-
                 att:{
-
                     className:'addUserTable leftT'
-
                 },
-
                 elementHandler:getTableAc,
-
                 child:[
-
                     $({
-
                         tag:'tr',
-
                         child:[
-
                             $({
-
                                 tag:'td',
-
-                                text:`CAPSU Center User's`,
-
+                                text:`RDE Center Chair Registration`,
                                 style:{
-
                                     fontFamily:'arial black,sans-serif',
-
                                     color:'#bbb',
-
                                     fontSize:'1.1vw'
-
                                 }
-
                             })
-
                         ]
-
                     }),
-
                     $({
-
                         tag:'tr',
-
                         child:[
-
                             $({
-
                                 tag:'td',
-
                                 child:[
-
                                     $({
-
                                         tag:'select',
-
                                         event:{
-
                                             type:'change',
-
                                             method:(event)=>{
-
-                                                getData.getCampus(event.target.value)
-
+                                                getData.getCenter(event.target.value)
                                             }
-
                                         },
-
                                         att:{
-
-
-
                                             className:'selectAddUser'
-
                                         },
-
                                         child:[
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Select Office/Campus',
-
+                                                text:'-- Select Center --',
                                                 att:{
-
                                                     disabled:true,
-
-                                                    selected:true
-
+                                                    selected:true,
+                                                    value:''
                                                 }
-
                                             }),
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Central Office'
-
+                                                text:'Crop Science Research & Development Center (CSRDC)',
+                                                att:{ value:'CSRDC' }
                                             }),
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Roxas City Main'
-
+                                                text:'Livestock Research & Development Center (LRDC)',
+                                                att:{ value:'LRDC' }
                                             }),
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Dayao'
-
+                                                text:'Fisheries Research & Development Center (FRDC)',
+                                                att:{ value:'FRDC' }
                                             }),
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Pontevedra'
-
+                                                text:'Food and Industrial Technology Research & Development Center (FIRDC)',
+                                                att:{ value:'FIRDC' }
                                             }),
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Pilar'
-
+                                                text:'Social Science Research & Development Center (SSRDC)',
+                                                att:{ value:'SSRDC' }
                                             }),
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Dumarao'
-
+                                                text:'Machinery and Agricultural Technology Engineering Center (MATEC)',
+                                                att:{ value:'MATEC' }
                                             }),
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Burias'
-
+                                                text:'Coconut Research and Development Center (Coco RDC)',
+                                                att:{ value:'Coco RDC' }
                                             }),
-
                                             $({
-
                                                 tag:'option',
-
-                                                text:'Mambusao'
-
+                                                text:'Extension',
+                                                att:{ value:'Extension' }
                                             }),
-
-                                            $({
-
-                                                tag:'option',
-
-                                                text:'Tapaz'
-
-                                            }),
-
-                                            $({
-
-                                                tag:'option',
-
-                                                text:'Sigma'
-
-                                            }),
-
                                         ]
-
-
-
                                     })
-
                                 ]
-
                             })
-
                         ]
-
                     }),
-
                     $({
-
                         tag:'tr',
-
                         child:[
-
                             $({
-
                                 tag:'td',
-
                                 child:[
-
                                     $({
-
                                         event:{
-
                                             type:'input',
-
                                             method:(event)=>{
-
                                                 getData.getGmail(event.target.value)
-
                                             }
-
                                         },
-
                                         tag:'input',
-
                                         att:{
-
                                             type:'email',
-
-                                            placeholder:'Enter CAPSU Gmail account',
-
+                                            placeholder:'Enter Center Chair Gmail account',
                                             className:'inputAddUser'
-
                                         },
-
-
-
                                     })
-
                                 ]
-
                             })
-
                         ]
-
                     }),
-
-                    selectUserType(),
-
-
-
                     $({
-
                         tag:'tr',
-
                         child:[
-
                             $({
-
-                                event:{
-
-                                    type:'click',
-
-                                    method: ()=>{
-
-                                        let dataState=true;
-
-                                        for (const val of Object.keys(accountData)) {
-
-                                            if(accountData[val]===''){
-
-                                                dataState=false
-
-                                                break;
-
-                                            }
-
-                                        }
-
-                                        if(dataState||true){
-
-
-
-                                            const load=Waiting()
-
-                                            document.body.appendChild(load)
-
-
-
-
-
-                                            const req= new Request('/addcapaccount')
-
-                                            req.Post([
-
-                                                {
-
-                                                    name:'registerAccount',
-
-                                                    value:'true'
-
-                                                },
-
-                                                {
-
-                                                    name:'email',
-
-                                                    value:accountData.gmail
-
-                                                },
-
-                                                {
-
-                                                    name:'accountName',
-
-                                                    value:accountData.userType,
-
-                                                },
-
-                                                {
-
-                                                    name:'office',
-
-                                                    value:accountData.campus
-
-                                                }
-
-                                            ])
-
-                                            req.Json()
-
-                                            req.Send().then(data=>{
-
-                                                load.remove()
-
-                                                if(data.status){
-
-                                                    setTimeout(()=>{
-
-                                                        alert(data.message)
-
-                                                        window.location.replace('/account/Login')
-
-                                                    },100)
-
-
-
-                                                }else {
-
-                                                    window.location.reload()
-
-                                                }
-
-                                            })
-
-
-
-
-
-                                        }else {
-
-                                            alert("Data provided is incomplete..!")
-
-                                        }
-
-                                    }
-
-                                },
-
                                 tag:'td',
+                                child:[
+                                    $({
+                                        event:{
+                                            type:'click',
+                                            method: ()=>{
+                                                if(accountData.center !== '' && accountData.gmail !== ''){
+                                                    const load=Waiting()
+                                                    document.body.appendChild(load)
 
-                                text:'Submit',
-                                style: {
-                                    borderRadius: '15px'
-                                },
-                                att:{
-                                    className:'submitAddUser'
-                                }
+                                                    const req= new Request('/addcapaccount')
+                                                    req.Post([
+                                                        {
+                                                            name:'registerAccount',
+                                                            value:'true'
+                                                        },
+                                                        {
+                                                            name:'email',
+                                                            value:accountData.gmail
+                                                        },
+                                                        {
+                                                            name:'accountName',
+                                                            value:accountData.userType,
+                                                        },
+                                                        {
+                                                            name:'center',
+                                                            value:accountData.center
+                                                        }
+                                                    ])
+                                                    req.Json()
+                                                    req.Send().then(data=>{
+                                                        load.remove()
+                                                        if(data.status){
+                                                            setTimeout(()=>{
+                                                                alert(data.message)
+                                                                window.location.replace('/account/Login')
+                                                            },100)
+                                                        }else {
+                                                            alert(data.message)
+                                                            window.location.reload()
+                                                        }
+                                                    })
+                                                }else {
+                                                    alert("Please select a center and enter Gmail address!")
+                                                }
+                                            }
+                                        },
+                                        tag:'td',
+                                        text:'Submit',
+                                        style: {
+                                            width:'86%',
+                                            paddingRight: '15vw',
+                                            paddingLeft: '15vw',
+                                            paddingTop:'.5vh',
+                                            paddingBottom:'.5vh',
+                                            fontFamily:'arial black,sans-serf',
+                                            margin:'.3vw auto auto',
+                                            fontSize:'1.5vw',
+                                            height:'5vh',
+                                            textAlign:'center',
+                                            borderRadius: '15px',
+                                            cursor:'pointer'
+                                        },
+                                        att:{
+                                            className:'submitAddUser'
+                                        }
+                                    })
+                                ]
                             })
-
                         ]
-
                     }),
-
-
-
                 ]
-
             })
-
         ]
-
     }))
-
 }
-
-
-
-
 
 const encodeEvaluator=()=>{
 
