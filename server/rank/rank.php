@@ -422,7 +422,7 @@ if(isset($_POST['generateSummaryReport'])) {
                 $documentColumns[$docId] = $index + 1;
             }
             
-            // STEP 7: PROCESS EACH EVALUATOR - EXACT EXCEL ROW STRUCTURE
+            // STEP 7: PROCESS EACH EVALUATOR - EXACT EXCEL ROW STRUCTURE WITH CONSISTENT COLUMN POSITIONS
             foreach ($evaluatorData as $evalIndex => $evalItem) {
                 $evaluator = $evalItem->evaluator ?? $evalItem['evaluator'];
                 $docs = $evalItem->docs ?? $evalItem['docs'];
@@ -440,7 +440,7 @@ if(isset($_POST['generateSummaryReport'])) {
                     ],
                     'criteria_rows' => [],
                     'total_row' => ['Total'],
-                    'documents' => []
+                    'documents' => []  // Will contain ALL documents with their column positions
                 ];
                 
                 // Initialize scores array for each criteria
@@ -455,7 +455,7 @@ if(isset($_POST['generateSummaryReport'])) {
                     ];
                 }
 
-                // NEW: Initialize document score lookup array
+                // Initialize document score lookup array
                 $scoresByDoc = []; // Will store scores by doc_id and criteria_id
 
                 // Create a lookup map for quick criteria identification by name
@@ -464,17 +464,33 @@ if(isset($_POST['generateSummaryReport'])) {
                     $criteriaNameMap[$criterion['name']] = $criterion['id'];
                 }
                 
-                // Map document scores to their column positions
+                // ============ FIX: FIRST, ADD ALL DOCUMENTS FROM MASTER LIST TO HEADERS ============
+                // This ensures EVERY document has a column position, even if this evaluator didn't score it
+                foreach ($documentIds as $docId) {
+                    $columnNumber = $documentColumns[$docId];
+                    $docTitle = $allDocuments[$docId]['title'];
+                    
+                    // Add to headers
+                    $evaluatorSheet['headers']['criteria_row'][] = $columnNumber;
+                    $evaluatorSheet['headers']['title_row'][] = $docTitle;
+                    
+                    // Initialize document info with zero score
+                    $evaluatorSheet['documents'][$docId] = [
+                        'column' => $columnNumber,
+                        'id' => $docId,
+                        'title' => $docTitle,
+                        'total_score' => 0  // Default to 0
+                    ];
+                }
+                
+                // ============ NOW, POPULATE SCORES FOR DOCUMENTS THIS EVALUATOR ACTUALLY SCORED ============
+                // Map document scores to their column positions - OVERWRITES the default zero scores
                 foreach ($docs as $doc) {
                     $docData = $doc->file ?? $doc['file'];
                     $docId = $docData['id'];
                     $columnNumber = $documentColumns[$docId];
                     
-                    // Add to headers
-                    $evaluatorSheet['headers']['criteria_row'][] = $columnNumber;
-                    $evaluatorSheet['headers']['title_row'][] = $docData['title'];
-                    
-                    // Store document info
+                    // Update document info with actual scores
                     $evaluatorSheet['documents'][$docId] = [
                         'column' => $columnNumber,
                         'id' => $docId,
@@ -482,7 +498,7 @@ if(isset($_POST['generateSummaryReport'])) {
                         'total_score' => $doc->TotalScore ?? $doc['TotalScore']
                     ];
                     
-                    // Get criteria scores for this document - USE DOC_ID TO GROUP SCORES
+                    // Get criteria scores for this document
                     $docScores = $doc->criteria ?? $doc['criteria'];
 
                     // Group scores by document ID first, then by criteria
@@ -516,8 +532,14 @@ if(isset($_POST['generateSummaryReport'])) {
                         }
                     }
                     
-                    // Add to total row
-                    $evaluatorSheet['total_row'][] = $doc->TotalScore ?? $doc['TotalScore'];
+                    // Update total row - We'll rebuild this after we have all documents
+                }
+                
+                // ============ REBUILD TOTAL ROW WITH ALL DOCUMENTS IN CORRECT ORDER ============
+                $evaluatorSheet['total_row'] = ['Total'];
+                foreach ($documentIds as $docId) {
+                    $totalScore = $evaluatorSheet['documents'][$docId]['total_score'] ?? 0;
+                    $evaluatorSheet['total_row'][] = $totalScore;
                 }
                 
                 // Build criteria rows in EXACT order - USING DOC_ID TO GET SCORES
@@ -541,26 +563,16 @@ if(isset($_POST['generateSummaryReport'])) {
                         'scores' => []
                     ];
                     
-                    // For each document column
+                    // For each document column (ALL documents in master list)
                     foreach ($documentIds as $docId) {
                         $column = $documentColumns[$docId];
                         
-                        // Get the score for this document and criteria
+                        // Get the score for this document and criteria (0 if not scored)
                         $score = 0;
                         
                         // Check if we have scores for this document
                         if (isset($scoresByDoc[$docId]) && isset($scoresByDoc[$docId][$criteriaId])) {
                             $score = $scoresByDoc[$docId][$criteriaId];
-                        } else {
-                            // Try to find by criteria name
-                            foreach ($scoresByDoc[$docId] ?? [] as $cid => $s) {
-                                foreach ($criteriaList as $c) {
-                                    if ($c['id'] == $cid && $c['name'] == $criteriaName) {
-                                        $score = $s;
-                                        break 2;
-                                    }
-                                }
-                            }
                         }
                         
                         $row['scores'][$column] = $score;
@@ -569,91 +581,157 @@ if(isset($_POST['generateSummaryReport'])) {
                     $evaluatorSheet['criteria_rows'][] = $row;
                     $addedCriteriaNames[$criteriaName] = true;
                 }
+                // ============ ADD RANK ROW FOR EACH EVALUATOR ============
+                // Calculate ranks based on total scores for THIS evaluator only
+                $rankRow = ['Rank'];
+                $scoresForRanking = [];
 
-                // DEBUG: Log the scores for first document
-                if ($evalIndex == 0 && !empty($documentIds)) {
-                    $firstDocId = $documentIds[0];
-                    $firstColumn = $documentColumns[$firstDocId];
-                    error_log("Scores for Document $firstDocId (Column $firstColumn): " . json_encode($scoresByDoc[$firstDocId] ?? []));
-                }
-                
-                $summaryReport['evaluators'][] = $evaluatorSheet;
-            }
-            
-            // STEP 8: CALCULATE QUALITY PRESENTATION ROW AND RANKS
-            // ALWAYS initialize the quality_presentation_row
-            $qualityPresentationRow = [
-                'name' => 'Quality of Presentation',
-                'scores' => []
-            ];
-
-            // Initialize all columns with 0
-            foreach ($documentIds as $docId) {
-                $column = $documentColumns[$docId];
-                $qualityPresentationRow['scores'][$column] = 0;
-            }
-
-            // Fill in actual scores if they exist
-            if (!empty($summaryReport['quality_presentation_totals'])) {
-                foreach ($summaryReport['quality_presentation_totals'] as $docId => $data) {
-                    $column = $data['column'];
-                    $qualityPresentationRow['scores'][$column] = $data['total_score'];
-                }
-                
-                // Calculate rankings
-                $rankings = [];
-                foreach ($summaryReport['quality_presentation_totals'] as $docId => $data) {
-                    $rankings[] = [
-                        'doc_id' => $docId,
-                        'title' => $data['title'],
-                        'total_score' => $data['total_score'],
-                        'column' => $data['column']
+                // First, collect all total scores with their column positions
+                foreach ($documentIds as $docId) {
+                    $column = $documentColumns[$docId];
+                    $totalScore = $evaluatorSheet['documents'][$docId]['total_score'] ?? 0;
+                    $scoresForRanking[] = [
+                        'column' => $column,
+                        'score' => $totalScore,
+                        'doc_id' => $docId
                     ];
                 }
-                
-                // Sort by total score descending
-                usort($rankings, function($a, $b) {
-                    return $b['total_score'] - $a['total_score'];
+
+                // Sort by score descending
+                usort($scoresForRanking, function($a, $b) {
+                    return $b['score'] - $a['score'];
                 });
-                
-                // Apply tie ranks
-                $rankedData = [];
+
+                // Calculate ranks with integer tie handling (no decimals)
+                $rankedScores = [];
                 $currentIndex = 0;
-                $count = count($rankings);
-                
+                $count = count($scoresForRanking);
+
                 while ($currentIndex < $count) {
-                    $tieGroup = [$rankings[$currentIndex]];
-                    $tieSum = $currentIndex + 1;
+                    $tieGroup = [$scoresForRanking[$currentIndex]];
+                    $tieCount = 1;
                     
+                    // Find all ties
                     for ($j = $currentIndex + 1; $j < $count; $j++) {
-                        if ($rankings[$j]['total_score'] == $rankings[$currentIndex]['total_score']) {
-                            $tieGroup[] = $rankings[$j];
-                            $tieSum += ($j + 1);
+                        if ($scoresForRanking[$j]['score'] == $scoresForRanking[$currentIndex]['score']) {
+                            $tieGroup[] = $scoresForRanking[$j];
+                            $tieCount++;
                         } else {
                             break;
                         }
                     }
                     
-                    $averageRank = $tieSum / count($tieGroup);
+                    // Assign the SAME integer rank to all tied items
+                    // If there's a tie, everyone gets the current position number (not average)
+                    $rank = $currentIndex + 1;
                     
                     foreach ($tieGroup as $item) {
-                        $rankedData[] = [
-                            'rank' => round($averageRank, 1),
-                            'doc_id' => $item['doc_id'],
-                            'title' => $item['title'],
-                            'total_score' => $item['total_score'],
-                            'column' => $item['column']
+                        $rankedScores[$item['column']] = $rank;
+                    }
+                    
+                    $currentIndex += $tieCount;
+                }
+
+                // Build the rank row in correct column order
+                foreach ($documentIds as $docId) {
+                    $column = $documentColumns[$docId];
+                    $rankValue = $rankedScores[$column] ?? ''; // Empty string if no score
+                    $rankRow[] = $rankValue;
+                }
+
+                // Add the rank row to evaluator sheet
+                $evaluatorSheet['rank_row'] = $rankRow;
+                $summaryReport['evaluators'][] = $evaluatorSheet;
+            }
+            // STEP 7.5: CALCULATE RANKINGS FOR ALL CRITERIA
+            $criteriaRankings = [];
+
+            if (!empty($criteriaList) && !empty($documentIds)) {
+                // For each criterion, collect all scores across documents and calculate ranks
+                foreach ($criteriaList as $criterion) {
+                    $criteriaId = (int)$criterion['id'];
+                    $criteriaName = $criterion['name'];
+                    
+                    // Collect all scores for this criterion across all documents
+                    $criterionScores = [];
+                    
+                    foreach ($documentIds as $docId) {
+                        $totalScore = 0;
+                        
+                        // Sum scores for this criterion across ALL evaluators
+                        foreach ($evaluatorData as $evalItem) {
+                            $docs = $evalItem->docs ?? $evalItem['docs'];
+                            foreach ($docs as $doc) {
+                                if (($doc->file['id'] ?? $doc['file']['id']) == $docId) {
+                                    $docScores = $doc->criteria ?? $doc['criteria'];
+                                    foreach ($docScores as $scoreItem) {
+                                        if ((int)$scoreItem['criteria_id'] == $criteriaId) {
+                                            $totalScore += (int)$scoreItem['score'];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Store score with document info
+                        $criterionScores[] = [
+                            'doc_id' => $docId,
+                            'title' => $allDocuments[$docId]['title'],
+                            'total_score' => $totalScore,
+                            'column' => $documentColumns[$docId]
                         ];
                     }
                     
-                    $currentIndex += count($tieGroup);
+                    // Sort by total score descending
+                    usort($criterionScores, function($a, $b) {
+                        return $b['total_score'] - $a['total_score'];
+                    });
+                    
+                    // Apply tie ranks
+                    $rankedScores = [];
+                    $currentIndex = 0;
+                    $count = count($criterionScores);
+                    
+                    while ($currentIndex < $count) {
+                        $tieGroup = [$criterionScores[$currentIndex]];
+                        $tieSum = $currentIndex + 1;
+                        
+                        for ($j = $currentIndex + 1; $j < $count; $j++) {
+                            if ($criterionScores[$j]['total_score'] == $criterionScores[$currentIndex]['total_score']) {
+                                $tieGroup[] = $criterionScores[$j];
+                                $tieSum += ($j + 1);
+                            } else {
+                                break;
+                            }
+                        }
+                        
+                        $averageRank = $tieSum / count($tieGroup);
+                        
+                        foreach ($tieGroup as $item) {
+                            $rankedScores[] = [
+                                'rank' => round($averageRank, 1),
+                                'doc_id' => $item['doc_id'],
+                                'title' => $item['title'],
+                                'total_score' => $item['total_score'],
+                                'column' => $item['column']
+                            ];
+                        }
+                        
+                        $currentIndex += count($tieGroup);
+                    }
+                    
+                    // Store rankings for this criterion
+                    $criteriaRankings[$criteriaId] = [
+                        'id' => $criteriaId,
+                        'name' => $criteriaName,
+                        'rankings' => $rankedScores
+                    ];
                 }
-                
-                $summaryReport['rankings'] = $rankedData;
             }
 
-            // ALWAYS set the quality_presentation_row
-            $summaryReport['quality_presentation_row'] = $qualityPresentationRow;
+            // Add to summary report
+            $summaryReport['criteria_rankings'] = $criteriaRankings;
+
             
             $response['success'] = true;
             $response['data'] = $summaryReport;

@@ -329,3 +329,9 @@ Fix using keyset pagination to bypass memory limits
 In cPanel → SSL/TLS → Manage AutoSSL → Run AutoSSL manually.
 The problem of app.capsurde.net iya nga DNS wala pa ma resolve globally muna nga indi maka auto SSL kay indi pa ma verify ang domain ownership.
 It should succeed once DNS resolves globally.
+
+
+For tommorow job
+do rank every criteria
+then rank the total score of the document in evaluator
+then rank the document per evaluator 

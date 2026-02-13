@@ -9,3 +9,48 @@
 [09-Feb-2026 13:57:55 Asia/Manila] PHP Warning:  Undefined array key "eventId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 706
 [09-Feb-2026 13:57:55 Asia/Manila] PHP Warning:  Undefined array key "userName" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 707
 [09-Feb-2026 13:57:55 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 708
+[13-Feb-2026 11:37:35 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[13-Feb-2026 11:37:35 Asia/Manila] Title: Trial Document
+[13-Feb-2026 11:37:35 Asia/Manila] Author: Mang Kanor
+[13-Feb-2026 11:37:35 Asia/Manila] Event: 38th University Faculty In-House Review
+[13-Feb-2026 11:37:35 Asia/Manila] Center: Social Science Research & Development Center (SSRDC)
+[13-Feb-2026 11:37:35 Asia/Manila] Category: Natural / Biological
+[13-Feb-2026 11:37:35 Asia/Manila] Uploading endorsement: endorsement.pdf
+[13-Feb-2026 11:37:36 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Natural / Biological -> Kanor_Trial_Document
+[13-Feb-2026 11:37:36 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Natural Biological -> Kanor_Trial_Document
+[13-Feb-2026 11:37:41 Asia/Manila] Event folder created/retrieved: 1thUD12Zb-dcjYdabUNF0KJ2nOBPoriGn for 38th University Faculty In-House Review
+[13-Feb-2026 11:37:43 Asia/Manila] Center folder created/retrieved: 1wRzwmBHWILX_S5YK8AfniXJcVEHUyl1G for Social Science Research & Development Center (SSRDC)
+[13-Feb-2026 11:37:45 Asia/Manila] Category folder created/retrieved: 1qQhIP8ijCje9PNU9Nw6rp12FkM0cWzLi for Natural Biological
+[13-Feb-2026 11:37:46 Asia/Manila] Entry folder created: 1tB55UtaRYPfsV3Sccc6fVUJQG58byyed for Kanor_Trial_Document
+[13-Feb-2026 11:37:46 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1tB55UtaRYPfsV3Sccc6fVUJQG58byyed
+[13-Feb-2026 11:37:49 Asia/Manila] Making file public: 1p_y1-QCd-lKgo5VabZZYgrblPcaiM0y-
+[13-Feb-2026 11:37:50 Asia/Manila] File 1p_y1-QCd-lKgo5VabZZYgrblPcaiM0y- is already public
+[13-Feb-2026 11:37:50 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[13-Feb-2026 11:37:50 Asia/Manila] Endorsement uploaded successfully: 1p_y1-QCd-lKgo5VabZZYgrblPcaiM0y-
+[13-Feb-2026 11:37:50 Asia/Manila] Endorsement saved to DB with ID: 509
+[13-Feb-2026 11:37:50 Asia/Manila] Uploading research: transactionDetails (2-8-2026).pdf
+[13-Feb-2026 11:37:50 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Natural / Biological -> Kanor_Trial_Document
+[13-Feb-2026 11:37:50 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Natural Biological -> Kanor_Trial_Document
+[13-Feb-2026 11:37:50 Asia/Manila] Event folder created/retrieved: 1thUD12Zb-dcjYdabUNF0KJ2nOBPoriGn for 38th University Faculty In-House Review
+[13-Feb-2026 11:37:51 Asia/Manila] Center folder created/retrieved: 1wRzwmBHWILX_S5YK8AfniXJcVEHUyl1G for Social Science Research & Development Center (SSRDC)
+[13-Feb-2026 11:37:51 Asia/Manila] Category folder created/retrieved: 1qQhIP8ijCje9PNU9Nw6rp12FkM0cWzLi for Natural Biological
+[13-Feb-2026 11:37:52 Asia/Manila] Entry folder created: 1tB55UtaRYPfsV3Sccc6fVUJQG58byyed for Kanor_Trial_Document
+[13-Feb-2026 11:37:52 Asia/Manila] Uploading research file: transactionDetails (2-8-2026).pdf to folder: 1tB55UtaRYPfsV3Sccc6fVUJQG58byyed
+[13-Feb-2026 11:37:54 Asia/Manila] Making file public: 1I7yfnGt8LPbSEwdTO_KeFWTWLsj2XlJQ
+[13-Feb-2026 11:37:55 Asia/Manila] File 1I7yfnGt8LPbSEwdTO_KeFWTWLsj2XlJQ is already public
+[13-Feb-2026 11:37:55 Asia/Manila] research file upload successful: transactionDetails (2-8-2026).pdf
+[13-Feb-2026 11:37:55 Asia/Manila] Research uploaded successfully: 1I7yfnGt8LPbSEwdTO_KeFWTWLsj2XlJQ
+[13-Feb-2026 11:37:55 Asia/Manila] Uploading program: program_inHouse.pdf
+[13-Feb-2026 11:37:55 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Natural / Biological -> Kanor_Trial_Document
+[13-Feb-2026 11:37:55 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Natural Biological -> Kanor_Trial_Document
+[13-Feb-2026 11:37:56 Asia/Manila] Event folder created/retrieved: 1thUD12Zb-dcjYdabUNF0KJ2nOBPoriGn for 38th University Faculty In-House Review
+[13-Feb-2026 11:37:56 Asia/Manila] Center folder created/retrieved: 1wRzwmBHWILX_S5YK8AfniXJcVEHUyl1G for Social Science Research & Development Center (SSRDC)
+[13-Feb-2026 11:37:57 Asia/Manila] Category folder created/retrieved: 1qQhIP8ijCje9PNU9Nw6rp12FkM0cWzLi for Natural Biological
+[13-Feb-2026 11:37:57 Asia/Manila] Entry folder created: 1tB55UtaRYPfsV3Sccc6fVUJQG58byyed for Kanor_Trial_Document
+[13-Feb-2026 11:37:57 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1tB55UtaRYPfsV3Sccc6fVUJQG58byyed
+[13-Feb-2026 11:38:00 Asia/Manila] Making file public: 13CuCr3Aq9R-Omj1FCJu8QDwXYiQAHvvQ
+[13-Feb-2026 11:38:00 Asia/Manila] File 13CuCr3Aq9R-Omj1FCJu8QDwXYiQAHvvQ is already public
+[13-Feb-2026 11:38:00 Asia/Manila] program file upload successful: program_inHouse.pdf
+[13-Feb-2026 11:38:00 Asia/Manila] Program uploaded successfully: 13CuCr3Aq9R-Omj1FCJu8QDwXYiQAHvvQ
+[13-Feb-2026 11:38:00 Asia/Manila] Number of columns in query: 23
+[13-Feb-2026 11:38:00 Asia/Manila] Number of variables to bind: 23

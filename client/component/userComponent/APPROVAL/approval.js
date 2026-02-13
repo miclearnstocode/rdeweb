@@ -1,9 +1,5 @@
 import {$, ConfirmationAlert, Request, Waiting} from '../../../lib/lib.js'
 
-
-
-
-
 export const ApprovalComponent=()=>{
     let dataListEl,appDataList
     const Form=()=>{

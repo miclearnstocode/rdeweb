@@ -130,8 +130,28 @@ export const CanvasRender = ({pdf, canvas, fileUrl, getSource}) => {
         renderPage(pdf.pageNumber)
     })
 }
-export const CapsuOffice = ["CENTRAL OFFICE", "ROXAS CITY MAIN", "DAYAO", "PONTEVEDRA", "PILAR", "BURIAS", "DUMARAO", "MAMBUSAO", "TAPAZ", "SIGMA"]
+export const CapsuOffice = [
+    "CROP SCIENCE RESEARCH & DEVELOPMENT CENTER (CSRDC)",
+    "LIVESTOCK RESEARCH & DEVELOPMENT CENTER (LRDC)",
+    "FISHERIES RESEARCH & DEVELOPMENT CENTER (FRDC)",
+    "FOOD AND INDUSTRIAL TECHNOLOGY RESEARCH & DEVELOPMENT CENTER (FIRDC)",
+    "SOCIAL SCIENCE RESEARCH & DEVELOPMENT CENTER (SSRDC)",
+    "MACHINERY AND AGRICULTURAL TECHNOLOGY ENGINEERING CENTER (MATEC)",
+    "COCONUT RESEARCH AND DEVELOPMENT CENTER (COCO RDC)",
+    "EXTENSION"
+]
 
+// Helper function to get center code from display name
+export const getCenterCode = (displayName) => {
+    if (displayName === "EXTENSION") return "Extension";
+    const match = displayName.match(/\(([^)]+)\)/);
+    return match ? match[1] : displayName;
+}
+
+// Helper function to get all center codes
+export const getCenterCodes = () => {
+    return CapsuOffice.map(val => getCenterCode(val));
+}
 
 export const Waiting = () => {
     return ($({
