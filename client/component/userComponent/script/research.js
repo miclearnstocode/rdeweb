@@ -1,4 +1,4 @@
-import {$, CapsuOffice, ConfirmationAlert, Request, TimeConvert, Waiting} from '../../../lib/lib.js'
+import {$, ConfirmationAlert, Request, TimeConvert, Waiting} from '../../../lib/lib.js'
 import {Error as ErrorComponent} from "../../../error.js";
 import {Print} from "../../otherComponent/comment.js";
 
@@ -41,7 +41,29 @@ const CreateNew = () => {
         event: '',
         research: []
     }
-    
+    //mapping object at the top of CreateNew() function, after the data declaration
+    const centerCategoryMapping = {
+        "Crop Science Research & Developement Center (CSRDC)": ["Natural / Biological"],
+        "Livestock Research & Development Center (LRDC)": ["Natural / Biological"],
+        "Fisheries Research & Development Center (FRDC)": ["Natural / Biological"],
+        "Food and Industrial Technology Research & Development Center (FITRDC)": ["Food"],
+        "Social Science Research & Development Center (SSRDC)": ["Social Science"],
+        "Machinery and Agricultural Technology Engineering Center (MATEC)": ["Industrial", "Engineering", "Information Technology", "Development","Agricultural Machinery"],
+        "Coconut Research and Development Center (Coco RDC)": ["Natural / Biological"],
+        "Extension Office": ["Extension"]
+    }
+
+    // Reverse mapping for quick lookup
+    const categoryToCenters = {};
+    Object.entries(centerCategoryMapping).forEach(([center, categories]) => {
+        categories.forEach(category => {
+            if (!categoryToCenters[category]) {
+                categoryToCenters[category] = [];
+            }
+            categoryToCenters[category].push(center);
+        })
+    })
+
     const getDataMethod = {
         getEndorsement: (value) => {
             data.endorsement = value
@@ -62,14 +84,15 @@ const CreateNew = () => {
             author: '',
             attachment: '', 
             program: '',     
-            coAuhtor: []
+            coAuhtor: [],
+            presenter: ''
         }
     }
     
     let Temp = resetTemp();
 
     // UI Elements references
-    let TitleEl, SelCat, getAuth, coAuth, coAuthList, centerSelect
+    let TitleEl, SelCat, getAuth, coAuth, coAuthList, centerSelect, presenterInput
     let researchCover, programCover, researchFileInput, programFileInput
 
     // Handler functions
@@ -79,14 +102,6 @@ const CreateNew = () => {
 
     const getProgramCover = (el) => {
         programCover = el
-    }
-    
-    const getResearchFileInput = (el) => {
-        researchFileInput = el
-    }
-    
-    const getProgramFileInput = (el) => {
-        programFileInput = el
     }
     
     const getCenter = (el) => {
@@ -107,6 +122,9 @@ const CreateNew = () => {
     
     const getCoAuth = (el) => {
         coAuth = el
+    }
+    const getPresenter = (el) => {
+        presenterInput = el
     }
 
     const labelRes = $({
@@ -185,8 +203,8 @@ const CreateNew = () => {
                         fontSize: '1.1vw',
                         backgroundColor: 'grey'
                     }
-                }))
-            }
+                }));
+            };
             
             const select = $({
                 tag: 'select',
@@ -202,12 +220,22 @@ const CreateNew = () => {
                     cursor: 'pointer'
                 },
                 att: {
-                    required: true
+                    required: true,
+                    id: 'categorySelect'
                 },
                 event: {
                     type: 'change',
                     method: (event) => {
-                        Temp.category = event.target.value
+                        const selectedCategory = event.target.value;
+                        Temp.category = selectedCategory;
+                        
+                        // Update center options based on selected category
+                        if (centerSelect) {
+                            updateCenterOptions(centerSelect, selectedCategory);
+                        }
+                        
+                        // Reset center selection
+                        Temp.center = '';
                     }
                 },
                 elementHandler: (el) => {
@@ -221,9 +249,10 @@ const CreateNew = () => {
                         },
                         att: {
                             disabled: true,
-                            selected: true
+                            selected: true,
+                            value: ''
                         }
-                    }))
+                    }));
                     
                     const categories = [
                         "Social Science",
@@ -235,15 +264,15 @@ const CreateNew = () => {
                         "Industrial",
                         "Engineering",
                         "Information Technology"
-                    ]
+                    ];
                     
                     categories.forEach(cat => {
-                        el.appendChild(option(cat))
-                    })
+                        el.appendChild(option(cat));
+                    });
                     
-                    getCategory(el)
+                    getCategory(el);
                 }
-            })
+            });
             
             const leb = $({
                 tag: 'div',
@@ -255,7 +284,7 @@ const CreateNew = () => {
                     margin: 'auto 0 auto auto',
                     fontSize: '1.1vw',
                 }
-            })
+            });
             
             return ($({
                 tag: 'div',
@@ -269,7 +298,7 @@ const CreateNew = () => {
                     textAlign: 'center'
                 },
                 child: [leb, select]
-            }))
+            }));
         }
         
         const Center = () => {
@@ -287,7 +316,8 @@ const CreateNew = () => {
                     cursor: 'pointer'
                 },
                 att: {
-                    required: true
+                    required: true,
+                    id: 'centerSelect'
                 },
                 event: {
                     type: 'change',
@@ -296,46 +326,13 @@ const CreateNew = () => {
                     }
                 },
                 elementHandler: (el) => {
-                    // Populate options
-                    el.appendChild($({
-                        tag: 'option',
-                        text: '- - Select Center - -',
-                        style: {
-                            color: 'black',
-                            fontSize: '1.1vw',
-                        },
-                        att: {
-                            disabled: true,
-                            selected: true
-                        }
-                    }))
+                    // Store reference
+                    centerSelect = el;
                     
-                    const centers = [
-                        "Crop Science Research & Developement Center (CSRDC)",
-                        "Livestock Research & Development Center (LRDC)",
-                        "Fisheries Research & Development Center (FRDC)",
-                        "Food and Industrial Technology Research & Development Center (FITRDC)",
-                        "Social Science Research & Development Center (SSRDC)",
-                        "Machinery and Agricultural Technology Engineering Center (MATEC)",
-                        "Coconut Research and Development Center (Coco RDC)",
-                        "Extension Office"
-                    ]
-                    
-                    centers.forEach(center => {
-                        el.appendChild($({
-                            tag: 'option',
-                            text: center,
-                            style: {
-                                color: 'black',
-                                fontSize: '1.1vw',
-                                backgroundColor: 'grey'
-                            }
-                        }))
-                    })
-                    
-                    getCenter(el)
+                    // Initial population - show all centers
+                    updateCenterOptions(el, null);
                 }
-            })
+            });
             
             const leb = $({
                 tag: 'div',
@@ -347,7 +344,7 @@ const CreateNew = () => {
                     margin: 'auto 0 auto auto',
                     fontSize: '1.1vw',
                 }
-            })
+            });
             
             return ($({
                 tag: 'div',
@@ -361,7 +358,71 @@ const CreateNew = () => {
                     textAlign: 'center'
                 },
                 child: [leb, select]
-            }))
+            }));
+        }
+        // Helper function to update center options based on category
+        const updateCenterOptions = (selectElement, selectedCategory) => {
+            if (!selectElement) return;
+            
+            // Clear existing options
+            selectElement.innerHTML = '';
+            
+            // Add default option
+            selectElement.appendChild($({
+                tag: 'option',
+                text: '- - Select Center - -',
+                style: {
+                    color: 'black',
+                    fontSize: '1.1vw',
+                },
+                att: {
+                    disabled: true,
+                    selected: true,
+                    value: ''
+                }
+            }));
+            
+            // Determine which centers to show
+            let centersToShow = [];
+            if (selectedCategory && categoryToCenters[selectedCategory]) {
+                // Show only centers that match the selected category
+                centersToShow = categoryToCenters[selectedCategory];
+                
+                // If no matching centers, show message
+                if (centersToShow.length === 0) {
+                    selectElement.appendChild($({
+                        tag: 'option',
+                        text: 'No centers available for this category',
+                        style: {
+                            color: '#ff6b6b',
+                            fontSize: '1.1vw',
+                        },
+                        att: {
+                            disabled: true
+                        }
+                    }));
+                    return;
+                }
+            } else {
+                // Show all centers if no category selected
+                centersToShow = Object.keys(centerCategoryMapping);
+            }
+            
+            // Add center options
+            centersToShow.forEach(center => {
+                selectElement.appendChild($({
+                    tag: 'option',
+                    text: center,
+                    style: {
+                        color: 'black',
+                        fontSize: '1.1vw',
+                        backgroundColor: 'grey'
+                    },
+                    att: {
+                        value: center
+                    }
+                }));
+            });
         }
         
         const Author = () => {
@@ -491,18 +552,38 @@ const CreateNew = () => {
             
             const bot = $({
                 tag: 'div',
-                att: {
-                    className: 'fa-solid fa-user-plus addCo',
-                    title: 'Add as co-author?'
-                },
                 style: {
-                    fontSize: '1.2vw',
+                    display: 'flex',
+                    alignItems: 'center',
                     margin: 'auto',
                     marginLeft: '1vw',
-                    border: 'solid thin deepskyblue',
-                    padding: '.3rem',
                     cursor: 'pointer'
                 },
+                child: [
+                    $({
+                        tag: 'div',
+                        att: {
+                            className: 'fa-solid fa-user-plus addCo',
+                            title: 'Add as co-author?'
+                        },
+                        style: {
+                            fontSize: '1.2vw',
+                            border: 'solid thin deepskyblue',
+                            padding: '.3rem',
+                        }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: 'Add Co-author',
+                        style: {
+                            fontFamily: 'arial,sans-serif',
+                            fontSize: '0.9vw',
+                            color: 'deepskyblue',
+                            marginLeft: '0.5vw',
+                            whiteSpace: 'nowrap'
+                        }
+                    })
+                ],
                 event: {
                     type: 'click',
                     method: () => {
@@ -579,13 +660,69 @@ const CreateNew = () => {
             }))
         }
         
-        // Research file attachment
+        const Presenter = () => {
+            const leb = $({
+                tag: 'div',
+                text: 'Presenter : ',
+                style: {
+                    fontFamily: 'arial,sans-serif',
+                    fontWeight: 'bolder',
+                    color: '#bbb',
+                    fontSize: '1.2vw',
+                    marginTop: 'auto',
+                    marginBottom: 'auto'
+                }
+            })
+
+            const presenterInput = $({
+                tag: 'input',
+                style: {
+                    height: '4vh',
+                    marginLeft: '.5vw',
+                    width: '100%',
+                    border: 'none',
+                    outline: 'none',
+                    backgroundColor: 'transparent',
+                    backgroundImage: 'linear-gradient(15deg,transparent,black)',
+                    fontSize: '1vw',
+                    color: '#bbb',
+                    paddingLeft: '1vw'
+                },
+                att: {
+                    placeholder: 'Presenter of the research or extension program (Full Name)',
+                    required: true
+                },
+                event: {
+                    type: 'input',
+                    method: (event) => {
+                        Temp.presenter = event.target.value
+                    }
+                },
+                elementHandler: getPresenter
+            })
+            
+            return ($({
+                tag: 'div',
+                style: {
+                    height: 'fit-content',
+                    width: '95%',
+                    margin: '1vh auto',
+                    backgroundColor: 'rgba(200,200,200,0.1)',
+                    padding: '.4rem',
+                    borderRadius: '.5vw',
+                    textAlign: 'center',
+                    display: 'flex',
+                    whiteSpace: 'nowrap'
+                },
+                child: [leb, presenterInput]
+            }))
+        }
         const Attachment = () => {
             const file = $({
                 tag: 'input',
                 att: {
                     type: 'file',
-                    accept: '.pdf',
+                    accept: '.pdf,application/pdf', // More specific accept attribute
                     required: true
                 },
                 style: {
@@ -600,40 +737,16 @@ const CreateNew = () => {
                     backgroundColor: 'transparent',
                     cursor: 'pointer',
                 },
-                event: {
-                    type: 'input',
-                    method: (event) => {
-                        if (event.target.files.length > 0) {
-                            const file = event.target.files[0];
-                            // Validate file type
-                            if (file.type !== 'application/pdf') {
-                                alert('Please upload only PDF files!');
-                                event.target.value = ''; // Clear the input
-                                if (researchCover) {
-                                    researchCover.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload research or extension proposal/paper in pdf format</div>`
-                                }
-                                return;
-                            }
-                            
-                            // Validate file size (optional: max 10MB)
-                            if (file.size > 10 * 1024 * 1024) {
-                                alert('File size too large! Maximum size is 10MB.');
-                                event.target.value = '';
-                                if (researchCover) {
-                                    researchCover.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload research or extension proposal/paper in pdf format</div>`
-                                }
-                                return;
-                            }
-                            
+                elementHandler: (el) => {
+                    researchFileInput = el;
+                    // Setup validation after element is created
+                    setTimeout(() => {
+                        setupFileInputValidation(el, researchCover, 'Research Paper', (file) => {
                             Temp.attachment = file;
-                            if (researchCover) {
-                                researchCover.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> ${file.name}</div>`
-                            }
-                        }
-                    }
-                },
-                elementHandler: getResearchFileInput
-            })
+                        });
+                    }, 100);
+                }
+            });
             
             const cover = $({
                 tag: 'div',
@@ -646,12 +759,13 @@ const CreateNew = () => {
                     textAlign: 'center',
                     display: 'flex',
                     justifyContent: 'center',
+                    transition: 'color 0.3s ease'
                 },
                 att: {
                     innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload research or extension proposal/paper in pdf format</div>`
                 },
                 elementHandler: getResearchCover
-            })
+            });
 
             return ($({
                 tag: 'div',
@@ -667,16 +781,15 @@ const CreateNew = () => {
                     backgroundColor: '#333'
                 },
                 child: [cover, file]
-            }))
+            }));
         }
-
         // Program file attachment
         const Program = () => {
             const file = $({
                 tag: 'input',
                 att: {
                     type: 'file',
-                    accept: '.pdf',
+                    accept: '.pdf,application/pdf', // More specific accept attribute
                     required: true
                 },
                 style: {
@@ -691,19 +804,16 @@ const CreateNew = () => {
                     backgroundColor: 'transparent',
                     cursor: 'pointer',
                 },
-                event: {
-                    type: 'input',
-                    method: (event) => {
-                        if (event.target.files.length > 0) {
-                            Temp.program = event.target.files[0]
-                            if (programCover) {
-                                programCover.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> ${event.target.files[0].name}</div>`
-                            }
-                        }
-                    }
-                },
-                elementHandler: getProgramFileInput
-            })
+                elementHandler: (el) => {
+                    programFileInput = el;
+                    // Setup validation after element is created
+                    setTimeout(() => {
+                        setupFileInputValidation(el, programCover, 'Program File', (file) => {
+                            Temp.program = file;
+                        });
+                    }, 100);
+                }
+            });
             
             const cover = $({
                 tag: 'div',
@@ -716,12 +826,13 @@ const CreateNew = () => {
                     textAlign: 'center',
                     display: 'flex',
                     justifyContent: 'center',
+                    transition: 'color 0.3s ease'
                 },
                 att: {
                     innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload Program in pdf format</div>`
                 },
                 elementHandler: getProgramCover
-            })
+            });
 
             return ($({
                 tag: 'div',
@@ -737,7 +848,7 @@ const CreateNew = () => {
                     backgroundColor: '#333'
                 },
                 child: [cover, file]
-            }))
+            }));
         }
 
         return ($({
@@ -757,6 +868,7 @@ const CreateNew = () => {
                 Center(),
                 Author(),
                 CoAuthor(),
+                Presenter(),
                 Attachment(),
                 Program()
             ]
@@ -770,15 +882,11 @@ const CreateNew = () => {
             cov = el
         }
         
-        const getEndorsementFileInput = (el) => {
-            endorsementFileInput = el
-        }
-        
         const file = $({
             tag: 'input',
             att: {
                 type: 'file',
-                accept: '.pdf',
+                accept: '.pdf,application/pdf', // More specific accept attribute
                 required: true
             },
             style: {
@@ -794,19 +902,16 @@ const CreateNew = () => {
                 zIndex: '2',
                 cursor: 'pointer'
             },
-            event: {
-                type: 'input',
-                method: (event) => {
-                    if (event.target.files.length > 0) {
-                        if (cov) {
-                            cov.innerHTML = `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> ${event.target.files[0].name}</div>`
-                        }
-                        getDataMethod.getEndorsement(event.target.files[0])
-                    }
-                }
-            },
-            elementHandler: getEndorsementFileInput
-        })
+            elementHandler: (el) => {
+                endorsementFileInput = el;
+                // Setup validation after element is created
+                setTimeout(() => {
+                    setupFileInputValidation(el, cov, 'Endorsement Letter', (file) => {
+                        getDataMethod.getEndorsement(file);
+                    });
+                }, 100);
+            }
+        });
         
         const cover = $({
             tag: 'div',
@@ -991,6 +1096,127 @@ const CreateNew = () => {
         return fil
     }
 
+    //helper function at the top of CreateNew() function
+    const validatePdfFile = (file, fieldName, coverElement, fileInputElement) => {
+        // Validate file exists
+        if (!file) return false;
+        
+        // Validate file type
+        if (file.type !== 'application/pdf') {
+            alert(`Error: ${fieldName} must be a PDF file. You selected: ${file.name || 'unknown format'}`);
+            if (coverElement) {
+                coverElement.innerHTML = `<div style="margin: auto; font-family: monospace; color: #ff6b6b" class="fa-solid fa-exclamation-triangle"> ${fieldName} - Please select PDF only</div>`;
+            }
+            if (fileInputElement) {
+                fileInputElement.value = ''; // Clear the input
+            }
+            return false;
+        }
+        
+        // Validate file extension
+        const fileName = file.name || '';
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+        if (fileExtension !== 'pdf') {
+            alert(`Error: ${fieldName} must have .pdf extension. You selected: .${fileExtension} file`);
+            if (coverElement) {
+                coverElement.innerHTML = `<div style="margin: auto; font-family: monospace; color: #ff6b6b" class="fa-solid fa-exclamation-triangle"> ${fieldName} - .pdf extension required</div>`;
+            }
+            if (fileInputElement) {
+                fileInputElement.value = ''; // Clear the input
+            }
+            return false;
+        }
+        
+        // Validate file size (optional: max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`Error: ${fieldName} file size too large! Maximum size is 10MB. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+            if (coverElement) {
+                coverElement.innerHTML = `<div style="margin: auto; font-family: monospace; color: #ff6b6b" class="fa-solid fa-file-pdf"> ${fieldName} - Max 10MB allowed</div>`;
+            }
+            if (fileInputElement) {
+                fileInputElement.value = ''; // Clear the input
+            }
+            return false;
+        }
+        
+        return true;
+    }
+
+    //helper function to validate file on input change
+    const setupFileInputValidation = (fileInput, coverElement, fieldName, setTempFunction) => {
+        if (!fileInput) return;
+        
+        // Remove any existing listeners by cloning and replacing
+        const newFileInput = fileInput.cloneNode(true);
+        fileInput.parentNode.replaceChild(newFileInput, fileInput);
+        
+        // Add change event listener
+        newFileInput.addEventListener('change', (event) => {
+            const fileInput = event.target;
+            const files = fileInput.files;
+            
+            if (files.length > 0) {
+                const file = files[0];
+                
+                // Real-time validation - show file type immediately
+                const fileName = file.name || '';
+                const fileExtension = fileName.split('.').pop().toLowerCase();
+                
+                // Update cover to show selected file name and type
+                if (coverElement) {
+                    coverElement.innerHTML = `<div style="margin: auto; font-family: monospace; color: #ffd700" class="fa-solid fa-file"> Selected: ${fileName}</div>`;
+                }
+                
+                // Validate PDF
+                if (validatePdfFile(file, fieldName, coverElement, fileInput)) {
+                    // Valid PDF - update with success styling
+                    if (coverElement) {
+                        coverElement.innerHTML = `<div style="margin: auto; font-family: monospace; color: #4caf50" class="fa-solid fa-file-pdf"> ✓ ${file.name}</div>`;
+                    }
+                    setTempFunction(file);
+                } else {
+                    // Invalid file - clear the temp value
+                    setTempFunction(null);
+                }
+            } else {
+                // No file selected
+                if (coverElement) {
+                    coverElement.innerHTML = `<div style="margin: auto; font-family: monospace; color: deepskyblue" class="fa-solid fa-file-pdf"> ${fieldName} - upload PDF format</div>`;
+                }
+                setTempFunction(null);
+            }
+        });
+        
+        // Add drag and drop prevention
+        newFileInput.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        
+        newFileInput.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                const fileName = file.name || '';
+                const fileExtension = fileName.split('.').pop().toLowerCase();
+                
+                if (fileExtension !== 'pdf' || file.type !== 'application/pdf') {
+                    alert(`Error: ${fieldName} must be a PDF file. You dropped: ${fileName}`);
+                    if (coverElement) {
+                        coverElement.innerHTML = `<div style="margin: auto; font-family: monospace; color: #ff6b6b" class="fa-solid fa-exclamation-triangle"> ${fieldName} - PDF only</div>`;
+                    }
+                    newFileInput.value = '';
+                    setTempFunction(null);
+                    return false;
+                }
+            }
+        });
+        
+        return newFileInput;
+    }
+
     const Submit = () => {
         return ($({
             tag: 'div',
@@ -1069,13 +1295,25 @@ const CreateNew = () => {
                         getAuth.focus();
                         return;
                     }
-                    if (!Temp.attachment) {
-                        alert("Research attachment is missing..!")
-                        return;
+                    if (Temp.attachment) {
+                        if (!validatePdfFile(Temp.attachment, 'Research Paper', researchCover, researchFileInput)) {
+                            alert('Research attachment must be a valid PDF file. Please check and try again.');
+                            return;
+                        }
                     }
-                    if (!Temp.program) {
-                        alert("Program attachment is missing")
-                        return;
+
+                    if (Temp.program) {
+                        if (!validatePdfFile(Temp.program, 'Program File', programCover, programFileInput)) {
+                            alert('Program attachment must be a valid PDF file. Please check and try again.');
+                            return;
+                        }
+                    }
+
+                    if (data.endorsement) {
+                        if (!validatePdfFile(data.endorsement, 'Endorsement Letter', cov, endorsementFileInput)) {
+                            alert('Endorsement letter must be a valid PDF file. Please check and try again.');
+                            return;
+                        }
                     }
                     
                     // Validate co-authors (if any)
@@ -3232,10 +3470,11 @@ const Submitted = () => {
         const allPanel = () => {
             let MainBody
             
-            // Move group function to outer scope so loadAllEvents can use it
             const group = ({text, id}) => {
                 let StateBot = false, lebBot, bod
                 
+                const eventId = id;
+                const cleanEventName = text.replace(/\s*\(ID:\s*\d+\)/i, '').trim();
                 const ListCampus = (content, resList) => {
                     const Panel = (docID, fileUrl = null, fileType = 'local') => {
                         let mainP
@@ -3528,75 +3767,112 @@ const Submitted = () => {
                                 fontSize:'1vw',
                                 cursor: 'pointer'
                             },
-                            text:text,
+                            text:text, // This still shows the full text with ID
                             elementHandler:(el)=>{
                                 lebBot=el
                             },
                             event:{
                                 type:'click',
-                                method:async (event)=>{
-                                    StateBot=!StateBot
+                                method: async (event) => {
+                                    StateBot = !StateBot
+                                    
+                                    // Abort controller for cancelling requests
+                                    const abortController = new AbortController();
+                                    
+                                    if (window.currentFileRequest) {
+                                        window.currentFileRequest.abort();
+                                    }
+                                    window.currentFileRequest = abortController;
                                     
                                     // Show loading
                                     bod.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">Loading files...</div>';
                                     
                                     try {
-                                        // Use fetch instead of Request class for better error handling
                                         const form = new FormData();
                                         form.append('researchFile', 'true');
-                                        form.append('eventType', text);
                                         
-                                        // Add all campuses
-                                        CapsuOffice.forEach(val => {
-                                            form.append('capName[]', val);
+                                        // Use the stored eventId directly instead of parsing from text
+                                        if (!eventId) {
+                                            throw new Error('Event ID is not available');
+                                        }
+                                        
+                                        form.append('eventId', eventId);
+                                        
+                                        console.log('Loading files for event:', {
+                                            displayText: text,
+                                            cleanName: cleanEventName,
+                                            eventId: eventId
                                         });
-                                        
-                                        console.log('Loading files for event:', text);
-                                        console.log('Campuses:', CapsuOffice);
                                         
                                         const response = await fetch('/uploadResearchFile', {
                                             method: 'POST',
-                                            body: form
+                                            body: form,
+                                            signal: abortController.signal
                                         });
                                         
-                                        console.log('Response status:', response.status);
+                                        if (window.currentFileRequest === abortController) {
+                                            window.currentFileRequest = null;
+                                        }
                                         
                                         if (response.ok) {
                                             const data = await response.json();
                                             console.log('Response data:', data);
                                             
-                                            bod.innerHTML = '';
-                                            
-                                            if(StateBot && data.status && data.list && data.list.length > 0){
-                                                data.list.forEach(val => {
-                                                    bod.style.marginTop='2vh';
-                                                    bod.appendChild(ListCampus(val.name, val.list));
-                                                });
-                                            } else if (StateBot) {
-                                                bod.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">No files found for this event</div>';
-                                                bod.style.marginTop='2vh';
-                                            } else {
-                                                bod.innerHTML='';
-                                                bod.style.marginTop='0';
+                                            if (!abortController.signal.aborted) {
+                                                bod.innerHTML = '';
+                                                
+                                                if (StateBot && data.status) {
+                                                    if (data.list && data.list.length > 0) {
+                                                        // Use event_id from response to determine center-based
+                                                        const isCenterBased = data.event_id >= 13;
+                                                        
+                                                        data.list.forEach(item => {
+                                                            bod.style.marginTop = '2vh';
+                                                            
+                                                            if (isCenterBased) {
+                                                                // Use center display function for new events
+                                                                if (typeof ListCenter === 'function') {
+                                                                    bod.appendChild(ListCenter(item.name, item.list));
+                                                                } else {
+                                                                    // Fallback to campus display with label
+                                                                    bod.appendChild(ListCampus(item.name + ' (Center)', item.list));
+                                                                }
+                                                            } else {
+                                                                // Use campus display for old events
+                                                                bod.appendChild(ListCampus(item.name, item.list));
+                                                            }
+                                                        });
+                                                    } else {
+                                                        bod.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">No files found for this event</div>';
+                                                        bod.style.marginTop = '2vh';
+                                                    }
+                                                } else {
+                                                    bod.innerHTML = '';
+                                                    bod.style.marginTop = '0';
+                                                }
                                             }
                                         } else {
-                                            // Try to get error message from response
                                             let errorText = await response.text();
                                             console.error('HTTP error response:', errorText);
                                             
-                                            try {
-                                                // Try to parse as JSON in case it's an error response
-                                                const errorData = JSON.parse(errorText);
-                                                bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Error: ' + (errorData.message || 'Unknown error') + '</div>';
-                                            } catch {
-                                                // If not JSON, show raw error
-                                                bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Error loading files (HTTP ' + response.status + '). Please try again.</div>';
+                                            if (!abortController.signal.aborted) {
+                                                try {
+                                                    const errorData = JSON.parse(errorText);
+                                                    bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Error: ' + (errorData.message || 'Unknown error') + '</div>';
+                                                } catch {
+                                                    bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Error loading files (HTTP ' + response.status + '). Please try again.</div>';
+                                                }
                                             }
                                         }
                                     } catch (error) {
-                                        // Handle network or other errors
-                                        bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Network error: ' + error.message + '</div>';
-                                        console.error('Error:', error);
+                                        if (error.name !== 'AbortError' && !abortController.signal.aborted) {
+                                            bod.innerHTML = '<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Error: ' + error.message + '</div>';
+                                            console.error('Error:', error);
+                                        }
+                                    } finally {
+                                        if (window.currentFileRequest === abortController) {
+                                            window.currentFileRequest = null;
+                                        }
                                     }
                                 }
                             },
@@ -3647,7 +3923,7 @@ const Submitted = () => {
                             tag: 'input',
                             att: {
                                 className: 'searchAll',
-                                placeholder: 'search file name, author, category, campus',
+                                placeholder: 'search file name',
                                 id: 'search-All-File',
                                 name: 'searchAllFile'
                             },
