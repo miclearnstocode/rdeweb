@@ -8,9 +8,9 @@ include ('db.php');
 if(isset($_POST['load'])){
     if($con=new mysqli($host,$username,$pass,$dbName)){
         $result=[];
-        foreach ($con->query('SELECT account_detail.campus,account_detail.id,account_detail.email FROM account_detail') as $val){
+        foreach ($con->query('SELECT account_detail.center,account_detail.id,account_detail.email FROM account_detail') as $val){
             $res=new stdClass();
-            $res->office=$val['campus'];
+            $res->office=$val['center'];
             $res->id=$val['id'];
             $res->email=$val['email'];
             $result[]=$res;
@@ -21,15 +21,16 @@ if(isset($_POST['load'])){
 if(isset($_POST['allUserAdmin'])){
     $result=[];
     if($con=new mysqli($host,$username,$pass,$dbName)){
-        $query="SELECT account_detail.campus,
-account_detail.id,
-account_detail.email,
-capsu_user.username,
-account_detail.fullName,
-account_detail.usertype
-FROM account_detail
-LEFT JOIN capsu_user ON account_detail.id=capsu_user.id
-";
+        $query="SELECT 
+        account_detail.center, 
+        account_detail.id,
+        account_detail.email,
+        capsu_user.username,
+        account_detail.fullName,
+        account_detail.usertype
+        FROM account_detail
+        LEFT JOIN capsu_user ON account_detail.id=capsu_user.id
+        ";
         $statement=$con->prepare($query);
         $statement->execute();
         $resultVal=$statement->get_result();
@@ -39,16 +40,17 @@ LEFT JOIN capsu_user ON account_detail.id=capsu_user.id
     }
     echo json_encode($result);
 }
+
 if(isset($_POST['allUser'])){
     $result=[];
     if($con=new mysqli($host,$username,$pass,$dbName)){
-        $query="SELECT account_detail.campus,
-account_detail.id,
-account_detail.email,
-capsu_user.username,
-account_detail.fullName
-FROM account_detail
-LEFT JOIN capsu_user ON account_detail.id=capsu_user.id";
+        $query="SELECT account_detail.center,
+            account_detail.id,
+            account_detail.email,
+            capsu_user.username,
+            account_detail.fullName
+            FROM account_detail
+            LEFT JOIN capsu_user ON account_detail.id=capsu_user.id";
         foreach ($con->query($query) as $val){
             if($val['username']!==null){
                 $res=new stdClass();
@@ -81,7 +83,7 @@ if(isset($_POST['getTotalUser'])){
     if($con=new mysqli($host,$username,$pass,$dbName)){
         for($x=0;$x<$camp;$x++) {
             $campusName=$_POST['campusName'][$x];
-            $query="SELECT COUNT(*) FROM account_detail WHERE account_detail.campus=?";
+            $query="SELECT COUNT(*) FROM account_detail WHERE account_detail.center=?";
             $statement=$con->prepare($query);
             $statement->bind_param("s",$campusName);
             $statement->execute();

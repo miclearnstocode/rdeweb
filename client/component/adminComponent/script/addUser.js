@@ -1290,7 +1290,7 @@ export const AddUser=()=>{
                     $({
                         tag:'div',
                         att:{
-                            className:'labelAdmin'
+                            className:'adminLabel'
                         },
                         text:'Register new Account'
                     }),
@@ -1307,7 +1307,7 @@ export const AddUser=()=>{
                     $({
                         tag:'div',
                         att:{
-                            className:'labelAdmin'
+                            className:'adminLabel'
                         },
                         text:'Register Evaluators Account',
                         event:{

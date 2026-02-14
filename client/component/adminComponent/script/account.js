@@ -1,12 +1,5 @@
 import {$, ConfirmationAlert, Request, Waiting} from '../../../lib/lib.js'
-
 import {Error} from "../../../error.js";
-
-
-
-
-
-
 
 const capUser=()=>{
     const AccountList=()=>{
@@ -391,179 +384,89 @@ const capUser=()=>{
                                     },
 
                                     att:{
-
                                         placeholder:'Enter text here...'
-
                                     },
-
                                     event:{
-
                                         type:'input',
-
                                         method:(ev)=>{
-
                                             let list=mainListBod.childNodes
-
                                             for(let val of list){
-
                                                 if(!val.innerText.toUpperCase().includes(ev.target.value.toUpperCase())){
-
                                                     val.style.display='none'
-
                                                 }else {
-
                                                     val.style.display='flex'
-
                                                 }
-
                                             }
-
                                         }
-
                                     }
-
                                 })
-
                             ]
-
                         })
-
                     ]
-
                 }),
-
                 $({
-
                     tag:'div',
-
                     style:{
-
                         height:'5vh',
-
                         borderBottom:'solid thin rgba(100,100,100,0.3)',
-
                         display:'flex'
-
                     },
-
                     child:[
-
                         head({
-
-                            text:'Campus',
-
+                            text:'Campus/Center',
                             width:'15%',
-
                         }),
-
                         head({
-
                             text:'User type',
-
                             width:'15%',
-
                         }),
-
                         head({
-
                             text:'Username',
-
                             width:'15%',
-
                         }),
-
                         head({
-
                             text:'Full name',
-
                             width:'30%',
-
                         }),
-
                         head({
-
                             text:'Email',
-
                             width:'25%',
-
-
-
                         }),
-
                     ]
-
                 }),
-
-
-
                 $({
-
                     tag:'div',
-
                     style:{
-
                         height:'82%',
-
                         backgroundColor:'rgba(0,0,0,0.2)',
-
                         overflowY:'auto'
-
                     },
-
                     elementHandler:(el)=>{
-
                         mainListBod=el
-
                         const req= new Request('/loader')
-
                         req.Post([
-
                             {
-
                                 name:'allUserAdmin',
-
                                 value:'0'
-
                             }
-
                         ])
-
                         req.Json()
-
                         req.Send().then(data=>{
-
                             data.forEach(val=>{
-
                                 el.appendChild(listAc({
-
                                     name:(val.fullName!==null)? val.fullName:'Name is empty',
-
-                                    campusN:val.campus,
-
+                                    campusN:val.center,  // Changed from val.campus to val.center
                                     id:val.id,
-
                                     designation:val.usertype,
-
                                     email:val.email,
-
                                     username:val.username
-
                                 }))
-
                             })
-
                         })
-
                     }
-
-
-
                 })
-
             ]
-
         }))
-
     }
 
     const RequestList=()=>{
@@ -618,528 +521,259 @@ const capUser=()=>{
 
 }
 
-
-
 const capsuAccountPage = () => {
-
-
-
     const topBar = () => {
-
         const searcBar = $({
-
             tag: 'td',
-
             att: {
-
                 className: 'searchTd'
-
             },
-
             child: [
-
                 $({
-
                     tag: 'span',
-
                     att: {
-
                         className: 'fa fa-search searchIconT'
-
                     }
-
                 }),
-
                 $({
-
                     tag: 'input',
-
                     att: {
-
                         type: 'text',
-
                         className: 'inpuTDsearch',
-
                         placeholder: 'Search name'
-
                     }
-
                 })
-
             ]
-
         })
-
         const sortBar = $({
-
             tag: 'td',
-
             att: {
-
                 className: 'searchTd'
-
             },
-
             child: [
-
                 $({
-
                     tag: 'select',
-
                     att: {
-
                         className: 'selectSort',
-
                     },
-
                     child: [
-
                         $({
-
                             tag: 'option',
-
                             text: '- - Sort by - -',
-
                             att: {
-
                                 selected: true,
-
                                 disabled: true
-
                             }
-
                         }),
-
                         $({
-
                             tag: 'option',
-
                             text: 'Full name',
-
                         }),
-
                         $({
-
                             tag: 'option',
-
                             text: 'Campus/Office',
-
                         }),
-
                     ]
-
                 })
-
             ]
-
         })
-
         const searchRow = $({
-
             tag: 'tr',
-
             child: [
-
                 searcBar,
-
                 sortBar,
-
                 $({
-
                     tag: 'td',
-
                     att: {
-
                         className: 'expandTD'
-
                     }
-
                 })
-
             ]
-
         })
-
         return ($({
-
             tag: 'table',
-
             att: {
-
                 className: 'tapBar'
-
             },
-
             child: [searchRow]
-
         }))
-
     }
-
     const listHead = ()=>{
-
         const getRow=(row)=>{
-
             row.appendChild($({
-
                 tag:'td',
-
                 att:{
-
                     className:'listUserName hed',
-
                 },
-
                 text:'UserName'
-
             }))
-
             row.appendChild($({
-
                 tag:'td',
-
                 att:{
-
                     className:'listFullName hed',
-
                 },
-
                 text:'Full name'
-
             }))
-
             row.appendChild($({
-
                 tag:'td',
-
                 att:{
-
                     className:'listEmail hed',
-
                 },
-
                 text:'Email'
-
             }))
-
             row.appendChild($({
-
                 tag:'td',
-
                 att:{
-
                     className:'deleteList',
-
                 },
-
             }))
-
-
-
         }
-
         return($({
-
             tag: 'table',
-
             att: {
-
                 className: 'listHead'
-
             },
-
             child:[
-
                 $({
-
                     tag:'tr',
-
                     elementHandler:getRow
-
                 })
-
             ]
-
         }))
-
     }
-
-
-
     const getContainer= async (panel)=>{
-
         const listTable=({username,fullName,email,id,directory})=>{
-
             const data=({className,label})=>{
-
                 return($({
-
                     tag:'td',
-
                     att:{
-
                         className:className
-
                     },
-
                     text:label
-
                 }))
-
             }
-
             const deleteButton=()=>{
-
                 return($({
-
                     tag:'td',
-
                     att:{
-
                         className:'deleteList'
-
                     },
-
                     child:[
-
                         $({
-
                             tag:'span',
-
                             att:{
-
                                 className:'fa fa-trash delI'
-
                             },
-
                             event:{
-
                                 type:'click',
-
                                 method:async ()=>{
-
                                     if(confirm('Are you sure you want to delete this account?')){
-
                                         const form=new FormData()
-
                                         form.append('deleteUser','true')
-
                                         form.append('userID',id)
-
                                         form.append('directory',directory)
-
                                         await fetch('/deleteUser',{
-
                                             method:'POST',
-
                                             body:form
-
                                         }).then(res=>res.json())
-
                                             .then(data=>{
-
                                                 if(data.status){
-
                                                     window.location.reload()
-
                                                 }else {
-
                                                     alert(data.messages)
-
                                                 }
-
                                             })
-
                                     }
-
                                 }
-
                             }
-
                         }),
-
                         $({
-
                             tag:'div',
-
                             att:{
-
                                 className:'space'
-
                             }
-
                         }),
-
                         $({
-
                             tag:'span',
-
                             att:{
-
                                 className:'fa fa-edit delI'
-
                             },
-
                             event:{
-
                                 type:'click',
-
                                 method:()=>{
-
                                     alert('edit')
-
                                 }
-
                             }
-
                         })
-
                     ]
-
                 }))
-
             }
-
             return($({
-
                 tag:'table',
-
                 att:{
-
                     className:'listTable'
-
                 },
-
                 child:[
-
                     $({
-
                         tag:'tr',
-
                         child:[
-
                             data({
-
                                 className:'listUserName',
-
                                 label:username
-
                             }),
-
                             data({
-
                                 className:'listFullName',
-
                                 label:fullName
-
                             }),
-
                             data({
-
                                 className:'listEmail',
-
                                 label:email
-
                             }),
-
                             deleteButton()
-
                         ]
-
                     })
-
                 ]
-
             }))
-
         }
-
         const form = new FormData();
-
         form.append('allUserAdmin','true')
-
         return await fetch('/loader', {
-
             method: 'POST',
-
             body: form
-
         }).then(res=>res.json())
-
             .then(data=>{
-
                 data.forEach(val=>{
-
                     panel.appendChild(listTable({
-
                         username:val.username,
-
                         fullName:(val.fullname!==null)? val.fullname:'Name is empty',
-
                         email:val.email,
-
                         id:val.id,
-
                         directory:val.directory
-
                     }))
-
                 })
-
             })
-
-
-
-
-
     }
-
-
-
     const listBar = () => {
-
         return ($({
-
             tag: 'div',
-
             att: {
-
                 className: 'listDiv'
-
             },
-
             elementHandler:getContainer
-
         }))
-
     }
-
     return ($({
-
         tag: 'div',
-
         att: {
-
             className: 'capAccPage'
-
         },
-
         child: [
-
             topBar(),
-
             listHead(),
-
             listBar()
-
         ]
-
-
-
     }))
-
 }
-
 const evalPage = () => {
 
 
@@ -3348,8 +2982,6 @@ const rdePage=()=>{
 
 }
 
-
-
 const TabButton = ({label, url}) => {
 
 
@@ -3399,162 +3031,81 @@ const TabButton = ({label, url}) => {
 
 
 const page = [];
-
 page.push({
-
     url: '/admin/accountList/CapsuUser',
-
     tab: TabButton({label: "CAPSU Account", url: '/admin/accountList/CapsuUser'}),
-
     page: capUser
-
 })
 
 page.push({
-
     url: '/admin/accountList/Evaluator',
-
     tab: TabButton({label: "Evaluators Account", url: '/admin/accountList/Evaluator'}),
-
     page: evalPage
-
 })
 
 page.push({
-
     url: '/admin/accountList/rdestaff/list',
-
     tab: TabButton({label: "RDE Staff", url: '/admin/accountList/rdestaff/list'}),
-
     page: rdePage
-
 })
 
 
 
 const Tabs = () => {
-
     const getTable = (table) => {
-
-
-
         page.forEach(val => {
-
             table.appendChild(val.tab)
-
         })
-
-
-
     }
-
     return ($({
-
         tag: 'table',
-
         att: {
-
             className: 'accountTabsTable'
-
         },
-
         child: [
-
             $({
-
                 tag: 'tr',
-
                 elementHandler: getTable
-
             })
-
         ]
-
     }))
-
 }
 
 const pageFrame = () => {
-
-
-
     const getFrame = (frame) => {
-
         let frameState = true
-
         page.forEach(val => {
-
             const current=window.location.href
-
             const origin=window.location.origin
-
             const rout=current.replace(origin,'')
-
-
-
             if (val.url.split('/')[3] === rout.split('/')[3]) {
-
                 frame.appendChild(val.page())
-
                 frameState = false
-
             }
-
         })
-
         if (frameState) {
-
             frame.appendChild(Error())
-
         }
-
     }
-
     return ($({
-
         tag: 'div',
-
         elementHandler: getFrame,
-
         att: {
-
             className: 'pageFrameAdmin'
-
         }
-
     }))
-
 }
-
-
 
 export const AccountList = () => {
-
-
-
     return ($({
-
         externalStyle: '/client/component/adminComponent/componentStyle/account.css',
-
         tag: 'div',
-
         att: {
-
             className: 'accountList '
-
         },
-
         child: [
-
             Tabs(),
-
             pageFrame(),
-
         ]
-
-
-
     }))
-
 }
-

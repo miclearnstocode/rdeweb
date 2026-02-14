@@ -79,6 +79,14 @@
     font-family: 'Quattrocento Sans', sans-serif;
     color: rgb(211, 211, 211);
 }
+.adminLabel {
+    font-family: 'Quattrocento Sans', sans-serif;
+    font-weight: 800;
+    color: rgb(211, 211, 211);
+    font-size: 1.4vw;
+    margin: .5vw auto auto;
+    text-align: center;
+}
 .inputAddUser,.selectAddUser{
     outline: none;
     border: solid thin grey;
