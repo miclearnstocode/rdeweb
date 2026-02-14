@@ -15,6 +15,92 @@ const CreateNew = () => {
         event: '',
         research: []
     }
+    
+    // Add form validation state as plain objects
+    const formState = {
+        isValid: false,
+        errors: {
+            title: false,
+            category: false,
+            center: false,
+            author: false,
+            presenter: false,
+            attachment: false,
+            program: false,
+            endorsement: false,
+            event: false,
+            coAuthors: false
+        },
+        touched: {
+            title: false,
+            category: false,
+            center: false,
+            author: false,
+            presenter: false,
+            attachment: false,
+            program: false,
+            endorsement: false,
+            event: false
+        }
+    };
+
+    // Store submit button reference
+    let submitButtonRef = null;
+
+    // Validation function
+    const validateForm = () => {
+        const errors = {
+            title: !Temp.title || Temp.title.trim() === '',
+            category: !Temp.category || Temp.category === '',
+            center: !Temp.center || Temp.center === '',
+            author: !Temp.author || Temp.author.trim() === '',
+            presenter: !Temp.presenter || Temp.presenter.trim() === '',
+            attachment: !Temp.attachment,
+            program: !Temp.program,
+            endorsement: !data.endorsement,
+            event: !data.event || data.event === '',
+            coAuthors: Temp.coAuhtor.some(coAuth => !coAuth.trim())
+        };
+
+        const isValid = !Object.values(errors).some(error => error === true);
+        
+        // Update formState
+        formState.isValid = isValid;
+        formState.errors = errors;
+        
+        // Update submit button state
+        if (submitButtonRef) {
+            if (isValid) {
+                submitButtonRef.style.opacity = '1';
+                submitButtonRef.style.backgroundColor = 'deepskyblue';
+                submitButtonRef.style.cursor = 'pointer';
+                submitButtonRef.style.pointerEvents = 'auto';
+                submitButtonRef.removeAttribute('disabled');
+            } else {
+                submitButtonRef.style.opacity = '0.5';
+                submitButtonRef.style.backgroundColor = '#666';
+                submitButtonRef.style.cursor = 'not-allowed';
+                submitButtonRef.style.pointerEvents = 'none';
+                submitButtonRef.setAttribute('disabled', 'disabled');
+            }
+        }
+
+        return isValid;
+    };
+
+    // Touch field handler
+    const touchField = (fieldName) => {
+        formState.touched[fieldName] = true;
+        validateForm();
+        
+        // Update field styling
+        const field = document.querySelector(`[name="${fieldName}"], [id="${fieldName}Select"], [data-field="${fieldName}"]`);
+        if (field && formState.errors[fieldName]) {
+            field.style.border = '1px solid #ff6b6b';
+            field.style.boxShadow = '0 0 5px #ff6b6b';
+        }
+    };
+
     //mapping object at the top of CreateNew() function, after the data declaration
     const centerCategoryMapping = {
         "Crop Science Research & Developement Center (CSRDC)": ["Natural / Biological"],
@@ -40,13 +126,18 @@ const CreateNew = () => {
 
     const getDataMethod = {
         getEndorsement: (value) => {
-            data.endorsement = value
+            data.endorsement = value;
+            validateForm();
+            touchField('endorsement');
         },
         getResearch: (value) => {
-            data.research.push(value)
+            data.research.push(value);
+            validateForm();
         },
         getEvent: (value) => {
-            data.event = value
+            data.event = value;
+            validateForm();
+            touchField('event');
         }
     }
 
@@ -138,12 +229,37 @@ const CreateNew = () => {
                 },
                 att: {
                     placeholder: 'Insert text here',
-                    required: true
+                    required: true,
+                    'data-field': 'title',
+                    name: 'title'
                 },
                 event: {
                     type: 'input',
                     method: (event) => {
-                        Temp.title = event.target.value
+                        Temp.title = event.target.value;
+                        validateForm();
+                        
+                        // Update border color based on validation
+                        if (formState.touched.title && !Temp.title) {
+                            event.target.style.border = '1px solid #ff6b6b';
+                            event.target.style.boxShadow = '0 0 5px #ff6b6b';
+                        } else if (formState.touched.title && Temp.title) {
+                            event.target.style.border = '1px solid #4caf50';
+                            event.target.style.boxShadow = '0 0 5px #4caf50';
+                        } else {
+                            event.target.style.border = 'none';
+                            event.target.style.boxShadow = 'none';
+                        }
+                    },
+                    blur: (event) => {
+                        touchField('title');
+                        if (!Temp.title) {
+                            event.target.style.border = '1px solid #ff6b6b';
+                            event.target.style.boxShadow = '0 0 5px #ff6b6b';
+                        } else {
+                            event.target.style.border = '1px solid #4caf50';
+                            event.target.style.boxShadow = '0 0 5px #4caf50';
+                        }
                     }
                 },
                 elementHandler: getTitle
@@ -191,7 +307,8 @@ const CreateNew = () => {
                 },
                 att: {
                     required: true,
-                    id: 'categorySelect'
+                    id: 'categorySelect',
+                    'data-field': 'category'
                 },
                 event: {
                     type: 'change',
@@ -206,7 +323,16 @@ const CreateNew = () => {
                         
                         // Reset center selection
                         Temp.center = '';
-                    }
+                        validateForm();
+                        touchField('category');
+                        
+                        // Update border
+                        if (selectedCategory) {
+                            event.target.style.border = '1px solid #4caf50';
+                            event.target.style.boxShadow = '0 0 5px #4caf50';
+                        }
+                    },
+                    blur: () => touchField('category')
                 },
                 elementHandler: (el) => {
                     // Populate options
@@ -287,13 +413,23 @@ const CreateNew = () => {
                 },
                 att: {
                     required: true,
-                    id: 'centerSelect'
+                    id: 'centerSelect',
+                    'data-field': 'center'
                 },
                 event: {
                     type: 'change',
                     method: (event) => {
-                        Temp.center = event.target.value
-                    }
+                        Temp.center = event.target.value;
+                        validateForm();
+                        touchField('center');
+                        
+                        // Update border
+                        if (event.target.value) {
+                            event.target.style.border = '1px solid #4caf50';
+                            event.target.style.boxShadow = '0 0 5px #4caf50';
+                        }
+                    },
+                    blur: () => touchField('center')
                 },
                 elementHandler: (el) => {
                     // Store reference
@@ -425,12 +561,34 @@ const CreateNew = () => {
                 },
                 att: {
                     placeholder: 'Enter text here',
-                    required: true
+                    required: true,
+                    'data-field': 'author',
+                    name: 'author'
                 },
                 event: {
                     type: 'input',
                     method: (event) => {
-                        Temp.author = event.target.value
+                        Temp.author = event.target.value;
+                        validateForm();
+                        
+                        // Update border
+                        if (formState.touched.author && !Temp.author) {
+                            event.target.style.border = '1px solid #ff6b6b';
+                            event.target.style.boxShadow = '0 0 5px #ff6b6b';
+                        } else if (formState.touched.author && Temp.author) {
+                            event.target.style.border = '1px solid #4caf50';
+                            event.target.style.boxShadow = '0 0 5px #4caf50';
+                        }
+                    },
+                    blur: (event) => {
+                        touchField('author');
+                        if (!Temp.author) {
+                            event.target.style.border = '1px solid #ff6b6b';
+                            event.target.style.boxShadow = '0 0 5px #ff6b6b';
+                        } else {
+                            event.target.style.border = '1px solid #4caf50';
+                            event.target.style.boxShadow = '0 0 5px #4caf50';
+                        }
                     }
                 },
                 elementHandler: getAuthor
@@ -498,8 +656,9 @@ const CreateNew = () => {
                             event: {
                                 type: 'click',
                                 method: () => {
-                                    main.remove()
-                                    Temp.coAuhtor = Temp.coAuhtor.filter((item) => { return item !== val })
+                                    main.remove();
+                                    Temp.coAuhtor = Temp.coAuhtor.filter((item) => { return item !== val });
+                                    validateForm();
                                 }
                             }
                         })
@@ -558,12 +717,13 @@ const CreateNew = () => {
                     type: 'click',
                     method: () => {
                         if (coInput.value.trim()) {
-                            Temp.coAuhtor.push(coInput.value.trim())
-                            listCo.innerHTML = ''
+                            Temp.coAuhtor.push(coInput.value.trim());
+                            listCo.innerHTML = '';
                             Temp.coAuhtor.forEach(val => {
-                                listCo.appendChild(perListCo(val))
-                            })
-                            coInput.value = ''
+                                listCo.appendChild(perListCo(val));
+                            });
+                            coInput.value = '';
+                            validateForm();
                         }
                     }
                 }
@@ -585,7 +745,8 @@ const CreateNew = () => {
                 },
                 att: {
                     placeholder: 'Input all authors here one by one and click the add icon ->',
-                    title: 'To add more authors click the add icon'
+                    title: 'To add more authors click the add icon',
+                    'data-field': 'coAuthor'
                 },
                 elementHandler: (el) => {
                     coInput = el
@@ -660,12 +821,34 @@ const CreateNew = () => {
                 },
                 att: {
                     placeholder: 'Presenter of the research or extension program (Full Name)',
-                    required: true
+                    required: true,
+                    'data-field': 'presenter',
+                    name: 'presenter'
                 },
                 event: {
                     type: 'input',
                     method: (event) => {
                         Temp.presenter = event.target.value;
+                        validateForm();
+                        
+                        // Update border
+                        if (formState.touched.presenter && !Temp.presenter) {
+                            event.target.style.border = '1px solid #ff6b6b';
+                            event.target.style.boxShadow = '0 0 5px #ff6b6b';
+                        } else if (formState.touched.presenter && Temp.presenter) {
+                            event.target.style.border = '1px solid #4caf50';
+                            event.target.style.boxShadow = '0 0 5px #4caf50';
+                        }
+                    },
+                    blur: (event) => {
+                        touchField('presenter');
+                        if (!Temp.presenter) {
+                            event.target.style.border = '1px solid #ff6b6b';
+                            event.target.style.boxShadow = '0 0 5px #ff6b6b';
+                        } else {
+                            event.target.style.border = '1px solid #4caf50';
+                            event.target.style.boxShadow = '0 0 5px #4caf50';
+                        }
                     }
                 },
                 elementHandler: getPresenter
@@ -687,13 +870,16 @@ const CreateNew = () => {
                 child: [leb, presenterInput]
             }))
         }
+        
         const Attachment = () => {
             const file = $({
                 tag: 'input',
                 att: {
                     type: 'file',
-                    accept: '.pdf,application/pdf', // More specific accept attribute
-                    required: true
+                    accept: '.pdf,application/pdf',
+                    required: true,
+                    'data-field': 'attachment',
+                    id: 'attachment'
                 },
                 style: {
                     opacity: '0',
@@ -709,10 +895,18 @@ const CreateNew = () => {
                 },
                 elementHandler: (el) => {
                     researchFileInput = el;
-                    // Setup validation after element is created
                     setTimeout(() => {
                         setupFileInputValidation(el, researchCover, 'Research Paper', (file) => {
                             Temp.attachment = file;
+                            validateForm();
+                            touchField('attachment');
+                            
+                            // Update border of parent
+                            const parent = el.parentElement;
+                            if (parent) {
+                                parent.style.border = '2px solid #4caf50';
+                                parent.style.boxShadow = '0 0 5px #4caf50';
+                            }
                         });
                     }, 100);
                 }
@@ -748,19 +942,22 @@ const CreateNew = () => {
                     margin: '2vh auto',
                     borderRadius: '.5vw',
                     position: 'relative',
-                    backgroundColor: '#333'
+                    backgroundColor: '#333',
+                    border: formState.touched.attachment && formState.errors.attachment ? '2px solid #ff6b6b' : 'none'
                 },
                 child: [cover, file]
             }));
         }
-        // Program file attachment
+        
         const Program = () => {
             const file = $({
                 tag: 'input',
                 att: {
                     type: 'file',
-                    accept: '.pdf,application/pdf', // More specific accept attribute
-                    required: true
+                    accept: '.pdf,application/pdf',
+                    required: true,
+                    'data-field': 'program',
+                    id: 'program'
                 },
                 style: {
                     opacity: '0',
@@ -776,10 +973,18 @@ const CreateNew = () => {
                 },
                 elementHandler: (el) => {
                     programFileInput = el;
-                    // Setup validation after element is created
                     setTimeout(() => {
                         setupFileInputValidation(el, programCover, 'Program File', (file) => {
                             Temp.program = file;
+                            validateForm();
+                            touchField('program');
+                            
+                            // Update border of parent
+                            const parent = el.parentElement;
+                            if (parent) {
+                                parent.style.border = '2px solid #4caf50';
+                                parent.style.boxShadow = '0 0 5px #4caf50';
+                            }
                         });
                     }, 100);
                 }
@@ -815,7 +1020,8 @@ const CreateNew = () => {
                     margin: '2vh auto',
                     borderRadius: '.5vw',
                     position: 'relative',
-                    backgroundColor: '#333'
+                    backgroundColor: '#333',
+                    border: formState.touched.program && formState.errors.program ? '2px solid #ff6b6b' : 'none'
                 },
                 child: [cover, file]
             }));
@@ -856,8 +1062,10 @@ const CreateNew = () => {
             tag: 'input',
             att: {
                 type: 'file',
-                accept: '.pdf,application/pdf', // More specific accept attribute
-                required: true
+                accept: '.pdf,application/pdf',
+                required: true,
+                'data-field': 'endorsement',
+                id: 'endorsement'
             },
             style: {
                 opacity: '0',
@@ -874,10 +1082,18 @@ const CreateNew = () => {
             },
             elementHandler: (el) => {
                 endorsementFileInput = el;
-                // Setup validation after element is created
                 setTimeout(() => {
                     setupFileInputValidation(el, cov, 'Endorsement Letter', (file) => {
                         getDataMethod.getEndorsement(file);
+                        validateForm();
+                        touchField('endorsement');
+                        
+                        // Update border of parent
+                        const parent = el.parentElement;
+                        if (parent) {
+                            parent.style.border = '2px solid #4caf50';
+                            parent.style.boxShadow = '0 0 5px #4caf50';
+                        }
                     });
                 }, 100);
             }
@@ -955,7 +1171,9 @@ const CreateNew = () => {
                         margin: 'auto',
                         marginLeft: '0',
                         position: 'relative',
-                        backgroundImage: 'linear-gradient(to right,transparent,rgba(0,0,0,0.5),black)'
+                        backgroundImage: 'linear-gradient(to right,transparent,rgba(0,0,0,0.5),black)',
+                        border: formState.touched.endorsement && formState.errors.endorsement ? '2px solid #ff6b6b' : 'none',
+                        borderRadius: '.5vw'
                     },
                     child: [cover, file]
                 })
@@ -983,7 +1201,8 @@ const CreateNew = () => {
                     tag: 'select',
                     style: {
                         width: '100%',
-                        border: 'none',
+                        border: formState.touched.event && formState.errors.event ? '1px solid #ff6b6b' : 'none',
+                        boxShadow: formState.touched.event && formState.errors.event ? '0 0 5px #ff6b6b' : 'none',
                         outline: 'none',
                         color: 'deepskyblue',
                         backgroundColor: 'transparent',
@@ -993,13 +1212,24 @@ const CreateNew = () => {
                         cursor: 'pointer'
                     },
                     att: {
-                        required: true
+                        required: true,
+                        'data-field': 'event',
+                        id: 'eventSelect'
                     },
                     event: {
                         type: 'change',
                         method: (event) => {
-                            getDataMethod.getEvent(event.target.value)
-                        }
+                            getDataMethod.getEvent(event.target.value);
+                            validateForm();
+                            touchField('event');
+                            
+                            // Update border
+                            if (event.target.value) {
+                                event.target.style.border = '1px solid #4caf50';
+                                event.target.style.boxShadow = '0 0 5px #4caf50';
+                            }
+                        },
+                        blur: () => touchField('event')
                     },
                     elementHandler: async (el) => {
                         el.appendChild($({
@@ -1007,7 +1237,8 @@ const CreateNew = () => {
                             text: '-- Select Event Name --',
                             att: {
                                 disabled: true,
-                                selected: true
+                                selected: true,
+                                value: ''
                             }
                         }))
                         
@@ -1031,7 +1262,8 @@ const CreateNew = () => {
                                             fontSize: '1.4vw'
                                         },
                                         att: {
-                                            id: val.id
+                                            id: val.id,
+                                            value: val.name
                                         }
                                     }))
                                 })
@@ -1200,15 +1432,38 @@ const CreateNew = () => {
                 fontFamily: 'arial black,sans-serif',
                 margin: '2vh auto',
                 width: 'fit-content',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                opacity: formState.isValid ? '1' : '0.5',
+                backgroundColor: formState.isValid ? 'deepskyblue' : '#666',
+                pointerEvents: formState.isValid ? 'auto' : 'none'
             },
             att: {
-                className: 'subEn'
+                className: 'subEn',
+                id: 'submitButton'
             },
             text: 'Submit',
+            elementHandler: (el) => {
+                submitButtonRef = el;
+            },
             event: {
                 type: 'click',
                 method: async () => {
+                    if (!formState.isValid) {
+                        alert("Please fill all required fields!");
+                        
+                        // Show all missing fields
+                        Object.keys(formState.errors).forEach(field => {
+                            if (formState.errors[field]) {
+                                const fieldEl = document.querySelector(`[data-field="${field}"], #${field}Select, #${field}`);
+                                if (fieldEl) {
+                                    fieldEl.style.border = '1px solid #ff6b6b';
+                                    fieldEl.style.boxShadow = '0 0 5px #ff6b6b';
+                                }
+                            }
+                        });
+                        return;
+                    }
+                    
                     // Get all required fields
                     const requiredInputs = document.querySelectorAll('[required]');
                     let isValid = true;
@@ -1311,12 +1566,6 @@ const CreateNew = () => {
                         // Since we only have one research entry now
                         const researchEntry = data.research[0];
                         
-                        // Debug logging
-                        //console.log('Research file:', researchEntry.attachment);
-                        //console.log('Program file:', researchEntry.program);
-                        //console.log('Endorsement file:', data.endorsement);
-                        //console.log('Presenter:', researchEntry.presenter);
-                        
                         // Add single research file
                         form.append('researchDoc', researchEntry.attachment)
                         form.append('programFile', researchEntry.program)
@@ -1398,6 +1647,11 @@ const CreateNew = () => {
         }))
     }
     
+    // Initialize validation on first render
+    setTimeout(() => {
+        validateForm();
+    }, 100);
+    
     return ($({
         tag: 'div',
         att: {
@@ -1407,6 +1661,7 @@ const CreateNew = () => {
     }))
 }
 
+//for viewing submitted files and display comment
 const Submitted = () => {
     let mainPanel
     const getMain = (mainElement) => {
@@ -1428,7 +1683,6 @@ const Submitted = () => {
 
     //for viewing submitted files and display comment
     const FilePanel = (fileUrl) => {
-
         const controlBar = () => {
             return ($({
                 tag: 'div',
@@ -1437,7 +1691,6 @@ const Submitted = () => {
                 }
             }))
         }
-
         const frame = $({
             tag: 'object',
             att: {
@@ -1446,7 +1699,6 @@ const Submitted = () => {
                 type: 'application/pdf'
             }
         })
-
         return ($({
             tag: 'div',
             att: {
@@ -1570,7 +1822,7 @@ const Submitted = () => {
                 ]
             }))
         }
-        const listDiv = ({date, author, category, title, status, file, id, eventType, drive_view_url, drive_file_id, drive_download_url}) => {
+        const listDiv = ({date, presenter, author, category, title, status, file, id, eventType, drive_view_url, drive_file_id, drive_download_url}) => {
             const Row = ({span, label, text}) => {
                 const getRowmin = (rw) => {
                     if (span) {
@@ -1649,7 +1901,45 @@ const Submitted = () => {
                     ]
                 }))
             }
-
+            const PresenterRow = () => {
+                return ($({
+                    tag: 'tr',
+                    child: [
+                        $({
+                            tag: 'td',
+                            att: {
+                                colSpan: '3'
+                            },
+                            style: {
+                                textAlign: 'center',
+                                padding: '0.5vh 0'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    style: {
+                                        fontFamily: 'arial,sans-serif',
+                                        fontWeight: 'bold',
+                                        color: 'deepskyblue',
+                                        fontSize: '1vw',
+                                        marginRight: '0.5vw'
+                                    },
+                                    text: 'Presenter: '
+                                }),
+                                $({
+                                    tag: 'span',
+                                    style: {
+                                        fontFamily: 'arial,sans-serif',
+                                        color: '#bbb',
+                                        fontSize: '1vw'
+                                    },
+                                    text: presenter || 'Not specified'
+                                })
+                            ]
+                        })
+                    ]
+                }))
+            }
             const Viewer = () => {
                 let viewerMain
                 const getViewer = (el) => {
@@ -1992,6 +2282,7 @@ const Submitted = () => {
                         label: 'Category: ',
                         text: category
                     }),
+                    PresenterRow(),
                     Title(),
                     Controller()
                 ]
@@ -2637,13 +2928,14 @@ const Submitted = () => {
                 ]
             })
 
-            const researchDocs=({resTitle,author,coAuthor,category,file,resId, drive_view_url, drive_file_id, drive_download_url})=>{
+            const researchDocs=({resTitle,author,coAuthor,category,file,resId, drive_view_url, drive_file_id, presenter})=>{
                 let mainIndiv
                 const getlistIndiv=(el)=>{
                     mainIndiv=el
 
                     el.appendChild(label("Title: ",resTitle))
                     el.append(label("Category: ",category))
+                    el.appendChild(label("Presenter: ", presenter || 'Not specified'))
                     el.append(label("Author: ",author))
                     el.append(label("Co-Author(s) ",""))
                     JSON.parse(coAuthor).forEach((val,i)=>{
@@ -3282,13 +3574,14 @@ const Submitted = () => {
                                     getResPanelHideEl.appendChild(researchDocs({
                                         resTitle: val.title,
                                         author: val.author,
+                                        presenter: val.presenter,
                                         coAuthor: val.coauthor,
                                         category: val.category,
                                         resId: val.docId,
                                         file: val.researchFile,
-                                        drive_view_url: val.drive_view_url || val.researchFile, // Add this
-                                        drive_file_id: val.drive_file_id, // Add this
-                                        drive_download_url: val.drive_download_url // Add this
+                                        drive_view_url: val.drive_view_url || val.researchFile,
+                                        drive_file_id: val.drive_file_id, 
+                                        drive_download_url: val.drive_download_url
                                     }))
                                 })
                                 event.target.style.color='red'
@@ -3571,7 +3864,7 @@ const Submitted = () => {
                     }
                     
                     let bodEl, campState = false
-                    const fileListName = ({author, name, id, file, file_type, drive_file_id, drive_download_url}) => {
+                    const fileListName = ({author, name, id, file, file_type, drive_file_id, drive_download_url, presenter}) => {
                         return ($({
                             tag: 'div',
                             style: {
@@ -3586,7 +3879,7 @@ const Submitted = () => {
                                 cursor: 'pointer'
                             },
                             att: {
-                                title: `${name} - ${author}`,
+                                title: `${name} - ${author} | Presenter: ${presenter || 'Not specified'}`,
                                 className: 'perRes'
                             },
                             elementHandler: (el) => {
@@ -4538,7 +4831,6 @@ export const Research = () => {
     }
 
     const tabFrame = ({getFrame}) => {
-
         return ($({
             tag: 'div',
             att: {

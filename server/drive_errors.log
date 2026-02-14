@@ -413,3 +413,59 @@ Stack trace:
 [14-Feb-2026 10:43:55 Asia/Manila] User ID: 40
 [14-Feb-2026 10:43:55 Asia/Manila] Event type: NEW (center-based)
 [14-Feb-2026 10:43:55 Asia/Manila] Grouping by: rf.center
+[14-Feb-2026 11:16:17 Asia/Manila] === researchFile API called ===
+[14-Feb-2026 11:16:17 Asia/Manila] Event ID: 12
+[14-Feb-2026 11:16:17 Asia/Manila] User ID: 40
+[14-Feb-2026 11:16:17 Asia/Manila] Event type: OLD (campus-based)
+[14-Feb-2026 11:16:17 Asia/Manila] Grouping by: rf.campus
+[14-Feb-2026 11:16:18 Asia/Manila] === researchFile API called ===
+[14-Feb-2026 11:16:18 Asia/Manila] Event ID: 12
+[14-Feb-2026 11:16:18 Asia/Manila] User ID: 40
+[14-Feb-2026 11:16:18 Asia/Manila] Event type: OLD (campus-based)
+[14-Feb-2026 11:16:18 Asia/Manila] Grouping by: rf.campus
+[14-Feb-2026 11:37:29 Asia/Manila] PHP Warning:  Undefined array key "userOffice" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 272
+[14-Feb-2026 11:37:29 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[14-Feb-2026 11:37:29 Asia/Manila] Title: Trial2
+[14-Feb-2026 11:37:29 Asia/Manila] Author: Michael Estorque
+[14-Feb-2026 11:37:29 Asia/Manila] Event: 38th University Faculty In-House Review
+[14-Feb-2026 11:37:29 Asia/Manila] Center: Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 11:37:29 Asia/Manila] Category: Natural / Biological
+[14-Feb-2026 11:37:29 Asia/Manila] Uploading endorsement: endorsement.pdf
+[14-Feb-2026 11:37:29 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[14-Feb-2026 11:37:29 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Trial2
+[14-Feb-2026 11:37:33 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 11:37:33 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 11:37:34 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 11:37:35 Asia/Manila] Entry folder created: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0 for Estorque_Trial2
+[14-Feb-2026 11:37:35 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0
+[14-Feb-2026 11:37:38 Asia/Manila] Making file public: 1uU108AsuI3ZRO4q1fLIG-XcUS9EpAoIO
+[14-Feb-2026 11:37:38 Asia/Manila] File 1uU108AsuI3ZRO4q1fLIG-XcUS9EpAoIO is already public
+[14-Feb-2026 11:37:38 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[14-Feb-2026 11:37:38 Asia/Manila] Endorsement uploaded successfully: 1uU108AsuI3ZRO4q1fLIG-XcUS9EpAoIO
+[14-Feb-2026 11:37:38 Asia/Manila] Endorsement saved to DB with ID: 514
+[14-Feb-2026 11:37:38 Asia/Manila] Uploading research: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 11:37:38 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[14-Feb-2026 11:37:38 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Trial2
+[14-Feb-2026 11:37:39 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 11:37:40 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 11:37:40 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 11:37:41 Asia/Manila] Entry folder created: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0 for Estorque_Trial2
+[14-Feb-2026 11:37:41 Asia/Manila] Uploading research file: transactionDetails (2-8-2026).pdf to folder: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0
+[14-Feb-2026 11:37:43 Asia/Manila] Making file public: 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn
+[14-Feb-2026 11:37:44 Asia/Manila] File 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn is already public
+[14-Feb-2026 11:37:44 Asia/Manila] research file upload successful: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 11:37:44 Asia/Manila] Research uploaded successfully: 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn
+[14-Feb-2026 11:37:44 Asia/Manila] Uploading program: program_inHouse.pdf
+[14-Feb-2026 11:37:44 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[14-Feb-2026 11:37:44 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Trial2
+[14-Feb-2026 11:37:45 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 11:37:45 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 11:37:46 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 11:37:46 Asia/Manila] Entry folder created: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0 for Estorque_Trial2
+[14-Feb-2026 11:37:46 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0
+[14-Feb-2026 11:37:49 Asia/Manila] Making file public: 1EvXssjHkQZrOky115dnZBzzcA-OYWbLl
+[14-Feb-2026 11:37:49 Asia/Manila] File 1EvXssjHkQZrOky115dnZBzzcA-OYWbLl is already public
+[14-Feb-2026 11:37:49 Asia/Manila] program file upload successful: program_inHouse.pdf
+[14-Feb-2026 11:37:49 Asia/Manila] Program uploaded successfully: 1EvXssjHkQZrOky115dnZBzzcA-OYWbLl
+[14-Feb-2026 11:37:49 Asia/Manila] Number of columns in query: 23
+[14-Feb-2026 11:37:49 Asia/Manila] Number of variables to bind: 23

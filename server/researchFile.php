@@ -1088,6 +1088,7 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs = new stdClass();
                 $researchDocs->author = $res['author'];
                 $researchDocs->coauthor = $res['coauthor'];
+                $researchDocs->presenter = $res['presenter'];
                 $researchDocs->title = $res['title'];
                 $researchDocs->docId = $res['docId'];
                 $researchDocs->category = $res['category'];
