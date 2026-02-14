@@ -1,8 +1,6 @@
-import {$, CapsuOffice, ConfirmationAlert, SpecialChar, Waiting} from '../lib/lib.js'
+import {$} from '../lib/lib.js'
 
 export const Scanner=()=>{
-
-
 
     return($({
         tag:'div',

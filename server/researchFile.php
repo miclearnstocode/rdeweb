@@ -305,6 +305,7 @@ if (isset($_POST['uploadResearch'])) {
                     $category = $_POST['category'];
                     $center = $_POST['center'];
                     $coAuthor = $_POST['coAuthor'] ?? '[]';
+                    $presenter = $_POST['presenter'];
                     
                     // Debug log
                     error_log("=== STARTING UPLOAD PROCESS ===");
@@ -520,8 +521,8 @@ if (isset($_POST['uploadResearch'])) {
                         researchfile.event_id,
                         researchfile.campus,
                         researchfile.coauthor,
-                        researchfile.reviews,
-                        researchfile.date
+                        researchfile.presenter,
+                        researchfile.reviews
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // 23 placeholders
 
                     $rev = NULL;
@@ -566,8 +567,8 @@ if (isset($_POST['uploadResearch'])) {
                         $eventId,
                         $campus,
                         $coAuthor,
-                        $rev,
-                        $defaultTime
+                        $presenter,
+                        $rev
                     );
 
                     if (!$bound) {
@@ -711,6 +712,7 @@ if (isset($_POST['researchSubmit'])) {
         $sqlQueries = "SELECT 
             researchfile.id,
             researchfile.author,
+            researchfile.presenter,
             researchfile.drive_view_url,
             researchfile.drive_file_id,
             researchfile.drive_download_url,
@@ -1068,6 +1070,7 @@ if (isset($_POST['researchReviewed'])) {
             $queryResearch = "SELECT 
                 researchfile.author,
                 researchfile.coauthor,
+                researchfile.presenter,
                 researchfile.title,
                 researchfile.id as docId,
                 researchfile.category,
@@ -1372,7 +1375,6 @@ if (isset($_POST['researchFileAdmin'])) {
             researchfile.category,
             researchfile.campus,
             researchfile.coauthor as proponent,
-            researchfile.date,
             researchfile.reviews,
             researchfile.status,
             researchfile.event,
@@ -1439,9 +1441,7 @@ if (isset($_POST['getResearch'])) {
                     researchfile.category,
                     researchfile.campus,
                     researchfile.coauthor,
-                    researchfile.year,
-                    researchfile.month,
-                    researchfile.date,
+                    researchfile.presenter,
                     researchfile.reviews,
                     researchfile.status,
                     researchfile.rejected_by,
@@ -1467,9 +1467,7 @@ if (isset($_POST['getResearch'])) {
                     $data->category = $row['category'];
                     $data->campus = $row['campus'];
                     $data->proponent = $row['coauthor'];
-                    $data->year = $row['year'];
-                    $data->month = $row['month'];
-                    $data->date = $row['month'] . '/' . $row['date'] . '/' . $row['year'];
+                    $data->presenter = $row['presenter'];
                     $data->reviews = $row['reviews'];
                     $data->status = $row['status'];
                     $data->rejected_by = $row['rejected_by'];
@@ -1500,9 +1498,7 @@ if (isset($_POST['getResearch'])) {
                     researchfile.category,
                     researchfile.campus,
                     researchfile.coauthor,
-                    researchfile.year,
-                    researchfile.month,
-                    researchfile.date,
+                    researchfile.presenter,
                     researchfile.reviews,
                     researchfile.status,
                     researchfile.rejected_by,
@@ -1573,9 +1569,7 @@ if (isset($_POST['getEndorse'])) {
                     researchfile.category,
                     researchfile.campus,
                     researchfile.coauthor,
-                    researchfile.year,
-                    researchfile.month,
-                    researchfile.date,
+                    researchfile.presenter,
                     researchfile.reviews,
                     researchfile.status,
                     researchfile.approval
@@ -1951,10 +1945,13 @@ if (isset($_POST['saveResearchPer'])) {
     exit();
 }
 
-// In researchFile.php, add this at the TOP of the file, right after your includes:
 if (isset($_POST['researchFile'])) {
-    // Clear any output buffers
+    // Clear output buffers
     while (ob_get_level()) ob_end_clean();
+    
+    // Set memory limit for this operation
+    ini_set('memory_limit', '256M');
+    set_time_limit(30);
     
     $response = new stdClass();
     $response->status = false;
@@ -1962,26 +1959,42 @@ if (isset($_POST['researchFile'])) {
     $response->message = '';
     
     try {
-        // Check required parameters
-        if (!isset($_POST['eventType']) || empty($_POST['eventType'])) {
-            throw new Exception('Event type is required');
+        // Check required parameters - ONLY eventId is required
+        if (!isset($_POST['eventId']) || intval($_POST['eventId']) === 0) {
+            throw new Exception('Event ID is required');
         }
         
-        if (!isset($_POST['capName']) || !is_array($_POST['capName']) || empty($_POST['capName'])) {
-            throw new Exception('Campus names are required');
-        }
-        
-        $userId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 0;
-        $eventType = $_POST['eventType'];
-        $campuses = $_POST['capName'];
+        $userId = isset($_SESSION['userId']) ? intval($_SESSION['userId']) : 0;
+        $eventId = intval($_POST['eventId']);
         
         error_log("=== researchFile API called ===");
-        error_log("Event: " . $eventType);
+        error_log("Event ID: " . $eventId);
         error_log("User ID: " . $userId);
-        error_log("Campuses: " . implode(', ', $campuses));
         
         if ($con = new mysqli($host, $username, $pass, $dbName)) {
-            // Simple query that should work with your database structure
+            $con->set_charset("utf8mb4");
+            
+            // FIRST: Get the event name for response
+            $eventName = '';
+            $eventNameQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
+            $eventNameStmt = $con->prepare($eventNameQuery);
+            if ($eventNameStmt) {
+                $eventNameStmt->bind_param('i', $eventId);
+                $eventNameStmt->execute();
+                $eventNameResult = $eventNameStmt->get_result();
+                if ($eventNameRow = $eventNameResult->fetch_assoc()) {
+                    $eventName = $eventNameRow['name'];
+                }
+                $eventNameStmt->close();
+            }
+            
+            // Determine which column to use based on event ID
+            $isNewEvent = ($eventId >= 13);
+            $groupByColumn = $isNewEvent ? 'rf.center' : 'rf.campus';
+
+            error_log("Event type: " . ($isNewEvent ? 'NEW (center-based)' : 'OLD (campus-based)'));
+            error_log("Grouping by: " . $groupByColumn);
+
             $query = "SELECT 
                 rf.id,
                 rf.author,
@@ -1993,77 +2006,142 @@ if (isset($_POST['researchFile'])) {
                 rf.category,
                 rf.campus,
                 rf.center,
-                e.date
+                DATE_FORMAT(e.date, '%Y-%m-%d') as date,
+                " . $groupByColumn . " as group_name
             FROM researchfile rf
-            LEFT JOIN endorsement e ON e.id = rf.endorsementid
+            INNER JOIN endorsement e ON e.id = rf.endorsementid
             WHERE e.status = 'accepted'
-            AND rf.event = ?
-            AND rf.campus = ?
-            AND rf.senderid <> ?";
-            
+            AND rf.event_id = ?";  // Only ONE placeholder
+
+            // Add column-specific filters
+            if ($isNewEvent) {
+                // NEW EVENTS (ID >= 13) - Group by CENTER
+                $query .= " AND rf.center IS NOT NULL AND rf.center != ''";
+            } else {
+                // OLD EVENTS (ID < 13) - Group by CAMPUS
+                $query .= " AND rf.campus IS NOT NULL AND rf.campus != ''";
+            }
+
+            // Add limits to prevent memory issues
+            $query .= " GROUP BY rf.id 
+                        ORDER BY group_name, rf.title 
+                        LIMIT 500";
+
             $stmt = $con->prepare($query);
             if (!$stmt) {
                 throw new Exception('Prepare failed: ' . $con->error);
             }
+
+            // Bind only ONE parameter - the eventId
+            $stmt->bind_param('i', $eventId);
+            $stmt->execute();
+            $result = $stmt->get_result();
             
-            foreach ($campuses as $campus) {
-                $perCamp = new stdClass();
-                $perCamp->name = $campus;
-                $perCamp->list = [];
-                
-                $stmt->bind_param('sss', $eventType, $campus, $userId);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) {
-                        $data = new stdClass();
-                        $data->author = $row['author'];
-                        $data->title = $row['title'];
-                        $data->id = $row['id'];
-                        
-                        // Prioritize Google Drive URL if available
-                        if (!empty($row['drive_view_url'])) {
-                            $data->file = $row['drive_view_url'];
-                            $data->file_type = 'drive';
-                            $data->drive_file_id = $row['drive_file_id'];
-                            $data->drive_download_url = $row['drive_download_url'];
-                        } else if (!empty($row['local_file'])) {
-                            $data->file = $row['local_file'];
-                            $data->file_type = 'local';
-                        } else {
-                            $data->file = null;
-                            $data->file_type = 'none';
-                        }
-                        
-                        $data->category = $row['category'];
-                        $data->center = $row['center'];
-                        $data->campus = $row['campus'];
-                        
-                        $perCamp->list[] = $data;
+            // Group results by campus or center
+            $groupedResults = [];
+            $totalProcessed = 0;
+            $maxGroups = 50;
+            $maxItemsPerGroup = 100;
+            
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $groupName = $row['group_name'];
+                    
+                    // Skip if group name is empty
+                    if (empty($groupName)) {
+                        continue;
                     }
                     
-                    if (count($perCamp->list) > 0) {
-                        $response->list[] = $perCamp;
+                    // Limit number of groups
+                    if (count($groupedResults) >= $maxGroups) {
+                        error_log("Reached maximum groups limit: " . $maxGroups);
+                        break;
                     }
+                    
+                    if (!isset($groupedResults[$groupName])) {
+                        $groupedResults[$groupName] = [
+                            'name' => $groupName,
+                            'list' => []
+                        ];
+                    }
+                    
+                    // Limit items per group
+                    if (count($groupedResults[$groupName]['list']) >= $maxItemsPerGroup) {
+                        continue;
+                    }
+                    
+                    $data = new stdClass();
+                    $data->author = htmlspecialchars($row['author'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->title = htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->id = intval($row['id']);
+                    
+                    // Prioritize Google Drive URL if available
+                    if (!empty($row['drive_view_url'])) {
+                        $data->file = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
+                        $data->file_type = 'drive';
+                        $data->drive_file_id = htmlspecialchars($row['drive_file_id'] ?? '', ENT_QUOTES, 'UTF-8');
+                        $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', FILTER_SANITIZE_URL);
+                    } else if (!empty($row['local_file'])) {
+                        $data->file = htmlspecialchars($row['local_file'], ENT_QUOTES, 'UTF-8');
+                        $data->file_type = 'local';
+                    } else {
+                        $data->file = null;
+                        $data->file_type = 'none';
+                    }
+                    
+                    $data->category = htmlspecialchars($row['category'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->center = htmlspecialchars($row['center'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->campus = htmlspecialchars($row['campus'] ?? '', ENT_QUOTES, 'UTF-8');
+                    
+                    $groupedResults[$groupName]['list'][] = $data;
+                    $totalProcessed++;
                 }
+                
+                $result->free();
+            }
+            
+            // Convert to indexed array and sort groups
+            $response->list = array_values($groupedResults);
+            
+            // Sort groups alphabetically
+            if (!empty($response->list)) {
+                usort($response->list, function($a, $b) {
+                    return strcasecmp($a['name'], $b['name']);
+                });
             }
             
             $response->status = true;
-            $response->message = 'Successfully retrieved ' . count($response->list) . ' campus groups';
+            $response->event_id = $eventId;
+            $response->event_name = $eventName;
+            $response->is_center_based = $isNewEvent;
+            $response->message = 'Successfully retrieved ' . count($response->list) . ' ' . 
+                                ($isNewEvent ? 'centers' : 'campuses') . 
+                                ' with ' . $totalProcessed . ' files';
             
             $stmt->close();
+            $con->close();
+            
+            // Clear memory
+            unset($groupedResults, $result);
+            
         } else {
             throw new Exception('Database connection failed');
         }
+        
     } catch (Exception $e) {
         error_log("researchFile error: " . $e->getMessage());
         $response->message = 'Error: ' . $e->getMessage();
+        $response->status = false;
+        $response->list = [];
     }
     
     // Send JSON response
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($response);
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    
+    echo json_encode($response, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
     exit();
 }
 
@@ -2328,7 +2406,8 @@ if (isset($_POST['incomingEndorsement'])) {
                 `event`,  
                 `status`, 
                 `campus`, 
-                `coauthor`, 
+                `coauthor`,
+                `presenter`,
                 `category` 
             FROM `researchfile` WHERE `endorsementid`='$data->id'") as $v) {
                 
@@ -2414,6 +2493,7 @@ if (isset($_POST['researchDocsNew'])) {
                 researchfile.id,
                 researchfile.senderid,
                 researchfile.author,
+                researchfile.presenter,
                 researchfile.title,
                 researchfile.file,                    -- Local file path
                 researchfile.drive_view_url,          -- Google Drive view URL

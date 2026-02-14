@@ -54,3 +54,362 @@
 [13-Feb-2026 11:38:00 Asia/Manila] Program uploaded successfully: 13CuCr3Aq9R-Omj1FCJu8QDwXYiQAHvvQ
 [13-Feb-2026 11:38:00 Asia/Manila] Number of columns in query: 23
 [13-Feb-2026 11:38:00 Asia/Manila] Number of variables to bind: 23
+[13-Feb-2026 13:16:40 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 13:16:40 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[13-Feb-2026 13:16:40 Asia/Manila] User ID: 42
+[13-Feb-2026 13:16:40 Asia/Manila] Campuses: CROP SCIENCE RESEARCH & DEVELOPMENT CENTER (CSRDC), LIVESTOCK RESEARCH & DEVELOPMENT CENTER (LRDC), FISHERIES RESEARCH & DEVELOPMENT CENTER (FRDC), FOOD AND INDUSTRIAL TECHNOLOGY RESEARCH & DEVELOPMENT CENTER (FIRDC), SOCIAL SCIENCE RESEARCH & DEVELOPMENT CENTER (SSRDC), MACHINERY AND AGRICULTURAL TECHNOLOGY ENGINEERING CENTER (MATEC), COCONUT RESEARCH AND DEVELOPMENT CENTER (COCO RDC), EXTENSION
+[13-Feb-2026 13:16:41 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 13:16:41 Asia/Manila] Event: 36th In-House Review
+[13-Feb-2026 13:16:41 Asia/Manila] User ID: 42
+[13-Feb-2026 13:16:41 Asia/Manila] Campuses: CROP SCIENCE RESEARCH & DEVELOPMENT CENTER (CSRDC), LIVESTOCK RESEARCH & DEVELOPMENT CENTER (LRDC), FISHERIES RESEARCH & DEVELOPMENT CENTER (FRDC), FOOD AND INDUSTRIAL TECHNOLOGY RESEARCH & DEVELOPMENT CENTER (FIRDC), SOCIAL SCIENCE RESEARCH & DEVELOPMENT CENTER (SSRDC), MACHINERY AND AGRICULTURAL TECHNOLOGY ENGINEERING CENTER (MATEC), COCONUT RESEARCH AND DEVELOPMENT CENTER (COCO RDC), EXTENSION
+[13-Feb-2026 13:16:59 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 13:16:59 Asia/Manila] Event: 38th University Faculty In-House Review
+[13-Feb-2026 13:16:59 Asia/Manila] User ID: 42
+[13-Feb-2026 13:16:59 Asia/Manila] Campuses: CROP SCIENCE RESEARCH & DEVELOPMENT CENTER (CSRDC), LIVESTOCK RESEARCH & DEVELOPMENT CENTER (LRDC), FISHERIES RESEARCH & DEVELOPMENT CENTER (FRDC), FOOD AND INDUSTRIAL TECHNOLOGY RESEARCH & DEVELOPMENT CENTER (FIRDC), SOCIAL SCIENCE RESEARCH & DEVELOPMENT CENTER (SSRDC), MACHINERY AND AGRICULTURAL TECHNOLOGY ENGINEERING CENTER (MATEC), COCONUT RESEARCH AND DEVELOPMENT CENTER (COCO RDC), EXTENSION
+[13-Feb-2026 13:17:00 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 13:17:00 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[13-Feb-2026 13:17:00 Asia/Manila] User ID: 42
+[13-Feb-2026 13:17:00 Asia/Manila] Campuses: CROP SCIENCE RESEARCH & DEVELOPMENT CENTER (CSRDC), LIVESTOCK RESEARCH & DEVELOPMENT CENTER (LRDC), FISHERIES RESEARCH & DEVELOPMENT CENTER (FRDC), FOOD AND INDUSTRIAL TECHNOLOGY RESEARCH & DEVELOPMENT CENTER (FIRDC), SOCIAL SCIENCE RESEARCH & DEVELOPMENT CENTER (SSRDC), MACHINERY AND AGRICULTURAL TECHNOLOGY ENGINEERING CENTER (MATEC), COCONUT RESEARCH AND DEVELOPMENT CENTER (COCO RDC), EXTENSION
+[13-Feb-2026 13:25:30 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 13:25:30 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[13-Feb-2026 13:25:30 Asia/Manila] User ID: 42
+[13-Feb-2026 13:25:30 Asia/Manila] Campuses: CROP SCIENCE RESEARCH & DEVELOPMENT CENTER (CSRDC), LIVESTOCK RESEARCH & DEVELOPMENT CENTER (LRDC), FISHERIES RESEARCH & DEVELOPMENT CENTER (FRDC), FOOD AND INDUSTRIAL TECHNOLOGY RESEARCH & DEVELOPMENT CENTER (FIRDC), SOCIAL SCIENCE RESEARCH & DEVELOPMENT CENTER (SSRDC), MACHINERY AND AGRICULTURAL TECHNOLOGY ENGINEERING CENTER (MATEC), COCONUT RESEARCH AND DEVELOPMENT CENTER (COCO RDC), EXTENSION
+[13-Feb-2026 13:57:50 Asia/Manila] researchFile error: Table 'capsued_rdesystem.events' doesn't exist
+[13-Feb-2026 13:57:58 Asia/Manila] researchFile error: Table 'capsued_rdesystem.events' doesn't exist
+[13-Feb-2026 14:01:30 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:01:30 Asia/Manila] Event: 38th University Faculty In-House Review
+[13-Feb-2026 14:01:30 Asia/Manila] Event ID: 13
+[13-Feb-2026 14:01:30 Asia/Manila] User ID: 42
+[13-Feb-2026 14:01:30 Asia/Manila] Grouping by: rf.center
+[13-Feb-2026 14:01:31 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:01:31 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[13-Feb-2026 14:01:31 Asia/Manila] Event ID: 12
+[13-Feb-2026 14:01:31 Asia/Manila] User ID: 42
+[13-Feb-2026 14:01:31 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 14:01:38 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:01:38 Asia/Manila] Event: 36th In-House Review
+[13-Feb-2026 14:01:38 Asia/Manila] Event ID: 11
+[13-Feb-2026 14:01:38 Asia/Manila] User ID: 42
+[13-Feb-2026 14:01:38 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 14:01:39 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:01:39 Asia/Manila] Event: 36th In-House Review
+[13-Feb-2026 14:01:39 Asia/Manila] Event ID: 11
+[13-Feb-2026 14:01:39 Asia/Manila] User ID: 42
+[13-Feb-2026 14:01:39 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 14:01:40 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:01:40 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[13-Feb-2026 14:01:40 Asia/Manila] Event ID: 12
+[13-Feb-2026 14:01:40 Asia/Manila] User ID: 42
+[13-Feb-2026 14:01:40 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 14:10:22 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:10:22 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[13-Feb-2026 14:10:22 Asia/Manila] Event ID: 0
+[13-Feb-2026 14:10:22 Asia/Manila] User ID: 42
+[13-Feb-2026 14:10:22 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 14:10:25 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:10:25 Asia/Manila] Event: 42nd Annual RDE Faculty Symposium
+[13-Feb-2026 14:10:25 Asia/Manila] Event ID: 0
+[13-Feb-2026 14:10:25 Asia/Manila] User ID: 42
+[13-Feb-2026 14:10:25 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 14:10:26 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:10:26 Asia/Manila] Event: 40th Midyear University Symposium
+[13-Feb-2026 14:10:26 Asia/Manila] Event ID: 0
+[13-Feb-2026 14:10:26 Asia/Manila] User ID: 42
+[13-Feb-2026 14:10:26 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 14:10:28 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:10:28 Asia/Manila] Event: 40th Midyear University Symposium
+[13-Feb-2026 14:10:28 Asia/Manila] Event ID: 0
+[13-Feb-2026 14:10:28 Asia/Manila] User ID: 42
+[13-Feb-2026 14:10:28 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 14:16:09 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 14:16:09 Asia/Manila] Event: 38th University Faculty In-House Review
+[13-Feb-2026 14:16:09 Asia/Manila] Event ID: 0
+[13-Feb-2026 14:16:09 Asia/Manila] User ID: 42
+[13-Feb-2026 14:16:09 Asia/Manila] Event type: OLD (campus-based)
+[13-Feb-2026 14:16:09 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 15:01:34 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:01:34 Asia/Manila] Event ID: 13
+[13-Feb-2026 15:01:34 Asia/Manila] User ID: 42
+[13-Feb-2026 15:01:34 Asia/Manila] Event type: NEW (center-based)
+[13-Feb-2026 15:01:34 Asia/Manila] Grouping by: rf.center
+[13-Feb-2026 15:01:35 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:01:35 Asia/Manila] Event ID: 12
+[13-Feb-2026 15:01:35 Asia/Manila] User ID: 42
+[13-Feb-2026 15:01:35 Asia/Manila] Event type: OLD (campus-based)
+[13-Feb-2026 15:01:35 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 15:01:37 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:01:37 Asia/Manila] Event ID: 12
+[13-Feb-2026 15:01:37 Asia/Manila] User ID: 42
+[13-Feb-2026 15:01:37 Asia/Manila] Event type: OLD (campus-based)
+[13-Feb-2026 15:01:37 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 15:01:37 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:01:37 Asia/Manila] Event ID: 13
+[13-Feb-2026 15:01:37 Asia/Manila] User ID: 42
+[13-Feb-2026 15:01:37 Asia/Manila] Event type: NEW (center-based)
+[13-Feb-2026 15:01:37 Asia/Manila] Grouping by: rf.center
+[13-Feb-2026 15:16:41 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:16:41 Asia/Manila] Event ID: 12
+[13-Feb-2026 15:16:41 Asia/Manila] User ID: 42
+[13-Feb-2026 15:16:41 Asia/Manila] Event type: OLD (campus-based)
+[13-Feb-2026 15:16:41 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 15:16:41 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2028
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2028): mysqli_stmt->bind_param('ii', 12, 42)
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2028
+[13-Feb-2026 15:16:42 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:16:42 Asia/Manila] Event ID: 11
+[13-Feb-2026 15:16:42 Asia/Manila] User ID: 42
+[13-Feb-2026 15:16:42 Asia/Manila] Event type: OLD (campus-based)
+[13-Feb-2026 15:16:42 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 15:16:42 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2028
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2028): mysqli_stmt->bind_param('ii', 11, 42)
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2028
+[13-Feb-2026 15:19:00 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:19:00 Asia/Manila] Event ID: 12
+[13-Feb-2026 15:19:00 Asia/Manila] User ID: 42
+[13-Feb-2026 15:19:00 Asia/Manila] Event type: OLD (campus-based)
+[13-Feb-2026 15:19:00 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 15:19:00 Asia/Manila] PHP Warning:  Undefined variable $eventNameResult in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2032
+[13-Feb-2026 15:19:00 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2032
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2032
+[13-Feb-2026 15:19:01 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:19:01 Asia/Manila] Event ID: 13
+[13-Feb-2026 15:19:01 Asia/Manila] User ID: 42
+[13-Feb-2026 15:19:01 Asia/Manila] Event type: NEW (center-based)
+[13-Feb-2026 15:19:01 Asia/Manila] Grouping by: rf.center
+[13-Feb-2026 15:19:01 Asia/Manila] PHP Warning:  Undefined variable $eventNameResult in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2032
+[13-Feb-2026 15:19:01 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to a member function fetch_assoc() on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2032
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2032
+[13-Feb-2026 15:19:55 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:19:55 Asia/Manila] Event ID: 12
+[13-Feb-2026 15:19:55 Asia/Manila] User ID: 42
+[13-Feb-2026 15:19:55 Asia/Manila] Event type: OLD (campus-based)
+[13-Feb-2026 15:19:55 Asia/Manila] Grouping by: rf.campus
+[13-Feb-2026 15:19:56 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:19:56 Asia/Manila] Event ID: 13
+[13-Feb-2026 15:19:56 Asia/Manila] User ID: 42
+[13-Feb-2026 15:19:56 Asia/Manila] Event type: NEW (center-based)
+[13-Feb-2026 15:19:56 Asia/Manila] Grouping by: rf.center
+[13-Feb-2026 15:19:57 Asia/Manila] === researchFile API called ===
+[13-Feb-2026 15:19:57 Asia/Manila] Event ID: 12
+[13-Feb-2026 15:19:57 Asia/Manila] User ID: 42
+[13-Feb-2026 15:19:57 Asia/Manila] Event type: OLD (campus-based)
+[13-Feb-2026 15:19:57 Asia/Manila] Grouping by: rf.campus
+[14-Feb-2026 09:34:51 Asia/Manila] PHP Warning:  Undefined array key "userOffice" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 272
+[14-Feb-2026 09:34:51 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[14-Feb-2026 09:34:51 Asia/Manila] Title: natural biological
+[14-Feb-2026 09:34:51 Asia/Manila] Author: Juan Tamad
+[14-Feb-2026 09:34:51 Asia/Manila] Event: 38th University Faculty In-House Review
+[14-Feb-2026 09:34:51 Asia/Manila] Center: Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 09:34:51 Asia/Manila] Category: Natural / Biological
+[14-Feb-2026 09:34:51 Asia/Manila] Uploading endorsement: endorsement.pdf
+[14-Feb-2026 09:34:51 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Tamad_natural_biological
+[14-Feb-2026 09:34:51 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Tamad_natural_biological
+[14-Feb-2026 09:34:54 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 09:34:55 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 09:34:55 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 09:34:57 Asia/Manila] Entry folder created: 17uIY2AnTMbW0OqIfqd73gZNEiFiPYp6A for Tamad_natural_biological
+[14-Feb-2026 09:34:57 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 17uIY2AnTMbW0OqIfqd73gZNEiFiPYp6A
+[14-Feb-2026 09:34:59 Asia/Manila] Making file public: 1coMIoG5ujCjv9poNr-7uMhMGpXdhAox8
+[14-Feb-2026 09:35:00 Asia/Manila] File 1coMIoG5ujCjv9poNr-7uMhMGpXdhAox8 is already public
+[14-Feb-2026 09:35:00 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[14-Feb-2026 09:35:00 Asia/Manila] Endorsement uploaded successfully: 1coMIoG5ujCjv9poNr-7uMhMGpXdhAox8
+[14-Feb-2026 09:35:00 Asia/Manila] Endorsement saved to DB with ID: 510
+[14-Feb-2026 09:35:00 Asia/Manila] Uploading research: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 09:35:00 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Tamad_natural_biological
+[14-Feb-2026 09:35:00 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Tamad_natural_biological
+[14-Feb-2026 09:35:00 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 09:35:01 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 09:35:01 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 09:35:02 Asia/Manila] Entry folder created: 17uIY2AnTMbW0OqIfqd73gZNEiFiPYp6A for Tamad_natural_biological
+[14-Feb-2026 09:35:02 Asia/Manila] Uploading research file: transactionDetails (2-8-2026).pdf to folder: 17uIY2AnTMbW0OqIfqd73gZNEiFiPYp6A
+[14-Feb-2026 09:35:04 Asia/Manila] Making file public: 11PsYjqloe1-odKzrY_SCDqEj1coeu4XC
+[14-Feb-2026 09:35:05 Asia/Manila] File 11PsYjqloe1-odKzrY_SCDqEj1coeu4XC is already public
+[14-Feb-2026 09:35:05 Asia/Manila] research file upload successful: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 09:35:05 Asia/Manila] Research uploaded successfully: 11PsYjqloe1-odKzrY_SCDqEj1coeu4XC
+[14-Feb-2026 09:35:05 Asia/Manila] Uploading program: program_inHouse.pdf
+[14-Feb-2026 09:35:05 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Tamad_natural_biological
+[14-Feb-2026 09:35:05 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Tamad_natural_biological
+[14-Feb-2026 09:35:05 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 09:35:06 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 09:35:06 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 09:35:07 Asia/Manila] Entry folder created: 17uIY2AnTMbW0OqIfqd73gZNEiFiPYp6A for Tamad_natural_biological
+[14-Feb-2026 09:35:07 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 17uIY2AnTMbW0OqIfqd73gZNEiFiPYp6A
+[14-Feb-2026 09:35:09 Asia/Manila] Making file public: 1QAV8kdbKZzf7UlxWSOhUk3lgNq7FB7gX
+[14-Feb-2026 09:35:10 Asia/Manila] File 1QAV8kdbKZzf7UlxWSOhUk3lgNq7FB7gX is already public
+[14-Feb-2026 09:35:10 Asia/Manila] program file upload successful: program_inHouse.pdf
+[14-Feb-2026 09:35:10 Asia/Manila] Program uploaded successfully: 1QAV8kdbKZzf7UlxWSOhUk3lgNq7FB7gX
+[14-Feb-2026 09:35:10 Asia/Manila] Number of columns in query: 23
+[14-Feb-2026 09:35:10 Asia/Manila] Number of variables to bind: 23
+[14-Feb-2026 10:01:34 Asia/Manila] PHP Warning:  Undefined array key "userOffice" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 272
+[14-Feb-2026 10:01:34 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[14-Feb-2026 10:01:34 Asia/Manila] Title: Natural Biological
+[14-Feb-2026 10:01:34 Asia/Manila] Author: Juan Tamad
+[14-Feb-2026 10:01:34 Asia/Manila] Event: 38th University Faculty In-House Review
+[14-Feb-2026 10:01:34 Asia/Manila] Center: Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:01:34 Asia/Manila] Category: Natural / Biological
+[14-Feb-2026 10:01:34 Asia/Manila] Uploading endorsement: endorsement.pdf
+[14-Feb-2026 10:01:34 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Tamad_Natural_Biological
+[14-Feb-2026 10:01:34 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Tamad_Natural_Biological
+[14-Feb-2026 10:01:35 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:01:35 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:01:36 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:01:37 Asia/Manila] Entry folder created: 1sSGequp_zot9ULHvntnWzdcBrGLOYMYJ for Tamad_Natural_Biological
+[14-Feb-2026 10:01:37 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1sSGequp_zot9ULHvntnWzdcBrGLOYMYJ
+[14-Feb-2026 10:01:40 Asia/Manila] Making file public: 1x3Gtn_o09BM6T4yfxiw3kw4der0IshbQ
+[14-Feb-2026 10:01:40 Asia/Manila] File 1x3Gtn_o09BM6T4yfxiw3kw4der0IshbQ is already public
+[14-Feb-2026 10:01:40 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[14-Feb-2026 10:01:40 Asia/Manila] Endorsement uploaded successfully: 1x3Gtn_o09BM6T4yfxiw3kw4der0IshbQ
+[14-Feb-2026 10:01:40 Asia/Manila] Endorsement saved to DB with ID: 511
+[14-Feb-2026 10:01:40 Asia/Manila] Uploading research: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 10:01:40 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Tamad_Natural_Biological
+[14-Feb-2026 10:01:40 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Tamad_Natural_Biological
+[14-Feb-2026 10:01:41 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:01:41 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:01:42 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:01:42 Asia/Manila] Entry folder created: 1sSGequp_zot9ULHvntnWzdcBrGLOYMYJ for Tamad_Natural_Biological
+[14-Feb-2026 10:01:42 Asia/Manila] Uploading research file: transactionDetails (2-8-2026).pdf to folder: 1sSGequp_zot9ULHvntnWzdcBrGLOYMYJ
+[14-Feb-2026 10:01:45 Asia/Manila] Making file public: 17JjC5eEe6nEYSrGAC0-IJ53rfLsb-aoa
+[14-Feb-2026 10:01:45 Asia/Manila] File 17JjC5eEe6nEYSrGAC0-IJ53rfLsb-aoa is already public
+[14-Feb-2026 10:01:45 Asia/Manila] research file upload successful: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 10:01:45 Asia/Manila] Research uploaded successfully: 17JjC5eEe6nEYSrGAC0-IJ53rfLsb-aoa
+[14-Feb-2026 10:01:45 Asia/Manila] Uploading program: program_inHouse.pdf
+[14-Feb-2026 10:01:45 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Tamad_Natural_Biological
+[14-Feb-2026 10:01:45 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Tamad_Natural_Biological
+[14-Feb-2026 10:01:46 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:01:46 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:01:47 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:01:48 Asia/Manila] Entry folder created: 1sSGequp_zot9ULHvntnWzdcBrGLOYMYJ for Tamad_Natural_Biological
+[14-Feb-2026 10:01:48 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1sSGequp_zot9ULHvntnWzdcBrGLOYMYJ
+[14-Feb-2026 10:01:50 Asia/Manila] Making file public: 1Weg3fg_m5lyFTc4uTTT1aVxGAA-dQfEu
+[14-Feb-2026 10:01:50 Asia/Manila] File 1Weg3fg_m5lyFTc4uTTT1aVxGAA-dQfEu is already public
+[14-Feb-2026 10:01:50 Asia/Manila] program file upload successful: program_inHouse.pdf
+[14-Feb-2026 10:01:50 Asia/Manila] Program uploaded successfully: 1Weg3fg_m5lyFTc4uTTT1aVxGAA-dQfEu
+[14-Feb-2026 10:01:50 Asia/Manila] Number of columns in query: 23
+[14-Feb-2026 10:01:50 Asia/Manila] Number of variables to bind: 23
+[14-Feb-2026 10:11:47 Asia/Manila] PHP Warning:  Undefined array key "userOffice" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 272
+[14-Feb-2026 10:11:47 Asia/Manila] PHP Warning:  Undefined array key "presenter" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 308
+[14-Feb-2026 10:11:47 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[14-Feb-2026 10:11:47 Asia/Manila] Title: Ang Pagkahuli sa Engkanto
+[14-Feb-2026 10:11:47 Asia/Manila] Author: Michael Estorque
+[14-Feb-2026 10:11:47 Asia/Manila] Event: 38th University Faculty In-House Review
+[14-Feb-2026 10:11:47 Asia/Manila] Center: Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:11:47 Asia/Manila] Category: Natural / Biological
+[14-Feb-2026 10:11:47 Asia/Manila] Uploading endorsement: endorsement.pdf
+[14-Feb-2026 10:11:47 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:11:47 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:11:48 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:11:49 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:11:49 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:11:51 Asia/Manila] Entry folder created: 11af2lWmSdLnBb83KJM5g4jQrhBOHKZpQ for Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:11:51 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 11af2lWmSdLnBb83KJM5g4jQrhBOHKZpQ
+[14-Feb-2026 10:11:53 Asia/Manila] Making file public: 1KXwztmbjQUnU9ReeZuBtj1PhvHPSqtbo
+[14-Feb-2026 10:11:54 Asia/Manila] File 1KXwztmbjQUnU9ReeZuBtj1PhvHPSqtbo is already public
+[14-Feb-2026 10:11:54 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[14-Feb-2026 10:11:54 Asia/Manila] Endorsement uploaded successfully: 1KXwztmbjQUnU9ReeZuBtj1PhvHPSqtbo
+[14-Feb-2026 10:11:54 Asia/Manila] Endorsement saved to DB with ID: 512
+[14-Feb-2026 10:11:54 Asia/Manila] Uploading research: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 10:11:54 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:11:54 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:11:54 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:11:55 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:11:55 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:11:56 Asia/Manila] Entry folder created: 11af2lWmSdLnBb83KJM5g4jQrhBOHKZpQ for Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:11:56 Asia/Manila] Uploading research file: transactionDetails (2-8-2026).pdf to folder: 11af2lWmSdLnBb83KJM5g4jQrhBOHKZpQ
+[14-Feb-2026 10:11:58 Asia/Manila] Making file public: 11uNgkLpj-9kb1F9N6ZjLbL4Q_gP10Oxd
+[14-Feb-2026 10:11:59 Asia/Manila] File 11uNgkLpj-9kb1F9N6ZjLbL4Q_gP10Oxd is already public
+[14-Feb-2026 10:11:59 Asia/Manila] research file upload successful: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 10:11:59 Asia/Manila] Research uploaded successfully: 11uNgkLpj-9kb1F9N6ZjLbL4Q_gP10Oxd
+[14-Feb-2026 10:11:59 Asia/Manila] Uploading program: program_inHouse.pdf
+[14-Feb-2026 10:11:59 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:11:59 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:12:00 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:12:00 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:12:00 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:12:01 Asia/Manila] Entry folder created: 11af2lWmSdLnBb83KJM5g4jQrhBOHKZpQ for Estorque_Ang_Pagkahuli_sa
+[14-Feb-2026 10:12:01 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 11af2lWmSdLnBb83KJM5g4jQrhBOHKZpQ
+[14-Feb-2026 10:12:03 Asia/Manila] Making file public: 1uG-XxFTQeqSGJuP6I_46T8YDmOyTnTld
+[14-Feb-2026 10:12:04 Asia/Manila] File 1uG-XxFTQeqSGJuP6I_46T8YDmOyTnTld is already public
+[14-Feb-2026 10:12:04 Asia/Manila] program file upload successful: program_inHouse.pdf
+[14-Feb-2026 10:12:04 Asia/Manila] Program uploaded successfully: 1uG-XxFTQeqSGJuP6I_46T8YDmOyTnTld
+[14-Feb-2026 10:12:04 Asia/Manila] Number of columns in query: 23
+[14-Feb-2026 10:12:04 Asia/Manila] Number of variables to bind: 23
+[14-Feb-2026 10:16:35 Asia/Manila] PHP Warning:  Undefined array key "userOffice" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 272
+[14-Feb-2026 10:16:35 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[14-Feb-2026 10:16:35 Asia/Manila] Title: Katamaran Files
+[14-Feb-2026 10:16:35 Asia/Manila] Author: Michael Estorque
+[14-Feb-2026 10:16:35 Asia/Manila] Event: 38th University Faculty In-House Review
+[14-Feb-2026 10:16:35 Asia/Manila] Center: Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:16:35 Asia/Manila] Category: Natural / Biological
+[14-Feb-2026 10:16:35 Asia/Manila] Uploading endorsement: endorsement.pdf
+[14-Feb-2026 10:16:35 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Katamaran_Files
+[14-Feb-2026 10:16:35 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Katamaran_Files
+[14-Feb-2026 10:16:36 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:16:36 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:16:36 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:16:38 Asia/Manila] Entry folder created: 1Lmod8hyYNHF3VS13vCjBXuH3A0CuNpEx for Estorque_Katamaran_Files
+[14-Feb-2026 10:16:38 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1Lmod8hyYNHF3VS13vCjBXuH3A0CuNpEx
+[14-Feb-2026 10:16:40 Asia/Manila] Making file public: 1f78mCogNWbocXY8BkBsB2NhIx7AUYAST
+[14-Feb-2026 10:16:41 Asia/Manila] File 1f78mCogNWbocXY8BkBsB2NhIx7AUYAST is already public
+[14-Feb-2026 10:16:41 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[14-Feb-2026 10:16:41 Asia/Manila] Endorsement uploaded successfully: 1f78mCogNWbocXY8BkBsB2NhIx7AUYAST
+[14-Feb-2026 10:16:41 Asia/Manila] Endorsement saved to DB with ID: 513
+[14-Feb-2026 10:16:41 Asia/Manila] Uploading research: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 10:16:41 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Katamaran_Files
+[14-Feb-2026 10:16:41 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Katamaran_Files
+[14-Feb-2026 10:16:42 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:16:42 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:16:43 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:16:43 Asia/Manila] Entry folder created: 1Lmod8hyYNHF3VS13vCjBXuH3A0CuNpEx for Estorque_Katamaran_Files
+[14-Feb-2026 10:16:43 Asia/Manila] Uploading research file: transactionDetails (2-8-2026).pdf to folder: 1Lmod8hyYNHF3VS13vCjBXuH3A0CuNpEx
+[14-Feb-2026 10:16:46 Asia/Manila] Making file public: 1O8XPygU4EdqAQtEvOp-eAw1tr-KMpk1j
+[14-Feb-2026 10:16:46 Asia/Manila] File 1O8XPygU4EdqAQtEvOp-eAw1tr-KMpk1j is already public
+[14-Feb-2026 10:16:46 Asia/Manila] research file upload successful: transactionDetails (2-8-2026).pdf
+[14-Feb-2026 10:16:46 Asia/Manila] Research uploaded successfully: 1O8XPygU4EdqAQtEvOp-eAw1tr-KMpk1j
+[14-Feb-2026 10:16:46 Asia/Manila] Uploading program: program_inHouse.pdf
+[14-Feb-2026 10:16:46 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Katamaran_Files
+[14-Feb-2026 10:16:46 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Katamaran_Files
+[14-Feb-2026 10:16:47 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[14-Feb-2026 10:16:47 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[14-Feb-2026 10:16:48 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[14-Feb-2026 10:16:48 Asia/Manila] Entry folder created: 1Lmod8hyYNHF3VS13vCjBXuH3A0CuNpEx for Estorque_Katamaran_Files
+[14-Feb-2026 10:16:48 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1Lmod8hyYNHF3VS13vCjBXuH3A0CuNpEx
+[14-Feb-2026 10:16:51 Asia/Manila] Making file public: 1pl9QWaNpe48ds9_mnteX8v1D9xVglSQH
+[14-Feb-2026 10:16:51 Asia/Manila] File 1pl9QWaNpe48ds9_mnteX8v1D9xVglSQH is already public
+[14-Feb-2026 10:16:51 Asia/Manila] program file upload successful: program_inHouse.pdf
+[14-Feb-2026 10:16:51 Asia/Manila] Program uploaded successfully: 1pl9QWaNpe48ds9_mnteX8v1D9xVglSQH
+[14-Feb-2026 10:16:51 Asia/Manila] Number of columns in query: 23
+[14-Feb-2026 10:16:51 Asia/Manila] Number of variables to bind: 23
+[14-Feb-2026 10:43:54 Asia/Manila] === researchFile API called ===
+[14-Feb-2026 10:43:54 Asia/Manila] Event ID: 13
+[14-Feb-2026 10:43:54 Asia/Manila] User ID: 40
+[14-Feb-2026 10:43:54 Asia/Manila] Event type: NEW (center-based)
+[14-Feb-2026 10:43:54 Asia/Manila] Grouping by: rf.center
+[14-Feb-2026 10:43:55 Asia/Manila] === researchFile API called ===
+[14-Feb-2026 10:43:55 Asia/Manila] Event ID: 13
+[14-Feb-2026 10:43:55 Asia/Manila] User ID: 40
+[14-Feb-2026 10:43:55 Asia/Manila] Event type: NEW (center-based)
+[14-Feb-2026 10:43:55 Asia/Manila] Grouping by: rf.center

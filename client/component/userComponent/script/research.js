@@ -9,32 +9,6 @@ const isGoogleDriveUrl = (url) => {
            (url.startsWith('https://') && url.includes('google.com'))
 }
 
-const getGoogleDriveEmbedUrl = (url) => {
-    // Convert Google Drive share link to embed URL if needed
-    if (url.includes('/file/d/')) {
-        const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
-        if (fileIdMatch) {
-            return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
-        }
-    }
-    return url
-}
-
-const isDevelopment = () => {
-    return window.location.hostname === 'localhost' || 
-           window.location.hostname === '127.0.0.1' ||
-           window.location.hostname.includes('.local') ||
-           window.location.port !== '' // Has a port number
-}
-
-const isProduction = () => {
-    return !isDevelopment()
-}
-
-const getUrl = (url) => {
-    sessionStorage.setItem('viewFile', '/' + url)
-}
-
 const CreateNew = () => {
     const data = {
         endorsement: '',
@@ -92,8 +66,8 @@ const CreateNew = () => {
     let Temp = resetTemp();
 
     // UI Elements references
-    let TitleEl, SelCat, getAuth, coAuth, coAuthList, centerSelect, presenterInput
-    let researchCover, programCover, researchFileInput, programFileInput
+    let TitleEl, SelCat, getAuth, coAuth, centerSelect, cov, coAuthList, presenterInput
+    let researchCover, programCover, researchFileInput, programFileInput, endorsementFileInput
 
     // Handler functions
     const getResearchCover = (el) => {
@@ -102,10 +76,6 @@ const CreateNew = () => {
 
     const getProgramCover = (el) => {
         programCover = el
-    }
-    
-    const getCenter = (el) => {
-        centerSelect = el
     }
     
     const getCategory = (el) => {
@@ -614,7 +584,7 @@ const CreateNew = () => {
                     paddingLeft: '1vw'
                 },
                 att: {
-                    placeholder: 'Input all authors here',
+                    placeholder: 'Input all authors here one by one and click the add icon ->',
                     title: 'To add more authors click the add icon'
                 },
                 elementHandler: (el) => {
@@ -695,7 +665,7 @@ const CreateNew = () => {
                 event: {
                     type: 'input',
                     method: (event) => {
-                        Temp.presenter = event.target.value
+                        Temp.presenter = event.target.value;
                     }
                 },
                 elementHandler: getPresenter
@@ -1342,9 +1312,10 @@ const CreateNew = () => {
                         const researchEntry = data.research[0];
                         
                         // Debug logging
-                        console.log('Research file:', researchEntry.attachment);
-                        console.log('Program file:', researchEntry.program);
-                        console.log('Endorsement file:', data.endorsement);
+                        //console.log('Research file:', researchEntry.attachment);
+                        //console.log('Program file:', researchEntry.program);
+                        //console.log('Endorsement file:', data.endorsement);
+                        //console.log('Presenter:', researchEntry.presenter);
                         
                         // Add single research file
                         form.append('researchDoc', researchEntry.attachment)
@@ -1356,7 +1327,7 @@ const CreateNew = () => {
                         form.append('center', researchEntry.center)
                         form.append('author', researchEntry.author)
                         form.append('coAuthor', JSON.stringify(researchEntry.coAuhtor || []))
-                        
+                        form.append('presenter', researchEntry.presenter)
                         form.append('uploadResearch', 'true')
                         
                         // Show loading indicator
@@ -4508,8 +4479,6 @@ const Submitted = () => {
     }))
 }
 
-
-
 export const Research = () => {
 
     const tabButton = ({label, url}) => {
@@ -4552,18 +4521,6 @@ export const Research = () => {
         }),
         page: CreateNew
     })
-
-    /*
-     tabsPage.push({
-         url: '/user/research/Endorsement',
-         tab: tabButton({
-             label: 'Endorsement Letter',
-             url: '/user/research/Endorsement'
-         }),
-         page: Endorsement
-     })
-     */
-
 
     const tabs = ({getRow}) => {
         return ($({

@@ -16,7 +16,7 @@
 }
 .tabsButton{
     font-family: "Arial Black",sans-serif;
-    color: rgba(200,200,200,0.9);
+    color: rgba(255, 255, 255, 0.9);
     font-size: 1vw;
     text-align: left;
     width: 80%;
@@ -25,7 +25,7 @@
     width: 20%;
     text-align: right;
     font-size: 1.5vw;
-    color: rgba(200,200,200,0.9);
+    color: rgba(255, 255, 255, 0.9);
 }
 .userAnimate{
     background-image: linear-gradient(to right,#333,grey);
@@ -50,30 +50,4 @@
         border-left: solid thin deepskyblue;
         border-top: solid thin deepskyblue;
     }
-}
-
-.capLogo{
-    height: fit-content;
-    width: 100%;
-    background-color: ghostwhite;
-    margin: 1vh auto;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-}
-.capLogo span{
-    font-family: Arial,sans-serif;
-    font-size: 5vw;
-    margin: auto;
-    text-shadow: -.5vh .5vh 0.7vw black;
-    font-weight: bolder;
-}
-.spanR{
-    color: blue;
-}
-.spanD{
-    color: orange;
-}
-.spanE{
-    color: green;
 }

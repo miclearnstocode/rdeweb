@@ -1350,7 +1350,7 @@ export const LoginPage = () => {
 
             },
 
-            text: 'Logg in?',
+            text: 'Login?',
 
 
 

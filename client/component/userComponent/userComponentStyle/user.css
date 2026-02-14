@@ -6,3 +6,371 @@
     margin: auto;
     background-color: #222222;
 }
+/* Modern User Panel Styles */
+.modern-user-panel {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #2f3031 0%, #c8cbd2 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Modern Navigation Bar */
+.modern-nav-bar {
+    width: 280px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1rem;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.modern-nav-bar:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Modern Logo Section */
+.modern-logo {
+    margin-bottom: 3rem;
+    padding: 1rem 0;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.logo-container span {
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.logo-container span:hover {
+    transform: translateY(-2px);
+}
+
+.logo-r {
+    color: #4caf50;
+    background: linear-gradient(135deg, #4caf50, #45a049);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.logo-d {
+    color: #ff9800;
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.logo-e {
+    color: #2196f3;
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.logo-text {
+    font-size: 0.85rem;
+    color: #666;
+    text-align: center;
+    letter-spacing: 1px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+/* Navigation Items */
+.nav-item-wrapper {
+    margin: 0.25rem 0;
+    transition: all 0.3s ease;
+}
+
+.nav-item-wrapper:hover {
+    transform: translateX(5px);
+}
+
+.modern-nav-btn {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    color: #555;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.modern-nav-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.modern-nav-btn.active-nav {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.modern-nav-btn.active-nav td {
+    color: white !important;
+}
+
+.modern-nav-btn td {
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.modern-nav-btn td:first-child {
+    width: 30px;
+    font-size: 1.2rem;
+}
+
+.modern-nav-btn td:last-child {
+    flex: 1;
+}
+
+/* Modern Frame */
+.modern-frame {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    margin: 1rem;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Page Wrapper */
+.page-wrapper {
+    height: 100%;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Request Button Styling */
+.modern-req-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ff4757);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 1rem 0;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.modern-req-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.modern-req-btn:active {
+    transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .modern-user-panel {
+        flex-direction: column;
+    }
+    
+    .modern-nav-bar {
+        width: 100%;
+        padding: 1rem;
+    }
+    
+    .modern-frame {
+        margin: 0;
+        border-radius: 0;
+        padding: 1rem;
+    }
+    
+    .logo-container span {
+        font-size: 2rem;
+    }
+    
+    .logo-text {
+        font-size: 0.7rem;
+    }
+}
+
+/* Scrollbar Styling */
+.modern-frame::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modern-frame::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+}
+
+.modern-frame::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 10px;
+}
+
+.modern-frame::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2, #667eea);
+}
+
+/* Glassmorphism Effect for Cards */
+.glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Modern Typography */
+.modern-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 1rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.modern-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 3px;
+}
+
+/* Loading Animation */
+.modern-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+}
+
+.modern-loading::after {
+    content: '';
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(102, 126, 234, 0.3);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error State Styling */
+.modern-error {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+}
+
+.modern-error i {
+    font-size: 3rem;
+    color: #ff6b6b;
+    margin-bottom: 1rem;
+}
+
+.modern-error h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.modern-error p {
+    font-size: 1rem;
+    color: #888;
+}
+
+/* Smooth Transitions */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .modern-nav-bar {
+        background: rgba(30, 30, 30, 0.95);
+    }
+    
+    .modern-frame {
+        background: rgba(40, 40, 40, 0.95);
+        color: #fff;
+    }
+    
+    .modern-nav-btn {
+        color: #aaa;
+    }
+    
+    .logo-text {
+        color: #aaa;
+    }
+    
+    .glass-card {
+        background: rgba(50, 50, 50, 0.7);
+        color: #fff;
+    }
+    
+    .modern-title {
+        color: #fff;
+    }
+}

@@ -1,6 +1,6 @@
 import {$, Request} from '../lib/lib.js';
 import {Header} from "./otherComponent/header.js";
-import {Box, HeaderTable, Search} from "./evaluatorComponent/script/listBox.js";
+import {Box, Search} from "./evaluatorComponent/script/listBox.js";
 
 export const Evaluator=()=>{
     document.getElementById('root').appendChild(Header())
@@ -143,8 +143,6 @@ export const Evaluator=()=>{
             }
         })
     }
-
-
     return($({
         tag:'div',
         externalStyle:'/client/component/evaluatorComponent/style/evaluator.css',
@@ -157,6 +155,5 @@ export const Evaluator=()=>{
            // HeaderTable(),
             Box(getBox)
         ]
-
     }))
 }
