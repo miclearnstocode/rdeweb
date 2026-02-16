@@ -28,7 +28,7 @@ export const ResearchMain = () => {
         mainFrame = el
     }
     let serch
-    const Incoming = () => {
+    const Incoming = () => { //left side panel were the submitted documents
         let bodyContent, docQue
         const label = $({
             tag: 'div',
@@ -457,7 +457,7 @@ export const ResearchMain = () => {
                                 })
                             ]
                         })
-                        const researchBot = ({id, dataURLResearch, title, category, author, coAuthor, center, programFile, programDriveViewUrl}) => {
+                        const researchBot = ({id, dataURLResearch, title, category, author, presenter,coAuthor, center, programFile, programDriveViewUrl}) => {
                             const labelDetails = (label, data) => {
                                 return ($({
                                     tag: 'div',
@@ -589,6 +589,7 @@ export const ResearchMain = () => {
                                     labelDetails("Title : ", title),
                                     labelDetails("Author : ", author),
                                     CoAuthorList(),
+                                    labelDetails("Presenter :", presenter),
                                     labelDetails("Center : ", center),
                                     labelDetails("Category : ", category),
 
@@ -597,18 +598,19 @@ export const ResearchMain = () => {
                                         style: {
                                             display: 'flex',
                                             flexDirection: 'row', // Align horizontally
-                                            gap: '2vw', // Space between buttons
+                                            gap: '1vw', // Space between buttons
                                             marginTop: '1vh',
                                             marginBottom: '1vh',
-                                            marginLeft: '3vw'
+                                            marginLeft: '1.2vw',
+                                            marginRight: '.5vw'
                                         },
                                         child: [
-                                            // Open Entry Button
+                                            // Research Entry Button
                                             $({
                                                 tag: 'div',
-                                                text: 'Open entry',
                                                 att: {
-                                                    className: 'botRes'
+                                                    className: 'botRes',
+                                                    innerHTML: '<span class="fa fa-file-pdf-o" style="margin-right: 0.2vw;"></span> Research entry'
                                                 },
                                                 style: {
                                                     fontSize: '1vw',
@@ -621,7 +623,8 @@ export const ResearchMain = () => {
                                                     userSelect: 'none',
                                                     border: 'solid thin deepskyblue',
                                                     borderRadius: '0.3vw',
-                                                    backgroundColor: 'rgba(0, 191, 255, 0.1)'
+                                                    backgroundColor: 'rgba(0, 191, 255, 0.1)',
+                                                    alignItems: 'right'
                                                 },
                                                 event: { //here open the research entry file in a new viewer
                                                     type: 'click',
@@ -636,9 +639,9 @@ export const ResearchMain = () => {
                                             ...(programDriveViewUrl ? [
                                                 $({
                                                     tag: 'div',
-                                                    text: 'Open program',
                                                     att: {
-                                                        className: 'botRes'
+                                                        className: 'botRes',
+                                                        innerHTML: '<span class="fa fa-file-pdf-o" style="margin-right: 0.2vw;"></span> Open program'
                                                     },
                                                     style: {
                                                         fontSize: '1vw',
@@ -1110,6 +1113,7 @@ export const ResearchMain = () => {
                                     category: val.category,
                                     author: val.author,
                                     coAuthor: val.coauthor,
+                                    presenter: val.presenter,
                                     center: val.center,
                                     programFile: val.programFile,
                                     programDriveViewUrl: val.program_drive_view_url 

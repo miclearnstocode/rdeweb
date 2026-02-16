@@ -469,3 +469,21 @@ Stack trace:
 [14-Feb-2026 11:37:49 Asia/Manila] Program uploaded successfully: 1EvXssjHkQZrOky115dnZBzzcA-OYWbLl
 [14-Feb-2026 11:37:49 Asia/Manila] Number of columns in query: 23
 [14-Feb-2026 11:37:49 Asia/Manila] Number of variables to bind: 23
+[16-Feb-2026 09:39:18 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'capsued_rdesystem.account' doesn't exist in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1440
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1440): mysqli->prepare('SELECT `researc...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1440
+[16-Feb-2026 09:39:29 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'capsued_rdesystem.account' doesn't exist in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1440
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1440): mysqli->prepare('SELECT `researc...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1440

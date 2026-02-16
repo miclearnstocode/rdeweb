@@ -18,6 +18,7 @@ if(isset($_POST['load'])){
         echo json_encode($result);
     }
 }
+
 if(isset($_POST['allUserAdmin'])){
     $result=[];
     if($con=new mysqli($host,$username,$pass,$dbName)){

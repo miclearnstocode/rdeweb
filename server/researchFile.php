@@ -1420,129 +1420,116 @@ if (isset($_POST['getResearch'])) {
     $response->status = false;
     $response->message = '';
     $response->list = [];
+    $response->hasMore = false;
+    $response->lastId = 0;
+    
+    // Pagination parameters
+    $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 20;
+    $lastId = isset($_POST['lastId']) ? intval($_POST['lastId']) : 0;
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $serderId = $_SESSION['userId'];
-        foreach ($con->query("SELECT `researchaccess` FROM `account` WHERE `id`='$serderId'") as $val) {
-            if ($val['researchaccess'] !== null) {
-                $response->message = 'something';
+        
+        // Check user access
+        $accessQuery = "SELECT `researchaccess` FROM `account` WHERE `id`='$serderId'";
+        $accessResult = $con->query($accessQuery);
+        $accessRow = $accessResult->fetch_assoc();
+        
+        if ($accessRow && $accessRow['researchaccess'] !== null) {
+            // Query for users with research access - keyset pagination
+            $query = "SELECT 
+                researchfile.id,
+                researchfile.author,
+                researchfile.drive_view_url as file_url,
+                researchfile.title,
+                researchfile.category,
+                researchfile.campus,
+                researchfile.coauthor,
+                researchfile.presenter,
+                researchfile.status
+            FROM `researchfile`
+            WHERE id > $lastId
+            ORDER BY id ASC
+            LIMIT $limit";
+            
+            $result = $con->query($query);
+            
+            while ($row = $result->fetch_assoc()) {
+                $data = new stdClass();
+                $data->id = $row['id'];
+                $data->author = $row['author'];
+                $data->file = $row['file_url'];
+                $data->title = $row['title'];
+                $data->category = $row['category'];
+                $data->campus = $row['campus'];
+                $data->coauthor = $row['coauthor'];
+                $data->presenter = $row['presenter'];
+                $data->status = $row['status'];
+                $data->file_type = 'drive';
                 
-                // Query for users with research access - UPDATED for Google Drive
-                $query = "SELECT 
-                    researchfile.id,
-                    researchfile.author,
-                    researchfile.drive_view_url as file_url,
-                    researchfile.drive_file_id,
-                    researchfile.drive_view_url,
-                    researchfile.drive_download_url,
-                    researchfile.drive_folder_id,
-                    researchfile.drive_event_folder_id,
-                    researchfile.drive_center_folder_id,
-                    researchfile.title,
-                    researchfile.category,
-                    researchfile.campus,
-                    researchfile.coauthor,
-                    researchfile.presenter,
-                    researchfile.reviews,
-                    researchfile.status,
-                    researchfile.rejected_by,
-                    researchfile.accepted_by,
-                    researchfile.rejected_date,
-                    researchfile.accepted_date
-                FROM `researchfile`";
-                
-                $result = $con->query($query);
-                
-                while ($row = $result->fetch_assoc()) {
-                    $data = new stdClass();
-                    $data->id = $row['id'];
-                    $data->author = $row['author'];
-                    $data->file = $row['file_url']; // Google Drive URL
-                    $data->drive_file_id = $row['drive_file_id'];
-                    $data->drive_view_url = $row['drive_view_url'];
-                    $data->drive_download_url = $row['drive_download_url'];
-                    $data->drive_folder_id = $row['drive_folder_id'];
-                    $data->drive_event_folder_id = $row['drive_event_folder_id'];
-                    $data->drive_center_folder_id = $row['drive_center_folder_id'];
-                    $data->title = $row['title'];
-                    $data->category = $row['category'];
-                    $data->campus = $row['campus'];
-                    $data->proponent = $row['coauthor'];
-                    $data->presenter = $row['presenter'];
-                    $data->reviews = $row['reviews'];
-                    $data->status = $row['status'];
-                    $data->rejected_by = $row['rejected_by'];
-                    $data->rejected_by_email = null;
-                    $data->accepted_by = $row['accepted_by'];
-                    $data->accepted_by_email = null;
-                    $data->rejected_date = $row['rejected_date'];
-                    $data->accepted_date = $row['accepted_date'];
-                    $data->file_type = 'drive'; // Always drive now
-                    
-                    $response->list[] = $data;
-                }
-            } else {
-                $response->message = 'something';
-                
-                // Query for regular users - UPDATED for Google Drive
-                $query = "SELECT 
-                    researchfile.id,
-                    researchfile.author,
-                    researchfile.drive_view_url as file_url,
-                    researchfile.drive_file_id,
-                    researchfile.drive_view_url,
-                    researchfile.drive_download_url,
-                    researchfile.drive_folder_id,
-                    researchfile.drive_event_folder_id,
-                    researchfile.drive_center_folder_id,
-                    researchfile.title,
-                    researchfile.category,
-                    researchfile.campus,
-                    researchfile.coauthor,
-                    researchfile.presenter,
-                    researchfile.reviews,
-                    researchfile.status,
-                    researchfile.rejected_by,
-                    researchfile.accepted_by,
-                    researchfile.rejected_date,
-                    researchfile.accepted_date
-                FROM `researchfile` WHERE `senderid`='$serderId'";
-                
-                $result = $con->query($query);
-                
-                while ($row = $result->fetch_assoc()) {
-                    $data = new stdClass();
-                    $data->id = $row['id'];
-                    $data->sender = $row['author'];
-                    $data->file = $row['file_url']; // Google Drive URL
-                    $data->drive_file_id = $row['drive_file_id'];
-                    $data->drive_view_url = $row['drive_view_url'];
-                    $data->drive_download_url = $row['drive_download_url'];
-                    $data->drive_folder_id = $row['drive_folder_id'];
-                    $data->drive_event_folder_id = $row['drive_event_folder_id'];
-                    $data->drive_center_folder_id = $row['drive_center_folder_id'];
-                    $data->title = $row['title'];
-                    $data->category = $row['category'];
-                    $data->campus = $row['campus'];
-                    $data->proponent = $row['coauthor'];
-                    $data->year = $row['year'];
-                    $data->month = $row['month'];
-                    $data->date = $row['month'] . '/' . $row['date'] . '/' . $row['year'];
-                    $data->reviews = $row['reviews'];
-                    $data->status = $row['status'];
-                    $data->rejected_by = $row['rejected_by'];
-                    $data->rejected_by_email = null;
-                    $data->accepted_by = $row['accepted_by'];
-                    $data->accepted_by_email = null;
-                    $data->rejected_date = $row['rejected_date'];
-                    $data->accepted_date = $row['accepted_date'];
-                    $data->file_type = 'drive'; // Always drive now
-                    
-                    $response->list[] = $data;
-                }
+                $response->list[] = $data;
+                $response->lastId = $row['id'];
             }
+            
+            // Check if more records exist
+            $checkQuery = "SELECT COUNT(*) as count FROM `researchfile` WHERE id > " . $response->lastId;
+            $checkResult = $con->query($checkQuery);
+            $checkRow = $checkResult->fetch_assoc();
+            $response->hasMore = ($checkRow['count'] > 0);
+            
+        } else {
+            // Query for regular users - keyset pagination
+            $query = "SELECT 
+                researchfile.id,
+                researchfile.author,
+                researchfile.drive_view_url as file_url,
+                researchfile.title,
+                researchfile.category,
+                researchfile.campus,
+                researchfile.coauthor,
+                researchfile.presenter,
+                researchfile.status,
+                researchfile.year,
+                researchfile.month,
+                researchfile.date
+            FROM `researchfile` 
+            WHERE `senderid`='$serderId' AND id > $lastId
+            ORDER BY id ASC
+            LIMIT $limit";
+            
+            $result = $con->query($query);
+            
+            while ($row = $result->fetch_assoc()) {
+                $data = new stdClass();
+                $data->id = $row['id'];
+                $data->sender = $row['author'];
+                $data->file = $row['file_url'];
+                $data->title = $row['title'];
+                $data->category = $row['category'];
+                $data->campus = $row['campus'];
+                $data->coauthor = $row['coauthor'];
+                $data->presenter = $row['presenter'];
+                $data->status = $row['status'];
+                $data->year = $row['year'];
+                $data->month = $row['month'];
+                $data->date = $row['month'] . '/' . $row['date'] . '/' . $row['year'];
+                $data->file_type = 'drive';
+                
+                $response->list[] = $data;
+                $response->lastId = $row['id'];
+            }
+            
+            // Check if more records exist
+            $checkQuery = "SELECT COUNT(*) as count FROM `researchfile` WHERE `senderid`='$serderId' AND id > " . $response->lastId;
+            $checkResult = $con->query($checkQuery);
+            $checkRow = $checkResult->fetch_assoc();
+            $response->hasMore = ($checkRow['count'] > 0);
         }
+        
+        $response->status = true;
+        $con->close();
     }
+    
     echo json_encode($response);
 }
 
@@ -2422,6 +2409,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->status = $v['status'];
                 $research->campus = $v['campus'];
                 $research->coauthor = $v['coauthor'];
+                $research->presenter = $v['presenter'];
                 $research->category = $v['category'];
                 
                 // Handle research file with backward compatibility
