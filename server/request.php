@@ -98,7 +98,7 @@ if (isset($_POST['getDocRequest'])) {
 doc_request.id,
 doc_request.sender_id,
 doc_request.docId,
-account_detail.campus,
+account_detail.center,
 account_detail.fullName,
 doc_request.date
 FROM doc_request

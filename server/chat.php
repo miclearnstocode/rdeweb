@@ -30,7 +30,7 @@ if (isset($_POST['systemaccount'])) {
             }
         }
      //   $query = "SELECT account.id,account.fullname,account.office FROM account";
-        $newQuery="SELECT account_detail.id,account_detail.fullName,account_detail.campus FROM account_detail";
+        $newQuery="SELECT account_detail.id,account_detail.fullName,account_detail.center FROM account_detail";
         $statement = $con->prepare($newQuery);
         $statement->execute();
         $result = $statement->get_result();

@@ -14,7 +14,7 @@ if(isset($_POST['settingsInfo'])){
     $response->data='';
 
     if($con){
-        $query="SELECT account_detail.fullName,account_detail.campus,account_detail.email,account_detail.usertype,capsu_user.username 
+        $query="SELECT account_detail.fullName,account_detail.center,account_detail.email,account_detail.usertype,capsu_user.username 
 FROM account_detail 
 LEFT JOIN capsu_user ON account_detail.id=capsu_user.id
 WHERE account_detail.id=? LIMIT 1";
@@ -145,7 +145,7 @@ if(isset($_POST['changeCampus'])){
     $response->message='';
     if($con){
         $id= $_SESSION['userId'];
-        $query="UPDATE account_detail SET account_detail.campus=? WHERE account_detail.id=?";
+        $query="UPDATE account_detail SET account_detail.center=? WHERE account_detail.id=?";
         $name=$_POST['data'];
         $statement=$con->prepare($query);
         $statement->bind_param("ss",$name,$id);

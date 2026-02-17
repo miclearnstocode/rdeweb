@@ -16,7 +16,7 @@ if(isset($_POST['loadCos'])){
 
     if($con=new mysqli($host,$username,$pass,$dbName)){
         $useId=$_SESSION['userId'];
-        $query="SELECT account_detail.campus,
+        $query="SELECT account_detail.center,
 
 account_detail.id,
 
