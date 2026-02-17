@@ -1,6 +1,7 @@
 import {$, ConfirmationAlert, Request, TimeConvert, Waiting} from '../../../lib/lib.js'
 import {Error as ErrorComponent} from "../../../error.js";
 import {Print} from "../../otherComponent/comment.js";
+import { handleResubmit, submitResubmit } from './resubmit.js';
 
 const isGoogleDriveUrl = (url) => {
     if (!url) return false
@@ -110,7 +111,7 @@ const CreateNew = () => {
         "Social Science Research & Development Center (SSRDC)": ["Social Science"],
         "Machinery and Agricultural Technology Engineering Center (MATEC)": ["Industrial", "Engineering", "Information Technology", "Development","Agricultural Machinery"],
         "Coconut Research and Development Center (Coco RDC)": ["Natural / Biological"],
-        "Extension Office": ["Extension"]
+        "Extension": ["Extension"]
     }
 
     // Reverse mapping for quick lookup
@@ -2305,8 +2306,6 @@ const Submitted = () => {
             const dt=date.split(' ')[0].split('-')
             const time=date.split(' ')[1].split(':')
 
-
-
             const ViewEn = () => {
                 let viewerMain
                 
@@ -2448,7 +2447,8 @@ const Submitted = () => {
                         }
                     }))
                 }
-                const Contrl=$({
+                
+                const Contrl = $({
                     tag:'div',
                     style:{
                         height:'8%',
@@ -2465,7 +2465,7 @@ const Submitted = () => {
                         $({
                             tag:'div',
                             style:{
-                                width:'50%',
+                                width:'70%', // Increased width to accommodate 3 buttons
                                 height:'100%',
                                 margin:'auto',
                                 display:'flex',
@@ -2474,10 +2474,11 @@ const Submitted = () => {
                                 backgroundColor:'#222'
                             },
                             child:[
+                                // View Correction Button
                                 $({
                                     tag:'div',
                                     style:{
-                                        width:'40%',
+                                        width:'33.33%', // Equal width for 3 buttons
                                         height:'90%',
                                         margin:'auto',
                                         paddingRight:'1vw',
@@ -2506,9 +2507,7 @@ const Submitted = () => {
                                                         endorseBody.appendChild(reason({message:data.message}))
                                                     }else {
                                                         resb.remove()
-
                                                     }
-
                                                 })
                                         }
                                     },
@@ -2518,7 +2517,7 @@ const Submitted = () => {
                                             text: 'View Correction',
                                             style: {
                                                 fontFamily: 'arial black,sans-serif',
-                                                fontSize: '1.3vw',
+                                                fontSize: '1.1vw', // Slightly smaller
                                                 width: 'fit-content',
                                                 height: 'fit-content',
                                                 margin: 'auto'
@@ -2526,10 +2525,53 @@ const Submitted = () => {
                                         }),
                                     ]
                                 }),
+                                
+                                // Resubmit Button (NEW)
+                                $({
+                                    tag:'div',
+                                    style:{
+                                        width:'33.33%', // Equal width for 3 buttons
+                                        height:'90%',
+                                        margin:'auto',
+                                        paddingRight:'1vw',
+                                        paddingLeft:'1vw',
+                                        display:'flex',
+                                        justifyContent:'center',
+                                        cursor:'pointer',
+                                        borderRadius:'.5vw',
+                                        backgroundColor: 'rgba(255, 165, 0, 0.2)' // Orange tint for visibility
+                                    },
+                                    att:{
+                                        className:'endorsCnt'
+                                    },
+                                    event:{
+                                        type:'click',
+                                        method: ()=>{
+                                            // Just pass the docId and endorsementUrl - no docData
+                                            handleResubmit(docId, endorsement);
+                                        }
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            text: 'Resubmit',
+                                            style: {
+                                                fontFamily: 'arial black,sans-serif',
+                                                fontSize: '1.1vw', // Slightly smaller
+                                                width: 'fit-content',
+                                                height: 'fit-content',
+                                                margin: 'auto',
+                                                color: '#FFA500' // Orange color
+                                            }
+                                        }),
+                                    ]
+                                }),
+                                
+                                // Delete Button
                                 $({
                                     tag: 'div',
                                     style: {
-                                        width: '40%',
+                                        width: '33.33%', // Equal width for 3 buttons
                                         height: '90%',
                                         margin: 'auto',
                                         paddingRight: '1vw',
@@ -2589,7 +2631,7 @@ const Submitted = () => {
                                             text: 'Delete',
                                             style: {
                                                 fontFamily: 'arial black,sans-serif',
-                                                fontSize: '1.3vw',
+                                                fontSize: '1.1vw', // Slightly smaller
                                                 width: 'fit-content',
                                                 height: 'fit-content',
                                                 margin: 'auto'
@@ -2880,7 +2922,7 @@ const Submitted = () => {
                 return popup;
             }
 
-            const ViewEndorsement=$({
+            const ViewEndorsement = $({
                 tag:'div',
                 att:{
                     className:'fa-solid fa-eye viewerBotEndorseMain'
@@ -2892,7 +2934,7 @@ const Submitted = () => {
                 },
                 event:{
                     type:'click',
-                    method:()=>{
+                    method:() => {
                         mainPanel.appendChild(ViewEn())
                     }
                 },
@@ -2914,12 +2956,12 @@ const Submitted = () => {
                                     el.style.animation = '';
                                 }, 500);
                             } else if (status === null || status === '') {
-                                el.style.color = '#FF9800'; // Orange color for waiting
+                                el.style.color = '#FF9800';
                                 el.style.fontWeight = 'bold';
                                 el.style.textShadow = '0 0 0.5vw rgba(255, 152, 0, 0.5)';
                                 el.style.fontStyle = 'italic';
                             } else {
-                                el.style.color = '#4CAF50'; // Green color for accepted
+                                el.style.color = '#4CAF50';
                                 el.style.fontWeight = 'bold';
                                 el.style.textShadow = '0 0 0.5vw rgba(76, 175, 80, 0.5)';
                             }

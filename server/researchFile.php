@@ -64,7 +64,7 @@ function getCenterCode($centerName) {
         'Machinery and Agricultural Technology Engineering Center' => 'MATEC',
         'Coconut Research and Development Center' => 'CocoRDC',
         'Coconut Research and Development Center (Coco RDC)' => 'CocoRDC',
-        'Extension' => 'EXT'
+        'Extension' => 'Extension'
     ];
     
     // Try exact match first
@@ -2647,24 +2647,12 @@ if (isset($_POST['rejectIndorse'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         error_log("Database connected successfully");
         
-        // Test Logging: Check if columns exist
-        $testQuery = "SHOW COLUMNS FROM researchfile LIKE 'rejected_by'";
-        $testResult = $con->query($testQuery);
-        if ($testResult->num_rows > 0) {
-            error_log("Column 'rejected_by' EXISTS in researchfile table");
-        } else {
-            error_log("ERROR: Column 'rejected_by' does NOT exist in researchfile table");
-            $response->message = "Database column 'rejected_by' not found";
-            echo json_encode($response);
-            exit();
-        }
-        
         // Get current RDE staff user info
         $staffId = $_SESSION['userId'];
-        $staffEmail = '';
-        $staffName = '';
+        $staffEmail = ''; // This will actually store the staff's NAME (from email column)
+        $staffName = '';  // This will store the username
         
-        // Get RDE staff email from rdestaff table
+        // Get RDE staff info from rdestaff table
         $staffQuery = "SELECT email, username FROM rdestaff WHERE id=?";
         $staffStmt = $con->prepare($staffQuery);
         $staffStmt->bind_param("i", $staffId);
@@ -2672,8 +2660,10 @@ if (isset($_POST['rejectIndorse'])) {
         $staffRes = $staffStmt->get_result();
         
         if ($staffRow = $staffRes->fetch_assoc()) {
-            $staffEmail = $staffRow['email'];
-            $staffName = $staffRow['username'];
+            // In rdestaff table, 'email' column actually stores the full name
+            $staffEmail = $staffRow['email']; // This is the staff's FULL NAME
+            $staffName = $staffRow['username']; // This is the login username
+            error_log("RDE Staff Name: " . $staffEmail . " (Username: " . $staffName . ")");
         } else {
             // Fallback to account_detail if not found in rdestaff
             $staffQuery2 = "SELECT email, fullName FROM account_detail WHERE id=?";
@@ -2685,6 +2675,9 @@ if (isset($_POST['rejectIndorse'])) {
             if ($staffRow2 = $staffRes2->fetch_assoc()) {
                 $staffEmail = $staffRow2['email'];
                 $staffName = $staffRow2['fullName'];
+                error_log("Using account_detail fallback: " . $staffName);
+            } else {
+                error_log("Could not find staff info for ID: " . $staffId);
             }
         }
 
@@ -2706,7 +2699,7 @@ if (isset($_POST['rejectIndorse'])) {
             $researchStmt->bind_param("ss", $staffId, $docId);
             $researchStmt->execute();
 
-            // 3. Insert into rejecteddocs table
+            // 3. Insert into rejecteddocs table (this is where rejection records should go)
             $query = "INSERT INTO `rejecteddocs`(`id`, `docid`, `url`, `type`, `reason`, `rejectedby`, `date`) VALUES (?, ?, ?, ?, ?, ?, NOW())";
             $docId = $_POST['docId'];
             $fileUrl = $_POST['fileUrl'];
@@ -2718,19 +2711,15 @@ if (isset($_POST['rejectIndorse'])) {
             $statement2->bind_param("ssssss", $idEn, $docId, $fileUrl, $type, $reason, $staffId);
             $statement2->execute();
 
-            // 4. Save to abstain table
-            $evalId = $_SESSION['userId'];
-            $abstainQuery = "INSERT INTO abstain (eval_id, doc_id, reason, date) VALUES (?, ?, ?, NOW())";
-            $abstainStmt = $con->prepare($abstainQuery);
-            $abstainStmt->bind_param("iss", $evalId, $docId, $reason);
-            $abstainStmt->execute();
-
             // Commit transaction
             $con->commit();
             
             $response->status = true;
             
-            // Send email notification
+            // Define email credentials (you should get these from a config file)
+            $rdeEmail = "rde@example.com"; // Replace with actual RDE email address
+            $emailPassword = "password"; // Replace with actual email password
+            
             $from = new stdClass();
             $from->email = $rdeEmail;
             $from->password = $emailPassword;
@@ -2780,17 +2769,22 @@ if (isset($_POST['rejectIndorse'])) {
                     $formattedTitles = "Research Document(s)";
                 }
                 
-                $detailedReason .= $reason;
+                $detailedReason = $reason;
                 
-                // Send email
-                $emailResult = SendEmail($from, $to, RejectedEntry($detailedReason, $eventName, $formattedTitles));
-                
-                if ($emailResult->status) {
-                    $response->emailStat = 'Email sent successfully to ' . $to->email;
-                    error_log("Email sent successfully to " . $to->email);
+                // Send email - make sure SendEmail function exists
+                if (function_exists('SendEmail')) {
+                    $emailResult = SendEmail($from, $to, RejectedEntry($detailedReason, $eventName, $formattedTitles));
+                    
+                    if ($emailResult->status) {
+                        $response->emailStat = 'Email sent successfully to ' . $to->email;
+                        error_log("Email sent successfully to " . $to->email);
+                    } else {
+                        $response->emailStat = 'Failed to send email to ' . $to->email . ': ' . $emailResult->message;
+                        error_log("Email failed: " . $emailResult->message);
+                    }
                 } else {
-                    $response->emailStat = 'Failed to send email to ' . $to->email . ': ' . $emailResult->message;
-                    error_log("Email failed: " . $emailResult->message);
+                    $response->emailStat = 'Email function not available';
+                    error_log("SendEmail function not found");
                 }
             } else {
                 $response->emailStat = 'Could not find sender information for email';
@@ -2809,6 +2803,514 @@ if (isset($_POST['rejectIndorse'])) {
         $response->message = "Database connection error";
     }
     echo json_encode($response);
+}
+if (isset($_POST['getRejectedForResubmit'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->data = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $userId = $_SESSION['userId']; // This is the senderid from account_detail
+        
+        // Simple query - just get all rejected documents for this senderid
+        $query = "SELECT 
+            rf.id,
+            rf.title,
+            rf.author,
+            rf.coauthor,
+            rf.presenter,
+            rf.category,
+            rf.center,
+            rf.event,
+            rf.drive_view_url,
+            rf.drive_file_id,
+            rf.program_drive_view_url,
+            rf.program_drive_file_id,
+            rf.resubmit_count,
+            rf.resubmitted,
+            e.id as endorsement_id,
+            e.drive_view_url as endorsement_url,
+            e.drive_file_id as endorsement_file_id,
+            rd.reason,
+            rd.date as rejection_date
+        FROM researchfile rf
+        LEFT JOIN endorsement e ON rf.endorsementid = e.id
+        LEFT JOIN rejecteddocs rd ON e.id = rd.docid
+        WHERE rf.senderid = ? AND rf.status = 'rejected'
+        ORDER BY rd.date DESC";
+        
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("s", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $data = new stdClass();
+            $data->id = $row['id'];
+            $data->title = $row['title'];
+            $data->author = $row['author'];
+            
+            // Parse coauthor
+            if (!empty($row['coauthor'])) {
+                $coauthorData = json_decode($row['coauthor'], true);
+                $data->coauthor = is_array($coauthorData) ? $coauthorData : [];
+            } else {
+                $data->coauthor = [];
+            }
+            
+            $data->presenter = $row['presenter'] ?? '';
+            $data->category = $row['category'];
+            $data->center = $row['center'];
+            $data->event = $row['event'];
+            
+            // Research file
+            $data->research_file = [
+                'url' => $row['drive_view_url'],
+                'file_id' => $row['drive_file_id']
+            ];
+            
+            // PROGRAM FILE - Add this
+            $data->program_file = [
+                'url' => $row['program_drive_view_url'],
+                'file_id' => $row['program_drive_file_id']
+            ];
+            
+            // Endorsement file
+            $data->endorsement_file = [
+                'url' => $row['endorsement_url'],
+                'file_id' => $row['endorsement_file_id']
+            ];
+            
+            $data->rejection_reason = $row['reason'];
+            $data->rejection_date = $row['rejection_date'];
+            $data->resubmit_count = $row['resubmit_count'] ?? 0;
+            $data->resubmitted = $row['resubmitted'] ?? 0;
+            $data->endorsement_id = $row['endorsement_id'];
+            
+            $response->data[] = $data;
+        }
+        
+        $response->status = true;
+        $response->message = count($response->data) . ' document(s) found';
+        
+    } else {
+        $response->message = "Database connection error";
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+if (isset($_POST['resubmitDocument'])) {
+    error_log("=== START resubmitDocument ===");
+    error_log("POST data: " . print_r($_POST, true));
+    
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $endorsementId = $_POST['docId']; // This is the endorsement ID (513 or 514)
+        $userId = $_SESSION['userId'];
+        
+        // Find the researchfile using endorsementid column - include folder information
+        $checkQuery = "SELECT 
+            rf.id,
+            rf.title,
+            rf.author,
+            rf.coauthor,
+            rf.presenter,
+            rf.category,
+            rf.center,
+            rf.event,
+            rf.drive_file_id,
+            rf.drive_view_url,
+            rf.program_drive_file_id,
+            rf.program_drive_view_url,
+            rf.endorsementid,
+            rf.resubmit_count,
+            rf.status,
+            rf.drive_event_folder_id,
+            rf.drive_center_folder_id,
+            rf.drive_category_folder_id,
+            rf.drive_entry_folder_id
+        FROM researchfile rf
+        WHERE rf.endorsementid = ?";
+        
+        $checkStmt = $con->prepare($checkQuery);
+        $checkStmt->bind_param("s", $endorsementId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        
+        if ($checkResult->num_rows === 0) {
+            error_log("No researchfile found with endorsementid = $endorsementId");
+            $response->message = "Document not found";
+            echo json_encode($response);
+            exit();
+        }
+        
+        $docInfo = $checkResult->fetch_assoc();
+        $researchfileId = $docInfo['id'];
+        $resubmitCount = ($docInfo['resubmit_count'] ?? 0) + 1;
+        
+        error_log("Found researchfile ID: $researchfileId for endorsement ID: $endorsementId");
+        
+        // Capture folder information from the old files
+        $entryFolderId = $docInfo['drive_entry_folder_id'];
+        
+        error_log("Entry folder ID: " . ($entryFolderId ?: 'none - will create new'));
+        
+        // STEP 1: Capture all old file IDs for THIS SPECIFIC DOCUMENT
+        $oldDriveFileId = $docInfo['drive_file_id'];
+        $oldProgramDriveFileId = $docInfo['program_drive_file_id'];
+        
+        // Get old endorsement file ID from endorsement table
+        $oldEndorseQuery = "SELECT drive_file_id FROM endorsement WHERE id = ?";
+        $oldEndorseStmt = $con->prepare($oldEndorseQuery);
+        $oldEndorseStmt->bind_param("s", $endorsementId);
+        $oldEndorseStmt->execute();
+        $oldEndorseResult = $oldEndorseStmt->get_result();
+        $oldEndorseData = $oldEndorseResult->fetch_assoc();
+        $oldEndorsementFileId = $oldEndorseData['drive_file_id'] ?? null;
+        
+        error_log("For endorsement ID $endorsementId:");
+        error_log("  - Research file ID: " . ($oldDriveFileId ?: 'none'));
+        error_log("  - Program file ID: " . ($oldProgramDriveFileId ?: 'none'));
+        error_log("  - Endorsement file ID: " . ($oldEndorsementFileId ?: 'none'));
+        
+        // STEP 2: Initialize Drive service
+        require_once __DIR__ . '/../config/driver_config.php';
+        $driveService = new GoogleDriveService();
+        
+        // STEP 3: DELETE OLD FILES FIRST - ONLY for files being replaced
+        if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK && !empty($oldDriveFileId)) {
+            try {
+                error_log("Deleting old research file for endorsement $endorsementId: $oldDriveFileId");
+                $driveService->trashFile($oldDriveFileId);
+                error_log("Successfully deleted old research file: $oldDriveFileId");
+            } catch (Exception $e) {
+                error_log("Failed to delete old research file: " . $e->getMessage());
+                // Continue with upload even if delete fails
+            }
+        }
+        
+        if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK && !empty($oldProgramDriveFileId)) {
+            try {
+                error_log("Deleting old program file for endorsement $endorsementId: $oldProgramDriveFileId");
+                $driveService->trashFile($oldProgramDriveFileId);
+                error_log("Successfully deleted old program file: $oldProgramDriveFileId");
+            } catch (Exception $e) {
+                error_log("Failed to delete old program file: " . $e->getMessage());
+                // Continue with upload even if delete fails
+            }
+        }
+        
+        if (isset($_FILES['endorsementFile']) && $_FILES['endorsementFile']['error'] === UPLOAD_ERR_OK && !empty($oldEndorsementFileId)) {
+            try {
+                error_log("Deleting old endorsement file for endorsement $endorsementId: $oldEndorsementFileId");
+                $driveService->trashFile($oldEndorsementFileId);
+                error_log("Successfully deleted old endorsement file: $oldEndorsementFileId");
+            } catch (Exception $e) {
+                error_log("Failed to delete old endorsement file: " . $e->getMessage());
+                // Continue with upload even if delete fails
+            }
+        }
+        
+        // Track what needs to be updated
+        $updates = [];
+        $params = [];
+        $types = "";
+        
+        // Check each field for changes
+        if (isset($_POST['title']) && trim($_POST['title']) !== $docInfo['title']) {
+            $updates[] = "title = ?";
+            $params[] = trim($_POST['title']);
+            $types .= "s";
+            error_log("Title changed");
+        }
+        
+        if (isset($_POST['author']) && trim($_POST['author']) !== $docInfo['author']) {
+            $updates[] = "author = ?";
+            $params[] = trim($_POST['author']);
+            $types .= "s";
+            error_log("Author changed");
+        }
+        
+        if (isset($_POST['presenter']) && trim($_POST['presenter']) !== $docInfo['presenter']) {
+            $updates[] = "presenter = ?";
+            $params[] = trim($_POST['presenter']);
+            $types .= "s";
+            error_log("Presenter changed");
+        }
+        
+        if (isset($_POST['category']) && trim($_POST['category']) !== $docInfo['category']) {
+            $updates[] = "category = ?";
+            $params[] = trim($_POST['category']);
+            $types .= "s";
+            error_log("Category changed");
+        }
+        
+        if (isset($_POST['center']) && trim($_POST['center']) !== $docInfo['center']) {
+            $updates[] = "center = ?";
+            $params[] = trim($_POST['center']);
+            $types .= "s";
+            error_log("Center changed");
+        }
+        
+        // Handle coauthor changes
+        if (isset($_POST['coauthor'])) {
+            $newCoauthor = $_POST['coauthor'];
+            $oldCoauthor = $docInfo['coauthor'];
+            
+            $coauthorData = json_decode($newCoauthor, true);
+            $coauthorChanged = false;
+            
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $coauthorChanged = json_encode($coauthorData) !== $oldCoauthor;
+            } else {
+                $coauthorChanged = $newCoauthor !== $oldCoauthor;
+            }
+            
+            if ($coauthorChanged) {
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $updates[] = "coauthor = ?";
+                    $params[] = json_encode($coauthorData);
+                } else {
+                    $updates[] = "coauthor = ?";
+                    $params[] = $newCoauthor;
+                }
+                $types .= "s";
+                error_log("Coauthor changed");
+            }
+        }
+        
+        // STEP 4: Upload new files to the SAME entry folder
+        // Create entry folder if it doesn't exist
+        if (empty($entryFolderId)) {
+            error_log("No entry folder found, creating new folder structure");
+            
+            // Generate entry folder name from author and title
+            $authorParts = explode(' ', trim($docInfo['author']));
+            $authorLastName = end($authorParts);
+            $titleWords = explode(' ', trim($docInfo['title']));
+            $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
+            $entryFolderName = $authorLastName . '_' . $titleKeywords;
+            
+            $newFolders = $driveService->createCompleteFolderStructure(
+                $docInfo['event'],
+                $docInfo['center'],
+                $docInfo['category'],
+                $entryFolderName
+            );
+            
+            $entryFolderId = $newFolders['entry_folder_id'];
+            
+            // Update folder IDs in database
+            $updates[] = "drive_event_folder_id = ?";
+            $params[] = $newFolders['event_folder_id'];
+            $types .= "s";
+            
+            $updates[] = "drive_center_folder_id = ?";
+            $params[] = $newFolders['center_folder_id'];
+            $types .= "s";
+            
+            $updates[] = "drive_category_folder_id = ?";
+            $params[] = $newFolders['category_folder_id'];
+            $types .= "s";
+            
+            $updates[] = "drive_entry_folder_id = ?";
+            $params[] = $newFolders['entry_folder_id'];
+            $types .= "s";
+            
+            error_log("Created new entry folder: $entryFolderId");
+        }
+        
+        // Upload research file
+        if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
+            $tempPath = $_FILES['researchDoc']['tmp_name'];
+            $fileName = $_FILES['researchDoc']['name'];
+            
+            error_log("Uploading new research file to folder $entryFolderId: $fileName");
+            
+            $driveResult = $driveService->uploadFile($tempPath, $fileName, $entryFolderId);
+            
+            if (!$driveResult['success']) {
+                throw new Exception("Failed to upload new research file: " . ($driveResult['error'] ?? 'Unknown error'));
+            }
+            
+            // Make file public
+            $driveService->makeFilePublic($driveResult['id']);
+            
+            $updates[] = "drive_file_id = ?";
+            $params[] = $driveResult['id'];
+            $types .= "s";
+            
+            $updates[] = "drive_view_url = ?";
+            $params[] = "https://drive.google.com/file/d/{$driveResult['id']}/preview";
+            $types .= "s";
+            
+            error_log("Research file uploaded to new ID: " . $driveResult['id']);
+        }
+        
+        // Upload program file
+        if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+            $tempPath = $_FILES['programFile']['tmp_name'];
+            $fileName = $_FILES['programFile']['name'];
+            
+            error_log("Uploading new program file to folder $entryFolderId: $fileName");
+            
+            $driveResult = $driveService->uploadFile($tempPath, $fileName, $entryFolderId);
+            
+            if (!$driveResult['success']) {
+                throw new Exception("Failed to upload new program file: " . ($driveResult['error'] ?? 'Unknown error'));
+            }
+            
+            // Make file public
+            $driveService->makeFilePublic($driveResult['id']);
+            
+            $updates[] = "program_drive_file_id = ?";
+            $params[] = $driveResult['id'];
+            $types .= "s";
+            
+            $updates[] = "program_drive_view_url = ?";
+            $params[] = "https://drive.google.com/file/d/{$driveResult['id']}/preview";
+            $types .= "s";
+            
+            error_log("Program file uploaded to new ID: " . $driveResult['id']);
+        }
+        
+        // Upload endorsement file (goes to center folder, not entry folder)
+        if (isset($_FILES['endorsementFile']) && $_FILES['endorsementFile']['error'] === UPLOAD_ERR_OK) {
+            $tempPath = $_FILES['endorsementFile']['tmp_name'];
+            $fileName = $_FILES['endorsementFile']['name'];
+            
+            // Get or create center folder for endorsement
+            $centerFolderId = $docInfo['drive_center_folder_id'];
+            
+            if (empty($centerFolderId)) {
+                // Create center folder structure
+                $folders = $driveService->createResearchFolderStructure(
+                    $docInfo['event'],
+                    $docInfo['center']
+                );
+                $centerFolderId = $folders['center_folder_id'];
+            }
+            
+            error_log("Uploading new endorsement file to center folder $centerFolderId: $fileName");
+            
+            $driveResult = $driveService->uploadFile($tempPath, $fileName, $centerFolderId);
+            
+            if (!$driveResult['success']) {
+                throw new Exception("Failed to upload new endorsement file: " . ($driveResult['error'] ?? 'Unknown error'));
+            }
+            
+            // Make file public
+            $driveService->makeFilePublic($driveResult['id']);
+            
+            // Update endorsement table
+            $updateEndorseQuery = "UPDATE endorsement SET 
+                drive_file_id = ?,
+                drive_view_url = ?,
+                drive_download_url = ?,
+                status = NULL
+                WHERE id = ?";
+            $updateEndorseStmt = $con->prepare($updateEndorseQuery);
+            $downloadUrl = "https://drive.google.com/uc?id={$driveResult['id']}&export=download";
+            $viewUrl = "https://drive.google.com/file/d/{$driveResult['id']}/preview";
+            
+            $updateEndorseStmt->bind_param(
+                "ssss",
+                $driveResult['id'],
+                $viewUrl,
+                $downloadUrl,
+                $endorsementId
+            );
+            
+            if (!$updateEndorseStmt->execute()) {
+                throw new Exception("Failed to update endorsement table: " . $updateEndorseStmt->error);
+            }
+            
+            error_log("Endorsement file uploaded to new ID: " . $driveResult['id']);
+        }
+        
+        // Set status to NULL (waiting for acceptance)
+        $updates[] = "status = NULL";
+        $updates[] = "rejected_by = NULL";
+        $updates[] = "rejected_date = NULL";
+        $updates[] = "resubmitted = 1";
+        $updates[] = "resubmit_count = ?";
+        $params[] = $resubmitCount;
+        $types .= "i";
+
+        // If nothing changed, return error
+        if (empty($updates)) {
+            $response->message = "No changes detected";
+            echo json_encode($response);
+            exit();
+        }
+
+        // Build the final UPDATE query for researchfile
+        $updateQuery = "UPDATE researchfile SET " . implode(", ", $updates) . " WHERE endorsementid = ?";
+        $params[] = $endorsementId;
+        $types .= "s";
+
+        error_log("Update query: $updateQuery");
+        error_log("Parameters count: " . count($params) . ", Types: $types");
+
+        // Start transaction
+        $con->begin_transaction();
+
+        try {
+            $updateStmt = $con->prepare($updateQuery);
+            
+            if (!$updateStmt) {
+                throw new Exception("Failed to prepare update: " . $con->error);
+            }
+            
+            // Bind parameters dynamically
+            $bindParams = array_merge([$types], $params);
+            $bindParamsRef = [];
+            foreach ($bindParams as $key => $value) {
+                $bindParamsRef[$key] = &$bindParams[$key];
+            }
+            
+            call_user_func_array([$updateStmt, 'bind_param'], $bindParamsRef);
+            
+            if (!$updateStmt->execute()) {
+                throw new Exception("Failed to execute update: " . $updateStmt->error);
+            }
+            
+            if ($updateStmt->affected_rows === 0) {
+                throw new Exception("Failed to update document - no rows affected");
+            }
+            
+            // ALWAYS update endorsement status to NULL regardless of which files changed
+            $updateEndorseStatusQuery = "UPDATE endorsement SET status = NULL WHERE id = ?";
+            $updateEndorseStatusStmt = $con->prepare($updateEndorseStatusQuery);
+            $updateEndorseStatusStmt->bind_param("s", $endorsementId);
+            
+            if (!$updateEndorseStatusStmt->execute()) {
+                throw new Exception("Failed to update endorsement status: " . $updateEndorseStatusStmt->error);
+            }
+            
+            error_log("Endorsement status set to NULL for ID: $endorsementId");
+            
+            $con->commit();
+            
+            $response->status = true;
+            $response->message = "Document resubmitted successfully. Status changed to waiting for acceptance.";
+            
+        } catch (Exception $e) {
+            $con->rollback();
+            $response->message = "Error: " . $e->getMessage();
+            error_log("Resubmit failed: " . $e->getMessage());
+        }
+    } else {
+        $response->message = "Database connection error";
+    }
+    
+    echo json_encode($response);
+    exit();
 }
 
 if (isset($_POST['deleteEndorsement'])) {

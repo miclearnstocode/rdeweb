@@ -487,3 +487,643 @@ Stack trace:
 #4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
 #5 {main}
   thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1440
+[16-Feb-2026 11:06:48 Asia/Manila] === START rejectIndorse ===
+[16-Feb-2026 11:06:48 Asia/Manila] POST data: Array
+(
+    [docId] => 513
+    [fileUrl] => https://drive.google.com/file/d/1f78mCogNWbocXY8BkBsB2NhIx7AUYAST/preview
+    [reasonEnd] => This is trial rejection
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[16-Feb-2026 11:06:48 Asia/Manila] Session ID: 1657588904430
+[16-Feb-2026 11:06:48 Asia/Manila] Database connected successfully
+[16-Feb-2026 11:06:48 Asia/Manila] Column 'rejected_by' EXISTS in researchfile table
+[16-Feb-2026 11:06:48 Asia/Manila] PHP Warning:  Undefined variable $detailedReason in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2783
+[16-Feb-2026 11:06:53 Asia/Manila] Email sent successfully to estorque.michael@student.capsu.edu.ph
+[16-Feb-2026 11:23:52 Asia/Manila] === START rejectIndorse ===
+[16-Feb-2026 11:23:52 Asia/Manila] POST data: Array
+(
+    [docId] => 514
+    [fileUrl] => https://drive.google.com/file/d/1uU108AsuI3ZRO4q1fLIG-XcUS9EpAoIO/preview
+    [reasonEnd] => This is trial rejection
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[16-Feb-2026 11:23:52 Asia/Manila] Session ID: 1657588904430
+[16-Feb-2026 11:23:52 Asia/Manila] Database connected successfully
+[16-Feb-2026 11:23:52 Asia/Manila] Column 'rejected_by' EXISTS in researchfile table
+[16-Feb-2026 11:23:52 Asia/Manila] RDE Staff Name: Nina Linan (Username: Nina)
+[16-Feb-2026 11:23:55 Asia/Manila] Email failed: Message could not be sent. Mailer Error: SMTP Error: Could not authenticate.
+[16-Feb-2026 13:46:36 Asia/Manila] === START resubmitDocument ===
+[16-Feb-2026 13:46:36 Asia/Manila] Resubmit failed: Document not found or you don't have permission to resubmit
+[16-Feb-2026 15:03:55 Asia/Manila] getRejectedForResubmit all query executed for userId: 40
+[16-Feb-2026 15:03:55 Asia/Manila] Number of rows found: 2
+[16-Feb-2026 15:03:55 Asia/Manila] Response data count: 2
+[16-Feb-2026 15:16:35 Asia/Manila] getRejectedForResubmit all query executed for userId: 40
+[16-Feb-2026 15:16:35 Asia/Manila] Number of rows found: 2
+[16-Feb-2026 15:16:35 Asia/Manila] Response data count: 2
+[16-Feb-2026 15:23:56 Asia/Manila] getRejectedForResubmit by ID query executed for docId: 513, userId: 40
+[16-Feb-2026 15:23:56 Asia/Manila] Number of rows found: 0
+[16-Feb-2026 15:23:56 Asia/Manila] Response data count: 0
+[16-Feb-2026 16:58:13 Asia/Manila] PHP Warning:  Undefined variable $stmt in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2849
+[16-Feb-2026 16:58:13 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to a member function execute() on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2849
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2849
+[16-Feb-2026 17:00:06 Asia/Manila] PHP Warning:  Undefined variable $stmt in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2849
+[16-Feb-2026 17:00:06 Asia/Manila] PHP Fatal error:  Uncaught Error: Call to a member function execute() on null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2849
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/getresearch', 'server/research...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\routes.php(18): post('/getresearch', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#4 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2849
+[16-Feb-2026 22:21:09 Asia/Manila] Session data: Array
+(
+    [isLog] => O:4:"Auth":9:{s:12:"
+[16-Feb-2026 22:21:09 Asia/Manila] User ID from session: 40
+[16-Feb-2026 22:21:09 Asia/Manila] Document 513 belongs to senderid: not found
+[16-Feb-2026 22:21:09 Asia/Manila] Current user ID: 40
+[16-Feb-2026 22:21:09 Asia/Manila] Query executed for docId: 513, userId: 40
+[16-Feb-2026 22:21:09 Asia/Manila] Number of rows found: 0
+[16-Feb-2026 22:21:09 Asia/Manila] Response data count: 0
+[17-Feb-2026 08:42:19 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 08:42:19 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 08:42:19 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2942
+[17-Feb-2026 08:42:19 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2943
+[17-Feb-2026 08:42:19 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2944
+[17-Feb-2026 08:42:19 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2945
+[17-Feb-2026 08:42:19 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2956
+[17-Feb-2026 08:42:19 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2984
+[17-Feb-2026 08:42:20 Asia/Manila] Creating folder structure for:  -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[17-Feb-2026 08:42:20 Asia/Manila] Starting folder structure creation: Untitled_1771288940 -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Trial2
+[17-Feb-2026 08:42:25 Asia/Manila] Event folder created/retrieved: 1PQMrR5tFAjHzi-aCzmfE5MwQtdO87YDl for Untitled_1771288940
+[17-Feb-2026 08:42:27 Asia/Manila] Center folder created/retrieved: 1sND3awO-bbQTk2BdkoI9K5aXsMcIhYKk for Crop Science Research & Developement Center (CSRDC)
+[17-Feb-2026 08:42:29 Asia/Manila] Category folder created/retrieved: 1aZjDIhc4o0NojpQpEbi23QPcL7xFpo1U for Natural Biological
+[17-Feb-2026 08:42:31 Asia/Manila] Entry folder created: 1BAHPaxXqFffXi4RKUpd0AUzwLdNbQslj for Estorque_Trial2
+[17-Feb-2026 08:42:31 Asia/Manila] Uploading research file: dtrJanuary2026.pdf to folder: 1BAHPaxXqFffXi4RKUpd0AUzwLdNbQslj
+[17-Feb-2026 08:42:33 Asia/Manila] Making file public: 1JduOf6wLFi6-xqBh-UQDahrCrnG3m0DX
+[17-Feb-2026 08:42:34 Asia/Manila] File 1JduOf6wLFi6-xqBh-UQDahrCrnG3m0DX is already public
+[17-Feb-2026 08:42:34 Asia/Manila] research file upload successful: dtrJanuary2026.pdf
+[17-Feb-2026 08:42:34 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 3033
+[17-Feb-2026 08:42:34 Asia/Manila] Resubmit failed: Failed to update document
+[17-Feb-2026 08:42:35 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 08:42:35 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 08:42:35 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2942
+[17-Feb-2026 08:42:35 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2943
+[17-Feb-2026 08:42:35 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2944
+[17-Feb-2026 08:42:35 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2945
+[17-Feb-2026 08:42:35 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2956
+[17-Feb-2026 08:42:35 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2984
+[17-Feb-2026 08:42:35 Asia/Manila] Creating folder structure for:  -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[17-Feb-2026 08:42:35 Asia/Manila] Starting folder structure creation: Untitled_1771288955 -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Trial2
+[17-Feb-2026 08:42:37 Asia/Manila] Event folder created/retrieved: 12TjY0AUab3VfzwZoWlDUuoVS1dGuW3Vr for Untitled_1771288955
+[17-Feb-2026 08:42:39 Asia/Manila] Center folder created/retrieved: 1w9A-TFQ8VYici8mRvD-X1y-C68b8N4u4 for Crop Science Research & Developement Center (CSRDC)
+[17-Feb-2026 08:42:40 Asia/Manila] Category folder created/retrieved: 1wDFY0f-USHr9I6BpiuGfB1A_m_17SyxS for Natural Biological
+[17-Feb-2026 08:42:42 Asia/Manila] Entry folder created: 1wDSw36bZTuyD-H0ifgbT8NXoqzCgxCY9 for Estorque_Trial2
+[17-Feb-2026 08:42:42 Asia/Manila] Uploading research file: dtrJanuary2026.pdf to folder: 1wDSw36bZTuyD-H0ifgbT8NXoqzCgxCY9
+[17-Feb-2026 08:42:45 Asia/Manila] Making file public: 1I1CbAOniLE59ABG8F-bPLeZQE1l8H2i2
+[17-Feb-2026 08:42:45 Asia/Manila] File 1I1CbAOniLE59ABG8F-bPLeZQE1l8H2i2 is already public
+[17-Feb-2026 08:42:45 Asia/Manila] research file upload successful: dtrJanuary2026.pdf
+[17-Feb-2026 08:42:45 Asia/Manila] PHP Warning:  Trying to access array offset on value of type null in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 3033
+[17-Feb-2026 08:42:45 Asia/Manila] Resubmit failed: Failed to update document
+[17-Feb-2026 08:56:34 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 08:56:34 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 09:03:31 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 09:03:31 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 09:07:43 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 09:07:43 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 09:07:43 Asia/Manila] DEBUG - Document 513 belongs to senderid: not found
+[17-Feb-2026 09:07:43 Asia/Manila] DEBUG - Current user ID from session: 40
+[17-Feb-2026 09:11:49 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 09:11:49 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 514
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 09:11:49 Asia/Manila] User 40 has documents: 511, 512
+[17-Feb-2026 09:11:49 Asia/Manila] Attempting to update document: 514
+[17-Feb-2026 09:25:05 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 09:25:05 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 09:30:22 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 09:30:22 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 10:10:36 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 10:10:36 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 10:10:36 Asia/Manila] Research document ID 513 not found
+[17-Feb-2026 10:31:50 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 10:31:50 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 10:31:50 Asia/Manila] Found researchfile ID: 511 for endorsement ID: 513
+[17-Feb-2026 10:31:50 Asia/Manila] Title changed
+[17-Feb-2026 10:31:50 Asia/Manila] Presenter changed
+[17-Feb-2026 10:31:50 Asia/Manila] Coauthor changed
+[17-Feb-2026 10:31:50 Asia/Manila] Uploading new research file: dtrJanuary2026.pdf
+[17-Feb-2026 10:31:50 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Katamaran_Files
+[17-Feb-2026 10:31:50 Asia/Manila] Starting folder structure creation: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural Biological -> Estorque_Katamaran_Files
+[17-Feb-2026 10:31:53 Asia/Manila] Event folder created/retrieved: 1axf4963iWD2uK9NsIwy1McxMg3wiaCvT for 38th University Faculty In-House Review
+[17-Feb-2026 10:31:54 Asia/Manila] Center folder created/retrieved: 1Lg7eiT4-fb5nC6Th5fhO4UHBV0-9OJ4U for Crop Science Research & Developement Center (CSRDC)
+[17-Feb-2026 10:31:54 Asia/Manila] Category folder created/retrieved: 1ESeFmigMuCUvUwyNVC0f4sK5Ga5OcJJg for Natural Biological
+[17-Feb-2026 10:31:55 Asia/Manila] Entry folder created: 1Lmod8hyYNHF3VS13vCjBXuH3A0CuNpEx for Estorque_Katamaran_Files
+[17-Feb-2026 10:31:55 Asia/Manila] Uploading research file: dtrJanuary2026.pdf to folder: 1Lmod8hyYNHF3VS13vCjBXuH3A0CuNpEx
+[17-Feb-2026 10:31:57 Asia/Manila] Making file public: 15xxdI3nUFtpJXAlk31xDCSuUhvZ7Nqzl
+[17-Feb-2026 10:31:58 Asia/Manila] File 15xxdI3nUFtpJXAlk31xDCSuUhvZ7Nqzl is already public
+[17-Feb-2026 10:31:58 Asia/Manila] research file upload successful: dtrJanuary2026.pdf
+[17-Feb-2026 10:31:58 Asia/Manila] Research file updated
+[17-Feb-2026 10:31:58 Asia/Manila] Update query: UPDATE researchfile SET title = ?, presenter = ?, coauthor = ?, drive_file_id = ?, drive_view_url = ?, status = 'pending', resubmitted = 1, resubmit_count = ? WHERE id = ?
+[17-Feb-2026 10:31:58 Asia/Manila] Parameters count: 7, Types: sssssis
+[17-Feb-2026 11:22:19 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 11:22:19 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 11:22:19 Asia/Manila] Found researchfile ID: 511 for endorsement ID: 513
+[17-Feb-2026 11:22:19 Asia/Manila] Uploading new research file: Print Comments.pdf
+[17-Feb-2026 11:22:20 Asia/Manila] Google Drive delete error for file 15xxdI3nUFtpJXAlk31xDCSuUhvZ7Nqzl: {
+  "error": {
+    "code": 404,
+    "message": "File not found: 15xxdI3nUFtpJXAlk31xDCSuUhvZ7Nqzl.",
+    "errors": [
+      {
+        "message": "File not found: 15xxdI3nUFtpJXAlk31xDCSuUhvZ7Nqzl.",
+        "domain": "global",
+        "reason": "notFound",
+        "location": "fileId",
+        "locationType": "parameter"
+      }
+    ]
+  }
+}
+
+[17-Feb-2026 11:22:20 Asia/Manila] Failed to delete old research file: Failed to delete file from Google Drive: {
+  "error": {
+    "code": 404,
+    "message": "File not found: 15xxdI3nUFtpJXAlk31xDCSuUhvZ7Nqzl.",
+    "errors": [
+      {
+        "message": "File not found: 15xxdI3nUFtpJXAlk31xDCSuUhvZ7Nqzl.",
+        "domain": "global",
+        "reason": "notFound",
+        "location": "fileId",
+        "locationType": "parameter"
+      }
+    ]
+  }
+}
+
+[17-Feb-2026 11:22:20 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[17-Feb-2026 11:22:23 Asia/Manila] Uploading research file: Print Comments.pdf to folder: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0
+[17-Feb-2026 11:22:25 Asia/Manila] Making file public: 1S7eIDiW-549t5keqpj2qe9yTv188pUgs
+[17-Feb-2026 11:22:26 Asia/Manila] File 1S7eIDiW-549t5keqpj2qe9yTv188pUgs is already public
+[17-Feb-2026 11:22:26 Asia/Manila] research file upload successful: Print Comments.pdf
+[17-Feb-2026 11:22:26 Asia/Manila] Research file updated to new ID: 1S7eIDiW-549t5keqpj2qe9yTv188pUgs
+[17-Feb-2026 11:22:26 Asia/Manila] Update query: UPDATE researchfile SET drive_file_id = ?, drive_view_url = ?, status = NULL, rejected_by = NULL, rejected_date = NULL, resubmitted = 1, resubmit_count = ? WHERE id = ?
+[17-Feb-2026 11:22:26 Asia/Manila] Parameters count: 4, Types: ssis
+[17-Feb-2026 12:54:30 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 12:54:30 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 514
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 12:54:30 Asia/Manila] Found researchfile ID: 512 for endorsement ID: 514
+[17-Feb-2026 12:54:30 Asia/Manila] Old research file ID: 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn
+[17-Feb-2026 12:54:30 Asia/Manila] Old program file ID: 1EvXssjHkQZrOky115dnZBzzcA-OYWbLl
+[17-Feb-2026 12:54:30 Asia/Manila] Old endorsement file ID: 1uU108AsuI3ZRO4q1fLIG-XcUS9EpAoIO
+[17-Feb-2026 12:54:30 Asia/Manila] Deleting old research file: 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn
+[17-Feb-2026 12:54:31 Asia/Manila] Google Drive delete error for file 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn: {
+  "error": {
+    "code": 404,
+    "message": "File not found: 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn.",
+    "errors": [
+      {
+        "message": "File not found: 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn.",
+        "domain": "global",
+        "reason": "notFound",
+        "location": "fileId",
+        "locationType": "parameter"
+      }
+    ]
+  }
+}
+
+[17-Feb-2026 12:54:31 Asia/Manila] Failed to delete old research file 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn: Failed to delete file from Google Drive: {
+  "error": {
+    "code": 404,
+    "message": "File not found: 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn.",
+    "errors": [
+      {
+        "message": "File not found: 15uhh7vQdDCsZDECcrZr6QxJsRI7uSSLn.",
+        "domain": "global",
+        "reason": "notFound",
+        "location": "fileId",
+        "locationType": "parameter"
+      }
+    ]
+  }
+}
+
+[17-Feb-2026 12:54:31 Asia/Manila] Uploading new research file: 1-MB.pdf
+[17-Feb-2026 12:54:31 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[17-Feb-2026 12:54:34 Asia/Manila] Uploading research file: 1-MB.pdf to folder: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0
+[17-Feb-2026 12:54:37 Asia/Manila] Making file public: 1aA8tO_tB7lX3hgTJYoNUlfekizwdNaFP
+[17-Feb-2026 12:54:37 Asia/Manila] File 1aA8tO_tB7lX3hgTJYoNUlfekizwdNaFP is already public
+[17-Feb-2026 12:54:37 Asia/Manila] research file upload successful: 1-MB.pdf
+[17-Feb-2026 12:54:37 Asia/Manila] Research file uploaded to new ID: 1aA8tO_tB7lX3hgTJYoNUlfekizwdNaFP
+[17-Feb-2026 12:54:37 Asia/Manila] Update query: UPDATE researchfile SET drive_file_id = ?, drive_view_url = ?, status = NULL, rejected_by = NULL, rejected_date = NULL, resubmitted = 1, resubmit_count = ? WHERE id = ?
+[17-Feb-2026 12:54:37 Asia/Manila] Parameters count: 4, Types: ssis
+[17-Feb-2026 13:06:13 Asia/Manila] === START rejectIndorse ===
+[17-Feb-2026 13:06:13 Asia/Manila] POST data: Array
+(
+    [docId] => 513
+    [fileUrl] => https://drive.google.com/file/d/1f78mCogNWbocXY8BkBsB2NhIx7AUYAST/preview
+    [reasonEnd] => This is trial rejection
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[17-Feb-2026 13:06:13 Asia/Manila] Session ID: 1657588904430
+[17-Feb-2026 13:06:13 Asia/Manila] Database connected successfully
+[17-Feb-2026 13:06:13 Asia/Manila] RDE Staff Name: Nina Linan (Username: Nina)
+[17-Feb-2026 13:06:16 Asia/Manila] Email failed: Message could not be sent. Mailer Error: SMTP Error: Could not authenticate.
+[17-Feb-2026 13:06:35 Asia/Manila] === START rejectIndorse ===
+[17-Feb-2026 13:06:35 Asia/Manila] POST data: Array
+(
+    [docId] => 514
+    [fileUrl] => https://drive.google.com/file/d/1uU108AsuI3ZRO4q1fLIG-XcUS9EpAoIO/preview
+    [reasonEnd] => Another trial rejection
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[17-Feb-2026 13:06:35 Asia/Manila] Session ID: 1657588904430
+[17-Feb-2026 13:06:35 Asia/Manila] Database connected successfully
+[17-Feb-2026 13:06:35 Asia/Manila] RDE Staff Name: Nina Linan (Username: Nina)
+[17-Feb-2026 13:06:37 Asia/Manila] Email failed: Message could not be sent. Mailer Error: SMTP Error: Could not authenticate.
+[17-Feb-2026 13:07:37 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 13:07:37 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 514
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 13:07:37 Asia/Manila] Found researchfile ID: 512 for endorsement ID: 514
+[17-Feb-2026 13:07:37 Asia/Manila] Old research file ID: 1aA8tO_tB7lX3hgTJYoNUlfekizwdNaFP
+[17-Feb-2026 13:07:37 Asia/Manila] Old program file ID: 1EvXssjHkQZrOky115dnZBzzcA-OYWbLl
+[17-Feb-2026 13:07:37 Asia/Manila] Old endorsement file ID: 1uU108AsuI3ZRO4q1fLIG-XcUS9EpAoIO
+[17-Feb-2026 13:07:37 Asia/Manila] Moving old research file to trash: 1aA8tO_tB7lX3hgTJYoNUlfekizwdNaFP
+[17-Feb-2026 13:07:40 Asia/Manila] Successfully moved file to trash: 1aA8tO_tB7lX3hgTJYoNUlfekizwdNaFP
+[17-Feb-2026 13:07:40 Asia/Manila] Successfully moved old research file to trash: 1aA8tO_tB7lX3hgTJYoNUlfekizwdNaFP
+[17-Feb-2026 13:07:40 Asia/Manila] Uploading new research file: research_paper.pdf
+[17-Feb-2026 13:07:40 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[17-Feb-2026 13:07:42 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0
+[17-Feb-2026 13:07:45 Asia/Manila] Making file public: 1Kckpp2wg4vKkINJBqYQxtkEhN1JbgYiW
+[17-Feb-2026 13:07:45 Asia/Manila] File 1Kckpp2wg4vKkINJBqYQxtkEhN1JbgYiW is already public
+[17-Feb-2026 13:07:45 Asia/Manila] research file upload successful: research_paper.pdf
+[17-Feb-2026 13:07:45 Asia/Manila] Research file uploaded to new ID: 1Kckpp2wg4vKkINJBqYQxtkEhN1JbgYiW
+[17-Feb-2026 13:07:45 Asia/Manila] Update query: UPDATE researchfile SET drive_file_id = ?, drive_view_url = ?, status = NULL, rejected_by = NULL, rejected_date = NULL, resubmitted = 1, resubmit_count = ? WHERE id = ?
+[17-Feb-2026 13:07:45 Asia/Manila] Parameters count: 4, Types: ssis
+[17-Feb-2026 13:14:33 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 13:14:33 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 13:14:33 Asia/Manila] Found researchfile ID: 511 for endorsement ID: 513
+[17-Feb-2026 13:14:33 Asia/Manila] Old research file ID: 1S7eIDiW-549t5keqpj2qe9yTv188pUgs
+[17-Feb-2026 13:14:33 Asia/Manila] Old program file ID: 1pl9QWaNpe48ds9_mnteX8v1D9xVglSQH
+[17-Feb-2026 13:14:33 Asia/Manila] Old endorsement file ID: 1f78mCogNWbocXY8BkBsB2NhIx7AUYAST
+[17-Feb-2026 13:14:33 Asia/Manila] Moving old program file to trash: 1pl9QWaNpe48ds9_mnteX8v1D9xVglSQH
+[17-Feb-2026 13:14:35 Asia/Manila] Successfully moved file to trash: 1pl9QWaNpe48ds9_mnteX8v1D9xVglSQH
+[17-Feb-2026 13:14:35 Asia/Manila] Successfully moved old program file to trash: 1pl9QWaNpe48ds9_mnteX8v1D9xVglSQH
+[17-Feb-2026 13:14:35 Asia/Manila] Uploading new program file: 1-MB.pdf
+[17-Feb-2026 13:14:35 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[17-Feb-2026 13:14:38 Asia/Manila] Uploading program file: 1-MB.pdf to folder: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0
+[17-Feb-2026 13:14:40 Asia/Manila] Making file public: 1qzmXEK9iqQ8v0ahOvtg52MViCPtLFjBD
+[17-Feb-2026 13:14:41 Asia/Manila] File 1qzmXEK9iqQ8v0ahOvtg52MViCPtLFjBD is already public
+[17-Feb-2026 13:14:41 Asia/Manila] program file upload successful: 1-MB.pdf
+[17-Feb-2026 13:14:41 Asia/Manila] Program file uploaded to new ID: 1qzmXEK9iqQ8v0ahOvtg52MViCPtLFjBD
+[17-Feb-2026 13:14:41 Asia/Manila] Update query: UPDATE researchfile SET program_drive_file_id = ?, program_drive_view_url = ?, status = NULL, rejected_by = NULL, rejected_date = NULL, resubmitted = 1, resubmit_count = ? WHERE id = ?
+[17-Feb-2026 13:14:41 Asia/Manila] Parameters count: 4, Types: ssis
+[17-Feb-2026 13:31:48 Asia/Manila] === START rejectIndorse ===
+[17-Feb-2026 13:31:48 Asia/Manila] POST data: Array
+(
+    [docId] => 513
+    [fileUrl] => https://drive.google.com/file/d/1f78mCogNWbocXY8BkBsB2NhIx7AUYAST/preview
+    [reasonEnd] => it is not good
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[17-Feb-2026 13:31:48 Asia/Manila] Session ID: 1657588904430
+[17-Feb-2026 13:31:48 Asia/Manila] Database connected successfully
+[17-Feb-2026 13:31:48 Asia/Manila] RDE Staff Name: Nina Linan (Username: Nina)
+[17-Feb-2026 13:31:51 Asia/Manila] Email failed: Message could not be sent. Mailer Error: SMTP Error: Could not authenticate.
+[17-Feb-2026 13:32:07 Asia/Manila] === START rejectIndorse ===
+[17-Feb-2026 13:32:07 Asia/Manila] POST data: Array
+(
+    [docId] => 514
+    [fileUrl] => https://drive.google.com/file/d/1uU108AsuI3ZRO4q1fLIG-XcUS9EpAoIO/preview
+    [reasonEnd] => Also this is wrong
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[17-Feb-2026 13:32:07 Asia/Manila] Session ID: 1657588904430
+[17-Feb-2026 13:32:07 Asia/Manila] Database connected successfully
+[17-Feb-2026 13:32:07 Asia/Manila] RDE Staff Name: Nina Linan (Username: Nina)
+[17-Feb-2026 13:32:08 Asia/Manila] Email failed: Message could not be sent. Mailer Error: SMTP Error: Could not authenticate.
+[17-Feb-2026 13:47:48 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 13:47:48 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 513
+    [title] => Trial2
+    [author] => Michael Estorque
+    [presenter] => Juan Tamad
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Mang Kanor"]
+)
+
+[17-Feb-2026 13:47:48 Asia/Manila] Found researchfile ID: 511 for endorsement ID: 513
+[17-Feb-2026 13:47:48 Asia/Manila] Old research file ID: 1S7eIDiW-549t5keqpj2qe9yTv188pUgs
+[17-Feb-2026 13:47:48 Asia/Manila] Old program file ID: 1qzmXEK9iqQ8v0ahOvtg52MViCPtLFjBD
+[17-Feb-2026 13:47:48 Asia/Manila] Old endorsement file ID: 1f78mCogNWbocXY8BkBsB2NhIx7AUYAST
+[17-Feb-2026 13:47:48 Asia/Manila] Deleting old research file: 1S7eIDiW-549t5keqpj2qe9yTv188pUgs
+[17-Feb-2026 13:47:49 Asia/Manila] File 1S7eIDiW-549t5keqpj2qe9yTv188pUgs is already in trash
+[17-Feb-2026 13:47:49 Asia/Manila] Successfully deleted old research file: 1S7eIDiW-549t5keqpj2qe9yTv188pUgs
+[17-Feb-2026 13:47:49 Asia/Manila] Deleting old endorsement file: 1f78mCogNWbocXY8BkBsB2NhIx7AUYAST
+[17-Feb-2026 13:47:51 Asia/Manila] Successfully moved file to trash: 1f78mCogNWbocXY8BkBsB2NhIx7AUYAST
+[17-Feb-2026 13:47:51 Asia/Manila] Successfully deleted old endorsement file: 1f78mCogNWbocXY8BkBsB2NhIx7AUYAST
+[17-Feb-2026 13:47:51 Asia/Manila] Uploading new research file: 1-MB.pdf
+[17-Feb-2026 13:47:51 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Trial2
+[17-Feb-2026 13:47:53 Asia/Manila] Uploading research file: 1-MB.pdf to folder: 1MByVmuj42Rt-LA0iXhaGcuugE9NT9MU0
+[17-Feb-2026 13:47:56 Asia/Manila] Making file public: 1Lk_P0f3qqI1_gZ1TRKkJMrWhs21kZsQK
+[17-Feb-2026 13:47:57 Asia/Manila] File 1Lk_P0f3qqI1_gZ1TRKkJMrWhs21kZsQK is already public
+[17-Feb-2026 13:47:57 Asia/Manila] research file upload successful: 1-MB.pdf
+[17-Feb-2026 13:47:57 Asia/Manila] Research file uploaded to new ID: 1Lk_P0f3qqI1_gZ1TRKkJMrWhs21kZsQK
+[17-Feb-2026 13:47:57 Asia/Manila] Uploading new endorsement file: research_paper.pdf
+[17-Feb-2026 13:47:57 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Endorsement -> mic_Endorsement_Letter
+[17-Feb-2026 13:48:01 Asia/Manila] Uploading endorsement file: research_paper.pdf to folder: 1C6PW6S57ePhCGxuGVaACaRG7ySAV0cEX
+[17-Feb-2026 13:48:04 Asia/Manila] Making file public: 1gKdKk6WRRupq_FDTFC6k6X5691isohKN
+[17-Feb-2026 13:48:04 Asia/Manila] File 1gKdKk6WRRupq_FDTFC6k6X5691isohKN is already public
+[17-Feb-2026 13:48:04 Asia/Manila] endorsement file upload successful: research_paper.pdf
+[17-Feb-2026 13:48:04 Asia/Manila] Endorsement file uploaded to new ID: 1gKdKk6WRRupq_FDTFC6k6X5691isohKN
+[17-Feb-2026 13:48:04 Asia/Manila] Update query: UPDATE researchfile SET drive_file_id = ?, drive_view_url = ?, status = NULL, rejected_by = NULL, rejected_date = NULL, resubmitted = 1, resubmit_count = ? WHERE id = ?
+[17-Feb-2026 13:48:04 Asia/Manila] Parameters count: 4, Types: ssis
+[17-Feb-2026 14:07:45 Asia/Manila] PHP Warning:  Undefined array key "userOffice" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 272
+[17-Feb-2026 14:07:45 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[17-Feb-2026 14:07:45 Asia/Manila] Title: Ang Probinsyano
+[17-Feb-2026 14:07:45 Asia/Manila] Author: Michael Estorque
+[17-Feb-2026 14:07:45 Asia/Manila] Event: 38th University Faculty In-House Review
+[17-Feb-2026 14:07:45 Asia/Manila] Center: Crop Science Research & Developement Center (CSRDC)
+[17-Feb-2026 14:07:45 Asia/Manila] Category: Natural / Biological
+[17-Feb-2026 14:07:45 Asia/Manila] Uploading endorsement: endorsement.pdf
+[17-Feb-2026 14:07:45 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Ang_Probinsyano
+[17-Feb-2026 14:07:48 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1V12i5E_OnbsjjImX4JfMEv9LTQKUfFlJ
+[17-Feb-2026 14:07:51 Asia/Manila] Making file public: 139NeKClkSQJrmH48A12bVOI0Hr4eQfu5
+[17-Feb-2026 14:07:51 Asia/Manila] File 139NeKClkSQJrmH48A12bVOI0Hr4eQfu5 is already public
+[17-Feb-2026 14:07:51 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[17-Feb-2026 14:07:51 Asia/Manila] Endorsement uploaded successfully: 139NeKClkSQJrmH48A12bVOI0Hr4eQfu5
+[17-Feb-2026 14:07:51 Asia/Manila] Endorsement saved to DB with ID: 515
+[17-Feb-2026 14:07:51 Asia/Manila] Uploading research: research_paper.pdf
+[17-Feb-2026 14:07:51 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Ang_Probinsyano
+[17-Feb-2026 14:07:54 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1V12i5E_OnbsjjImX4JfMEv9LTQKUfFlJ
+[17-Feb-2026 14:07:56 Asia/Manila] Making file public: 1CouTrKzuMDhml2Zfmxzj6PWlx_NwfC-G
+[17-Feb-2026 14:07:57 Asia/Manila] File 1CouTrKzuMDhml2Zfmxzj6PWlx_NwfC-G is already public
+[17-Feb-2026 14:07:57 Asia/Manila] research file upload successful: research_paper.pdf
+[17-Feb-2026 14:07:57 Asia/Manila] Research uploaded successfully: 1CouTrKzuMDhml2Zfmxzj6PWlx_NwfC-G
+[17-Feb-2026 14:07:57 Asia/Manila] Uploading program: program_inHouse.pdf
+[17-Feb-2026 14:07:57 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Crop Science Research & Developement Center (CSRDC) -> Natural / Biological -> Estorque_Ang_Probinsyano
+[17-Feb-2026 14:07:59 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1V12i5E_OnbsjjImX4JfMEv9LTQKUfFlJ
+[17-Feb-2026 14:08:02 Asia/Manila] Making file public: 1y4JoTOud9TckWGi6hQttA4_b2JRvNpOy
+[17-Feb-2026 14:08:02 Asia/Manila] File 1y4JoTOud9TckWGi6hQttA4_b2JRvNpOy is already public
+[17-Feb-2026 14:08:02 Asia/Manila] program file upload successful: program_inHouse.pdf
+[17-Feb-2026 14:08:02 Asia/Manila] Program uploaded successfully: 1y4JoTOud9TckWGi6hQttA4_b2JRvNpOy
+[17-Feb-2026 14:08:02 Asia/Manila] Number of columns in query: 23
+[17-Feb-2026 14:08:02 Asia/Manila] Number of variables to bind: 23
+[17-Feb-2026 14:10:30 Asia/Manila] === START rejectIndorse ===
+[17-Feb-2026 14:10:30 Asia/Manila] POST data: Array
+(
+    [docId] => 515
+    [fileUrl] => https://drive.google.com/file/d/139NeKClkSQJrmH48A12bVOI0Hr4eQfu5/preview
+    [reasonEnd] => Trial rejection
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[17-Feb-2026 14:10:30 Asia/Manila] Session ID: 1657588904430
+[17-Feb-2026 14:10:30 Asia/Manila] Database connected successfully
+[17-Feb-2026 14:10:30 Asia/Manila] RDE Staff Name: Nina Linan (Username: Nina)
+[17-Feb-2026 14:10:33 Asia/Manila] Email failed: Message could not be sent. Mailer Error: SMTP Error: Could not authenticate.
+[17-Feb-2026 14:11:49 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 14:11:49 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 515
+    [title] => Ang Probinsyano
+    [author] => Michael Estorque
+    [presenter] => Cardo Dalisay
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Juan Tamad"]
+)
+
+[17-Feb-2026 14:11:49 Asia/Manila] Found researchfile ID: 513 for endorsement ID: 515
+[17-Feb-2026 14:11:49 Asia/Manila] Entry folder ID: 1V12i5E_OnbsjjImX4JfMEv9LTQKUfFlJ
+[17-Feb-2026 14:11:49 Asia/Manila] For endorsement ID 515:
+[17-Feb-2026 14:11:49 Asia/Manila]   - Research file ID: 1CouTrKzuMDhml2Zfmxzj6PWlx_NwfC-G
+[17-Feb-2026 14:11:49 Asia/Manila]   - Program file ID: 1y4JoTOud9TckWGi6hQttA4_b2JRvNpOy
+[17-Feb-2026 14:11:49 Asia/Manila]   - Endorsement file ID: 139NeKClkSQJrmH48A12bVOI0Hr4eQfu5
+[17-Feb-2026 14:11:49 Asia/Manila] Deleting old research file for endorsement 515: 1CouTrKzuMDhml2Zfmxzj6PWlx_NwfC-G
+[17-Feb-2026 14:11:51 Asia/Manila] Successfully moved file to trash: 1CouTrKzuMDhml2Zfmxzj6PWlx_NwfC-G
+[17-Feb-2026 14:11:51 Asia/Manila] Successfully deleted old research file: 1CouTrKzuMDhml2Zfmxzj6PWlx_NwfC-G
+[17-Feb-2026 14:11:51 Asia/Manila] Uploading new research file to folder 1V12i5E_OnbsjjImX4JfMEv9LTQKUfFlJ: 1-MB.pdf
+[17-Feb-2026 14:11:56 Asia/Manila] File 1tSZ_fl6ItCQnjAREiy8VtFNCAs8Pf33Q is already public
+[17-Feb-2026 14:11:56 Asia/Manila] Research file uploaded to new ID: 1tSZ_fl6ItCQnjAREiy8VtFNCAs8Pf33Q
+[17-Feb-2026 14:11:56 Asia/Manila] Update query: UPDATE researchfile SET drive_file_id = ?, drive_view_url = ?, status = NULL, rejected_by = NULL, rejected_date = NULL, resubmitted = 1, resubmit_count = ? WHERE endorsementid = ?
+[17-Feb-2026 14:11:56 Asia/Manila] Parameters count: 4, Types: ssis
+[17-Feb-2026 14:43:29 Asia/Manila] === START rejectIndorse ===
+[17-Feb-2026 14:43:29 Asia/Manila] POST data: Array
+(
+    [docId] => 515
+    [fileUrl] => https://drive.google.com/file/d/139NeKClkSQJrmH48A12bVOI0Hr4eQfu5/preview
+    [reasonEnd] => Change the program file
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[17-Feb-2026 14:43:29 Asia/Manila] Session ID: 1657588904430
+[17-Feb-2026 14:43:29 Asia/Manila] Database connected successfully
+[17-Feb-2026 14:43:29 Asia/Manila] RDE Staff Name: Nina Linan (Username: Nina)
+[17-Feb-2026 14:43:32 Asia/Manila] Email failed: Message could not be sent. Mailer Error: SMTP Error: Could not authenticate.
+[17-Feb-2026 14:45:42 Asia/Manila] === START resubmitDocument ===
+[17-Feb-2026 14:45:42 Asia/Manila] POST data: Array
+(
+    [resubmitDocument] => true
+    [docId] => 515
+    [title] => Ang Probinsyano
+    [author] => Michael Estorque
+    [presenter] => Cardo Dalisay Jr.
+    [category] => Natural / Biological
+    [center] => Crop Science Research & Developement Center (CSRDC)
+    [coauthor] => ["Juan Tamad","Juan Pusong"]
+)
+
+[17-Feb-2026 14:45:42 Asia/Manila] Found researchfile ID: 513 for endorsement ID: 515
+[17-Feb-2026 14:45:42 Asia/Manila] Entry folder ID: 1V12i5E_OnbsjjImX4JfMEv9LTQKUfFlJ
+[17-Feb-2026 14:45:42 Asia/Manila] For endorsement ID 515:
+[17-Feb-2026 14:45:42 Asia/Manila]   - Research file ID: 1tSZ_fl6ItCQnjAREiy8VtFNCAs8Pf33Q
+[17-Feb-2026 14:45:42 Asia/Manila]   - Program file ID: 1y4JoTOud9TckWGi6hQttA4_b2JRvNpOy
+[17-Feb-2026 14:45:42 Asia/Manila]   - Endorsement file ID: 139NeKClkSQJrmH48A12bVOI0Hr4eQfu5
+[17-Feb-2026 14:45:42 Asia/Manila] Deleting old program file for endorsement 515: 1y4JoTOud9TckWGi6hQttA4_b2JRvNpOy
+[17-Feb-2026 14:45:44 Asia/Manila] Successfully moved file to trash: 1y4JoTOud9TckWGi6hQttA4_b2JRvNpOy
+[17-Feb-2026 14:45:44 Asia/Manila] Successfully deleted old program file: 1y4JoTOud9TckWGi6hQttA4_b2JRvNpOy
+[17-Feb-2026 14:45:44 Asia/Manila] Presenter changed
+[17-Feb-2026 14:45:44 Asia/Manila] Coauthor changed
+[17-Feb-2026 14:45:44 Asia/Manila] Uploading new program file to folder 1V12i5E_OnbsjjImX4JfMEv9LTQKUfFlJ: transactionDetails (2-8-2026).pdf
+[17-Feb-2026 14:45:47 Asia/Manila] File 16dm4pLb6AX3Dn5ez33-Sexek45BRFMWb is already public
+[17-Feb-2026 14:45:47 Asia/Manila] Program file uploaded to new ID: 16dm4pLb6AX3Dn5ez33-Sexek45BRFMWb
+[17-Feb-2026 14:45:47 Asia/Manila] Update query: UPDATE researchfile SET presenter = ?, coauthor = ?, program_drive_file_id = ?, program_drive_view_url = ?, status = NULL, rejected_by = NULL, rejected_date = NULL, resubmitted = 1, resubmit_count = ? WHERE endorsementid = ?
+[17-Feb-2026 14:45:47 Asia/Manila] Parameters count: 6, Types: ssssis
+[17-Feb-2026 14:45:47 Asia/Manila] Endorsement status set to NULL for ID: 515

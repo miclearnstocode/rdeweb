@@ -1004,3 +1004,59 @@
     from { opacity: 0; transform: translate(-50%, -45%); }
     to { opacity: 1; transform: translate(-50%, -50%); }
 }
+
+/* Resubmit button styling */
+.resubmitBtn {
+    background-color: #ff9800 !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 5px 10px !important;
+    font-size: 0.9vw !important;
+    transition: all 0.3s !important;
+}
+
+.resubmitBtn:hover {
+    background-color: #f57c00 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(255, 152, 0, 0.3);
+}
+
+.resubmitBtn i, .resubmitBtn span {
+    color: white !important;
+}
+
+/* Animation for rejected status */
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Resubmit badge on the view button */
+.resubmit-badge {
+    animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(3px);
+    }
+}
+
+/* Make the button container responsive */
+@media (max-width: 768px) {
+    .viewerBotEndorseMain div,
+    .resubmitBtn,
+    .delRes span {
+        font-size: 12px !important;
+    }
+}

@@ -151,11 +151,11 @@ class GoogleDriveService {
         try {
             // 1. Create or get event folder inside root
             $eventFolderId = $this->findOrCreateFolder($eventName, $this->rootFolderId);
-            error_log("Event folder created: $eventFolderId for $eventName");
+           //error_log("Event folder created: $eventFolderId for $eventName");
             
             // 2. Create or get center folder inside event folder
             $centerFolderId = $this->findOrCreateFolder($centerName, $eventFolderId);
-            error_log("Center folder created: $centerFolderId for $centerName");
+            //error_log("Center folder created: $centerFolderId for $centerName");
             
             return [
                 'event_folder_id' => $eventFolderId,
@@ -193,13 +193,11 @@ class GoogleDriveService {
                 $permission = new Google_Service_Drive_Permission([
                     'type' => 'anyone',
                     'role' => 'reader',
-                    'allowFileDiscovery' => false
-                ]);
+                    'allowFileDiscovery' => false]);
                 
                 $result = $service->permissions->create($fileId, $permission, [
                     'supportsAllDrives' => true,
-                    'fields' => 'id'
-                ]);
+                    'fields' => 'id']);
                 
                 error_log("File $fileId made public successfully, permission ID: " . $result->getId());
                 return true;
@@ -210,35 +208,30 @@ class GoogleDriveService {
         } catch (Exception $e) {
             error_log("Error making file public: " . $e->getMessage());
             // Log the full error for debugging
-            error_log("Error details: " . json_encode([
-                'fileId' => $fileId,
-                'error' => $e->getMessage(),
-                'code' => $e->getCode(),
-                'trace' => $e->getTraceAsString()
-            ]));
+            //error_log("Error details: " . json_encode(['fileId' => $fileId,'error' => $e->getMessage(),'code' => $e->getCode(),'trace' => $e->getTraceAsString()]));
             return false;
         }
     }
     // Method to create complete folder structure
     public function createCompleteFolderStructure($eventName, $centerName, $categoryName, $entryFolderName) {
         try {
-            error_log("Starting folder structure creation: $eventName -> $centerName -> $categoryName -> $entryFolderName");
+            //error_log("Starting folder structure creation: $eventName -> $centerName -> $categoryName -> $entryFolderName");
             
             // 1. Create or get event folder inside root
             $eventFolderId = $this->findOrCreateFolder($eventName, $this->rootFolderId);
-            error_log("Event folder created/retrieved: $eventFolderId for $eventName");
+            //error_log("Event folder created/retrieved: $eventFolderId for $eventName");
             
             // 2. Create or get center folder inside event folder
             $centerFolderId = $this->findOrCreateFolder($centerName, $eventFolderId);
-            error_log("Center folder created/retrieved: $centerFolderId for $centerName");
+            //error_log("Center folder created/retrieved: $centerFolderId for $centerName");
             
             // 3. Create or get category folder inside center folder
             $categoryFolderId = $this->findOrCreateFolder($categoryName, $centerFolderId);
-            error_log("Category folder created/retrieved: $categoryFolderId for $categoryName");
+            //error_log("Category folder created/retrieved: $categoryFolderId for $categoryName");
             
             // 4. Create entry folder inside category folder
             $entryFolderId = $this->findOrCreateFolder($entryFolderName, $categoryFolderId);
-            error_log("Entry folder created: $entryFolderId for $entryFolderName");
+            //error_log("Entry folder created: $entryFolderId for $entryFolderName");
             
             return [
                 'event_folder_id' => $eventFolderId,
@@ -248,8 +241,8 @@ class GoogleDriveService {
             ];
             
         } catch (Exception $e) {
-            error_log("Failed to create complete folder structure: " . $e->getMessage());
-            error_log("Stack trace: " . $e->getTraceAsString());
+            //error_log("Failed to create complete folder structure: " . $e->getMessage());
+            //error_log("Stack trace: " . $e->getTraceAsString());
             throw new Exception("Failed to create folder structure: " . $e->getMessage());
         }
     }
@@ -266,5 +259,52 @@ class GoogleDriveService {
             error_log("Could not get drive ID for folder $folderId: " . $e->getMessage());
             return null;
         }
+    }
+    public function trashFile($fileId) {
+        try {
+            $service = $this->service;
+            
+            // Check if file exists first
+            try {
+                $file = $service->files->get($fileId, [
+                    'fields' => 'id, name, trashed',
+                    'supportsAllDrives' => true
+                ]);
+                
+                if ($file->getTrashed()) {
+                    error_log("File $fileId is already in trash");
+                    return true;
+                }
+                
+            } catch (Exception $e) {
+                if (strpos($e->getMessage(), 'File not found') !== false) {
+                    error_log("File $fileId not found in Google Drive");
+                    return true; // Consider it already gone
+                }
+                throw $e;
+            }
+            
+            // Move to trash instead of permanent delete
+            $file = new Google_Service_Drive_DriveFile();
+            $file->setTrashed(true);
+            
+            $updatedFile = $service->files->update($fileId, $file, [
+                'supportsAllDrives' => true,
+                'fields' => 'id, trashed'
+            ]);
+            
+            error_log("Successfully moved file to trash: $fileId");
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Google Drive trash error for file $fileId: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            throw new Exception("Failed to move file to trash in Google Drive: " . $e->getMessage());
+        }
+    }
+
+    // Keep deleteFile for backward compatibility but use trashFile instead
+    public function deleteFile($fileId) {
+        return $this->trashFile($fileId);
     }
 }

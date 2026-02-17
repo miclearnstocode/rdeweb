@@ -819,7 +819,7 @@ export const ResearchMain = () => {
                                                                     }
                                                                     const form = new FormData()
                                                                     form.append('docId', docId)
-                                                                    form.append('fileUrl', drive_view_url || file)
+                                                                    form.append('fileUrl', driveViewUrl || file)
                                                                     form.append('reasonEnd', inputres)
                                                                     form.append('rejectIndorse', 'true')
                                                                     form.append('fileType', `EndorsementLetter:${eventType}`)

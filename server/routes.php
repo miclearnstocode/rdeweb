@@ -68,6 +68,8 @@ get('/admin/addAccount','/index.html');
 get('/admin/$page','/index.html');  // Catch-all for other admin pages
 
 // User routes
+get('/user/research/resubmit','/index.html'); //resubmit 
+get('/user/research/$page','/index.html');   // handle other research pages
 get('/user/create/share','/index.html');
 get('/user/$page1/$page2/$page3','/index.html');  // User has nested routes
 get('/user/$page1/$page2','/index.html');
