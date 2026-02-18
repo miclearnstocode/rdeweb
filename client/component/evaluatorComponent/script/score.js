@@ -1,6 +1,5 @@
 import {$, Request} from '../../../lib/lib.js'
 
-
 export const ScoreBoard=({resId,eventId,center})=>{
     let AbstainState=false;
 
@@ -16,6 +15,16 @@ description:val.percentage,
 score:0
  */
     const Submit= ()=>{
+        // Check if all scores are zero
+        const allScoresZero = dataArray.every(item => item.score === 0 || item.score === '0');
+        
+        if (allScoresZero) {
+            const confirmZero = confirm("All scores are zero. Are you sure you want to save zero scores for all criteria?");
+            if (!confirmZero) {
+                return; // Exit if user cancels
+            }
+        }
+        
         setTimeout(async ()=>{
             const form= new FormData()
             form.append('center',center)
@@ -25,14 +34,17 @@ score:0
                 form.append('criteriaId[]',val.criteriaId)
                 form.append('Score[]',val.score)
             })
-            await fetch('/scoreboard',{
-                method:'POST',
-                body:form
-            })
-                .then(res=>res.json())
-                .then(data=>{
-                    alert(data.message);
+            try {
+                const response = await fetch('/scoreboard',{
+                    method:'POST',
+                    body:form
                 })
+                const data = await response.json()
+                alert(data.message);
+            } catch (error) {
+                console.error('Error saving scores:', error)
+                alert('Error saving scores. Please try again.')
+            }
         },100)
     }
     const InputEvent=({id,value})=>{
@@ -42,7 +54,7 @@ score:0
             }
         }
     }
-    const scoreBoardCriPanel=()=>{
+    const scoreBoardCriPanel=()=>{ //sbd
         const PerCritScore=({name,description,percentage,crit_id})=>{
             const Name=()=>{
                 return($({
@@ -124,7 +136,7 @@ score:0
                                             if(this.value>100){
                                                 this.value=this.value.slice(0,2)
                                             }
-                                            InputEvent(this)
+                                            InputEvent({id: this.id, value: this.value})
                                         }
                                     },
                                     style:{
@@ -135,7 +147,8 @@ score:0
                                         width:'10vw',
                                         textAlign: 'center',
                                         backgroundColor:'rgba(50,50,50,0.5)',
-                                        color:'white'
+                                        color:'white',
+                                        borderRadius: '10px'
                                     },
                                     elementHandler:(el)=>{
                                         setTimeout(()=>{
@@ -192,6 +205,7 @@ score:0
                     width:'95%',
                     margin:'auto',
                     marginTop:'1vh',
+                    borderRadius: '10px',
                     fontSize: '1vw',
                     border:'solid thin rgba(100,100,100,0.5)',
                     padding:'.5rem'
@@ -271,20 +285,20 @@ score:0
                             fontSize:'1vw',
                             fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
                             margin:'auto',
-                            color:'#999',
+                            color:'#ffffff',
                             paddingTop:'2vh',
-
                         }
                     }),
                     scoreBoardCriPanel(),
                     $({
                         tag:'div',
-
                         style:{
                             width:'98%',
                             margin:'auto',
+                            marginTop: '10px',
+                            marginBottom: '10px', 
                             height:'5vh',
-                            display:'flex',
+                            display:'flex'
                         },
                         child:[
                             $({
@@ -292,15 +306,22 @@ score:0
                                 style:{
                                     margin:'auto',
                                     width:'fit-content',
-                                    height:'fit-content',
+                                    height:'fit-content'
                                 },
                                 child:[
                                     $({
                                         tag:'button',
                                         text:'Save Score',
                                         style:{
-                                            width:'100%',
-                                            height:'4vh'
+                                            width:'10vw',
+                                            height:'6vh',
+                                            borderRadius: '10px',
+                                            fontFamily: 'Quattrocento Sans',
+                                            fontSize: '17px',
+                                            cursor: 'pointer',
+                                            backgroundColor: '#4CAF50',
+                                            color: 'white',
+                                            border: 'none'
                                         },
                                     })
                                 ]
@@ -320,8 +341,14 @@ score:0
                                             value:'Abstain'
                                         },
                                         style:{
-                                            width:'100%',
-                                            height:'4vh'
+                                            width:'10vw',
+                                            height:'6vh',
+                                            borderRadius: '10px',
+                                            fontFamily: 'Quattrocento Sans',
+                                            fontSize: '17px',
+                                            cursor: 'pointer',
+                                            border: 'none',
+                                            color: 'white'
                                         },
                                         event:{
                                             type:'click',

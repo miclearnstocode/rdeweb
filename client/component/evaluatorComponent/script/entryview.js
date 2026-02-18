@@ -136,152 +136,217 @@ export const EntryView=({docId,title,eventId,centerId})=>{
     
     const SideTools=()=>{
         let BotComState=false;
+        
         const Close=()=>{
-            return($({
-                tag:'div',
-                style:{
-                    width: 'fit-content',
-                    height: 'fit-content',
-                    margin: 'auto',
-                    marginTop: '2vh',
-                    fontSize:'2vw',
-                    color:'deepskyblue',
-                    cursor:'pointer',
-                    border:'solid thin #bbb',
-                    padding:'.2rem',
-                    backgroundColor:'#333',
-                    borderRadius:'.5vw'
-                },
-                att:{
-                    title:'Close',
-                },
-                event:{
-                    type:'click',
-                    method:(el)=>{
-                        let saveState=true;
-
-                        if(baseCheck(closeState.base,closeState.raw)){
-
-                            saveState=confirm("Do you want to exit without saving your data?")
-                        }
-                        if(saveState){
-                            window.location.replace('/evaluator')
-                        }
-
-
-                    }
-                },
-                child:[
-                    $({
-                        tag:'span',
-                        att:{
-                            className:'fa-solid fa-arrow-right-from-bracket'
-                        }
-                    })
-                ]
-            }))
-        }
-        const Comment=()=>{
-            return($({
-                tag:'button',
-                att:{
-                    className:'fa-solid fa-file-pen',
-                    title:'comments',
-                    name:'comment',
-                    'aria-hidden': 'false'
-                },
-                style:{
-                    backgroundColor:'#333',
-                    border:'solid thin #bbb',
-                    color:'deepskyblue',
-                    outline:'none',
-                    fontSize: '1.5vw',
-                    textAlign:'center',
-                    width:'fit-content',
-                    height:'5.5vh',
-                    borderRadius:'.5vw',
-                    marginTop: '2vh',
-                    cursor:'pointer'
-                },
-                event:{
-                    type:'click',
-                    method:(eve)=>{
-                        BotComState=!BotComState
-                        if(BotComState){
-                            eve.target.style.color="red"
-                        }else {
-                            eve.target.style.color="deepskyblue"
-                        }
-                        ChangePanel(eve.target)
-                    }
-                },
-            }))
-        }
-        const ScoreBoard=()=>{
-            let scoreBotState=false
-            return($({
-                tag:'button',
-                att:{
-                    className:'fa-solid fa-chalkboard',
-                    title:'ScoreBoard',
-                    name:'score',
-                    'aria-hidden': 'false'
-                },
-                event:{
-                    type:'click',
-                    method:(eve)=>{
-                        scoreBotState=!scoreBotState
-                        if(scoreBotState){
-                            eve.target.style.color="red"
-                        }else {
-                            eve.target.style.color="deepskyblue"
-                        }
-                        ChangePanel(eve.target)
-                    }
-                },
-                style:{
-                    backgroundColor:'#333',
-                    border:'solid thin #bbb',
-                    color:'deepskyblue',
-                    outline:'none',
-                    fontSize: '1.5vw',
-                    textAlign:'center',
-                    width:'fit-content',
-                    height:'5.5vh',
-                    borderRadius:'.5vw',
-                    marginTop: '2vh',
-                    cursor:'pointer'
+            // Create the close button container
+            const closeContainer = document.createElement('div');
+            closeContainer.style.cssText = `
+                width: 111px;
+                height: fit-content;
+                margin: auto;
+                margin-top: 5vh;
+                font-size: 2vw;
+                color: deepskyblue;
+                cursor: pointer;
+                border: solid thin #bbb;
+                padding: 0.2rem;
+                background-color: #333;
+                border-radius: 0.5vw;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            `;
+            closeContainer.setAttribute('title', 'Close Entry');
+            
+            // Create the icon
+            const icon = document.createElement('span');
+            icon.className = 'fa-duotone fa-solid fa-arrow-right-from-bracket';
+            
+            // Create the text label
+            const label = document.createElement('div');
+            label.style.cssText = `
+                font-size: 0.8vw;
+                font-weight: 300;
+                margin-top: 5px;
+                color: #fff;
+            `;
+            label.textContent = 'Close Entry';
+            
+            // Add click event
+            closeContainer.addEventListener('click', ()=>{
+                let saveState=true;
+                if(baseCheck(closeState.base,closeState.raw)){
+                    saveState=confirm("Do you want to exit without saving your data?")
                 }
-            }))
+                if(saveState){
+                    window.location.replace('/evaluator')
+                }
+            });
+            
+            // Append elements
+            closeContainer.appendChild(icon);
+            closeContainer.appendChild(label);
+            
+            return closeContainer;
         }
-        return($({
-            tag:'div',
-            style:{
-                width:'4.5vw',
-                backgroundColor: '#555',
-                height: '50vh',
-                margin:'auto',
-                border:'solid thin #bbb',
-                display:'flex'
-            },
-            child:[
-                $({
-                    tag:'div',
-                    style:{
-                        width:'fit-content',
-                        margin:'auto',
-                        height:'100%'
-                    },
-                    child:[
-                        Close(),
-                        Comment(),
-                        $({tag:'div'}),
-                        ScoreBoard()
-                    ]
-
-                })
-            ]
-        }))
+        
+        const Comment=()=>{
+            // Create button
+            const button = document.createElement('button');
+            button.className = 'fa-solid fa-file-pen';
+            button.setAttribute('title', 'Open/Close Comments Panel');
+            button.setAttribute('name', 'comment');
+            button.setAttribute('aria-hidden', 'false');
+            button.style.cssText = `
+                background-color: #333;
+                border: solid thin #bbb;
+                color: deepskyblue;
+                outline: none;
+                font-size: 1.5vw;
+                text-align: center;
+                width: 111px;
+                height: auto;
+                border-radius: 0.5vw;
+                margin-top: 2vh;
+                cursor: pointer;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 10px;
+            `;
+            
+            // Create icon span
+            const icon = document.createElement('span');
+            
+            // Create text label
+            const label = document.createElement('span');
+            label.style.cssText = `
+                font-size: 0.7vw;
+                font-weight: 300;
+                margin-top: 5px;
+                color: #fff;
+                font-family: Quattrocento Sans, sans-serif;
+            `;
+            label.textContent = 'Comments';
+            
+            // Add click event
+            button.addEventListener('click', (eve)=>{
+                BotComState=!BotComState
+                if(BotComState){
+                    eve.target.style.color="red"
+                }else {
+                    eve.target.style.color="deepskyblue"
+                }
+                ChangePanel({name: 'comment'})
+            });
+            
+            // Append elements
+            button.appendChild(icon);
+            button.appendChild(label);
+            
+            return button;
+        }
+        
+        const ScoreBoard=()=>{
+            let scoreBotState=false;
+            
+            // Create button
+            const button = document.createElement('button');
+            button.className = 'fa-solid fa-chalkboard';
+            button.setAttribute('title', 'Open/Close Scoreboard Panel');
+            button.setAttribute('name', 'score');
+            button.setAttribute('aria-hidden', 'false');
+            button.style.cssText = `
+                background-color: #333;
+                border: solid thin #bbb;
+                color: deepskyblue;
+                outline: none;
+                font-size: 1.5vw;
+                text-align: center;
+                width: 111px;
+                height: auto;
+                border-radius: 0.5vw;
+                margin-top: 2vh;
+                margin-bottom: 5vh;
+                cursor: pointer;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 10px;
+            `;
+            
+            // Create icon span
+            const icon = document.createElement('span');
+            
+            // Create text label
+            const label = document.createElement('span');
+            label.style.cssText = `
+                font-size: 0.8vw;
+                font-weight: 300;
+                margin-top: 5px;
+                color: #fff;
+                font-family: Quattrocento Sans, sans-serif;
+            `;
+            label.textContent = 'Scoreboard';
+            
+            // Add click event
+            button.addEventListener('click', (eve)=>{
+                scoreBotState=!scoreBotState
+                if(scoreBotState){
+                    eve.target.style.color="red"
+                }else {
+                    eve.target.style.color="deepskyblue"
+                }
+                ChangePanel({name: 'score'})
+            });
+            
+            // Append elements
+            button.appendChild(icon);
+            button.appendChild(label);
+            
+            return button;
+        }
+        
+        // Create spacer function
+        const Spacer = () => {
+            const spacer = document.createElement('div');
+            spacer.style.height = '10px';
+            return spacer;
+        }
+        
+        // Create main container
+        const container = document.createElement('div');
+        container.style.cssText = `
+            width: 8vw;
+            background-color: #555;
+            height: fit-content;
+            margin: auto;
+            border: solid thin #bbb;
+            display: flex;
+            border-radius: 10px;
+        `;
+        
+        // Create inner container
+        const innerContainer = document.createElement('div');
+        innerContainer.style.cssText = `
+            width: fit-content;
+            margin: auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        `;
+        
+        // Append all elements
+        innerContainer.appendChild(Close());
+        innerContainer.appendChild(Spacer());
+        innerContainer.appendChild(Comment());
+        innerContainer.appendChild(Spacer());
+        innerContainer.appendChild(ScoreBoard());
+        
+        container.appendChild(innerContainer);
+        
+        return container;
     }
     
     return($({
