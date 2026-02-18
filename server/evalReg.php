@@ -143,7 +143,7 @@ if (isset($_POST['auth'])) {
                     $response->message = '/evaluator';
                     
                     // Fix: Removed duplicate parameters in serialize
-                    $_SESSION['isLog'] = serialize(new Auth(true, $_POST['userType'], $username, $centerName, $id, $acnem));
+                    $_SESSION['isLog'] = serialize(new Auth(true, $_POST['userType'], $username, $centerName, $id, $acnem,'',$acnem,''));
                     
                     $_SESSION['eventTYpe'] = $evName;
                     $_SESSION['eventId'] = $evId;
