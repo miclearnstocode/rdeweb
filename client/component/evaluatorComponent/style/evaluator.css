@@ -106,7 +106,7 @@
 .authorListEval{
     width: 20%;
 }
-.campusListEval{
+.centerListEval{
     width: 70%;
 }
 .viewPanel{
@@ -327,4 +327,34 @@
 
 .status-pending {
     animation: pulse 2s infinite;
+}
+
+.entry-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.entry-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.entry-card:hover .status-label {
+    transform: scale(1.05);
+}
+
+/* Animation for status labels */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.status-label {
+    animation: slideIn 0.3s ease-out;
 }

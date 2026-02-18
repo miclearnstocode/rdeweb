@@ -84,7 +84,7 @@ export const Search=(method)=>{
             child:[
                 $({
                     tag:'div',
-                    text:'Total number of Entries :',
+                    text:'Total number of Entries: ',
                     style:{
                         fontSize:'1.3vw',
                         fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
@@ -172,9 +172,9 @@ export const HeaderTable=()=>{
 
     label.push({
 
-        text:'Campus',
+        text:'Center',
 
-        className:'campusListEval'
+        className:'centerListEval'
 
     })
 
@@ -562,17 +562,7 @@ export const Box=  (getBody)=>{
 
                     }))
                 }
-
-
-
-
-
-
-
                 const Editor=()=>{
-
-
-
                     const controlIcon=({icon,event,text})=>{
 
                         return($({
@@ -1493,7 +1483,7 @@ export const Box=  (getBody)=>{
 
 
 
-    const listTable=({date,title,author,campus,file,docID,comments,status})=>{
+    const listTable=({date,title,author,center,file,docID,comments,status})=>{
         const R1=()=>{
             const data=({className,content})=>{
                 return($({
@@ -1516,8 +1506,8 @@ export const Box=  (getBody)=>{
                         content:author
                     }),
                     data({
-                        className:'campusListEval',
-                        content:campus
+                        className:'centerListEval',
+                        content:center
                     }),
                 ]
             }))
@@ -1566,8 +1556,6 @@ export const Box=  (getBody)=>{
         }))
     }
 
-
-
     const getListPanel= async (panel)=>{
         getBody(panel)
         panelBox=panel
@@ -1597,20 +1585,24 @@ export const Box=  (getBody)=>{
                     panel.appendChild(EntryList({
                         title:val.title,
                         author:val.author,
-                        campus:val.campus,
+                        center:val.center,
                         docId:val.id,
                         eventId:val.eventId || val.event_id,
-                        centerId:val.centerId
+                        centerId:val.centerId,
+                        hasScore: val.hasScore || false,
+                        hasComment: val.hasComment || false,
                     }))
                 }else {
                     panel.insertBefore(EntryList({
                         title:val.title,
                         author:val.author,
-                        campus:val.campus,
+                        center:val.center,
                         docId:val.id,
                         status:true,
                         eventId:val.eventId || val.event_id,
-                        catId:val.catId
+                        catId:val.catId,
+                        hasScore: val.hasScore || false,
+                        hasComment: val.hasComment || false,
                     }),panel.childNodes[0])
                 }
             })
@@ -1630,4 +1622,3 @@ export const Box=  (getBody)=>{
         elementHandler:getListPanel
     }))
 }
-

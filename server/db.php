@@ -170,4 +170,3 @@ function deleteAll($dir) {
     }
     rmdir($dir);
 }
-

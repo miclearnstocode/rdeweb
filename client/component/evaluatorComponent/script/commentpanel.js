@@ -1,5 +1,4 @@
-import {$, baseCheck, Request} from '../../../lib/lib.js'
-
+import {$} from '../../../lib/lib.js'
 
 export const CommentBoard=({title,docId,closeState})=>{
 
@@ -366,7 +365,6 @@ export const CommentBoard=({title,docId,closeState})=>{
                             type:'input',
                             method:getInputEvent
                         },
-
                         elementHandler:async (el)=>{
                             inputDiv=el
                             let form= new FormData()
@@ -383,13 +381,9 @@ export const CommentBoard=({title,docId,closeState})=>{
                                     el.innerHTML=val.data
                                 })
                             
-
-
-
                             el.addEventListener('keydown',(e)=>{
                                 if (e.keyCode === 9) { // tab key
                                     e.preventDefault();  // this will prevent us from tabbing out of the editor
-
                                     // now insert four non-breaking spaces for the tab key
                                     let doc = el.ownerDocument.defaultView;
                                     let sel = doc.getSelection();
@@ -411,7 +405,6 @@ export const CommentBoard=({title,docId,closeState})=>{
             }))
         }
         const clipMap=commentCat.map(val=>{
-
             return chlInput({
                 getEl:(el)=>{
                     part.push(el)
@@ -422,10 +415,7 @@ export const CommentBoard=({title,docId,closeState})=>{
                 postId:val.id
             })
         })
-
-
         const perComment=({label,click,botName})=>{
-
             return($({
                 tag:'div',
                 style:{
@@ -524,7 +514,6 @@ export const CommentBoard=({title,docId,closeState})=>{
                             height:'fit-content',
                             fontSize:'2vw',
                             color:'deepskyblue',
-
                         }
                     }),
                     $({
@@ -542,7 +531,7 @@ export const CommentBoard=({title,docId,closeState})=>{
                                     width:'100%',
                                     height:'fit-content',
                                     margin:'auto',
-                                    marginBottom:'2vh'
+                                    marginBottom:'2vh',
                                 },
                                 child:commentCatChild
                             }),
@@ -557,7 +546,6 @@ export const CommentBoard=({title,docId,closeState})=>{
                                                 alert('Document ID is required');
                                                 return;
                                             }
-
                                             // Create FormData instead of object array
                                             const formData = new FormData();
                                             formData.append('updateReview', 'true');
@@ -571,18 +559,15 @@ export const CommentBoard=({title,docId,closeState})=>{
                                             formData.append('literature', data.literature || '');
                                             formData.append('other', data.other || '');
                                             formData.append('docId', docId);
-
                                             // Send request
                                             const response = await fetch('/uploadResearchFile', {
                                                 method: 'POST',
                                                 body: formData
                                             });
-
                                             // Check if response is OK
                                             if (!response.ok) {
                                                 throw new Error(`HTTP error! status: ${response.status}`);
                                             }
-
                                             // Parse JSON response
                                             const result = await response.json();
                                             
@@ -616,17 +601,14 @@ export const CommentBoard=({title,docId,closeState})=>{
                                                     // Ignore if we can't get text
                                                 }
                                             }
-                                            
                                             alert(`Error saving comments: ${error.message}`);
                                         }
                                     }
                                 }
                             }),
                             Bot({text:'Reset all comments'})
-
                         ]
                     }),
-
                 ],
                 elementHandler:(el)=>{
                     el.addEventListener('mouseenter',(eve)=>{
@@ -659,13 +641,12 @@ export const CommentBoard=({title,docId,closeState})=>{
                         width:'95%',
                         height:'100%',
                         backgroundColor:'#777',
+                        borderRadius: '10px'
                     },
                     elementHandler:(el)=>{
                         inputPan=el
                     },
                     child:clipMap
-
-
                 }),
                 hoverTool()
             ]
@@ -676,9 +657,7 @@ export const CommentBoard=({title,docId,closeState})=>{
         style:{
             width:'100%',
             height:'100%',
-
         },
-
         child:[
             $({
                 tag:'div',
@@ -696,6 +675,7 @@ export const CommentBoard=({title,docId,closeState})=>{
                 style:{
                     border:'solid thin #555',
                     backgroundColor:'#444',
+                    borderRadius: '10px',
                     padding:'.5rem',
                     width:'90%',
                     margin:'auto',
@@ -716,7 +696,7 @@ export const CommentBoard=({title,docId,closeState})=>{
                             padding: '.1rem',
                             paddingLeft:'1vw',
                             paddingRight:'1vw',
-
+                            borderRadius: '10px',
                             left:'1vw',
                             height:'fit-content',
                             width:'fit-content',

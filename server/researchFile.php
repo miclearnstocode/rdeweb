@@ -350,7 +350,7 @@ if (isset($_POST['uploadResearch'])) {
                     
                     $query2 = "INSERT INTO endorsement (
                         endorsement.senderid,
-                        endorsement.campus,
+                        endorsement.center,
                         endorsement.center,
                         endorsement.file, 
                         endorsement.drive_file_id,
@@ -722,7 +722,7 @@ if (isset($_POST['researchSubmit'])) {
             researchfile.event_id,      
             researchfile.category,
             researchfile.center,
-            endorsement.campus,
+            endorsement.center,
             event_list.id as eventId,
             category.id as catId
         FROM researchfile
@@ -777,8 +777,12 @@ if (isset($_POST['researchSubmit'])) {
             $data->recommendation = '';
             $data->literature = '';
             $data->other = '';
+            
+            // Initialize status flags
+            $data->hasComment = false;
+            $data->hasScore = false;
 
-            // UPDATED query to include comments.title
+            // UPDATED query to include comments.title and check for comments
             $comquery = "SELECT 
                 comments.title as comment_title, 
                 comments.intro,
@@ -789,12 +793,27 @@ if (isset($_POST['researchSubmit'])) {
                 comments.recommendation,
                 comments.literature,
                 comments.other,
-                comments.date
+                comments.date,
+                -- Check if any comment field has content
+                CASE 
+                    WHEN COALESCE(comments.title, '') != '' 
+                         OR COALESCE(comments.intro, '') != ''
+                         OR COALESCE(comments.abstract, '') != ''
+                         OR COALESCE(comments.objective, '') != ''
+                         OR COALESCE(comments.methodology, '') != ''
+                         OR COALESCE(comments.results, '') != ''
+                         OR COALESCE(comments.recommendation, '') != ''
+                         OR COALESCE(comments.literature, '') != ''
+                         OR COALESCE(comments.other, '') != ''
+                    THEN 1 ELSE 0 
+                END as has_comment_content
             FROM comments WHERE comments.resid = ? AND comments.evalid = ? AND comments.eventType = ?";
+            
             $statement = $con->prepare($comquery);
             $statement->bind_param('sss', $val['id'], $evalId, $val['event']);
             $statement->execute();
             $res = $statement->get_result();
+            
             while ($v = $res->fetch_assoc()) {
                 $data->status = 'updated';
                 $data->comment_title = $v['comment_title']; // Store comment title separately
@@ -806,7 +825,28 @@ if (isset($_POST['researchSubmit'])) {
                 $data->recommendation = $v['recommendation'];
                 $data->literature = $v['literature'];
                 $data->other = $v['other'];
+                $data->hasComment = ($v['has_comment_content'] == 1);
             }
+            
+            // Check if this document has been scored
+            $scoreQuery = "SELECT 
+                COUNT(*) as score_count,
+                CASE 
+                    WHEN COUNT(*) > 0 AND SUM(CASE WHEN score IS NOT NULL THEN 1 ELSE 0 END) > 0
+                    THEN 1 ELSE 0 
+                END as has_score_content
+            FROM score_board 
+            WHERE doc_id = ? AND eval_id = ?";
+            
+            $scoreStmt = $con->prepare($scoreQuery);
+            $scoreStmt->bind_param('ss', $val['id'], $evalId);
+            $scoreStmt->execute();
+            $scoreResult = $scoreStmt->get_result();
+            
+            if ($scoreRow = $scoreResult->fetch_assoc()) {
+                $data->hasScore = ($scoreRow['has_score_content'] == 1);
+            }
+            
             $response->list[] = $data;
         }
     }
@@ -843,7 +883,7 @@ if (isset($_POST['updateReview'])) {
             researchfile.event, 
             researchfile.category,
             researchfile.center,
-            endorsement.campus,
+            endorsement.center,
             account_detail.email,
             account_detail.fullName
         FROM researchfile 
@@ -2165,7 +2205,7 @@ if (isset($_POST['searchResearch'])) {
                     researchfile.file as local_file,
                     researchfile.category,
                     researchfile.center,
-                    endorsement.campus,
+                    endorsement.center,
                     researchfile.event,
                     researchfile.drive_folder_id,
                     researchfile.drive_event_folder_id,
@@ -2180,7 +2220,7 @@ if (isset($_POST['searchResearch'])) {
                     OR researchfile.category LIKE '%$searchTerm%'
                     OR researchfile.center LIKE '%$searchTerm%'
                     OR researchfile.event LIKE '%$searchTerm%'
-                    OR endorsement.campus LIKE '%$searchTerm%'
+                    OR endorsement.center LIKE '%$searchTerm%'
                 )
                 ORDER BY event_list.name, researchfile.title";
             
@@ -2315,7 +2355,7 @@ if (isset($_POST['incomingEndorsement'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $queries = "SELECT endorsement.id, 
             endorsement.senderid,
-            endorsement.campus, 
+            endorsement.center, 
             endorsement.file,  
             endorsement.drive_file_id,
             endorsement.drive_view_url,  
@@ -2495,7 +2535,7 @@ if (isset($_POST['researchDocsNew'])) {
                 researchfile.category,
                 researchfile.center,
                 researchfile.deletestate,           
-                endorsement.campus,
+                endorsement.center,
                 endorsement.event,
                 endorsement.date,
                 researchfile.endorsementid,
@@ -2730,7 +2770,7 @@ if (isset($_POST['rejectIndorse'])) {
                 account_detail.email, 
                 account_detail.fullName, 
                 endorsement.event,
-                endorsement.campus
+                endorsement.center
             FROM endorsement 
             LEFT JOIN account_detail ON endorsement.senderid = account_detail.id 
             WHERE endorsement.id=?";

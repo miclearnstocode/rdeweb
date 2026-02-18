@@ -1127,3 +1127,56 @@ Stack trace:
 [17-Feb-2026 14:45:47 Asia/Manila] Update query: UPDATE researchfile SET presenter = ?, coauthor = ?, program_drive_file_id = ?, program_drive_view_url = ?, status = NULL, rejected_by = NULL, rejected_date = NULL, resubmitted = 1, resubmit_count = ? WHERE endorsementid = ?
 [17-Feb-2026 14:45:47 Asia/Manila] Parameters count: 6, Types: ssssis
 [17-Feb-2026 14:45:47 Asia/Manila] Endorsement status set to NULL for ID: 515
+[18-Feb-2026 08:46:18 Asia/Manila] PHP Warning:  Undefined array key "userOffice" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 272
+[18-Feb-2026 08:46:18 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[18-Feb-2026 08:46:18 Asia/Manila] Title: Trial Coco RDC
+[18-Feb-2026 08:46:18 Asia/Manila] Author: Michael Estorque
+[18-Feb-2026 08:46:18 Asia/Manila] Event: 38th University Faculty In-House Review
+[18-Feb-2026 08:46:18 Asia/Manila] Center: Coconut Research and Development Center (Coco RDC)
+[18-Feb-2026 08:46:18 Asia/Manila] Category: Natural / Biological
+[18-Feb-2026 08:46:18 Asia/Manila] Uploading endorsement: endorsement.pdf
+[18-Feb-2026 08:46:19 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Estorque_Trial_Coco_RDC
+[18-Feb-2026 08:46:26 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1_Hvt-_fjG1KlLx4zChUZQg5I36bLdymL
+[18-Feb-2026 08:46:28 Asia/Manila] Making file public: 1-H5OS4a9Pb630SM-quclB9-sibX5Km82
+[18-Feb-2026 08:46:29 Asia/Manila] File 1-H5OS4a9Pb630SM-quclB9-sibX5Km82 is already public
+[18-Feb-2026 08:46:29 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[18-Feb-2026 08:46:29 Asia/Manila] Endorsement uploaded successfully: 1-H5OS4a9Pb630SM-quclB9-sibX5Km82
+[18-Feb-2026 08:46:29 Asia/Manila] Endorsement saved to DB with ID: 516
+[18-Feb-2026 08:46:29 Asia/Manila] Uploading research: research_paper.pdf
+[18-Feb-2026 08:46:29 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Estorque_Trial_Coco_RDC
+[18-Feb-2026 08:46:31 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1_Hvt-_fjG1KlLx4zChUZQg5I36bLdymL
+[18-Feb-2026 08:46:34 Asia/Manila] Making file public: 1PO0EAqGCVo2PFs_cKq13FI0pKR9b9ei0
+[18-Feb-2026 08:46:34 Asia/Manila] File 1PO0EAqGCVo2PFs_cKq13FI0pKR9b9ei0 is already public
+[18-Feb-2026 08:46:34 Asia/Manila] research file upload successful: research_paper.pdf
+[18-Feb-2026 08:46:34 Asia/Manila] Research uploaded successfully: 1PO0EAqGCVo2PFs_cKq13FI0pKR9b9ei0
+[18-Feb-2026 08:46:34 Asia/Manila] Uploading program: program_inHouse.pdf
+[18-Feb-2026 08:46:34 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Estorque_Trial_Coco_RDC
+[18-Feb-2026 08:46:36 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1_Hvt-_fjG1KlLx4zChUZQg5I36bLdymL
+[18-Feb-2026 08:46:39 Asia/Manila] Making file public: 1kcPsQmRU0eMFn7Gsl6Qg8GUoJY_eezAw
+[18-Feb-2026 08:46:39 Asia/Manila] File 1kcPsQmRU0eMFn7Gsl6Qg8GUoJY_eezAw is already public
+[18-Feb-2026 08:46:39 Asia/Manila] program file upload successful: program_inHouse.pdf
+[18-Feb-2026 08:46:39 Asia/Manila] Program uploaded successfully: 1kcPsQmRU0eMFn7Gsl6Qg8GUoJY_eezAw
+[18-Feb-2026 08:46:39 Asia/Manila] Number of columns in query: 23
+[18-Feb-2026 08:46:39 Asia/Manila] Number of variables to bind: 23
+[18-Feb-2026 13:53:45 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:53:53 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:56:06 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:56:13 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:56:19 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:57:48 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:57:51 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:57:55 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:03 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:05 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:07 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:13 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:15 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:17 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:18 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:20 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:37 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:58:50 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1032
+[18-Feb-2026 13:59:02 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 13:59:59 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 14:00:12 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
+[18-Feb-2026 14:08:41 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 765
