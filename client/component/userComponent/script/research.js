@@ -1005,7 +1005,7 @@ const CreateNew = () => {
                     transition: 'color 0.3s ease'
                 },
                 att: {
-                    innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload Program in pdf format</div>`
+                    innerHTML: `<div style="margin: auto; font-family: monospace" class="fa-solid fa-file-pdf"> Upload Local in House-Review/Symposium Program</div>`
                 },
                 elementHandler: getProgramCover
             });

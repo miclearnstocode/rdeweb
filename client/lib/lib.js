@@ -190,42 +190,71 @@ export const Waiting = () => {
 
 
 export const ConfirmationAlert = (message, eventClose) => {
-    let closeMOdal
+    let modalContainer
     let modal
+
+    const getModalContainer = (el) => {
+        modalContainer = el
+    }
+
     const getModalMain = (el) => {
         modal = el
     }
-    const getColse = (el) => {
-        closeMOdal = el
-    }
-    window.addEventListener('click', (event) => {
-        if (event.target === closeMOdal) {
+
+    // Close function
+    const closeModal = (e) => {
+        if (e) e.stopPropagation()
+        if (modalContainer && modalContainer.remove) {
+            modalContainer.remove()
+        }
+        if (eventClose && typeof eventClose === 'function') {
             eventClose()
-        } else {
-            modal.style.boxShadow = '0 0 .5vw ghostwhite'
+        }
+    }
+
+    // Close button with direct click event
+    const closeButton = $({
+        tag: 'div',
+        att: {
+            className: 'textClose'
+        },
+        text: 'Close',
+        style: {
+            cursor: 'pointer',
+            padding: '10px 20px',
+            textAlign: 'center',
+            backgroundColor: '#00bcd4',
+            color: '#fff',
+            borderRadius: '5px',
+            marginTop: '10px',
+            userSelect: 'none',
+            width: 'fit-content',
+            margin: '10px auto 0'
+        },
+        event: {
+            type: 'click',
+            method: (e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                closeModal(e)
+            }
         }
     })
 
-    const confirm = () => {
-        return ($({
-            tag: 'div',
-            att: {
-                className: 'textClose'
-            },
-            text: 'Close',
-            elementHandler: getColse,
-
-        }))
-    }
-    const messageBox = () => {
-        return ($({
-            tag: 'div',
-            att: {
-                className: 'messageBox'
-            },
-            text: message
-        }))
-    }
+    const messageBox = $({
+        tag: 'div',
+        att: {
+            className: 'messageBox'
+        },
+        text: message,
+        style: {
+            padding: '20px',
+            textAlign: 'center',
+            color: '#fff',
+            fontSize: '1.1vw',
+            wordBreak: 'break-word'
+        }
+    })
 
     return ($({
         tag: 'div',
@@ -233,20 +262,43 @@ export const ConfirmationAlert = (message, eventClose) => {
         att: {
             className: 'coverMOdal'
         },
+        style: {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            zIndex: '10000',
+            alignItems: 'center',
+            justifyContent: 'center'
+        },
+        elementHandler: getModalContainer,
         child: [
             $({
                 tag: 'div',
                 att: {
                     className: 'confirmAlert'
                 },
+                style: {
+                    background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                    padding: '2rem',
+                    borderRadius: '1vw',
+                    border: '1px solid #333',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                    minWidth: '300px',
+                    maxWidth: '500px',
+                    position: 'relative',
+                    pointerEvents: 'auto'
+                },
                 elementHandler: getModalMain,
                 child: [
-                    messageBox(),
-                    confirm()
+                    messageBox,
+                    closeButton
                 ]
             })
         ]
-
     }))
 }
 

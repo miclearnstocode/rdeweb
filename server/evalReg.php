@@ -103,8 +103,8 @@ if (isset($_POST['auth'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         logMemoryUsage('auth - After DB Connection');
 
-        $username = $_POST['username'];
-        $password = $_POST['password'];
+        $username = trim($_POST['username']);
+        $password = trim($_POST['password']); 
 
         $newQuery = "SELECT
             evaluator.id,
@@ -388,7 +388,15 @@ if (isset($_POST['resetEvaluatorPassword'])) {
     $res->message = '';
     
     $id = $_POST['id'];
-    $newPassword = $_POST['newPassword'];
+    $newPassword = trim($_POST['newPassword']); // TRIM HERE
+    
+    // Add validation
+    if (empty($newPassword)) {
+        $res->message = 'Password cannot be empty';
+        ob_clean();
+        echo json_encode($res);
+        exit();
+    }
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         logMemoryUsage('resetEvaluatorPassword - After DB Connection');

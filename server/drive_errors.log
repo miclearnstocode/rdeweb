@@ -3395,3 +3395,8 @@ Stack trace:
 [20-Feb-2026 09:01:00 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 802
 [20-Feb-2026 09:01:00 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 802
 [20-Feb-2026 09:01:00 Asia/Manila] Found 2 research files for center: Extension (Extension)
+[20-Feb-2026 14:02:38 Asia/Manila] Evaluator center (session): Extension (Extension)
+[20-Feb-2026 14:02:38 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[20-Feb-2026 14:02:38 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 802
+[20-Feb-2026 14:02:38 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 802
+[20-Feb-2026 14:02:38 Asia/Manila] Found 2 research files for center: Extension (Extension)

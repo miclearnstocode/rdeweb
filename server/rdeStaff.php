@@ -57,8 +57,8 @@ if (isset($_POST['auth'])) {
     $response->status = false;
     $response->message = '';
     if ($con) {
-        $username = $_POST['username'];
-        $password = $_POST['password'];
+        $username = trim($_POST['username']);
+        $password = trim($_POST['password']); 
         if ($statement = $con->prepare(" SELECT `id`, `email`, `password` FROM `rdestaff` WHERE `username`=?")) {
             $statement->bind_param("s", $username);
             $statement->execute();
@@ -92,12 +92,3 @@ if (isset($_POST['auth'])) {
     }
     echo json_encode($response);
 }
-
-
-
-
-
-
-
-
-
