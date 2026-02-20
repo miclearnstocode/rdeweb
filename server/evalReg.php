@@ -44,50 +44,56 @@ if (isset($_POST['evaluatorRegister'])) {
     logMemoryUsage('evaluatorRegister - Start');
     logExecutionTime('evaluatorRegister');
     
-    $responce = new stdClass();
-    $responce->status = false;
-    $responce->message = 'Server connection failed..!';
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = 'Server connection failed..!';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         logMemoryUsage('evaluatorRegister - After DB Connection');
 
-        $responce = new stdClass();
-        $user = $_POST['username'];
-        $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $fullname = $_POST['fullname'];
-        $category = $_POST['category'];
-        $center = isset($_POST['center']) ? $_POST['center'] : null;
-        $eventType = $_POST['eventTYpe'];
+        $response = new stdClass();
+        $user = trim($_POST['username']);
+        $pass = password_hash(trim($_POST['password']), PASSWORD_DEFAULT);
+        $fullname = trim($_POST['fullname']);
+        $center = isset($_POST['center']) && !empty($_POST['center']) ? trim($_POST['center']) : null;
+        $eventType = trim($_POST['eventTYpe']);
 
         $id = round(microtime(true) * 1000) . '';
 
-        // Updated query to include center_id
+        // Query without category field
         if ($center) {
             $newQuery = "INSERT INTO `evaluator` 
-            (evaluator.fullname, evaluator.username, evaluator.password, evaluator.category, evaluator.eventid, evaluator.center_id) 
-            VALUES ('$fullname','$user','$pass','$category','$eventType','$center')";
+            (evaluator.fullname, evaluator.username, evaluator.password, evaluator.eventid, evaluator.center_id) 
+            VALUES (?, ?, ?, ?, ?)";
+            
+            $stmt = $con->prepare($newQuery);
+            $stmt->bind_param("sssss", $fullname, $user, $pass, $eventType, $center);
         } else {
             $newQuery = "INSERT INTO `evaluator` 
-            (evaluator.fullname, evaluator.username, evaluator.password, evaluator.category, evaluator.eventid) 
-            VALUES ('$fullname','$user','$pass','$category','$eventType')";
+            (evaluator.fullname, evaluator.username, evaluator.password, evaluator.eventid) 
+            VALUES (?, ?, ?, ?)";
+            
+            $stmt = $con->prepare($newQuery);
+            $stmt->bind_param("ssss", $fullname, $user, $pass, $eventType);
         }
 
         logMemoryUsage('evaluatorRegister - Before Query Execution');
 
-        if ($con->query($newQuery)) {
-            $responce->status = true;
-            $responce->message = 'Save successfully..!';
+        if ($stmt->execute()) {
+            $response->status = true;
+            $response->message = 'Save successfully..!';
         } else {
-            $responce->message = $con->error;
+            $response->message = $stmt->error;
         }
 
+        $stmt->close();
         logMemoryUsage('evaluatorRegister - After Query Execution');
         $con->close();
     }
 
     logMemoryUsage('evaluatorRegister - End');
     ob_clean();
-    echo json_encode($responce);
+    echo json_encode($response);
     ob_end_flush();
     exit();
 }

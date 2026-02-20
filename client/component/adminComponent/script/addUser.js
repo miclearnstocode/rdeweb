@@ -246,7 +246,6 @@ const encodeUser = () => {
 const encodeEvaluator = () => {
     const data = {
         eventType: '',
-        category: '',
         center: '',
         fullname: '',
         username: '',
@@ -257,10 +256,6 @@ const encodeEvaluator = () => {
     const getData = {
         getEventType: (value) => {
             data.eventType = value
-            validateForm()
-        },
-        getCategory: (value) => {
-            data.category = value
             validateForm()
         },
         getCenter: (value) => {
@@ -292,7 +287,6 @@ const encodeEvaluator = () => {
         
         const isValid = 
             data.center.trim() !== '' &&
-            data.category.trim() !== '' &&
             data.eventType.trim() !== '' &&
             data.fullname.trim() !== '' &&
             data.username.trim() !== '' &&
@@ -306,11 +300,11 @@ const encodeEvaluator = () => {
         if (isValid) {
             submitBtn.style.opacity = '1'
             submitBtn.style.cursor = 'pointer'
-            submitBtn.style.backgroundColor = '#4CAF50' // Optional: add a color
+            submitBtn.style.backgroundColor = '#4CAF50'
         } else {
             submitBtn.style.opacity = '0.5'
             submitBtn.style.cursor = 'not-allowed'
-            submitBtn.style.backgroundColor = '#cccccc' // Optional: gray out
+            submitBtn.style.backgroundColor = '#cccccc'
         }
     }
 
@@ -337,7 +331,7 @@ const encodeEvaluator = () => {
                                 text: 'Center'
                             })
                         ]
-                    }), //label
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -350,43 +344,6 @@ const encodeEvaluator = () => {
                                             type: 'change',
                                             method: async (event) => {
                                                 getData.getCenter(event.target.value)
-                                                // Load categories for selected center
-                                                const center = event.target.value
-                                                const categorySelect = document.getElementById('categorySelect')
-                                                if (categorySelect && center) {
-                                                    // Clear existing options except the first one
-                                                    while (categorySelect.children.length > 1) {
-                                                        categorySelect.removeChild(categorySelect.lastChild)
-                                                    }
-                                                    // Fetch categories for this center
-                                                    const req = new Request('/evaluatorReg')
-                                                    req.Post([
-                                                        { name: 'getCategoriesByCenter', value: 'true' },
-                                                        { name: 'center', value: center }
-                                                    ])
-                                                    req.Json()
-                                                    req.Send().then(data => {
-                                                        if (data && data.length > 0) {
-                                                            data.forEach(category => {
-                                                                categorySelect.appendChild($({
-                                                                    tag: 'option',
-                                                                    text: category.name || category.id,
-                                                                    att: {
-                                                                        value: category.name || category.id
-                                                                    }
-                                                                }))
-                                                            })
-                                                        }
-                                                    }).catch(err => {
-                                                        console.error('Error loading categories:', err)
-                                                    })
-                                                } else if (categorySelect) {
-                                                    // Clear categories if no center selected
-                                                    while (categorySelect.children.length > 1) {
-                                                        categorySelect.removeChild(categorySelect.lastChild)
-                                                    }
-                                                    categorySelect.value = ''
-                                                }
                                             }
                                         },
                                         att: {
@@ -438,57 +395,10 @@ const encodeEvaluator = () => {
                                 att: {
                                     className: 'labelAdmin ev'
                                 },
-                                text: 'Category'
-                            })
-                        ]
-                    }), //label
-                    $({
-                        tag: 'tr',
-                        child: [
-                            $({
-                                tag: 'td',
-                                child: [
-                                    $({
-                                        tag: 'select',
-                                        event: {
-                                            type: 'change',
-                                            method: (event) => {
-                                                getData.getCategory(event.target.value)
-                                            }
-                                        },
-                                        att: {
-                                            className: 'selectAddUser',
-                                            id: 'categorySelect'
-                                        },
-                                        elementHandler: (el) => {
-                                            el.appendChild($({
-                                                tag: 'option',
-                                                text: '-- Select Category --',
-                                                att: {
-                                                    disabled: true,
-                                                    selected: true,
-                                                    value: ''
-                                                }
-                                            }))
-                                        },
-                                        child: []
-                                    })
-                                ]
-                            })
-                        ]
-                    }),
-                    $({
-                        tag: 'tr',
-                        child: [
-                            $({
-                                tag: 'td',
-                                att: {
-                                    className: 'labelAdmin ev'
-                                },
                                 text: 'Event Type'
                             })
                         ]
-                    }), //label
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -545,7 +455,7 @@ const encodeEvaluator = () => {
                                 text: '\n'
                             })
                         ]
-                    }), //break
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -557,7 +467,7 @@ const encodeEvaluator = () => {
                                 text: 'Evaluators name'
                             })
                         ]
-                    }), //label
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -573,7 +483,7 @@ const encodeEvaluator = () => {
                                         },
                                         tag: 'input',
                                         att: {
-                                            type: 'email',
+                                            type: 'text', // Changed from 'email' to 'text'
                                             placeholder: 'Evaluators full name',
                                             className: 'inputAddUser'
                                         },
@@ -590,7 +500,7 @@ const encodeEvaluator = () => {
                                 text: '\n'
                             })
                         ]
-                    }), //break
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -602,7 +512,7 @@ const encodeEvaluator = () => {
                                 text: 'Create Username'
                             })
                         ]
-                    }), //label
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -635,7 +545,7 @@ const encodeEvaluator = () => {
                                 text: '\n'
                             })
                         ]
-                    }), //break
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -647,7 +557,7 @@ const encodeEvaluator = () => {
                                 text: 'Create Password'
                             })
                         ]
-                    }), //label
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -682,7 +592,7 @@ const encodeEvaluator = () => {
                                 text: '\n'
                             })
                         ]
-                    }), //break
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -694,7 +604,7 @@ const encodeEvaluator = () => {
                                 text: 'Re-type Password'
                             })
                         ]
-                    }), //label
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -736,7 +646,7 @@ const encodeEvaluator = () => {
                                 text: '\n'
                             })
                         ]
-                    }), //break
+                    }),
                     $({
                         tag: 'tr',
                         child: [
@@ -744,11 +654,11 @@ const encodeEvaluator = () => {
                                 tag: 'td',
                                 child: [
                                     $({
-                                        tag: 'button', // Changed from td to button
+                                        tag: 'button',
                                         att: {
                                             className: 'submitEval',
                                             id: 'submitEvalBtn',
-                                            disabled: true // Initially disabled
+                                            disabled: true
                                         },
                                         text: 'Submit',
                                         event: {
@@ -756,7 +666,6 @@ const encodeEvaluator = () => {
                                             method: async (event) => {
                                                 const submitBtn = document.getElementById('submitEvalBtn')
                                                 
-                                                // Double-check if button is disabled
                                                 if (submitBtn.disabled) {
                                                     event.preventDefault()
                                                     return
@@ -772,14 +681,16 @@ const encodeEvaluator = () => {
                                                 form.append('username', data.username.toUpperCase())
                                                 form.append('password', data.password)
                                                 form.append('fullname', data.fullname.toUpperCase())
-                                                form.append('category', data.category.toUpperCase())
+                                                form.append('category', '') // Send empty string or default value
                                                 form.append('center', data.center)
                                                 form.append('eventTYpe', data.eventType)
+                                                
                                                 let loading = Waiting()
                                                 document.body.appendChild(loading)
                                                 const remove = () => {
                                                     loading.remove()
                                                 }
+                                                
                                                 try {
                                                     const res = await fetch('/evaluatorReg', {
                                                         method: 'POST',
@@ -809,7 +720,7 @@ const encodeEvaluator = () => {
                                 ]
                             })
                         ]
-                    }), //submission
+                    }),
                 ]
             })
         ]
