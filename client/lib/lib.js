@@ -51,6 +51,7 @@ export const $ = ({tag, att, text, child, elementHandler, style, externalStyle, 
     }
     return Tag;
 }
+
 export const Fragment = ({child}) => {
     const fragment = document.createDocumentFragment()
     if (child) {
