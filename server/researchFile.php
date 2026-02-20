@@ -269,8 +269,8 @@ if (isset($_POST['uploadResearch'])) {
     error_reporting(E_ALL);
     ini_set('display_errors', 0);
     
-    $campus = $_SESSION['userOffice'];
-    $serderId = $_SESSION['userId'];
+    $center = $_POST['center'] ?? ''; // Use center from POST, not campus
+    $senderId = $_SESSION['userId'];
     $response = new stdClass();
     $response->message = '';
     $response->serverMessage = "";
@@ -303,7 +303,7 @@ if (isset($_POST['uploadResearch'])) {
                     $title = $_POST['title'];
                     $author = $_POST['author'];
                     $category = $_POST['category'];
-                    $center = $_POST['center'];
+                    $center = $_POST['center']; // This is the center name
                     $coAuthor = $_POST['coAuthor'] ?? '[]';
                     $presenter = $_POST['presenter'];
                     
@@ -348,9 +348,9 @@ if (isset($_POST['uploadResearch'])) {
                     // Insert endorsement record with Drive metadata
                     $defaultTime = date('Y-m-d H:i:s');
                     
+                    // FIXED: Removed duplicate center column and corrected number of placeholders
                     $query2 = "INSERT INTO endorsement (
                         endorsement.senderid,
-                        endorsement.center,
                         endorsement.center,
                         endorsement.file, 
                         endorsement.drive_file_id,
@@ -363,7 +363,7 @@ if (isset($_POST['uploadResearch'])) {
                         endorsement.event,
                         endorsement.status,
                         endorsement.date
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"; // 13 placeholders
 
                     $stateM = $con->prepare($query2);
                     if (!$stateM) {
@@ -379,11 +379,11 @@ if (isset($_POST['uploadResearch'])) {
                     $drive_category_folder_id = $endorsementDriveResult['drive_category_folder_id'] ?? null;
                     $drive_entry_folder_id = $endorsementDriveResult['drive_entry_folder_id'] ?? null;
                     
+                    // FIXED: Removed $campus parameter and corrected to 13 parameters
                     $stateM->bind_param(
-                        'ssssssssssssss', 
-                        $serderId, 
-                        $campus, 
-                        $center,
+                        'sssssssssssss', // 13 's' parameters
+                        $senderId, 
+                        $center, // Use center, not campus
                         $endorsementFileJson,
                         $endorsementDriveResult['drive_file_id'],
                         $endorsementDriveResult['drive_view_url'],
@@ -546,11 +546,11 @@ if (isset($_POST['uploadResearch'])) {
                     // Bind parameters - count should match: 23 parameters
                     $bound = $stementResNew->bind_param(
                         'sssssssssssssssssssssss', // 23 's' for strings (including NULL values)
-                        $serderId,
+                        $senderId,
                         $endorsementId,
                         $author,
                         $title,
-                        $center,
+                        $center, // Use center
                         $category,
                         $researchDriveResult['drive_file_id'],
                         $researchDriveResult['drive_view_url'],
@@ -565,7 +565,7 @@ if (isset($_POST['uploadResearch'])) {
                         $programDriveViewUrl,
                         $eventType,
                         $eventId,
-                        $campus,
+                        $center, // Use center for campus field as well (for backward compatibility)
                         $coAuthor,
                         $presenter,
                         $rev
@@ -694,21 +694,38 @@ if (isset($_POST['acceptRequest'])) {
     
     echo json_encode($response);
 }
-
+// this is for evaluator
 if (isset($_POST['researchSubmit'])) {
     $response = new stdClass();
     $response->list = [];
     $response->userName = '';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Get center from POST or session (changed from category)
+        // Get center from POST or session
         $center = isset($_POST['center']) ? $_POST['center'] : (isset($_SESSION['centerId']) ? $_SESSION['centerId'] : $_SESSION['center']);
         $event = isset($_POST['event']) ? $_POST['event'] : $_SESSION['eventTYpe'];
         $eventId = isset($_POST['eventId']) ? $_POST['eventId'] : $_SESSION['eventId'];
         $response->userName = $_SESSION['userName'];
         $evalId = $_SESSION['userId'];
 
-        // UPDATED QUERY with backward compatibility for file URLs and including comments.title
+        // FIXED: Use center code mapping for consistent comparison
+        // Get the actual center name from the center table using the session center code
+        $centerNameQuery = "SELECT name FROM center WHERE code = ? OR UPPER(code) = UPPER(?) OR name LIKE ? LIMIT 1";
+        $centerStmt = $con->prepare($centerNameQuery);
+        $searchTerm = "%$center%";
+        $centerStmt->bind_param("sss", $center, $center, $searchTerm);
+        $centerStmt->execute();
+        $centerResult = $centerStmt->get_result();
+        $centerRow = $centerResult->fetch_assoc();
+        
+        // If we found a matching center in the database, use its name
+        // Otherwise, use the original value but convert to proper case for comparison
+        $dbCenterName = $centerRow ? $centerRow['name'] : $center;
+        
+        error_log("Evaluator center (session): $center");
+        error_log("Looking for researchfiles with center: $dbCenterName");
+
+        // UPDATED QUERY with better center matching
         $sqlQueries = "SELECT 
             researchfile.id,
             researchfile.author,
@@ -721,7 +738,6 @@ if (isset($_POST['researchSubmit'])) {
             researchfile.event,
             researchfile.event_id,      
             researchfile.category,
-            researchfile.center,
             endorsement.center,
             event_list.id as eventId,
             category.id as catId
@@ -730,13 +746,34 @@ if (isset($_POST['researchSubmit'])) {
         LEFT JOIN event_list ON researchfile.event_id = event_list.id
         LEFT JOIN category ON researchfile.category = category.name
         WHERE endorsement.status = ? 
-        AND (researchfile.center = ? OR researchfile.center LIKE CONCAT(?, '%')) 
+        AND (
+            researchfile.center = ? 
+            OR researchfile.center LIKE ?
+            OR UPPER(researchfile.center) = UPPER(?)
+            OR researchfile.center LIKE ?
+        )
         AND researchfile.event_id = ?
         AND event_list.dead_line > CURRENT_TIMESTAMP";
 
         $stm = $con->prepare($sqlQueries);
         $stat = 'accepted';
-        $stm->bind_param("ssss", $stat, $center, $center, $eventId);
+        
+        // Create multiple variations for matching
+        $centerExact = $dbCenterName;
+        $centerLike = "%$dbCenterName%";
+        $centerUpper = strtoupper($center);
+        $centerLikeUpper = "%" . strtoupper($dbCenterName) . "%";
+        
+        $stm->bind_param(
+            "sssssi", 
+            $stat, 
+            $centerExact,     // exact match
+            $centerLike,      // contains match
+            $centerUpper,     // case-insensitive exact
+            $centerLikeUpper, // case-insensitive contains
+            $eventId
+        );
+        
         $stm->execute();
         $resultRes = $stm->get_result();
 
@@ -849,6 +886,8 @@ if (isset($_POST['researchSubmit'])) {
             
             $response->list[] = $data;
         }
+        
+        error_log("Found " . count($response->list) . " research files for center: $dbCenterName");
     }
     echo json_encode($response);
 }

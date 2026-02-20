@@ -15,9 +15,7 @@ import {$, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting} from '
 const LoginPanel = (prop) => {
 
     let username
-
     let password
-
     let usertype
     let form
     let formUserType
@@ -25,21 +23,31 @@ const LoginPanel = (prop) => {
     let selType
 
     const getUserType = (value) => {
-
         usertype = value
-
     }
 
     const getUserName = (value) => {
-
         username = value
-
     }
 
     const getPassword = (value) => {
-
         password = value
+    }
 
+    // Toggle password visibility function
+    const togglePasswordVisibility = (inputId, iconId) => {
+        const input = document.getElementById(inputId)
+        const icon = document.getElementById(iconId)
+        
+        if (input && icon) {
+            if (input.type === 'password') {
+                input.type = 'text'
+                icon.className = 'fa-solid fa-eye-slash'
+            } else {
+                input.type = 'password'
+                icon.className = 'fa-solid fa-eye'
+            }
+        }
     }
 
     const getSubmit = (bot) => {
@@ -160,13 +168,7 @@ const LoginPanel = (prop) => {
 
                 }
 
-
-
             }
-
-
-
-
 
         })
 
@@ -575,10 +577,14 @@ const LoginPanel = (prop) => {
                                 ]
                             }),
 
+                            // Password field with eye icon
                             $({
                                 tag:'div',
                                 att:{
-                                    className:'input-group mb-3 input-group-floating'
+                                    className:'input-group mb-3 input-group-floating password-container'
+                                },
+                                style:{
+                                    position: 'relative'
                                 },
                                 child:[
                                     $({
@@ -604,7 +610,7 @@ const LoginPanel = (prop) => {
                                         tag:'input',
                                         att:{
                                             type:'password',
-                                            className:'form-control',
+                                            className:'form-control password-input',
                                             name:'password',
                                             id:'userPid',
                                             placeholder:' ',
@@ -614,7 +620,8 @@ const LoginPanel = (prop) => {
                                         style:{
                                             backgroundColor:'rgba(0,0,0,0.3)',
                                             color:'#ddd',
-                                            border: 'none'
+                                            border: 'none',
+                                            paddingRight: '40px' // Space for eye icon
                                         }
                                     }),
                                     $({
@@ -626,6 +633,45 @@ const LoginPanel = (prop) => {
                                         style:{
                                             color:'#999',
                                             backgroundColor: 'transparent'
+                                        }
+                                    }),
+                                    // Eye icon for password visibility toggle
+                                    $({
+                                        tag:'span',
+                                        att:{
+                                            className: 'password-toggle',
+                                            id: 'toggle-login-password'
+                                        },
+                                        style: {
+                                            position: 'absolute',
+                                            right: '10px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            cursor: 'pointer',
+                                            color: '#999',
+                                            zIndex: '10',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: '30px',
+                                            height: '30px',
+                                            borderRadius: '50%',
+                                            transition: 'all 0.3s ease'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'i',
+                                                att: {
+                                                    className: 'fa-solid fa-eye',
+                                                    id: 'login-password-eye-icon'
+                                                }
+                                            })
+                                        ],
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                togglePasswordVisibility('userPid', 'login-password-eye-icon')
+                                            }
                                         }
                                     })
                                 ]
@@ -651,128 +697,80 @@ const LoginPanel = (prop) => {
 const Signup = (prop) => {
 
     let email
-
     let center
-
     let username
-
     let password
-
     let conPass
-
     let fullName
 
-
-
     const get = {
-
         email: (value) => {
-
             email = value
-
         },
-
         fullName: (value) => {
-
             fullName = value
-
         },
-
-
-
         center: (value) => {
-
             center = value
-
         },
-
         username: (value) => {
-
             username = value
-
         },
-
         password: (value) => {
-
             password = value
-
         },
-
         conPass: (value) => {
-
             conPass = value
-
         },
-
     }
 
-
+    // Toggle password visibility function
+    const togglePasswordVisibility = (inputId, iconId) => {
+        const input = document.getElementById(inputId)
+        const icon = document.getElementById(iconId)
+        
+        if (input && icon) {
+            if (input.type === 'password') {
+                input.type = 'text'
+                icon.className = 'fa-solid fa-eye-slash'
+            } else {
+                input.type = 'password'
+                icon.className = 'fa-solid fa-eye'
+            }
+        }
+    }
 
     const TableCont = ({label, element}) => {
-
         return $({
-
             tag: 'table',
-
             att: {
-
                 className: 'logTable sign'
-
             },
-
             child: [
-
                 $({
-
                     tag: 'tr',
-
                     child: [
-
                         $({
-
                             tag: 'td',
-
                             att: {
-
                                 className: 'labelTDSign'
-
                             },
-
                             text: label
-
                         }),
-
                     ]
-
                 }),
-
                 $({
-
                     tag: 'tr',
-
                     child: [
-
                         $({
-
                             tag: 'td',
-
-
-
                             child: [element]
-
                         }),
-
                     ]
-
                 }),
-
             ]
-
         })
-
     }
-
-
 
     const getContainer = (container) => {
         const option = ({label, placeholder, value}) => {
@@ -806,7 +804,7 @@ const Signup = (prop) => {
                 const match = val.match(/\(([^)]+)\)/);
                 if (match) {
                     code = match[1]; // Gets "CSRDC", "LRDC", etc.
-                } else if (val === "EXTENSION") {
+                } else if (val === "Extension") {
                     code = "Extension"; // Match your database value
                 }
                 
@@ -828,7 +826,7 @@ const Signup = (prop) => {
                 event: {
                     type: 'change',
                     method: (event) => {
-                        get.center(event.target.value)  // This will now receive "SSRDC", not the full text
+                        get.center(event.target.value)
                     }
                 },
                 att: {
@@ -839,361 +837,309 @@ const Signup = (prop) => {
         }))
 
         container.appendChild(TableCont({
-
             label: 'Email address',
-
             element: $({
-
                 tag: 'input',
-
                 att: {
                     className: 'signInput',
                     placeholder: 'xxxx@capsu.edu.ph',
                     id: 'signup-email',
                     autocomplete: 'email'
-
                 },
-
                 event: {
-
                     type: 'input',
-
                     method: (event) => {
-
                         get.email(event.target.value)
-
                     }
-
                 }
-
             })
-
         }))
 
         container.appendChild(TableCont({
-
             label: 'Full name',
-
             element: $({
-
                 tag: 'input',
-
                 att: {
                     id: 'signinput-fullname',
                     className: 'signInput',
                     placeholder: 'Enter full name'
-
                 },
-
                 event: {
-
                     type: 'input',
-
                     method: (event) => {
-
                         get.fullName(event.target.value)
-
                     }
-
                 }
-
             })
-
         }))
 
         container.appendChild(TableCont({
-
             label: 'Username',
-
             element: $({
-
                 tag: 'input',
-
                 att: {
                     id: 'signinput-Username',
                     className: 'signInput',
                     placeholder: 'Enter username'
-
                 },
-
                 event: {
-
                     type: 'input',
-
                     method: (event) => {
-
                         get.username(event.target.value)
-
                     }
-
                 },
-
                 elementHandler: SpecialChar
-
             })
-
         }))
 
-
-
-
-
+        // Password field with eye icon
         container.appendChild(TableCont({
-
             label: 'Password',
-
             element: $({
-
-                tag: 'input',
-
+                tag: 'div',
                 att: {
-
-                    type: 'password',
-
-                    className: 'signInput',
-
-                    placeholder: 'Create  8 to 20 characters password',
-
-                    maxLength: '20',
-
-                    minLength:'8',
-                    id: 'signup-password',
-                    name: 'password',
-                    autocomplete: 'new-password'
-
+                    className: 'password-container'
                 },
-
-                event: {
-
-                    type: 'input',
-
-                    method: (event) => {
-
-                        get.password(event.target.value)
-
-                    }
-
+                style: {
+                    position: 'relative',
+                    width: '100%'
                 },
-
-                elementHandler: SpecialChar
-
-            })
-
-        }))
-
-        container.appendChild(TableCont({
-
-            label: 'Re-type Password',
-
-            element: $({
-
-                tag: 'input',
-
-                att: {
-
-                    type: 'password',
-
-                    className: 'signInput',
-
-                    placeholder: 'Re-enter password',
-
-                    maxLength: '20',
-                    id: 'signup-confirm-password',
-                    name: 'confirmPasswod',
-                    autocomplete: 'new-password'
-
-                },
-
-                event: {
-
-                    type: 'input',
-
-                    method: (event) => {
-
-                        get.conPass(event.target.value)
-
-                    }
-
-                },
-
-                elementHandler: SpecialChar
-
-            })
-
-        }))
-
-        container.appendChild(TableCont({
-
-            label: '',
-
-            element: $({
-
-                tag: 'input',
-
-                att: {
-
-                    type: 'button',
-
-                    className: 'submit',
-
-                    value: 'Submit'
-
-                },
-
-                event: {
-
-                    type: 'click',
-
-                    method: async () => {
-
-                        if (center === undefined) {
-
-                            alert("Please select a Research Center..!")
-
-                            return
-
-                        }
-
-                        if (email === undefined) {
-
-                            alert("E-Mailer is missing..!")
-
-                            return
-
-                        }
-
-                        if (fullName === undefined) {
-
-                            alert("Full name is missing..!")
-
-                            return
-
-                        }
-
-                        if (username === undefined) {
-
-                            alert("Username is missing..!")
-
-                            return
-
-                        }
-
-                        if (password === undefined) {
-
-                            alert("Password is missing..!")
-
-                            return
-
-                        }
-
-                        if (password.split('').length < 8) {
-
-                            alert("please provide at least 8 characters password...!")
-
-                            return
-
-                        }
-
-
-
-                        if (password === conPass) {
-
-                            const form = new FormData();
-
-                            form.append('auth', 'signup')
-
-                            form.append('cName', center.toUpperCase())
-
-                            form.append('userEmail', email)
-
-                            form.append('fullName', fullName)
-
-                            form.append('username', username)
-
-                            form.append('password', password)
-
-                            let loading = Waiting()
-
-                            document.body.appendChild(loading)
-
-                            const remove = () => {
-
-                                loading.remove()
-
+                child: [
+                    $({
+                        tag: 'input',
+                        att: {
+                            type: 'password',
+                            className: 'signInput password-input',
+                            placeholder: 'Create 8 to 20 characters password',
+                            maxLength: '20',
+                            minLength: '8',
+                            id: 'signup-password',
+                            name: 'password',
+                            autocomplete: 'new-password'
+                        },
+                        style: {
+                            width: '100%',
+                            paddingRight: '40px' // Make space for the eye icon
+                        },
+                        event: {
+                            type: 'input',
+                            method: (event) => {
+                                get.password(event.target.value)
                             }
-
-                            await fetch('/server/authToken.php', {
-
-                                method: "POST",
-
-                                body: form
-
-                            }).then(res => {
-
-                                if (res.ok) {
-
-                                    remove()
-
-                                    return res.json()
-
+                        },
+                        elementHandler: SpecialChar
+                    }),
+                    $({
+                        tag: 'span',
+                        att: {
+                            className: 'password-toggle',
+                            id: 'toggle-password'
+                        },
+                        style: {
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            cursor: 'pointer',
+                            color: '#999',
+                            zIndex: '10'
+                        },
+                        child: [
+                            $({
+                                tag: 'i',
+                                att: {
+                                    className: 'fa-solid fa-eye',
+                                    id: 'password-eye-icon'
                                 }
-
-                            }).then(dat => {
-
-                                if (dat.status) {
-
-                                    document.body.appendChild(ConfirmationAlert("Your account has been successfully created...!\n please check your email..!", () => {
-
-                                        window.location.replace(dat.message)
-
-                                    }))
-
-                                } else {
-
-                                    document.body.appendChild(ConfirmationAlert(dat.message, () => {
-
-                                        window.location.reload()
-
-                                    }))
-
-                                }
-
                             })
-
+                        ],
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                togglePasswordVisibility('signup-password', 'password-eye-icon')
+                            }
                         }
-
-                    }
-
-                }
-
+                    })
+                ]
             })
-
         }))
 
+        // Confirm Password field with eye icon
+        container.appendChild(TableCont({
+            label: 'Re-type Password',
+            element: $({
+                tag: 'div',
+                att: {
+                    className: 'password-container'
+                },
+                style: {
+                    position: 'relative',
+                    width: '100%'
+                },
+                child: [
+                    $({
+                        tag: 'input',
+                        att: {
+                            type: 'password',
+                            className: 'signInput password-input',
+                            placeholder: 'Re-enter password',
+                            maxLength: '20',
+                            id: 'signup-confirm-password',
+                            name: 'confirmPasswod',
+                            autocomplete: 'new-password'
+                        },
+                        style: {
+                            width: '100%',
+                            paddingRight: '40px' // Make space for the eye icon
+                        },
+                        event: {
+                            type: 'input',
+                            method: (event) => {
+                                get.conPass(event.target.value)
+                            }
+                        },
+                        elementHandler: SpecialChar
+                    }),
+                    $({
+                        tag: 'span',
+                        att: {
+                            className: 'password-toggle',
+                            id: 'toggle-confirm-password'
+                        },
+                        style: {
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            cursor: 'pointer',
+                            color: '#999',
+                            zIndex: '10'
+                        },
+                        child: [
+                            $({
+                                tag: 'i',
+                                att: {
+                                    className: 'fa-solid fa-eye',
+                                    id: 'confirm-password-eye-icon'
+                                }
+                            })
+                        ],
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                togglePasswordVisibility('signup-confirm-password', 'confirm-password-eye-icon')
+                            }
+                        }
+                    })
+                ]
+            })
+        }))
+
+        container.appendChild(TableCont({
+            label: '',
+            element: $({
+                tag: 'input',
+                att: {
+                    type: 'button',
+                    className: 'submit',
+                    value: 'Submit'
+                },
+                event: {
+                    type: 'click',
+                    method: async () => {
+                        if (center === undefined) {
+                            alert("Please select a Research Center..!")
+                            return
+                        }
+                        if (email === undefined) {
+                            alert("E-Mail is missing..!")
+                            return
+                        }
+                        if (fullName === undefined) {
+                            alert("Full name is missing..!")
+                            return
+                        }
+                        if (username === undefined) {
+                            alert("Username is missing..!")
+                            return
+                        }
+                        if (password === undefined) {
+                            alert("Password is missing..!")
+                            return
+                        }
+                        if (password.length < 8) {
+                            alert("Please provide at least 8 characters password...!")
+                            return
+                        }
+
+                        if (password !== conPass) {
+                            alert("Passwords do not match!")
+                            return
+                        }
+
+                        const form = new FormData();
+                        form.append('auth', 'signup')
+                        form.append('cName', center.toUpperCase())
+                        form.append('userEmail', email)
+                        form.append('fullName', fullName)
+                        form.append('username', username)
+                        form.append('password', password)
+                        
+                        let loading = Waiting()
+                        document.body.appendChild(loading)
+                        
+                        const remove = () => {
+                            loading.remove()
+                        }
+
+                        try {
+                            const res = await fetch('/server/authToken.php', {
+                                method: "POST",
+                                body: form
+                            })
+                            
+                            if (res.ok) {
+                                remove()
+                                const dat = await res.json()
+                                
+                                if (dat.status) {
+                                    // Show success message and redirect to login page
+                                    document.body.appendChild(ConfirmationAlert(
+                                        "Your account has been successfully created!\nPlease check your email to verify your account.", 
+                                        () => {
+                                            // Redirect to login page after user clicks OK
+                                            window.location.replace('/account/Login?')
+                                        }
+                                    ))
+                                } else {
+                                    document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                        // Stay on signup page on error
+                                        window.location.reload()
+                                    }))
+                                }
+                            } else {
+                                remove()
+                                alert("Server error. Please try again later.")
+                            }
+                        } catch (error) {
+                            remove()
+                            console.error('Signup error:', error)
+                            alert("An error occurred during registration. Please try again.")
+                        }
+                    }
+                }
+            })
+        }))
     }
 
-
-
-
-
     return ($({
-
         tag: 'div',
-
         att: {
-
             className: 'logInDiv signIn'
-
         },
-
         elementHandler: getContainer
-
-
-
     }))
-
 }
-
 
 
 const logo = () => {
@@ -1263,8 +1209,6 @@ const logo = () => {
     }))
 
 }
-
-
 
 export const LoginPage = () => {
 

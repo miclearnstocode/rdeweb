@@ -379,6 +379,49 @@ if (isset($_POST['evalLeb'])) {
     exit();
 }
 
+if (isset($_POST['resetEvaluatorPassword'])) {
+    logMemoryUsage('resetEvaluatorPassword - Start');
+    logExecutionTime('resetEvaluatorPassword');
+
+    $res = new stdClass();
+    $res->status = false;
+    $res->message = '';
+    
+    $id = $_POST['id'];
+    $newPassword = $_POST['newPassword'];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        logMemoryUsage('resetEvaluatorPassword - After DB Connection');
+        
+        // Hash the new password
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        
+        $query = "UPDATE `evaluator` SET `password` = ? WHERE `id` = ?";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("ss", $hashedPassword, $id);
+        
+        if ($stmt->execute()) {
+            $res->status = true;
+            $res->message = "Password reset successfully";
+            logMemoryUsage('resetEvaluatorPassword - Update Successful');
+        } else {
+            $res->message = $con->error;
+            logMemoryUsage('resetEvaluatorPassword - Update Failed');
+        }
+        
+        $stmt->close();
+        $con->close();
+    } else {
+        $res->message = 'Database connection failed';
+    }
+
+    logMemoryUsage('resetEvaluatorPassword - End');
+    ob_clean();
+    echo json_encode($res);
+    ob_end_flush();
+    exit();
+}
+
 // Log final memory usage if no endpoint matched
 logMemoryUsage('No Endpoint Matched');
 logExecutionTime('Script End');

@@ -111,7 +111,7 @@ const CreateNew = () => {
         "Social Science Research & Development Center (SSRDC)": ["Social Science"],
         "Machinery and Agricultural Technology Engineering Center (MATEC)": ["Industrial", "Engineering", "Information Technology", "Development","Agricultural Machinery"],
         "Coconut Research and Development Center (Coco RDC)": ["Natural / Biological"],
-        "Extension": ["Extension"]
+        "Extension (Extension)": ["Extension"]
     }
 
     // Reverse mapping for quick lookup

@@ -162,7 +162,60 @@ const encodeUser = () => {
             event: {
                 type: 'click',
                 method: async (event) => {
-                    // ... keep the existing method code ...
+                    const submitBtn = document.getElementById('centerDirectorSubmitBtn')
+                    
+                    if (submitBtn.disabled) {
+                        event.preventDefault()
+                        return
+                    }
+                    
+                    if (accountData.center.trim() === '' || accountData.gmail.trim() === '') {
+                        alert("Please select a center and enter Gmail address!")
+                        return
+                    }
+                    
+                    // Validate email format
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                    if (!emailRegex.test(accountData.gmail)) {
+                        alert("Please enter a valid email address!")
+                        return
+                    }
+                    
+                    const load = Waiting()
+                    document.body.appendChild(load)
+                    
+                    submitBtn.disabled = true
+                    
+                    try {
+                        const req = new Request('/addcapaccount')
+                        req.Post([
+                            { name: 'registerAccount', value: 'true' },
+                            { name: 'email', value: accountData.gmail },
+                            { name: 'accountName', value: accountData.userType },
+                            { name: 'center', value: accountData.center }
+                        ])
+                        req.Json()
+                        
+                        const data = await req.Send()
+                        load.remove()
+                        
+                        if (data.status) {
+                            setTimeout(() => {
+                                alert(data.message)
+                                window.location.replace('/account/Login')
+                            }, 100)
+                        } else {
+                            alert(data.message)
+                            submitBtn.disabled = false
+                            validateForm()
+                        }
+                    } catch (error) {
+                        load.remove()
+                        console.error('Error:', error)
+                        alert('An error occurred during submission')
+                        submitBtn.disabled = false
+                        validateForm()
+                    }
                 }
             }
         }))
@@ -855,7 +908,46 @@ const rdeUser = () => {
             event: {
                 type: 'click',
                 method: async (event) => {
-                    // ... keep the existing method code ...
+                    const submitBtn = document.getElementById('rdeSubmitBtn')
+                    
+                    if (submitBtn.disabled) {
+                        event.preventDefault()
+                        return
+                    }
+                    
+                    if (!data.email.trim() || !data.userName.trim() || !data.password.trim()) {
+                        alert('All fields are required!')
+                        return
+                    }
+                    
+                    const form = new FormData()
+                    form.append('submitStaff', 'true')
+                    form.append('staffEmail', data.email)
+                    form.append('staffUserName', data.userName)
+                    form.append('staffPassword', data.password)
+                    
+                    submitBtn.disabled = true
+                    
+                    try {
+                        const res = await fetch('/rdeStaff', {
+                            method: 'POST',
+                            body: form,
+                        })
+                        const responseData = await res.json()
+                        
+                        if (responseData.status) {
+                            window.location.reload()
+                        } else {
+                            alert(responseData.message)
+                            submitBtn.disabled = false
+                            validateForm()
+                        }
+                    } catch (error) {
+                        console.error('Error:', error)
+                        alert('An error occurred during submission')
+                        submitBtn.disabled = false
+                        validateForm()
+                    }
                 }
             }
         }))

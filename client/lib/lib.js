@@ -131,26 +131,28 @@ export const CanvasRender = ({pdf, canvas, fileUrl, getSource}) => {
     })
 }
 export const CapsuOffice = [
-    "CROP SCIENCE RESEARCH & DEVELOPMENT CENTER (CSRDC)",
-    "LIVESTOCK RESEARCH & DEVELOPMENT CENTER (LRDC)",
-    "FISHERIES RESEARCH & DEVELOPMENT CENTER (FRDC)",
-    "FOOD AND INDUSTRIAL TECHNOLOGY RESEARCH & DEVELOPMENT CENTER (FIRDC)",
-    "SOCIAL SCIENCE RESEARCH & DEVELOPMENT CENTER (SSRDC)",
-    "MACHINERY AND AGRICULTURAL TECHNOLOGY ENGINEERING CENTER (MATEC)",
-    "COCONUT RESEARCH AND DEVELOPMENT CENTER (COCO RDC)",
-    "EXTENSION"
+    "Crop Science Research & Development Center (CSRDC)",
+    "Livestock Research & Development Center (LRDC)",
+    "Fisheries Research & Development Center (FRDC)",
+    "Food and Industrial Technology Research & Development Center (FIRDC)",
+    "Social Science Research & Development Center (SSRDC)",
+    "Machinery and Agricultural Technology Engineering Center (MATEC)",
+    "Coconut Research and Development Center (Coco RDC)",
+    "Extension"
 ]
 
-// Helper function to get center code from display name
+// Get center code from display name
 export const getCenterCode = (displayName) => {
-    if (displayName === "EXTENSION") return "Extension";
+    if (!displayName) return "";
+    if (displayName === "Extension") return "Extension";
+    
     const match = displayName.match(/\(([^)]+)\)/);
     return match ? match[1] : displayName;
 }
 
-// Helper function to get all center codes
+// Get all center codes
 export const getCenterCodes = () => {
-    return CapsuOffice.map(val => getCenterCode(val));
+    return CapsuOffice.map(center => getCenterCode(center));
 }
 
 export const Waiting = () => {
