@@ -484,7 +484,6 @@ const capUser = () => {
                         }),
                         $({
                             tag: 'div',
-                            text: name,
                             style: {
                                 width: '22%',
                                 fontFamily: 'Segoe UI, sans-serif',
@@ -493,8 +492,33 @@ const capUser = () => {
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                paddingRight: '1vw'
-                            }
+                                paddingRight: '1vw',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5vw'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    att: {
+                                        className: 'fa-solid fa-user-circle',
+                                    },
+                                    style: {
+                                        color: 'rgba(0,188,212,0.6)',
+                                        fontSize: '1.2vw',
+                                        flexShrink: 0
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: name,
+                                    style: {
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                    }
+                                })
+                            ]
                         }),
                         $({
                             tag: 'div',
