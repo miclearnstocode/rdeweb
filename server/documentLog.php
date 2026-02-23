@@ -11,14 +11,14 @@ if (isset($_POST['logRequest'])) {
     $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $query="SELECT 
-document_log.id,
-document_log.user_id as userID,
-document_log.doc_id as docId,
-rdestaff.email as rdeName,
-document_log.details,
-document_log.date
-FROM document_log
-LEFT JOIN rdestaff ON document_log.user_id=rdestaff.id";
+        document_log.id,
+        document_log.user_id as userID,
+        document_log.doc_id as docId,
+        rdestaff.email as rdeName,
+        document_log.details,
+        document_log.date
+        FROM document_log
+        LEFT JOIN rdestaff ON document_log.user_id=rdestaff.id";
         $statement=$con->prepare($query);
         $statement->execute();
         $res=$statement->get_result();
@@ -26,6 +26,20 @@ LEFT JOIN rdestaff ON document_log.user_id=rdestaff.id";
             $response[]=$row;
         }
 
+    }
+    echo json_encode($response);
+}
+
+if (isset($_POST['emailLogRequest'])) {
+    $response = [];
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "SELECT * FROM `email_log` ORDER BY sent_date DESC";
+        $statement = $con->prepare($query);
+        $statement->execute();
+        $res = $statement->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $response[] = $row;
+        }
     }
     echo json_encode($response);
 }

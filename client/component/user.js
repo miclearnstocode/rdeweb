@@ -147,6 +147,12 @@ export const UserPanel = () => {
             
             nav.appendChild(ReqButton());
             
+            const currentPath = window.location.href.replace(window.location.origin, '');
+            const currentMainSection = currentPath.split('/')[2];
+            
+            // Track if any tab matches the current URL
+            let foundActiveTab = false;
+            
             tabsButton.forEach(val => {
                 const buttonWrapper = $({
                     tag: 'div',
@@ -156,22 +162,41 @@ export const UserPanel = () => {
                     child: [val.button]
                 });
                 
-                if (val.url.split('/')[2] === window.location.href.replace(window.location.origin, '').split('/')[2]) {
+                // Check if this tab matches the current URL
+                if (val.url.split('/')[2] === currentMainSection) {
+                    foundActiveTab = true;
                     val.button.className += ' active-nav';
                     let td = val.button.getElementsByTagName('td');
                     for (let x = 0; x < td.length; x++) {
                         td[x].style.color = '#00bcd4';
                     }
                 }
+                
                 nav.appendChild(buttonWrapper);
-            })
+            });
+            
+            // If no tab matches the URL, make Event Documents (first tab) active
+            if (!foundActiveTab) {
+                // Find the Event Documents tab (first tab with research in URL)
+                const eventDocsTab = tabsButton.find(tab => tab.url.includes('/research/'));
+                if (eventDocsTab) {
+                    eventDocsTab.button.className += ' active-nav';
+                    let td = eventDocsTab.button.getElementsByTagName('td');
+                    for (let x = 0; x < td.length; x++) {
+                        td[x].style.color = '#00bcd4';
+                    }
+                }
+            }
         },
         getFrame: (frame) => {
             let urlState = true;
             frame.className = 'modern-frame';
             
+            const currentPath = window.location.href.replace(window.location.origin, '');
+            const currentMainSection = currentPath.split('/')[2];
+            
             tabsButton.forEach(val => {
-                if (val.url.split('/')[2] === window.location.href.replace(window.location.origin, '').split('/')[2]) {
+                if (val.url.split('/')[2] === currentMainSection) {
                     urlState = false;
                     const pageWrapper = $({
                         tag: 'div',
@@ -184,8 +209,25 @@ export const UserPanel = () => {
                 }
             });
             
+            // If no matching tab found, show Event Documents (Research) by default
             if (urlState) {
-                frame.appendChild(Error());
+                // Find the Event Documents tab (first tab with research in URL)
+                const eventDocsTab = tabsButton.find(tab => tab.url.includes('/research/'));
+                if (eventDocsTab) {
+                    const pageWrapper = $({
+                        tag: 'div',
+                        att: {
+                            className: 'page-wrapper'
+                        },
+                        child: [eventDocsTab.page()]
+                    });
+                    frame.appendChild(pageWrapper);
+                    
+                    // Also update the URL to match Event Documents without reloading
+                    history.pushState({}, '', eventDocsTab.url);
+                } else {
+                    frame.appendChild(Error());
+                }
             }
         }
     }
