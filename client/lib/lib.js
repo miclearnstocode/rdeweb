@@ -620,3 +620,79 @@ export const SearchMethod=({nodeList,textArray,display})=>{
         })
     })
 }
+export const UnderConstruction = ({ message = "This feature is under construction", duration = 3000 }) => {
+    let notificationContainer;
+    
+    const getContainer = (el) => {
+        notificationContainer = el;
+        
+        // Auto remove after duration
+        setTimeout(() => {
+            if (notificationContainer && notificationContainer.remove) {
+                notificationContainer.classList.add('fade-out');
+                setTimeout(() => {
+                    if (notificationContainer.parentNode) {
+                        notificationContainer.remove();
+                    }
+                }, 300)
+            }
+        }, duration)
+    }
+
+    return ($({
+        tag: 'div',
+        externalStyle: '/client/lib/loaderStyleLib.css',
+        att: {
+            className: 'under-construction-notification'
+        },
+        elementHandler: getContainer,
+        child: [
+            $({
+                tag: 'div',
+                att: {
+                    className: 'notification-content'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        att: {
+                            className: 'notification-icon'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: {
+                                    className: 'fa-solid fa-tools'
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        att: {
+                            className: 'notification-message'
+                        },
+                        text: message
+                    }),
+                    $({
+                        tag: 'div',
+                        att: {
+                            className: 'notification-progress'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                att: {
+                                    className: 'progress-bar'
+                                },
+                                style: {
+                                    animation: `shrink ${duration}ms linear forwards`
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+        ]
+    }))
+}

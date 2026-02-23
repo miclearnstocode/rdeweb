@@ -4843,7 +4843,7 @@ export const Research = () => {
     tabsPage.push({
         url: '/user/research/submittedDocs/submittedFiles',
         tab: tabButton({
-            label: 'Documents',
+            label: 'Documents Uploaded',
             url: '/user/research/submittedDocs/submittedFiles'
         }),
         page: Submitted

@@ -1,17 +1,8 @@
-import {$, ConfirmationAlert, Request, Waiting} from '../../../lib/lib.js'
+import {$, ConfirmationAlert, Request, Waiting, UnderConstruction} from '../../../lib/lib.js'
 
 export const ReqButton = () => {
     return ($({
         tag: 'div',
-        style: {
-            width: '100%',
-            height: '5vh',
-            marginBottom: '3vh',
-            marginTop: '3vh',
-            display: 'flex',
-            justifyContent: 'center',
-            cursor: 'pointer'
-        },
         att: {
             className: 'reqBot'
         },
@@ -20,29 +11,13 @@ export const ReqButton = () => {
             $({
                 tag: 'div',
                 att: {
-                    className: "fa-solid fa-circle-exclamation",
-                },
-                style: {
-                    margin: 'auto',
-                    fontSize: '1.5vw',
-                    width: 'fit-content',
-                    height: 'fit-content',
-                    marginRight: '0',
-                    marginLeft: 'auto'
+                    className: "fa-solid fa-circle-exclamation req-icon",
                 }
             }),
             $({
                 tag: 'div',
-
-                style: {
-                    margin: 'auto',
-                    height: 'fit-content',
-                    width: 'fit-content',
-                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                    fontWeight: 'bold',
-                    marginLeft: '1vw',
-                    marginRight: 'auto'
-
+                att: {
+                    className: 'req-text'
                 },
                 text: "User's Request"
             })
@@ -51,6 +26,10 @@ export const ReqButton = () => {
             type: 'click',
             method: () => {
                 document.body.appendChild(UserRequest())
+                // Show under construction notification
+                document.body.appendChild(UnderConstruction({
+                    message: "User's Request feature is currently under construction",
+                }))
             }
         }
     }))
@@ -64,15 +43,7 @@ const UserRequest = () => {
             return ($({
                 tag: 'div',
                 att: {
-                    className: 'fa-solid fa-circle-xmark'
-                },
-                style: {
-                    position: 'absolute',
-                    left: '-5vw',
-                    top: '-2vw',
-                    color: 'deepskyblue',
-                    fontSize: '2.5vw',
-                    cursor: 'pointer'
+                    className: 'fa-solid fa-circle-xmark close-request'
                 },
                 event: {
                     type: 'click',
@@ -82,127 +53,99 @@ const UserRequest = () => {
                 }
             }))
         }
+        
         const Label = (leb) => {
             return ($({
                 tag: 'div',
-                text: leb,
-                style: {
-                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                    fontSize: '1.1vw',
-                    fontWeight: 'bolder',
-                    textAlign: 'center',
-                    marginTop: '1vh',
-                    marginBottom: '1vh',
-                    color: '#bbb'
-                }
+                att: {
+                    className: 'request-label'
+                },
+                text: leb
             }))
         }
+        
         const requestPanel = () => {
 
-            const RequestList = ({user, fileName, fileType, id, campus, date,reqId}) => {
+            const RequestList = ({user, fileName, fileType, id, campus, date, reqId}) => {
                 let getMainReq
+                
                 const Name = $({
                     tag: 'div',
                     text: user,
                     att: {
                         title: campus,
                     },
-                    style: {
-                        color: '#bbb',
-                        width: '60%'
+                    att: {
+                        className: 'request-user-name'
                     }
                 })
+                
                 const file = $({
                     tag: 'div',
                     text: fileName,
                     att: {
-                        title: fileType
-                    },
-                    style: {
-                        color: '#bbb',
-                        width: '40%'
+                        title: fileType,
+                        className: 'request-file-name'
                     }
                 })
+                
                 const dateTime = $({
                     tag: 'div',
-                    text: date,
-                    style: {
-                        fontSize: '1vw',
-                        color: '#999'
-                    }
+                    att: {
+                        className: 'request-date'
+                    },
+                    text: date
                 })
+                
                 const control = () => {
-                    const Icon = ({clsName, style, method}) => {
+                    const Icon = ({clsName, method}) => {
                         return ($({
                             tag: 'div',
-                            style: style,
                             att: {
-                                className: clsName + ' iconLog'
+                                className: clsName + ' icon-log'
                             },
-                            event:{
-                                type:'click',
-                                method:method
+                            event: {
+                                type: 'click',
+                                method: method
                             }
                         }))
                     }
 
-                    const fileViewer=(url)=>{
+                    const fileViewer = (url) => {
                         let flV
                         return($({
-                            tag:'div',
-                            style:{
-                                width:'100%',
-                                height:'100%',
-                                position:'absolute',
-                                left:'0',
-                                right:'0',
-                                backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-                                display:'flex'
+                            tag: 'div',
+                            att: {
+                                className: 'request-file-viewer'
                             },
-                            elementHandler:(el)=>{
-                                flV=el
+                            elementHandler: (el) => {
+                                flV = el
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        width:'80%',
-                                        height:'96%',
-                                        margin:'auto',
-                                        border:'solid thin rgba(100,100,100,0.5)',
-                                        borderRadius: '.5vw',
-                                        padding: '.5rem',
-                                        position:'relative'
+                                    tag: 'div',
+                                    att: {
+                                        className: 'request-viewer-container'
                                     },
-                                    child:[
+                                    child: [
                                         $({
-                                            tag:'div',
-                                            att:{
-                                                className:'fa-solid fa-circle-xmark'
+                                            tag: 'div',
+                                            att: {
+                                                className: 'fa-solid fa-circle-xmark viewer-close'
                                             },
-                                            style:{
-                                                fontSize:'3vw',
-                                                position:'absolute',
-                                                left:'-4vw',
-                                                color:'deepskyblue',
-                                                cursor:'pointer'
-                                            },
-                                            event:{
-                                                type:'click',
-                                                method:()=>{
+                                            event: {
+                                                type: 'click',
+                                                method: () => {
                                                     flV.remove()
                                                 }
-                                            },
+                                            }
                                         }),
                                         $({
-                                            tag:'object',
-                                            att:{
-                                                data:url,
-                                                type:'application/pdf'
-                                            },
-                                            style:{
-                                                width:'100%',
-                                                height:'100%',
+                                            tag: 'object',
+                                            att: {
+                                                data: url,
+                                                type: 'application/pdf',
+                                                className: 'request-pdf-viewer'
                                             }
                                         })
                                     ]
@@ -210,80 +153,62 @@ const UserRequest = () => {
                             ]
                         }))
                     }
+                    
                     return ($({
                         tag: 'div',
-                        style: {
-                            width: '30%',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            position: 'relative',
-
+                        att: {
+                            className: 'request-controls'
                         },
-
                         child: [
                             Icon({
-                                clsName: 'fa-solid fa-thumbs-up',
-                                style: {
-                                    left: '0',
-                                    top: '0',
-                                    bottom: '0',
-                                    right: 'auto',
-                                    margin: 'auto'
-                                },
-                                method:async ()=>{
+                                clsName: 'fa-solid fa-thumbs-up approve-icon',
+                                method: async () => {
                                     if(confirm("Allow this user to access this file?")){
                                         let loading = Waiting()
                                         document.body.appendChild(loading)
                                         const remove = () => {
                                             loading.remove()
                                         }
-                                        const form= new FormData()
+                                        const form = new FormData()
                                         form.append('allowAccess','true')
-                                        form.append('requestId',reqId)
-                                        await fetch('/requestDocs',{
-                                            method:'POST',
-                                            body:form
+                                        form.append('requestId', reqId)
+                                        await fetch('/requestDocs', {
+                                            method: 'POST',
+                                            body: form
                                         }).then(res => {
                                             if (res.ok) {
                                                 remove()
                                                 return res.json()
                                             }
                                         })
-                                            .then(dat => {
-                                                if (dat.status) {
-                                                    document.body.appendChild(ConfirmationAlert("Success..!", () => {
-                                                        window.location.reload()
-                                                    }))
-                                                } else {
-                                                    document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                                        window.location.reload()
-                                                    }))
-                                                }
-                                            })
+                                        .then(dat => {
+                                            if (dat.status) {
+                                                document.body.appendChild(ConfirmationAlert("Success..!", () => {
+                                                    window.location.reload()
+                                                }))
+                                            } else {
+                                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                                    window.location.reload()
+                                                }))
+                                            }
+                                        })
                                     }
                                 }
                             }),
                             Icon({
-                                clsName: 'fa-solid fa-trash-can',
-                                style: {
-                                    left: 'auto',
-                                    top: '0',
-                                    bottom: '0',
-                                    right: 'auto',
-                                    margin: 'auto'
-                                },
-                                method:()=>{
+                                clsName: 'fa-solid fa-trash-can delete-icon',
+                                method: () => {
                                     if(confirm("This operation cannot be undone. Would you like to proceed? ")){
-                                        const req=new Request('/requestDocs')
+                                        const req = new Request('/requestDocs')
                                         req.Post([
-                                            {name:'declinedFileRequest',value:'0'},
-                                            {name:'reqId',value:reqId}
+                                            {name: 'declinedFileRequest', value: '0'},
+                                            {name: 'reqId', value: reqId}
                                         ])
                                         req.Json()
-                                        req.Send().then(data=>{
+                                        req.Send().then(data => {
                                             if(data.status){
                                                 getMainReq.remove()
-                                            }else {
+                                            } else {
                                                 alert(data.message)
                                             }
                                         })
@@ -291,65 +216,44 @@ const UserRequest = () => {
                                 }
                             }),
                             Icon({
-                                clsName: 'fa-solid fa-folder-open',
-                                style: {
-                                    left: 'auto',
-                                    top: '0',
-                                    bottom: '0',
-                                    right: '0',
-                                    margin: 'auto'
-                                },
-                                method:()=>{
-
-                                    const req= new Request('/uploadResearchFile')
+                                clsName: 'fa-solid fa-folder-open view-icon',
+                                method: () => {
+                                    const req = new Request('/uploadResearchFile')
                                     req.Post([
-                                        {name:'viewDocReq',value:'true'},
-                                        {name:'docId',value:id},
+                                        {name: 'viewDocReq', value: 'true'},
+                                        {name: 'docId', value: id},
                                     ])
                                     req.Json()
-                                    req.Send().then(data=>{
+                                    req.Send().then(data => {
                                         if(data.status){
-                                            main.appendChild(fileViewer('/'+data.data))
-                                        }else {
+                                            main.appendChild(fileViewer('/' + data.data))
+                                        } else {
                                             alert("File not found..!")
                                         }
                                     })
-
-
-
                                 }
                             })
                         ]
                     }))
                 }
+                
                 return ($({
                     tag: 'div',
-                    style: {
-                        width: '97%%',
-                        margin: '1vh auto',
-                        height: 'fit-content',
-                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                        padding: '.5rem',
-                        borderRadius: '.5rem',
-                    },
                     att: {
-                        className: 'listReq'
+                        className: 'request-list-item'
                     },
-                    elementHandler:(el)=>{
-                        getMainReq=el
+                    elementHandler: (el) => {
+                        getMainReq = el
                     },
                     child: [
                         $({
                             tag: 'div',
-                            child: [
-                                dateTime
-                            ]
+                            child: [dateTime]
                         }),
                         $({
                             tag: 'div',
-                            style: {
-                                display: 'flex',
-                                width: '100%'
+                            att: {
+                                className: 'request-item-content'
                             },
                             child: [
                                 Name,
@@ -362,22 +266,15 @@ const UserRequest = () => {
 
             return ($({
                 tag: 'div',
-                style: {
-                    width: '50%',
-                    height: '100%',
-                    border: 'solid thin rgba(100,100,100,0.5)',
-                    backgroundColor: '#333',
-
+                att: {
+                    className: 'request-panel-left'
                 },
                 child: [
                     Label("User's Request"),
                     $({
                         tag: 'div',
-                        style: {
-                            height: '93%',
-                            width: '95%',
-                            margin: 'auto',
-                            overflowY: 'auto',
+                        att: {
+                            className: 'request-list-container'
                         },
                         elementHandler: (el) => {
                             const request = new Request('/requestDocs')
@@ -396,108 +293,79 @@ const UserRequest = () => {
                                         fileType: 'Symposium',
                                         date: val.date.split(' ')[0],
                                         campus: val.campus,
-                                        id:val.docId,
-                                        reqId:val.id
+                                        id: val.docId,
+                                        reqId: val.id
                                     }))
                                 })
                             })
-                        },
-
-
+                        }
                     })
                 ]
             }))
         }
+        
         const GrantUser = () => {
-            const Filter=()=>{
-                return($({
-                    tag:'div',
-                    style:{
-                        height:'5vh',
-                        width:'98%',
-                        border:'solid thin rgba(100,100,100,0.5)',
-                        margin:'auto'
+            const Filter = () => {
+                return ($({
+                    tag: 'div',
+                    att: {
+                        className: 'grant-filter'
                     }
                 }))
             }
-            const containBody=()=>{
+            
+            const containBody = () => {
 
-                const allowedList=({fileType,fileName,userList,fileUrl,fileId})=>{
+                const allowedList = ({fileType, fileName, userList, fileUrl, fileId}) => {
                     let mainListBody
                     let useHold
-                    let stateUse=false
-                    const UserListBox=(label)=>{
-                        return($({
-                            tag:'div',
-                            text:label,
-                            style:{
-                                fontSize:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                fontsize:'1vw'
-                            }
+                    let stateUse = false
+                    
+                    const UserListBox = (label) => {
+                        return ($({
+                            tag: 'div',
+                            att: {
+                                className: 'user-list-item'
+                            },
+                            text: label
                         }))
                     }
-                    const vieFile=(url)=>{
+                    
+                    const vieFile = (url) => {
                         let viewMain
                         return($({
-                            tag:'div',
-                            style:{
-                                height:'100%',
-                                width:'100%',
-                                position:'absolute',
-                                left:'0',
-                                top:'0',
-                                display:'flex',
-                                justifyContent:'center',
-                                backgroundColor:'#333'
+                            tag: 'div',
+                            att: {
+                                className: 'file-viewer-overlay'
                             },
-                            elementHandler:(el)=>{
-                                viewMain=el
+                            elementHandler: (el) => {
+                                viewMain = el
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        width:'80%',
-                                        height:'97%',
-                                        border:'solid thin #999',
-                                        display:'flex',
-                                        justifyContent:'center',
-                                        margin:'auto',
-                                        position:'relative',
-                                        padding:'.5rem',
-                                        borderRadius:'.5vw',
-                                        backgroundColor:'#222'
+                                    tag: 'div',
+                                    att: {
+                                        className: 'file-viewer-container'
                                     },
-                                    child:[
+                                    child: [
                                         $({
-                                            tag:'div',
-                                            att:{
-                                                className:'fa-solid fa-circle-xmark'
+                                            tag: 'div',
+                                            att: {
+                                                className: 'fa-solid fa-circle-xmark viewer-close'
                                             },
-                                            style:{
-                                                position:'absolute',
-                                                left:'-4vw',
-                                                fontSize:'2vw',
-                                                color:'deepskyblue',
-                                                cursor:'pointer'
-                                            },
-                                            event:{
-                                                type:'click',
-                                                method:()=>{
+                                            event: {
+                                                type: 'click',
+                                                method: () => {
                                                     viewMain.remove()
                                                 }
                                             }
                                         }),
                                         $({
-                                            tag:'object',
-                                            style:{
-                                                margin:'auto',
-                                                width:'100%',
-                                                height:'100%',
-                                            },
-                                            att:{
-                                                type:'application/pdf',
-                                                data:'/'+url
+                                            tag: 'object',
+                                            att: {
+                                                type: 'application/pdf',
+                                                data: '/' + url,
+                                                className: 'file-viewer-object'
                                             }
                                         })
                                     ]
@@ -506,137 +374,95 @@ const UserRequest = () => {
                         }))
                     }
 
-
                     return($({
-                        tag:'div',
-                        style:{
-                            height:'fit-content',
-                            width:'95%',
-                            margin:'1vh auto auto',
-                            border:'solid thin #444',
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            fontSize:'1vw',
-                            padding:'.2rem'
+                        tag: 'div',
+                        att: {
+                            className: 'allowed-list-item'
                         },
-                        elementHandler:(el)=>{
-                            mainListBody=el
+                        elementHandler: (el) => {
+                            mainListBody = el
                         },
-                        att:{
-                            className:'reqListPan'
-                        },
-                        child:[
+                        child: [
                             $({
-                                tag:'div',
-                                style:{
-                                    marginLeft:'0',
-                                    marginRight:'auto',
-                                    fontFamily:'box-shadow: black 0.3vw 0.3vw 2vh 0.1vh inset'
+                                tag: 'div',
+                                att: {
+                                    className: 'file-type'
                                 },
-                                text:fileType
+                                text: fileType
                             }),
                             $({
-                                tag:'div',
-                                style:{
-                                    width:'100%',
-                                    display:'flex'
+                                tag: 'div',
+                                att: {
+                                    className: 'file-info-row'
                                 },
-                                child:[
+                                child: [
                                     $({
-                                        tag:'div',
-                                        style:{
-                                            marginLeft:'0',
-                                            marginRight:'auto',
-                                            fontFamily:'box-shadow: black 0.3vw 0.3vw 2vh 0.1vh inset',
-                                            width:'80%',
-                                            textOverflow:'ellipsis',
-                                            overflow:'hidden',
-                                            whiteSpace:'nowrap'
+                                        tag: 'div',
+                                        att: {
+                                            className: 'file-name'
                                         },
-                                        text:fileName
+                                        text: fileName
                                     }),
                                     $({
-                                        tag:'div',
-                                        style:{
-                                            marginLeft:'0',
-                                            marginRight:'auto',
-                                            fontFamily:'box-shadow: black 0.3vw 0.3vw 2vh 0.1vh inset',
-                                            width:'20%',
-                                            display:'flex',
-                                            justifyContent:'center'
+                                        tag: 'div',
+                                        att: {
+                                            className: 'file-actions'
                                         },
-                                        child:[
+                                        child: [
                                             $({
-                                                tag:'div',
-                                                att:{
-                                                    className:'fa-solid fa-square-caret-down alListBot'
+                                                tag: 'div',
+                                                att: {
+                                                    className: 'fa-solid fa-square-caret-down action-icon toggle-users'
                                                 },
-                                                style:{
-                                                    fontSize:'1.1vw',
-                                                    width:'fit-content',
-                                                    margin:'auto'
-                                                },
-                                                event:{
-                                                    type:'click',
-                                                    method:()=>{
-                                                        stateUse=!stateUse
+                                                event: {
+                                                    type: 'click',
+                                                    method: () => {
+                                                        stateUse = !stateUse
                                                         if(stateUse){
-                                                            userList.forEach(val=>{
+                                                            userList.forEach(val => {
                                                                 useHold.appendChild(UserListBox(val))
                                                             })
-                                                        }else {
-                                                            useHold.innerHTML=''
+                                                        } else {
+                                                            useHold.innerHTML = ''
                                                         }
                                                     }
                                                 }
                                             }),
-
                                             $({
-                                                tag:'div',
-                                                att:{
-                                                    className:'fa-solid fa-folder-open alListBot'
+                                                tag: 'div',
+                                                att: {
+                                                    className: 'fa-solid fa-folder-open action-icon view-file'
                                                 },
-                                                style:{
-                                                    fontSize:'1.1vw',
-                                                    width:'fit-content',
-                                                    margin:'auto'
-                                                },
-                                                event:{
-                                                    type:'click',
-                                                    method:()=>{
+                                                event: {
+                                                    type: 'click',
+                                                    method: () => {
                                                         document.body.appendChild(vieFile(fileUrl))
                                                     }
                                                 }
                                             }),
                                             $({
-                                                tag:'div',
-                                                att:{
-                                                    className:'fa-solid fa-trash-can alListBot'
+                                                tag: 'div',
+                                                att: {
+                                                    className: 'fa-solid fa-trash-can action-icon delete-file'
                                                 },
-                                                style:{
-                                                    fontSize:'1.1vw',
-                                                    width:'fit-content',
-                                                    margin:'auto'
-                                                },
-                                                event:{
-                                                    type:'click',
-                                                    method:()=>{
+                                                event: {
+                                                    type: 'click',
+                                                    method: () => {
                                                         if(confirm("This operation cannot be undone. Would you like to proceed? ")){
-                                                            const req= new Request('/requestDocs')
+                                                            const req = new Request('/requestDocs')
                                                             req.Post([
-                                                                {name:'deleteFileAccess',value:'0'},
-                                                                {name:'docId',value:fileId},
+                                                                {name: 'deleteFileAccess', value: '0'},
+                                                                {name: 'docId', value: fileId},
                                                             ])
                                                             req.Json()
-                                                            req.Send().then(data=>{
+                                                            req.Send().then(data => {
                                                                 if(data.status){
                                                                     mainListBody.remove()
-                                                                }else {
+                                                                } else {
                                                                     alert(data.message)
                                                                 }
-
                                                             })
                                                         }
-
                                                     }
                                                 }
                                             }),
@@ -645,16 +471,12 @@ const UserRequest = () => {
                                 ]
                             }),
                             $({
-                                tag:'div',
-                                style:{
-                                    width:'97%',
-                                    height:'fit-content',
-                                    backgroundColor:'rgba(0,0,0,0.5)',
-                                    margin:'1vh .5vh auto',
-                                    paddingLeft:'.5vw'
+                                tag: 'div',
+                                att: {
+                                    className: 'users-list-container'
                                 },
-                                elementHandler:(el)=>{
-                                    useHold=el
+                                elementHandler: (el) => {
+                                    useHold = el
                                 }
                             })
                         ]
@@ -662,49 +484,35 @@ const UserRequest = () => {
                 }
 
                 return($({
-                    tag:'div',
-                    style:{
-                        height:'86%',
-                        width:'98%',
-                        backgroundColor:'rgba(0,0,0,0.1)',
-                        margin:'1vh auto auto',
-                        boxShadow:' black 0.3vw 0.3vw 2vh 0.1vh inset',
-                        overflowY: 'auto'
+                    tag: 'div',
+                    att: {
+                        className: 'grant-body-container'
                     },
-                    elementHandler:(el)=>{
-                        const req= new Request('/requestDocs')
+                    elementHandler: (el) => {
+                        const req = new Request('/requestDocs')
                         req.Post([
-                            {name:'reqAllowedList',value:'true'}
+                            {name: 'reqAllowedList', value: 'true'}
                         ])
-                       req.Json()
-                        /*
-                        $document->reqId=$val['id'];
-            $document->event=$val['event'];
-            $document->title=$val['title'];
-            $document->file=$val['file'];
-            $document->docId=$val['docId'];
-                         */
-                        req.Send().then(data=>{
-                            data.docs.forEach(val=>{
+                        req.Json()
+                        req.Send().then(data => {
+                            data.docs.forEach(val => {
                                 el.appendChild(allowedList({
-                                    fileType:val.event,
-                                    fileName:val.title,
-                                    userList:val.allowedUser,
-                                    fileUrl:val.file,
-                                    fileId:val.docId
+                                    fileType: val.event,
+                                    fileName: val.title,
+                                    userList: val.allowedUser,
+                                    fileUrl: val.file,
+                                    fileId: val.docId
                                 }))
                             })
                         })
-                    },
+                    }
                 }))
             }
+            
             return ($({
                 tag: 'div',
-                style: {
-                    width: '50%',
-                    height: '100%',
-                    border: 'solid thin rgba(100,100,100,0.5)',
-                    backgroundColor: '#333'
+                att: {
+                    className: 'request-panel-right'
                 },
                 child: [
                     Label("Shared Documents"),
@@ -716,15 +524,9 @@ const UserRequest = () => {
 
         return ($({
             tag: 'div',
-            style: {
-                width: '70%',
-                height: '90%',
-                margin: 'auto',
-                display: 'flex',
-                justifyContent: 'center',
-                position: 'relative'
+            att: {
+                className: 'request-holder'
             },
-
             child: [
                 Close(),
                 requestPanel(),
@@ -735,15 +537,8 @@ const UserRequest = () => {
 
     return ($({
         tag: 'div',
-        style: {
-            width: '100%',
-            height: '100%',
-            backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-            position: 'absolute',
-            left: '0',
-            top: '0',
-            display: 'flex',
-            justifyContent: 'center'
+        att: {
+            className: 'request-modal-overlay'
         },
         elementHandler: (el) => {
             main = el

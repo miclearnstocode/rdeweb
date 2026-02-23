@@ -1,4 +1,4 @@
-import {$} from '../lib/lib.js';
+import {$, UnderConstruction} from '../lib/lib.js';
 import {NavBar} from "./userComponent/script/navigation.js";
 import {Frame} from "./userComponent/script/userFrame.js";
 import {Button} from "./userComponent/script/navigation.js";
@@ -17,22 +17,23 @@ tabsButton.push({
     button:Button({
         icon:{
             type:'icon',
-            text:'fa fa-book',
+            text:'fa fa-calendar',
             class: 'tabsIcon'
         },
         label:{
             type: 'label',
-            text: 'Event Documents',
+            text: 'Event/Activity Documents',
             class:'tabsButton'
         },
         eventHandler:()=>{
             window.location.assign('/user/research/submittedDocs/submittedFiles')
         },
     }),
-    page:Research
+    page:Research,
+    disabled: false
 })
 
-//for uploading proposal
+//for uploading proposal - DISABLED
 tabsButton.push({
     url:'/user/create/share',
     button:Button({
@@ -47,12 +48,17 @@ tabsButton.push({
             class:'tabsButton'
         },
         eventHandler:()=>{
-            window.location.assign('/user/create/share')
+            // Show under construction notification
+                document.body.appendChild(UnderConstruction({
+                message: "Activity Proposal feature is currently under construction",
+            }))
         }
     }),
-    page:Create
+    page:Create,
+    disabled: true
 })
 
+// Communication - DISABLED
 tabsButton.push({
     url:'/user/systemFiles',
     button:Button({
@@ -67,13 +73,17 @@ tabsButton.push({
             class:'tabsButton'
         },
         eventHandler:()=>{
-        //   alert("This feature is currently unavailable.")
-           window.location.assign('/user/systemFiles/personal')
+            // Show under construction notification
+                document.body.appendChild(UnderConstruction({
+                message: "Communication feature is currently under construction",
+            }))
         },
     }),
-    page:Files
+    page:Files,
+    disabled: true
 })
 
+// Settings - ENABLED
 tabsButton.push({
     url:'/user/settings/userInfo',
     button:Button({
@@ -91,9 +101,9 @@ tabsButton.push({
             window.location.assign('/user/settings/userInfo')
         },
     }),
-    page:Settings
+    page:Settings,
+    disabled: false
 })
-
 
 //Logo of RDE
 export const UserPanel = () => {
@@ -150,9 +160,6 @@ export const UserPanel = () => {
             const currentPath = window.location.href.replace(window.location.origin, '');
             const currentMainSection = currentPath.split('/')[2];
             
-            // Track if any tab matches the current URL
-            let foundActiveTab = false;
-            
             tabsButton.forEach(val => {
                 const buttonWrapper = $({
                     tag: 'div',
@@ -162,57 +169,33 @@ export const UserPanel = () => {
                     child: [val.button]
                 });
                 
-                // Check if this tab matches the current URL
+                // Apply active class based on URL match
                 if (val.url.split('/')[2] === currentMainSection) {
-                    foundActiveTab = true;
                     val.button.className += ' active-nav';
-                    let td = val.button.getElementsByTagName('td');
-                    for (let x = 0; x < td.length; x++) {
-                        td[x].style.color = '#00bcd4';
-                    }
+                }
+                
+                // Add disabled class if tab is disabled
+                if (val.disabled) {
+                    val.button.className += ' disabled-tab';
                 }
                 
                 nav.appendChild(buttonWrapper);
             });
-            
-            // If no tab matches the URL, make Event Documents (first tab) active
-            if (!foundActiveTab) {
-                // Find the Event Documents tab (first tab with research in URL)
-                const eventDocsTab = tabsButton.find(tab => tab.url.includes('/research/'));
-                if (eventDocsTab) {
-                    eventDocsTab.button.className += ' active-nav';
-                    let td = eventDocsTab.button.getElementsByTagName('td');
-                    for (let x = 0; x < td.length; x++) {
-                        td[x].style.color = '#00bcd4';
-                    }
-                }
-            }
         },
         getFrame: (frame) => {
-            let urlState = true;
             frame.className = 'modern-frame';
             
             const currentPath = window.location.href.replace(window.location.origin, '');
             const currentMainSection = currentPath.split('/')[2];
             
-            tabsButton.forEach(val => {
-                if (val.url.split('/')[2] === currentMainSection) {
-                    urlState = false;
-                    const pageWrapper = $({
-                        tag: 'div',
-                        att: {
-                            className: 'page-wrapper'
-                        },
-                        child: [val.page()]
-                    });
-                    frame.appendChild(pageWrapper);
-                }
-            });
+            // Check if current URL matches a disabled tab
+            const matchingDisabledTab = tabsButton.find(tab => 
+                tab.disabled && tab.url.split('/')[2] === currentMainSection
+            );
             
-            // If no matching tab found, show Event Documents (Research) by default
-            if (urlState) {
-                // Find the Event Documents tab (first tab with research in URL)
-                const eventDocsTab = tabsButton.find(tab => tab.url.includes('/research/'));
+            // If trying to access a disabled tab, redirect to Event Documents
+            if (matchingDisabledTab) {
+                const eventDocsTab = tabsButton.find(tab => !tab.disabled && tab.url.includes('/research/'));
                 if (eventDocsTab) {
                     const pageWrapper = $({
                         tag: 'div',
@@ -222,8 +205,37 @@ export const UserPanel = () => {
                         child: [eventDocsTab.page()]
                     });
                     frame.appendChild(pageWrapper);
-                    
-                    // Also update the URL to match Event Documents without reloading
+                    history.pushState({}, '', eventDocsTab.url);
+                    return;
+                }
+            }
+            
+            // Check if current URL matches an enabled tab
+            const matchingEnabledTab = tabsButton.find(tab => 
+                !tab.disabled && tab.url.split('/')[2] === currentMainSection
+            );
+            
+            if (matchingEnabledTab) {
+                const pageWrapper = $({
+                    tag: 'div',
+                    att: {
+                        className: 'page-wrapper'
+                    },
+                    child: [matchingEnabledTab.page()]
+                });
+                frame.appendChild(pageWrapper);
+            } else {
+                // Default to Event Documents
+                const eventDocsTab = tabsButton.find(tab => !tab.disabled && tab.url.includes('/research/'));
+                if (eventDocsTab) {
+                    const pageWrapper = $({
+                        tag: 'div',
+                        att: {
+                            className: 'page-wrapper'
+                        },
+                        child: [eventDocsTab.page()]
+                    });
+                    frame.appendChild(pageWrapper);
                     history.pushState({}, '', eventDocsTab.url);
                 } else {
                     frame.appendChild(Error());
