@@ -82,7 +82,7 @@ const encodeUser = () => {
                 $({
                     tag: 'option',
                     text: 'Food and Industrial Technology Research & Development Center (FITRDC)',
-                    att: { value: 'FIRDC' }
+                    att: { value: 'FITRDC' }
                 }),
                 $({
                     tag: 'option',
