@@ -16,7 +16,7 @@
 .tabsres{
     width: 15vw;
     text-align: center;
-    color: ghostwhite;
+    color: rgb(240, 240, 244);
     font-weight: bolder;
     font-family: Arial,sans-serif;
     font-size: 1.1vw;
@@ -206,7 +206,7 @@
     width: auto;
     border-bottom: solid thin grey;
     position: relative;
-    color: ghostwhite;
+    color: #999;
     font-size: 1vw;
     font-family: Arial,sans-serif;
     text-align: center;

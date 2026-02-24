@@ -1331,7 +1331,7 @@ const CreateNew = () => {
         }
         
         // Validate file size (optional: max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
+        if (file.size > 50 * 1024 * 1024) {
             alert(`Error: ${fieldName} file size too large! Maximum size is 10MB. Your file: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
             if (coverElement) {
                 coverElement.innerHTML = `<div style="margin: auto; font-family: monospace; color: #ff6b6b" class="fa-solid fa-file-pdf"> ${fieldName} - Max 10MB allowed</div>`;
@@ -4843,7 +4843,7 @@ export const Research = () => {
     tabsPage.push({
         url: '/user/research/submittedDocs/submittedFiles',
         tab: tabButton({
-            label: 'Documents Uploaded',
+            label: 'Uploaded Documents',
             url: '/user/research/submittedDocs/submittedFiles'
         }),
         page: Submitted
@@ -4851,7 +4851,7 @@ export const Research = () => {
     tabsPage.push({
         url: '/user/research/createNewFle',
         tab: tabButton({
-            label: 'Upload File',
+            label: 'Upload Event File',
             url: '/user/research/createNewFle'
         }),
         page: CreateNew
