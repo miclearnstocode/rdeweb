@@ -1,13 +1,4 @@
-import {
-    $,
-    Base,
-    ConfirmationAlert,
-    Current,
-    Path,
-    Request,
-    SearchMethod,
-    TimeConvert,
-    Waiting } from "../../../lib/lib.js";
+import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting } from "../../../lib/lib.js";
 
 import {Print} from "../../otherComponent/comment.js";
 import {PrintSummary} from "../../otherComponent/ReviewTemplate.js";
@@ -19,8 +10,6 @@ import {SummaryDocs} from "./src/RankSummary.js";
 import {FinalRanking, RankPerCriteria, ScoreRankAVe} from "./src/rankAlgo.js";
 import {Summary} from "./src/Summary.js";
 import {PrintResearch} from "../../otherComponent/researchSummary.js";
-
-
 
 export const ResearchMain = () => {
     let mainFrame, leftPdiv
@@ -110,9 +99,10 @@ export const ResearchMain = () => {
         })
         const bodyPanel = () => {
             const docs = ({date, campus, eventType, file, research, docId, status, sender, smail}) => {
-                let category
+                let category, titleEntry
                 research.forEach(val=>{
                     category=val.category
+                    titleEntry=val.title
                 })
                 const viewDocs = () => {
                     let frm, viewerPanel
@@ -303,7 +293,6 @@ export const ResearchMain = () => {
                             ]
                         }))
                     }
-
                     const frameView = $({
                         tag: 'div',
                         style: {
@@ -1153,8 +1142,6 @@ export const ResearchMain = () => {
                         ]
                     }))
                 }
-
-
                 const icon = $({
                     tag: 'div',
                     att: {
@@ -1205,6 +1192,7 @@ export const ResearchMain = () => {
                             width: '90%',
                         },
                         child: [
+                            details("Title: ", titleEntry),
                             details("Date: ", Date+" || "+TimeFormat),
                             details("Campus: ", campus),
                             details("Sender: ", sender),
