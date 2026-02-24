@@ -2,7 +2,7 @@
 .modern-user-panel {
     display: flex;
     min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #003153 0%, #FFFFFF 100%);
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -17,7 +17,7 @@
     flex-direction: column;
     padding: 2rem 1.5rem;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1000;
+    z-index: 15;
     overflow-y: auto;
 }
 
@@ -221,7 +221,7 @@
     border-radius: 8px;
     font-size: 0.85rem;
     white-space: nowrap;
-    z-index: 1001;
+    z-index: 11;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     pointer-events: none;
     animation: fadeIn 0.3s ease;

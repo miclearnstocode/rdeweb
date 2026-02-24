@@ -1,4 +1,4 @@
-import {$, UnderConstruction} from '../lib/lib.js';
+import {$, UnderConstruction, Path} from '../lib/lib.js';
 import {NavBar} from "./userComponent/script/navigation.js";
 import {Frame} from "./userComponent/script/userFrame.js";
 import {Button} from "./userComponent/script/navigation.js";
@@ -10,104 +10,92 @@ import {Create} from "./userComponent/script/create.js";
 import {Files} from "./userComponent/script/Files.js";
 import {ReqButton} from "./userComponent/script/Request.js";
 
-const tabsButton=[]
-//uploading event documents and files for research and other purposes, also to view the uploaded documents and files by the user.
-tabsButton.push({
-    url:'/user/research/submittedDocs/submittedFiles',
-    button:Button({
-        icon:{
-            type:'icon',
-            text:'fa fa-calendar',
-            class: 'tabsIcon'
-        },
-        label:{
-            type: 'label',
-            text: 'Event/Activity Documents',
-            class:'tabsButton'
-        },
-        eventHandler:()=>{
-            window.location.assign('/user/research/submittedDocs/submittedFiles')
-        },
-    }),
-    page:Research,
-    disabled: false
-})
+// Map of tab IDs to their components and configurations
+const tabs = {
+    'research-tab': {
+        url: '/user/research/submittedDocs/submittedFiles',
+        urlPattern: '/user/research/',
+        label: 'Event/Activity Documents',
+        icon: 'fa fa-calendar',
+        page: Research,
+        disabled: false,
+        index: 0
+    },
+    
+    'proposal-tab': {
+        url: '/user/create/share',
+        urlPattern: '/user/create/',
+        label: 'Activity Proposal',
+        icon: 'fa fa-file-text',
+        page: Create,
+        disabled: true,  // This tab is disabled
+        index: 1
+    },
+    
+    'communication-tab': {
+        url: '/user/systemFiles',
+        urlPattern: '/user/systemFiles',
+        label: 'Communication',
+        icon: 'fa fa-paper-plane-o',
+        page: Files,
+        disabled: true,  // This tab is disabled
+        index: 2
+    },
+    
+    'settings-tab': {
+        url: '/user/settings/userInfo',
+        urlPattern: '/user/settings/',
+        label: 'Settings',
+        icon: 'fa fa-sliders',
+        page: Settings,
+        disabled: false,
+        index: 3
+    }
+}
 
-//for uploading proposal - DISABLED
-tabsButton.push({
-    url:'/user/create/share',
-    button:Button({
-        icon:{
-            type:'icon',
-            text:'fa fa-file-text',
-            class: 'tabsIcon'
-        },
-        label:{
-            type: 'label',
-            text: 'Activity Proposal',
-            class:'tabsButton'
-        },
-        eventHandler:()=>{
-            // Show under construction notification
-                document.body.appendChild(UnderConstruction({
-                message: "Activity Proposal feature is currently under construction",
-            }))
-        }
-    }),
-    page:Create,
-    disabled: true
-})
-
-// Communication - DISABLED
-tabsButton.push({
-    url:'/user/systemFiles',
-    button:Button({
-        icon:{
-            type:'icon',
-            text:'fa fa-paper-plane-o',
-            class: 'tabsIcon'
-        },
-        label:{
-            type: 'label',
-            text: 'Communication',
-            class:'tabsButton'
-        },
-        eventHandler:()=>{
-            // Show under construction notification
-                document.body.appendChild(UnderConstruction({
-                message: "Communication feature is currently under construction",
-            }))
-        },
-    }),
-    page:Files,
-    disabled: true
-})
-
-// Settings - ENABLED
-tabsButton.push({
-    url:'/user/settings/userInfo',
-    button:Button({
-        icon:{
-            type:'icon',
-            text:'fa fa-sliders',
-            class: 'tabsIcon'
-        },
-        label:{
-            type: 'label',
-            text: 'Settings',
-            class:'tabsButton'
-        },
-        eventHandler:()=>{
-            window.location.assign('/user/settings/userInfo')
-        },
-    }),
-    page:Settings,
-    disabled: false
-})
+// Order of tabs for display (using IDs)
+const tabOrder = ['research-tab', 'proposal-tab', 'communication-tab', 'settings-tab'];
 
 //Logo of RDE
 export const UserPanel = () => {
-    /* Modern User Panel with improved design */
+    
+    const currentPath = window.location.pathname;
+
+    let needsRedirect = false;
+    let redirectUrl = '/user/research/submittedDocs/submittedFiles'; // Default to research tab
+    
+    Object.entries(tabs).forEach(([tabId, tab]) => {
+        if (currentPath.startsWith(tab.urlPattern) && tab.disabled) {
+            console.warn(`⚠ Visiting disabled tab URL: ${tabId} (${tab.label}). Redirecting to research tab.`);
+            needsRedirect = true;
+        }
+    });
+    
+
+    if (needsRedirect) {
+ 
+        window.location.replace(redirectUrl);
+        return null; // Return null to prevent rendering
+    }
+    
+    // Determine active tab based on URL pattern matching
+    let activeTabId = 'research-tab'; // Default to research tab
+    
+    // Find which tab matches the current URL (only check enabled tabs)
+    Object.entries(tabs).forEach(([tabId, tab]) => {
+        const matches = !tab.disabled && currentPath.startsWith(tab.urlPattern);
+        
+        if (!tab.disabled && currentPath.startsWith(tab.urlPattern)) {
+            activeTabId = tabId;
+            //console.log(`✓ Setting active tab to: ${tabId} (${tab.label})`);
+        }
+    });
+    
+    // DOUBLE CHECK: If somehow activeTabId is a disabled tab, force it to research-tab
+    if (tabs[activeTabId]?.disabled) {
+        activeTabId = 'research-tab';
+    }
+    
     const Props = {
         getNav: (nav) => {
             nav.appendChild($({
@@ -157,27 +145,61 @@ export const UserPanel = () => {
             
             nav.appendChild(ReqButton());
             
-            const currentPath = window.location.href.replace(window.location.origin, '');
-            const currentMainSection = currentPath.split('/')[2];
-            
-            tabsButton.forEach(val => {
+            // Render tabs in the specified order
+            tabOrder.forEach((tabId) => {
+                const tab = tabs[tabId];
+                if (!tab) return;
+                
+                // Create the button
+                const button = Button({
+                    icon: {
+                        type: 'icon',
+                        text: tab.icon,
+                        class: 'tabsIcon'
+                    },
+                    label: {
+                        type: 'label',
+                        text: tab.label,
+                        class: 'tabsButton'
+                    },
+                    eventHandler: () => {
+                        if (tab.disabled) {
+                            document.body.appendChild(UnderConstruction({
+                                message: `${tab.label} feature is currently under construction`,
+                            }));
+                        } else {
+                            window.location.assign(tab.url);
+                        }
+                    }
+                });
+                
+                // CRITICAL: Force remove any existing active classes
+                button.className = button.className
+                    .replace(/active-nav/g, '')
+                    .replace(/disabled-tab/g, '')
+                    .trim();
+                
+                // Add disabled class if tab is disabled
+                if (tab.disabled) {
+                    button.className += ' disabled-tab';
+                }
+                
+                // Add active class ONLY if this is the active tab AND it's not disabled
+                if (tabId === activeTabId && !tab.disabled) {
+                    button.className += ' active-nav';
+                    //console.log(`✅ Added active-nav to: ${tabId}`);
+                } else {
+                    //console.log(`❌ No active-nav for: ${tabId} (activeTabId=${activeTabId}, disabled=${tab.disabled})`);
+                }
+                
                 const buttonWrapper = $({
                     tag: 'div',
                     att: {
-                        className: 'nav-item-wrapper'
+                        className: 'nav-item-wrapper',
+                        'data-tab-id': tabId
                     },
-                    child: [val.button]
+                    child: [button]
                 });
-                
-                // Apply active class based on URL match
-                if (val.url.split('/')[2] === currentMainSection) {
-                    val.button.className += ' active-nav';
-                }
-                
-                // Add disabled class if tab is disabled
-                if (val.disabled) {
-                    val.button.className += ' disabled-tab';
-                }
                 
                 nav.appendChild(buttonWrapper);
             });
@@ -185,66 +207,40 @@ export const UserPanel = () => {
         getFrame: (frame) => {
             frame.className = 'modern-frame';
             
-            const currentPath = window.location.href.replace(window.location.origin, '');
-            const currentMainSection = currentPath.split('/')[2];
+            // Get the active tab by ID - ensure it's not disabled
+            let activeTab = tabs[activeTabId];
             
-            // Check if current URL matches a disabled tab
-            const matchingDisabledTab = tabsButton.find(tab => 
-                tab.disabled && tab.url.split('/')[2] === currentMainSection
-            );
-            
-            // If trying to access a disabled tab, redirect to Event Documents
-            if (matchingDisabledTab) {
-                const eventDocsTab = tabsButton.find(tab => !tab.disabled && tab.url.includes('/research/'));
-                if (eventDocsTab) {
-                    const pageWrapper = $({
-                        tag: 'div',
-                        att: {
-                            className: 'page-wrapper'
-                        },
-                        child: [eventDocsTab.page()]
-                    });
-                    frame.appendChild(pageWrapper);
-                    history.pushState({}, '', eventDocsTab.url);
-                    return;
-                }
+            // If active tab is disabled, force to research tab
+            if (activeTab?.disabled) {
+                activeTabId = 'research-tab';
+                activeTab = tabs['research-tab'];
             }
             
-            // Check if current URL matches an enabled tab
-            const matchingEnabledTab = tabsButton.find(tab => 
-                !tab.disabled && tab.url.split('/')[2] === currentMainSection
-            );
+            //console.log('Rendering frame for tab:', activeTabId, activeTab?.label);
             
-            if (matchingEnabledTab) {
+            if (activeTab && !activeTab.disabled) {
                 const pageWrapper = $({
                     tag: 'div',
                     att: {
                         className: 'page-wrapper'
                     },
-                    child: [matchingEnabledTab.page()]
+                    child: [activeTab.page()]
                 });
                 frame.appendChild(pageWrapper);
+                //console.log(`✅ Rendered page for: ${activeTab.label}`);
             } else {
-                // Default to Event Documents
-                const eventDocsTab = tabsButton.find(tab => !tab.disabled && tab.url.includes('/research/'));
-                if (eventDocsTab) {
-                    const pageWrapper = $({
-                        tag: 'div',
-                        att: {
-                            className: 'page-wrapper'
-                        },
-                        child: [eventDocsTab.page()]
-                    });
-                    frame.appendChild(pageWrapper);
-                    history.pushState({}, '', eventDocsTab.url);
-                } else {
-                    frame.appendChild(Error());
-                }
+                // Ultimate fallback
+                //console.error('❌ No valid tab found, showing error');
+                frame.appendChild(Error());
             }
         }
     }
     
-    document.getElementById('root').appendChild(Header());
+    // Only add Header if root element exists
+    const root = document.getElementById('root');
+    if (root) {
+        root.appendChild(Header());
+    }
     
     return ($({
         tag: 'div',
