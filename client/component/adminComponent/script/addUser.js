@@ -81,7 +81,7 @@ const encodeUser = () => {
                 }),
                 $({
                     tag: 'option',
-                    text: 'Food and Industrial Technology Research & Development Center (FIRDC)',
+                    text: 'Food and Industrial Technology Research & Development Center (FITRDC)',
                     att: { value: 'FIRDC' }
                 }),
                 $({
