@@ -1,495 +1,937 @@
+/* Settings Container */
 .settingsDiv {
     width: 100%;
     height: 100%;
+    background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
 }
 
+/* Modern Tabs Styling */
 .tabsSettings {
-    height: 6%;
+    height: 8%;
     width: 100%;
-    margin: auto;
+    margin: 0;
     table-layout: auto;
     border-collapse: collapse;
-}
-
-.settingsFrame {
-    height: 94%;
-    width: 100%;
-    background-color: #333;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .settingsBot {
     text-align: center;
-    width: 15vw;
-    white-space: nowrap;
-    font-family: "Arial Black", sans-serif;
-    font-size: 1.1vw;
+    padding: 1.2rem 2rem;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
-    color: #bbb;
-    border-radius: 1vw 1vw 0 0;
+    color: #fbfbfb;
+    border-radius: 12px 12px 0 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.settingsBot::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    background: linear-gradient(135deg, #003153, #FFFFFF);
+    transition: width 0.3s ease;
 }
 
 .settingsBot:hover {
-    background-image: linear-gradient(#333, rgba(0, 0, 0, 0.5));
-    color: ghostwhite;
-    transition: .5s;
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.settingsBot:hover::before {
+    width: 80%;
 }
 
 .setBotActive {
-    color: deepskyblue;
+    color: #051e40;
+    background: linear-gradient(135deg, #003153, #FFFFFF);
     pointer-events: none;
-    background-color: #333;
+    position: relative;
 }
 
+.setBotActive::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(135deg, #003153, #FFFFFF);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+}
 
+/* Settings Frame */
+.settingsFrame {
+    height: 92%;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(10px);
+    overflow-y: auto;
+    background: #1e1e1e;
+}
+
+/* Signature Container */
 .sigContainer {
     height: 100%;
     width: 100%;
     display: flex;
     justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    gap: 2rem;
 }
 
+/* Center Container - Signature Editor */
 .centerCont {
     width: 60%;
-    height: 95%;
-    border: solid thin ghostwhite;
-    margin: auto;
+    height: 90%;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
     position: relative;
-    background-color: rgba(255, 255, 255, 0.4);
-    border-radius: 1vw;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
 }
 
+.centerCont:hover {
+    box-shadow: 0 30px 60px rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Signature Viewer */
 .viewerSig {
-    height: 70%;
-    width: 80%;
+    height: 65%;
+    width: 85%;
     position: relative;
-    top: 3vh;
-    bottom: auto;
-    left: 0;
-    right: 0;
-    margin: auto;
-    background-color: white;
+    margin: 2rem auto;
+    background: #2d2d2d;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.sigControl {
-    width: 98%;
-    margin: auto;
-    height: 20vh;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: auto;
-    background-color: #555;
-    bottom: 1vh;
-    border-radius: 0 0 1vw 1vw;
-}
-
-.tableLayoutSig {
-    height: 60%;
-    width: 100%;
-    table-layout: fixed;
-}
-
-.tableLayoutSig td {
-    height: 50%;
-    position: relative;
-}
-
-.uploadPic {
-    width: 100%;
-    height: 100%;
-    border: none;
-    outline: none;
-    position: absolute;
-    margin: auto;
-}
-
-.entryName {
-    width: 93%;
-    height: 100%;
-    border: none;
-    outline: none;
-    border-radius: .5vw;
-    padding-left: 1vw;
-    padding-right: 1vw;
-    font-family: Arial, sans-serif;
-    font-weight: bolder;
-    font-size: 16px;
-}
-
-.fontSizeSig {
-    width: 99%;
-    border: none;
-    outline: none;
-    height: 98%;
-    font-size: 1.3vw;
-    text-align: center;
-}
-
-.imageResize {
-    width: 80%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.3);
-}
-
-.resizeGuide {
-    width: 20%;
-    text-align: center;
-    margin: auto;
-    font-family: "Arial Black", sans-serif;
-    color: deepskyblue;
-}
-
-.saveSig {
-    margin: 2vh auto;
-    text-align: center;
-    width: fit-content;
-    height: fit-content;
-    padding-left: 1vw;
-    padding-right: 1vw;
-    background-color: #777;
-    font-family: "Arial Black", sans-serif;
-    font-size: 1.3vw;
-    border-radius: .5vw;
-    cursor: pointer;
-}
-
+/* Signature Image */
 .sigIm {
     position: absolute;
     top: 50%;
-    bottom: auto;
-    left: 0;
-    right: 0;
-    width: fit-content;
-    margin: auto;
-
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: grab;
+    border: 2px solid transparent;
 }
 
 .sigIm:hover {
-    cursor: grab;
+    border-color: #667eea;
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
 }
 
 .sigIm:active {
     cursor: grabbing;
+    transform: translate(-50%, -50%) scale(0.98);
 }
 
+/* Base Font (Name) */
 .baseFont {
     position: absolute;
-    top: 60%;
-    bottom: auto;
+    bottom: 20px;
     left: 0;
     right: 0;
-    width: 80%;
-    margin: auto;
-    padding: .5vw;
+    width: 90%;
+    margin: 0 auto;
+    padding: 0.5rem;
     text-align: center;
-    height: 2vh;
-    font-family: "Times New Roman", sans-serif;
-    font-weight: bolder;
-
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-weight: 600;
+    color: #333;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.previewSig {
-    width: 30%;
-    height: 70%;
-    margin: auto;
-    background-color: white;
+/* Signature Controls */
+.sigControl {
+    width: 95%;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tableLayoutSig {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.tableLayoutSig td {
+    padding: 8px;
+}
+
+/* Upload Button */
+.uploadEsig {
+    width: 100%;
+    padding: 0.8rem 1.2rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
     position: relative;
-    border-radius: 1vw;
-    border: solid thin;
-    box-shadow: -.5vw -.5vh .5vw black, .5vw .5vh .5vw gray;
+    overflow: hidden;
+    text-align: center;
+}
+
+.uploadEsig::before {
+    content: '📷 Upload Signature';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #764ba2, #667eea);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.uploadEsig:hover::before {
+    opacity: 1;
+}
+
+.uploadEsig:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Entry Name Input */
+.entryName {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #f1f5f9;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.entryName:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.entryName::placeholder {
+    color: #94a3b8;
+}
+
+/* Font Size Input */
+.fontSizeSig {
+    width: 100%;
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #f1f5f9;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.fontSizeSig:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Image Resize Slider */
+.imageResize {
+    width: 70%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.imageResize::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    transition: all 0.3s ease;
+}
+
+.imageResize::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+}
+
+/* Resize Guide Label */
+.resizeGuide {
+    width: 25%;
+    text-align: center;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.9rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Save Button */
+.saveSig {
+    margin: 1.5rem auto;
+    padding: 0.8rem 2rem;
+    width: fit-content;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+}
+
+.saveSig:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4);
+}
+
+.saveSig:active {
+    transform: translateY(0);
+}
+
+/* Preview Section */
+.previewSig {
+    width: 35%;
+    height: 80%;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.previewSig:hover {
+    box-shadow: 0 30px 60px rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.3);
 }
 
 .previewSig td {
     text-align: center;
+    vertical-align: middle;
 }
 
 .prevSig {
-    margin: auto;
-    width: fit-content;
-    height: fit-content;
+    max-width: 90%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .esign {
-    font-size: 1.3vw;
-    font-family: "Arial Black", sans-serif;
+    font-size: 1.1rem;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-weight: 600;
+    color: #94a3b8;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 0 0 24px 24px;
 }
 
-
+/* User Info Section */
 .userInfoDiv {
     height: 100%;
     display: flex;
     justify-content: center;
+    gap: 2rem;
+    padding: 2rem;
+    background: #1a1a1a;
 }
 
-.leftUserInfo {
-    height: 98%;
-    width: 49%;
-
-    margin: auto;
-    position: relative;
-}
-
-
-
-.perInfo {
-    padding-top: 1vh;
-    padding-bottom: 1vh;
-    margin: 2vh auto;
-    width: 98%;
-    border: solid thin deepskyblue;
-    border-radius: .5vw;
-    display: flex;
-    justify-content: center;
-}
-
-.detUser {
-    font-family: Arial, sans-serif;
-    font-weight: bolder;
-}
-
-.pointerUser {
-    cursor: pointer;
-}
-
-.pointerUser:hover {
-    color: black;
-    background-color: deepskyblue;
-    text-shadow: 0 0 1vw black;
-    box-shadow: 0 0 .3vw ghostwhite;
-}
-
-.pointerUser:active {
-    font-size: 2.1vw;
-}
-
-.tableUser {
+.leftUserInfo,
+.rightUserInfo {
     height: 100%;
+    width: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.rightUserInfo {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+.usersLabel {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-weight: 700;
+    text-align: center;
+    margin: 1rem 0 2rem;
+    font-size: 1.3rem;
+    color: #f1f5f9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #003153, #FFFFFF);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+/* User Info Label */
+.rightLabel {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-weight: 700;
+    text-align: center;
+    margin: 1rem 0 2rem;
+    font-size: 1.3rem;
+    color: #f1f5f9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #003153, #FFFFFF);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Per Info Container */
+.perInfo {
+    padding: 1rem;
+    margin: 1rem 0;
     width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.perInfo:hover {
+    border-color: rgba(102, 126, 234, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(5px);
+}
+
+/* Table User */
+.tableUser {
+    width: 100%;
+    border-collapse: collapse;
 }
 
 .tableUser td {
-    text-align: center;
-    font-family: Arial, sans-serif;
-    font-weight: bolder;
-    font-size: 1.2vw;
+    padding: 8px 0;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
+.tableUser td:first-child {
+    color: #f1f5f9;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.tableUser td:last-child {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+/* Edit Icon */
+.pointerUser {
+    cursor: pointer;
+    font-size: 1.3rem;
+    color: #667eea;
+    transition: all 0.3s ease;
+    padding: 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.pointerUser:hover {
+    color: white;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Edit User Div */
 .editUserDiv {
-    height: 100%;
-    width: 100%;
-    background-color: rgba(100, 100, 100, 0.8);
-    position: absolute;
+    position: fixed;
     top: 0;
-    animation: editAnim .3s;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(128, 128, 128, 0.574);
+    backdrop-filter: blur(10px);
     display: flex;
+    align-items: center;
     justify-content: center;
+    z-index: 15;
+    animation: fadeIn 0.3s ease;
+    border-radius: 20px;
 }
 
-@keyframes editAnim {
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Field Editor */
+.fieldEditor {
+    background: rgba(30, 41, 59, 0.95);
+    border-radius: 15px;
+    padding: 2.5rem;
+    min-width: 450px;
+    min-height: 130px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
     from {
         opacity: 0;
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
+        transform: translateY(0);
     }
 }
 
-.closeBotUser {
-    padding: .5vh .5vw;
-    text-align: center;
-    background-color: transparent;
-    border-radius: 1vw;
-    position: absolute;
-    right: .5vw;
-    color: deepskyblue;
-    top: .5vh;
-
-    cursor: pointer;
-    font-size: 1.4vw;
-}
-
-.closeBotUser:hover {
-    color: black;
-    background-color: black;
-    text-shadow: 0 0 .3vw ghostwhite;
-}
-
-.fieldEditor {
-    margin: auto;
-    background-color: #333;
-    border-radius: 1vw;
-    border: solid thin deepskyblue;
-    padding: .5rem;
-}
-
+/* Name Field */
 .nameField {
-    border: none;
-    outline: none;
-    background-color: rgba(0, 0, 0, 0.3);
-    height: 4vh;
-    font-size: 1.2vw;
-    width: 30vw;
-    color: #aaa;
-    text-align: center;
-}
-
-.nameField:hover {
-    background-color: rgba(0, 0, 0, 0.5);
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    color: #f1f5f9;
+    font-size: 1rem;
+    transition: all 0.3s ease;
 }
 
 .nameField:focus {
-    background-color: rgba(0, 0, 0, 0.5);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
+/* Save Div Edit */
 .saveDivEdit {
-    width: fit-content;
-    padding-left: 1vw;
-    padding-right: 1vw;
-    font-family: "Arial Black", sans-serif;
-    font-size: 1.5vw;
-    margin: auto;
-    color: deepskyblue;
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 50px;
     cursor: pointer;
-    border-radius: 1vw;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
 }
 
 .saveDivEdit:hover {
-    background-color: black;
-    color: black;
-    text-shadow: 0 0 .5vw ghostwhite;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
 }
 
-.saveDivEdit:active {
-    border: solid thin deepskyblue;
+/* Close Button */
+.closeBotUser {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
 }
 
+.closeBotUser:hover {
+    color: #ef4444;
+    transform: rotate(90deg);
+}
 
+/* Right Section - User Name */
+.userLabel {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 2rem auto;
+    font-size: 1.2rem;
+    text-align: center;
+}
 
-.rightUserInfo {
-    height: 98%;
-    width: 49%;
-    margin: auto;
-    border-left: solid thin #bbbbbb;
+.userLabel td {
+    padding: 8px;
+}
+
+/* Right Class Table */
+.rightClass {
+    width: 100%;
+    color: #94a3b8;
+    font-size: 1rem;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    margin: 2rem 0;
+    border-collapse: separate;
+    border-spacing: 0 1rem;
+}
+
+.rightClass td {
+    padding: 1rem;
+    text-align: left;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.trBot {
+    background: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+}
+
+.trBot:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    transform: translateX(5px);
+}
+
+.trBot:active {
+    transform: translateX(5px) scale(0.98);
+}
+
+/* Editor Container */
+.editorCont {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Close Right */
+.closeRight {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    font-size: 1.5rem;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.closeRight:hover {
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+/* Edit Container Field */
+.editConField {
+    width: 90%;
+    max-width: 500px;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+/* User Edit */
+.userEdit {
+    width: 100%;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.userEdit input {
+    width: 100%;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    color: #f1f5f9;
+    font-size: 1rem;
+}
+
+.userEdit input:focus {
+    outline: none;
+}
+
+/* Save Bot Acc */
+.saveBotAcc {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1.5rem;
+}
+
+.saveBotAcc:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+}
+
+.saveBotAcc:active {
+    transform: translateY(0);
+}
+
+/* Password Container with Eye Icon */
+.passCont {
+    width: 100%;
+    margin: 1rem 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
     position: relative;
 }
 
-.rightLabel {
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    text-align: center;
-    margin-top: 1vh;
-    font-size: 1.4vw;
-    color: rgba(200, 200, 200, 0.6);
-}
-.userLabel{
-     font-family:Arial,sans-serif;
-    font-weight: bolder;
-    color: deepskyblue;
-    margin:10vh auto;
-    font-size: 1.4vw;
+.passCont:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
+.passCont input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1rem; /* Right padding for eye icon */
+    background: transparent;
+    border: none;
+    color: #f1f5f9;
+    font-size: 1rem;
+}
 
+.passCont input:focus {
+    outline: none;
+}
 
-.rightClass{
-    color: #999;
-    font-size: 1.2vw;
-    font-family: "Arial Black",sans-serif;
-    margin: auto;
-    border-collapse: separate;
-    border-spacing: 0 2vh;
-}
-.rightClass td{
-    padding-left: 1vw;
-    padding-right: 1vw;
-    text-align: left;
-}
-.trBot:hover{
-    color: deepskyblue;
-    cursor: pointer;
-    background-color: rgba(0,0,0,0.2);
-}
-.trBot:active{
-    background-color: rgba(0,0,0,0.4);
-    color: lightskyblue;
-}
-.editorCont{
+/* Eye Icon Container */
+.password-eye {
     position: absolute;
-    top: 0;
-    width: 99%;
-    height: 100%;
-    background-color: rgba(100, 100, 100, 0.8);
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    z-index: 10;
+    width: 24px;
+    height: 24px;
     display: flex;
+    align-items: center;
     justify-content: center;
 }
-.closeRight{
-    font-size:2vw;
-    cursor: pointer;
-    position: absolute;
-    top: 0;
-    left: 0;
+
+.password-eye:hover {
+    color: #667eea;
+    transform: translateY(-50%) scale(1.1);
 }
-.closeRight:hover{
-    color: deepskyblue;
+
+.password-eye:active {
+    transform: translateY(-50%) scale(0.95);
 }
-.closeRight:active{
-    color: lightskyblue;
+
+/* Edit Pass Table Cells with Eye Icons */
+.editPass td {
+    padding: 0;
+    background: transparent;
+    position: relative;
 }
-.divUser{
-    width: 90%;
-    height: 5vh;
-    margin: auto;
-}
-.editConField{
-    width: 95%;
-    padding-top: 5vh;
-    background-color: #333;
-    border: solid thin deepskyblue;
-    margin: auto;
-}
-.userEdit{
-    height: 5vh;
-    width: 90%;
-    margin: auto;
-    background-color: rgba(0,0,0,0.3);
-}
-.saveBotAcc{
-    margin:2vh auto auto;
+
+.editPass input {
     width: 100%;
-    height: fit-content;
-    padding-top: 1vh;
-    padding-bottom: 1vh;
-    font-family: "Arial Black",sans-serif;
-    font-size: 1.3vw;
-    background-color: rgba(0,0,0,0.5);
-    text-align: center;
-    cursor: pointer;
-    color: #bbb;
+    padding: 1rem 3rem 1rem 1rem; /* Right padding for eye icon */
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #f1f5f9;
+    font-size: 1rem;
+    transition: all 0.3s ease;
 }
-.saveBotAcc:hover{
-    background-color: rgba(0,0,0,0.4);
+
+.editPass input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
-.saveBotAcc:active{
-    background-color: rgba(0,0,0,0.6);
-    color: deepskyblue;
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .password-eye {
+        font-size: 1rem;
+        right: 8px;
+    }
+    
+    .passCont input,
+    .editPass input {
+        padding: 0.8rem 2.5rem 0.8rem 0.8rem;
+    }
 }
-.passCont{
-    margin: 1px auto auto;
-    background-color: rgba(0,0,0,0.3);
-    width: 90%;
-    height: 5vh;
-}
-.passCont:hover{
-    border:solid thin deepskyblue;
-}
-.editPass{
+
+/* Edit Pass Table */
+.editPass {
+    width: 100%;
     border-collapse: separate;
-    border: solid 1px #555;
-    width: 90%;
-    margin:2vh auto auto;
-    height: 10vh;
-    border-spacing: 0 1px;
+    border-spacing: 0 10px;
+    margin: 1rem 0;
 }
-.editPass td{
-    background-color: rgba(0,0,0,0.3);
+
+.editPass td {
+    padding: 0;
+    background: transparent;
+}
+
+.editPass input {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #f1f5f9;
+    font-size: 1rem;
+}
+
+.editPass input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Scrollbar Styling */
+.leftUserInfo::-webkit-scrollbar,
+.rightUserInfo::-webkit-scrollbar,
+.settingsFrame::-webkit-scrollbar {
+    width: 6px;
+}
+
+.leftUserInfo::-webkit-scrollbar-track,
+.rightUserInfo::-webkit-scrollbar-track,
+.settingsFrame::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+
+.leftUserInfo::-webkit-scrollbar-thumb,
+.rightUserInfo::-webkit-scrollbar-thumb,
+.settingsFrame::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 10px;
+}
+
+.leftUserInfo::-webkit-scrollbar-thumb:hover,
+.rightUserInfo::-webkit-scrollbar-thumb:hover,
+.settingsFrame::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2, #667eea);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .userInfoDiv {
+        flex-direction: column;
+        padding: 1rem;
+    }
+    
+    .leftUserInfo,
+    .rightUserInfo {
+        width: 100%;
+        height: auto;
+        min-height: 50%;
+    }
+    
+    .sigContainer {
+        flex-direction: column;
+        padding: 1rem;
+    }
+    
+    .centerCont,
+    .previewSig {
+        width: 90%;
+        height: auto;
+        min-height: 400px;
+    }
+    
+    .settingsBot {
+        font-size: 0.9rem;
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .fieldEditor {
+        min-width: 300px;
+        padding: 1.5rem;
+    }
+    
+    .editConField {
+        width: 95%;
+        padding: 1rem;
+    }
+    
+    .tableLayoutSig td {
+        display: block;
+        width: 100%;
+    }
+    
+    .imageResize {
+        width: 60%;
+    }
+    
+    .resizeGuide {
+        width: 35%;
+    }
 }

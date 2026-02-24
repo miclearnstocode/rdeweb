@@ -1,33 +1,15 @@
-import {
-    $,
-    CapsuOffice,
-    ConfirmationAlert,
-    dataURLtoFile,
-    Dim, Move,
-    ResizeImage,
-    SpecialChar,
-    Waiting
-} from '../../../lib/lib.js'
-import {Error} from "../../../error.js";
-
+import {$, CapsuOffice, ConfirmationAlert, dataURLtoFile, Move, ResizeImage, SpecialChar,Waiting} from '../../../lib/lib.js'
 
 const userInfo = () => {
     const left = () => {
         let leftMain
         const LabelTop = $({
             tag: 'div',
-            style: {
-                fontFamily: 'Arial,sans-serif',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                marginTop: '1vh',
-                fontSize: '1.4vw',
-                color: 'rgba(200,200,200,0.6)',
-
+            att: {
+                className: 'usersLabel'
             },
             text: "User's Information",
         })
-
         const container = ({child, buttonEvent}) => {
             const getbod = (bod) => {
                 if (child) {
@@ -116,7 +98,6 @@ const userInfo = () => {
                 ]
             }))
         }
-
         const buttonEvent = ({component}) => {
             let content
             const Close = () => {
@@ -146,12 +127,9 @@ const userInfo = () => {
                 }, elementHandler: getfloater,
                 child: [Close()]
             }))
-
         }
-
         const nameField = () => {
             let data=''
-
             const inputField = $({
                 tag: 'tr',
                 child: [
@@ -228,8 +206,6 @@ const userInfo = () => {
                     })
                 ]
             })
-
-
             buttonEvent({
                 component: $({
                     tag: 'table',
@@ -243,8 +219,6 @@ const userInfo = () => {
                 })
             })
         }
-
-
         const designation = () => {
             let data
             const textInput = $({
@@ -322,13 +296,11 @@ const userInfo = () => {
                                         }
                                     }
                                 }
-
                             })
                         ]
                     })
                 ]
             })
-
             buttonEvent({
                 component: $({
                     tag: 'table',
@@ -385,7 +357,6 @@ const userInfo = () => {
                                 event:{
                                     type:'click',
                                     method:async ()=>{
-
                                         if(confirm("Click ok to CONFIRM")){
                                             let loading = Waiting()
                                             document.body.appendChild(loading)
@@ -460,7 +431,6 @@ const userInfo = () => {
                     }))
                 })
             }
-
             const textInput = $({
                 tag: 'tr',
                 child: [
@@ -500,7 +470,6 @@ const userInfo = () => {
                                 event:{
                                     type:'click',
                                     method:async ()=>{
-
                                         if(confirm("Click ok to CONFIRM")){
                                             let loading = Waiting()
                                             document.body.appendChild(loading)
@@ -539,7 +508,6 @@ const userInfo = () => {
                 ]
             })
             buttonEvent({
-
                 component: $({
                     tag: 'table',
                     att: {
@@ -552,8 +520,6 @@ const userInfo = () => {
                 })
             })
         }
-
-
         return ($({
             tag: 'div',
             att: {
@@ -569,13 +535,13 @@ const userInfo = () => {
                     body:form
                 }).then(res=>res.json())
                     .then(data=>{
-                       el.appendChild(container({
-                           child:UserInfo({
-                               data:data.data.fullName,
-                               label:'Full Name'
-                           }),
-                           buttonEvent:nameField
-                       }))
+                        el.appendChild(container({
+                            child:UserInfo({
+                            data:data.data.fullName,
+                            label:'Full Name'
+                        }),
+                        buttonEvent:nameField
+                    }))
                         el.appendChild(container({
                             child:UserInfo({
                                 data:data.data.userType,
@@ -598,10 +564,7 @@ const userInfo = () => {
                             buttonEvent:office
                         }))
                     })
-
             },
-
-
         }))
     }
 
@@ -711,8 +674,29 @@ const userInfo = () => {
                 }))
             }
 
-            const Password = ({placeholder,eventMethod}) => {
-
+            const Password = ({placeholder, eventMethod}) => {
+                let inputRef
+                let eyeIconRef
+                
+                const togglePassword = (input, eyeIcon) => {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        eyeIcon.className = 'fa-solid fa-eye-slash password-eye'
+                    } else {
+                        input.type = 'password'
+                        eyeIcon.className = 'fa-solid fa-eye password-eye'
+                    }
+                };
+                
+                const getInput = (el) => {
+                    inputRef = el
+                };
+                
+                const getEyeIcon = (el) => {
+                    eyeIconRef = el
+                    el.addEventListener('click', () => togglePassword(inputRef, el))
+                };
+                
                 return ($({
                     tag: 'div',
                     att: {
@@ -723,9 +707,9 @@ const userInfo = () => {
                             tag: 'input',
                             att: {
                                 type: 'password',
-                                placeholder:placeholder,
+                                placeholder: placeholder,
                                 maxLength: '20',
-                                minLength:'8'
+                                minLength: '8'
                             },
                             event: {
                                 type: 'input',
@@ -743,7 +727,17 @@ const userInfo = () => {
                                 fontSize: '1.5vw',
                                 color: '#bbb'
                             },
-                            elementHandler:SpecialChar
+                            elementHandler: (el) => {
+                                SpecialChar(el);
+                                getInput(el);
+                            }
+                        }),
+                        $({
+                            tag: 'span',
+                            att: {
+                                className: 'fa-solid fa-eye password-eye'
+                            },
+                            elementHandler: getEyeIcon
                         })
                     ]
                 }))
@@ -912,108 +906,177 @@ const userInfo = () => {
                         ]
                     }))
                 }
-
                 mainRight.appendChild(mainEditorContainer({content: [EditUserName]}))
             }
             const changePassword = () => {
-
                 let prevPass,newPassw,reType
-
                 const EditPassword = () => {
-
-
-                    const newPass=()=>{
-
-                        const passA=$({
-                            tag:'tr',
-                            child:[
+                    const newPass = () => {
+                        let passAInput, passAEye, passBInput, passBEye;
+                        
+                        const togglePassword = (input, eyeIcon) => {
+                            if (input.type === 'password') {
+                                input.type = 'text';
+                                eyeIcon.className = 'fa-solid fa-eye-slash password-eye';
+                            } else {
+                                input.type = 'password';
+                                eyeIcon.className = 'fa-solid fa-eye password-eye';
+                            }
+                        };
+                        
+                        const passA = $({
+                            tag: 'tr',
+                            child: [
                                 $({
-                                    tag:'td',
-                                    child:[
+                                    tag: 'td',
+                                    child: [
                                         $({
-                                            tag:'input',
-                                            att:{
-                                                type:'password',
-                                                placeholder:'Enter new Password',
-                                                maxLength: '20',
-                                                minLength:'8'
+                                            tag: 'div',
+                                            style: {
+                                                position: 'relative',
+                                                width: '100%'
                                             },
-                                            style:{
-                                                backgroundColor: 'transparent',
-                                                height: '100%',
-                                                width: '95%',
-                                                border: 'none',
-                                                outline: 'none',
-                                                paddingRight: '1vw',
-                                                paddingLeft: '1vw',
-                                                fontFamily: 'monospace',
-                                                fontSize: '1.5vw',
-                                                color: '#bbb'
+                                            child: [
+                                                $({
+                                                    tag: 'input',
+                                                    att: {
+                                                        type: 'password',
+                                                        placeholder: 'Enter new Password',
+                                                        maxLength: '20',
+                                                        minLength: '8'
+                                                    },
+                                                    style: {
+                                                        backgroundColor: 'transparent',
+                                                        height: '100%',
+                                                        width: '100%',
+                                                        border: 'none',
+                                                        outline: 'none',
+                                                        paddingRight: '3rem',
+                                                        paddingLeft: '1rem',
+                                                        fontFamily: 'monospace',
+                                                        fontSize: '1.5vw',
+                                                        color: '#bbb'
+                                                    },
+                                                    event: {
+                                                        type: 'input',
+                                                        method: (eve) => {
+                                                            newPassw = eve.target.value;
+                                                        }
+                                                    },
+                                                    elementHandler: (el) => {
+                                                        SpecialChar(el);
+                                                        passAInput = el;
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    att: {
+                                                        className: 'fa-solid fa-eye password-eye'
+                                                    },
+                                                    style: {
+                                                        position: 'absolute',
+                                                        right: '12px',
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        color: '#94a3b8',
+                                                        cursor: 'pointer',
+                                                        fontSize: '1.2rem',
+                                                        zIndex: '10'
+                                                    },
+                                                    elementHandler: (el) => {
+                                                        passAEye = el;
+                                                        el.addEventListener('click', () => togglePassword(passAInput, el));
+                                                    }
+                                                })
+                                            ]
+                                        })
+                                    ]
+                                })
+                            ]
+                        });
+                        
+                        const passB = $({
+                            tag: 'tr',
+                            child: [
+                                $({
+                                    tag: 'td',
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                position: 'relative',
+                                                width: '100%'
                                             },
-                                            event:{
-                                                type:'input',
-                                                method:(eve)=>{
-                                                    newPassw=eve.target.value
-                                                }
-                                            },
-                                            elementHandler:SpecialChar
+                                            child: [
+                                                $({
+                                                    tag: 'input',
+                                                    att: {
+                                                        type: 'password',
+                                                        placeholder: 'Re-type Password',
+                                                        maxLength: '20',
+                                                        minLength: '8'
+                                                    },
+                                                    style: {
+                                                        backgroundColor: 'transparent',
+                                                        height: '100%',
+                                                        width: '100%',
+                                                        border: 'none',
+                                                        outline: 'none',
+                                                        paddingRight: '3rem',
+                                                        paddingLeft: '1rem',
+                                                        fontFamily: 'monospace',
+                                                        fontSize: '1.5vw',
+                                                        color: '#bbb'
+                                                    },
+                                                    event: {
+                                                        type: 'input',
+                                                        method: (eve) => {
+                                                            reType = eve.target.value;
+                                                        }
+                                                    },
+                                                    elementHandler: (el) => {
+                                                        SpecialChar(el);
+                                                        passBInput = el;
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    att: {
+                                                        className: 'fa-solid fa-eye password-eye'
+                                                    },
+                                                    style: {
+                                                        position: 'absolute',
+                                                        right: '12px',
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        color: '#94a3b8',
+                                                        cursor: 'pointer',
+                                                        fontSize: '1.2rem',
+                                                        zIndex: '10'
+                                                    },
+                                                    elementHandler: (el) => {
+                                                        passBEye = el;
+                                                        el.addEventListener('click', () => togglePassword(passBInput, el));
+                                                    }
+                                                })
+                                            ]
                                         })
                                     ]
                                 })
                             ]
                         })
-                        const passB=$({
-                            tag:'tr',
-                            child:[
-                                $({
-                                    tag:'td',
-                                    child:[
-                                        $({
-                                            tag:'input',
-                                            att:{
-                                                type:'password',
-                                                placeholder:'Re-type Password',
-                                                maxLength: '20',
-                                                minLength:'8'
-                                            },
-                                            style:{
-                                                backgroundColor: 'transparent',
-                                                height: '100%',
-                                                width: '95%',
-                                                border: 'none',
-                                                outline: 'none',
-                                                paddingRight: '1vw',
-                                                paddingLeft: '1vw',
-                                                fontFamily: 'monospace',
-                                                fontSize: '1.5vw',
-                                                color: '#bbb'
-                                            },
-                                            event:{
-                                                type:'input',
-                                                method:(eve)=>{
-                                                    reType=eve.target.value
-                                                }
-                                            },
-                                            elementHandler:SpecialChar
-                                        })
-                                    ]
-                                })
-                            ]
-                        })
+                        
                         return ($({
-                            tag:'table',
-                            att:{
-                                className:'editPass'
+                            tag: 'table',
+                            att: {
+                                className: 'editPass'
                             },
-                            child:[
+                            child: [
                                 passA,
                                 passB
                             ]
                         }))
                     }
-
-
-
                     return ($({
                         tag: 'div',
                         att: {
@@ -1052,17 +1115,14 @@ const userInfo = () => {
                         ]
                     }))
                 }
-
                 mainRight.appendChild(mainEditorContainer({content: [EditPassword]}))
             }
-
             return ($({
                 tag: 'table',
                 att: {
                     className: 'rightClass'
                 },
                 child: [
-
                     accBot({
                         name: 'Change Username',
                         button: {
@@ -1080,7 +1140,6 @@ const userInfo = () => {
                 ]
             }))
         }
-
         return ($({
             tag: 'div',
             att: {
@@ -1094,7 +1153,6 @@ const userInfo = () => {
             ]
         }))
     }
-
     return ($({
         tag: 'div',
         att: {
@@ -1104,13 +1162,10 @@ const userInfo = () => {
             left(),
             right()
         ]
-
     }))
 }
 
-
 const signature = () => {
-
     const centerContainer = () => {
         let nameBase
         let imgHolder
@@ -1124,14 +1179,11 @@ const signature = () => {
         const getViewerSig = (v) => {
             viewerSig = v
             //================================================
-
             Move({
                 panel:viewerSig,
                 object:imgHolder
             })
-
             //==============================================
-
         }
         const getlabelRange = (element) => {
             labelRange = element
@@ -1416,8 +1468,6 @@ const signature = () => {
                 ]
             }))
         }
-
-
         return ($({
             tag: 'div',
             att: {
@@ -1430,9 +1480,6 @@ const signature = () => {
         }))
     }
     const preview = () => {
-
-
-
         return ($({
             tag: 'table',
             att: {
@@ -1512,10 +1559,7 @@ const signature = () => {
     }))
 }
 
-
 const Tabs = ({getHeader}) => {
-
-
     return ($({
         tag: 'table',
         att: {
@@ -1547,7 +1591,6 @@ export const Settings = () => {
                 bot.className += ' setBotActive'
             }
         }
-
         return ($({
             tag: 'td',
             att: {
