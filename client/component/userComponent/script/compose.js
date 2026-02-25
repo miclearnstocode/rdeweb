@@ -1,7 +1,5 @@
 import {$,TextAreaExpand} from '../../../lib/lib.js'
 
-
-
 const ComposedBox=()=>{
     let box
     const getBox=(element)=>{

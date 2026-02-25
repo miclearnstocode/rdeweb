@@ -26,11 +26,7 @@ const CreateNew = () => {
             center: false,
             author: false,
             presenter: false,
-            attachment: false,
-            program: false,
-            endorsement: false,
-            event: false,
-            coAuthors: false
+            attachment: false, program: false, endorsement: false, event: false, coAuthors: false
         },
         touched: {
             title: false,
@@ -43,7 +39,7 @@ const CreateNew = () => {
             endorsement: false,
             event: false
         }
-    };
+    }
 
     // Store submit button reference
     let submitButtonRef = null;
@@ -1423,21 +1419,6 @@ const CreateNew = () => {
     const Submit = () => {
         return ($({
             tag: 'div',
-            style: {
-                height: 'fit-content',
-                padding: '.2rem',
-                fontSize: '1.2vw',
-                paddingLeft: '1vw',
-                paddingRight: '1vw',
-                borderRadius: '1vw',
-                fontFamily: 'arial black,sans-serif',
-                margin: '2vh auto',
-                width: 'fit-content',
-                cursor: 'pointer',
-                opacity: formState.isValid ? '1' : '0.5',
-                backgroundColor: formState.isValid ? 'deepskyblue' : '#666',
-                pointerEvents: formState.isValid ? 'auto' : 'none'
-            },
             att: {
                 className: 'subEn',
                 id: 'submitButton'
@@ -1723,13 +1704,12 @@ const Submitted = () => {
                 },
                 child: [
                     $({
-                            tag: 'span',
-                            att: {
-                                className: 'fa fa-search serIc'
-                            },
-                            style: {verticalAlign: 'middle'}
-                        }
-                    ),
+                        tag: 'span',
+                        att: {
+                            className: 'fa fa-search serIc'
+                        },
+                        style: {verticalAlign: 'middle'}
+                    }),
                     $({
                         tag: 'input',
                         att: {
@@ -2153,7 +2133,8 @@ const Submitted = () => {
                         margin: 'auto',
                         display: 'flex',
                         justifyContent: 'center',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        color: 'skyblue'
                     },
                     child: [
                         $({
@@ -2547,8 +2528,14 @@ const Submitted = () => {
                                     event:{
                                         type:'click',
                                         method: ()=>{
-                                            // Just pass the docId and endorsementUrl - no docData
-                                            handleResubmit(docId, endorsement);
+                                            if (researchPaper && researchPaper.length > 0) {
+                                                const researchFileId = researchPaper[0].docId; // Get the researchfile ID
+                                                console.log('Resubmitting - Endorsement ID:', docId, 'Research File ID:', researchFileId);
+                                                handleResubmit(docId, endorsement, researchFileId);
+                                            } else {
+                                                // Fallback to just endorsement ID
+                                                handleResubmit(docId, endorsement);
+                                            }
                                         }
                                     },
                                     child: [
@@ -2931,6 +2918,7 @@ const Submitted = () => {
                     fontSize:'1vw',
                     justifyContent:'center',
                     display:'flex',
+                    color: 'skyblue'
                 },
                 event:{
                     type:'click',
@@ -3605,6 +3593,7 @@ const Submitted = () => {
                         fontSize:'1vw',
                         justifyContent:'center',
                         display:'flex',
+                        color: 'skyblue',
                         margin:'auto'
                     },
                     event:{
@@ -3641,7 +3630,8 @@ const Submitted = () => {
                             text:'Open Entry list',
                             style:{
                                 fontFamily:'arial,sans-serif',
-                                marginLeft:'.5vw'
+                                marginLeft:'.5vw',
+                                color: 'ghostwhite'
                             }
                         })
                     ]
@@ -4058,7 +4048,8 @@ const Submitted = () => {
                         border:'solid thin grey',
                         margin:'auto',
                         marginTop:'2vh', 
-                        borderRadius: '.5vw'
+                        borderRadius: '.5vw',
+                        color: 'ghostwhite'
                     },
                     att:{
                         className:'campDivBot'
@@ -4198,40 +4189,48 @@ const Submitted = () => {
                     ]
                 }))
             }
-
             const search = () => {
-                const searchBox = $({
-                    tag: 'div',
+                const searchInput = $({
+                    tag: 'td',
+                    att: {
+                        className: 'searchBoxTd' // Use the same class as left panel
+                    },
                     style: {
-                        margin: 'auto',
-                        marginLeft: '0',
-                        backgroundColor: 'rgba(0,0,0,0.3)',
-                        borderRadius: '1vw',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        borderRadius: '30px',
+                        padding: '4px 8px 4px 16px',
                         display: 'flex',
-                        justifyContent: 'center',
-                        paddingLeft: '.5vw',
-                        paddingRight: '.5vw'
+                        alignItems: 'center',
+                        gap: '8px'
                     },
                     child: [
                         $({
                             tag: 'span',
                             att: {
-                                className: 'fa-solid fa-magnifying-glass',
+                                className: 'fa fa-search serIc' // Match left panel icon class
                             },
-                            style: {
-                                fontSize: '1.5vw',
-                                height: 'fit-content',
-                                margin: 'auto',
-                                color: 'deepskyblue'
-                            }
+                            style: {verticalAlign: 'middle'}
                         }),
                         $({
                             tag: 'input',
                             att: {
-                                className: 'searchAll',
-                                placeholder: 'search file name',
+                                type: 'search',
+                                className: 'searchInputRes', // Use the same class as left panel
                                 id: 'search-All-File',
-                                name: 'searchAllFile'
+                                name: 'searchAllFile',
+                                placeholder: 'Search file name'
+                            },
+                            event: {
+                                type: 'focus',
+                                method: (ev) => {
+                                    ev.target.style.width = '300px';
+                                }
+                            },
+                            event: {
+                                type: 'blur',
+                                method: (ev) => {
+                                    ev.target.style.width = '200px';
+                                }
                             },
                             event: {
                                 type: 'input',
@@ -4239,26 +4238,21 @@ const Submitted = () => {
                                     const searchTerm = ev.target.value.trim();
                                     const searchInput = ev.target;
                                     
-                                    // Add debouncing to prevent too many requests
                                     clearTimeout(searchInput._searchTimeout);
                                     
                                     searchInput._searchTimeout = setTimeout(async () => {
-                                        // Clear existing content
                                         if (MainBody) {
                                             MainBody.innerHTML = '';
                                         }
                                         
                                         if (searchTerm === '') {
-                                            // If search is empty, load all events
                                             loadAllEvents();
                                             return;
                                         }
                                         
-                                        // Show loading indicator
-                                        MainBody.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">Searching...</div>';
+                                        MainBody.innerHTML = '<div style="color: #bbb; font-family: arial; font-size: 14px; margin: 20px auto; text-align: center;">Searching...</div>';
                                         
                                         try {
-                                            // Use the new searchResearch API
                                             const searchForm = new FormData();
                                             searchForm.append('searchResearch', 'true');
                                             searchForm.append('searchTerm', searchTerm);
@@ -4273,40 +4267,50 @@ const Submitted = () => {
                                                 MainBody.innerHTML = '';
                                                 
                                                 if (searchData.status && searchData.list && searchData.list.length > 0) {
-                                                    // For search results, use a different display function
                                                     displaySearchResults(searchData.list, searchTerm);
                                                 } else {
-                                                    MainBody.innerHTML = `<div style="color: #bbb; font-family: arial; font-size: 1.2vw; margin: auto;">No files found matching "${searchTerm}"</div>`;
+                                                    MainBody.innerHTML = `<div style="color: #bbb; font-family: arial; font-size: 14px; margin: 20px auto; text-align: center;">No files found matching "${searchTerm}"</div>`;
                                                 }
                                             } else {
-                                                MainBody.innerHTML = `<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Search failed. Please try again.</div>`;
+                                                MainBody.innerHTML = `<div style="color: #f87171; font-family: arial; font-size: 14px; margin: 20px auto; text-align: center;">Search failed. Please try again.</div>`;
                                             }
                                         } catch (error) {
                                             console.error('Search error:', error);
-                                            MainBody.innerHTML = `<div style="color: red; font-family: arial; font-size: 1.2vw; margin: auto;">Search error: ${error.message}</div>`;
+                                            MainBody.innerHTML = `<div style="color: #f87171; font-family: arial; font-size: 14px; margin: 20px auto; text-align: center;">Search error: ${error.message}</div>`;
                                         }
-                                    }, 500); // 500ms debounce delay
+                                    }, 500);
                                 }
                             }
                         })
                     ]
                 });
-                
+
                 return ($({
-                    tag: 'div',
+                    tag: 'table',
+                    att: {
+                        className: 'searchBoxRes' // Use the same class as left panel
+                    },
                     style: {
-                        height: '10%',
-                        width: '100%',
-                        backgroundColor: '#333',
-                        display: 'flex'
+                        margin: '16px',
+                        width: 'auto',
+                        flexShrink: '0'
                     },
                     child: [
-                        searchBox
+                        $({
+                            tag: 'tr',
+                            child: [
+                                searchInput,
+                                $({
+                                    tag: 'td',
+                                    style: {
+                                        width: '100%'
+                                    }
+                                })
+                            ]
+                        })
                     ]
-                }))
+                }));
             }
-
-            // Helper function to display search results
             const displaySearchResults = (searchResults, searchTerm) => {
                 searchResults.forEach(eventGroup => {
                     if (eventGroup.list && eventGroup.list.length > 0) {
@@ -4447,7 +4451,8 @@ const Submitted = () => {
                                                                             overflow: 'hidden',
                                                                             paddingTop: '.5vh',
                                                                             paddingBottom: '.5vh',
-                                                                            cursor: 'pointer'
+                                                                            cursor: 'pointer',
+                                                                            color: '#e1e1e1'
                                                                         },
                                                                         att: {
                                                                             title: `${name} - ${author}`,
@@ -4539,7 +4544,8 @@ const Submitted = () => {
                                                                             style:{
                                                                                 width:'100%',
                                                                                 cursor: 'pointer',
-                                                                                fontWeight: 'bold'
+                                                                                fontWeight: 'bold',
+                                                                                color: '#dcdcdc'
                                                                             },
                                                                             text:content,
                                                                             event:{
@@ -4705,17 +4711,17 @@ const Submitted = () => {
                                                         }
                                                     })
                                                 ]
-                                            });
+                                            })
                                             el.appendChild(campusSection);
-                                        });
+                                        })
                                     }
                                 })
                             ]
-                        });
+                        })
                         
                         MainBody.appendChild(eventGroupElement);
                     }
-                });
+                })
             }
 
             // Helper function to load all events
@@ -4766,24 +4772,27 @@ const Submitted = () => {
                     }
                 }))
             }
-
             return ($({
                 tag: 'div',
                 style: {
                     width: '49%',
                     height: '100%',
                     margin: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column'
                 },
                 child: [
                     $({
-                        tag:'div',
-                        style:{
-                            height:'5vh',
-                            width:'100%'
+                        tag: 'div',
+                        style: {
+                            height: 'auto',
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '0',
+                            flexShrink: '0'
                         },
-                        child:[
-                            search()
-                        ]
+                        child: [search()]
                     }),
                     bodyContainer()
                 ]
