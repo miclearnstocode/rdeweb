@@ -1,10 +1,8 @@
 import { $, ConfirmationAlert, Waiting, Request } from '../../../lib/lib.js';
 
-export const handleResubmit = async (docId, endorsementUrl) => {
+export const handleResubmit = async (endorsementId, endorsementUrl) => {
     // Create resubmit form modal with metadata fields
     let resubmitModal;
-    let researchFileInput, programFileInput, endorsementFileInput;
-    let researchFile, programFile, endorsementFile;
     
     // Show loading indicator
     const loading = Waiting()
@@ -14,7 +12,7 @@ export const handleResubmit = async (docId, endorsementUrl) => {
         // Fetch the specific document data from the server by ID
         const formData = new FormData();
         formData.append('getRejectedForResubmit', 'true');
-        formData.append('docId', docId);
+        formData.append('docId', endorsementId);
         
         const response = await fetch('/getresearch', {
             method: 'POST',
@@ -93,7 +91,7 @@ export const handleResubmit = async (docId, endorsementUrl) => {
         
         // Create the modal with the data
         resubmitModal = createResubmitModal({
-            docId,
+            docId: endorsementId,
             currentDoc,
             updatedValues,
             coauthorDisplayText,
@@ -784,9 +782,7 @@ export async function submitResubmit(params) {
         researchFile,
         programFile,
         endorsementFile,
-        currentDoc,
-        closeModal
-    } = params;
+        currentDoc, closeModal} = params;
 
     // Check if any changes were made
     const originalCoauthorStr = JSON.stringify(updatedValues.coauthors);
