@@ -1,916 +1,397 @@
-.researchPanel{
+.researchPanel {
     width: 100%;
-    height: 100%;
-
+    height: 100vh;
+    overflow: hidden;
+    background-color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
 }
 
-.tabsHeader{
-    height: 6%;
+/* Modern Tabs - Fixed positioning */
+.tabsHeader {
+    height: 60px;
+    min-height: 60px;
     width: 100%;
-    background-image: linear-gradient(transparent,black);
-    table-layout: auto;
-    border-collapse: separate !important;
-    border-spacing: 8px !important;
+    background: linear-gradient(180deg, #2d2d2d 0%, #1f1f1f 100%);
+    border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    flex-shrink: 0;
 }
 
-.tabsres{
-    width: 15vw;
-    text-align: center;
-    color: rgb(240, 240, 244);
-    font-weight: bolder;
-    font-family: Arial,sans-serif;
-    font-size: 1.1vw;
+.tabsHeader::-webkit-scrollbar {
+    height: 3px;
+}
+
+.tabsHeader::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.tabsHeader::-webkit-scrollbar-thumb {
+    background: deepskyblue;
+    border-radius: 3px;
+}
+
+.tabsres {
+    padding: 8px 20px;
+    color: #bbb;
+    font-weight: 500;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
     cursor: pointer;
-    border-radius: .5vw !important;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    border: 1px solid transparent;
 }
+
 .tabsres:hover {
-    border: solid thin rgba(0, 191, 255, 0.5) !important;
-    border-radius: .5vw !important;         /* Important override */
-    cursor: pointer;
+    border-color: rgba(0, 191, 255, 0.3);
+    background: rgba(0, 191, 255, 0.1);
 }
-.tabActive{
+
+.tabActive {
+    background: linear-gradient(135deg, rgba(0, 191, 255, 0.15), transparent);
     color: deepskyblue;
-    background-image:  linear-gradient(black,#333333);
-    pointer-events: none;
-    border-radius: .5vw !important;
+    border-bottom: 2px solid deepskyblue;
+    border-radius: 6px 6px 0 0;
 }
-.tabFrame{
+
+.tabFrame {
+    flex: 1;
     width: 100%;
-    height: 94%;
-    background-color: #333;
+    min-height: 0;
+    background: linear-gradient(145deg, #222222, #1a1a1a);
     display: flex;
-    justify-content: center;
-    border-radius: .5vw !important;
+    overflow: hidden;
 }
-.createPan{
-    width: 98%;
-    height: 99%;
-    margin: 1vh auto auto;
+
+/* Create Panel - Better scrolling */
+.createPan {
+    width: 100%;
+    height: 100%;
+    padding: 24px;
     overflow-y: auto;
-    padding-right: 1vw;
-    padding-left: 1vw;
-}
-.sumittedPan{
-    width: 98%;
-    background-color: transparent;
+    overflow-x: hidden;
 }
 
-.contentSup{
-    width: 95%;
-    margin: auto;
-    border-collapse: collapse;
-    height: fit-content;
-    table-layout: auto;
+.createPan > div {
+    max-width: 'auto';
+    margin: 0 auto;
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.labelRes{
-    font-family: "Arial Black",sans-serif;
-    font-size: 1.3vw;
-    color: #777;
-    padding-top: 3vh;
-    width: 9vw;
-}
-.req{
-    padding-top: 3vh;
-    width: auto;
-    text-align: left;
-    font-size: .9vw;
-
-    font-family: "Arial Black",sans-serif;
-    color: #999;
-}
-.selectCatRes{
-    font-size: 1.2vw;
-    font-family: Arial,sans-serif;
-    font-weight: bolder;
-    background-color: rgba(0,0,0,0.2);
-    color: #999;
-    outline: none;
-    border: solid thin #555;
-    padding: .2rem;
-    border-radius: .5vw;
-}
-
-.selectCatRes option{
-    background-color: grey;
-    color: black;
-}
-
-
-
-
-.titleRes{
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-    font-weight: bolder;
-    background-color: rgba(0,0,0,0.2);
-    color: #999;
-    outline: none;
-    border: solid thin #555;
-    border-radius: .5vw;
-    width: 90%;
-    resize: none;
-    padding: 1vh;
-    min-height: 2.5vh;
-    line-height: 2.5vh;
-}
-
-
-.authorRes{
-    font-size: 1.2vw;
-    font-family: Arial,sans-serif;
-    font-weight: bolder;
-    background-color: rgba(0,0,0,0.2);
-    color: #999;
-    outline: none;
-    border: solid thin #555;
-    border-radius: .5vw;
-    padding: 1vh;
-    width: 40vw;
-}
-.addCoPanel{
-    width: 80%;
-}
-.addBotRes{
-    color: ghostwhite;
-    font-family: "Arial Black",sans-serif;
-    background-color: #555;
-    border-radius: 1vw;
-    cursor: pointer;
-}
-.addBotRes:hover{
-    background-color: #444;
-    color: #777;
-    text-shadow: 0 0 .5vw black;
-}
-.addBotRes:active{
-    background-color: #333;
-    color: #777;
-    text-shadow: 0 0 .5vw black;
-}
-.addBot{
-    color: deepskyblue;
-    font-size: 1.1vw;
-    cursor: pointer;
-    width: fit-content;
-}
-.lebBHot{
-    font-family: "Arial Black",sans-serif;
-}
-
-.panelCo{
-    width: 65.5%;
-    height: fit-content;
-    padding-bottom: .5vh;
-    border: solid thin #444;
-}
-.adInputCo{
-    background-color: rgba(0,0,0,0.2);
-    outline: none;
-    margin-left: 1vw;
-    margin-bottom: .5vh;
-    height: 3.5vh;
-    width: 25vw;
-    border: solid thin rgba(100,100,100,0.6);
-    border-radius: .5vw;
-    padding-left: .5vw;
-    padding-right: .5vw;
-    color: #999;
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-}
-.nameCoList{
+/* Modern Form Elements */
+textarea, input[type="text"], input[type="search"], select {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    color: #e0e0e0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    transition: all 0.2s ease;
     width: 100%;
-    font-family: "Arial Black",sans-serif;
-
-}
-.nameListCo{
-    width: 80%;
-    color: #999;
-}
-.removeCon{
-    width: 20%;
-    color: deepskyblue;
-}
-.uploadTable{
-    width: 52.5%;
-    border-collapse: separate;
-    border-spacing: 1vh;
-    border: solid thin #444;
-}
-.uploadTable td{
-    height: 4vh;
-
-}
-.upIn{
-    width: auto;
-    border-bottom: solid thin grey;
-    position: relative;
-    color: #999;
-    font-size: 1vw;
-    font-family: Arial,sans-serif;
-    text-align: center;
-    cursor: pointer;
 }
 
-.upLeb{
-    width: 15vw;
-    text-align: right;
-    font-family: Arial,sans-serif;
-    color: deepskyblue;
-    font-weight: bolder;
-    font-size: 1.3vw;
-
-}
-.fileInputUp{
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    margin: auto;
-    opacity: 0;
-    z-index: 5;
-    cursor: pointer;
-}
-.upIn:hover{
-    background-color: rgba(0,0,0,0.2);
-    color: deepskyblue;
-}
-.resB{
-    text-align: center;
-    font-size: 1.2vw;
-    color: deepskyblue;
-    cursor: pointer;
-}
-.resB:hover{
-    color: lightskyblue;
-    background-color: rgba(0,0,0,0.3);
-}
-.submitRes{
-    text-align: center;
-    font-family: "Arial Black",sans-serif;
-    color: #999;
-    height: 7vh;
-    font-weight: bolder;
-    cursor: pointer;
-    font-size: 2vw;
-}
-.submitRes:hover{
-    color: lightskyblue;
-    background-color: rgba(0,0,0,0.3);
-}
-.contentSup input:hover,.contentSup textarea:hover,.contentSup select:hover{
-    border: solid thin deepskyblue;
-}
-.contentSup input:focus,.contentSup textarea:focus,.contentSup select:focus{
-    border: solid thin deepskyblue;
-    background-color: rgba(0,0,0,0.4);
-    color: #bbbbbb;
-}
-.fileViewerPanelRes{
-    height: 100%;
-    width: 100%;
-    display: flex;justify-content: center;
-    position: relative;
-}
-.messagePanelRes{
-    height: 99%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
-.listRes{
-    background-color: #222;
-}
-.listRes:hover{
-    background-color: rgba(0,0,0,0.7);
-}
-
-.viewListRes{
-    font-weight: bolder;
-    margin: auto;
-    color: deepskyblue;
-    cursor: pointer;
-}
-.viewListRes:hover{
-    text-shadow: 0 0 .5vw ghostwhite;
-    color: black;
-}
-.delRes{
-    color: deepskyblue;
-    border-radius: .5vw;
-}
-.delRes:hover{
-    color: black;
-    text-shadow: 0 0 .2vw ghostwhite;
-}
-.delRes:active{
-    background-color: rgba(100,100,100,0.5);
-}
-.searchBoxRes{
-    margin: auto;
-    height: 5%;
-    width: 90%;
-    table-layout: auto;
-    border-collapse: collapse;
-}
-.searchBoxTd{
-    width: fit-content;
-    font-size: 1.5vw;
-    text-align: center;
-    white-space: nowrap;
-    background-color: rgba(0,0,0,0.3);
-    border-radius: 1vw;
-    padding-left: .5vw;
-    color: deepskyblue;
-
-}
-.searchInputRes{
-    height: 100%;
-    width: 15vw;
-    background-color: transparent;
-    border: none;
-    outline: none;
-    font-size: 1vw;
-    font-family: monospace;
-    font-weight: bolder;
-    color: #aaa;
-    border-radius: 0 1vw 1vw 0;
-    padding-left: .5vw;
-    padding-right: .5vw;
-}
-.searchInputRes:hover{
-    background-image: linear-gradient(to right,transparent,rgba(0,0,0,0.5));
-}
-.searchInputRes:focus{
-    background-image: linear-gradient(to right,transparent,rgba(0,0,0,0.5));
-    width: 30vw;
-    animation: expandRes .3s;
-}
-@keyframes expandRes {
-    from{
-        width: 15vw;
-    }
-    to{
-        width: 30vw;
-    }
-}
-.listPRes{
-    height: 94%;
-    width: 98%;
-    margin: 1% auto auto;
-    overflow-y: auto;
-    background-color: rgba(0,0,0,0.2);
-
-}
-.listDiv{
-    width: 95%;
-    margin: 1vh auto auto;
-    height: fit-content;
-    padding-left: .5vw;
-    padding-right: .5vw;
-    border: solid thin rgba(200,200,200,0.3);
-    border-radius: .5vw;
-}
-.listDiv:hover{
+textarea:focus, input:focus, select:focus {
     border-color: deepskyblue;
-    background-color: rgba(0,0,0,0.3);
-}
-.r1Table{
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: auto;
-    margin: 1vh auto;
-}
-.r1TdDateLabel,.r1TDAuthorLabel,.r2categoryLabel,.r2TitleLabel{
-    width: fit-content;
-    color: lightblue;
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-    font-weight: bolder;
-    white-space: nowrap;
-    padding-right: 1vw;
-}
-.r1TDAuthorLabel,.r2categoryLabel{
-    padding-left: 4vw;
-}
-
-.r1TdDate{
-    width: fit-content;
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-    color: #999;
-    white-space: nowrap;
-    border-bottom: solid thin #888;
-}
-.r1TDAuthor{
-    width: 100%;
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-    color: #999;
-    border-bottom: solid thin #888;
-    white-space: nowrap;
-}
-
-.r2category{
-    width: fit-content;
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-    color: #999;
-    border-bottom: solid thin #888;
-    white-space: nowrap;
-}
-.r2Title{
-    width: 100%;
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-    color: #999;
-    border-bottom: solid thin #888;
-    white-space: nowrap;
-}
-
-
-.r3Table{
-    width: 100%;
-    border-collapse: separate;
-    table-layout: auto;
-    margin: 1vh auto;
-    height: 5vh;
-    background-color: rgba(200,200,200,0.2);
-}
-.r3StatusLabel{
-    width: fit-content;
-    color: rgba(0,0,0,0.5);
-    font-size: 1.1vw;
-    font-family: "Arial Black",sans-serif;
-    font-weight: bolder;
-    white-space: nowrap;
-    padding-left: 1vw;
-}
-.reuploadLabel{
-    width: 30%;
-    color: deepskyblue;
-    font-size: 1.1vw;
-    font-family: "Arial Black",sans-serif;
-    font-weight: bolder;
-    white-space: nowrap;
-    padding-right: 2vw;
-    padding-left: 2vw;
-    cursor: pointer;
-    text-align: center;
-
-}
-.reuploadLabel:hover{
-    background-color: rgba(0,0,0,0.2);
-    color: ghostwhite;
-    text-decoration-line: underline;
-}
-.frameViewer{
-    width: 98%;
-    height: 99%;
-    margin: auto;
-}
-.viewerTool{
-    position: absolute;
-    height: 20%;
-    width: 5vw;
-    background-color: yellow;
-    margin: auto;
-    top: 0;
-    bottom: 0;
-    left: auto;
-    right: 2vw;
-}
-.endorsePan{
-    width: 90%;
-    margin: auto;
-    background-color: transparent;
-    border-left: solid thin rgba(100,100,100,0.3);
-    border-right: solid thin rgba(100,100,100,0.3);
-}
-.searchEndorsBox{
-    width: 98%;
-    height: 5.5%;
-    margin:1vh auto auto;
-    display: flex;
-    justify-content: center;
-}
-.listContainEndors{
-    width: 98%;
-    height: 93.2%;
-    background-color: rgba(0,0,0,0.3);
-    margin: auto;
-    overflow-y: auto;
-}
-.endorseListTable{
-    width: 98%;
-    cursor: pointer;
-    margin: 1vh auto auto;
-    background-color: rgba(100,100,100,.5);
-    border-radius: .5vw;
-}
-.endorseListTable:hover{
-    background-color: rgba(0,0,0,.3);
-}
-.allEnTable{
-    color: #bbb;
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-    font-weight: bold;
-}
-.dateEnTable{
-    width: 20%;
-}
-.authorEnTable{
-    width: 50%;
-}
-.categoryEnTable{
-    width: 30%;
-}
-
-.titleEnTable{
-    background-color: rgba(100,100,100,0.6);
-}
-.endorseLetDiv{
-    width:100%;
-    height: 100%;
-    position: absolute;
-    z-index: 3;
-    background-color: rgba(0,0,0,0.5);
-    top: 0;
-    left: 0;
-    display: flex;
-    justify-content: center;
-}
-.canvasHolder{
-    width: fit-content;
-    height: 92%;
-    overflow: auto;
-    margin:1vh auto auto;
-    text-align: center;
-}
-.canvasLetter{
-    margin:1vh auto auto;
-    width: 100%;
-}
-.toolBarEndors{
-    position: absolute;
-    left: 0;
-    top: auto;
-    bottom: 1vh;
-    right: 0;
-    height: 5%;
-    width: 100%;
-    margin: auto;
-    background-color: rgba(255,255,255,0.5);
-    display: flex;
-    justify-content: center;
-}
-.currentPage{
-    width: fit-content;
-    padding-left: 1vw;
-    padding-right: 1vw;
-    height: 100%;
-    text-align: center;
-    background-color: grey;
-    font-size: 2vw;
-    font-family: "Arial Black",sans-serif;
-
-
-}
-.canvasButton{
-    font-size: 2vw;
-    font-family: "Arial Black",sans-serif;
-    cursor: pointer;
-    font-stretch: extra-expanded;
-    width: fit-content;
-}
-.forward{
-    border-radius: .2vw 100% 100% .2vw;
-    padding-right: 5vw;
-    width: 5vw;
-}
-.backward{
-    border-radius:  100% .2vw .2vw 100% ;
-    padding-left: 5vw;
-    width: 5vw;
-}
-
-.canvasButton:hover{
-    text-shadow: 0 0 1vw ghostwhite;
-    background-color: black;
-    transition: .3s;
-}
-.canvasButton:active{
-    text-shadow: 0 0 1vw ghostwhite;
-    background-color: black;
-    color: deepskyblue;
-}
-
-.closeBotEn{
-    color: deepskyblue;
-    background-color: black;
-    height: fit-content;
-    margin: auto auto auto 3vw;
-    font-size: 2vw;
-    display: flex;
-    width: fit-content;
-    padding: .2rem 1vw;
-    border-radius: .5vw;
-    cursor: pointer;
-}
-.closeBotEn:hover{
-    color: black;
-    text-shadow: 0 0 .2vw ghostwhite;
-}
-
-.saveEn{
-    font-size: 2vw;
-    font-family: "Arial Black",sans-serif;
-    cursor: pointer;
-    color: deepskyblue;
-    width: fit-content;
-    padding-left: 1vw;
-    padding-right: 1vw;
-    background-color: black;
-    border-radius: .5vw;
-    margin: auto;
-    text-decoration: none;
-}
-.saveEn:hover{
-    color: black;
-    text-shadow: 0 0 .5vw ghostwhite;
-    transition: .3s;
-}
-.saveEn:active{
-    background-color: #222;
-    transition: .3s;
-}
-.searchAll{
-    height: 4vh;
-    background-color: transparent;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
     outline: none;
-    padding-left: .5vw;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Message Panel - Fixed layout */
+.messagePanelRes {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.messagePanelRes > div {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid #333;
+    overflow: hidden;
+}
+
+/* List Panel - Proper scrolling */
+.listPRes {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure both search boxes have identical styling */
+.searchBoxRes {
+    flex-shrink: 0;
+    margin: 16px;
+    width: auto;
+    border-collapse: collapse;
+}
+
+.searchBoxTd {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 30px;
+    padding: 4px 8px 4px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.searchBoxTd:hover {
+    border-color: rgba(0, 191, 255, 0.3);
+}
+
+.searchBoxTd:focus-within {
+    border-color: deepskyblue;
+    box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.1);
+}
+
+/* Both inputs use the same class now */
+.searchInputRes {
+    width: 200px;
+    background: transparent;
     border: none;
-    width: 10vw;
-    font-size: 1vw;
-    font-family: monospace;
-    color: #bbb;
-}
-.searchAll:focus{
-    width:20vw;
-    transition: .3s;
-}
-.fileAllPer{
-    background-color: #555;
-    cursor: pointer;
-}
-.fileAllPer:hover{
-    background-color: #333;
-}
-.fileAllPer:active{
-    background-color: #444;
-}
-.exitAllFile:hover{
-    background-color: deepskyblue;
+    font-size: 14px;
+    color: #e0e0e0;
+    padding: 8px 0;
+    outline: none;
+    transition: width 0.3s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.addEnRes{
-    color: deepskyblue;
+.searchInputRes:focus {
+    width: 300px;
+    animation: expandRes 0.3s;
 }
-.addEnRes:hover{
-    color: black;
-    text-shadow: 0 0 .2vw ghostwhite;
-}
-.subEn{
-    background-color: #555;
-    color: #ddd;
-}
-.subEn:hover{
-    background-color: #444;
-    color: #666;
-    text-shadow: 0 0 .5vw black;
-}
-.subEn:active{
-    background-color: #333;
 
+.searchInputRes::placeholder {
+    color: #888;
+    opacity: 0.8;
 }
-.cover,.resAtt,.selectEv{
-    border: solid thin deepskyblue;
-}
-.selectEv{
-    border: solid thin deepskyblue;
-}
-.cover:hover,.resAtt:hover,.selectEv:hover{
-    background-color: rgba(0,0,0,0.3);
-    box-shadow: 0 0 .3vw ghostwhite;
-}
-.viewerBotEndorseMain{
+
+/* Icon styling */
+.serIc, .fa-search, .fa-magnifying-glass {
     color: deepskyblue;
-    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
 }
-.viewerBotEndorseMain:hover{
-    color: black;
-    text-shadow: 0 0 .4vw ghostwhite;
+
+/* Animation */
+@keyframes expandRes {
+    from {
+        width: 200px;
+    }
+    to {
+        width: 300px;
+    }
 }
-.resHiderclose{
-    width: 95%;
-    margin-left: auto;
-    margin-right: 0;
-    height: 0px;
-    opacity: 0;
-    background-color: rgba(200,200,200,0.1);
-    padding: .3rem;
-    position: relative;
+
+/* Ensure the right panel layout is correct */
+.allPanel > div:first-child {
+    height: auto !important;
+    min-height: auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 !important;
 }
-.resHiderOpen{
-    margin-left: auto;
-    margin-right: 0;
-    height: fit-content;
-    opacity: 1;
-    margin-top: 1vh;
+
+/* Fix the right panel layout */
+.allPanel > div:first-child {
+    height: auto !important;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Change from center to flex-start */
+    padding-left: 16px !important; /* Add left padding */
 }
-.resListInn{
-    background-color: transparent;
+
+/* Ensure the search box container in right panel matches left panel */
+.allPanel .search-box-wrapper {
+    width: auto;
+    margin: 0;
 }
-.resListInn:hover{
-    background-color: rgba(0,0,0,0.5);
-}
-.contr,.submitRes{
+
+/* Fix the icon styling */
+.fa-magnifying-glass, .fa-search {
+    font-size: 16px;
     color: deepskyblue;
+    display: flex;
+    align-items: center;
 }
-.contr:hover,.submitRes:hover{
-    color: black;
-    text-shadow: 0 0 .4vw ghostwhite;
+/* Modern Document List Items */
+.listRes {
+    background: #1e1e1e;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    border: 1px solid #333;
+    width: 100%;
 }
-.fileBot{
-    color: deepskyblue;
-    width: 80%;
-    margin: 1vh auto auto;
-    height: fit-content;
-    text-align: center;
-    font-family: "Arial Black",sans-serif;
-    font-size: 1vw;
-    cursor: pointer;
+
+.listRes:hover {
+    background: #242424;
+    border-color: deepskyblue;
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 191, 255, 0.15);
 }
-.endorsCnt{
-    background-image: radial-gradient( rgba(100,100,100,0.5),black);
-    color: deepskyblue;
-}
-.endorsCnt:hover{
-    background-image: radial-gradient( black,rgba(100,100,100,0.3));
-    transition: .3s;
-    color: black;
-    text-shadow: 0 0 .3vw ghostwhite;
-}
-.listCampEv{
-    background-color: #222;
-    cursor: pointer;
-    font-size: 1.2vw;
-}
-.listCampEv:hover{
-    color: deepskyblue;
-    transition: .3s;
-    background-color: #111;
-}
-.campDivBot{
-    cursor: pointer;
-    color: #bbb;
-}
-.campDivBot:hover{
-    background-color: rgba(0,0,0,0.2);
-    color: deepskyblue;
-    transition: .3s;
-}
-.perRes{
-    color: #bbb;
-    font-size: 1vw;
-}
-.perRes:hover{
-    color: deepskyblue;
-    font-size: 1.1vw;
-    transition: .3s;
-}
-.addCo{
-    color: deepskyblue;
-    border-radius: .5vw;
-}
-.addCo:hover{
-    color: black;
-    text-shadow: 0 0 .3vw ghostwhite;
-    background-color: black;
-}
-/* Floating popup container - Stack like messenger */
+/* Popup Container - Highest z-index */
 .popup-container {
     position: fixed;
-    top: 10vh;
-    right: 2vw;
-    z-index: 10000;
+    top: 80px;
+    right: 24px;
+    z-index: 999 !important;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.8vw; /* Consistent gap between popups */
+    gap: 12px;
+    max-width: 380px;
+    max-height: calc(100vh - 120px);
+    pointer-events: none;
+    padding: 8px;
 }
 
-/* Base popup styles - all popups same size */
+/* Status Popup Styling - Base styles with high z-index */
 .status-popup {
-    background: var(--popup-bg);
-    color: white;
-    padding: 1vw 1.5vw;
-    border-radius: 0.5vw;
-    box-shadow: var(--popup-shadow);
-    max-width: 25vw;
-    min-width: 20vw;
-    border-left: 0.5vw solid var(--popup-border);
-    font-family: 'arial', sans-serif;
-    display: flex;
-    align-items: center;
-    gap: 1vw;
-    animation: slideInRight 0.3s ease-out;
-    transform-origin: right center;
-    margin: 0;
     position: relative;
+    z-index: 999 !important;
+    padding: 16px 20px;
+    border-radius: 16px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    border: none;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-left: 4px solid transparent;
+    min-width: 300px;
+    max-width: 360px;
+    color: white;
+    pointer-events: all;
+    animation: slideInRight 0.3s ease-out;
+    margin: 0;
 }
 
-/* Specific popup types with consistent sizing */
+/* Specific popup types */
 .rejected-popup {
-    --popup-bg: linear-gradient(45deg, #ff4444, #cc0000);
-    --popup-shadow: 0 0.5vw 1vw rgba(255, 68, 68, 0.3);
-    --popup-border: #ff8888;
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.98), rgba(185, 28, 28, 0.98));
+    border-left-color: #ff8888;
 }
 
 .success-popup {
-    --popup-bg: linear-gradient(45deg, #4CAF50, #2E7D32);
-    --popup-shadow: 0 0.5vw 1vw rgba(76, 175, 80, 0.3);
-    --popup-border: #81C784;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.98), rgba(22, 163, 74, 0.98));
+    border-left-color: #86efac;
 }
 
 .pending-popup {
-    --popup-bg: linear-gradient(45deg, #FF9800, #F57C00);
-    --popup-shadow: 0 0.5vw 1vw rgba(255, 152, 0, 0.3);
-    --popup-border: #FFB74D;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.98), rgba(234, 88, 12, 0.98));
+    border-left-color: #fdba74;
 }
 
-/* Icon styles */
-.status-popup:before {
-    font-size: 1.5vw;
+/* Popup content layout */
+.status-popup {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Icon styling */
+.status-popup::before {
+    font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.5vw;
+    min-width: 24px;
+    height: 24px;
 }
 
-.rejected-popup:before {
+.rejected-popup::before {
     content: '⚠️';
 }
 
-.success-popup:before {
+.success-popup::before {
     content: '✓';
 }
 
-.pending-popup:before {
+.pending-popup::before {
     content: '⏳';
 }
 
-/* Content styling */
+/* Content container */
 .popup-content {
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-width: 0; /* Allow text truncation */
+    min-width: 0;
 }
 
 .popup-title {
-    font-weight: bold;
-    font-size: 1.1vw;
-    margin-bottom: 0.2vw;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: white;
+    line-height: 1.4;
 }
 
 .popup-message {
-    font-size: 0.9vw;
+    font-size: 13px;
     opacity: 0.9;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: white;
+    line-height: 1.4;
+    white-space: normal;
+    word-wrap: break-word;
 }
 
 /* Close button */
 .popup-close {
-    margin-left: auto;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
     cursor: pointer;
-    font-size: 1vw;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-    min-width: 1vw;
+    font-size: 14px;
+    color: white;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .popup-close:hover {
-    opacity: 1;
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.popup-close:active {
+    transform: rotate(90deg) scale(0.95);
 }
 
 /* Animations */
@@ -940,123 +421,279 @@
     animation: fadeOut 0.5s ease-out forwards;
 }
 
-/* Different status styles for the event type display */
+/* Ensure popups are above everything */
+.status-popup,
+.rejected-popup,
+.success-popup,
+.pending-popup {
+    z-index: 999999 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .popup-container {
+        top: 70px;
+        right: 16px;
+        max-width: 320px;
+    }
+    
+    .status-popup {
+        min-width: 260px;
+        padding: 14px 16px;
+    }
+    
+    .popup-title {
+        font-size: 14px;
+    }
+    
+    .popup-message {
+        font-size: 12px;
+    }
+}
+
+/* Print styles - hide popups when printing */
+@media print {
+    .popup-container,
+    .status-popup {
+        display: none !important;
+    }
+}
+
+/* Event Type Display - Fixed styling */
 .event-type-accepted {
-    background: linear-gradient(to right, #4CAF50, transparent) !important;
-    color: #2E7D32 !important;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), transparent) !important;
+    color: #4ade80 !important;
+    border-left: 4px solid #22c55e !important;
+    padding-left: 12px !important;
 }
 
 .event-type-rejected {
-    background: linear-gradient(to right, #faa, transparent) !important;
-    color: #d32f2f !important;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), transparent) !important;
+    color: #f87171 !important;
+    border-left: 4px solid #ef4444 !important;
+    padding-left: 12px !important;
 }
 
 .event-type-pending {
-    background: linear-gradient(to right, #FF9800, transparent) !important;
-    color: #FF9800 !important;
-}
-.drive-open-link:hover {
-    background-color: #3367d6 !important;
-    transform: scale(1.05);
-    transition: all 0.3s ease;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), transparent) !important;
+    color: #fb923c !important;
+    border-left: 4px solid #f97316 !important;
+    padding-left: 12px !important;
 }
 
-.drive-open-link:active {
-    transform: scale(0.95);
-}
-/* File upload status indicators */
-.file-upload-status {
-    display: flex;
-    align-items: center;
-    margin-top: 0.5vh;
-    font-size: 0.9vw;
-    color: #bbb;
-}
-
-.file-upload-status.success {
-    color: #4CAF50;
-}
-
-.file-upload-status.error {
-    color: #f44336;
-}
-
-.file-upload-status .fa-check-circle {
-    margin-right: 0.5vw;
-}
-
-.file-upload-status .fa-times-circle {
-    margin-right: 0.5vw;
-}
-.search-highlight {
-    background-color: #ffeb3b !important;
-    color: #000 !important;
-    padding: 0 2px !important;
-    border-radius: 2px !important;
-    font-weight: bold !important;
-}
-
-.no-results-message {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translate(-50%, -45%); }
-    to { opacity: 1; transform: translate(-50%, -50%); }
-}
-
-/* Resubmit button styling */
-.resubmitBtn {
-    background-color: #ff9800 !important;
+/* Resubmit Button */
+.resubmitBtn, .endorsCnt .resubmit-button {
+    background: linear-gradient(135deg, #f97316, #ea580c) !important;
     border: none !important;
-    border-radius: 3px !important;
-    padding: 5px 10px !important;
-    font-size: 0.9vw !important;
-    transition: all 0.3s !important;
+    border-radius: 8px !important;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    color: #FFFFFF;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
 }
 
-.resubmitBtn:hover {
-    background-color: #f57c00 !important;
+.resubmitBtn:hover, .endorsCnt .resubmit-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 2px 5px rgba(255, 152, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+/* Find this section around line 680-700 and replace with: */
+.endorsCnt {
+    background-image: radial-gradient(rgba(100,100,100,0.5), black);
+    color: white !important;  /* Change from deepskyblue to white */
 }
 
-.resubmitBtn i, .resubmitBtn span {
+.endorsCnt:hover {
+    background-image: radial-gradient(black, rgba(100,100,100,0.3));
+    transition: .3s;
+    color: white !important;  /* Keep white on hover */
+    text-shadow: 0 0 .3vw ghostwhite;
+}
+
+/* Also update any specific button text inside endorsCnt */
+.endorsCnt div, 
+.endorsCnt span {
     color: white !important;
 }
 
-/* Animation for rejected status */
-@keyframes pulse {
-    0% {
-        opacity: 1;
+/* For the View Correction text specifically */
+.endorsCnt .fa-solid,
+.endorsCnt [class*="fa-"] {
+    color: white !important;
+}
+
+/* For the Delete button */
+.delRes {
+    color: white !important;  /* Change from deepskyblue to white */
+    border-radius: .5vw;
+}
+
+.delRes:hover {
+    color: white !important;  /* Keep white on hover */
+    text-shadow: 0 0 .2vw ghostwhite;
+}
+
+/* For the Delete button text */
+.delRes span,
+.delRes div {
+    color: white !important;
+}
+
+/* If there's a specific View Correction button class */
+.view-correction-btn,
+.view-correction-btn span,
+.view-correction-btn div {
+    color: white !important;
+}
+
+/* For any other buttons in the endorsement panel */
+.endorsement-controls button,
+.endorsement-controls .btn,
+.endorsement-controls [class*="btn"] {
+    color: white !important;
+}
+
+/* File Upload Areas */
+.resAtt, .cover, .selectEv {
+    border: 1px solid rgba(0, 191, 255, 0.3);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    background: linear-gradient(145deg, #2a2a2a, #222);
+}
+
+.resAtt:hover, .cover:hover, .selectEv:hover {
+    border-color: deepskyblue;
+    background: linear-gradient(145deg, #2d2d2d, #252525);
+    box-shadow: 0 4px 16px rgba(0, 191, 255, 0.2);
+}
+
+/* Submit Button */
+.subEn {
+    background: linear-gradient(135deg, #00b4ff, #0080ff);
+    color: white;
+    padding: 12px 36px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(0, 191, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 230px;
+}
+
+.subEn:hover:not([disabled]) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 191, 255, 0.4);
+}
+
+.subEn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #4a4a4a;
+    box-shadow: none;
+}
+
+/* Document Viewer */
+.fileViewerPanelRes {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    background: #1a1a1a;
+    position: relative;
+}
+
+.frameViewer {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #2a2a2a;
+}
+
+/* Control Buttons */
+.viewListRes, .delRes, .addCo {
+    color: deepskyblue;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.viewListRes:hover, .delRes:hover, .addCo:hover {
+    background: rgba(0, 191, 255, 0.1);
+    transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .messagePanelRes {
+        flex-direction: column;
+        padding: 12px;
     }
-    50% {
-        opacity: 0.7;
+    
+    .searchInputRes:focus {
+        width: 200px;
     }
-    100% {
-        opacity: 1;
+    
+    .popup-container {
+        max-width: 320px;
+        right: 16px;
+        top: 70px;
     }
 }
 
-/* Resubmit badge on the view button */
-.resubmit-badge {
-    animation: bounce 1s ease-in-out infinite;
-}
-
-@keyframes bounce {
-    0%, 100% {
+/* Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
         transform: translateX(0);
-    }
-    50% {
-        transform: translateX(3px);
+        opacity: 1;
     }
 }
 
-/* Make the button container responsive */
-@media (max-width: 768px) {
-    .viewerBotEndorseMain div,
-    .resubmitBtn,
-    .delRes span {
-        font-size: 12px !important;
-    }
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
+
+::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: deepskyblue;
+}
+
+/* Utility Classes */
+.overflow-hidden {
+    overflow: hidden !important;
+}
+
+.overflow-auto {
+    overflow: auto !important;
+}
+
+.flex-shrink-0 {
+    flex-shrink: 0 !important;
+}
+

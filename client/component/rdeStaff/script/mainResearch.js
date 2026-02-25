@@ -599,7 +599,7 @@ export const ResearchMain = () => {
                                                 tag: 'div',
                                                 att: {
                                                     className: 'botRes',
-                                                    innerHTML: '<span class="fa fa-file-pdf-o" style="margin-right: 0.2vw;"></span> Research entry'
+                                                    innerHTML: '<span class="fa fa-file-pdf-o" style="margin-right: 0.2vw;"></span> Docs entry'
                                                 },
                                                 style: {
                                                     fontSize: '1vw',
@@ -2904,333 +2904,553 @@ export const ResearchMain = () => {
         const Content = () => {
             const Report=()=>{
                 const ReportPanel=()=>{
-                    let panBo
-                    let bodCon
-                    let eventTypeName
-                    const contain=({category,total,eventType})=>{
-
-                        let dropDownState=false,dropPan
-
-                        return($({
-                            tag:'div',
-                            style:{
-                                width:'100%',
-                                height:'fit-content',
-                                marginTop:'.5vh',
-                                marginBottom:'.5vh',
+                    let panBo, bodCon, eventTypeName
+                    // Main container for center and its categories
+                    const contain = ({center, total, categories, eventType}) => {
+                        let dropDownState, dropPan
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                width: '100%',
+                                height: 'fit-content',
+                                marginTop: '.5vh',
+                                marginBottom: '.5vh',
                             },
-                            child:[
+                            child: [
+                                // Main Center Row
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        display:'flex',
-                                        width:'100%',
-                                        height:'fit-content',
-                                        borderBottom:'solid thin deepskybluee'
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        width: '100%',
+                                        height: 'fit-content',
+                                        borderBottom: '1px solid #444',
+                                        cursor: 'pointer',
+                                        backgroundColor: '#2a2a2a',
+                                        borderRadius: '5px',
+                                        marginBottom: '2px',
+                                        transition: 'all 0.3s'
                                     },
-                                    child:[
+                                    child: [
+                                        // Dropdown icon
                                         $({
-                                            tag:'div',
-                                            att:{
-                                                //<i class="fa-solid fa-square-caret-up"></i>
-                                                className:'fa-solid fa-square-caret-up',
-                                                
+                                            tag: 'div',
+                                            att: {
+                                                className: dropDownState ? 'fa-solid fa-square-caret-down' : 'fa-solid fa-square-caret-right'
                                             },
-                                            style:{
-                                                width:'5%',
-                                                textAlign:'center',
-                                                margin:'auto',
-                                                fontSize:'1.2vw',
-                                                color:'deepskyblue'
+                                            style: {
+                                                width: '5%',
+                                                textAlign: 'center',
+                                                margin: 'auto',
+                                                fontSize: '1.2vw',
+                                                color: 'deepskyblue',
+                                                padding: '10px 0',
+                                                cursor: 'pointer'
                                             },
-                                            elementHandler:(el)=>{
-                                            },
-                                            event:{
-                                                type:'click',
-                                                method:(eve)=>{
-                                                    dropPan.innerHTML=''
-                                                    dropDownState=!dropDownState
-                                                    if(dropDownState){
-                                                        eve.target.className='fa-solid fa-square-caret-down'
-                                                        const req= new Request('/entrycount')
-                                                        req.Post([
-                                                            {
-                                                                name:'perCampReport',
-                                                                value:'1'
-                                                            },
-                                                            {
-                                                                name:'category',
-                                                                value:category
-                                                            },
-                                                            {
-                                                                name:'eventType',
-                                                                value:eventType
+                                            event: {
+                                                type: 'click',
+                                                method: (eve) => {
+                                                    dropPan.innerHTML = ''
+                                                    dropDownState = !dropDownState
+                                                    
+                                                    if (dropDownState) {
+                                                        eve.target.className = 'fa-solid fa-square-caret-down'
+                                                        
+                                                        // Create categories container
+                                                        const categoriesDiv = $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '10px',
+                                                                backgroundColor: '#1a1a1a',
+                                                                borderRadius: '0 0 5px 5px'
                                                             }
-                                                        ])
-                                                        req.Json()
-                                                        req.Send().then(data=>{
-                                                            const ul=$({
-                                                                tag:'ul',
-                                                                style:{
-                                                                    userSelect:'text'
-                                                                }
-                                                            })
-                                                            data.forEach(val=>{
-                                                                if(val.total>0){
-                                                                    ul.appendChild($({
-                                                                        tag:'li',
-                                                                        style:{
-                                                                            display:'flex',
-                                                                            width:'100%',
-                                                                            borderBottom:'solid thin #999'
-                                                                        },
-                                                                        child:[
-                                                                            $({
-                                                                                tag:'div',
-                                                                                text:val.name,
-                                                                                style:{
-                                                                                    width:'50%',
-                                                                                    color:'#bbb',
-                                                                                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif'
-                                                                                }
-                                                                            }),
-                                                                            $({
-                                                                                tag:'div',
-                                                                                text:val.total,
-                                                                                style:{
-                                                                                    width:'50%',
-                                                                                    color:'#bbb',
-                                                                                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif'
-                                                                                }
-                                                                            })
-                                                                        ]
-                                                                    }))
-                                                                }
-                                                            })
-                                                            dropPan.appendChild(ul)
                                                         })
-                                                    }else {
-                                                        eve.target.className='fa-solid fa-square-caret-up'
+                                                        
+                                                        // Add ALL categories (including zeros)
+                                                        categories.forEach(cat => {
+                                                            categoriesDiv.appendChild(createCategoryRow({
+                                                                category: cat.name,
+                                                                total: cat.total
+                                                            }))
+                                                        })
+                                                        
+                                                        dropPan.appendChild(categoriesDiv)
+                                                    } else {
+                                                        eve.target.className = 'fa-solid fa-square-caret-right'
                                                     }
-
                                                 }
                                             }
                                         }),
+                                        // Center Name
                                         $({
-                                            tag:'div',
-                                            style:{
-                                                width:'45%',
-                                                margin:'auto',
-                                                fontSize:'1vw',
-                                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                                color:'deepskyblue'
+                                            tag: 'div',
+                                            style: {
+                                                width: '45%',
+                                                margin: 'auto',
+                                                fontSize: '1vw',
+                                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                                color: 'deepskyblue',
+                                                fontWeight: 'bold',
+                                                padding: '10px 0'
                                             },
-                                            text:category
+                                            text: center
                                         }),
+                                        // Total Entries for Center - THIS WILL SHOW ZERO
                                         $({
-                                            tag:'div',
-                                            style:{
-                                                width:'50%',
-                                                margin:'auto',
-                                                fontSize:'1vw',
-                                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                                color:'deepskyblue'
+                                            tag: 'div',
+                                            style: {
+                                                width: '50%',
+                                                margin: 'auto',
+                                                fontSize: '1vw',
+                                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                                color: total > 0 ? '#4CAF50' : '#888',
+                                                fontWeight: 'bold',
+                                                padding: '10px 0',
+                                                textAlign: 'center'
                                             },
-                                            text:total
+                                            text: total.toString() // Ensure it's converted to string
                                         })
                                     ]
                                 }),
+                                // Dropdown Container for Categories
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        width:'100%',
+                                    tag: 'div',
+                                    style: {
+                                        width: '100%',
+                                        marginLeft: '5%'
                                     },
-                                    elementHandler:(el)=>{
-                                        dropPan=el
+                                    elementHandler: (el) => {
+                                        dropPan = el
+                                        
+                                        // Populate categories on initial render
+                                        if (dropDownState && categories && categories.length > 0) {
+                                            const categoriesDiv = $({
+                                                tag: 'div',
+                                                style: {
+                                                    width: '100%',
+                                                    padding: '10px',
+                                                    backgroundColor: '#1a1a1a',
+                                                    borderRadius: '0 0 5px 5px'
+                                                }
+                                            })
+                                            
+                                            categories.forEach(cat => {
+                                                categoriesDiv.appendChild(createCategoryRow({
+                                                    category: cat.name,
+                                                    total: cat.total
+                                                }))
+                                            })
+                                            
+                                            dropPan.appendChild(categoriesDiv)
+                                        }
                                     }
                                 })
                             ]
                         }))
                     }
-                    const printSummary=(eventDetails)=>{
-                        return($({
-                            tag:'div',
-                            style:{
-                                marginTop:'4vh',
-                                width:'100%',
-                                textAlign:'center',
-                                fontSize:'1.1vw',
-                                color:'deepskyblue',
-                                cursor:'pointer',
-                                fontFamily:"Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif"
+                    // Category row showing category name and its total (including zeros)
+                    const createCategoryRow = ({category, total}) => {
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                width: '95%',
+                                marginBottom: '5px',
+                                backgroundColor: '#222',
+                                borderRadius: '3px'
                             },
-                            text:'Print Summary',
-                            event:{
-                                type:'click',
-                                method:()=>{
-
-                                    const req= new Request('/entrycount')
-                                    req.Post([
-                                        {
-                                            name:'printSum',
-                                            value:'1'
-                                        },
-                                        {
-                                            name:'eventName',
-                                            value:eventDetails.name
-                                        },
-
-                                    ])
-                                    req.Json()
-                                    req.Send().then(data=>{
-
-                                        let WinPrint = window.open('', '', 'toolbar=0,scrollbars=0,status=0');
-
-                                        WinPrint.document.write('<head><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/review.css"></head>')
-
-                                        WinPrint.document.write(PrintSummary(data).innerHTML);
-
-                                        WinPrint.document.close();
-
-                                        WinPrint.focus();
-
-                                        WinPrint.print();
-
-                                        WinPrint.close();
-
-                                    })
-
-
-
-                                }
-                            }
-                        }))
-                    }
-                    const researchEntry=(eventDetails)=>{
-                        return($({
-                            tag:'div',
-                            style:{
-                                marginTop:'4vh',
-                                width:'100%',
-                                textAlign:'center',
-                                fontSize:'1.1vw',
-                                color:'deepskyblue',
-                                cursor:'pointer',
-                                fontFamily:"Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif"
-                            },
-                            text:'Print Reasarch Entry Sumarry',
-                            event:{
-                                type:'click',
-                                method:()=>{
-
-                                    const req= new Request('/entrycount')
-                                    req.Post([
-                                        {
-                                            name:'printEntry',
-                                            value:'1'
-                                        },
-                                        {
-                                            name:'eventName',
-                                            value:eventDetails.name
-                                        },
-
-                                    ])
-                                    req.Json()
-                                    req.Send().then(data=>{
-
-                                        let WinPrint = window.open('', '', 'toolbar=0,scrollbars=0,status=0');
-
-                                        WinPrint.document.write('<head><title>Summary</title><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/review.css"></head>')
-
-                                        WinPrint.document.write(PrintResearch({
-                                            eventName:eventDetails.name,
-                                            data:data
-                                        }).innerHTML);
-
-                                        WinPrint.document.close();
-
-                                        WinPrint.focus();
-
-                                        WinPrint.print();
-
-                                        WinPrint.close();
-
-                                    })
-
-
-
-                                }
-                            }
-                        }))
-                    }
-                    const SelectEvent=()=>{
-                        let selVal
-                        return($({
-                            tag:'div',
-                            style:{
-                                width:'70%',
-                                marginTop:'1vh',
-                                border:'solid thin #999',
-                                height:'4vh',
-                                display:'flex',
-                                margin:'auto',
-                                padding:'.5vw',
-                                borderRadius:'.5vw',
-                                marginLeft:'2vw'
-                            },
-                            child:[
+                            child: [
                                 $({
-                                    tag:"div",
-                                    att:{
-                                        className:'fa-solid fa-calendar-check'
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        width: '100%',
+                                        padding: '8px 0',
+                                        borderBottom: '1px dotted #444'
                                     },
-                                    style:{
-                                        color:"deepskyblue",
-                                        fontSize:'1.2vw',
-                                        margin:'auto'
+                                    child: [
+                                        // Bullet point indicator
+                                        $({
+                                            tag: 'div',
+                                            att: {
+                                                className: 'fa-solid fa-circle'
+                                            },
+                                            style: {
+                                                width: '5%',
+                                                textAlign: 'center',
+                                                fontSize: '0.6vw',
+                                                color: total > 0 ? '#FF9800' : '#666',
+                                                marginLeft: '2%',
+                                                marginTop: '5px'
+                                            }
+                                        }),
+                                        // Category Name
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                width: '45%',
+                                                fontSize: '0.95vw',
+                                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                                color: total > 0 ? '#FF9800' : '#777',
+                                                marginLeft: '2%',
+                                                fontWeight: total > 0 ? 'bold' : 'normal'
+                                            },
+                                            text: category
+                                        }),
+                                        // Category Total - THIS WILL SHOW ZERO
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                width: '45%',
+                                                fontSize: '0.95vw',
+                                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                                color: total > 0 ? '#4CAF50' : '#777',
+                                                fontWeight: total > 0 ? 'bold' : 'normal',
+                                                textAlign: 'center',
+                                                paddingRight: '10px'
+                                            },
+                                            text: total.toString() // Ensure it's converted to string
+                                        })
+                                    ]
+                                })
+                            ]
+                        }))
+                    }
+                    //print summary
+                    const printSummary = (eventDetails) => {
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                marginTop: '4vh',
+                                width: '100%',
+                                textAlign: 'center',
+                                fontSize: '1.1vw',
+                                color: 'deepskyblue',
+                                cursor: 'pointer',
+                                fontFamily: "Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif"
+                            },
+                            text: 'Print Summary',
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    const req = new Request('/entrycount')
+                                    req.Post([
+                                        {
+                                            name: 'printSum',
+                                            value: '1'
+                                        },
+                                        {
+                                            name: 'eventName',
+                                            value: eventDetails.name
+                                        }
+                                    ])
+                                    req.Json();
+                                    req.Send().then(data => {
+                                        console.log('Print summary data:', data)
+                                        
+                                        // Create print window
+                                        let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
+                                        
+                                        WinPrint.document.write(`
+                                            <!DOCTYPE html>
+                                            <html>
+                                            <head>
+                                                <title>Research Summary - ${eventDetails.name}</title>
+                                                <link rel="stylesheet" href="/client/component/otherComponent/style/review.css">
+                                            </head>
+                                            <body>
+                                                <div class="print-summary-container">
+                                                    ${PrintSummary(data).innerHTML}
+                                                </div>
+                                            </body>
+                                            </html>
+                                        `)
+                                        
+                                        WinPrint.document.close();
+                                        
+                                        // Wait for content to load before printing
+                                        WinPrint.onload = function() {
+                                            setTimeout(() => {
+                                                WinPrint.focus()
+                                                WinPrint.print()
+                                            }, 500)
+                                        }
+                                    }).catch(error => {
+                                        console.error('Error loading summary data:', error);
+                                        alert('Error loading summary data. Please try again.');
+                                    })
+                                }
+                            }
+                        }))
+                    }
+                    const researchEntry = (eventDetails) => {
+                        // Create modal container
+                        const createModal = () => {
+                            console.log('Creating modal...');
+                            
+                            const modalOverlay = $({
+                                tag: 'div',
+                                att: { className: 'modal-overlay' }
+                            });
+
+                            const modalContent = $({
+                                tag: 'div',
+                                att: { className: 'modal-content' }
+                            });
+
+                            const modalHeader = $({
+                                tag: 'h2',
+                                text: 'Print Research Entry Summary'
+                            });
+
+                            // Form fields
+                            const dateField = createFormField('dateToBeHeld', 'Date to be held:', 'text', 'March 2-3, 2026');
+                            const venueField = createFormField('venue', 'Venue:', 'text', 'Roxas City Campus, Fuentes Drive, Roxas City, Capiz');
+                            const pptDeadlineField = createFormField('pptDeadline', 'PPT Deadline:', 'text', 'March 01, 2026, 3:00 p.m.');
+                            const driveLinkField = createFormField('driveLink', 'Drive link:', 'text', 'https://bit.ly/38thIHR_PPTs');
+
+                            const buttonContainer = $({
+                                tag: 'div',
+                                att: { className: 'button-container' }
+                            });
+
+                            const cancelBtn = $({
+                                tag: 'button',
+                                att: { className: 'cancel-btn' },
+                                text: 'Cancel',
+                                event: {
+                                    type: 'click',
+                                    method: (e) => {
+                                        e.stopPropagation();
+                                        if (document.body.contains(modalOverlay)) {
+                                            document.body.removeChild(modalOverlay);
+                                        }
+                                    }
+                                }
+                            });
+
+                            const printBtn = $({
+                                tag: 'button',
+                                att: { className: 'print-btn' },
+                                text: 'Print',
+                                event: {
+                                    type: 'click',
+                                    method: (e) => {
+                                        e.stopPropagation();
+                                        
+                                        const formData = {
+                                            dateToBeHeld: document.getElementById('dateToBeHeld')?.value || 'March 2-3, 2026',
+                                            venue: document.getElementById('venue')?.value || 'Roxas City Campus, Fuentes Drive, Roxas City, Capiz',
+                                            pptDeadline: document.getElementById('pptDeadline')?.value || 'March 01, 2026, 3:00 p.m.',
+                                            driveLink: document.getElementById('driveLink')?.value || 'https://bit.ly/38thIHR_PPTs'
+                                        };
+                                        
+                                        if (document.body.contains(modalOverlay)) {
+                                            document.body.removeChild(modalOverlay);
+                                        }
+                                        
+                                        printResearchSummary(formData);
+                                    }
+                                }
+                            });
+
+                            buttonContainer.child = [cancelBtn, printBtn];
+                            
+                            modalContent.child = [
+                                modalHeader,
+                                dateField,
+                                venueField,
+                                pptDeadlineField,
+                                driveLinkField,
+                                buttonContainer
+                            ];
+                            
+                            modalOverlay.child = [modalContent];
+                            
+                            // Close on overlay click
+                            modalOverlay.event = {
+                                type: 'click',
+                                method: (e) => {
+                                    if (e.target === modalOverlay) {
+                                        document.body.removeChild(modalOverlay);
+                                    }
+                                }
+                            };
+                            
+                            return modalOverlay;
+                        }
+
+                        const createFormField = (id, label, type, placeholder) => {
+                            const container = $({
+                                tag: 'div',
+                                att: { className: 'form-field' }
+                            });
+
+                            const labelEl = $({
+                                tag: 'label',
+                                att: { for: id },
+                                text: label
+                            });
+
+                            const input = $({
+                                tag: 'input',
+                                att: {
+                                    type: type,
+                                    id: id,
+                                    placeholder: placeholder,
+                                    value: placeholder
+                                }
+                            });
+
+                            container.child = [labelEl, input];
+                            return container;
+                        }
+
+                        const printResearchSummary = (formData) => {
+                            const req = new Request('/entrycount');
+                            req.Post([
+                                {
+                                    name: 'printEntry',
+                                    value: '1'
+                                },
+                                {
+                                    name: 'eventName',
+                                    value: eventDetails.name
+                                }
+                            ]);
+                            req.Json();
+                            req.Send().then(data => {
+                                console.log('Research entry data:', data);
+                                
+                                let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
+                                
+                                WinPrint.document.write(`
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                        <title>Research Entries - ${eventDetails.name}</title>
+                                        <link rel="stylesheet" href="/client/component/otherComponent/style/review.css">
+                                        <style>
+                                            @page {
+                                                size: A4;
+                                                margin: 0;
+                                            }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        ${PrintResearch({
+                                            eventName: eventDetails.name,
+                                            data: data,
+                                            formData: formData
+                                        }).innerHTML}
+                                    </body>
+                                    </html>
+                                `);
+                                
+                                WinPrint.document.close();
+                                
+                                WinPrint.onload = function() {
+                                    setTimeout(() => {
+                                        WinPrint.focus();
+                                        WinPrint.print();
+                                    }, 500);
+                                };
+                            }).catch(error => {
+                                console.error('Error loading research entries:', error);
+                                alert('Error loading research entries. Please try again.');
+                            })
+                        }
+
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                marginTop: '4vh',
+                                width: '100%',
+                                textAlign: 'center',
+                                fontSize: '1.1vw',
+                                color: 'deepskyblue',
+                                cursor: 'pointer',
+                                fontFamily: "Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif"
+                            },
+                            text: 'Print Research Entry Summary',
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    const modal = createModal();
+                                    document.body.appendChild(modal);
+                                }
+                            }
+                        }))
+                    }
+                    const SelectEvent = () => {
+                        let selVal
+                        
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                width: '70%',
+                                marginTop: '1vh',
+                                border: 'solid thin #999',
+                                height: '4vh',
+                                display: 'flex',
+                                margin: 'auto',
+                                padding: '.5vw',
+                                borderRadius: '.5vw',
+                                marginLeft: '2vw'
+                            },
+                            child: [
+                                $({
+                                    tag: "div",
+                                    att: {
+                                        className: 'fa-solid fa-calendar-check'
+                                    },
+                                    style: {
+                                        color: "deepskyblue",
+                                        fontSize: '1.2vw',
+                                        margin: 'auto'
                                     }
                                 }),
                                 $({
-                                    tag:'select',
-                                    style:{
-                                        backgroundColor:'transparent',
-                                        border:'none',
-                                        width:'90%',
-                                        height:'100%',
-                                        outline:'none',
-                                        color:'deepskyblue',
-                                        textAlign:'center',
-                                        cursor:'pointer',
+                                    tag: 'select',
+                                    style: {
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        width: '90%',
+                                        height: '100%',
+                                        outline: 'none',
+                                        color: 'deepskyblue',
+                                        textAlign: 'center',
+                                        cursor: 'pointer',
                                     },
-                                    elementHandler:(el)=>{
-                                        selVal=el
-                                        const req= new Request('/eventRequest')
+                                    elementHandler: (el) => {
+                                        selVal = el
+                                        const req = new Request('/eventRequest')
                                         req.Post([
                                             {
-                                                name:'getEventAdmin',
-                                                value:'1'
+                                                name: 'getEventAdmin',
+                                                value: '1'
                                             }
                                         ])
                                         req.Json()
-                                        req.Send().then(data=>{
+                                        req.Send().then(data => {
                                             el.appendChild($({
-                                                tag:'option',
-                                                text:'- - Select Event - -',
-                                                att:{
-                                                    disable:true,
-                                                    selected:true
+                                                tag: 'option',
+                                                text: '- - Select Event - -',
+                                                att: {
+                                                    disabled: true,
+                                                    selected: true
                                                 }
                                             }))
-                                            data.forEach(val=>{
+                                            data.forEach(val => {
                                                 el.appendChild($({
-                                                    tag:'option',
-                                                    text:val.name,
-                                                    att:{
-                                                        id:val.id
+                                                    tag: 'option',
+                                                    text: val.name,
+                                                    att: {
+                                                        id: val.id
                                                     },
-                                                    style:{
-                                                        backgroundColor:'#222',
-                                                        fontSize:'1vw'
+                                                    style: {
+                                                        backgroundColor: '#222',
+                                                        fontSize: '1vw'
                                                     }
                                                 }))
                                             })
@@ -3238,237 +3458,353 @@ export const ResearchMain = () => {
                                     }
                                 }),
                                 $({
-                                    tag:"button",
-                                    att:{
-                                        className:'fa-solid fa-rotate',
-                                        title: 'Refresh'
+                                    tag: "button",
+                                    att: {
+                                        className: 'fa-solid fa-rotate',
+                                        title: 'Load Event Data'
                                     },
-                                    style:{
-                                        color:"deepskyblue",
-                                        fontSize:'1.2vw',
-                                        margin:'auto',
-                                        marginLeft:'3vw',
-                                        backgroundColor:'#444',
-                                        borderRadius:'.5vw',
-                                        cursor:'pointer',
-                                        border:'solid thin deepskyblue'
+                                    style: {
+                                        color: "deepskyblue",
+                                        fontSize: '1.2vw',
+                                        margin: 'auto',
+                                        marginLeft: '3vw',
+                                        backgroundColor: '#444',
+                                        borderRadius: '.5vw',
+                                        cursor: 'pointer',
+                                        border: 'solid thin deepskyblue'
                                     },
-                                    event:{
-                                        type:'click',
-                                        method:()=>{
-                                            let eventType=selVal.childNodes[selVal.selectedIndex].innerText
-                                            eventTypeName={
-                                                name:eventType,
-                                                eventId:eventType.id
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            // Check if an event is selected
+                                            if (selVal.selectedIndex === 0) {
+                                                alert('Please select an event first')
+                                                return
                                             }
-                                            bodCon.innerHTML=''
-                                            const req= new Request('/entrycount')
+                                            
+                                            let eventType = selVal.childNodes[selVal.selectedIndex].innerText
+                                            eventTypeName = {
+                                                name: eventType,
+                                                eventId: selVal.childNodes[selVal.selectedIndex].id
+                                            }
+                                            
+                                            // Show loading
+                                            bodCon.innerHTML = $({
+                                                tag: 'div',
+                                                style: {
+                                                    textAlign: 'center',
+                                                    padding: '20px',
+                                                    color: '#bbb',
+                                                    fontSize: '1.2vw'
+                                                },
+                                                text: 'Loading data...'
+                                            }).outerHTML
+                                            
+                                            const req = new Request('/entrycount')
                                             req.Post([
                                                 {
-                                                    name:'entryCounter',
-                                                    value:'1',
+                                                    name: 'entryCounter',
+                                                    value: '1',
                                                 },
                                                 {
-                                                    name:'eventType',
-                                                    value:eventType
+                                                    name: 'eventType',
+                                                    value: eventType
                                                 }
                                             ])
                                             req.Json()
-                                            req.Send().then(data=>{
-
-                                                data.forEach(val=>{
-
-                                                    bodCon.appendChild(contain({
-                                                        category:val.name,
-                                                        total:val.total,
-                                                        eventType:eventType
+                                            req.Send().then(data => {
+                                                console.log('Center data received:', data)
+                                                
+                                                // Clear the container
+                                                bodCon.innerHTML = ''
+                                                
+                                                // Check if data exists
+                                                if (!data || data.length === 0) {
+                                                    bodCon.appendChild($({
+                                                        tag: 'div',
+                                                        style: {
+                                                            textAlign: 'center',
+                                                            padding: '20px',
+                                                            color: '#888',
+                                                            fontSize: '1vw'
+                                                        },
+                                                        text: 'No data available for this event'
                                                     }))
-
+                                                    return
+                                                }
+                                                
+                                                // Add ALL centers (including zeros) - NO FILTERING
+                                                data.forEach(center => {
+                                                    console.log(`Adding center: ${center.name}, total: ${center.total}`)
+                                                    bodCon.appendChild(contain({
+                                                        center: center.name,
+                                                        total: center.total,
+                                                        categories: center.categories || [],
+                                                        eventType: eventType
+                                                    }))
                                                 })
+                                                
+                                                // Add print buttons
                                                 bodCon.appendChild(printSummary(eventTypeName))
                                                 bodCon.appendChild(researchEntry(eventTypeName))
+                                            }).catch(error => {
+                                                console.error('Error loading data:', error)
+                                                bodCon.innerHTML = ''
+                                                bodCon.appendChild($({
+                                                    tag: 'div',
+                                                    style: {
+                                                        textAlign: 'center',
+                                                        padding: '20px',
+                                                        color: '#ff4444',
+                                                        fontSize: '1vw'
+                                                    },
+                                                    text: 'Error loading data. Please try again.'
+                                                }))
                                             })
                                         }
                                     }
-
                                 })
                             ]
                         }))
                     }
-                    const bod=()=>{
-
-                        const leb=(text)=>{
-                            return($({
-                                tag:'div',
-                                style:{
-                                    width:'50%',
-                                    height:'fit-content',
-                                    margin:'auto',
-                                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    fontSize:'1vw',
-                                    color:'#999'
+                    const bod = () => {
+                        const leb = (text) => {
+                            return ($({
+                                tag: 'div',
+                                style: {
+                                    width: '50%',
+                                    height: 'fit-content',
+                                    margin: 'auto',
+                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                    fontSize: '1vw',
+                                    color: '#999',
+                                    fontWeight: 'bold'
                                 },
-                                text:text
+                                text: text
                             }))
                         }
 
-                        return($({
-                            tag:'div',
-                            style:{
-                                width:'95%',
-                                margin:'auto',
-                                marginTop:'2vh',
-                                border:'solid thin #999',
-                                backgroundColor:'#333',
-                                height:'82%'
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                width: '95%',
+                                margin: 'auto',
+                                marginTop: '2vh',
+                                border: 'solid thin #444',
+                                backgroundColor: '#1e1e1e',
+                                height: '70vh',
+                                borderRadius: '10px',
+                                overflow: 'hidden'
                             },
-                            child:[
+                            child: [
+                                // Header
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        height:'5%',
-                                        width:'100%',
-                                        backgroundColor:'#444',
-                                        display:'flex'
+                                    tag: 'div',
+                                    style: {
+                                        height: '40px',
+                                        width: '100%',
+                                        backgroundColor: '#333',
+                                        display: 'flex',
+                                        borderBottom: '2px solid #444'
                                     },
-                                    child:[
-                                        leb("Category"),
-                                        leb("Total Entries"),
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                width: '5%',
+                                                margin: 'auto',
+                                                textAlign: 'center'
+                                            }
+                                        }),
+                                        leb("RESEARCH CENTER"),
+                                        leb("TOTAL ENTRIES"),
                                     ]
                                 }),
+                                // Body
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        height:'95%',
-                                        width:'100%',
-                                        overflowY:'auto',
+                                    tag: 'div',
+                                    style: {
+                                        height: 'calc(100% - 40px)',
+                                        width: '100%',
+                                        overflowY: 'auto',
+                                        padding: '10px 0'
                                     },
-                                    elementHandler:(el)=>{
-                                        bodCon=el
-
+                                    elementHandler: (el) => {
+                                        bodCon = el
                                     }
                                 })
                             ]
                         }))
                     }
-
-                    return($({
-                        tag:'div',
-                        style:{
-                            width:'100%',
-                            height:'100%',
-                            position:'absolute',
-                            left:'0',
-                            top:'0',
-                            backgroundColor:'rgba(0,0,0,0.8)'
+                    return ($({
+                        tag: 'div',
+                        style: {
+                            width: '80%',
+                            height: '90%',
+                            position: 'absolute',
+                            left: '10%',
+                            top: '5%',
+                            backgroundColor: '#2a2a2a',
+                            borderRadius: '15px',
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                            zIndex: 1000
                         },
-                        elementHandler:(el)=>{
-                            panBo=el
+                        elementHandler: (el) => {
+                            panBo = el
                         },
-                        child:[
+                        child: [
                             $({
-                                tag:'div',
-                                style:{
-                                    width:'100%',
-                                    height:'100%',
-                                    position:'relative',
-                                    display:'flex',
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    borderRadius: '15px',
+                                    overflow: 'hidden'
                                 },
-                                child:[
+                                child: [
+                                    // Close Button
                                     $({
-                                        tag:'div',
-                                        att:{
-                                            className:'fa-solid fa-circle-xmark'
+                                        tag: 'div',
+                                        att: {
+                                            className: 'fa-solid fa-circle-xmark'
                                         },
-                                        style:{
-                                            fontSize:'1.5vw',
-                                            color:'deepskyblue',
-                                            position:'absolute',
-                                            left:'.5vw',
-                                            top:'1vh',
-                                            cursor:'pointer'
+                                        style: {
+                                            fontSize: '1.8vw',
+                                            color: '#ff4444',
+                                            position: 'absolute',
+                                            right: '15px',
+                                            top: '15px',
+                                            cursor: 'pointer',
+                                            zIndex: 10,
+                                            transition: 'transform 0.3s',
+                                            ':hover': {
+                                                transform: 'scale(1.1)'
+                                            }
                                         },
-                                        event:{
-                                            type:'click',
-                                            method:()=>{
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
                                                 panBo.remove()
                                             }
                                         }
                                     }),
+                                    // Main Content
                                     $({
-                                        tag:'div',
-                                        style:{
-                                            width:'95%',
-                                            height:'95%',
-                                            overflowY:'auto',
-                                            border:'solid thin #999',
-                                            margin:'auto',
-                                            backgroundColor:'#222'
+                                        tag: 'div',
+                                        style: {
+                                            width: '100%',
+                                            height: '100%',
+                                            overflowY: 'auto',
+                                            backgroundColor: '#222',
+                                            padding: '20px'
                                         },
-                                        child:[
+                                        child: [
                                             $({
-                                                tag:'div',
-                                                style:{
-                                                    width:'100%',
-                                                    height:'fit-content',
-                                                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                                    color:'#bbb',
-                                                    textAlign:'center',
-                                                    marginBottom: '2vh',
-                                                    marginTop:'1vh'
+                                                tag: 'div',
+                                                style: {
+                                                    width: '100%',
+                                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                                    color: '#fff',
+                                                    textAlign: 'center',
+                                                    fontSize: '1.5vw',
+                                                    fontWeight: 'bold',
+                                                    marginBottom: '20px',
+                                                    marginTop: '10px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '10px'
                                                 },
-                                                text:'Entries Summary'
+                                                child: [
+                                                    // Icon as separate element
+                                                    $({
+                                                        tag: 'span',
+                                                        att: {
+                                                            className: 'fa-regular fa-chart-bar'
+                                                        },
+                                                        style: {
+                                                            fontSize: '1.8vw',
+                                                            color: 'deepskyblue'
+                                                        }
+                                                    }),
+                                                    // Text as separate element
+                                                    $({
+                                                        tag: 'span',
+                                                        text: 'Entries Summary By Center',
+                                                        style: {
+                                                            color: '#fff'
+                                                        }
+                                                    })
+                                                ]
                                             }),
                                             SelectEvent(),
                                             bod()
                                         ]
                                     })
                                 ]
-                            }),
-
+                            })
                         ]
                     }))
                 }
-                return($({
-                    tag:'div',
-                    style:{
+                return ($({
+                    tag: 'div',
+                    style: {
                         margin: 'auto',
-                        border:'solid thin rgba(153,153,153)',
-                        padding: '.4rem',
-                        borderRadius:'1rem',
-                        backgroundColor: 'rgba(34,34,34)',
+                        border: '1px solid #444',
+                        padding: '8px 15px',
+                        borderRadius: '15px',
+                        backgroundColor: '#2a2a2a',
                         width: 'fit-content',
                         height: 'fit-content',
-                        marginRight:'3vw'
+                        marginRight: '3vw',
+                        transition: 'all 0.3s',
+                        cursor: 'pointer',
+                        ':hover': {
+                            backgroundColor: '#333',
+                            transform: 'translateY(-2px)'
+                        }
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'button',
-                            att:{
-                                className:'fa-solid fa-chart-bar',
-                                title: 'View Summary'
+                            tag: 'button',
+                            att: {
+                                className: 'fa-solid fa-chart-pie',
+                                title: 'View Summary by Center'
                             },
-                            style:{
-                                fontSize:'1vw',
-                                backgroundColor:'transparent',
-                                border:'none',
+                            style: {
+                                fontSize: '1vw',
+                                backgroundColor: 'transparent',
+                                border: 'none',
                                 outline: 'none',
                                 width: 'fit-content',
                                 height: 'fit-content',
-                                cursor:'pointer',
-                                color:'deepskyblue'
+                                cursor: 'pointer',
+                                color: 'deepskyblue',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
                             },
-                            text: 'View Summary',
-                            event:{
-                                type:'click',
-                                method:()=>{
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: 'Center Summary',
+                                    style: {
+                                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                        fontSize: '0.9vw'
+                                    }
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
                                     leftPdiv.appendChild(ReportPanel())
                                 }
                             }
                         })
                     ]
                 }))
-
             }
             const Filter = () => {
                 // Track pagination state
@@ -3940,13 +4276,20 @@ export const ResearchMain = () => {
                     tag:'div',
                     style:{
                         margin: 'auto',
-                        border:'solid thin rgba(153,153,153)',
-                        padding: '.5rem',
-                        borderRadius:'1rem',
-                        backgroundColor: 'rgba(34,34,34)',
+                        border: '1px solid #444',
+                        padding: '8px 15px',
+                        borderRadius: '15px',
+                        backgroundColor: '#2a2a2a',
                         width: 'fit-content',
                         height: 'fit-content',
-                        marginRight:'1vw'
+                        marginRight: '1vw',
+                        marginLeft: '1vw',
+                        transition: 'all 0.3s',
+                        cursor: 'pointer',
+                        ':hover': {
+                            backgroundColor: '#333',
+                            transform: 'translateY(-2px)'
+                        }
                     },
                     child:[
                         $({

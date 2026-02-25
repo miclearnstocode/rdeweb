@@ -2395,6 +2395,7 @@ if (isset($_POST['incomingEndorsement'])) {
         $queries = "SELECT endorsement.id, 
             endorsement.senderid,
             endorsement.center, 
+            endorsement.campus,
             endorsement.file,  
             endorsement.drive_file_id,
             endorsement.drive_view_url,  
@@ -2575,6 +2576,7 @@ if (isset($_POST['researchDocsNew'])) {
                 researchfile.center,
                 researchfile.deletestate,           
                 endorsement.center,
+                endorsement.campus,
                 endorsement.event,
                 endorsement.date,
                 researchfile.endorsementid,
@@ -2892,35 +2894,71 @@ if (isset($_POST['getRejectedForResubmit'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $userId = $_SESSION['userId']; // This is the senderid from account_detail
         
-        // Simple query - just get all rejected documents for this senderid
-        $query = "SELECT 
-            rf.id,
-            rf.title,
-            rf.author,
-            rf.coauthor,
-            rf.presenter,
-            rf.category,
-            rf.center,
-            rf.event,
-            rf.drive_view_url,
-            rf.drive_file_id,
-            rf.program_drive_view_url,
-            rf.program_drive_file_id,
-            rf.resubmit_count,
-            rf.resubmitted,
-            e.id as endorsement_id,
-            e.drive_view_url as endorsement_url,
-            e.drive_file_id as endorsement_file_id,
-            rd.reason,
-            rd.date as rejection_date
-        FROM researchfile rf
-        LEFT JOIN endorsement e ON rf.endorsementid = e.id
-        LEFT JOIN rejecteddocs rd ON e.id = rd.docid
-        WHERE rf.senderid = ? AND rf.status = 'rejected'
-        ORDER BY rd.date DESC";
+        // Check if a specific docId (endorsement ID) was provided
+        if (isset($_POST['docId']) && !empty($_POST['docId'])) {
+            $endorsementId = $_POST['docId'];
+            
+            // Fetch ONLY the specific document using endorsement_id
+            $query = "SELECT 
+                rf.id,
+                rf.title,
+                rf.author,
+                rf.coauthor,
+                rf.presenter,
+                rf.category,
+                rf.center,
+                rf.event,
+                rf.drive_view_url,
+                rf.drive_file_id,
+                rf.program_drive_view_url,
+                rf.program_drive_file_id,
+                rf.resubmit_count,
+                rf.resubmitted,
+                e.id as endorsement_id,
+                e.drive_view_url as endorsement_url,
+                e.drive_file_id as endorsement_file_id,
+                rd.reason,
+                rd.date as rejection_date
+            FROM researchfile rf
+            LEFT JOIN endorsement e ON rf.endorsementid = e.id
+            LEFT JOIN rejecteddocs rd ON e.id = rd.docid
+            WHERE rf.senderid = ? AND rf.status = 'rejected' AND e.id = ?";
+            
+            $stmt = $con->prepare($query);
+            $stmt->bind_param("ss", $userId, $endorsementId);
+            
+        } else {
+            // No specific ID - return ALL rejected documents (for listing)
+            $query = "SELECT 
+                rf.id,
+                rf.title,
+                rf.author,
+                rf.coauthor,
+                rf.presenter,
+                rf.category,
+                rf.center,
+                rf.event,
+                rf.drive_view_url,
+                rf.drive_file_id,
+                rf.program_drive_view_url,
+                rf.program_drive_file_id,
+                rf.resubmit_count,
+                rf.resubmitted,
+                e.id as endorsement_id,
+                e.drive_view_url as endorsement_url,
+                e.drive_file_id as endorsement_file_id,
+                rd.reason,
+                rd.date as rejection_date
+            FROM researchfile rf
+            LEFT JOIN endorsement e ON rf.endorsementid = e.id
+            LEFT JOIN rejecteddocs rd ON e.id = rd.docid
+            WHERE rf.senderid = ? AND rf.status = 'rejected'
+            ORDER BY rd.date DESC";
+            
+            $stmt = $con->prepare($query);
+            $stmt->bind_param("s", $userId);
+        }
         
-        $stmt = $con->prepare($query);
-        $stmt->bind_param("s", $userId);
         $stmt->execute();
         $result = $stmt->get_result();
         
@@ -2949,7 +2987,7 @@ if (isset($_POST['getRejectedForResubmit'])) {
                 'file_id' => $row['drive_file_id']
             ];
             
-            // PROGRAM FILE - Add this
+            // Program file
             $data->program_file = [
                 'url' => $row['program_drive_view_url'],
                 'file_id' => $row['program_drive_file_id']
@@ -2989,7 +3027,7 @@ if (isset($_POST['resubmitDocument'])) {
     $response->message = '';
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $endorsementId = $_POST['docId']; // This is the endorsement ID (513 or 514)
+        $endorsementId = $_POST['docId']; // This is the endorsement ID
         $userId = $_SESSION['userId'];
         
         // Find the researchfile using endorsementid column - include folder information
