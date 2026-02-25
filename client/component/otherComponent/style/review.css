@@ -144,3 +144,230 @@
     }
 
 }
+/* Print Summary Styles */
+.print-summary {
+    width: 100%;
+    min-height: 29.7cm;
+    position: relative;
+    font-family: Arial, sans-serif;
+    background-color: white;
+}
+
+.print-header-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.print-header-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.print-content {
+    position: relative;
+    z-index: 1;
+    padding: 2.5cm 1.5cm;
+    width: 100%;
+    min-height: 29.7cm;
+    box-sizing: border-box;
+}
+
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #000;
+    font-size: 10pt;
+    background-color: white;
+    margin-bottom: 20px;
+}
+
+.summary-table th,
+.summary-table td {
+    border: 1px solid #000;
+    padding: 6px;
+}
+
+.summary-table th {
+    background-color: #e6e6e6;
+    font-weight: bold;
+}
+
+/* Print-specific styles */
+@media print {
+    body, html {
+        height: auto;
+        margin: 0;
+        padding: 0;
+    }
+    
+    @page {
+        size: A4;
+        margin: 0;
+    }
+    
+    .print-summary {
+        position: relative;
+        width: 21cm;
+        min-height: 29.7cm;
+        margin: 0 auto;
+        background: white;
+        page-break-after: always;
+    }
+    
+    .print-content * {
+        color: black !important;
+        text-shadow: 0 0 2px white;
+    }
+    
+    .summary-table {
+        page-break-inside: auto;
+    }
+    
+    .summary-table tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    .summary-table thead {
+        display: table-header-group;
+    }
+    
+    .summary-table tfoot {
+        display: table-footer-group;
+    }
+}
+/* Print Research Summary Styles */
+.print-research-summary {
+    width: 100%;
+    font-family: Arial, sans-serif;
+}
+
+.print-page {
+    position: relative;
+    width: 21cm;
+    min-height: 29.7cm;
+    margin: 0 auto;
+    background-color: white;
+    page-break-after: always;
+    page-break-inside: avoid;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.page-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.page-content {
+    position: relative;
+    z-index: 1;
+    padding: 3.5cm 1.5cm 2.5cm 1.5cm;
+    width: 100%;
+    min-height: 29.7cm;
+    box-sizing: border-box;
+}
+
+.page-number {
+    position: absolute;
+    bottom: 1cm;
+    right: 1.5cm;
+    font-size: 10pt;
+    color: #666;
+    z-index: 2;
+}
+
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
+    
+    @page {
+        size: A4;
+        margin: 0;
+    }
+    
+    .print-research-summary {
+        width: 100%;
+    }
+    
+    .print-page {
+        position: relative;
+        width: 21cm;
+        min-height: 29.7cm;
+        page-break-after: always;
+        page-break-inside: avoid;
+        background-color: white;
+        box-shadow: none;
+    }
+    
+    .page-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .background-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;  /* Changed from 'fill' to 'cover' */
+        object-position: center center;
+        display: block;
+    }
+    
+    .page-content {
+        position: relative;
+        z-index: 1;
+        padding: 4cm 1.5cm 4cm 1.5cm;
+        width: 100%;
+        min-height: 29.7cm;
+        box-sizing: border-box;
+        background: transparent;
+    }
+    
+    .page-content * {
+        color: black !important;
+    }
+    
+    .center-section,
+    .category-section {
+        page-break-inside: avoid;
+    }
+    
+    .document-item {
+        page-break-inside: avoid;
+    }
+    
+    .page-number {
+        position: absolute;
+        bottom: 1cm;
+        right: 1.5cm;
+        z-index: 2;
+    }
+}
