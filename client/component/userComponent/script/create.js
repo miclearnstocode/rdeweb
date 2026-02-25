@@ -1,14 +1,4 @@
-import {
-    $,
-    CanvasRender,
-    ConfirmationAlert,
-    Fragment,
-    MONTHS,
-    Move, Request,
-    TextAreaExpand,
-    TimeConvert,
-    Waiting
-} from '../../../lib/lib.js'
+import { $, CanvasRender, ConfirmationAlert, Fragment, MONTHS, Request, TextAreaExpand, TimeConvert, Waiting} from '../../../lib/lib.js'
 import {ApprovalComponent} from "../APPROVAL/approval.js";
 
 export const Create = () => {
@@ -51,8 +41,6 @@ export const Create = () => {
                 })
             }
         }
-
-
         return ($({
             tag: 'div',
             att: {
@@ -60,12 +48,10 @@ export const Create = () => {
                 innerHTML: `<div style="font-size: 1vw">${text}</div>`
             },
             elementHandler: getBot,
-
             event: {
                 type: 'click',
                 method: event
             },
-
         }))
     }
 
@@ -74,9 +60,7 @@ export const Create = () => {
         const getFrm=(el)=>{
             frm=el
         }
-
         const leftPart = () => {
-
             const data = {
                 file: '',
                 sender: '',
@@ -85,7 +69,6 @@ export const Create = () => {
                 finalApproval: '',
                 info: ''
             }
-
             const approvalRemover = (value) => {
                 for (let x = 0; x < data.approval.length; x++) {
                     if (data.approval[x] === value) {
@@ -93,7 +76,6 @@ export const Create = () => {
                     }
                 }
             }
-
             const getData = {
                 getFile: (value) => {
                     data.file = value
@@ -114,7 +96,6 @@ export const Create = () => {
                     data.office = value
                 }
             }
-
             const selectFile = () => {
                 let label
                 const getLabelName = (leb) => {
@@ -148,13 +129,10 @@ export const Create = () => {
                                 })
                             }
                         })
-
                     select.addEventListener('change', (event) => {
                         getData.getOffice(event.target.value)
                     })
                 }
-
-
                 const labelRow = $({
                     tag: 'tr',
                     child: [
@@ -207,8 +185,6 @@ export const Create = () => {
                         })
                     ]
                 })
-
-
                 return ($({
                     tag: 'table',
                     att: {
@@ -223,19 +199,12 @@ export const Create = () => {
                                 height: '1vh'
                             }
                         }),
-
-
                     ]
                 }))
             }
-
             const SenderInfo = () => {
-
-
                 const fromRow = () => {
-
                     const frmInput = () => {
-
                         return ($({
                             tag: 'input',
                             att: {
@@ -251,7 +220,6 @@ export const Create = () => {
                             }
                         }))
                     }
-
                     return ($({
                         tag: 'tr',
                         child: [
@@ -261,7 +229,6 @@ export const Create = () => {
                                     innerText: 'From :',
                                     className: 'frmLabel'
                                 },
-
                             }),
                             $({
                                 tag: 'td',
@@ -271,14 +238,12 @@ export const Create = () => {
                                 child: [
                                     frmInput()
                                 ]
-
                             })
                         ]
                     }))
                 }
                 let dataListEl
                 let allUser
-
                 const getDatalist = async (dataL) => {
                     dataListEl = dataL
                     const form = new FormData()
@@ -312,10 +277,8 @@ export const Create = () => {
                     })
                 }
                 const ToRow = () => {
-
                     const toTop = () => {
                         const addedName = ({name}) => {
-
                             const remove = $({
                                 tag: 'div',
                                 att: {
@@ -324,7 +287,6 @@ export const Create = () => {
                                 style: {
                                     margin: 'auto',
                                     width: 'fit-content',
-
                                 }
                             })
                             const lebName = $({
@@ -335,7 +297,6 @@ export const Create = () => {
                                     width: '100%',
                                 }
                             })
-
                             return ($({
                                 tag: 'div',
                                 style: {
@@ -354,19 +315,13 @@ export const Create = () => {
                         }
                         let inputVal
                         let divCon
-
-
                         const getInput = (el) => {
                             inputVal = el
                             inputVal.setAttribute('list', 'datalistAdd')
-
                         }
-
                         const getDiv = (el) => {
                             divCon = el
                         }
-
-
                         /* Creating a span element with the text "Shared To: " and styling it with the font family "Arial
                         Black,sans-serif". */
                         const spanLeb = $({
@@ -383,7 +338,6 @@ export const Create = () => {
                             },
                             elementHandler: getDatalist
                         })
-
                         const inputSearch = $({
                             tag: 'input',
                             att: {
@@ -395,9 +349,7 @@ export const Create = () => {
                                 border:'solid thin grey'
                             },
                             elementHandler: getInput,
-
                         })
-
                         /* The above code is creating a span element with class name 'fa fa-user-plus addTo' and adding a
                         click event to it. */
                         const addBot = $({
@@ -438,11 +390,9 @@ export const Create = () => {
                                                 status: '',
                                                 note: ''
                                             })
-
                                         } else {
                                             alert("Already in list...!")
                                         }
-
                                         inputVal.value = ''
                                     }
                                 }
@@ -480,9 +430,7 @@ export const Create = () => {
                                 child: [
                                     toTop()
                                 ]
-
                             }),
-
                         ]
                     }))
                 }
@@ -496,7 +444,6 @@ export const Create = () => {
                                     colSpan: '2'
                                 },
                                 style: {
-
                                     fontFamily: 'Arial Black, san-serif',
                                     color: 'lightskyblue',
                                     fontSize: '1vw',
@@ -525,7 +472,6 @@ export const Create = () => {
                                         elementHandler: getNameFinal,
                                     })
                                 ]
-
                             }),
                             $({
                                 tag: 'td'
@@ -534,7 +480,6 @@ export const Create = () => {
                     }))
                 }
                 const infoRow = () => {
-
                     const textArea = $({
                         tag: 'textarea',
                         att: {
@@ -580,7 +525,6 @@ export const Create = () => {
                                         style:{
                                             marginBottom: '1vh',
                                         }
-
                                     }),
                                     textArea
                                 ]
@@ -588,15 +532,12 @@ export const Create = () => {
                         ]
                     }))
                 }
-
-
                 const submitRow = () => {
                     return ($({
                         tag: 'tr',
                         event: {
                             type: 'click',
                             method: async () => {
-
                                 if (!data.file.size*1   <=10000) {
                                     // && data.sender !== ''
                                     /* The above code is a JavaScript code that is used to send the data to the server. */
@@ -607,11 +548,9 @@ export const Create = () => {
                                             loading.remove()
                                         }
                                         const form = new FormData()
-
                                         let dl = dataListEl.getElementsByTagName('option')
                                         let finalID
                                         let finalEmail
-
                                         for (let x = 0; x < dl.length; x++) {
                                             if (dl[x].value === data.finalApproval) {
                                                 finalID = dl[x].id
@@ -627,9 +566,7 @@ export const Create = () => {
                                             status: '',
                                             note: ''
                                         }
-
                                         form.append('approvalFiles', 'true')
-
                                         form.append('files', data.file)
                                         form.append('appSign', JSON.stringify(data.approval))
                                         form.append('finalApprove', JSON.stringify(finalData))
@@ -660,11 +597,9 @@ export const Create = () => {
                                                 loading.remove()
                                             }
                                             const form = new FormData()
-
                                             let dl = dataListEl.getElementsByTagName('option')
                                             let finalID
                                             let finalEmail
-
                                             for (let x = 0; x < dl.length; x++) {
                                                 if (dl[x].value === data.finalApproval) {
                                                     finalID = dl[x].id
@@ -680,9 +615,7 @@ export const Create = () => {
                                                 status: '',
                                                 note: ''
                                             }
-
                                             form.append('approvalFiles', 'true')
-
                                             form.append('files', data.file)
                                             form.append('appSign', JSON.stringify(data.approval))
                                             form.append('finalApprove', JSON.stringify(finalData))
@@ -710,7 +643,6 @@ export const Create = () => {
                                 } else {
                                     alert("Your file is larger than 10 MB...!")
                                 }
-
                             }
                         },
                         child: [

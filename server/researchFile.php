@@ -2312,7 +2312,6 @@ if (isset($_POST['searchResearch'])) {
                     
                     $researchData->category = $row['category'];
                     $researchData->center = $row['center'];
-                    $researchData->campus = $row['campus'];
                     $researchData->event = $row['event'];
                     $researchData->drive_folder_id = $row['drive_folder_id'];
                     $researchData->drive_event_folder_id = $row['drive_event_folder_id'];

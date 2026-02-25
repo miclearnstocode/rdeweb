@@ -2633,25 +2633,15 @@ export const ResearchMain = () => {
                                         }),
                                         $({
                                             tag: 'div',
-
                                             style: {
-
                                                 height: 'fit-content',
-
                                                 width: '100% ',
-
                                                 fontFamily: 'arial  black,sans-serif',
-
                                                 margin: 'auto',
-
                                                 marginLeft: '1vw'
-
                                             },
-
                                             text: 'Print'
-
                                         })
-
                                     ],
                                     event: {
                                         type: 'click',
@@ -3176,191 +3166,234 @@ export const ResearchMain = () => {
                                             }, 500)
                                         }
                                     }).catch(error => {
-                                        console.error('Error loading summary data:', error);
                                         alert('Error loading summary data. Please try again.');
                                     })
                                 }
                             }
                         }))
                     }
-                    const researchEntry = (eventDetails) => {
+                    // Define the modal creation function OUTSIDE researchEntry
+                    const createPrintModal = (eventDetails) => {
+                        // Remove existing modal if any
+                        const existingModal = document.getElementById('printResearchModal')
+                        if (existingModal) existingModal.remove()
+                        
                         // Create modal container
-                        const createModal = () => {
-                            console.log('Creating modal...');
+                        const modalOverlay = document.createElement('div')
+                        modalOverlay.id = 'printResearchModal'
+                        modalOverlay.className = 'research-modal-overlay modal-overlay'
+                        modalOverlay.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-color: rgba(0, 0, 0, 0.7);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            z-index: 50;
+                        `
+                        
+                        // Modal content
+                        const modalContent = document.createElement('div');
+                        modalContent.className = 'research-modal-content modal-content';
+                        modalContent.style.cssText = `
+                            background-color: white;
+                            padding: 30px;
+                            border-radius: 8px;
+                            width: 500px;
+                            max-width: 90%;
+                            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                            position: relative;
+                            z-index: 51;
+                        `
+                        
+                        // Header
+                        const header = document.createElement('h2');
+                        header.textContent = 'Print Research Entry Summary';
+                        header.style.cssText = `
+                            margin: 0 0 20px 0;
+                            color: #333;
+                            font-size: 20px;
+                            border-bottom: 2px solid #43A5BE;
+                            padding-bottom: 10px;
+                        `
+                        modalContent.appendChild(header)
+                        
+                        // Form fields - with placeholders only, no default values
+                        const fields = [
+                            { id: 'dateToBeHeld', label: 'Date to be held:', placeholder: 'e.g., March 2-3, 2026' },
+                            { id: 'venue', label: 'Venue:', placeholder: 'e.g., Roxas City Campus, Fuentes Drive, Roxas City, Capiz' },
+                            { id: 'pptDeadline', label: 'PPT Deadline:', placeholder: 'e.g., March 01, 2026, 3:00 p.m.' },
+                            { id: 'driveLink', label: 'Drive link:', placeholder: 'e.g., https://bit.ly/38thIHR_PPTs' }
+                        ]
+                        
+                        fields.forEach(field => {
+                            const fieldDiv = document.createElement('div');
+                            fieldDiv.style.cssText = `
+                                margin-bottom: 15px;
+                                width: 100%;
+                            `
                             
-                            const modalOverlay = $({
-                                tag: 'div',
-                                att: { className: 'modal-overlay' }
-                            });
-
-                            const modalContent = $({
-                                tag: 'div',
-                                att: { className: 'modal-content' }
-                            });
-
-                            const modalHeader = $({
-                                tag: 'h2',
-                                text: 'Print Research Entry Summary'
-                            });
-
-                            // Form fields
-                            const dateField = createFormField('dateToBeHeld', 'Date to be held:', 'text', 'March 2-3, 2026');
-                            const venueField = createFormField('venue', 'Venue:', 'text', 'Roxas City Campus, Fuentes Drive, Roxas City, Capiz');
-                            const pptDeadlineField = createFormField('pptDeadline', 'PPT Deadline:', 'text', 'March 01, 2026, 3:00 p.m.');
-                            const driveLinkField = createFormField('driveLink', 'Drive link:', 'text', 'https://bit.ly/38thIHR_PPTs');
-
-                            const buttonContainer = $({
-                                tag: 'div',
-                                att: { className: 'button-container' }
-                            });
-
-                            const cancelBtn = $({
-                                tag: 'button',
-                                att: { className: 'cancel-btn' },
-                                text: 'Cancel',
-                                event: {
-                                    type: 'click',
-                                    method: (e) => {
-                                        e.stopPropagation();
-                                        if (document.body.contains(modalOverlay)) {
-                                            document.body.removeChild(modalOverlay);
-                                        }
-                                    }
-                                }
-                            });
-
-                            const printBtn = $({
-                                tag: 'button',
-                                att: { className: 'print-btn' },
-                                text: 'Print',
-                                event: {
-                                    type: 'click',
-                                    method: (e) => {
-                                        e.stopPropagation();
-                                        
-                                        const formData = {
-                                            dateToBeHeld: document.getElementById('dateToBeHeld')?.value || 'March 2-3, 2026',
-                                            venue: document.getElementById('venue')?.value || 'Roxas City Campus, Fuentes Drive, Roxas City, Capiz',
-                                            pptDeadline: document.getElementById('pptDeadline')?.value || 'March 01, 2026, 3:00 p.m.',
-                                            driveLink: document.getElementById('driveLink')?.value || 'https://bit.ly/38thIHR_PPTs'
-                                        };
-                                        
-                                        if (document.body.contains(modalOverlay)) {
-                                            document.body.removeChild(modalOverlay);
-                                        }
-                                        
-                                        printResearchSummary(formData);
-                                    }
-                                }
-                            });
-
-                            buttonContainer.child = [cancelBtn, printBtn];
+                            const label = document.createElement('label');
+                            label.htmlFor = field.id;
+                            label.textContent = field.label;
+                            label.style.cssText = `
+                                display: block;
+                                margin-bottom: 5px;
+                                color: #555;
+                                font-size: 14px;
+                                font-weight: bold;
+                            `
                             
-                            modalContent.child = [
-                                modalHeader,
-                                dateField,
-                                venueField,
-                                pptDeadlineField,
-                                driveLinkField,
-                                buttonContainer
-                            ];
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.id = field.id;
+                            input.placeholder = field.placeholder; // Set placeholder only
+                            input.value = ''; // Empty value for user to fill
+                            input.style.cssText = `
+                                width: 100%;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                border-radius: 4px;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                            `
                             
-                            modalOverlay.child = [modalContent];
-                            
-                            // Close on overlay click
-                            modalOverlay.event = {
-                                type: 'click',
-                                method: (e) => {
-                                    if (e.target === modalOverlay) {
-                                        document.body.removeChild(modalOverlay);
-                                    }
-                                }
-                            };
-                            
-                            return modalOverlay;
+                            fieldDiv.appendChild(label);
+                            fieldDiv.appendChild(input);
+                            modalContent.appendChild(fieldDiv);
+                        })
+                        
+                        // Button container
+                        const buttonDiv = document.createElement('div');
+                        buttonDiv.style.cssText = `
+                            display: flex;
+                            justify-content: flex-end;
+                            gap: 10px;
+                            margin-top: 20px;
+                        `
+                        
+                        // Cancel button
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.textContent = 'Cancel';
+                        cancelBtn.style.cssText = `
+                            padding: 8px 16px;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            background-color: #f0f0f0;
+                            color: #333;
+                        `
+                        cancelBtn.onmouseover = () => cancelBtn.style.backgroundColor = '#e0e0e0';
+                        cancelBtn.onmouseout = () => cancelBtn.style.backgroundColor = '#f0f0f0';
+                        cancelBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            document.body.removeChild(modalOverlay);
                         }
-
-                        const createFormField = (id, label, type, placeholder) => {
-                            const container = $({
-                                tag: 'div',
-                                att: { className: 'form-field' }
-                            });
-
-                            const labelEl = $({
-                                tag: 'label',
-                                att: { for: id },
-                                text: label
-                            });
-
-                            const input = $({
-                                tag: 'input',
-                                att: {
-                                    type: type,
-                                    id: id,
-                                    placeholder: placeholder,
-                                    value: placeholder
-                                }
-                            });
-
-                            container.child = [labelEl, input];
-                            return container;
+                        
+                        // Print button
+                        const printBtn = document.createElement('button');
+                        printBtn.textContent = 'Print'
+                        printBtn.style.cssText = `
+                            padding: 8px 16px;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: bold;
+                            background-color: #43A5BE;
+                            color: white;
+                        `
+                        printBtn.onmouseover = () => printBtn.style.backgroundColor = '#3597b0';
+                        printBtn.onmouseout = () => printBtn.style.backgroundColor = '#43A5BE';
+                        printBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            
+                            // Get form data - use empty string if user didn't fill
+                            const formData = {
+                                dateToBeHeld: document.getElementById('dateToBeHeld')?.value || '',
+                                venue: document.getElementById('venue')?.value || '',
+                                pptDeadline: document.getElementById('pptDeadline')?.value || '',
+                                driveLink: document.getElementById('driveLink')?.value || ''
+                            }
+                            
+                            // Validate if required fields are filled
+                            if (!formData.dateToBeHeld || !formData.venue || !formData.pptDeadline || !formData.driveLink) {
+                                alert('Please fill in all fields before printing');
+                                return;
+                            }
+                            
+                            // Remove modal
+                            document.body.removeChild(modalOverlay);
+                            
+                            // Call print function
+                            printResearchSummary(eventDetails, formData);
                         }
-
-                        const printResearchSummary = (formData) => {
-                            const req = new Request('/entrycount');
-                            req.Post([
-                                {
-                                    name: 'printEntry',
-                                    value: '1'
-                                },
-                                {
-                                    name: 'eventName',
-                                    value: eventDetails.name
-                                }
-                            ]);
-                            req.Json();
-                            req.Send().then(data => {
-                                console.log('Research entry data:', data);
-                                
-                                let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
-                                
-                                WinPrint.document.write(`
-                                    <!DOCTYPE html>
-                                    <html>
-                                    <head>
-                                        <title>Research Entries - ${eventDetails.name}</title>
-                                        <link rel="stylesheet" href="/client/component/otherComponent/style/review.css">
-                                        <style>
-                                            @page {
-                                                size: A4;
-                                                margin: 0;
-                                            }
-                                        </style>
-                                    </head>
-                                    <body>
-                                        ${PrintResearch({
-                                            eventName: eventDetails.name,
-                                            data: data,
-                                            formData: formData
-                                        }).innerHTML}
-                                    </body>
-                                    </html>
-                                `);
-                                
-                                WinPrint.document.close();
-                                
-                                WinPrint.onload = function() {
-                                    setTimeout(() => {
-                                        WinPrint.focus();
-                                        WinPrint.print();
-                                    }, 500);
-                                };
-                            }).catch(error => {
-                                console.error('Error loading research entries:', error);
-                                alert('Error loading research entries. Please try again.');
-                            })
+                        
+                        buttonDiv.appendChild(cancelBtn);
+                        buttonDiv.appendChild(printBtn);
+                        modalContent.appendChild(buttonDiv);
+                        
+                        modalOverlay.appendChild(modalContent);
+                        
+                        // Close on overlay click
+                        modalOverlay.onclick = (e) => {
+                            if (e.target === modalOverlay) {
+                                document.body.removeChild(modalOverlay);
+                            }
                         }
-
+                        
+                        return modalOverlay;
+                    }
+                    // Print summary function
+                    const printResearchSummary = (eventDetails, formData) => {
+                        const req = new Request('/entrycount')
+                        req.Post([
+                            { name: 'printEntry', value: '1' },
+                            { name: 'eventName', value: eventDetails.name }
+                        ])
+                        req.Json();
+                        req.Send().then(data => {
+                            
+                            let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
+                            
+                            WinPrint.document.write(`
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                    <title>Research Entries - ${eventDetails.name}</title>
+                                    <link rel="stylesheet" href="/client/component/otherComponent/style/review.css">
+                                    <style>
+                                        @page { size: A4; margin: 0; }
+                                    </style>
+                                </head>
+                                <body>
+                                    ${PrintResearch({
+                                        eventName: eventDetails.name,
+                                        data: data,
+                                        formData: formData
+                                    }).innerHTML}
+                                </body>
+                                </html>
+                            `)
+                            
+                            WinPrint.document.close();
+                            
+                            WinPrint.onload = function() {
+                                setTimeout(() => {
+                                    WinPrint.focus();
+                                    WinPrint.print();
+                                }, 500);
+                            }
+                        }).catch(error => {
+                            alert('Error loading research entries. Please try again.');
+                        })
+                    }
+                    // Research entry clickable div - this calls the modal
+                    const researchEntry = (eventDetails) => {
                         return ($({
                             tag: 'div',
                             style: {
@@ -3376,7 +3409,8 @@ export const ResearchMain = () => {
                             event: {
                                 type: 'click',
                                 method: () => {
-                                    const modal = createModal();
+                                    // Call the modal creator
+                                    const modal = createPrintModal(eventDetails);
                                     document.body.appendChild(modal);
                                 }
                             }
@@ -3513,8 +3547,6 @@ export const ResearchMain = () => {
                                             ])
                                             req.Json()
                                             req.Send().then(data => {
-                                                console.log('Center data received:', data)
-                                                
                                                 // Clear the container
                                                 bodCon.innerHTML = ''
                                                 
@@ -3535,7 +3567,6 @@ export const ResearchMain = () => {
                                                 
                                                 // Add ALL centers (including zeros) - NO FILTERING
                                                 data.forEach(center => {
-                                                    console.log(`Adding center: ${center.name}, total: ${center.total}`)
                                                     bodCon.appendChild(contain({
                                                         center: center.name,
                                                         total: center.total,
@@ -3583,7 +3614,6 @@ export const ResearchMain = () => {
                                 text: text
                             }))
                         }
-
                         return ($({
                             tag: 'div',
                             style: {
@@ -3647,7 +3677,7 @@ export const ResearchMain = () => {
                             backgroundColor: '#2a2a2a',
                             borderRadius: '15px',
                             boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                            zIndex: 1000
+                            zIndex: 40
                         },
                         elementHandler: (el) => {
                             panBo = el
