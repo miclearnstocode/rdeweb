@@ -14,7 +14,7 @@ export const LoadLocation = (url) => {
     window.location.assign(url)
 }
 
-export const $ = ({tag, att, text, child, elementHandler, style, externalStyle, event}) => {
+export const $ = ({tag, att, text, html, child, elementHandler, style, externalStyle, event}) => {
     let Tag
     if (externalStyle) {
         const link = document.createElement('link')
@@ -34,6 +34,9 @@ export const $ = ({tag, att, text, child, elementHandler, style, externalStyle, 
     }
     if (text) {
         Tag.innerText = text
+    }
+    if (html) {
+        Tag.innerHTML = html
     }
     if (att) {
         Object.assign(Tag, att)

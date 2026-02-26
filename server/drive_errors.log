@@ -162,3 +162,44 @@
 [25-Feb-2026 19:29:04 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2315
 [25-Feb-2026 19:29:04 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2315
 [25-Feb-2026 19:29:04 Asia/Manila] Search successful: 6 events found
+[26-Feb-2026 13:12:36 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[26-Feb-2026 13:12:36 Asia/Manila] Title: trial
+[26-Feb-2026 13:12:36 Asia/Manila] Author: trial
+[26-Feb-2026 13:12:36 Asia/Manila] Event: 38th University Faculty In-House Review
+[26-Feb-2026 13:12:36 Asia/Manila] Center: Food and Industrial Technology Research & Development Center (FITRDC)
+[26-Feb-2026 13:12:36 Asia/Manila] Category: Food
+[26-Feb-2026 13:12:36 Asia/Manila] Uploading endorsement: endorsement.pdf
+[26-Feb-2026 13:12:38 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Food and Industrial Technology Research & Development Center (FITRDC) -> Food -> trial_trial
+[26-Feb-2026 13:12:46 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1TWVnh0_sbSfwuN4opLHdscO7_4jAPgsz
+[26-Feb-2026 13:12:48 Asia/Manila] Making file public: 1uAy2PSuOgJ8Xf5atyM-Q2Ko70sV8VxjY
+[26-Feb-2026 13:12:49 Asia/Manila] File 1uAy2PSuOgJ8Xf5atyM-Q2Ko70sV8VxjY is already public
+[26-Feb-2026 13:12:49 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[26-Feb-2026 13:12:49 Asia/Manila] Endorsement uploaded successfully: 1uAy2PSuOgJ8Xf5atyM-Q2Ko70sV8VxjY
+[26-Feb-2026 13:12:49 Asia/Manila] Endorsement saved to DB with ID: 521
+[26-Feb-2026 13:12:49 Asia/Manila] Uploading research: research_paper.pdf
+[26-Feb-2026 13:12:49 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Food and Industrial Technology Research & Development Center (FITRDC) -> Food -> trial_trial
+[26-Feb-2026 13:12:51 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1TWVnh0_sbSfwuN4opLHdscO7_4jAPgsz
+[26-Feb-2026 13:12:54 Asia/Manila] Making file public: 1p9PxwfUUZ-sdKvxsQSgpBvwCsPzupg3V
+[26-Feb-2026 13:12:54 Asia/Manila] File 1p9PxwfUUZ-sdKvxsQSgpBvwCsPzupg3V is already public
+[26-Feb-2026 13:12:54 Asia/Manila] research file upload successful: research_paper.pdf
+[26-Feb-2026 13:12:54 Asia/Manila] Research uploaded successfully: 1p9PxwfUUZ-sdKvxsQSgpBvwCsPzupg3V
+[26-Feb-2026 13:12:54 Asia/Manila] Uploading program: program_inHouse.pdf
+[26-Feb-2026 13:12:54 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Food and Industrial Technology Research & Development Center (FITRDC) -> Food -> trial_trial
+[26-Feb-2026 13:12:56 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1TWVnh0_sbSfwuN4opLHdscO7_4jAPgsz
+[26-Feb-2026 13:12:59 Asia/Manila] Making file public: 1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9
+[26-Feb-2026 13:12:59 Asia/Manila] File 1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9 is already public
+[26-Feb-2026 13:12:59 Asia/Manila] program file upload successful: program_inHouse.pdf
+[26-Feb-2026 13:12:59 Asia/Manila] Program uploaded successfully: 1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9
+[26-Feb-2026 13:12:59 Asia/Manila] Number of columns in query: 23
+[26-Feb-2026 13:12:59 Asia/Manila] Number of variables to bind: 23
+[26-Feb-2026 13:14:17 Asia/Manila] Files to delete from Google Drive: ["1uAy2PSuOgJ8Xf5atyM-Q2Ko70sV8VxjY","1p9PxwfUUZ-sdKvxsQSgpBvwCsPzupg3V","1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9"]
+[26-Feb-2026 13:14:17 Asia/Manila] Moving Google Drive file to trash: 1uAy2PSuOgJ8Xf5atyM-Q2Ko70sV8VxjY
+[26-Feb-2026 13:14:19 Asia/Manila] Successfully moved file to trash: 1uAy2PSuOgJ8Xf5atyM-Q2Ko70sV8VxjY
+[26-Feb-2026 13:14:19 Asia/Manila] Successfully trashed file: 1uAy2PSuOgJ8Xf5atyM-Q2Ko70sV8VxjY
+[26-Feb-2026 13:14:19 Asia/Manila] Moving Google Drive file to trash: 1p9PxwfUUZ-sdKvxsQSgpBvwCsPzupg3V
+[26-Feb-2026 13:14:21 Asia/Manila] Successfully moved file to trash: 1p9PxwfUUZ-sdKvxsQSgpBvwCsPzupg3V
+[26-Feb-2026 13:14:21 Asia/Manila] Successfully trashed file: 1p9PxwfUUZ-sdKvxsQSgpBvwCsPzupg3V
+[26-Feb-2026 13:14:21 Asia/Manila] Moving Google Drive file to trash: 1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9
+[26-Feb-2026 13:14:22 Asia/Manila] Successfully moved file to trash: 1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9
+[26-Feb-2026 13:14:22 Asia/Manila] Successfully trashed file: 1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9
+[26-Feb-2026 13:14:22 Asia/Manila] Deleted 0 comments for research IDs: 519

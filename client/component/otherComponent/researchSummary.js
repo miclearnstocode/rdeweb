@@ -15,6 +15,10 @@ export const PrintResearch = ({eventName, data, formData}) => {
 
     const USABLE_HEIGHT = CONTENT_AREA_PX - PAGE_NUMBER_RESERVED // ~790px
 
+    // Data is now pre-sorted and pre-formatted from the API
+    const centersWithDocs = data?.length > 0
+        ? data[0].centers : [];
+
     // Realistic height estimates based on actual font sizes + margins (at 96dpi)
     // 1pt ≈ 1.33px
     const estimateHeight = (element) => {
@@ -151,7 +155,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                         color: '#000',
                         textTransform: 'uppercase'
                     },
-                    text: center.name
+                    text: center.displayName || center.name // Use displayName if available
                 }),
                 ...categoriesWithDocs.map(cat => renderCategory(cat))
             ]
@@ -205,12 +209,12 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             ]
                         }),
                         
-                        // Right signature - FRENCH A. DAMPOG, MBA
+                        // Right signature
                         $({
                             tag: 'div',
                             style: { 
                                 width: '45%',
-                                marginLeft: '5px'  // ← 20px away from PhD
+                                marginLeft: '5px'
                             },
                             child: [
                                 $({ tag: 'p', style: { fontSize: '12pt', fontWeight: 'bold', marginBottom: '5px' }, text: 'FRENCH A. DAMPOG, MBA' }),
@@ -367,7 +371,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
             })
         })
 
-        // Add all centers
+        // Add all centers (Extension first, then others alphabetically - already sorted by API)
         centersWithDocs.forEach(center => {
             const categoriesWithDocs = center.categories.filter(cat => cat.docs?.length > 0)
             if (!categoriesWithDocs.length) return
@@ -376,7 +380,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
 
             items.push({
                 type: 'center-header',
-                centerName: center.name,
+                centerName: center.displayName || center.name,
                 height: 54,
                 element: $({
                     tag: 'h2',
@@ -387,7 +391,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                         borderBottom: '2px solid #000', color: '#000',
                         textTransform: 'uppercase'
                     },
-                    text: center.name
+                    text: center.displayName || center.name
                 })
             })
 
@@ -407,7 +411,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
 
                     items.push({
                         type: 'document',
-                        centerName: center.name,
+                        centerName: center.displayName || center.name,
                         isFirstInCategory: idx === 0,
                         categoryName: cat.category,
                         docNumber: centerDocCounter,
@@ -428,7 +432,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                                     att: { className: 'doc-title-line' },
                                     style: { fontWeight: 'normal', marginBottom: '2px' },
                                     child: [
-                                        $({ tag: 'span', text: `${doc.title} by `, style: { fontWeight: 'normal' } }),
+                                        $({ tag: 'span', html: `${doc.title} by `, style: { fontWeight: 'normal' } }),
                                         $({ tag: 'span', text: authorsText, style: { fontWeight: 'normal', fontStyle: 'italic' } }),
                                         $({ tag: 'span', text: ` - ${cat.category}`, style: { fontWeight: 'normal' } }),
                                     ]
@@ -449,6 +453,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 })
             })
         })
+        
         // Add footer as the last item
         items.push({
             type: 'footer',
@@ -457,6 +462,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
         })
         return items
     }
+    
     // ─── Pagination ───────────────────────────────────────────────────────────
     const paginateItems = (flatItems) => {
         const pages = [] 
@@ -483,6 +489,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
         flush()
         return pages
     }
+    
     // ─── Assemble a page DOM from flat items ──────────────────────────────────
     const buildPageChildren = (flatItems) => {
         const children = []
@@ -660,10 +667,6 @@ export const PrintResearch = ({eventName, data, formData}) => {
     }
 
     // ─── Main 
-    const centersWithDocs = data?.length > 0
-        ? data[0].centers.filter(center =>
-            center.categories.some(cat => cat.docs?.length > 0)) : []
-
     const flatItems   = buildFlatItems();
     const pages       = paginateItems(flatItems);
     const totalPages  = pages.length;

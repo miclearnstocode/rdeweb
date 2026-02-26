@@ -1,15 +1,15 @@
 import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting } from "../../../lib/lib.js";
-
 import {Print} from "../../otherComponent/comment.js";
 import {PrintSummary} from "../../otherComponent/ReviewTemplate.js";
 import {Route, Router} from "../../../lib/Router.js";
-import {TableScore} from "./src/docsScoreTable.js";
-import {ScoreRank} from "./src/RankingController.js";
 import {RankDocs} from "./src/docsRank.js";
-import {SummaryDocs} from "./src/RankSummary.js";
 import {FinalRanking, RankPerCriteria, ScoreRankAVe} from "./src/rankAlgo.js";
 import {Summary} from "./src/Summary.js";
 import {PrintResearch} from "../../otherComponent/researchSummary.js";
+
+import {SummaryDocs} from "./src/RankSummary.js";
+import {TableScore} from "./src/docsScoreTable.js";
+import {ScoreRank} from "./src/RankingController.js";
 
 export const ResearchMain = () => {
     let mainFrame, leftPdiv
@@ -1670,8 +1670,6 @@ export const ResearchMain = () => {
                             let fileId = null;
                             let embedUrl = file;
                             
-                            console.log('Google Drive URL:', file);
-                            
                             // Try different patterns to extract file ID
                             const patterns = [
                                 /\/d\/([a-zA-Z0-9_-]+)/,                     // /d/FILE_ID/
@@ -1685,7 +1683,6 @@ export const ResearchMain = () => {
                                 const match = file.match(pattern);
                                 if (match && match[1]) {
                                     fileId = match[1];
-                                    console.log('File ID found:', fileId);
                                     break;
                                 }
                             }
@@ -1696,7 +1693,6 @@ export const ResearchMain = () => {
                                 for (let i = 0; i < urlParts.length; i++) {
                                     if (urlParts[i] === 'd' && urlParts[i + 1]) {
                                         fileId = urlParts[i + 1];
-                                        console.log('File ID from path:', fileId);
                                         break;
                                     }
                                 }
@@ -1706,8 +1702,6 @@ export const ResearchMain = () => {
                                 // Clean the fileId (remove query parameters if any)
                                 fileId = fileId.split('?')[0].split('&')[0];
                                 embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
-                                
-                                console.log('Final Embed URL:', embedUrl);
                                 
                                 // Add loading indicator
                                 const loadingIndicator = document.createElement('div');
@@ -1761,23 +1755,16 @@ export const ResearchMain = () => {
                                 
                                 // Handle successful load
                                 iframe.onload = () => {
-                                    console.log('Google Drive iframe loaded successfully');
                                     // Remove loading indicator
                                     if (loadingIndicator.parentNode === el) {
                                         el.removeChild(loadingIndicator);
                                     }
-                                    
-                                    // Don't try to access iframe content due to CORS
-                                    // Instead, listen for postMessage from iframe if needed
                                     window.addEventListener('message', (event) => {
-                                        // Handle messages from Google Drive iframe if any
-                                        console.log('Message from iframe:', event.data);
-                                    });
-                                };
+                                    })
+                                }
                                 
                                 // Handle load error
                                 iframe.onerror = () => {
-                                    console.log('Google Drive iframe failed to load');
                                     // Remove loading indicator
                                     if (loadingIndicator.parentNode === el) {
                                         el.removeChild(loadingIndicator);
@@ -1789,7 +1776,6 @@ export const ResearchMain = () => {
                                 // Add timeout in case iframe hangs
                                 setTimeout(() => {
                                     if (loadingIndicator.parentNode === el) {
-                                        console.log('Google Drive iframe loading timeout');
                                         el.removeChild(loadingIndicator);
                                         // Show alternative options
                                         showAlternativeOptions(el, file, fileId);
@@ -1799,8 +1785,6 @@ export const ResearchMain = () => {
                                 el.appendChild(iframe);
                                 
                             } else {
-                                // Invalid Google Drive URL format
-                                console.log('Invalid Google Drive URL format:', file);
                                 el.innerHTML = `
                                     <div style="
                                         color: #666; 
@@ -3136,8 +3120,6 @@ export const ResearchMain = () => {
                                     ])
                                     req.Json();
                                     req.Send().then(data => {
-                                        console.log('Print summary data:', data)
-                                        
                                         // Create print window
                                         let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
                                         
@@ -3430,7 +3412,8 @@ export const ResearchMain = () => {
                                 margin: 'auto',
                                 padding: '.5vw',
                                 borderRadius: '.5vw',
-                                marginLeft: '2vw'
+                                marginLeft: '2vw',
+                                height: 'auto'
                             },
                             child: [
                                 $({
@@ -3450,7 +3433,7 @@ export const ResearchMain = () => {
                                         backgroundColor: 'transparent',
                                         border: 'none',
                                         width: '90%',
-                                        height: '100%',
+                                        height: '100%]',
                                         outline: 'none',
                                         color: 'deepskyblue',
                                         textAlign: 'center',
@@ -3620,6 +3603,7 @@ export const ResearchMain = () => {
                                 width: '95%',
                                 margin: 'auto',
                                 marginTop: '2vh',
+                                marginBottom : '2vh',
                                 border: 'solid thin #444',
                                 backgroundColor: '#1e1e1e',
                                 height: '70vh',
@@ -3657,7 +3641,7 @@ export const ResearchMain = () => {
                                         height: 'calc(100% - 40px)',
                                         width: '100%',
                                         overflowY: 'auto',
-                                        padding: '10px 0'
+                                        padding: '10px 0 20px 0'
                                     },
                                     elementHandler: (el) => {
                                         bodCon = el
@@ -3726,26 +3710,20 @@ export const ResearchMain = () => {
                                         style: {
                                             width: '100%',
                                             height: '100%',
-                                            overflowY: 'auto',
                                             backgroundColor: '#222',
-                                            padding: '20px'
+                                            padding: '20px',
                                         },
                                         child: [
                                             $({
                                                 tag: 'div',
                                                 style: {
-                                                    width: '100%',
-                                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                                    color: '#fff',
-                                                    textAlign: 'center',
-                                                    fontSize: '1.5vw',
-                                                    fontWeight: 'bold',
-                                                    marginBottom: '20px',
-                                                    marginTop: '10px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '10px'
+                                                height: 'fit-content',
+                                                width: 'fit-content',
+                                                fontFamily: 'arial black,sans-serif',
+                                                color: '#bbb',
+                                                margin: '1vh auto auto',
+                                                justifyContent: 'space-between',
+                                                fontSize: '1.2vw'
                                                 },
                                                 child: [
                                                     // Icon as separate element
@@ -3762,10 +3740,7 @@ export const ResearchMain = () => {
                                                     // Text as separate element
                                                     $({
                                                         tag: 'span',
-                                                        text: 'Entries Summary By Center',
-                                                        style: {
-                                                            color: '#fff'
-                                                        }
+                                                        text: 'Entries Summary By Center'
                                                     })
                                                 ]
                                             }),
@@ -3819,7 +3794,7 @@ export const ResearchMain = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    text: 'Center Summary',
+                                    text: 'Entry Summary',
                                     style: {
                                         fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
                                         fontSize: '0.9vw'
@@ -3943,8 +3918,6 @@ export const ResearchMain = () => {
                                             // Reset to page 1
                                             currentPage = 1;
                                             
-                                            console.log('Refresh button clicked');
-                                            
                                             // Get the select element by ID
                                             const eventSelect = document.getElementById('eventSelectFilter');
                                             
@@ -3956,8 +3929,6 @@ export const ResearchMain = () => {
                                             // Get the selected value
                                             currentEventId = eventSelect.value || '0';
                                             const selectedText = eventSelect.options[eventSelect.selectedIndex].text;
-                                            
-                                            console.log('Selected event:', selectedText, 'ID:', currentEventId);
                                             
                                             // Clear search if it exists
                                             if (typeof serch !== 'undefined' && serch) {
@@ -4014,20 +3985,17 @@ export const ResearchMain = () => {
                         return response.json();
                     })
                     .then(response => {
-                        console.log('Response received:', response);
                         
                         // Remove loading indicator
                         const loadingIndicator = document.getElementById('loadingIndicator');
                         if (loadingIndicator) loadingIndicator.remove();
                         
                         if (response.error) {
-                            console.error('Server error:', response.error);
-                            showError('Server error: ' + response.error);
+                            showError('Server error: ' + response.error)
                             return;
                         }
                         
                         if (!response.data || !Array.isArray(response.data)) {
-                            console.error('Invalid response format:', response);
                             showError('Invalid response format from server');
                             return;
                         }
@@ -4255,15 +4223,13 @@ export const ResearchMain = () => {
                         isLoading = false;
                     })
                     .catch(error => {
-                        console.error('Error:', error);
-                        
                         // Remove loading indicator
                         const loadingIndicator = document.getElementById('loadingIndicator');
                         if (loadingIndicator) loadingIndicator.remove();
                         
                         showError('Error: ' + error.message);
                         isLoading = false;
-                    });
+                    })
                 }
                 
                 function showError(message) {
@@ -4278,7 +4244,7 @@ export const ResearchMain = () => {
                                 fontSize: '1.2vw'
                             },
                             text: message
-                        }));
+                        }))
                     }
                 }
                 
@@ -4295,11 +4261,8 @@ export const ResearchMain = () => {
                             currentPage++;
                             loadDocuments(currentEventId, currentPage);
                         }
-                    });
+                    })
                 }
-                
-                // Initialize scroll listener
-                setTimeout(setupInfiniteScroll, 1000);
             }
             const Score=()=>{
                 return($({
@@ -4331,16 +4294,18 @@ export const ResearchMain = () => {
                                 href:'/rdeOffice/research/scoreSummary'
                             },
                             style:{
-                                fontSize:'1vw',
-                                backgroundColor:'transparent',
-                                border:'none',
+                                fontSize: '1vw',
+                                backgroundColor: 'transparent',
+                                border: 'none',
                                 outline: 'none',
                                 width: 'fit-content',
-                                textDecoration: 'none',
                                 height: 'fit-content',
-                                color:'deepskyblue',
-                                cursor:'pointer',
-                                
+                                cursor: 'pointer',
+                                color: 'deepskyblue',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                textDecoration: 'none'
                             },
                             text: ' Score Summary'
                         })
@@ -4435,7 +4400,6 @@ export const ResearchMain = () => {
                                             const match = fileUrl.match(pattern);
                                             if (match && match[1]) {
                                                 fileId = match[1];
-                                                console.log('File ID found:', fileId);
                                                 break;
                                             }
                                         }
@@ -4446,7 +4410,6 @@ export const ResearchMain = () => {
                                             for (let i = 0; i < urlParts.length; i++) {
                                                 if (urlParts[i] === 'd' && urlParts[i + 1]) {
                                                     fileId = urlParts[i + 1];
-                                                    console.log('File ID from path:', fileId);
                                                     break;
                                                 }
                                             }
