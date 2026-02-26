@@ -457,13 +457,11 @@ export const PrintResearch = ({eventName, data, formData}) => {
         })
         return items
     }
-
     // ─── Pagination ───────────────────────────────────────────────────────────
     const paginateItems = (flatItems) => {
         const pages = [] 
         let current = []
         let usedHeight = 0
-
         const flush = () => {
             if (current.length) {
                 pages.push([...current])
@@ -471,45 +469,35 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 usedHeight = 0
             }
         }
-
         for (let i = 0; i < flatItems.length; i++) {
             const item = flatItems[i]
-
             const pairedHeight = (item.type === 'center-header' && i + 1 < flatItems.length)
                 ? item.height + flatItems[i + 1].height
                 : item.height
-
             if (usedHeight + pairedHeight > USABLE_HEIGHT && current.length > 0) {
                 flush()
             }
-
             current.push(item)
             usedHeight += item.height
         }
-
         flush()
         return pages
     }
-
     // ─── Assemble a page DOM from flat items ──────────────────────────────────
     const buildPageChildren = (flatItems) => {
         const children = []
         let i = 0
-
         while (i < flatItems.length) {
             const item = flatItems[i]
-
             if (item.type === 'title' || item.type === 'footer') {
                 children.push(item.element)
                 i++
                 continue
             }
-
             if (item.type === 'center-header') {
                 const headerEl = item.element
                 const docElements = []
                 let firstDocNumber = 1
-
                 let j = i + 1
                 while (j < flatItems.length && flatItems[j].type === 'document') {
                     if (docElements.length === 0) {
@@ -518,7 +506,6 @@ export const PrintResearch = ({eventName, data, formData}) => {
                     docElements.push(flatItems[j].element)
                     j++
                 }
-
                 if (docElements.length > 0) {
                     children.push($({
                         tag: 'div',
@@ -599,7 +586,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 boxSizing: 'border-box'
             },
             child: [
-                // Background Image - Fixed to cover entire page with no white spaces
+                
                 $({
                     tag: 'div',
                     att: { className: 'page-background' },
@@ -627,15 +614,14 @@ export const PrintResearch = ({eventName, data, formData}) => {
                         style: { 
                             width: '100%', 
                             height: '100%', 
-                            objectFit: 'cover',  // This ensures image covers entire area
-                            objectPosition: 'center center', // Center the image
+                            objectFit: 'cover',  
+                            objectPosition: 'center center', 
                             display: 'block',
                             margin: 0,
                             padding: 0
                         }
                     })]
                 }),
-    
                 $({
                     tag: 'div',
                     att: { className: 'page-content' },
@@ -676,9 +662,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
     // ─── Main 
     const centersWithDocs = data?.length > 0
         ? data[0].centers.filter(center =>
-            center.categories.some(cat => cat.docs?.length > 0)
-          )
-        : []
+            center.categories.some(cat => cat.docs?.length > 0)) : []
 
     const flatItems   = buildFlatItems();
     const pages       = paginateItems(flatItems);

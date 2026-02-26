@@ -505,44 +505,35 @@ export const Main=({title,category,campus,date,evalName,author,coAuthor,intro,ab
 }
 
 export const PrintSummary = (data) => {
-    console.log(data)
+    console.log('Print summary data:', data)
     
-    const row = (...td) => {
-        return ($({
-            tag: 'tr',
-            elementHandler: (el) => {
-                td.forEach(val => {
-                    el.appendChild(val);
-                })
-            }
-        }))
+    // Define the center-category mapping
+    const centerCategoryMapping = {
+        "Crop Science Research & Developement Center (CSRDC)": ["Natural / Biological"],
+        "Livestock Research & Development Center (LRDC)": ["Natural / Biological"],
+        "Fisheries Research & Development Center (FRDC)": ["Natural / Biological"],
+        "Food and Industrial Technology Research & Development Center (FITRDC)": ["Food"],
+        "Social Science Research & Development Center (SSRDC)": ["Social Science"],
+        "Machinery and Agricultural Technology Engineering Center (MATEC)": ["Industrial", "Engineering", "Information Technology", "Development", "Agricultural Machinery"],
+        "Coconut Research and Development Center (Coco RDC)": ["Natural / Biological"],
+        "Extension (Extension)": ["Extension"]
     }
-
-    const col = ({text, style, att}) => {
-        return ($({
-            tag: 'td',
-            style: style,
-            text: text,
-            att: att
-        }))
-    }
-
-    // Get all unique categories from the data
+    
+    // Get all unique categories from the mapping
     const allCategories = [];
-    if (data && data.length > 0) {
-        data.forEach(center => {
-            center.campuses.forEach(campus => {
-                campus.categories.forEach(cat => {
-                    if (!allCategories.includes(cat.name)) {
-                        allCategories.push(cat.name);
-                    }
-                });
-            });
+    Object.values(centerCategoryMapping).forEach(cats => {
+        cats.forEach(cat => {
+            if (!allCategories.includes(cat)) {
+                allCategories.push(cat);
+            }
         });
-    }
+    });
     
     // Sort categories alphabetically
     allCategories.sort();
+    
+    // Get all centers from the mapping
+    const allCenters = Object.keys(centerCategoryMapping);
 
     return ($({
         tag: 'div',
@@ -551,7 +542,7 @@ export const PrintSummary = (data) => {
         },
         style: {
             width: '100%',
-            minHeight: '29.7cm',
+            minHeight: '21cm', // Landscape height (A4 landscape)
             position: 'relative',
             fontFamily: 'Arial, sans-serif',
             backgroundColor: 'white'
@@ -597,9 +588,9 @@ export const PrintSummary = (data) => {
                 style: {
                     position: 'relative',
                     zIndex: 1,
-                    padding: '4cm 1.5cm 2.5cm 1.5cm',
+                    padding: '4cm 1.5cm 1.5cm 1.5cm',
                     width: '100%',
-                    minHeight: '29.7cm',
+                    minHeight: '21cm',
                     boxSizing: 'border-box'
                 },
                 child: [
@@ -608,27 +599,27 @@ export const PrintSummary = (data) => {
                         tag: 'div',
                         style: {
                             textAlign: 'center',
-                            marginBottom: '20px',
-                            marginTop: '10px'
+                            marginBottom: '15px',
+                            marginTop: '5px'
                         },
                         child: [
                             $({ 
                                 tag: 'h2', 
                                 text: 'SUMMARY OF ACCEPTED RESEARCH DOCUMENTS',
                                 style: {
-                                    fontSize: '16pt',
+                                    fontSize: '14pt',
                                     fontWeight: 'bold',
-                                    margin: '5px 0',
+                                    margin: '3px 0',
                                     color: '#000'
                                 }
                             }),
                             $({ 
                                 tag: 'h3', 
-                                text: data[0]?.campuses[0]?.event || 'Research Documents',
+                                text: data && data[0]?.campuses[0]?.event ? data[0].campuses[0].event : 'Research Documents Summary',
                                 style: {
-                                    fontSize: '14pt',
+                                    fontSize: '11pt',
                                     fontWeight: 'normal',
-                                    margin: '5px 0',
+                                    margin: '3px 0',
                                     color: '#333'
                                 }
                             })
@@ -645,135 +636,120 @@ export const PrintSummary = (data) => {
                             width: '100%',
                             borderCollapse: 'collapse',
                             border: '1px solid #000',
-                            fontSize: '10pt',
+                            fontSize: '9pt',
                             backgroundColor: 'white',
-                            marginBottom: '20px'
+                            marginBottom: '15px'
                         },
                         elementHandler: (el) => {
-                            // Create header row with centers
-                            const headerRow1 = $({ tag: 'tr' });
+                            // Create header row
+                            const headerRow = $({ tag: 'tr' });
                             
-                            // First column for Campus
-                            headerRow1.appendChild($({
+                            // First column for Center
+                            headerRow.appendChild($({
                                 tag: 'th',
                                 style: { 
                                     border: '1px solid #000', 
-                                    padding: '8px', 
+                                    padding: '7px', 
                                     backgroundColor: '#e6e6e6',
-                                    fontWeight: 'bold'
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    fontSize: '10pt'
                                 },
-                                text: 'CAMPUS',
-                                att: { rowspan: 2 }
+                                text: 'RESEARCH CENTER'
                             }));
                             
-                            // Center columns
-                            data.forEach(center => {
-                                headerRow1.appendChild($({
+                            // Category columns
+                            allCategories.forEach(category => {
+                                headerRow.appendChild($({
                                     tag: 'th',
                                     style: { 
                                         border: '1px solid #000', 
-                                        padding: '8px', 
+                                        padding: '7px', 
                                         backgroundColor: '#e6e6e6',
-                                        fontWeight: 'bold'
+                                        fontWeight: 'bold',
+                                        textAlign: 'center',
+                                        fontSize: '10pt'
                                     },
-                                    text: center.center,
-                                    att: { colspan: allCategories.length }
+                                    text: category
                                 }));
                             });
                             
                             // Total column
-                            headerRow1.appendChild($({
+                            headerRow.appendChild($({
                                 tag: 'th',
                                 style: { 
                                     border: '1px solid #000', 
                                     padding: '8px', 
                                     backgroundColor: '#e6e6e6',
-                                    fontWeight: 'bold'
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    fontSize: '10pt'
                                 },
-                                text: 'TOTAL',
-                                att: { rowspan: 2 }
+                                text: 'TOTAL'
                             }));
                             
-                            el.appendChild(headerRow1);
+                            el.appendChild(headerRow);
                             
-                            // Second header row - categories under each center
-                            const headerRow2 = $({ tag: 'tr' });
-                            
-                            data.forEach(center => {
-                                allCategories.forEach(category => {
-                                    headerRow2.appendChild($({
-                                        tag: 'th',
-                                        style: { 
-                                            border: '1px solid #000', 
-                                            padding: '4px', 
-                                            fontSize: '9pt',
-                                            backgroundColor: '#f0f0f0',
-                                            fontWeight: 'bold'
-                                        },
-                                        text: category
-                                    }))
-                                })
-                            })
-                            
-                            el.appendChild(headerRow2);
-                            
-                            // Get all unique campuses
-                            const allCampuses = new Set();
-                            data.forEach(center => {
-                                center.campuses.forEach(campus => {
-                                    allCampuses.add(campus.campus);
-                                })
-                            })
-                            
-                            // Sort campuses
-                            const campusesList = Array.from(allCampuses).sort();
-                            
-                            // Data rows for each campus
-                            campusesList.forEach((campusName, index) => {
-                                const dataRow = $({ tag: 'tr' })
+                            // Data rows for each center from the mapping
+                            allCenters.forEach((centerName, centerIndex) => {
+                                // Find center data if it exists in the provided data
+                                const centerData = data && data.length > 0 
+                                    ? data.find(c => c.center === centerName) 
+                                    : null;
                                 
-                                // Campus name with alternating background
+                                const dataRow = $({ tag: 'tr' });
+                                
+                                // Center name with alternating background
                                 dataRow.appendChild($({
                                     tag: 'td',
                                     style: { 
                                         border: '1px solid #000', 
                                         padding: '6px', 
                                         fontWeight: 'bold',
-                                        backgroundColor: index % 2 === 0 ? '#fafafa' : 'white'
+                                        backgroundColor: centerIndex % 2 === 0 ? '#fafafa' : 'white'
                                     },
-                                    text: campusName
-                                }))
+                                    text: centerName
+                                }));
                                 
-                                let campusTotal = 0
+                                let centerTotal = 0;
                                 
-                                // Data for each center
-                                data.forEach(center => {
-                                    // Find this campus in this center
-                                    const campusData = center.campuses.find(c => c.campus === campusName);
+                                // Get categories assigned to this center from mapping
+                                const assignedCategories = centerCategoryMapping[centerName] || [];
+                                
+                                // Data for each category (all categories, but only assigned ones can have values)
+                                allCategories.forEach(category => {
+                                    let categoryTotal = 0;
                                     
-                                    allCategories.forEach(category => {
-                                        let count = 0;
-                                        if (campusData) {
-                                            const catData = campusData.categories.find(c => c.name === category);
-                                            count = catData ? catData.total : 0;
+                                    // Check if this category is assigned to this center
+                                    if (assignedCategories.includes(category)) {
+                                        // Sum up all campuses for this center and category if data exists
+                                        if (centerData) {
+                                            centerData.campuses.forEach(campus => {
+                                                const catData = campus.categories.find(c => c.name === category);
+                                                if (catData) {
+                                                    categoryTotal += catData.total;
+                                                }
+                                            });
                                         }
-                                        
-                                        campusTotal += count;
-                                        
-                                        dataRow.appendChild($({
-                                            tag: 'td',
-                                            style: { 
-                                                border: '1px solid #000', 
-                                                padding: '6px', 
-                                                textAlign: 'center',
-                                                backgroundColor: index % 2 === 0 ? '#fafafa' : 'white'
-                                            },
-                                            text: count > 0 ? count : '-'
-                                        }))
-                                    })
-                                })
+                                    }
+                                    
+                                    centerTotal += categoryTotal;
+                                    
+                                    dataRow.appendChild($({
+                                        tag: 'td',
+                                        style: { 
+                                            border: '1px solid #000', 
+                                            padding: '6px', 
+                                            textAlign: 'center',
+                                            backgroundColor: centerIndex % 2 === 0 ? '#fafafa' : 'white',
+                                            fontWeight: categoryTotal > 0 ? 'bold' : 'normal',
+                                            color: assignedCategories.includes(category) ? (categoryTotal > 0 ? '#000' : '#666') : '#999'
+                                        },
+                                        text: assignedCategories.includes(category) ? categoryTotal : '—'
+                                    }));
+                                });
                                 
-                                // Campus total
+                                // Center total
                                 dataRow.appendChild($({
                                     tag: 'td',
                                     style: { 
@@ -781,60 +757,169 @@ export const PrintSummary = (data) => {
                                         padding: '6px', 
                                         textAlign: 'center', 
                                         fontWeight: 'bold',
-                                        backgroundColor: index % 2 === 0 ? '#fafafa' : 'white'
+                                        backgroundColor: centerIndex % 2 === 0 ? '#fafafa' : 'white'
                                     },
-                                    text: campusTotal
-                                }))
+                                    text: centerTotal
+                                }));
                                 
                                 el.appendChild(dataRow);
-                            })
+                            });
                             
                             // Grand Total Row
-                            const totalRow = $({ 
+                            const grandTotalRow = $({ 
                                 tag: 'tr', 
                                 style: { 
-                                    backgroundColor: '#e0e0e0', 
-                                    fontWeight: 'bold' 
+                                    backgroundColor: '#b6d7a8', 
+                                    fontWeight: 'bold',
+                                    borderTop: '2px solid #000'
                                 } 
-                            })
+                            });
                             
-                            totalRow.appendChild($({
+                            grandTotalRow.appendChild($({
                                 tag: 'td',
-                                style: { border: '1px solid #000', padding: '8px' },
+                                style: { border: '1px solid #000', padding: '7px', fontWeight: 'bold' },
                                 text: 'GRAND TOTAL'
-                            }))
+                            }));
                             
-                            let grandTotal = 0
+                            let finalGrandTotal = 0;
                             
-                            data.forEach(center => {
-                                allCategories.forEach(category => {
-                                    let categoryTotal = 0;
-                                    
-                                    center.campuses.forEach(campus => {
-                                        const catData = campus.categories.find(c => c.name === category);
-                                        if (catData) {
-                                            categoryTotal += catData.total;
+                            // Calculate grand totals per category
+                            allCategories.forEach(category => {
+                                let categoryGrandTotal = 0;
+                                
+                                if (data && data.length > 0) {
+                                    data.forEach(center => {
+                                        // Only sum if this center has this category assigned
+                                        const assignedCategories = centerCategoryMapping[center.center] || [];
+                                        if (assignedCategories.includes(category)) {
+                                            center.campuses.forEach(campus => {
+                                                const catData = campus.categories.find(c => c.name === category);
+                                                if (catData) {
+                                                    categoryGrandTotal += catData.total;
+                                                }
+                                            });
                                         }
-                                    })
-                                    
-                                    grandTotal += categoryTotal;
-                                    
-                                    totalRow.appendChild($({
-                                        tag: 'td',
-                                        style: { border: '1px solid #000', padding: '6px', textAlign: 'center' },
-                                        text: categoryTotal
-                                    }))
-                                })
-                            })
+                                    });
+                                }
+                                
+                                finalGrandTotal += categoryGrandTotal;
+                                
+                                grandTotalRow.appendChild($({
+                                    tag: 'td',
+                                    style: { border: '1px solid #000', padding: '6px', textAlign: 'center', fontWeight: 'bold' },
+                                    text: categoryGrandTotal
+                                }));
+                            });
                             
-                            totalRow.appendChild($({
+                            grandTotalRow.appendChild($({
                                 tag: 'td',
-                                style: { border: '1px solid #000', padding: '6px', textAlign: 'center' },
-                                text: grandTotal
-                            }))
+                                style: { border: '1px solid #000', padding: '6px', textAlign: 'center', fontWeight: 'bold' },
+                                text: finalGrandTotal
+                            }));
                             
-                            el.appendChild(totalRow);
+                            el.appendChild(grandTotalRow);
                         }
+                    }),
+                    
+                    // Notes Section - Below the table
+                    $({
+                        tag: 'div',
+                        style: {
+                            marginTop: '8px',
+                            fontSize: '8pt',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            color: '#666',
+                            fontStyle: 'italic'
+                        },
+                        child: [
+                            // Note about dashes
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        style: {
+                                            display: 'inline-block',
+                                            width: '16px',
+                                            textAlign: 'center',
+                                            color: '#999',
+                                            fontWeight: 'bold',
+                                            fontStyle: 'normal' // Keep dash non-italic
+                                        },
+                                        text: '—'
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        style: {
+                                            fontStyle: 'italic'
+                                        },
+                                        text: 'Indicates categories not assigned to this research center'
+                                    })
+                                ]
+                            }),
+                            
+                            // Note about no data (only show if no data)
+                            ...(!data || data.length === 0 ? [
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '3px'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            style: {
+                                                color: '#666',
+                                                fontStyle: 'normal' // Keep icon non-italic
+                                            },
+                                            text: 'ⓘ'
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            style: {
+                                                fontStyle: 'italic'
+                                            },
+                                            text: 'No data available. Showing format with zeros and dashes.'
+                                        })
+                                    ]
+                                })
+                            ] : [])
+                        ]
+                    }),
+                    // Summary information
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginTop: '15px',
+                            fontSize: '9pt',
+                            color: '#333',
+                            paddingTop: '5px'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                text: `Total Research Centers: ${allCenters.length}`
+                            }),
+                            $({
+                                tag: 'div',
+                                text: `Total Categories: ${allCategories.length}`
+                            }),
+                            $({
+                                tag: 'div',
+                                style: { textAlign: 'right' },
+                                text: `Printed on: ${new Date().toLocaleDateString()}`
+                            })
+                        ]
                     })
                 ]
             })
