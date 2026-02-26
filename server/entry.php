@@ -11,74 +11,114 @@ include ('db.php');
 
 function isScientificName($text) {
     if (!$text || strlen(trim($text)) < 2) return false;
-    
     $text = trim($text);
 
-    // ── Rule 1: Contains digits → NOT scientific ──────────────────────────
+    // ── Hard exclusions ───────────────────────────────────────────────────
     if (preg_match('/\d/', $text)) return false;
+    if (preg_match('/^[A-Z]{2,}$/', $text)) return false; // pure acronyms
 
-    // ── Rule 2: All uppercase abbreviations like "RTE", "HIV", "ICT" → NOT scientific
-    if (preg_match('/^[A-Z]{2,}$/', $text)) return false;
+    // ── Known scientific name patterns ────────────────────────────────────
 
-    // ── Rule 3: Known non-scientific abbreviations/acronyms → NOT scientific
-    $nonScientific = [
-        'L.', 'Linn', 'Linn.', 'var.', 'spp.', 'sp.', 'subsp.',  // actually these ARE scientific suffixes
-    ];
+    // Binomial: "Genus species", "Genus Species" (with or without capital)
+    if (preg_match('/^[A-Z][a-z]{1,20}\s+[A-Z]?[a-z]{3,25}$/', $text)) return true;
 
-    // ── Rule 4: Binomial nomenclature (Genus species) ─────────────────────
-    // Classic two-word: Capital + lowercase, both Latin-looking
-    // e.g. "Cocos nucifera", "Anas platyrhynchos", "Momordica charantia"
-    if (preg_match('/^[A-Z][a-z]{1,20}\s+[a-z]{3,25}$/', $text)) return true;
+    // Binomial + author: "Genus species L.", "Genus Species Linn."
+    if (preg_match('/^[A-Z][a-z]{1,20}\s+[A-Z]?[a-z]{3,25}\s+[A-Z][a-zA-Z\.]{0,15}$/', $text)) return true;
 
-    // ── Rule 5: Binomial + author abbreviation ────────────────────────────
-    // e.g. "Cocos nucifera L.", "Cajanus Cajan L.", "Capsicum annuum L."
-    if (preg_match('/^[A-Z][a-z]{1,20}\s+[a-zA-Z]{3,25}(\s+[A-Z][a-z]*\.?)?$/', $text)) {
-        // Make sure it's not just a normal English/Filipino phrase
-        // Scientific names rarely contain common English words
-        $commonWords = ['The', 'And', 'For', 'With', 'From', 'This', 'That',
-                        'Using', 'Based', 'New', 'Different', 'Local', 'Native',
-                        'Green', 'Blue', 'Red', 'Black', 'White', 'Small', 'Large',
-                        'Pinna', 'Ito', 'Ang', 'Mga', 'Ng', 'Sa', 'Na'];
-        $firstWord = explode(' ', $text)[0];
-        if (!in_array($firstWord, $commonWords)) {
-            return true;
-        }
-    }
+    // Trinomial: "Genus species var. subspecies"
+    if (preg_match('/^[A-Z][a-z]+\s+[A-Z]?[a-z]+\s+(var\.|subsp\.|ssp\.|f\.|cv\.)\s+[a-z]+$/i', $text)) return true;
 
-    // ── Rule 6: Single Latin genus name (Capitalized, no common meaning) ──
-    // e.g. "Gracilaria", "Amaranthus", "Moringa", "Crescentia"
-    if (preg_match('/^[A-Z][a-z]{4,20}$/', $text)) {
-        // Check it's not a common English word
-        $commonEnglish = [
-            'The', 'And', 'For', 'With', 'From', 'This', 'That', 'Food', 'Fish',
-            'Rice', 'Corn', 'Soil', 'Water', 'Plant', 'Grass', 'Fruit', 'Meat',
-            'Milk', 'Chicken', 'Coconut', 'Sugar', 'Banana', 'Mango', 'Guava',
-            'Garlic', 'Onion', 'Pepper', 'Ginger', 'Coffee', 'Cacao', 'Bamboo',
-            'Pilar', 'Tapaz', 'Sigma', 'Dayao', 'Capiz', 'Roxas', 'Burias',
-            'Innovation', 'Development', 'Education', 'Production', 'Assessment',
-            'Management', 'Research', 'Science', 'Health', 'Program', 'Project',
-            'Philippines', 'Visayas', 'Western', 'Central', 'Northern', 'Southern'
+    // Single word genus with strong Latin/Greek suffixes
+    if (preg_match('/^[A-Z][a-z]{3,25}$/', $text)) {
+        // Strong Latin/Greek genus endings used in taxonomy
+        $latinGenusEndings = [
+            // Animals
+            'idae', 'inae', 'ini', 'oidea', 'iformes',
+            // Plants  
+            'aceae', 'ales', 'opsida', 'ophyta',
+            // General Latin/Greek endings common in genus names
+            'ia', 'ium', 'ius', 'ella', 'illa', 'ula', 'ulus',
+            'aster', 'oides', 'opsis', 'phora', 'fera',
+            'dendron', 'phyllum', 'carpus', 'anthus', 'spora',
+            'myces', 'mycin', 'plasma', 'coccus', 'bacillus',
+            'monas', 'vibrio', 'bacter',
         ];
-        if (!in_array($text, $commonEnglish)) {
-            // Extra check: Latin genus names tend to end in specific suffixes
-            if (preg_match('/(?:ia|us|um|is|ae|on|ium|aceae|ales|inae)$/i', $text)) {
-                return true;
+
+        // Blocklist of common words that match the pattern
+        $commonWords = [
+            'Africa', 'America', 'Arabia', 'Armenia', 'Asia', 'Australia',
+            'Austria', 'Bulgaria', 'Canada', 'China', 'Croatia', 'Cuba',
+            'Russia', 'Serbia', 'Sierra', 'Syria', 'Tunisia', 'Uganda',
+            'Victoria', 'Virginia', 'Bolivia', 'Colombia', 'Georgia',
+            // Common English
+            'Innovation', 'Development', 'Education', 'Production',
+            'Assessment', 'Management', 'Research', 'Science', 'Health',
+            'Program', 'Project', 'System', 'Design', 'Analysis',
+            'Philippines', 'Western', 'Central', 'Northern', 'Southern',
+            'Eastern', 'National', 'Regional', 'Provincial', 'Municipal',
+            // Local places
+            'Pilar', 'Tapaz', 'Sigma', 'Dayao', 'Capiz', 'Roxas', 'Burias',
+            'Visayas', 'Pontevedra', 'Mambusao', 'Dumarao',
+            // Common nouns
+            'Food', 'Fish', 'Rice', 'Corn', 'Soil', 'Water', 'Plant',
+            'Grass', 'Fruit', 'Meat', 'Milk', 'Chicken', 'Coconut',
+            'Sugar', 'Banana', 'Mango', 'Guava', 'Garlic', 'Onion',
+            'Pepper', 'Ginger', 'Coffee', 'Cacao', 'Bamboo', 'Bread',
+        ];
+
+        if (!in_array($text, $commonWords)) {
+            foreach ($latinGenusEndings as $ending) {
+                if (str_ends_with(strtolower($text), $ending)) {
+                    return true;
+                }
             }
         }
     }
 
-    // ── Rule 7: Trinomial / subspecies ────────────────────────────────────
-    // e.g. "Coffea canephora var. robusta"
-    if (preg_match('/^[A-Z][a-z]+\s+[a-z]+\s+(var\.|subsp\.|f\.)\s+[a-z]+$/', $text)) return true;
+    // Species epithet Latin suffixes (works inside multi-word names too)
+    $latinSpeciesSuffixes = [
+        // Very strong indicators - rarely appear in common words
+        'rhynchos', 'platyrhynch', 'orhynchus',     // beak-related
+        'pteryx', 'ptera', 'pteron',                 // wing-related  
+        'cephalus', 'cephala',                       // head-related
+        'phyllus', 'phylla', 'phyllum',              // leaf-related
+        'carpus', 'carpa', 'carpum',                 // fruit-related
+        'spermus', 'sperma',                         // seed-related
+        'phyta', 'phytum',                           // plant-related
+        'mycota', 'mycetes', 'myces',                // fungi-related
+        'aceae', 'phyceae',                          // family endings
+        // Species epithets
+        'nucifera', 'officinalis', 'officinale',
+        'vulgaris', 'vulgare', 'communis', 'commune',
+        'sativus', 'sativa', 'sativum',
+        'domesticus', 'domestica', 'domesticum',
+        'sylvestris', 'sylvestre',
+        'japonica', 'japonicum', 'japonicus',
+        'chinensis', 'sinensis',
+        'indica', 'indicus', 'indicum',
+        'africana', 'africanus', 'africanum',
+        'australis', 'australis',
+        'orientalis', 'occidentalis',
+        'maximus', 'maxima', 'maximum',
+        'minor', 'minus', 'minimus', 'minima',
+        'major', 'majus',
+        'niger', 'nigra', 'nigrum',
+        'alba', 'albus', 'album',
+        'rubra', 'ruber', 'rubrum',
+        'viridis', 'viride',
+        'flavus', 'flava', 'flavum',
+        'roseus', 'rosea', 'roseum',
+        'aureus', 'aurea', 'aureum',
+        'platensis', 'muricata', 'charantia',
+        'annuum', 'canephora', 'umbellata',
+        'miliaceum', 'platyrhynchos',
+    ];
 
-    // ── Rule 8: Genus + species + author (3 words, last is capitalized abbreviation)
-    // e.g. "Vigna umbellata Ohwi", "Panicum miliaceum L."
-    if (preg_match('/^[A-Z][a-z]{2,15}\s+[a-z]{3,20}\s+[A-Z][a-zA-Z\.]{0,10}$/', $text)) return true;
-
-    // ── Rule 9: Contains typical Latin suffixes anywhere ──────────────────
-    // Words like "nucifera", "platyrhynchos", "muricata", "viridis", "charantia"
-    if (preg_match('/\b[a-z]{4,}(?:ifera|rhynchos|uricata|viridis|antia|ensis|phyllus|carpus|phyta|mycota|aceae)\b/i', $text)) {
-        return true;
+    $textLower = strtolower($text);
+    foreach ($latinSpeciesSuffixes as $suffix) {
+        if (str_contains($textLower, $suffix)) {
+            return true;
+        }
     }
 
     return false;
@@ -355,65 +395,32 @@ if(isset($_POST['perCenterReport'])){
 }
 
 if(isset($_POST['perCampReport'])){
-
     $response=[];
-
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
         $camp= ['Central Office','Roxas City Main','Dayao','Pontevedra','Pilar','Dumarao','Burias','Mambusao','Tapaz','Sigma'];
-
         foreach ($camp as $v){
-
             $obj= new stdClass();
-
             $obj->name=$v;
-
             $obj->total='0';
-
             $response[]=$obj;
-
         }
-
         $query="SELECT researchfile.id, researchfile.category,researchfile.campus,COUNT(*) as total FROM researchfile
-
         LEFT JOIN endorsement ON researchfile.endorsementid=endorsement.id
-
         WHERE endorsement.status='accepted'AND researchfile.category=? AND researchfile.event=?
-
         GROUP BY researchfile.campus ";
-
         $statement=$con->prepare($query);
-
         $statement->bind_param("ss",$_POST['category'],$_POST['eventType']);
-
         $statement->execute();
-
         $result=$statement->get_result();
-
         while ($val=$result->fetch_assoc()){
-
             for($x=0;$x<sizeof($response);$x++){
-
                 if($response[$x]->name===$val['campus']){
-
                     $response[$x]->total=$val['total'];
-
                 }
-
             }
-
         }
-
-
-
-
-
     }
-
     echo json_encode($response);
-
-
-
 }
 
 if(isset($_POST['printSum'])) {
