@@ -3433,37 +3433,188 @@ if (isset($_POST['deleteEndorsement'])) {
     $response = new stdClass();
     $response->message = '';
     $response->status = false;
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query = "DELETE FROM endorsement WHERE endorsement.status=? AND endorsement.id=?";
-        $statement = $con->prepare($query);
-        $status = 'rejected';
         $docId = $_POST['docId'];
-        $file = $_POST['fileUrl'];
-        $resUrl = json_decode($_POST['researchFileUrl']);
-        $statement->bind_param('ss', $status, $docId);
-        $statusStatement = $statement->execute();
-        if ($statusStatement) {
-            if ($statement->affected_rows > 0) {
-                $response->status = true;
-                $response->message = 'Document deleted successfully..!';
-                if (!unlink($file)) {
-                    $response->message .= "\n But failed to remove file from web storage...";
+        
+        // Start transaction
+        $con->begin_transaction();
+        
+        try {
+            // Get all Google Drive file IDs and folder IDs for this endorsement
+            $fileQuery = "SELECT 
+                e.drive_file_id as endorsement_drive_id,
+                e.drive_event_folder_id,
+                e.drive_center_folder_id,
+                e.drive_category_folder_id,
+                e.drive_entry_folder_id,
+                rf.id as research_id,
+                rf.drive_file_id as research_drive_id,
+                rf.program_drive_file_id,
+                rf.drive_event_folder_id as research_event_folder,
+                rf.drive_center_folder_id as research_center_folder,
+                rf.drive_category_folder_id as research_category_folder,
+                rf.drive_entry_folder_id as research_entry_folder
+            FROM endorsement e
+            LEFT JOIN researchfile rf ON rf.endorsementid = e.id
+            WHERE e.id = ?";
+            
+            $fileStmt = $con->prepare($fileQuery);
+            $fileStmt->bind_param("s", $docId);
+            $fileStmt->execute();
+            $fileResult = $fileStmt->get_result();
+            
+            $driveFileIds = [];
+            $folderIds = [];
+            $researchIds = [];
+            
+            while ($row = $fileResult->fetch_assoc()) {
+                // Collect endorsement drive files
+                if (!empty($row['endorsement_drive_id'])) {
+                    $driveFileIds[] = $row['endorsement_drive_id'];
                 }
-                for ($x = 0; $x < sizeof($resUrl); $x++) {
-                    if (!unlink($resUrl[$x])) {
-                        $response->message .= "\n But failed to remove file from web storage...";
-                    }
+                
+                // Collect research drive files
+                if (!empty($row['research_drive_id'])) {
+                    $driveFileIds[] = $row['research_drive_id'];
                 }
-            } else {
-                $response->message = 'Unable to delete this document...!';
+                
+                // Collect program drive files
+                if (!empty($row['program_drive_file_id'])) {
+                    $driveFileIds[] = $row['program_drive_file_id'];
+                }
+                
+                // Collect research IDs for comment deletion
+                if (!empty($row['research_id'])) {
+                    $researchIds[] = $row['research_id'];
+                }
+                
+                // Collect folder IDs (optional - we might keep folders even if empty)
+                if (!empty($row['drive_entry_folder_id'])) {
+                    $folderIds[] = $row['drive_entry_folder_id'];
+                }
+                if (!empty($row['research_entry_folder'])) {
+                    $folderIds[] = $row['research_entry_folder'];
+                }
             }
-        } else {
-            $response->message = $statement->error;
+            
+            error_log("Files to delete from Google Drive: " . json_encode($driveFileIds));
+            
+            // Initialize Google Drive service
+            require_once __DIR__ . '/../config/driver_config.php';
+            
+            if (!class_exists('GoogleDriveService')) {
+                throw new Exception("GoogleDriveService class not found");
+            }
+            
+            $driveService = new GoogleDriveService();
+            
+            // Move files to trash in Google Drive
+            $trashedCount = 0;
+            $failedFiles = [];
+            
+            foreach ($driveFileIds as $fileId) {
+                try {
+                    if (!empty($fileId)) {
+                        error_log("Moving Google Drive file to trash: $fileId");
+                        $result = $driveService->trashFile($fileId);
+                        if ($result) {
+                            $trashedCount++;
+                            error_log("Successfully trashed file: $fileId");
+                        } else {
+                            $failedFiles[] = $fileId;
+                            error_log("Failed to trash file: $fileId");
+                        }
+                    }
+                } catch (Exception $e) {
+                    $failedFiles[] = $fileId;
+                    error_log("Exception trashing file $fileId: " . $e->getMessage());
+                    // Continue with other files even if one fails
+                }
+            }
+            
+            // Delete comments for all research files
+            if (!empty($researchIds)) {
+                $placeholders = implode(',', array_fill(0, count($researchIds), '?'));
+                $commentDeleteQuery = "DELETE FROM comments WHERE resid IN ($placeholders)";
+                $commentDeleteStmt = $con->prepare($commentDeleteQuery);
+                
+                // Dynamically bind parameters
+                $types = str_repeat('s', count($researchIds));
+                $commentDeleteStmt->bind_param($types, ...$researchIds);
+                $commentDeleteStmt->execute();
+                $commentsDeleted = $commentDeleteStmt->affected_rows;
+                error_log("Deleted $commentsDeleted comments for research IDs: " . implode(',', $researchIds));
+            }
+            
+            // Delete researchfile records
+            $deleteResearchQuery = "DELETE FROM researchfile WHERE endorsementid = ?";
+            $deleteResearchStmt = $con->prepare($deleteResearchQuery);
+            $deleteResearchStmt->bind_param("s", $docId);
+            $deleteResearchStmt->execute();
+            $researchDeleted = $deleteResearchStmt->affected_rows;
+            
+            // Delete endorsement record
+            $deleteEndorseQuery = "DELETE FROM endorsement WHERE id = ?";
+            $deleteEndorseStmt = $con->prepare($deleteEndorseQuery);
+            $deleteEndorseStmt->bind_param("s", $docId);
+            $deleteEndorseStmt->execute();
+            $endorsementDeleted = $deleteEndorseStmt->affected_rows;
+            
+            if ($endorsementDeleted > 0) {
+                // Log the deletion
+                $logQuery = "INSERT INTO document_log (user_id, doc_id, details, date) VALUES (?, ?, ?, NOW())";
+                $logStmt = $con->prepare($logQuery);
+                
+                $userName = $_SESSION['userName'] ?? $_SESSION['userFulname'] ?? 'Unknown User';
+                $details = "User: $userName deleted endorsement ID: $docId. ";
+                $details .= "$trashedCount Google Drive file(s) moved to trash.";
+                
+                if (!empty($failedFiles)) {
+                    $details .= " Failed to trash: " . implode(', ', $failedFiles);
+                }
+                
+                $logStmt->bind_param("sss", $_SESSION['userId'], $docId, $details);
+                $logStmt->execute();
+                
+                $con->commit();
+                
+                // Build response message
+                $response->status = true;
+                $response->message = "Document deleted successfully. ";
+                $response->message .= "$trashedCount file(s) moved to Google Drive trash.";
+                
+                if ($researchDeleted > 0) {
+                    $response->message .= " $researchDeleted research record(s) deleted.";
+                }
+                
+                if (!empty($failedFiles)) {
+                    $response->message .= " Warning: " . count($failedFiles) . " file(s) could not be trashed.";
+                    $response->failed_files = $failedFiles;
+                }
+                
+                $response->trashed_count = $trashedCount;
+                $response->research_deleted = $researchDeleted;
+                
+            } else {
+                throw new Exception("No endorsement record found to delete");
+            }
+            
+        } catch (Exception $e) {
+            $con->rollback();
+            $response->message = "Error: " . $e->getMessage();
+            $response->error_details = $e->getMessage();
+            error_log("Delete endorsement failed: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
         }
     } else {
-        $response->message = $con->error;
+        $response->message = "Database connection error: " . mysqli_connect_error();
     }
+    
+    // Ensure clean JSON output
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
+    exit();
 }
 
 if (isset($_POST['rejectRequest'])) {
