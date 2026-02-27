@@ -725,7 +725,7 @@ if (isset($_POST['researchSubmit'])) {
         error_log("Evaluator center (session): $center");
         error_log("Looking for researchfiles with center: $dbCenterName");
 
-        // UPDATED QUERY with better center matching
+        // UPDATED QUERY with better center matching - REMOVED event deadline condition
         $sqlQueries = "SELECT 
             researchfile.id,
             researchfile.author,
@@ -752,8 +752,8 @@ if (isset($_POST['researchSubmit'])) {
             OR UPPER(researchfile.center) = UPPER(?)
             OR researchfile.center LIKE ?
         )
-        AND researchfile.event_id = ?
-        AND event_list.dead_line > CURRENT_TIMESTAMP";
+        AND researchfile.event_id = ?";
+        // REMOVED: "AND event_list.dead_line > CURRENT_TIMESTAMP"
 
         $stm = $con->prepare($sqlQueries);
         $stat = 'accepted';
@@ -764,15 +764,7 @@ if (isset($_POST['researchSubmit'])) {
         $centerUpper = strtoupper($center);
         $centerLikeUpper = "%" . strtoupper($dbCenterName) . "%";
         
-        $stm->bind_param(
-            "sssssi", 
-            $stat, 
-            $centerExact,     // exact match
-            $centerLike,      // contains match
-            $centerUpper,     // case-insensitive exact
-            $centerLikeUpper, // case-insensitive contains
-            $eventId
-        );
+        $stm->bind_param("sssssi", $stat, $centerExact, $centerLike, $centerUpper, $centerLikeUpper, $eventId);
         
         $stm->execute();
         $resultRes = $stm->get_result();

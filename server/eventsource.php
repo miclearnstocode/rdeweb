@@ -451,7 +451,7 @@ if(isset($_POST['deleteEvent'])){
     echo json_encode($response);
     exit();
 }
-
+// for evaluators number of entries
 if(isset($_POST['collectEntries'])){
     $count = 0;
     
@@ -487,8 +487,7 @@ if(isset($_POST['collectEntries'])){
             LEFT JOIN event_list ON researchfile.event_id = event_list.id
             WHERE endorsement.status = 'accepted' 
             AND researchfile.center = ?
-            AND event_list.id = ?
-            AND event_list.dead_line > CURRENT_TIMESTAMP";
+            AND event_list.id = ?";
 
         $statement = $con->prepare($query);
         if ($statement) {
