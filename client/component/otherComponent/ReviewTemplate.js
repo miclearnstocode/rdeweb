@@ -504,8 +504,9 @@ export const Main=({title,category,campus,date,evalName,author,coAuthor,intro,ab
 
 }
 
-export const PrintSummary = (data) => {
+export const PrintSummary = (data, eventName) => {
     console.log('Print summary data:', data)
+    console.log('Event name:', eventName)
     
     // Define the center-category mapping
     const centerCategoryMapping = {
@@ -542,7 +543,7 @@ export const PrintSummary = (data) => {
         },
         style: {
             width: '100%',
-            minHeight: '21cm', // Landscape height (A4 landscape)
+            minHeight: '29.7cm',
             position: 'relative',
             fontFamily: 'Arial, sans-serif',
             backgroundColor: 'white'
@@ -588,9 +589,9 @@ export const PrintSummary = (data) => {
                 style: {
                     position: 'relative',
                     zIndex: 1,
-                    padding: '4cm 1.5cm 1.5cm 1.5cm',
+                    padding: '4cm 1.5cm 2.5cm 1.5cm',
                     width: '100%',
-                    minHeight: '21cm',
+                    minHeight: '29.7cm',
                     boxSizing: 'border-box'
                 },
                 child: [
@@ -599,7 +600,7 @@ export const PrintSummary = (data) => {
                         tag: 'div',
                         style: {
                             textAlign: 'center',
-                            marginBottom: '15px',
+                            marginBottom: '20px',
                             marginTop: '5px'
                         },
                         child: [
@@ -607,19 +608,19 @@ export const PrintSummary = (data) => {
                                 tag: 'h2', 
                                 text: 'SUMMARY OF ACCEPTED RESEARCH DOCUMENTS',
                                 style: {
-                                    fontSize: '14pt',
+                                    fontSize: '16pt',
                                     fontWeight: 'bold',
-                                    margin: '3px 0',
+                                    margin: '5px 0',
                                     color: '#000'
                                 }
                             }),
                             $({ 
                                 tag: 'h3', 
-                                text: data && data[0]?.campuses[0]?.event ? data[0].campuses[0].event : 'Research Documents Summary',
+                                text: eventName || 'Research Documents Summary',
                                 style: {
-                                    fontSize: '11pt',
+                                    fontSize: '14pt',
                                     fontWeight: 'normal',
-                                    margin: '3px 0',
+                                    margin: '5px 0',
                                     color: '#333'
                                 }
                             })
@@ -636,9 +637,10 @@ export const PrintSummary = (data) => {
                             width: '100%',
                             borderCollapse: 'collapse',
                             border: '1px solid #000',
-                            fontSize: '9pt',
+                            fontSize: '8pt',
                             backgroundColor: 'white',
-                            marginBottom: '15px'
+                            marginBottom: '15px',
+                            tableLayout: 'fixed' // Keep fixed layout for better control
                         },
                         elementHandler: (el) => {
                             // Create header row
@@ -649,26 +651,38 @@ export const PrintSummary = (data) => {
                                 tag: 'th',
                                 style: { 
                                     border: '1px solid #000', 
-                                    padding: '7px', 
+                                    padding: '8px', // Increased padding
                                     backgroundColor: '#e6e6e6',
                                     fontWeight: 'bold',
                                     textAlign: 'center',
-                                    fontSize: '10pt'
+                                    fontSize: '9pt',
+                                    width: '20%', // Reduced width to give more space to categories
+                                    verticalAlign: 'middle',
+                                    wordWrap: 'break-word', // Enable text wrapping
+                                    whiteSpace: 'normal', // Allow text to wrap
+                                    lineHeight: '1.3' // Better line height for wrapped text
                                 },
                                 text: 'RESEARCH CENTER'
                             }));
                             
-                            // Category columns
+                            // Category columns - with text wrapping enabled
                             allCategories.forEach(category => {
                                 headerRow.appendChild($({
                                     tag: 'th',
                                     style: { 
                                         border: '1px solid #000', 
-                                        padding: '7px', 
+                                        padding: '8px', // Increased padding
                                         backgroundColor: '#e6e6e6',
                                         fontWeight: 'bold',
                                         textAlign: 'center',
-                                        fontSize: '10pt'
+                                        fontSize: '8pt', // Slightly smaller for wrapped text
+                                        width: '7%',
+                                        verticalAlign: 'middle',
+                                        wordWrap: 'break-word', // Enable text wrapping
+                                        whiteSpace: 'normal', // Allow text to wrap
+                                        lineHeight: '1.2', // Tighter line height for wrapped text
+                                        height: 'auto', // Allow height to adjust
+                                        minHeight: '40px' // Minimum height for headers
                                     },
                                     text: category
                                 }));
@@ -683,7 +697,12 @@ export const PrintSummary = (data) => {
                                     backgroundColor: '#e6e6e6',
                                     fontWeight: 'bold',
                                     textAlign: 'center',
-                                    fontSize: '10pt'
+                                    fontSize: '9pt',
+                                    width: '8%',
+                                    verticalAlign: 'middle',
+                                    wordWrap: 'break-word',
+                                    whiteSpace: 'normal',
+                                    lineHeight: '1.3'
                                 },
                                 text: 'TOTAL'
                             }));
@@ -706,7 +725,12 @@ export const PrintSummary = (data) => {
                                         border: '1px solid #000', 
                                         padding: '6px', 
                                         fontWeight: 'bold',
-                                        backgroundColor: centerIndex % 2 === 0 ? '#fafafa' : 'white'
+                                        backgroundColor: centerIndex % 2 === 0 ? '#fafafa' : 'white',
+                                        fontSize: '7.5pt', // Slightly smaller
+                                        wordWrap: 'break-word',
+                                        whiteSpace: 'normal',
+                                        lineHeight: '1.2',
+                                        verticalAlign: 'top'
                                     },
                                     text: centerName
                                 }));
@@ -743,7 +767,9 @@ export const PrintSummary = (data) => {
                                             textAlign: 'center',
                                             backgroundColor: centerIndex % 2 === 0 ? '#fafafa' : 'white',
                                             fontWeight: categoryTotal > 0 ? 'bold' : 'normal',
-                                            color: assignedCategories.includes(category) ? (categoryTotal > 0 ? '#000' : '#666') : '#999'
+                                            color: assignedCategories.includes(category) ? (categoryTotal > 0 ? '#000' : '#666') : '#999',
+                                            fontSize: '8pt',
+                                            verticalAlign: 'middle'
                                         },
                                         text: assignedCategories.includes(category) ? categoryTotal : '—'
                                     }));
@@ -757,7 +783,9 @@ export const PrintSummary = (data) => {
                                         padding: '6px', 
                                         textAlign: 'center', 
                                         fontWeight: 'bold',
-                                        backgroundColor: centerIndex % 2 === 0 ? '#fafafa' : 'white'
+                                        backgroundColor: centerIndex % 2 === 0 ? '#fafafa' : 'white',
+                                        fontSize: '8pt',
+                                        verticalAlign: 'middle'
                                     },
                                     text: centerTotal
                                 }));
@@ -777,7 +805,14 @@ export const PrintSummary = (data) => {
                             
                             grandTotalRow.appendChild($({
                                 tag: 'td',
-                                style: { border: '1px solid #000', padding: '7px', fontWeight: 'bold' },
+                                style: { 
+                                    border: '1px solid #000', 
+                                    padding: '8px', 
+                                    fontWeight: 'bold', 
+                                    fontSize: '8pt',
+                                    wordWrap: 'break-word',
+                                    whiteSpace: 'normal'
+                                },
                                 text: 'GRAND TOTAL'
                             }));
                             
@@ -806,14 +841,28 @@ export const PrintSummary = (data) => {
                                 
                                 grandTotalRow.appendChild($({
                                     tag: 'td',
-                                    style: { border: '1px solid #000', padding: '6px', textAlign: 'center', fontWeight: 'bold' },
+                                    style: { 
+                                        border: '1px solid #000', 
+                                        padding: '6px', 
+                                        textAlign: 'center', 
+                                        fontWeight: 'bold', 
+                                        fontSize: '8pt',
+                                        verticalAlign: 'middle'
+                                    },
                                     text: categoryGrandTotal
                                 }));
                             });
                             
                             grandTotalRow.appendChild($({
                                 tag: 'td',
-                                style: { border: '1px solid #000', padding: '6px', textAlign: 'center', fontWeight: 'bold' },
+                                style: { 
+                                    border: '1px solid #000', 
+                                    padding: '6px', 
+                                    textAlign: 'center', 
+                                    fontWeight: 'bold', 
+                                    fontSize: '8pt',
+                                    verticalAlign: 'middle'
+                                },
                                 text: finalGrandTotal
                             }));
                             
@@ -821,19 +870,18 @@ export const PrintSummary = (data) => {
                         }
                     }),
                     
-                    // Notes Section - Below the table
+                    // Notes Section
                     $({
                         tag: 'div',
                         style: {
-                            marginTop: '8px',
-                            fontSize: '8pt',
+                            marginTop: '10px',
+                            fontSize: '7pt',
                             display: 'flex',
                             justifyContent: 'space-between',
                             color: '#666',
                             fontStyle: 'italic'
                         },
                         child: [
-                            // Note about dashes
                             $({
                                 tag: 'div',
                                 style: {
@@ -850,7 +898,7 @@ export const PrintSummary = (data) => {
                                             textAlign: 'center',
                                             color: '#999',
                                             fontWeight: 'bold',
-                                            fontStyle: 'normal' // Keep dash non-italic
+                                            fontStyle: 'normal'
                                         },
                                         text: '—'
                                     }),
@@ -859,12 +907,11 @@ export const PrintSummary = (data) => {
                                         style: {
                                             fontStyle: 'italic'
                                         },
-                                        text: 'Indicates categories not assigned to this research center'
+                                        text: 'Indicates categories not assigned to the research center'
                                     })
                                 ]
                             }),
                             
-                            // Note about no data (only show if no data)
                             ...(!data || data.length === 0 ? [
                                 $({
                                     tag: 'div',
@@ -878,7 +925,7 @@ export const PrintSummary = (data) => {
                                             tag: 'span',
                                             style: {
                                                 color: '#666',
-                                                fontStyle: 'normal' // Keep icon non-italic
+                                                fontStyle: 'normal'
                                             },
                                             text: 'ⓘ'
                                         }),
@@ -894,6 +941,7 @@ export const PrintSummary = (data) => {
                             ] : [])
                         ]
                     }),
+                    
                     // Summary information
                     $({
                         tag: 'div',

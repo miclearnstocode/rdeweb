@@ -251,7 +251,7 @@
 .print-page {
     position: relative;
     width: 21cm;
-    min-height: 29.7cm;
+    height: 31cm;
     margin: 0 auto;
     background-color: white;
     page-break-after: always;
@@ -286,7 +286,7 @@
 
 .page-number {
     position: absolute;
-    bottom: 1cm;
+    bottom: 4cm;
     right: 1.5cm;
     font-size: 10pt;
     color: #666;
@@ -312,7 +312,7 @@
     .print-page {
         position: relative;
         width: 21cm;
-        min-height: 29.7cm;
+        height: 31cm;
         page-break-after: always;
         page-break-inside: avoid;
         background-color: white;
@@ -366,8 +366,9 @@
     
     .page-number {
         position: absolute;
-        bottom: 1cm;
+        bottom: 4cm;
         right: 1.5cm;
+        color: #666;
         z-index: 2;
     }
 }

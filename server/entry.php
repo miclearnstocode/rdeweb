@@ -152,64 +152,247 @@ function formatDocumentTitle($title) {
 function formatName($name) {
     if (!$name) return '';
     
-    // List of academic titles that should remain as-is (case sensitive)
-    $academicTitles = [
-        'PhD', 'MBA', 'MFT', 'MA', 'MS', 'MPH', 'DrPH', 'Ed.D.', 'DBA', 
-        'Rn', 'MD', 'DVM', 'JD', 'LLB', 'LLM', 'PharmD', 'PT', 'OT',
-        'CPA', 'CMA', 'CFA', 'PE', 'Arch'
+    // First, clean up the entire string by removing common patterns
+    
+    // Remove "by - " or "by " at the beginning
+    $name = preg_replace('/^by\s+-?\s*/i', '', $name);
+    
+    // Remove standalone dash at the beginning or end
+    $name = preg_replace('/^\s*-\s*|\s*-\s*$/', '', $name);
+    
+    // Remove dash followed by title (like "- Dr." or "-Dr.")
+    $name = preg_replace('/-\s*(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $name);
+    
+    // Remove dash followed by anything that looks like a position description
+    $name = preg_replace('/-\s*[A-Za-z\s]+$/', '', $name);
+    
+    // Remove everything after a slash (position descriptions)
+    if (strpos($name, '/') !== false) {
+        $parts = explode('/', $name);
+        // Take the first part, but also check if it contains "by" or other patterns
+        $name = trim($parts[0]);
+    }
+    
+    // Remove everything after a dash ONLY if it's followed by a space and a word that looks like a title/position
+    if (preg_match('/\s+-\s+(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Extension|Development|Research)/i', $name)) {
+        $name = trim(explode(' - ', $name)[0]);
+    }
+    
+    // Also handle dash without spaces
+    if (preg_match('/-(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Extension|Development|Research)/i', $name)) {
+        $parts = preg_split('/-(?=Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Extension|Development|Research)/i', $name);
+        $name = trim($parts[0]);
+    }
+    
+    // List of titles to remove from the beginning
+    $titlesToRemove = [
+        '^dr\.?\s+',
+        '^prof\.?\s+',
+        '^professor\s+',
+        '^assoc\.?\s*prof\.?\s+',
+        '^asso\.?\s*prof\.?\s+',
+        '^associate\s+professor\s+',
+        '^asst\.?\s*prof\.?\s+',
+        '^assistant\s+professor\s+',
+        '^instructor\s+',
+        '^lecturer\s+',
+        '^mr\.?\s+',
+        '^mrs\.?\s+',
+        '^ms\.?\s+',
+        '^miss\s+'
     ];
     
-    // Create lowercase versions for case-insensitive matching
-    $academicTitlesLower = array_map('strtolower', $academicTitles);
+    // Academic suffixes to remove from the end
+    $suffixesToRemove = [
+        ',\s*ph\.?d\.?',
+        ',\s*md',
+        ',\s*dvm',
+        ',\s*jd',
+        ',\s*llb',
+        ',\s*llm',
+        ',\s*rn',
+        ',\s*cpa',
+        ',\s*cma',
+        ',\s*cfa',
+        ',\s*pe',
+        ',\s*arch',
+        ',\s*ed\.?d\.?',
+        ',\s*dba',
+        ',\s*mph',
+        ',\s*ms',
+        ',\s*ma',
+        ',\s*mba',
+        ',\s*mft',
+        ',\s*drph',
+        ',\s*pharmd',
+        ',\s*pt',
+        ',\s*ot',
+        ',\s*ece',
+        ',\s*mcs',
+        ',\s*maed',
+        ',\s*edd',
+        '\s+iii$',
+        '\s+iv$',
+        '\s+v$',
+        '\s+vi$',
+        '\s+vii$',
+        '\s+viii$',
+        '\s+ix$',
+        '\s+x$'
+    ];
     
-    // Check if the name contains a comma (indicating title after comma)
-    if (strpos($name, ',') !== false) {
-        $parts = explode(',', $name);
-        $namePart = trim($parts[0]);
-        $titlePart = trim(implode(',', array_slice($parts, 1)));
-        
-        // Format the name part (only the name, not titles)
-        $isNameUppercase = ($namePart === strtoupper($namePart) && strlen($namePart) > 1);
-        $formattedName = $isNameUppercase 
-            ? ucwords(strtolower($namePart))
-            : $namePart;
-        
-        // Return with the title part unchanged
-        return $formattedName . ', ' . $titlePart;
+    // Remove titles from the beginning
+    foreach ($titlesToRemove as $pattern) {
+        $name = preg_replace('/' . $pattern . '/i', '', $name);
     }
     
-    // No comma - need to identify which parts are names and which are titles
-    $words = explode(' ', $name);
-    $formattedWords = [];
+    // Remove suffixes from the end
+    foreach ($suffixesToRemove as $pattern) {
+        $name = preg_replace('/' . $pattern . '$/i', '', $name);
+    }
     
-    for ($i = 0; $i < count($words); $i++) {
-        $word = $words[$i];
-        $wordLower = strtolower($word);
-        $wordWithoutPunctuation = preg_replace('/[.,]/', '', $wordLower);
+    // Remove standalone academic abbreviations that might be in the middle
+    $academicAbbr = [
+        '\s+ph\.?d\.?',
+        '\s+md',
+        '\s+dvm',
+        '\s+jd',
+        '\s+llb',
+        '\s+llm',
+        '\s+rn',
+        '\s+cpa',
+        '\s+cma',
+        '\s+cfa',
+        '\s+pe',
+        '\s+arch',
+        '\s+ed\.?d\.?',
+        '\s+dba',
+        '\s+mph',
+        '\s+ms',
+        '\s+ma',
+        '\s+mba',
+        '\s+mft',
+        '\s+drph',
+        '\s+pharmd',
+        '\s+pt',
+        '\s+ot',
+        '\s+ece',
+        '\s+mcs',
+        '\s+maed',
+        '\s+edd'
+    ];
+    
+    foreach ($academicAbbr as $pattern) {
+        $name = preg_replace('/' . $pattern . '\b/i', '', $name);
+    }
+    
+    // Remove common titles with dots
+    $name = preg_replace('/\b(Dr\.|Asso\.|Assoc\.|Asst\.|Prof\.|Professor|Instructor|Lecturer|Mr\.|Mrs\.|Ms\.)\s*/i', '', $name);
+    
+    // Trim any remaining whitespace
+    $name = trim($name);
+    
+    // Clean up multiple spaces
+    $name = preg_replace('/\s+/', ' ', $name);
+    
+    // Remove any remaining standalone dash at the beginning
+    $name = preg_replace('/^\s*-\s*/', '', $name);
+    
+    // Handle name formatting for uppercase names
+    if (preg_match('/[A-Z]{2,}/', $name)) {
+        $words = explode(' ', $name);
+        $formattedWords = [];
         
-        // Check if this word matches any academic title (case-insensitive)
-        $titleIndex = array_search($wordWithoutPunctuation, $academicTitlesLower);
-        
-        if ($titleIndex !== false) {
-            // This is an academic title - use the original casing from the list
-            $formattedWords[] = $academicTitles[$titleIndex];
-        } else {
-            // This is a name part - format it properly
+        foreach ($words as $word) {
+            // Skip empty words
+            if (empty($word)) continue;
+            
+            // Check if word is all uppercase (and longer than 1 character)
             if ($word === strtoupper($word) && strlen($word) > 1) {
-                // Word is all uppercase, convert to proper case
-                $formattedWords[] = ucwords(strtolower($word));
+                // Handle hyphenated names like "R-Jun"
+                if (strpos($word, '-') !== false) {
+                    $hyphenParts = explode('-', $word);
+                    $formattedHyphenParts = [];
+                    foreach ($hyphenParts as $part) {
+                        // If it's a single letter like "R", keep it uppercase
+                        if (strlen($part) === 1) {
+                            $formattedHyphenParts[] = strtoupper($part);
+                        } else {
+                            $formattedHyphenParts[] = ucwords(strtolower($part));
+                        }
+                    }
+                    $formattedWords[] = implode('-', $formattedHyphenParts);
+                } else {
+                    // Convert to proper case but preserve known name prefixes
+                    $lowercaseWord = strtolower($word);
+                    // Common name prefixes that should remain lowercase
+                    $prefixes = ['de', 'del', 'dela', 'van', 'von', 'da', 'do', 'dos', 'das'];
+                    if (in_array($lowercaseWord, $prefixes)) {
+                        $formattedWords[] = $lowercaseWord;
+                    } else {
+                        $formattedWords[] = ucwords($lowercaseWord);
+                    }
+                }
             } else {
-                // Keep as is (already properly formatted)
-                $formattedWords[] = $word;
+                // Handle hyphenated names that might already be mixed case
+                if (strpos($word, '-') !== false) {
+                    $hyphenParts = explode('-', $word);
+                    $formattedHyphenParts = [];
+                    foreach ($hyphenParts as $part) {
+                        if (strlen($part) === 1 && ctype_upper($part)) {
+                            $formattedHyphenParts[] = $part;
+                        } else {
+                            $formattedHyphenParts[] = ucwords(strtolower($part));
+                        }
+                    }
+                    $formattedWords[] = implode('-', $formattedHyphenParts);
+                } else {
+                    $formattedWords[] = $word;
+                }
             }
         }
+        
+        $name = implode(' ', $formattedWords);
     }
     
-    return implode(' ', $formattedWords);
+    // Final cleanup
+    $name = trim($name);
+    $name = preg_replace('/\s+/', ' ', $name);
+    $name = preg_replace('/\s*-\s*/', '-', $name); // Clean up spaces around hyphens
+    
+    return $name;
 }
 
 function formatAuthors($authors) {
     if (!$authors || !is_array($authors) || count($authors) === 0) return [];
+    
+    // Handle cases where authors might be a single string with multiple authors
+    if (count($authors) === 1) {
+        $authorString = $authors[0];
+        
+        // Split by comma, but be careful with "Dr." which contains a dot
+        // First, temporarily replace "Dr." with a placeholder
+        $authorString = str_replace('Dr.', '___DR___', $authorString);
+        
+        // Now split by comma
+        if (strpos($authorString, ',') !== false) {
+            $splitAuthors = explode(',', $authorString);
+            $result = [];
+            
+            foreach ($splitAuthors as $author) {
+                // Restore "Dr." and format
+                $author = str_replace('___DR___', 'Dr.', trim($author));
+                $result[] = formatName($author);
+            }
+            
+            return $result;
+        }
+        
+        // Restore if no split happened
+        $authorString = str_replace('___DR___', 'Dr.', $authorString);
+        return [formatName($authorString)];
+    }
+    
     return array_map('formatName', $authors);
 }
 
@@ -395,27 +578,49 @@ if(isset($_POST['perCenterReport'])){
 }
 
 if(isset($_POST['perCampReport'])){
+
     $response=[];
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
+
         $camp= ['Central Office','Roxas City Main','Dayao','Pontevedra','Pilar','Dumarao','Burias','Mambusao','Tapaz','Sigma'];
+
         foreach ($camp as $v){
+
             $obj= new stdClass();
+
             $obj->name=$v;
+
             $obj->total='0';
+
             $response[]=$obj;
+
         }
+
         $query="SELECT researchfile.id, researchfile.category,researchfile.campus,COUNT(*) as total FROM researchfile
+
         LEFT JOIN endorsement ON researchfile.endorsementid=endorsement.id
+
         WHERE endorsement.status='accepted'AND researchfile.category=? AND researchfile.event=?
+
         GROUP BY researchfile.campus ";
+
         $statement=$con->prepare($query);
+
         $statement->bind_param("ss",$_POST['category'],$_POST['eventType']);
+
         $statement->execute();
+
         $result=$statement->get_result();
+
         while ($val=$result->fetch_assoc()){
+
             for($x=0;$x<sizeof($response);$x++){
+
                 if($response[$x]->name===$val['campus']){
+
                     $response[$x]->total=$val['total'];
+
                 }
             }
         }
