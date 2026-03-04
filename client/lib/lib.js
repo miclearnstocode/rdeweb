@@ -192,7 +192,6 @@ export const Waiting = () => {
     }))
 }
 
-
 export const ConfirmationAlert = (message, eventClose) => {
     let modalContainer
     let modal

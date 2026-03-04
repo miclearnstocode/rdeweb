@@ -136,6 +136,7 @@ export const EntryView=({docId,title,eventId,centerId})=>{
     
     const SideTools=()=>{
         let BotComState=false;
+        let scoreBotState=false;
         
         const Close=()=>{
             // Create the close button container
@@ -172,7 +173,7 @@ export const EntryView=({docId,title,eventId,centerId})=>{
             `;
             label.textContent = 'Close Entry';
             
-            // Add click event
+            // Add click event to the entire container
             closeContainer.addEventListener('click', ()=>{
                 let saveState=true;
                 if(baseCheck(closeState.base,closeState.raw)){
@@ -191,13 +192,9 @@ export const EntryView=({docId,title,eventId,centerId})=>{
         }
         
         const Comment=()=>{
-            // Create button
-            const button = document.createElement('button');
-            button.className = 'fa-solid fa-file-pen';
-            button.setAttribute('title', 'Open/Close Comments Panel');
-            button.setAttribute('name', 'comment');
-            button.setAttribute('aria-hidden', 'false');
-            button.style.cssText = `
+            // Create button container (whole thing is clickable)
+            const commentContainer = document.createElement('div');
+            commentContainer.style.cssText = `
                 background-color: #333;
                 border: solid thin #bbb;
                 color: deepskyblue;
@@ -213,10 +210,14 @@ export const EntryView=({docId,title,eventId,centerId})=>{
                 flex-direction: column;
                 align-items: center;
                 padding: 10px;
+                transition: all 0.3s ease;
             `;
+            commentContainer.setAttribute('title', 'Open/Close Comments Panel');
+            commentContainer.setAttribute('name', 'comment');
             
             // Create icon span
             const icon = document.createElement('span');
+            icon.className = 'fa-solid fa-file-pen';
             
             // Create text label
             const label = document.createElement('span');
@@ -229,34 +230,33 @@ export const EntryView=({docId,title,eventId,centerId})=>{
             `;
             label.textContent = 'Comments';
             
-            // Add click event
-            button.addEventListener('click', (eve)=>{
-                BotComState=!BotComState
+            // Add click event to the entire container
+            commentContainer.addEventListener('click', (e)=>{
+                BotComState = !BotComState;
+                
+                // Change color to white when active, back to deepskyblue when inactive
                 if(BotComState){
-                    eve.target.style.color="red"
-                }else {
-                    eve.target.style.color="deepskyblue"
+                    commentContainer.style.color = "#fff";
+                    commentContainer.style.borderColor = "#fff";
+                } else {
+                    commentContainer.style.color = "deepskyblue";
+                    commentContainer.style.borderColor = "#bbb";
                 }
-                ChangePanel({name: 'comment'})
+                
+                ChangePanel({name: 'comment'});
             });
             
             // Append elements
-            button.appendChild(icon);
-            button.appendChild(label);
+            commentContainer.appendChild(icon);
+            commentContainer.appendChild(label);
             
-            return button;
+            return commentContainer;
         }
         
-        const ScoreBoard=()=>{
-            let scoreBotState=false;
-            
-            // Create button
-            const button = document.createElement('button');
-            button.className = 'fa-solid fa-chalkboard';
-            button.setAttribute('title', 'Open/Close Scoreboard Panel');
-            button.setAttribute('name', 'score');
-            button.setAttribute('aria-hidden', 'false');
-            button.style.cssText = `
+        const ScoreBoardButton=()=>{
+            // Create button container (whole thing is clickable)
+            const scoreContainer = document.createElement('div');
+            scoreContainer.style.cssText = `
                 background-color: #333;
                 border: solid thin #bbb;
                 color: deepskyblue;
@@ -273,10 +273,14 @@ export const EntryView=({docId,title,eventId,centerId})=>{
                 flex-direction: column;
                 align-items: center;
                 padding: 10px;
+                transition: all 0.3s ease;
             `;
+            scoreContainer.setAttribute('title', 'Open/Close Scoreboard Panel');
+            scoreContainer.setAttribute('name', 'score');
             
             // Create icon span
             const icon = document.createElement('span');
+            icon.className = 'fa-solid fa-chalkboard';
             
             // Create text label
             const label = document.createElement('span');
@@ -289,22 +293,27 @@ export const EntryView=({docId,title,eventId,centerId})=>{
             `;
             label.textContent = 'Scoreboard';
             
-            // Add click event
-            button.addEventListener('click', (eve)=>{
-                scoreBotState=!scoreBotState
+            // Add click event to the entire container
+            scoreContainer.addEventListener('click', (e)=>{
+                scoreBotState = !scoreBotState;
+                
+                // Change color to white when active, back to deepskyblue when inactive
                 if(scoreBotState){
-                    eve.target.style.color="red"
-                }else {
-                    eve.target.style.color="deepskyblue"
+                    scoreContainer.style.color = "#fff";
+                    scoreContainer.style.borderColor = "#fff";
+                } else {
+                    scoreContainer.style.color = "deepskyblue";
+                    scoreContainer.style.borderColor = "#bbb";
                 }
-                ChangePanel({name: 'score'})
+                
+                ChangePanel({name: 'score'});
             });
             
             // Append elements
-            button.appendChild(icon);
-            button.appendChild(label);
+            scoreContainer.appendChild(icon);
+            scoreContainer.appendChild(label);
             
-            return button;
+            return scoreContainer;
         }
         
         // Create spacer function
@@ -342,7 +351,7 @@ export const EntryView=({docId,title,eventId,centerId})=>{
         innerContainer.appendChild(Spacer());
         innerContainer.appendChild(Comment());
         innerContainer.appendChild(Spacer());
-        innerContainer.appendChild(ScoreBoard());
+        innerContainer.appendChild(ScoreBoardButton());
         
         container.appendChild(innerContainer);
         

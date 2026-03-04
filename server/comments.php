@@ -217,117 +217,44 @@ if(isset($_POST['reqCommentIndiv2'])){
     $res= new stdClass();
     $res->name='';
     $res->data='';
+    $res->isCommented=0;
+    $res->evID=null;
+    
     if ($cons = new mysqli($host, $username, $pass, $dbName)) {
-
-        switch ($_POST['comName']){
-            case 'title':
-                $query="SELECT comments.title, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='title';
-                    $res->data=$val['title'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
-            case 'abstract':
-                $query="SELECT comments.abstract, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='abstract';
-                    $res->data=$val['abstract'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
-            case 'intro':
-                $query="SELECT comments.intro, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='intro';
-                    $res->data=$val['intro'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
-            case 'objective':
-                $query="SELECT comments.objective, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='objective';
-                    $res->data=$val['objective'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
-            case 'methodology':
-                $query="SELECT comments.methodology, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='methodology';
-                    $res->data=$val['methodology'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
-            case 'results':
-                $query="SELECT comments.results, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='results';
-                    $res->data=$val['results'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
-            case 'recommendation':
-                $query="SELECT comments.recommendation, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='recommendation';
-                    $res->data=$val['recommendation'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
-            case 'literature':
-                $query="SELECT comments.literature, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='literature';
-                    $res->data=$val['literature'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
-            case 'other':
-                $query="SELECT comments.other, comments.isCommented FROM comments WHERE comments.resid=? AND comments.evalid=?";
-                $statement=$cons->prepare($query);
-                $statement->bind_param("ss", $_POST['docId'],$_SESSION['userId']);
-                $statement->execute();
-                $result=$statement->get_result();
-                while ($val=$result->fetch_assoc()){
-                    $res->name='other';
-                    $res->data=$val['other'];
-                    $res->isCommented=$val['isCommented'];
-                }
-                break;
+        $comName = $_POST['comName'];
+        $docId = $_POST['docId'];
+        $evalId = $_SESSION['userId'];
+        
+        // Map section names to database columns
+        $columnMap = [
+            'title' => 'title',
+            'abstract' => 'abstract',
+            'intro' => 'intro',
+            'objective' => 'objective',
+            'methodology' => 'methodology',
+            'results' => 'results',
+            'recommendation' => 'recommendation',
+            'literature' => 'literature',
+            'other' => 'other'
+        ];
+        
+        if (isset($columnMap[$comName])) {
+            $column = $columnMap[$comName];
+            $query = "SELECT comments.$column as data, comments.isCommented, comments.evID 
+                     FROM comments 
+                     WHERE comments.resid = ? AND comments.evalid = ?";
+            
+            $statement = $cons->prepare($query);
+            $statement->bind_param("ss", $docId, $evalId);
+            $statement->execute();
+            $result = $statement->get_result();
+            
+            while ($val = $result->fetch_assoc()) {
+                $res->name = $comName;
+                $res->data = $val['data'];
+                $res->isCommented = $val['isCommented'];
+                $res->evID = $val['evID'];
+            }
         }
     }
     echo json_encode($res);

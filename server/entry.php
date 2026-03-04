@@ -901,3 +901,83 @@ if(isset($_POST['printEntry'])){
     echo json_encode($response);
     exit();
 }
+
+if(isset($_POST['getCertificates'])) {
+    $response = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $eventName = $_POST['eventName'];
+        
+        // Get research files with accepted status for the selected event
+        $query = "SELECT 
+                    researchfile.id,
+                    researchfile.title,
+                    researchfile.category,
+                    researchfile.presenter,
+                    researchfile.author,
+                    researchfile.coauthor,
+                    researchfile.center
+                  FROM researchfile
+                  WHERE researchfile.status = 'accepted' 
+                    AND researchfile.event = ?
+                  ORDER BY researchfile.center, researchfile.category, researchfile.title";
+        
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("s", $eventName);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $certificateData = [];
+        
+        while ($row = $result->fetch_assoc()) {
+            $certItem = new stdClass();
+            $certItem->id = $row['id'];
+            $certItem->title = formatDocumentTitle($row['title']);
+            $certItem->category = $row['category'];
+            
+            // Format presenter name
+            $certItem->presenter = formatName($row['presenter'] ?: 'Not specified');
+            
+            // Combine author and coauthors
+            $researchers = [];
+            
+            // Add main author if exists
+            if (!empty($row['author'])) {
+                $researchers[] = formatName($row['author']);
+            }
+            
+            // Add coauthors if exist
+            if (!empty($row['coauthor'])) {
+                $coauthors = json_decode($row['coauthor'], true);
+                if (is_array($coauthors)) {
+                    foreach ($coauthors as $coauthor) {
+                        $researchers[] = formatName($coauthor);
+                    }
+                }
+            }
+            
+            $certItem->researchers = $researchers;
+            $certItem->center = $row['center'];
+            
+            $certificateData[] = $certItem;
+        }
+        
+        $response = [
+            'status' => 'success',
+            'event' => $eventName,
+            'data' => $certificateData,
+            'count' => count($certificateData)
+        ];
+        
+        $stmt->close();
+    } else {
+        $response = [
+            'status' => 'error',
+            'message' => 'Database connection failed'
+        ];
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}

@@ -3132,7 +3132,7 @@ export const ResearchMain = () => {
                                             </head>
                                             <body>
                                                 <div class="print-summary-container">
-                                                    ${PrintSummary(data).innerHTML}
+                                                    ${PrintSummary(data, eventDetails.name).innerHTML} <!-- Pass eventName here -->
                                                 </div>
                                             </body>
                                             </html>
@@ -3330,15 +3330,457 @@ export const ResearchMain = () => {
                         
                         return modalOverlay;
                     }
-                    // Print summary function
+                    const createCertificateModal = (eventDetails) => {
+                        // Remove existing modal if any
+                        const existingModal = document.getElementById('certificateModal');
+                        if (existingModal && existingModal.parentNode) {
+                            existingModal.parentNode.removeChild(existingModal);
+                        }
+                        
+                        // Create modal overlay using your library
+                        const modalOverlay = $({
+                            tag: 'div',
+                            att: { id: 'certificateModal' },
+                            style: {
+                                position: 'fixed',
+                                top: '0',
+                                left: '0',
+                                width: '100%',
+                                height: '100%',
+                                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                zIndex: '1000'
+                            }
+                        });
+                        
+                        // Modal content
+                        const modalContent = $({
+                            tag: 'div',
+                            style: {
+                                backgroundColor: '#2a2a2a',
+                                padding: '30px',
+                                borderRadius: '8px',
+                                width: '500px',
+                                maxWidth: '90%',
+                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                                position: 'relative',
+                                zIndex: '1001',
+                                border: '1px solid #FFD700'
+                            }
+                        });
+                        
+                        // Header
+                        const header = $({
+                            tag: 'h2',
+                            style: {
+                                margin: '0 0 20px 0',
+                                color: '#FFD700',
+                                fontSize: '22px',
+                                borderBottom: '2px solid #FFD700',
+                                paddingBottom: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                            },
+                            html: '<span class="fa-solid fa-certificate"></span> Print Certificates'
+                        });
+                        modalContent.appendChild(header);
+                        
+                        // Event info
+                        const eventInfo = $({
+                            tag: 'div',
+                            style: {
+                                marginBottom: '20px',
+                                padding: '10px',
+                                backgroundColor: '#333',
+                                borderRadius: '5px',
+                                color: '#bbb',
+                                fontSize: '14px',
+                                borderLeft: '3px solid #FFD700'
+                            },
+                            html: `<strong>Event:</strong> ${eventDetails.name}`
+                        });
+                        modalContent.appendChild(eventInfo);
+                        
+                        // Form fields - Only date and venue (president is in background)
+                        const fields = [
+                            { id: 'certDateToBeHeld', label: 'Date of Event:', placeholder: 'e.g., March 2-3, 2026' },
+                            { id: 'certVenue', label: 'Venue:', placeholder: 'e.g., CAPSU Conference Room, Roxas City, Capiz' }
+                        ];
+                        
+                        fields.forEach(field => {
+                            const fieldDiv = $({
+                                tag: 'div',
+                                style: {
+                                    marginBottom: '15px',
+                                    width: '100%'
+                                }
+                            });
+                            
+                            const label = $({
+                                tag: 'label',
+                                att: { htmlFor: field.id },
+                                style: {
+                                    display: 'block',
+                                    marginBottom: '5px',
+                                    color: '#FFD700',
+                                    fontSize: '14px',
+                                    fontWeight: 'bold'
+                                },
+                                text: field.label
+                            });
+                            fieldDiv.appendChild(label);
+                            
+                            const input = $({
+                                tag: 'input',
+                                att: {
+                                    type: 'text',
+                                    id: field.id,
+                                    placeholder: field.placeholder,
+                                    value: field.value || ''
+                                },
+                                style: {
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    border: '1px solid #555',
+                                    borderRadius: '4px',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box',
+                                    backgroundColor: '#333',
+                                    color: '#fff'
+                                }
+                            });
+                            fieldDiv.appendChild(input);
+                            modalContent.appendChild(fieldDiv);
+                        });
+                        
+                        // Button container
+                        const buttonDiv = $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '10px',
+                                marginTop: '20px'
+                            }
+                        });
+                        
+                        // Cancel button
+                        const cancelBtn = $({
+                            tag: 'button',
+                            text: 'Cancel',
+                            style: {
+                                padding: '10px 20px',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                backgroundColor: '#444',
+                                color: '#bbb',
+                                transition: 'all 0.3s'
+                            },
+                            event: {
+                                type: 'click',
+                                method: (e) => {
+                                    e.stopPropagation();
+                                    if (modalOverlay.parentNode) {
+                                        modalOverlay.parentNode.removeChild(modalOverlay);
+                                    }
+                                }
+                            }
+                        });
+                        buttonDiv.appendChild(cancelBtn);
+                        
+                        // Print button
+                        const printBtn = $({
+                            tag: 'button',
+                            style: {
+                                padding: '10px 20px',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                backgroundColor: '#FFD700',
+                                color: '#2a2a2a',
+                                transition: 'all 0.3s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            },
+                            html: '<span class="fa-solid fa-print"></span> Generate Certificates',
+                            event: {
+                                type: 'click',
+                                method: (e) => {
+                                    e.stopPropagation();
+                                    
+                                    // Get form data - only date and venue
+                                    const formData = {
+                                        dateToBeHeld: document.getElementById('certDateToBeHeld')?.value || '',
+                                        venue: document.getElementById('certVenue')?.value || ''
+                                    };
+                                    
+                                    // Validate required fields
+                                    if (!formData.dateToBeHeld || !formData.venue) {
+                                        alert('Please fill in all required fields');
+                                        return;
+                                    }
+                                    
+                                    // Remove modal
+                                    if (modalOverlay.parentNode) {
+                                        modalOverlay.parentNode.removeChild(modalOverlay);
+                                    }
+                                    
+                                    // Call certificate generation function
+                                    generateCertificates(eventDetails, formData);
+                                }
+                            }
+                        });
+                        buttonDiv.appendChild(printBtn);
+                        modalContent.appendChild(buttonDiv);
+                        modalOverlay.appendChild(modalContent);
+                        
+                        // Close on overlay click
+                        modalOverlay.event = {
+                            type: 'click',
+                            method: (e) => {
+                                if (e.target === modalOverlay) {
+                                    if (modalOverlay.parentNode) {
+                                        modalOverlay.parentNode.removeChild(modalOverlay);
+                                    }
+                                }
+                            }
+                        };
+                        
+                        return modalOverlay;
+                    };
+                    const generateCertificates = (eventDetails, formData) => {
+                        // Show loading using Waiting() function
+                        let loading = Waiting();
+                        document.body.appendChild(loading);
+                        
+                        // Define remove function
+                        const removeLoading = () => {
+                            if (loading && loading.parentNode) {
+                                loading.parentNode.removeChild(loading);
+                            }
+                        };
+                        
+                        // Fetch certificate data
+                        const req = new Request('/entrycount');
+                        req.Post([
+                            { name: 'getCertificates', value: '1' },
+                            { name: 'eventName', value: eventDetails.name }
+                        ]);
+                        req.Json();
+                        
+                        req.Send().then(response => {
+                            // Check if response is valid
+                            if (!response) {
+                                removeLoading();
+                                alert('No response from server');
+                                return;
+                            }
+                            
+                            // Check for error status
+                            if (response.status === 'error') {
+                                removeLoading();
+                                alert('Error: ' + (response.message || 'Failed to load certificate data'));
+                                return;
+                            }
+                            
+                            // Check if data exists
+                            if (!response.data || response.data.length === 0) {
+                                removeLoading();
+                                alert('No accepted research files found for this event');
+                                return;
+                            }
+                            
+                            // Open print window
+                            let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
+                            
+                            if (!WinPrint) {
+                                removeLoading();
+                                alert('Popup blocked! Please allow popups for this site and try again.');
+                                return;
+                            }
+                            
+                            // Set up interval to check when print window is closed
+                            const checkWindowClosed = setInterval(() => {
+                                if (WinPrint.closed) {
+                                    clearInterval(checkWindowClosed);
+                                    removeLoading();
+                                    console.log('Print window closed - loading removed');
+                                }
+                            }, 500);
+                            
+                            // Also handle unload event
+                            WinPrint.onunload = function() {
+                                clearInterval(checkWindowClosed);
+                                removeLoading();
+                            };
+                            
+                            // Write HTML with script reference
+                            WinPrint.document.write(`
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                    <title>Certificates - ${eventDetails.name}</title>
+                                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                                    <style>
+                                        body {
+                                            margin: 0;
+                                            padding: 0;
+                                            background-color: #333;
+                                            font-family: Arial, sans-serif;
+                                        }
+                                        @media print {
+                                            body {
+                                                background-color: white;
+                                            }
+                                            .no-print {
+                                                display: none !important;
+                                            }
+                                        }
+                                        .print-controls {
+                                            position: fixed;
+                                            bottom: 20px;
+                                            right: 20px;
+                                            z-index: 1000;
+                                            display: flex;
+                                            gap: 10px;
+                                        }
+                                        .print-btn {
+                                            padding: 12px 24px;
+                                            background-color: #FFD700;
+                                            color: #2a2a2a;
+                                            border: none;
+                                            border-radius: 5px;
+                                            font-size: 16px;
+                                            font-weight: bold;
+                                            cursor: pointer;
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 8px;
+                                            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                                        }
+                                        .print-btn:hover {
+                                            background-color: #FFC800;
+                                        }
+                                        .certificate-container {
+                                            padding: 20px;
+                                        }
+                                        .certificate-page {
+                                            position: relative;
+                                            width: 29.7cm;
+                                            height: 21cm;
+                                            page-break-after: always;
+                                            page-break-inside: avoid;
+                                            margin: 0 auto;
+                                            overflow: hidden;
+                                            background: white;
+                                        }
+                                        .certificate-background {
+                                            position: absolute;
+                                            top: 0;
+                                            left: 0;
+                                            width: 100%;
+                                            height: 100%;
+                                            z-index: 1;
+                                        }
+                                        .certificate-background img {
+                                            width: 100%;
+                                            height: 100%;
+                                            object-fit: cover;
+                                            display: block;
+                                        }
+                                        .certificate-content {
+                                            position: absolute;
+                                            top: 0;
+                                            left: 0;
+                                            width: 100%;
+                                            height: 100%;
+                                            z-index: 2;
+                                            display: flex;
+                                            flex-direction: column;
+                                            justify-content: center;
+                                            align-items: center;
+                                            text-align: center;
+                                            font-family: 'Times New Roman', serif;
+                                            box-sizing: border-box;
+                                            padding: 20px;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class="print-controls no-print">
+                                        <button class="print-btn" onclick="window.print()">
+                                            <i class="fa-solid fa-print"></i> Print Certificates
+                                        </button>
+                                    </div>
+                                    <div id="certificate-container" class="certificate-container"></div>
+                                    
+                                    <script src="/client/component/otherComponent/researchCertificates.js?v=${Date.now()}"></script>
+                                    <script>
+                                        // Wait for script to load then render certificates
+                                        function renderCertificatesWithRetry() {
+                                            if (window.renderCertificates) {
+                                                window.renderCertificates(
+                                                    document.getElementById('certificate-container'),
+                                                    ${JSON.stringify(response.data)},
+                                                    {
+                                                        event: ${JSON.stringify(eventDetails.name)},
+                                                        date: ${JSON.stringify(formData.dateToBeHeld)},
+                                                        venue: ${JSON.stringify(formData.venue)},
+                                                        backgroundImage: '/client/images/certBackground.png'
+                                                    }
+                                                );
+                                                
+                                                // Automatically show print dialog after a short delay
+                                                setTimeout(function() {
+                                                    window.print();
+                                                }, 1500);
+                                            } else {
+                                                // Retry after a short delay
+                                                setTimeout(renderCertificatesWithRetry, 100);
+                                            }
+                                        }
+                                        
+                                        // Start rendering
+                                        setTimeout(renderCertificatesWithRetry, 300);
+                                    </script>
+                                </body>
+                                </html>
+                            `);
+                            
+                            WinPrint.document.close();
+                            
+                        }).catch(error => {
+                            removeLoading();
+                            alert('Error: ' + error.message);
+                        });
+                    };
                     const printResearchSummary = (eventDetails, formData) => {
-                        const req = new Request('/entrycount')
+                        let loading = Waiting();
+                        document.body.appendChild(loading);
+                        
+                        const removeLoading = () => {
+                            if (loading && loading.parentNode) {
+                                loading.parentNode.removeChild(loading);
+                            }
+                        };
+                        
+                        const req = new Request('/entrycount');
                         req.Post([
                             { name: 'printEntry', value: '1' },
                             { name: 'eventName', value: eventDetails.name }
-                        ])
+                        ]);
                         req.Json();
+                        
                         req.Send().then(data => {
+                            removeLoading();
                             
                             let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
                             
@@ -3360,7 +3802,7 @@ export const ResearchMain = () => {
                                     }).innerHTML}
                                 </body>
                                 </html>
-                            `)
+                            `);
                             
                             WinPrint.document.close();
                             
@@ -3369,35 +3811,100 @@ export const ResearchMain = () => {
                                     WinPrint.focus();
                                     WinPrint.print();
                                 }, 500);
-                            }
+                            };
                         }).catch(error => {
+                            removeLoading();
                             alert('Error loading research entries. Please try again.');
-                        })
-                    }
+                        });
+                    };
                     // Research entry clickable div - this calls the modal
                     const researchEntry = (eventDetails) => {
                         return ($({
                             tag: 'div',
                             style: {
-                                marginTop: '4vh',
+                                marginTop: '2vh',
                                 width: '100%',
                                 textAlign: 'center',
                                 fontSize: '1.1vw',
                                 color: 'deepskyblue',
                                 cursor: 'pointer',
-                                fontFamily: "Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif"
+                                fontFamily: "Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif",
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: '20px'
                             },
-                            text: 'Print Research Entry Summary',
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    // Call the modal creator
-                                    const modal = createPrintModal(eventDetails);
-                                    document.body.appendChild(modal);
-                                }
-                            }
+                            child: [
+                                // Print Research Entry Summary button
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        padding: '10px 20px',
+                                        backgroundColor: '#2a2a2a',
+                                        border: '1px solid deepskyblue',
+                                        borderRadius: '5px',
+                                        transition: 'all 0.3s',
+                                        ':hover': {
+                                            backgroundColor: '#333',
+                                            transform: 'translateY(-2px)'
+                                        }
+                                    },
+                                    text: 'Print Research Entry Summary',
+                                    event: {
+                                        type: 'click',
+                                        method: (e) => {
+                                            e.stopPropagation();
+                                            const modal = createPrintModal(eventDetails);
+                                            document.body.appendChild(modal);
+                                        }
+                                    }
+                                }),
+                                
+                                // Print Certificates button (NEW)
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        padding: '10px 20px',
+                                        backgroundColor: '#2a2a2a',
+                                        border: '1px solid #FFD700', // Gold color
+                                        borderRadius: '5px',
+                                        transition: 'all 0.3s',
+                                        ':hover': {
+                                            backgroundColor: '#333',
+                                            transform: 'translateY(-2px)'
+                                        }
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: {
+                                                className: 'fa-solid fa-certificate'
+                                            },
+                                            style: {
+                                                marginRight: '8px',
+                                                color: '#FFD700'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: 'Print Certificates',
+                                            style: {
+                                                color: '#FFD700'
+                                            }
+                                        })
+                                    ],
+                                    event: {
+                                        type: 'click',
+                                        method: (e) => {
+                                            e.stopPropagation();
+                                            const certModal = createCertificateModal(eventDetails);
+                                            document.body.appendChild(certModal);
+                                        }
+                                    }
+                                })
+                            ]
                         }))
                     }
+                    
                     const SelectEvent = () => {
                         let selVal
                         
@@ -3562,7 +4069,6 @@ export const ResearchMain = () => {
                                                 bodCon.appendChild(printSummary(eventTypeName))
                                                 bodCon.appendChild(researchEntry(eventTypeName))
                                             }).catch(error => {
-                                                console.error('Error loading data:', error)
                                                 bodCon.innerHTML = ''
                                                 bodCon.appendChild($({
                                                     tag: 'div',

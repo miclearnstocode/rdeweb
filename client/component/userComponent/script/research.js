@@ -1,7 +1,7 @@
 import {$, ConfirmationAlert, Request, TimeConvert, Waiting} from '../../../lib/lib.js'
 import {Error as ErrorComponent} from "../../../error.js";
 import {Print} from "../../otherComponent/comment.js";
-import { handleResubmit, submitResubmit } from './resubmit.js';
+import { handleResubmit } from './resubmit.js';
 
 const isGoogleDriveUrl = (url) => {
     if (!url) return false
@@ -17,7 +17,7 @@ const CreateNew = () => {
         research: []
     }
     
-    // Add form validation state as plain objects
+    // Add form validation state as plain
     const formState = {
         isValid: false,
         errors: {
@@ -1988,11 +1988,6 @@ const Submitted = () => {
                                 iframe.allow = 'autoplay'
                                 iframe.title = 'Google Drive Document Viewer'
                                 
-                                // Add error handling
-                                iframe.onload = () => {
-                                    console.log('Google Drive iframe loaded')
-                                }
-                                
                                 iframe.onerror = () => {
                                     // If iframe fails, show alternative options
                                     el.innerHTML = `
@@ -2530,7 +2525,6 @@ const Submitted = () => {
                                         method: ()=>{
                                             if (researchPaper && researchPaper.length > 0) {
                                                 const researchFileId = researchPaper[0].docId; // Get the researchfile ID
-                                                console.log('Resubmitting - Endorsement ID:', docId, 'Research File ID:', researchFileId);
                                                 handleResubmit(docId, endorsement, researchFileId);
                                             } else {
                                                 // Fallback to just endorsement ID
@@ -3498,7 +3492,6 @@ const Submitted = () => {
                                                 ])
                                                 req.Json()
                                                 req.Send().then(data=>{
-                                                    console.log('API Response:', data);
                                                     const campusName = data.length > 0 ? data[0].campus : "No campus specified";
                                                     bodCo.appendChild(comments(data, campusName))
                                                 })
@@ -4094,13 +4087,6 @@ const Submitted = () => {
                                         }
                                         
                                         form.append('eventId', eventId);
-                                        
-                                        console.log('Loading files for event:', {
-                                            displayText: text,
-                                            cleanName: cleanEventName,
-                                            eventId: eventId
-                                        });
-                                        
                                         const response = await fetch('/uploadResearchFile', {
                                             method: 'POST',
                                             body: form,
@@ -4113,7 +4099,6 @@ const Submitted = () => {
                                         
                                         if (response.ok) {
                                             const data = await response.json();
-                                            console.log('Response data:', data);
                                             
                                             if (!abortController.signal.aborted) {
                                                 bod.innerHTML = '';
