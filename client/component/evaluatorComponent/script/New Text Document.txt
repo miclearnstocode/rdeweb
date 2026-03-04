@@ -1,13 +1,5 @@
 import {$, ConfirmationAlert, Request, Waiting} from '../../../lib/lib.js'
 
-
-
-
-
-
-
-
-
 export const Search=(method)=>{
 
 

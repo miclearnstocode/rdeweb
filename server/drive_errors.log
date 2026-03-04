@@ -203,3 +203,1435 @@
 [26-Feb-2026 13:14:22 Asia/Manila] Successfully moved file to trash: 1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9
 [26-Feb-2026 13:14:22 Asia/Manila] Successfully trashed file: 1vCZe9--NkwWuonS3SzjDJt0KAB62KWc9
 [26-Feb-2026 13:14:22 Asia/Manila] Deleted 0 comments for research IDs: 519
+[03-Mar-2026 21:57:36 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[03-Mar-2026 21:57:36 Asia/Manila] Title: Trial
+[03-Mar-2026 21:57:36 Asia/Manila] Author: Michael Estorque
+[03-Mar-2026 21:57:36 Asia/Manila] Event: 38th University Faculty In-House Review
+[03-Mar-2026 21:57:36 Asia/Manila] Center: Extension (Extension)
+[03-Mar-2026 21:57:36 Asia/Manila] Category: Extension
+[03-Mar-2026 21:57:36 Asia/Manila] Uploading endorsement: program_inHouse.pdf
+[03-Mar-2026 21:57:36 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_Trial
+[03-Mar-2026 21:57:44 Asia/Manila] Uploading endorsement file: program_inHouse.pdf to folder: 1aqZocjwigy3lFLl0BIgwPBVhfiV575_X
+[03-Mar-2026 21:57:48 Asia/Manila] Making file public: 1tYPw1TEtRSJfATq20xugYPAQq6tYEwkE
+[03-Mar-2026 21:57:48 Asia/Manila] File 1tYPw1TEtRSJfATq20xugYPAQq6tYEwkE is already public
+[03-Mar-2026 21:57:48 Asia/Manila] endorsement file upload successful: program_inHouse.pdf
+[03-Mar-2026 21:57:48 Asia/Manila] Endorsement uploaded successfully: 1tYPw1TEtRSJfATq20xugYPAQq6tYEwkE
+[03-Mar-2026 21:57:48 Asia/Manila] Endorsement saved to DB with ID: 522
+[03-Mar-2026 21:57:48 Asia/Manila] Uploading research: research_paper.pdf
+[03-Mar-2026 21:57:48 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_Trial
+[03-Mar-2026 21:57:51 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1aqZocjwigy3lFLl0BIgwPBVhfiV575_X
+[03-Mar-2026 21:57:54 Asia/Manila] Making file public: 1BjrXZvJwJoLV-4ZtDjgdtuWMiZc2lWwc
+[03-Mar-2026 21:57:54 Asia/Manila] File 1BjrXZvJwJoLV-4ZtDjgdtuWMiZc2lWwc is already public
+[03-Mar-2026 21:57:54 Asia/Manila] research file upload successful: research_paper.pdf
+[03-Mar-2026 21:57:54 Asia/Manila] Research uploaded successfully: 1BjrXZvJwJoLV-4ZtDjgdtuWMiZc2lWwc
+[03-Mar-2026 21:57:54 Asia/Manila] Uploading program: endorsement.pdf
+[03-Mar-2026 21:57:54 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_Trial
+[03-Mar-2026 21:57:56 Asia/Manila] Uploading program file: endorsement.pdf to folder: 1aqZocjwigy3lFLl0BIgwPBVhfiV575_X
+[03-Mar-2026 21:57:59 Asia/Manila] Making file public: 1PQjRAXKrHhYQuSnm6rkwhjw9Ms2qOcne
+[03-Mar-2026 21:58:00 Asia/Manila] File 1PQjRAXKrHhYQuSnm6rkwhjw9Ms2qOcne is already public
+[03-Mar-2026 21:58:00 Asia/Manila] program file upload successful: endorsement.pdf
+[03-Mar-2026 21:58:00 Asia/Manila] Program uploaded successfully: 1PQjRAXKrHhYQuSnm6rkwhjw9Ms2qOcne
+[03-Mar-2026 21:58:00 Asia/Manila] Number of columns in query: 23
+[03-Mar-2026 21:58:00 Asia/Manila] Number of variables to bind: 23
+[03-Mar-2026 21:58:35 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 21:58:35 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 21:58:35 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 21:58:35 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 21:58:38 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 21:58:38 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 21:58:38 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 21:58:38 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:03:44 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:03:44 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:03:44 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:03:44 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:08:42 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:08:42 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:08:42 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:08:43 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:11:22 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:11:22 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:11:22 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:11:22 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:18:33 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:18:33 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:18:33 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:18:33 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:18:36 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:18:36 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:18:36 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:18:36 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:20:09 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:20:09 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:20:09 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:20:09 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:22:30 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:22:30 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:22:30 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:22:30 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:32:18 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:32:18 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:32:18 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:32:18 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:40:57 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:40:57 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:40:57 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:40:57 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:42:42 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:42:42 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:42:42 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:42:42 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:46:12 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:46:12 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:46:12 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:46:12 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:50:24 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:50:24 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:50:24 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:50:24 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[03-Mar-2026 22:50:52 Asia/Manila] Evaluator center (session): Extension (Extension)
+[03-Mar-2026 22:50:52 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[03-Mar-2026 22:50:52 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[03-Mar-2026 22:50:52 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 08:43:11 Asia/Manila] PHP Warning:  Undefined array key "eventId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 707
+[04-Mar-2026 08:43:11 Asia/Manila] PHP Warning:  Undefined array key "userName" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 708
+[04-Mar-2026 08:43:11 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 709
+[04-Mar-2026 08:43:11 Asia/Manila] Evaluator center (session): 
+[04-Mar-2026 08:43:11 Asia/Manila] Looking for researchfiles with center: Crop Science Research & Developement Center
+[04-Mar-2026 08:43:11 Asia/Manila] Found 0 research files for center: Crop Science Research & Developement Center
+[04-Mar-2026 08:44:35 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 08:44:35 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 08:44:35 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 08:44:35 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 08:44:37 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 08:44:37 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 08:44:37 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 08:44:37 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 10:15:16 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 10:15:16 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 10:15:16 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 10:15:16 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 10:34:45 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 10:34:45 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 10:34:45 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 10:34:45 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:16:24 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:16:24 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:16:24 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:16:24 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:16:44 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:942
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(942): mysqli->prepare('SELECT id FROM ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 942
+[04-Mar-2026 11:19:17 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:19:17 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:19:17 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:19:17 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:19:40 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:942
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(942): mysqli->prepare('SELECT id FROM ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 942
+[04-Mar-2026 11:20:25 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:20:25 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:20:25 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:20:25 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:20:47 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:942
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(942): mysqli->prepare('SELECT id FROM ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 942
+[04-Mar-2026 11:22:55 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:22:55 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:22:55 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:22:55 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:23:16 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:952
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(952): mysqli->prepare('SELECT id FROM ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 952
+[04-Mar-2026 11:29:24 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:29:24 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:29:24 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:29:24 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:37:15 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:37:15 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:37:15 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:37:15 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:37:33 Asia/Manila] === updateReview called ===
+[04-Mar-2026 11:37:33 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => 
+    [intro] => 
+    [abstract] => 
+    [objective] => 
+    [methodology] => 
+    [results] => 
+    [recommendation] => 
+    [literature] => 
+    [other] => 
+    [docId] => 520
+)
+
+[04-Mar-2026 11:37:33 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 11:37:33 Asia/Manila] eventId: 13
+[04-Mar-2026 11:37:33 Asia/Manila] Comment data - title: '', intro: '', abstract: ''
+[04-Mar-2026 11:37:33 Asia/Manila] Comments exist: yes
+[04-Mar-2026 11:37:33 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 11:37:33 Asia/Manila] Binding values: title='', intro='', abstract='', objective='', methodology='', results='', recommendation='', literature='', other='', docsId='520', evalId='232'
+[04-Mar-2026 11:37:33 Asia/Manila] UPDATE successful
+[04-Mar-2026 11:37:33 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"No email sent: No comments were added.","userName":"jlegaspi"}
+[04-Mar-2026 11:40:19 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:40:19 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:40:19 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:40:19 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:40:38 Asia/Manila] === updateReview called ===
+[04-Mar-2026 11:40:38 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => 
+    [intro] => 
+    [abstract] => 
+    [objective] => 
+    [methodology] => 
+    [results] => 
+    [recommendation] => 
+    [literature] => 
+    [other] => 
+    [docId] => 520
+)
+
+[04-Mar-2026 11:40:38 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 11:40:38 Asia/Manila] eventId: 13
+[04-Mar-2026 11:40:38 Asia/Manila] Comment data - title: '', intro: '', abstract: ''
+[04-Mar-2026 11:40:38 Asia/Manila] Comments exist: yes
+[04-Mar-2026 11:40:38 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 11:40:38 Asia/Manila] Binding values: title='', intro='', abstract='', objective='', methodology='', results='', recommendation='', literature='', other='', docsId='520', evalId='232'
+[04-Mar-2026 11:40:38 Asia/Manila] UPDATE successful
+[04-Mar-2026 11:40:38 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"No email sent: No comments were added.","userName":"jlegaspi"}
+[04-Mar-2026 11:44:24 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:44:24 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:44:24 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:44:24 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:44:48 Asia/Manila] === updateReview called ===
+[04-Mar-2026 11:44:48 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => zdfvzsdfvzdfv
+    [intro] => vb zdgfbzdv
+    [abstract] => dgzvdfbvzfv
+    [objective] => xcbvb zdf z
+    [methodology] => fdvzxc zx
+    [results] => cbzfdbzf
+    [recommendation] => xfvbzdfvzxfvz
+    [literature] => bvzdfbzfb
+    [other] => fbzfcbzf
+    [docId] => 520
+)
+
+[04-Mar-2026 11:44:48 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 11:44:48 Asia/Manila] eventId: 13
+[04-Mar-2026 11:44:48 Asia/Manila] Comment data - title: 'zdfvzsdfvzdfv', intro: 'vb zdgfbzdv', abstract: 'dgzvdfbvzfv'
+[04-Mar-2026 11:44:48 Asia/Manila] Comments exist: yes
+[04-Mar-2026 11:44:48 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 11:44:48 Asia/Manila] Binding values: title='zdfvzsdfvzdfv', intro='vb zdgfbzdv', abstract='dgzvdfbvzfv', objective='xcbvb zdf z', methodology='fdvzxc zx', results='cbzfdbzf', recommendation='xfvbzdfvzxfvz', literature='bvzdfbzfb', other='fbzfcbzf', docsId='520', evalId='232'
+[04-Mar-2026 11:44:48 Asia/Manila] UPDATE successful
+[04-Mar-2026 11:44:48 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Failed to send email: Message could not be sent. Mailer Error: Invalid address:  (From): ","userName":"jlegaspi"}
+[04-Mar-2026 11:46:03 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:46:03 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:46:03 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:46:03 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:46:37 Asia/Manila] === updateReview called ===
+[04-Mar-2026 11:46:37 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => sfSFDeSEFSEF
+    [intro] => XDVzfvbxfv
+    [abstract] => VDSVsDVSDvzdfvzdf
+    [objective] => zfbzgbzgbzdgb
+    [methodology] => ncgnxcvb bgb
+    [results] => xfbzcvbzcvb
+    [recommendation] => zcvbgncgbzcv
+    [literature] => cvbxcgncgnbzc
+    [other] => xcvnxcgbxcgb
+    [docId] => 520
+)
+
+[04-Mar-2026 11:46:37 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 11:46:37 Asia/Manila] eventId: 13
+[04-Mar-2026 11:46:37 Asia/Manila] Comment data - title: 'sfSFDeSEFSEF', intro: 'XDVzfvbxfv', abstract: 'VDSVsDVSDvzdfvzdf'
+[04-Mar-2026 11:46:37 Asia/Manila] Comments exist: yes
+[04-Mar-2026 11:46:37 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 11:46:37 Asia/Manila] Binding values: title='sfSFDeSEFSEF', intro='XDVzfvbxfv', abstract='VDSVsDVSDvzdfvzdf', objective='zfbzgbzgbzdgb', methodology='ncgnxcvb bgb', results='xfbzcvbzcvb', recommendation='zcvbgncgbzcv', literature='cvbxcgncgnbzc', other='xcvnxcgbxcgb', docsId='520', evalId='232'
+[04-Mar-2026 11:46:37 Asia/Manila] UPDATE successful
+[04-Mar-2026 11:46:37 Asia/Manila] PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function sendCommentEmail(), 6 passed in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1008 and exactly 8 expected in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1097
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1008): sendCommentEmail(Object(mysqli), 'JOCELY LEGASPI', Array, Array, '520', 232)
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1097
+[04-Mar-2026 11:52:17 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 11:52:17 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 11:52:17 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 11:52:17 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 11:52:59 Asia/Manila] === updateReview called ===
+[04-Mar-2026 11:52:59 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay
+    [intro] => Then&nbsp;
+    [abstract] => Tapos
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 11:52:59 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 11:52:59 Asia/Manila] eventId: 13
+[04-Mar-2026 11:52:59 Asia/Manila] Comment data - title: 'Okay', intro: 'Then&nbsp;', abstract: 'Tapos'
+[04-Mar-2026 11:52:59 Asia/Manila] Comments exist: yes
+[04-Mar-2026 11:52:59 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 11:52:59 Asia/Manila] Binding values: title='Okay', intro='Then&nbsp;', abstract='Tapos', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 11:52:59 Asia/Manila] UPDATE successful
+[04-Mar-2026 11:53:03 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 12:18:58 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 12:18:58 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 12:18:58 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 12:18:58 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 12:19:05 Asia/Manila] === updateReview called ===
+[04-Mar-2026 12:19:05 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay kaayu
+    [intro] => Then&nbsp;
+    [abstract] => Tapos
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 12:19:05 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 12:19:05 Asia/Manila] eventId: 13
+[04-Mar-2026 12:19:05 Asia/Manila] Comment data - title: 'Okay kaayu', intro: 'Then&nbsp;', abstract: 'Tapos'
+[04-Mar-2026 12:19:05 Asia/Manila] Comments exist: yes
+[04-Mar-2026 12:19:05 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 12:19:05 Asia/Manila] Binding values: title='Okay kaayu', intro='Then&nbsp;', abstract='Tapos', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 12:19:05 Asia/Manila] UPDATE successful
+[04-Mar-2026 12:19:09 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 12:19:09 Asia/Manila] === updateReview called ===
+[04-Mar-2026 12:19:09 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay kaayu
+    [intro] => Then&nbsp;
+    [abstract] => Tapos
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 12:19:09 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 12:19:09 Asia/Manila] eventId: 13
+[04-Mar-2026 12:19:09 Asia/Manila] Comment data - title: 'Okay kaayu', intro: 'Then&nbsp;', abstract: 'Tapos'
+[04-Mar-2026 12:19:09 Asia/Manila] Comments exist: yes
+[04-Mar-2026 12:19:09 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 12:19:09 Asia/Manila] Binding values: title='Okay kaayu', intro='Then&nbsp;', abstract='Tapos', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 12:19:09 Asia/Manila] UPDATE successful
+[04-Mar-2026 12:19:13 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 12:53:58 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 12:53:58 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 12:53:58 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 12:53:58 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 12:55:28 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 12:55:28 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 12:55:28 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 12:55:28 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 12:56:42 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 12:56:42 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 12:56:42 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 12:56:42 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 12:57:04 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 12:57:04 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 12:57:04 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 12:57:04 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 12:57:47 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 12:57:47 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 12:57:47 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 12:57:47 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 12:57:49 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 12:57:49 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 12:57:49 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 12:57:49 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 12:58:00 Asia/Manila] === updateReview called ===
+[04-Mar-2026 12:58:00 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay kaayu
+    [intro] => Then&nbsp;
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 12:58:00 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 12:58:00 Asia/Manila] eventId: 13
+[04-Mar-2026 12:58:00 Asia/Manila] Comment data - title: 'Okay kaayu', intro: 'Then&nbsp;', abstract: 'Tapos na gid man?'
+[04-Mar-2026 12:58:00 Asia/Manila] Comments exist: yes
+[04-Mar-2026 12:58:00 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 12:58:00 Asia/Manila] Binding values: title='Okay kaayu', intro='Then&nbsp;', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 12:58:00 Asia/Manila] UPDATE successful
+[04-Mar-2026 12:58:03 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:18:11 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:18:11 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:18:11 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:18:11 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:18:21 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:18:21 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay kaayu
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:18:21 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:18:21 Asia/Manila] eventId: 13
+[04-Mar-2026 13:18:21 Asia/Manila] Comment data - title: 'Okay kaayu', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:18:21 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:18:21 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:18:21 Asia/Manila] Binding values: title='Okay kaayu', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:18:21 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:18:25 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:20:12 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:20:12 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:20:12 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:20:12 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:20:20 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:20:20 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay kaayu kag
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:20:20 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:20:20 Asia/Manila] eventId: 13
+[04-Mar-2026 13:20:20 Asia/Manila] Comment data - title: 'Okay kaayu kag', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:20:20 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:20:20 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:20:20 Asia/Manila] Binding values: title='Okay kaayu kag', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:20:20 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:20:24 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:25:26 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:25:26 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:25:26 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:25:26 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:25:53 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:25:53 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:25:53 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:25:53 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:26:34 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:26:34 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:26:34 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:26:34 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:26:36 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:26:36 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:26:36 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:26:36 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:32:17 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:32:17 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:32:17 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:32:17 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:33:37 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:33:37 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:33:37 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:33:37 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:33:47 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:33:47 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:33:47 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:33:47 Asia/Manila] eventId: 13
+[04-Mar-2026 13:33:47 Asia/Manila] Comment data - title: 'Okay nani', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:33:47 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:33:47 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:33:47 Asia/Manila] Binding values: title='Okay nani', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:33:47 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:33:50 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:34:28 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:34:28 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:34:28 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:34:28 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:36:00 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:36:00 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:36:00 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:36:00 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:36:06 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:36:06 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:36:06 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:36:06 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:36:14 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:36:14 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:36:14 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:36:14 Asia/Manila] eventId: 13
+[04-Mar-2026 13:36:14 Asia/Manila] Comment data - title: 'Okay nani guro', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:36:14 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:36:14 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:36:14 Asia/Manila] Binding values: title='Okay nani guro', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:36:14 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:36:18 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:44:47 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:44:47 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:44:47 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:44:47 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:44:55 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:44:55 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro ah
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:44:55 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:44:55 Asia/Manila] eventId: 13
+[04-Mar-2026 13:44:55 Asia/Manila] Comment data - title: 'Okay nani guro ah', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:44:55 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:44:55 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:44:55 Asia/Manila] Binding values: title='Okay nani guro ah', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:44:55 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:44:58 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:45:10 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:45:10 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:45:10 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:45:10 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:46:41 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:46:41 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:46:41 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:46:41 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:46:44 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:46:44 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:46:44 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:46:44 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:46:50 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:46:50 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro&nbsp;
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:46:50 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:46:50 Asia/Manila] eventId: 13
+[04-Mar-2026 13:46:50 Asia/Manila] Comment data - title: 'Okay nani guro&nbsp;', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:46:50 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:46:50 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:46:50 Asia/Manila] Binding values: title='Okay nani guro&nbsp;', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:46:50 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:46:53 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:51:18 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:51:18 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:51:18 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:51:18 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:51:26 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:51:26 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro mo
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:51:26 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:51:26 Asia/Manila] eventId: 13
+[04-Mar-2026 13:51:26 Asia/Manila] Comment data - title: 'Okay nani guro mo', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:51:26 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:51:26 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:51:26 Asia/Manila] Binding values: title='Okay nani guro mo', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:51:26 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:51:30 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:55:06 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:55:06 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:55:06 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:55:06 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:55:12 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:55:12 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro mo sige
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:55:12 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:55:12 Asia/Manila] eventId: 13
+[04-Mar-2026 13:55:12 Asia/Manila] Comment data - title: 'Okay nani guro mo sige', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:55:12 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:55:12 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:55:12 Asia/Manila] Binding values: title='Okay nani guro mo sige', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:55:12 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:55:16 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 13:57:10 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 13:57:10 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 13:57:10 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 13:57:10 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 13:57:16 Asia/Manila] === updateReview called ===
+[04-Mar-2026 13:57:16 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro mo
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 13:57:16 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 13:57:16 Asia/Manila] eventId: 13
+[04-Mar-2026 13:57:16 Asia/Manila] Comment data - title: 'Okay nani guro mo', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 13:57:16 Asia/Manila] Comments exist: yes
+[04-Mar-2026 13:57:16 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 13:57:16 Asia/Manila] Binding values: title='Okay nani guro mo', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 13:57:16 Asia/Manila] UPDATE successful
+[04-Mar-2026 13:57:19 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:15:45 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:15:45 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:15:45 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:15:45 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:17:24 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:17:24 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:17:24 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:17:24 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:17:27 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:17:27 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:17:27 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:17:27 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:19:00 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:19:00 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:19:00 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:19:00 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:19:42 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:19:42 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:19:42 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:19:42 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:20:06 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:20:06 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:20:06 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:20:06 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:20:07 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:20:07 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:20:07 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:20:07 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:22:22 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:22:22 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:22:22 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:22:22 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:22:29 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:22:29 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro mo a
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:22:29 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:22:29 Asia/Manila] eventId: 13
+[04-Mar-2026 14:22:29 Asia/Manila] Comment data - title: 'Okay nani guro mo a', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:22:29 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:22:29 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:22:29 Asia/Manila] Binding values: title='Okay nani guro mo a', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:22:29 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:22:33 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:23:01 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:23:01 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:23:01 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:23:01 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:23:05 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:23:05 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro mo
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:23:05 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:23:05 Asia/Manila] eventId: 13
+[04-Mar-2026 14:23:05 Asia/Manila] Comment data - title: 'Okay nani guro mo', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:23:05 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:23:05 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:23:05 Asia/Manila] Binding values: title='Okay nani guro mo', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:23:05 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:23:08 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:29:23 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:29:23 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:29:23 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:29:23 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:29:34 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:29:34 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro mo ah
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:29:34 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:29:34 Asia/Manila] eventId: 13
+[04-Mar-2026 14:29:34 Asia/Manila] Comment data - title: 'Okay nani guro mo ah', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:29:34 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:29:34 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:29:34 Asia/Manila] Binding values: title='Okay nani guro mo ah', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:29:34 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:29:38 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:29:38 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:29:38 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro mo ah
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:29:38 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:29:38 Asia/Manila] eventId: 13
+[04-Mar-2026 14:29:38 Asia/Manila] Comment data - title: 'Okay nani guro mo ah', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:29:38 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:29:38 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:29:38 Asia/Manila] Binding values: title='Okay nani guro mo ah', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:29:38 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:29:41 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:31:38 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:31:38 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:31:38 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:31:38 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:31:48 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:31:48 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:31:48 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:31:48 Asia/Manila] eventId: 13
+[04-Mar-2026 14:31:48 Asia/Manila] Comment data - title: 'Okay nani guro', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:31:48 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:31:48 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:31:48 Asia/Manila] Binding values: title='Okay nani guro', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:31:48 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:31:52 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:37:46 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:37:46 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:37:46 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:37:46 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:38:19 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:38:19 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:38:19 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:38:19 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:38:20 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:38:20 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:38:20 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:38:20 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:38:27 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:38:27 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro AH
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:38:27 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:38:27 Asia/Manila] eventId: 13
+[04-Mar-2026 14:38:27 Asia/Manila] Comment data - title: 'Okay nani guro AH', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:38:27 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:38:27 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:38:27 Asia/Manila] Binding values: title='Okay nani guro AH', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:38:27 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:38:30 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:38:40 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:38:40 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:38:40 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:38:40 Asia/Manila] eventId: 13
+[04-Mar-2026 14:38:40 Asia/Manila] Comment data - title: 'Okay nani guro', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:38:40 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:38:40 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:38:40 Asia/Manila] Binding values: title='Okay nani guro', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:38:40 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:38:43 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:41:31 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:41:31 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:41:31 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:41:31 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:41:37 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:41:37 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro a
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:41:37 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:41:37 Asia/Manila] eventId: 13
+[04-Mar-2026 14:41:37 Asia/Manila] Comment data - title: 'Okay nani guro a', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:41:37 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:41:37 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:41:37 Asia/Manila] Binding values: title='Okay nani guro a', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:41:37 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:41:40 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:43:30 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:43:30 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:43:30 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:43:30 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:43:44 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:43:44 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:43:44 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:43:44 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:43:45 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:43:45 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:43:45 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:43:45 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:43:47 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:43:47 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:43:47 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:43:47 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:44:05 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:44:05 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:44:05 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:44:05 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:44:08 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:44:08 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:44:08 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:44:08 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:44:10 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:44:10 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:44:10 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:44:10 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:44:21 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:44:21 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:44:21 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:44:21 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:45:52 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:45:52 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:45:52 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:45:52 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:45:57 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:45:57 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro agh
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:45:57 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:45:57 Asia/Manila] eventId: 13
+[04-Mar-2026 14:45:57 Asia/Manila] Comment data - title: 'Okay nani guro agh', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:45:57 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:45:57 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:45:57 Asia/Manila] Binding values: title='Okay nani guro agh', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:45:57 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:46:00 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:46:06 Asia/Manila] === updateReview called ===
+[04-Mar-2026 14:46:06 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Okay nani guro
+    [intro] => Then hay?
+    [abstract] => Tapos na gid man?
+    [objective] => Sige
+    [methodology] => Liwat
+    [results] => Hay
+    [recommendation] => Dasun
+    [literature] => Oh ti?
+    [other] => Waay naman
+    [docId] => 520
+)
+
+[04-Mar-2026 14:46:06 Asia/Manila] evalId: 232, docsId: 520
+[04-Mar-2026 14:46:06 Asia/Manila] eventId: 13
+[04-Mar-2026 14:46:06 Asia/Manila] Comment data - title: 'Okay nani guro', intro: 'Then hay?', abstract: 'Tapos na gid man?'
+[04-Mar-2026 14:46:06 Asia/Manila] Comments exist: yes
+[04-Mar-2026 14:46:06 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-Mar-2026 14:46:06 Asia/Manila] Binding values: title='Okay nani guro', intro='Then hay?', abstract='Tapos na gid man?', objective='Sige', methodology='Liwat', results='Hay', recommendation='Dasun', literature='Oh ti?', other='Waay naman', docsId='520', evalId='232'
+[04-Mar-2026 14:46:06 Asia/Manila] UPDATE successful
+[04-Mar-2026 14:46:10 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"jlegaspi"}
+[04-Mar-2026 14:47:10 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:47:10 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:47:10 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:47:10 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:47:11 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:47:11 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:47:11 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:47:11 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 14:58:32 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 14:58:32 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 14:58:32 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 14:58:32 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:03:28 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:03:28 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:03:28 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:03:28 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:03:31 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:03:31 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:03:31 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:03:31 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:07:16 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:07:16 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:07:16 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:07:16 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:08:51 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:08:51 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:08:51 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:08:51 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:10:35 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:10:35 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:10:35 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:10:35 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:10:38 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:10:38 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:10:38 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:10:38 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:17:19 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:17:19 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:17:19 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:17:19 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:17:21 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:17:21 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:17:21 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:17:21 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:17:23 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:17:23 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:17:23 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:17:23 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:18:06 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:18:06 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:18:06 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:18:06 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:19:19 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:19:19 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:19:19 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:19:19 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:21:06 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:21:06 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:21:06 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:21:06 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:21:29 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:21:29 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:21:29 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:21:29 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[04-Mar-2026 15:24:33 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-Mar-2026 15:24:33 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-Mar-2026 15:24:33 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
+[04-Mar-2026 15:24:33 Asia/Manila] Found 1 research files for center: Extension (Extension)

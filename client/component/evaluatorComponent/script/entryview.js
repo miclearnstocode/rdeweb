@@ -51,8 +51,6 @@ export const EntryView=({docId,title,eventId,centerId})=>{
     const CloseState=({base,raw})=>{
         closeState={base,raw}
     }
-
-
     const MainPanel=(fileUrl)=>{
         // Check if this is a Google Drive URL
         const isGoogleDrive = fileUrl.includes('drive.google.com');
@@ -80,6 +78,7 @@ export const EntryView=({docId,title,eventId,centerId})=>{
                 padding:'.5rem',
                 borderRadius:'.5rem',
                 display:'flex',
+                overflowY: 'hidden'
             },
             child:[
                 $({
@@ -129,7 +128,6 @@ export const EntryView=({docId,title,eventId,centerId})=>{
                         })
                     ]
                 }),
-
             ]
         }))
     }
@@ -333,6 +331,7 @@ export const EntryView=({docId,title,eventId,centerId})=>{
             border: solid thin #bbb;
             display: flex;
             border-radius: 10px;
+            overflow-y: hidden;
         `;
         
         // Create inner container
@@ -367,7 +366,8 @@ export const EntryView=({docId,title,eventId,centerId})=>{
             top:'0',
             left:'0',
             display:'flex',
-            backgroundColor:'#333'
+            backgroundColor:'#333',
+            overflowY: 'hidden'
         },
         elementHandler:(el)=>{
             // Changed endpoint from '/entrycount' to match backend

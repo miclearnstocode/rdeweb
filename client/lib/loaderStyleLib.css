@@ -1,17 +1,15 @@
-.mainLoaderBase{
+.mainLoaderBase {
     position: absolute;
     top: 0;
-    left:0;
+    left: 0;
     display: flex;
     justify-content: center;
     height: 100%;
     width: 100%;
- background-image: radial-gradient(rgba(100,100,100,0.5),black);
+    background-image: radial-gradient(rgba(160, 190, 200, 0.4), #1a3a3a);
 }
 
-
 #loading-wrapper {
-
     width: 100%;
     height: 100%;
     left: 0;
@@ -23,13 +21,14 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    color: deepskyblue;
+    color: #7ac7c7;
     width: 100px;
     height: 30px;
     text-align: center;
     font-family: 'PT Sans Narrow', sans-serif;
     font-size: 30px;
     margin: -60px 0 0 -85px;
+    text-shadow: 0 0 10px rgba(122, 199, 199, 0.3);
 }
 
 #loading-content {
@@ -37,37 +36,43 @@
     position: relative;
     left: 50%;
     top: 50%;
+    border-radius: 20px;
     width: 300px;
     height: 300px;
     margin: -200px 0 0 -200px;
-    border: 3px solid #F00;
-    background-color:rgba(0,0,0,0.3)
+    border: 3px solid #9bb0b0;
+    background-color: rgba(30, 50, 50, 0.3);
+    box-shadow: 0 0 30px rgba(122, 199, 199, 0.2);
 }
 
 #loading-content:after {
     content: "";
     position: absolute;
-    border: 3px solid #0F0;
+    border: 3px solid #96c0b0;
     left: 15px;
     right: 15px;
     top: 15px;
+    border-radius: 20px;
     bottom: 15px;
+    box-shadow: inset 0 0 15px rgba(150, 192, 176, 0.2);
 }
 
 #loading-content:before {
     content: "";
     position: absolute;
-    border: 3px solid #00F;
+    border: 3px solid #b8d9d0;
     left: 5px;
     right: 5px;
     top: 5px;
+    border-radius: 20px;
     bottom: 5px;
+    box-shadow: inset 0 0 10px rgba(184, 217, 208, 0.2);
 }
 
 #loading-content {
     border: 1rem solid transparent;
-    border-top-color: blue;
-    border-bottom-color: blue;
+    border-top-color: #7ac7c7;
+    border-bottom-color: #9bb0b0;
     border-radius: 50%;
     -webkit-animation: loader 2s linear infinite;
     -moz-animation: loader 2s linear infinite;
@@ -76,9 +81,9 @@
 }
 
 #loading-content:before {
-    border:3px solid transparent;
-    border-top-color: orange;
-    border-bottom-color: orange;
+    border: 3px solid transparent;
+    border-top-color: #b8d9d0;
+    border-bottom-color: #96c0b0;
     border-radius: 50%;
     -webkit-animation: loader 3s linear infinite;
     -moz-animation: loader 2s linear infinite;
@@ -88,8 +93,8 @@
 
 #loading-content:after {
     border: 1rem solid transparent;
-    border-top-color: green;
-    border-bottom-color: green;
+    border-top-color: #96c0b0;
+    border-bottom-color: #b8d9d0;
     border-radius: 50%;
     -webkit-animation: loader 1.5s linear infinite;
     animation: loader 1.5s linear infinite;

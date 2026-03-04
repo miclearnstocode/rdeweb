@@ -50,7 +50,7 @@ export const CommentBoard = ({title, docId, closeState}) => {
             backgroundColor: '#1e1e1e',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden'
+            overflowY: 'hidden'
         }
     });
 
