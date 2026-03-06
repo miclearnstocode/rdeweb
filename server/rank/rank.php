@@ -1054,3 +1054,249 @@ function getEvalByCategory($con, $eventId, $categoryId) {
     
     return $response;
 }
+
+/**
+ * GET AVERAGE RANK ACROSS ALL EVALUATORS
+ */
+if(isset($_POST['getAverageRank'])) {
+    $response = ['success' => false, 'data' => null, 'error' => ''];
+    
+    if($con = new mysqli($host, $username, $pass, $dbName)) {
+        $con->set_charset('utf8mb4');
+        
+        $eventId = $_POST['eventId'];
+        $categoryId = $_POST['categoryId'];
+        $isNewSystem = ($eventId >= 13);
+        
+        try {
+            // STEP 1: GET EVENT AND CATEGORY DETAILS
+            $eventName = getEventName($con, $eventId);
+            
+            // Get category/center name
+            $categoryName = '';
+            $systemType = $isNewSystem ? 'Center' : 'Category';
+            $centerCode = '';
+            
+            if ($categoryId && $categoryId != '0') {
+                if ($isNewSystem) {
+                    $catQuery = "SELECT name, code FROM center WHERE id = ?";
+                    $catStmt = $con->prepare($catQuery);
+                    $catStmt->bind_param("i", $categoryId);
+                    $catStmt->execute();
+                    $catResult = $catStmt->get_result();
+                    if ($catRow = $catResult->fetch_assoc()) {
+                        $categoryName = $catRow['name'];
+                        $centerCode = $catRow['code'] ?? '';
+                    }
+                    $catStmt->close();
+                } else {
+                    $catQuery = "SELECT name FROM category WHERE id = ?";
+                    $catStmt = $con->prepare($catQuery);
+                    $catStmt->bind_param("i", $categoryId);
+                    $catStmt->execute();
+                    $catResult = $catStmt->get_result();
+                    if ($catRow = $catResult->fetch_assoc()) {
+                        $categoryName = $catRow['name'];
+                    }
+                    $catStmt->close();
+                }
+            } else {
+                $categoryName = $isNewSystem ? 'All Centers' : 'All Categories';
+            }
+            
+            // STEP 2: GET EVALUATOR DATA
+            $evaluatorData = [];
+            if ($isNewSystem) {
+                $evaluatorData = getEvalByCenter($con, $eventId, $categoryId);
+            } else {
+                $evaluatorData = getEvalByCategory($con, $eventId, $categoryId);
+            }
+            
+            if (empty($evaluatorData)) {
+                throw new Exception('No evaluator data found');
+            }
+            
+            // STEP 3: COLLECT ALL UNIQUE DOCUMENTS
+            $allDocuments = [];
+            $documentColumns = [];
+            
+            foreach ($evaluatorData as $evalItem) {
+                $docs = $evalItem->docs ?? $evalItem['docs'];
+                foreach ($docs as $doc) {
+                    $docId = $doc->file['id'] ?? $doc['file']['id'];
+                    if (!isset($allDocuments[$docId])) {
+                        $allDocuments[$docId] = [
+                            'id' => $docId,
+                            'title' => $doc->file['title'] ?? $doc['file']['title'],
+                            'author' => $doc->file['author'] ?? $doc['file']['author'] ?? '',
+                            'campus' => $doc->file['campus'] ?? $doc['file']['campus'] ?? '',
+                            'category' => $doc->file['category'] ?? $doc['file']['category'] ?? '',
+                            'center' => $doc->file['center'] ?? $doc['file']['center'] ?? ''
+                        ];
+                    }
+                }
+            }
+            
+            // Sort documents and assign columns
+            $documentIds = array_keys($allDocuments);
+            sort($documentIds);
+            
+            foreach ($documentIds as $index => $docId) {
+                $documentColumns[$docId] = $index + 1;
+            }
+            
+            // STEP 4: CALCULATE RANKS PER EVALUATOR
+            $evaluatorRanks = [];
+            $allRankings = []; // Store all ranks for averaging
+            
+            foreach ($evaluatorData as $evalIndex => $evalItem) {
+                $evaluator = $evalItem->evaluator ?? $evalItem['evaluator'];
+                $docs = $evalItem->docs ?? $evalItem['docs'];
+                $evalId = $evaluator['id'] ?? $evaluator->id;
+                $evalName = $evaluator['fullname'] ?? $evaluator->fullname;
+                
+                // Create document score map for this evaluator
+                $docScores = [];
+                foreach ($docs as $doc) {
+                    $docId = $doc->file['id'] ?? $doc['file']['id'];
+                    $docScores[$docId] = $doc->TotalScore ?? $doc['TotalScore'];
+                }
+                
+                // Prepare scores for ranking
+                $scoresForRanking = [];
+                foreach ($documentIds as $docId) {
+                    $score = $docScores[$docId] ?? 0;
+                    $scoresForRanking[] = [
+                        'doc_id' => $docId,
+                        'score' => $score,
+                        'column' => $documentColumns[$docId]
+                    ];
+                }
+                
+                // Sort by score descending
+                usort($scoresForRanking, function($a, $b) {
+                    return $b['score'] - $a['score'];
+                });
+                
+                // Calculate ranks with tie handling
+                $currentIndex = 0;
+                $count = count($scoresForRanking);
+                
+                while ($currentIndex < $count) {
+                    $tieGroup = [$scoresForRanking[$currentIndex]];
+                    $tieCount = 1;
+                    
+                    // Find all ties
+                    for ($j = $currentIndex + 1; $j < $count; $j++) {
+                        if ($scoresForRanking[$j]['score'] == $scoresForRanking[$currentIndex]['score']) {
+                            $tieGroup[] = $scoresForRanking[$j];
+                            $tieCount++;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    // Assign same rank to all tied items
+                    $rank = $currentIndex + 1;
+                    
+                    foreach ($tieGroup as $item) {
+                        $docId = $item['doc_id'];
+                        
+                        // Store per-evaluator rank
+                        if (!isset($evaluatorRanks[$docId])) {
+                            $evaluatorRanks[$docId] = [];
+                        }
+                        
+                        $evaluatorRanks[$docId][] = [
+                            'evaluator_id' => $evalId,
+                            'evaluator_name' => $evalName,
+                            'evaluator_number' => $evalIndex + 1,
+                            'rank' => $rank,
+                            'score' => $item['score']
+                        ];
+                        
+                        // Store for averaging
+                        if (!isset($allRankings[$docId])) {
+                            $allRankings[$docId] = [];
+                        }
+                        $allRankings[$docId][] = $rank;
+                    }
+                    
+                    $currentIndex += $tieCount;
+                }
+            }
+            
+            // STEP 5: CALCULATE AVERAGE RANKS
+            $averageRanks = [];
+            foreach ($documentIds as $docId) {
+                if (isset($allRankings[$docId]) && !empty($allRankings[$docId])) {
+                    $ranks = $allRankings[$docId];
+                    $sum = array_sum($ranks);
+                    $count = count($ranks);
+                    $average = $sum / $count;
+                    
+                    // Format to 1 decimal place
+                    $formattedAverage = round($average, 1);
+                    
+                    $averageRanks[$docId] = [
+                        'doc_id' => $docId,
+                        'title' => $allDocuments[$docId]['title'],
+                        'column' => $documentColumns[$docId],
+                        'ranks' => $ranks,
+                        'average' => $average,
+                        'formatted_average' => $formattedAverage,
+                        'sum' => $sum,
+                        'count' => $count
+                    ];
+                }
+            }
+            
+            // Sort average ranks by average (lower is better)
+            uasort($averageRanks, function($a, $b) {
+                if ($a['average'] == $b['average']) return 0;
+                return ($a['average'] < $b['average']) ? -1 : 1;
+            });
+            
+            // Add final rank position based on average
+            $finalPosition = 1;
+            foreach ($averageRanks as $docId => &$rankData) {
+                $rankData['final_rank'] = $finalPosition++;
+            }
+            
+            // STEP 6: BUILD RESPONSE
+            $response['success'] = true;
+            $response['data'] = [
+                'event' => [
+                    'name' => $eventName,
+                    'id' => $eventId
+                ],
+                'category' => [
+                    'name' => $categoryName,
+                    'type' => $systemType,
+                    'code' => $centerCode,
+                    'id' => $categoryId
+                ],
+                'documents' => $allDocuments,
+                'document_columns' => $documentColumns,
+                'evaluator_ranks' => $evaluatorRanks,
+                'average_ranks' => $averageRanks,
+                'summary' => [
+                    'total_evaluators' => count($evaluatorData),
+                    'total_documents' => count($documentIds),
+                    'generated_at' => date('Y-m-d H:i:s')
+                ]
+            ];
+            
+        } catch (Exception $e) {
+            error_log("getAverageRank Error: " . $e->getMessage());
+            $response['error'] = $e->getMessage();
+        }
+        
+        $con->close();
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
+}

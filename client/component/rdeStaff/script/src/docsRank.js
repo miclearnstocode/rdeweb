@@ -11,7 +11,7 @@ export const RankDocs = ({evalName, docList}) => {
         
         // Use Total if provided, otherwise use calculated total
         const finalTotal = (Total !== undefined && !isNaN(Total) && Total !== null) ? 
-                          Total : calculatedTotal;
+                        Total : calculatedTotal;
 
         const CriteriaList = criteria.map(data => {
             const score = parseFloat(data.score) || 0;

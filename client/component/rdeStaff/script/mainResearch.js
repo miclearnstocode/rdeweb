@@ -7,10 +7,6 @@ import {FinalRanking, RankPerCriteria, ScoreRankAVe} from "./src/rankAlgo.js";
 import {Summary} from "./src/Summary.js";
 import {PrintResearch} from "../../otherComponent/researchSummary.js";
 
-import {SummaryDocs} from "./src/RankSummary.js";
-import {TableScore} from "./src/docsScoreTable.js";
-import {ScoreRank} from "./src/RankingController.js";
-
 export const ResearchMain = () => {
     let mainFrame, leftPdiv
     const getMainFrame = (el) => {
@@ -6344,18 +6340,22 @@ export const ResearchMain = () => {
                 },
                 child:[
                     $({
-                        tag:'a',
-                        style:{
+                        tag: 'button',
+                        style: {
                             width:'fit-content',
                             height:'fit-content',
                             marginRight:'2vw',
                             marginLeft:'1vw',
-                            border:'solid thin #bbb',
+                            border:'solid thin deepskyblue',
                             paddingLeft:'.5vw',
                             paddingRight:'.5vw',
                             borderRadius:'.5rem',
                             backgroundColor: '#222',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column', 
+                            alignItems: 'center',
+                            justifyContent: 'center'
                         },
                         child:[
                             $({
@@ -6364,13 +6364,14 @@ export const ResearchMain = () => {
                                 style:{
                                     fontSize:'1vw',
                                     fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    color: '#bbb'
+                                    color: 'deepskyblue',
+                                    textDecoration: 'hidden'
                                 }
                             }),
                             $({
                                 tag:'div',
                                 att:{
-                                    className:'fa-solid fa-left-long'
+                                    className:'fa fa-arrow-left'
                                 },
                                 style:{
                                     margin:'auto',
@@ -6381,13 +6382,16 @@ export const ResearchMain = () => {
                                 }
                             })
                         ],
-                        att:{
-                            href:'/rdeOffice/research/research'
+                        event: {  // Add click event instead of href
+                            type: 'click',
+                            method: () => {
+                                window.location.href = '/rdeOffice/research/research';
+                            }
                         }
                     }),
                     $({
                         tag:'div',
-                        text:'Score Summary and Ranking',// here the summary and ranking page
+                        text:'Score Summary and Ranking',
                         style:{
                             margin:'auto',
                             marginLeft:'1vw',
