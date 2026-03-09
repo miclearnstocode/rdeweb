@@ -4,16 +4,32 @@ const encodeUser = () => {
     const accountData = {
         center: '',
         gmail: '',
-        userType: 'Center Director'
+        userType: 'Center Director', // Default user type
+        campus: ''
     }
 
     const getData = {
         getCenter: (value) => {
             accountData.center = value
+            
+            // Set userType based on center selection
+            if (value === 'Extension') {
+                accountData.userType = 'Extension Campus Chair'
+            } else {
+                accountData.userType = 'Center Director'
+                // Clear campus when switching from Extension to other centers
+                accountData.campus = ''
+            }
+            
+            updateCampusField(value) // Show/hide campus field based on selection
             validateForm()
         },
         getGmail: (value) => {
             accountData.gmail = value
+            validateForm()
+        },
+        getCampus: (value) => {
+            accountData.campus = value
             validateForm()
         }
     }
@@ -23,18 +39,23 @@ const encodeUser = () => {
         const submitBtn = document.getElementById('centerDirectorSubmitBtn')
         if (!submitBtn) return
         
-        const isValid = 
+        let isValid = 
             accountData.center.trim() !== '' &&
             accountData.gmail.trim() !== ''
+        
+        // Add campus validation if Extension is selected
+        if (accountData.center === 'Extension') {
+            isValid = isValid && accountData.campus && accountData.campus.trim() !== ''
+        }
         
         submitBtn.disabled = !isValid
     }
 
     const label = $({
         tag: 'div',
-        text: 'Center Director Account Registration',
+        text: 'Center Director / Extension Campus Chair Account Registration',
         att: {
-            className: 'form-label' // Add class instead of inline style
+            className: 'form-label'
         }
     })
 
@@ -51,13 +72,13 @@ const encodeUser = () => {
                 }
             },
             att: {
-                className: 'selectAddUser', // Use class only
+                className: 'selectAddUser',
                 id: 'centerSelection'
             },
             child: [
                 $({
                     tag: 'option',
-                    text: '-- Select Center --',
+                    text: '-- Select Center--',
                     att: {
                         disabled: true,
                         selected: true,
@@ -110,7 +131,7 @@ const encodeUser = () => {
         return ($({
             tag: 'div',
             att: {
-                className: 'input-container' // Add class
+                className: 'input-container'
             },
             child: [selectEl]
         }))
@@ -150,6 +171,57 @@ const encodeUser = () => {
         }))
     }
 
+    // Campus input component (only shown for Extension)
+    const campusInput = () => {
+        return input({
+            prop: {
+                type: 'text',
+                placeholder: 'Enter Campus Name (e.g., Burias, Pontevedra, Roxas City Main, etc.)',
+                className: 'inputAddUser',
+                id: 'campusInput'
+            },
+            getDataMethod: getData.getCampus,
+            filter: true
+        })
+    }
+
+    // Store reference to campus field container
+    let campusFieldContainer = null
+
+    // Function to create campus field
+    const createCampusField = () => {
+        return campusInput()
+    }
+
+    // Function to update campus field visibility
+    const updateCampusField = (centerValue) => {
+        const container = document.querySelector('.encodeUser-container')
+        if (!container) return
+        
+        // Find the position after the select element
+        const selectContainer = container.querySelector('.input-container')
+        
+        // Remove existing campus field if any
+        const existingCampus = document.getElementById('campusFieldContainer')
+        if (existingCampus) {
+            existingCampus.remove()
+            campusFieldContainer = null
+        }
+        
+        // Add campus field if Extension is selected (right after the select)
+        if (centerValue === 'Extension') {
+            campusFieldContainer = createCampusField()
+            campusFieldContainer.id = 'campusFieldContainer'
+            
+            // Insert campus field after the select container
+            if (selectContainer && selectContainer.nextSibling) {
+                selectContainer.parentNode.insertBefore(campusFieldContainer, selectContainer.nextSibling)
+            } else if (selectContainer) {
+                selectContainer.parentNode.appendChild(campusFieldContainer)
+            }
+        }
+    }
+
     const Submit = () => {
         return ($({
             tag: 'button',
@@ -169,8 +241,15 @@ const encodeUser = () => {
                         return
                     }
                     
+                    // Validation
                     if (accountData.center.trim() === '' || accountData.gmail.trim() === '') {
-                        alert("Please select a center and enter Gmail address!")
+                        alert("Please select a center/campus and enter Gmail address!")
+                        return
+                    }
+                    
+                    // Validate campus for Extension
+                    if (accountData.center === 'Extension' && (!accountData.campus || accountData.campus.trim() === '')) {
+                        alert("Please enter campus name for Extension Campus Chair!")
                         return
                     }
                     
@@ -187,13 +266,24 @@ const encodeUser = () => {
                     submitBtn.disabled = true
                     
                     try {
-                        const req = new Request('/addcapaccount')
-                        req.Post([
+                        // Prepare form data
+                        const formData = [
                             { name: 'registerAccount', value: 'true' },
                             { name: 'email', value: accountData.gmail },
                             { name: 'accountName', value: accountData.userType },
                             { name: 'center', value: accountData.center }
-                        ])
+                        ]
+                        
+                        // Add campus to form data if Extension
+                        if (accountData.center === 'Extension' && accountData.campus) {
+                            formData.push({ name: 'campus', value: accountData.campus })
+                        } else {
+                            // For non-Extension centers, set campus to empty string or null
+                            formData.push({ name: 'campus', value: '' })
+                        }
+                        
+                        const req = new Request('/addcapaccount')
+                        req.Post(formData)
                         req.Json()
                         
                         const data = await req.Send()
@@ -221,10 +311,11 @@ const encodeUser = () => {
         }))
     }
 
-    return ($({
+    // Create the main container
+    const container = $({
         tag: 'div',
         att: {
-            className: 'encodeUser-container' // Add class
+            className: 'encodeUser-container'
         },
         child: [
             label,
@@ -232,7 +323,7 @@ const encodeUser = () => {
             input({
                 prop: {
                     type: 'email',
-                    placeholder: 'Enter Center Director Gmail account',
+                    placeholder: 'Enter Gmail account',
                     className: 'inputAddUser',
                     id: 'gmailInput'
                 },
@@ -240,7 +331,17 @@ const encodeUser = () => {
             }),
             Submit()
         ]
-    }))
+    })
+
+    // Store reference to the container for later use
+    setTimeout(() => {
+        // If Extension was previously selected (e.g., on page load), show campus field
+        if (accountData.center === 'Extension') {
+            updateCampusField('Extension')
+        }
+    }, 100)
+
+    return container
 }
 
 const encodeEvaluator = () => {
