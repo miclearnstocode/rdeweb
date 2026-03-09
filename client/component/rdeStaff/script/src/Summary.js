@@ -218,7 +218,7 @@ export const Summary = () => {
         })
     }
 
-    //Main Content - EXACT EXCEL FORMAT WITH AVERAGE RANKS
+    // Main Content - EXACT EXCEL FORMAT WITH AVERAGE RANKS
     const createContent = (data) => {
         if (!data) return $({ tag: 'div', text: 'No data available' })
         
@@ -248,7 +248,7 @@ export const Summary = () => {
             }
         })
 
-        //  HEADER SECTION - DYNAMIC EVENT TITLE 
+        // HEADER SECTION - DYNAMIC EVENT TITLE 
         wrapper.appendChild($({
             tag: 'div',
             style: {
@@ -310,18 +310,34 @@ export const Summary = () => {
         //total table width
         const totalTableWidth = criteriaColWidth + (scoreColWidth * documentCount);
         
-        //  CENTERED TABLE WRAPPER 
-        const centerWrapper = $({
-            tag: 'div',
-            style: {
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-            }
-        });
+        // Fetch final rank data FIRST
+        let finalRankData = null;
         
-        //  EVALUATOR SHEETS 
+        // Create a synchronous XMLHttpRequest to get final rank data
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/ranking', false); // false makes it synchronous
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        
+        const params = new URLSearchParams({
+            getFinalRank: '1',
+            eventId: eventId,
+            categoryId: categoryId
+        }).toString();
+        
+        xhr.send(params);
+        
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    finalRankData = response.data;
+                }
+            } catch (e) {
+                console.error('Error parsing final rank data:', e);
+            }
+        }
+        
+        // EVALUATOR SHEETS 
         if (data.evaluators && Array.isArray(data.evaluators)) {
             data.evaluators.forEach((evaluatorSheet, evalIndex) => {
                 const evaluator = evaluatorSheet.evaluator
@@ -376,7 +392,7 @@ export const Summary = () => {
                     }
                 });
 
-                //  CRITERIA ROW (Column Headers) 
+                // CRITERIA ROW (Column Headers) 
                 const criteriaRow = $({
                     tag: 'div',
                     style: {
@@ -427,7 +443,7 @@ export const Summary = () => {
                 })
                 tableContainer.appendChild(criteriaRow)
 
-                //  TITLE ROW 
+                // TITLE ROW 
                 const titleRow = $({
                     tag: 'div',
                     style: {
@@ -484,7 +500,7 @@ export const Summary = () => {
                 })
                 tableContainer.appendChild(titleRow)
 
-                //  CRITERIA SCORE ROWS 
+                // CRITERIA SCORE ROWS 
                 if (evaluatorSheet.criteria_rows && Array.isArray(evaluatorSheet.criteria_rows)) {
                     evaluatorSheet.criteria_rows.forEach((criteriaRow, critIndex) => {
                         const scoreRow = $({
@@ -549,7 +565,7 @@ export const Summary = () => {
                     })
                 }
                 
-                //  TOTAL ROW 
+                // TOTAL ROW 
                 const totalRow = $({
                     tag: 'div',
                     style: {
@@ -595,7 +611,7 @@ export const Summary = () => {
                 })
                 tableContainer.appendChild(totalRow)
                 
-                //  RANK ROW (PER EVALUATOR) 
+                // RANK ROW (PER EVALUATOR) 
                 if (evaluatorSheet.rank_row) {
                     const rankRow = $({
                         tag: 'div',
@@ -646,9 +662,83 @@ export const Summary = () => {
                     tableContainer.appendChild(rankRow)
                 }
 
+                // FINAL CONSOLIDATED RANK ROW (1224 STANDARD) - ADD THIS AFTER RANK ROW
+                if (finalRankData && finalRankData.final_rank_rows) {
+                    const finalRankRowData = finalRankData.final_rank_rows[evaluator.id];
+                    
+                    if (finalRankRowData) {
+                        const finalRankRow = $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                width: '100%',
+                                borderLeft: 'solid 1px #9b59b6',
+                                borderRight: 'solid 1px #9b59b6',
+                                borderBottom: 'solid 2px #9b59b6',
+                                backgroundColor: '#e1d5e7',
+                                fontWeight: 'bold',
+                                marginTop: '5px'
+                            }
+                        });
+
+                        finalRankRow.appendChild($({
+                            tag: 'div',
+                            style: {
+                                width: `${criteriaColWidth}px`,
+                                padding: '8px 5px',
+                                borderRight: 'solid 1px #9b59b6',
+                                fontSize: '18px',
+                                fontWeight: 'bold',
+                                fontFamily: 'Quattrocento Sans',
+                                backgroundColor: '#e1d5e7',
+                                color: '#4a235a'
+                            },
+                            text: 'Final Rank (1224)'
+                        }));
+
+                        documents.forEach((doc) => {
+                            const finalRank = finalRankRowData[doc.column] || '';
+                            
+                            // Style based on rank
+                            let bgColor = '#e1d5e7';
+                            let textColor = '#4a235a';
+                            let fontWeight = 'bold';
+                            
+                            if (finalRank === 1) {
+                                bgColor = '#f1c40f'; // Gold
+                                textColor = '#000000';
+                            } else if (finalRank === 2) {
+                                bgColor = '#bdc3c7'; // Silver
+                                textColor = '#000000';
+                            } else if (finalRank === 3) {
+                                bgColor = '#cd7f32'; // Bronze
+                                textColor = '#ffffff';
+                            }
+                            
+                            finalRankRow.appendChild($({
+                                tag: 'div',
+                                style: {
+                                    width: `${scoreColWidth}px`,
+                                    padding: '8px 2px',
+                                    borderRight: 'solid 1px #9b59b6',
+                                    textAlign: 'center',
+                                    fontSize: '18px',
+                                    fontWeight: fontWeight,
+                                    fontFamily: 'Quattrocento Sans',
+                                    backgroundColor: bgColor,
+                                    color: textColor
+                                },
+                                text: finalRank
+                            }));
+                        });
+
+                        tableContainer.appendChild(finalRankRow);
+                    }
+                }
+
                 wrapper.appendChild(tableContainer);
 
-                // Add spacing after rank row
+                // Add spacing after rank rows
                 wrapper.appendChild($({
                     tag: 'div',
                     style: { height: '30px', width: '100%' }
@@ -656,7 +746,7 @@ export const Summary = () => {
             })
         }
         
-        //  CRITERIA RANKINGS SECTIONS 
+        // CRITERIA RANKINGS SECTIONS 
         if (data.criteria_rankings && Object.keys(data.criteria_rankings).length > 0) {
             
             // Add spacing before criteria rankings
@@ -840,10 +930,10 @@ export const Summary = () => {
             wrapper.appendChild(rankingsContainer);
         }
 
-        //  AVERAGE RANK SECTION 
+        // AVERAGE RANK SECTION 
         wrapper.appendChild(createAverageRankSection(eventId, categoryId, documentColumns, data))
 
-        //  FINAL RANK ROW 
+        // FINAL RANK ROW (Global) - Remove this section if it's duplicate
         if (data.rankings && data.rankings.length > 0) {
             const finalRankContainer = $({
                 tag: 'div',

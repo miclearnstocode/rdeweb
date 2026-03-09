@@ -12,237 +12,218 @@ header('Cache-Control: no-cache, must-revalidate');
 if(isset($_POST['getEval'])) {
     $response = [];
     
-    if($con = new mysqli($host, $username, $pass, $dbName)) {
-        $eventId = $_POST['eventId'];
-        $categoryId = $_POST['categoryId']; // This is center_id for new system, category_id for old system
-        
-        // Determine system type based on event ID
-        $isNewSystem = ($eventId >= 13);
-        
-        // Get evaluators for the specific category/center
+    $con = new mysqli($host, $username, $pass, $dbName);
+    $con->set_charset("utf8mb4");
+    
+    $eventId = (int)$_POST['eventId'];
+    $categoryId = (int)$_POST['categoryId'];
+    $isNewSystem = ($eventId >= 13);
+    
+    if ($categoryId > 0) {
         if ($isNewSystem) {
-            // NEW SYSTEM: Get by center
-            if ($categoryId > 0) {
-                // Get center details
-                $centerQuery = "SELECT name, code FROM center WHERE id = ?";
-                $centerStmt = $con->prepare($centerQuery);
-                $centerStmt->bind_param("i", $categoryId);
-                $centerStmt->execute();
-                $centerResult = $centerStmt->get_result();
+            // NEW SYSTEM - Get by center
+            $centerStmt = $con->prepare("SELECT name, code FROM center WHERE id = ?");
+            $centerStmt->bind_param("i", $categoryId);
+            $centerStmt->execute();
+            $centerResult = $centerStmt->get_result();
+            
+            if ($centerRow = $centerResult->fetch_assoc()) {
+                $centerName = $centerRow['name'];
+                $centerCode = $centerRow['code'];
                 
-                if ($centerRow = $centerResult->fetch_assoc()) {
-                    $centerName = $centerRow['name'];
-                    $centerCode = $centerRow['code'];
+                // Get evaluators
+                $evalQuery = "SELECT id, fullname FROM evaluator WHERE eventid = ? AND (center_id = ? OR center_id IS NULL OR center_id = 0) ORDER BY fullname";
+                $evalStmt = $con->prepare($evalQuery);
+                $evalStmt->bind_param("ii", $eventId, $categoryId);
+                $evalStmt->execute();
+                $evaluators = $evalStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                
+                foreach ($evaluators as $row) {
+                    $eval = new stdClass();
+                    $eval->evaluator = $row;
+                    $eval->docs = [];
                     
-                    // Get evaluators assigned to this center for this event
-                    $evalQuery = "SELECT DISTINCT
-                        evaluator.id,
-                        evaluator.fullname
-                    FROM evaluator
-                    WHERE evaluator.eventid = ?
-                    AND (evaluator.center_id = ? OR evaluator.center_id IS NULL OR evaluator.center_id = 0)
-                    ORDER BY evaluator.fullname";
+                    // Get documents with scores - FIX: COALESCE to handle NULL scores
+                    $docQuery = "SELECT 
+                        rf.id,
+                        rf.title,
+                        rf.author,
+                        rf.campus,
+                        rf.category,
+                        rf.center,
+                        rf.center as display_name,
+                        ? as center_code,
+                        COALESCE(sb.score, 0) as score,
+                        c.id as criteria_id,
+                        c.name as criteria_name,
+                        c.percentage
+                    FROM researchfile rf
+                    INNER JOIN score_board sb ON rf.id = sb.doc_id
+                    INNER JOIN endorsement e ON rf.endorsementid = e.id
+                    LEFT JOIN criteria c ON sb.criteria_id = c.id
+                    WHERE sb.eval_id = ?
+                    AND rf.event_id = ?
+                    AND (rf.center LIKE ? OR rf.center LIKE ?)
+                    AND e.status = 'accepted'
+                    ORDER BY rf.id, c.id";
                     
-                    $evalStmt = $con->prepare($evalQuery);
-                    $evalStmt->bind_param("ii", $eventId, $categoryId);
-                    $evalStmt->execute();
-                    $evalResult = $evalStmt->get_result();
+                    $docStmt = $con->prepare($docQuery);
+                    $centerPattern1 = "%" . $centerName . "%";
+                    $centerPattern2 = "%" . $centerCode . "%";
                     
-                    while($row = $evalResult->fetch_assoc()) {
-                        $eval = new stdClass();
-                        $eval->evaluator = $row;
-                        $eval->docs = [];
+                    $docStmt->bind_param("siiss", $centerCode, $row['id'], $eventId, $centerPattern1, $centerPattern2);
+                    $docStmt->execute();
+                    $docResult = $docStmt->get_result();
+                    
+                    $docs = [];
+                    while ($docRow = $docResult->fetch_assoc()) {
+                        $docId = $docRow['id'];
                         
-                        // Get documents for this evaluator within the selected center
-                        // Use LIKE to match center name with different formats
-                        $docQuery = "SELECT 
-                            rf.id,
-                            rf.title,
-                            rf.author,
-                            rf.campus,
-                            rf.category,
-                            rf.center,
-                            rf.center as display_name,
-                            ? as center_code
-                        FROM researchfile rf
-                        INNER JOIN score_board sb ON rf.id = sb.doc_id
-                        INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        WHERE sb.eval_id = ?
-                        AND rf.event_id = ?
-                        AND (rf.center LIKE ? OR rf.center LIKE ?)
-                        AND e.status = 'accepted'
-                        GROUP BY rf.id";
-                        
-                        $docStmt = $con->prepare($docQuery);
-                        
-                        // multiple patterns to match the center
-                        $centerPattern1 = "%" . $centerName . "%";
-                        $centerPattern2 = "%" . $centerCode . "%";
-                        
-                        $docStmt->bind_param("siiss", $centerCode, $row['id'], $eventId, $centerPattern1, $centerPattern2);
-                        $docStmt->execute();
-                        $docResult = $docStmt->get_result();
-                        
-                        while($docRow = $docResult->fetch_assoc()) {
+                        if (!isset($docs[$docId])) {
                             $doc = new stdClass();
-                            $doc->file = $docRow;
+                            $doc->file = [
+                                'id' => (int)$docRow['id'],
+                                'title' => (string)$docRow['title'],
+                                'author' => (string)$docRow['author'],
+                                'campus' => (string)$docRow['campus'],
+                                'category' => (string)$docRow['category'],
+                                'center' => (string)$docRow['center'],
+                                'display_name' => (string)$docRow['display_name'],
+                                'center_code' => (string)$docRow['center_code']
+                            ];
                             $doc->TotalScore = 0;
                             $doc->criteria = [];
-                            
-                            // Get scores for this document by this evaluator
-                            $scoreQuery = "SELECT 
-                                c.id as criteria_id,
-                                c.name,
-                                c.percentage,
-                                sb.score
-                            FROM score_board sb
-                            LEFT JOIN criteria c ON sb.criteria_id = c.id
-                            WHERE sb.doc_id = ?
-                            AND sb.eval_id = ?
-                            ORDER BY c.id";
-                            
-                            $scoreStmt = $con->prepare($scoreQuery);
-                            $scoreStmt->bind_param("ii", $docRow['id'], $row['id']);
-                            $scoreStmt->execute();
-                            $scoreResult = $scoreStmt->get_result();
-                            
-                            $rawTotal = 0;
-                            
-                            while($scoreRow = $scoreResult->fetch_assoc()) {
-                                $doc->criteria[] = $scoreRow;
-                                $rawTotal += $scoreRow['score'];
-                            }
-                            
-                            $doc->TotalScore = $rawTotal;
-                            $eval->docs[] = $doc;
+                            $docs[$docId] = $doc;
                         }
                         
-                        // Only add evaluator if they have documents in this center
-                        if (count($eval->docs) > 0) {
-                            $response[] = $eval;
+                        // Add criteria - score is never NULL because of COALESCE
+                        if ($docRow['criteria_id']) {
+                            $criteria = [
+                                'criteria_id' => (int)$docRow['criteria_id'],
+                                'name' => (string)$docRow['criteria_name'],
+                                'percentage' => (int)$docRow['percentage'],
+                                'score' => (int)$docRow['score'] // Now always an int
+                            ];
+                            
+                            $docs[$docId]->criteria[] = $criteria;
+                            $docs[$docId]->TotalScore += (int)$docRow['score'];
                         }
+                    }
+                    
+                    $eval->docs = array_values($docs);
+                    if (count($eval->docs) > 0) {
+                        $response[] = $eval;
                     }
                 }
             }
         } else {
-            // OLD SYSTEM: Get by category
-            if ($categoryId > 0) {
-                // Get category details
-                $categoryQuery = "SELECT name FROM category WHERE id = ?";
-                $catStmt = $con->prepare($categoryQuery);
-                $catStmt->bind_param("i", $categoryId);
-                $catStmt->execute();
-                $catResult = $catStmt->get_result();
+            // OLD SYSTEM - Get by category
+            $catStmt = $con->prepare("SELECT name FROM category WHERE id = ?");
+            $catStmt->bind_param("i", $categoryId);
+            $catStmt->execute();
+            $catResult = $catStmt->get_result();
+            
+            if ($catRow = $catResult->fetch_assoc()) {
+                $categoryName = $catRow['name'];
                 
-                if ($catRow = $catResult->fetch_assoc()) {
-                    $categoryName = $catRow['name'];
+                // Get evaluators
+                $evalQuery = "SELECT id, fullname FROM evaluator WHERE eventid = ? AND (category = ? OR category IS NULL OR category = '') ORDER BY fullname";
+                $evalStmt = $con->prepare($evalQuery);
+                $evalStmt->bind_param("is", $eventId, $categoryName);
+                $evalStmt->execute();
+                $evaluators = $evalStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                
+                foreach ($evaluators as $row) {
+                    $eval = new stdClass();
+                    $eval->evaluator = $row;
+                    $eval->docs = [];
                     
-                    // Get evaluators assigned to this category for this event
-                    $evalQuery = "SELECT DISTINCT
-                        evaluator.id,
-                        evaluator.fullname
-                    FROM evaluator
-                    WHERE evaluator.eventid = ?
-                    AND (evaluator.category = ? OR evaluator.category IS NULL OR evaluator.category = '')
-                    ORDER BY evaluator.fullname";
+                    // Get documents with scores - FIX: COALESCE to handle NULL scores
+                    $docQuery = "SELECT 
+                        rf.id,
+                        rf.title,
+                        rf.author,
+                        rf.campus,
+                        rf.category,
+                        rf.center,
+                        rf.category as display_name,
+                        '' as center_code,
+                        COALESCE(sb.score, 0) as score,
+                        c.id as criteria_id,
+                        c.name as criteria_name,
+                        c.percentage
+                    FROM researchfile rf
+                    INNER JOIN score_board sb ON rf.id = sb.doc_id
+                    INNER JOIN endorsement e ON rf.endorsementid = e.id
+                    LEFT JOIN criteria c ON sb.criteria_id = c.id
+                    WHERE sb.eval_id = ?
+                    AND rf.event_id = ?
+                    AND (rf.category = ? OR rf.category LIKE ?)
+                    AND e.status = 'accepted'
+                    ORDER BY rf.id, c.id";
                     
-                    $evalStmt = $con->prepare($evalQuery);
-                    $evalStmt->bind_param("is", $eventId, $categoryName);
-                    $evalStmt->execute();
-                    $evalResult = $evalStmt->get_result();
+                    $docStmt = $con->prepare($docQuery);
+                    $categoryPattern = "%" . $categoryName . "%";
                     
-                    while($row = $evalResult->fetch_assoc()) {
-                        $eval = new stdClass();
-                        $eval->evaluator = $row;
-                        $eval->docs = [];
+                    $docStmt->bind_param("iiss", $row['id'], $eventId, $categoryName, $categoryPattern);
+                    $docStmt->execute();
+                    $docResult = $docStmt->get_result();
+                    
+                    $docs = [];
+                    while ($docRow = $docResult->fetch_assoc()) {
+                        $docId = $docRow['id'];
                         
-                        // Get documents for this evaluator within the selected category
-                        $docQuery = "SELECT 
-                            rf.id,
-                            rf.title,
-                            rf.author,
-                            rf.campus,
-                            rf.category,
-                            rf.center,
-                            rf.category as display_name,
-                            '' as center_code
-                        FROM researchfile rf
-                        INNER JOIN score_board sb ON rf.id = sb.doc_id
-                        INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        WHERE sb.eval_id = ?
-                        AND rf.event_id = ?
-                        AND (rf.category = ? OR rf.category LIKE ?)
-                        AND e.status = 'accepted'
-                        GROUP BY rf.id";
-                        
-                        $docStmt = $con->prepare($docQuery);
-                        $categoryPattern = "%" . $categoryName . "%";
-                        $docStmt->bind_param("iiss", $row['id'], $eventId, $categoryName, $categoryPattern);
-                        $docStmt->execute();
-                        $docResult = $docStmt->get_result();
-                        
-                        while($docRow = $docResult->fetch_assoc()) {
+                        if (!isset($docs[$docId])) {
                             $doc = new stdClass();
-                            $doc->file = $docRow;
+                            $doc->file = [
+                                'id' => (int)$docRow['id'],
+                                'title' => (string)$docRow['title'],
+                                'author' => (string)$docRow['author'],
+                                'campus' => (string)$docRow['campus'],
+                                'category' => (string)$docRow['category'],
+                                'center' => (string)$docRow['center'],
+                                'display_name' => (string)$docRow['display_name'],
+                                'center_code' => (string)$docRow['center_code']
+                            ];
                             $doc->TotalScore = 0;
                             $doc->criteria = [];
-                            
-                            // Get scores for this document by this evaluator
-                            $scoreQuery = "SELECT 
-                                c.id as criteria_id,
-                                c.name,
-                                c.percentage,
-                                sb.score
-                            FROM score_board sb
-                            LEFT JOIN criteria c ON sb.criteria_id = c.id
-                            WHERE sb.doc_id = ?
-                            AND sb.eval_id = ?
-                            ORDER BY c.id";
-                            
-                            $scoreStmt = $con->prepare($scoreQuery);
-                            $scoreStmt->bind_param("ii", $docRow['id'], $row['id']);
-                            $scoreStmt->execute();
-                            $scoreResult = $scoreStmt->get_result();
-                            
-                            $rawTotal = 0;
-                            
-                            while($scoreRow = $scoreResult->fetch_assoc()) {
-                                $doc->criteria[] = $scoreRow;
-                                $rawTotal += $scoreRow['score'];
-                            }
-                            
-                            $doc->TotalScore = $rawTotal;
-                            $eval->docs[] = $doc;
+                            $docs[$docId] = $doc;
                         }
                         
-                        // Only add evaluator if they have documents in this category
-                        if (count($eval->docs) > 0) {
-                            $response[] = $eval;
+                        // Add criteria - score is never NULL because of COALESCE
+                        if ($docRow['criteria_id']) {
+                            $criteria = [
+                                'criteria_id' => (int)$docRow['criteria_id'],
+                                'name' => (string)$docRow['criteria_name'],
+                                'percentage' => (int)$docRow['percentage'],
+                                'score' => (int)$docRow['score'] // Now always an int
+                            ];
+                            
+                            $docs[$docId]->criteria[] = $criteria;
+                            $docs[$docId]->TotalScore += (int)$docRow['score'];
                         }
+                    }
+                    
+                    $eval->docs = array_values($docs);
+                    if (count($eval->docs) > 0) {
+                        $response[] = $eval;
                     }
                 }
             }
         }
-        
-        // If no data found, return empty array
-        if (empty($response)) {
-            // Log for debugging
-            error_log("No data found for eventId: $eventId, categoryId: $categoryId, isNewSystem: " . ($isNewSystem ? 'true' : 'false'));
-        }
-        if (ob_get_length() > 0) {
-            ob_end_flush();
-        }
     }
     
+    // Clean output buffer and send JSON
     ob_clean();
-    echo json_encode($response);
+    header('Content-Type: application/json');
+    
+    // Force all numbers to be numbers in JSON
+    echo json_encode($response, JSON_NUMERIC_CHECK);
     ob_end_flush();
     exit();
 }
 
-/**
- * GENERATE SUMMARY REPORT - EXACT EXCEL FORMAT
- */
+//GENERATE SUMMARY REPORT - EXACT EXCEL FORMAT
 if(isset($_POST['generateSummaryReport'])) {
     $response = ['success' => false, 'data' => null, 'error' => ''];
     
@@ -385,16 +366,14 @@ if(isset($_POST['generateSummaryReport'])) {
                     'type' => $systemType,
                     'code' => $centerCode
                 ],
-                'criteria' => $criteriaList,  // <-- CRITICAL: Add this line
+                'criteria' => $criteriaList,
                 'evaluators' => [],
                 'quality_presentation_totals' => [],
                 'rankings' => []
             ];
             
-            // STEP 6: ORGANIZE DOCUMENTS BY COLUMN (CRITICAL - Excel format)
-            // First, collect ALL unique documents across ALL evaluators
+            // STEP 6: COLLECT ALL UNIQUE DOCUMENTS
             $allDocuments = [];
-            $documentColumns = []; // Maps document_id -> column number
             
             foreach ($evaluatorData as $evalItem) {
                 $docs = $evalItem->docs ?? $evalItem['docs'];
@@ -413,21 +392,32 @@ if(isset($_POST['generateSummaryReport'])) {
                 }
             }
             
-            // Sort documents by ID to ensure consistent column mapping
-            $documentIds = array_keys($allDocuments);
-            sort($documentIds);
+            // STEP 7: SORT DOCUMENTS BY TITLE TO ENSURE CONSISTENT ORDERING
+            // This ensures document 1 is always column 1, document 2 is column 2, etc.
+            uasort($allDocuments, function($a, $b) {
+                return strcmp($a['title'], $b['title']);
+            });
             
-            // Assign column numbers (1, 2, 3...)
+            $documentIds = array_keys($allDocuments);
+            $documentColumns = []; // Maps document_id -> column number
+            
+            // Assign column numbers based on sorted order
             foreach ($documentIds as $index => $docId) {
                 $documentColumns[$docId] = $index + 1;
             }
             
-            // STEP 7: PROCESS EACH EVALUATOR - EXACT EXCEL ROW STRUCTURE WITH CONSISTENT COLUMN POSITIONS
+            // DEBUG: Log document column assignments
+            error_log("=== DOCUMENT COLUMN ASSIGNMENTS ===");
+            foreach ($documentIds as $docId) {
+                error_log("Doc ID {$docId}: Column {$documentColumns[$docId]} - Title: {$allDocuments[$docId]['title']}");
+            }
+            
+            // STEP 8: PROCESS EACH EVALUATOR
             foreach ($evaluatorData as $evalIndex => $evalItem) {
                 $evaluator = $evalItem->evaluator ?? $evalItem['evaluator'];
                 $docs = $evalItem->docs ?? $evalItem['docs'];
                 
-                // Initialize evaluator sheet with EXACT Excel rows
+                // Initialize evaluator sheet
                 $evaluatorSheet = [
                     'evaluator' => [
                         'number' => $evalIndex + 1,
@@ -440,7 +430,7 @@ if(isset($_POST['generateSummaryReport'])) {
                     ],
                     'criteria_rows' => [],
                     'total_row' => ['Total'],
-                    'documents' => []  // Will contain ALL documents with their column positions
+                    'documents' => []
                 ];
                 
                 // Initialize scores array for each criteria
@@ -451,21 +441,14 @@ if(isset($_POST['generateSummaryReport'])) {
                         'id' => $criteriaId,
                         'name' => $criterion['name'],
                         'percentage' => (int)$criterion['percentage'],
-                        'scores' => []  // This will store scores keyed by column number
+                        'scores' => []
                     ];
                 }
 
                 // Initialize document score lookup array
-                $scoresByDoc = []; // Will store scores by doc_id and criteria_id
+                $scoresByDoc = [];
 
-                // Create a lookup map for quick criteria identification by name
-                $criteriaNameMap = [];
-                foreach ($criteriaList as $criterion) {
-                    $criteriaNameMap[$criterion['name']] = $criterion['id'];
-                }
-                
-                // ============ FIX: FIRST, ADD ALL DOCUMENTS FROM MASTER LIST TO HEADERS ============
-                // This ensures EVERY document has a column position, even if this evaluator didn't score it
+                // FIRST: Add ALL documents from master list to headers in column order
                 foreach ($documentIds as $docId) {
                     $columnNumber = $documentColumns[$docId];
                     $docTitle = $allDocuments[$docId]['title'];
@@ -479,15 +462,21 @@ if(isset($_POST['generateSummaryReport'])) {
                         'column' => $columnNumber,
                         'id' => $docId,
                         'title' => $docTitle,
-                        'total_score' => 0  // Default to 0
+                        'total_score' => 0
                     ];
                 }
                 
-                // ============ NOW, POPULATE SCORES FOR DOCUMENTS THIS EVALUATOR ACTUALLY SCORED ============
-                // Map document scores to their column positions - OVERWRITES the default zero scores
+                // SECOND: Populate scores for documents this evaluator actually scored
                 foreach ($docs as $doc) {
                     $docData = $doc->file ?? $doc['file'];
                     $docId = $docData['id'];
+                    
+                    // Make sure this document exists in our master list
+                    if (!isset($documentColumns[$docId])) {
+                        error_log("WARNING: Document ID {$docId} not found in master list");
+                        continue;
+                    }
+                    
                     $columnNumber = $documentColumns[$docId];
                     
                     // Update document info with actual scores
@@ -501,13 +490,11 @@ if(isset($_POST['generateSummaryReport'])) {
                     // Get criteria scores for this document
                     $docScores = $doc->criteria ?? $doc['criteria'];
 
-                    // Group scores by document ID first, then by criteria
+                    // Group scores by document ID and criteria ID
                     foreach ($docScores as $scoreItem) {
                         $criteriaId = (int)$scoreItem['criteria_id'];
-                        $criteriaName = $scoreItem['name'] ?? '';
                         $score = (int)$scoreItem['score'];
                         
-                        // Store scores keyed by document ID and criteria ID
                         if (!isset($scoresByDoc[$docId])) {
                             $scoresByDoc[$docId] = [];
                         }
@@ -518,7 +505,8 @@ if(isset($_POST['generateSummaryReport'])) {
                             $criteriaScores[$criteriaId]['scores'][$columnNumber] = $score;
                         }
                         
-                        // Track Quality Presentation scores for ranking - using doc_id
+                        // Track Quality Presentation scores
+                        $criteriaName = $scoreItem['name'] ?? '';
                         if (stripos($criteriaName, 'Quality of Presentation') !== false) {
                             if (!isset($summaryReport['quality_presentation_totals'][$docId])) {
                                 $summaryReport['quality_presentation_totals'][$docId] = [
@@ -531,46 +519,38 @@ if(isset($_POST['generateSummaryReport'])) {
                             $summaryReport['quality_presentation_totals'][$docId]['total_score'] += $score;
                         }
                     }
-                    
-                    // Update total row - We'll rebuild this after we have all documents
                 }
                 
-                // ============ REBUILD TOTAL ROW WITH ALL DOCUMENTS IN CORRECT ORDER ============
+                // REBUILD TOTAL ROW IN CORRECT COLUMN ORDER
                 $evaluatorSheet['total_row'] = ['Total'];
                 foreach ($documentIds as $docId) {
                     $totalScore = $evaluatorSheet['documents'][$docId]['total_score'] ?? 0;
                     $evaluatorSheet['total_row'][] = $totalScore;
                 }
                 
-                // Build criteria rows in EXACT order - USING DOC_ID TO GET SCORES
+                // BUILD CRITERIA ROWS
                 $evaluatorSheet['criteria_rows'] = [];
                 $addedCriteriaNames = [];
 
-                // For each unique criterion
                 foreach ($criteriaList as $criterion) {
                     $criteriaId = (int)$criterion['id'];
                     $criteriaName = $criterion['name'];
                     
-                    // Skip duplicates
                     if (isset($addedCriteriaNames[$criteriaName])) {
                         continue;
                     }
                     
-                    // Create ONE row per unique criterion
                     $row = [
                         'name' => $criteriaName,
                         'percentage' => (int)$criterion['percentage'],
                         'scores' => []
                     ];
                     
-                    // For each document column (ALL documents in master list)
+                    // Add scores in correct column order
                     foreach ($documentIds as $docId) {
                         $column = $documentColumns[$docId];
-                        
-                        // Get the score for this document and criteria (0 if not scored)
                         $score = 0;
                         
-                        // Check if we have scores for this document
                         if (isset($scoresByDoc[$docId]) && isset($scoresByDoc[$docId][$criteriaId])) {
                             $score = $scoresByDoc[$docId][$criteriaId];
                         }
@@ -581,12 +561,12 @@ if(isset($_POST['generateSummaryReport'])) {
                     $evaluatorSheet['criteria_rows'][] = $row;
                     $addedCriteriaNames[$criteriaName] = true;
                 }
-                // ============ ADD RANK ROW FOR EACH EVALUATOR ============
-                // Calculate ranks based on total scores for THIS evaluator only
+                
+                // CALCULATE RANK ROW FOR THIS EVALUATOR
                 $rankRow = ['Rank'];
                 $scoresForRanking = [];
 
-                // First, collect all total scores with their column positions
+                // Collect scores in column order
                 foreach ($documentIds as $docId) {
                     $column = $documentColumns[$docId];
                     $totalScore = $evaluatorSheet['documents'][$docId]['total_score'] ?? 0;
@@ -597,68 +577,63 @@ if(isset($_POST['generateSummaryReport'])) {
                     ];
                 }
 
-                // Sort by score descending
+                // Sort by score descending for ranking
                 usort($scoresForRanking, function($a, $b) {
                     return $b['score'] - $a['score'];
                 });
 
-                // Calculate ranks with integer tie handling (no decimals)
+                // Calculate ranks with normal ranking (1,2,2,3)
                 $rankedScores = [];
+                $currentRank = 1;
                 $currentIndex = 0;
                 $count = count($scoresForRanking);
 
                 while ($currentIndex < $count) {
-                    $tieGroup = [$scoresForRanking[$currentIndex]];
+                    $currentScore = $scoresForRanking[$currentIndex]['score'];
                     $tieCount = 1;
                     
                     // Find all ties
                     for ($j = $currentIndex + 1; $j < $count; $j++) {
-                        if ($scoresForRanking[$j]['score'] == $scoresForRanking[$currentIndex]['score']) {
-                            $tieGroup[] = $scoresForRanking[$j];
+                        if ($scoresForRanking[$j]['score'] == $currentScore) {
                             $tieCount++;
                         } else {
                             break;
                         }
                     }
                     
-                    // Assign the SAME integer rank to all tied items
-                    // If there's a tie, everyone gets the current position number (not average)
-                    $rank = $currentIndex + 1;
-                    
-                    foreach ($tieGroup as $item) {
-                        $rankedScores[$item['column']] = $rank;
+                    // Assign same rank to all tied items
+                    for ($k = 0; $k < $tieCount; $k++) {
+                        $item = $scoresForRanking[$currentIndex + $k];
+                        $rankedScores[$item['column']] = $currentRank;
                     }
                     
                     $currentIndex += $tieCount;
+                    $currentRank++; // Always increment by 1 regardless of tie count
                 }
-
-                // Build the rank row in correct column order
+                // Build rank row in correct column order
                 foreach ($documentIds as $docId) {
                     $column = $documentColumns[$docId];
-                    $rankValue = $rankedScores[$column] ?? ''; // Empty string if no score
+                    $rankValue = $rankedScores[$column] ?? '';
                     $rankRow[] = $rankValue;
                 }
 
-                // Add the rank row to evaluator sheet
                 $evaluatorSheet['rank_row'] = $rankRow;
                 $summaryReport['evaluators'][] = $evaluatorSheet;
             }
-            // STEP 7.5: CALCULATE RANKINGS FOR ALL CRITERIA
+            
+            // STEP 9: CALCULATE CRITERIA RANKINGS
             $criteriaRankings = [];
 
             if (!empty($criteriaList) && !empty($documentIds)) {
-                // For each criterion, collect all scores across documents and calculate ranks
                 foreach ($criteriaList as $criterion) {
                     $criteriaId = (int)$criterion['id'];
                     $criteriaName = $criterion['name'];
                     
-                    // Collect all scores for this criterion across all documents
                     $criterionScores = [];
                     
                     foreach ($documentIds as $docId) {
                         $totalScore = 0;
                         
-                        // Sum scores for this criterion across ALL evaluators
                         foreach ($evaluatorData as $evalItem) {
                             $docs = $evalItem->docs ?? $evalItem['docs'];
                             foreach ($docs as $doc) {
@@ -673,7 +648,6 @@ if(isset($_POST['generateSummaryReport'])) {
                             }
                         }
                         
-                        // Store score with document info
                         $criterionScores[] = [
                             'doc_id' => $docId,
                             'title' => $allDocuments[$docId]['title'],
@@ -687,29 +661,29 @@ if(isset($_POST['generateSummaryReport'])) {
                         return $b['total_score'] - $a['total_score'];
                     });
                     
-                    // Apply tie ranks
+                    // Apply 1224 standard ranking
                     $rankedScores = [];
                     $currentIndex = 0;
                     $count = count($criterionScores);
                     
                     while ($currentIndex < $count) {
-                        $tieGroup = [$criterionScores[$currentIndex]];
-                        $tieSum = $currentIndex + 1;
+                        $currentScore = $criterionScores[$currentIndex]['total_score'];
+                        $tieCount = 1;
                         
                         for ($j = $currentIndex + 1; $j < $count; $j++) {
-                            if ($criterionScores[$j]['total_score'] == $criterionScores[$currentIndex]['total_score']) {
-                                $tieGroup[] = $criterionScores[$j];
-                                $tieSum += ($j + 1);
+                            if ($criterionScores[$j]['total_score'] == $currentScore) {
+                                $tieCount++;
                             } else {
                                 break;
                             }
                         }
                         
-                        $averageRank = $tieSum / count($tieGroup);
+                        $rank = $currentIndex + 1;
                         
-                        foreach ($tieGroup as $item) {
+                        for ($k = 0; $k < $tieCount; $k++) {
+                            $item = $criterionScores[$currentIndex + $k];
                             $rankedScores[] = [
-                                'rank' => round($averageRank, 1),
+                                'rank' => $rank,
                                 'doc_id' => $item['doc_id'],
                                 'title' => $item['title'],
                                 'total_score' => $item['total_score'],
@@ -717,10 +691,9 @@ if(isset($_POST['generateSummaryReport'])) {
                             ];
                         }
                         
-                        $currentIndex += count($tieGroup);
+                        $currentIndex += $tieCount;
                     }
                     
-                    // Store rankings for this criterion
                     $criteriaRankings[$criteriaId] = [
                         'id' => $criteriaId,
                         'name' => $criteriaName,
@@ -729,9 +702,7 @@ if(isset($_POST['generateSummaryReport'])) {
                 }
             }
 
-            // Add to summary report
             $summaryReport['criteria_rankings'] = $criteriaRankings;
-
             
             $response['success'] = true;
             $response['data'] = $summaryReport;
@@ -1055,9 +1026,214 @@ function getEvalByCategory($con, $eventId, $categoryId) {
     return $response;
 }
 
-/**
- * GET AVERAGE RANK ACROSS ALL EVALUATORS
- */
+// GET FINAL CONSOLIDATED RANK (1224 STANDARD)
+if(isset($_POST['getFinalRank'])) {
+    $response = ['success' => false, 'data' => null, 'error' => ''];
+    
+    if($con = new mysqli($host, $username, $pass, $dbName)) {
+        $con->set_charset('utf8mb4');
+        
+        $eventId = $_POST['eventId'];
+        $categoryId = $_POST['categoryId'];
+        $isNewSystem = ($eventId >= 13);
+        
+        try {
+            // STEP 1: GET EVALUATOR DATA
+            $evaluatorData = [];
+            if ($isNewSystem) {
+                $evaluatorData = getEvalByCenter($con, $eventId, $categoryId);
+            } else {
+                $evaluatorData = getEvalByCategory($con, $eventId, $categoryId);
+            }
+            
+            if (empty($evaluatorData)) {
+                throw new Exception('No evaluator data found');
+            }
+            
+            // STEP 2: COLLECT ALL UNIQUE DOCUMENTS
+            $allDocuments = [];
+            
+            foreach ($evaluatorData as $evalItem) {
+                $docs = $evalItem->docs ?? $evalItem['docs'];
+                foreach ($docs as $doc) {
+                    $docId = $doc->file['id'] ?? $doc['file']['id'];
+                    if (!isset($allDocuments[$docId])) {
+                        $allDocuments[$docId] = [
+                            'id' => $docId,
+                            'title' => $doc->file['title'] ?? $doc['file']['title']
+                        ];
+                    }
+                }
+            }
+            
+            // STEP 3: SORT DOCUMENTS BY TITLE
+            uasort($allDocuments, function($a, $b) {
+                return strcmp($a['title'], $b['title']);
+            });
+            
+            $documentIds = array_keys($allDocuments);
+            $documentColumns = [];
+            foreach ($documentIds as $index => $docId) {
+                $documentColumns[$docId] = $index + 1;
+            }
+            
+            // STEP 4: CALCULATE FINAL RANK FOR EACH EVALUATOR
+            $finalRankRows = [];
+            
+            foreach ($evaluatorData as $evalIndex => $evalItem) {
+                $evaluator = $evalItem->evaluator ?? $evalItem['evaluator'];
+                $evalId = $evaluator['id'] ?? $evaluator->id;
+                $docs = $evalItem->docs ?? $evalItem['docs'];
+                
+                // Create document score map
+                $docScores = [];
+                foreach ($docs as $doc) {
+                    $docId = $doc->file['id'] ?? $doc['file']['id'];
+                    $docScores[$docId] = $doc->TotalScore ?? $doc['TotalScore'];
+                }
+                
+                // STEP 4a: Calculate ranks based on scores (with ties)
+                $scoreItems = [];
+                foreach ($documentIds as $docId) {
+                    $scoreItems[] = [
+                        'doc_id' => $docId,
+                        'score' => $docScores[$docId] ?? 0,
+                        'column' => $documentColumns[$docId]
+                    ];
+                }
+                
+                // Sort by score descending
+                usort($scoreItems, function($a, $b) {
+                    return $b['score'] - $a['score'];
+                });
+                
+                // Assign ranks (e.g., 1, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5, 6)
+                $ranks = [];
+                $currentRank = 1;
+                $i = 0;
+                
+                while ($i < count($scoreItems)) {
+                    $currentScore = $scoreItems[$i]['score'];
+                    $tieCount = 1;
+                    
+                    for ($j = $i + 1; $j < count($scoreItems); $j++) {
+                        if ($scoreItems[$j]['score'] == $currentScore) {
+                            $tieCount++;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    for ($k = 0; $k < $tieCount; $k++) {
+                        $docId = $scoreItems[$i + $k]['doc_id'];
+                        $ranks[$docId] = $currentRank;
+                    }
+                    
+                    $i += $tieCount;
+                    $currentRank++;
+                }
+                
+                // STEP 4b: Create array of documents with their rank
+                $rankedDocs = [];
+                foreach ($documentIds as $docId) {
+                    $rankedDocs[] = [
+                        'doc_id' => $docId,
+                        'rank' => $ranks[$docId],
+                        'column' => $documentColumns[$docId]
+                    ];
+                }
+                
+                // STEP 4c: Sort by rank (and column for stability)
+                usort($rankedDocs, function($a, $b) {
+                    if ($a['rank'] == $b['rank']) {
+                        return $a['column'] - $b['column'];
+                    }
+                    return $a['rank'] - $b['rank'];
+                });
+                
+                // STEP 4d: Group by rank
+                $rankGroups = [];
+                foreach ($rankedDocs as $item) {
+                    $rank = $item['rank'];
+                    if (!isset($rankGroups[$rank])) {
+                        $rankGroups[$rank] = [];
+                    }
+                    $rankGroups[$rank][] = $item['doc_id'];
+                }
+                
+                // STEP 4e: Calculate final rank for each rank group
+                // The final ranks must be consecutive numbers
+                $finalRanks = [];
+                $groupPosition = 1;
+                
+                foreach ($rankGroups as $rank => $groupDocIds) {
+                    $groupSize = count($groupDocIds);
+                    
+                    if ($groupSize == 1) {
+                        // Single document - final rank is the group position
+                        foreach ($groupDocIds as $docId) {
+                            $finalRanks[$docId] = $groupPosition;
+                        }
+                    } else {
+                        // Multiple documents - average the group positions
+                        // Sum of positions from $groupPosition to $groupPosition + $groupSize - 1
+                        $sumOfPositions = 0;
+                        for ($pos = $groupPosition; $pos < $groupPosition + $groupSize; $pos++) {
+                            $sumOfPositions += $pos;
+                        }
+                        $averagePosition = $sumOfPositions / $groupSize;
+                        
+                        // Format to 1 decimal if needed
+                        if (floor($averagePosition) == $averagePosition) {
+                            $finalRank = (int)$averagePosition;
+                        } else {
+                            $finalRank = round($averagePosition, 1);
+                        }
+                        
+                        foreach ($groupDocIds as $docId) {
+                            $finalRanks[$docId] = $finalRank;
+                        }
+                    }
+                    
+                    $groupPosition += $groupSize;
+                }
+                
+                // STEP 4f: Create final rank row in column order
+                $finalRankRow = [];
+                foreach ($documentIds as $docId) {
+                    $finalRankRow[$documentColumns[$docId]] = $finalRanks[$docId] ?? '';
+                }
+                
+                $finalRankRows[$evalId] = $finalRankRow;
+            }
+            
+            // STEP 5: BUILD RESPONSE
+            $response['success'] = true;
+            $response['data'] = [
+                'document_columns' => $documentColumns,
+                'final_rank_rows' => $finalRankRows,
+                'documents' => $allDocuments,
+                'summary' => [
+                    'total_evaluators' => count($evaluatorData),
+                    'total_documents' => count($documentIds)
+                ]
+            ];
+            
+        } catch (Exception $e) {
+            error_log("getFinalRank Error: " . $e->getMessage());
+            $response['error'] = $e->getMessage();
+        }
+        
+        $con->close();
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
+}
+
+//GET AVERAGE RANK ACROSS ALL EVALUATORS
 if(isset($_POST['getAverageRank'])) {
     $response = ['success' => false, 'data' => null, 'error' => ''];
     
