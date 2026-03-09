@@ -1220,7 +1220,20 @@ export const Summary = () => {
                 headerCell.setAttribute('title', evaluator.full)
                 headerRow.appendChild(headerCell)
             })
-
+            headerRow.appendChild($({
+                tag: 'div',
+                style: {
+                    width: `${averageRankWidth}px`, // Reuse average rank width or adjust as needed
+                    padding: '12px 5px',
+                    borderRight: 'solid 1px #fff',
+                    textAlign: 'center',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    backgroundColor: '#f39c12', // Different color to distinguish
+                    flexShrink: 0
+                },
+                text: 'Total Rank Score'
+            }))
             // Average Rank header
             headerRow.appendChild($({
                 tag: 'div',
@@ -1313,8 +1326,8 @@ export const Summary = () => {
 
                 // Individual evaluator ranks
                 const rankByColumn = {}
-                if (doc.ranks && Array.isArray(doc.ranks)) {
-                    doc.ranks.forEach((rank, idx) => {
+                if (doc.final_ranks && Array.isArray(doc.final_ranks)) {
+                    doc.final_ranks.forEach((rank, idx) => {
                         rankByColumn[idx + 1] = rank
                     })
                 }
@@ -1357,12 +1370,49 @@ export const Summary = () => {
                     })
                     
                     if (evaluatorNames[i-1]) {
-                        const rankText = rankValue !== '' ? `Rank: ${rankValue}` : 'Not scored'
+                        const rankText = rankValue !== '' ? `Final Rank: ${rankValue}` : 'Not scored'
                         rankCell.setAttribute('title', `${evaluatorNames[i-1].full}: ${rankText}`)
                     }
                     
                     row.appendChild(rankCell)
                 }
+
+                // ADD TOTAL RANK SCORE CELL (NEW)
+                const totalRankScore = doc.total_rank_score || 0
+                const totalScoreCell = $({
+                    tag: 'div',
+                    style: {
+                        width: `${averageRankWidth}px`,
+                        padding: '10px 5px',
+                        borderRight: 'solid 1px #ddd',
+                        textAlign: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        color: '#c0392b',
+                        backgroundColor: '#fde9e9',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            style: {
+                                display: 'inline-block',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                backgroundColor: '#c0392b',
+                                color: 'white',
+                                fontSize: '14px',
+                                fontWeight: 'bold'
+                            },
+                            text: totalRankScore.toFixed(1)
+                        })
+                    ]
+                })
+                totalScoreCell.setAttribute('title', `Sum of final ranks from all evaluators`)
+                row.appendChild(totalScoreCell)
 
                 // Average rank cell
                 const avgValue = doc.formatted_average || (doc.average ? doc.average.toFixed(1) : '0.0')
@@ -1397,7 +1447,7 @@ export const Summary = () => {
                         })
                     ]
                 })
-                avgCell.setAttribute('title', `Average rank based on ${doc.count || evaluatorNames.length} evaluators`)
+                avgCell.setAttribute('title', `Average of final ranks from ${doc.count || evaluatorNames.length} evaluators`)
                 row.appendChild(avgCell)
 
                 table.appendChild(row)
@@ -1667,22 +1717,26 @@ export const Summary = () => {
                 wsData.push([])
                 
                 // Header row - USE FULL EVALUATOR NAMES
-                let headerRow = ['Final Rank', 'Document Title', ...evaluatorNames, 'Average Rank']
+                let headerRow = ['Final Rank', 'Document Title', ...evaluatorNames, 'Total Rank Score', 'Average Rank']
                 wsData.push(headerRow)
                 
                 // Get the pre-calculated average ranks from the API
                 const sortedDocs = Object.values(rankData.average_ranks || {}).sort((a, b) => a.final_rank - b.final_rank)
                 
-                // Data rows - use the data from the API
+                // Data rows - use the data from the API with Total Rank Score
                 sortedDocs.forEach(doc => {
                     let row = [doc.final_rank, doc.title]
                     
-                    // Add ranks for each evaluator (from doc.ranks array)
+                    // Add final ranks for each evaluator (from doc.final_ranks array)
                     for (let i = 0; i < evaluatorNames.length; i++) {
-                        const rankValue = doc.ranks && doc.ranks[i] !== undefined ? doc.ranks[i] : ''
+                        const rankValue = doc.final_ranks && doc.final_ranks[i] !== undefined ? doc.final_ranks[i] : ''
                         row.push(rankValue)
                     }
                     
+                    // Add Total Rank Score
+                    row.push(doc.total_rank_score || 0)
+                    
+                    // Add Average Rank
                     row.push(doc.formatted_average || doc.average?.toFixed(1) || '0.0')
                     wsData.push(row)
                 })
@@ -1695,11 +1749,12 @@ export const Summary = () => {
             // Create worksheet
             const ws = XLSX.utils.aoa_to_sheet(wsData)
             
-            // Calculate column widths - UPDATE THIS to include evaluator columns
+            // Calculate column widths - UPDATE THIS to include evaluator columns and Total Rank Score
             const baseColWidths = [
                 { wch: 15 }, // Final Rank
                 { wch: 50 }, // Document Title
                 ...evaluatorNames.map(() => ({ wch: 25 })), // Evaluator columns - wider for full names
+                { wch: 18 }, // Total Rank Score
                 { wch: 15 }  // Average Rank
             ]
             
@@ -2512,18 +2567,22 @@ export const Summary = () => {
                 // Get the pre-calculated average ranks from the API
                 const sortedDocs = Object.values(rankData.average_ranks || {}).sort((a, b) => a.final_rank - b.final_rank)
                 
-                // Prepare table data - USE FULL EVALUATOR NAMES INSTEAD OF E1, E2, etc.
-                const headers = ['Final Rank', 'Document Title', ...evaluatorNames, 'Average Rank']
+                // Prepare table data - USE FULL EVALUATOR NAMES WITH TOTAL RANK SCORE
+                const headers = ['Final Rank', 'Document Title', ...evaluatorNames, 'Total Rank Score', 'Average Rank']
                 
                 const body = sortedDocs.map(doc => {
                     const row = [doc.final_rank.toString(), doc.title]
                     
-                    // Add ranks for each evaluator (from doc.ranks array)
+                    // Add final ranks for each evaluator (from doc.final_ranks array)
                     for (let i = 0; i < evaluatorNames.length; i++) {
-                        const rankValue = doc.ranks && doc.ranks[i] !== undefined ? doc.ranks[i].toString() : '-'
+                        const rankValue = doc.final_ranks && doc.final_ranks[i] !== undefined ? doc.final_ranks[i].toString() : '-'
                         row.push(rankValue)
                     }
                     
+                    // Add Total Rank Score
+                    row.push((doc.total_rank_score || 0).toFixed(1))
+                    
+                    // Add Average Rank
                     row.push(doc.formatted_average || doc.average?.toFixed(1) || '0.0')
                     return row
                 })
@@ -2532,33 +2591,36 @@ export const Summary = () => {
                 const evaluatorCount = evaluatorNames.length
                 const finalRankWidth = 20
                 const titleWidth = 70
-                
+
                 // Calculate average width needed for evaluator names based on longest name
                 let maxNameLength = 0
                 evaluatorNames.forEach(name => {
                     maxNameLength = Math.max(maxNameLength, name.length)
                 })
-                
+
                 // Adjust evaluator column width based on name length (approx 1.5mm per character)
                 const evaluatorColWidth = Math.max(15, Math.min(40, maxNameLength * 1.5))
+                const totalRankScoreWidth = 20 // NEW: Width for Total Rank Score column
                 const avgRankWidth = 20
-                
-                const avgTotalWidth = finalRankWidth + titleWidth + (evaluatorColWidth * evaluatorCount) + avgRankWidth
+
+                // Update total width calculation to include Total Rank Score
+                const avgTotalWidth = finalRankWidth + titleWidth + (evaluatorColWidth * evaluatorCount) + totalRankScoreWidth + avgRankWidth
                 const avgStartX = (pageWidth - avgTotalWidth) / 2
                 
                 // Create column styles dynamically
                 const columnStyles = {
                     0: { cellWidth: finalRankWidth, fontStyle: 'bold' },
                     1: { cellWidth: titleWidth, halign: 'left' },
-                    [evaluatorCount + 1]: { cellWidth: avgRankWidth, fillColor: [230, 126, 34], textColor: [255, 255, 255], fontStyle: 'bold' }
+                    [evaluatorCount + 1]: { cellWidth: totalRankScoreWidth, fillColor: [192, 57, 43], textColor: [255, 255, 255], fontStyle: 'bold' }, // Total Rank Score column
+                    [evaluatorCount + 2]: { cellWidth: avgRankWidth, fillColor: [230, 126, 34], textColor: [255, 255, 255], fontStyle: 'bold' } // Average Rank column
                 }
-                
+
                 // Add styles for evaluator columns with proper text handling
                 for (let i = 0; i < evaluatorCount; i++) {
                     columnStyles[i + 2] = { 
                         cellWidth: evaluatorColWidth,
                         fontStyle: 'normal',
-                        fontSize: 7, // Slightly smaller font for long names
+                        fontSize: 7,
                         halign: 'center'
                     }
                 }

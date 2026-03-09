@@ -1233,7 +1233,7 @@ if(isset($_POST['getFinalRank'])) {
     exit();
 }
 
-//GET AVERAGE RANK ACROSS ALL EVALUATORS
+// GET AVERAGE RANK ACROSS ALL EVALUATORS USING FINAL RANK (1224)
 if(isset($_POST['getAverageRank'])) {
     $response = ['success' => false, 'data' => null, 'error' => ''];
     
@@ -1313,133 +1313,189 @@ if(isset($_POST['getAverageRank'])) {
                 }
             }
             
-            // Sort documents and assign columns
+            // Sort documents by title to ensure consistent ordering
+            uasort($allDocuments, function($a, $b) {
+                return strcmp($a['title'], $b['title']);
+            });
+            
             $documentIds = array_keys($allDocuments);
-            sort($documentIds);
+            $documentColumns = [];
             
             foreach ($documentIds as $index => $docId) {
                 $documentColumns[$docId] = $index + 1;
             }
             
-            // STEP 4: CALCULATE RANKS PER EVALUATOR
-            $evaluatorRanks = [];
-            $allRankings = []; // Store all ranks for averaging
+            // STEP 4: FIRST, GET THE FINAL RANK (1224) FOR EACH EVALUATOR
+            // We need to calculate the final rank for each evaluator first
+            
+            $allFinalRanks = []; // Store final ranks keyed by doc_id => array of final ranks from each evaluator
             
             foreach ($evaluatorData as $evalIndex => $evalItem) {
                 $evaluator = $evalItem->evaluator ?? $evalItem['evaluator'];
-                $docs = $evalItem->docs ?? $evalItem['docs'];
                 $evalId = $evaluator['id'] ?? $evaluator->id;
-                $evalName = $evaluator['fullname'] ?? $evaluator->fullname;
+                $docs = $evalItem->docs ?? $evalItem['docs'];
                 
-                // Create document score map for this evaluator
+                // Create document score map
                 $docScores = [];
                 foreach ($docs as $doc) {
                     $docId = $doc->file['id'] ?? $doc['file']['id'];
                     $docScores[$docId] = $doc->TotalScore ?? $doc['TotalScore'];
                 }
                 
-                // Prepare scores for ranking
-                $scoresForRanking = [];
+                // Calculate ranks based on scores
+                $scoreItems = [];
                 foreach ($documentIds as $docId) {
-                    $score = $docScores[$docId] ?? 0;
-                    $scoresForRanking[] = [
+                    $scoreItems[] = [
                         'doc_id' => $docId,
-                        'score' => $score,
-                        'column' => $documentColumns[$docId]
+                        'score' => $docScores[$docId] ?? 0
                     ];
                 }
                 
                 // Sort by score descending
-                usort($scoresForRanking, function($a, $b) {
+                usort($scoreItems, function($a, $b) {
                     return $b['score'] - $a['score'];
                 });
                 
-                // Calculate ranks with tie handling
-                $currentIndex = 0;
-                $count = count($scoresForRanking);
+                // Assign ranks (with ties getting same rank)
+                $ranks = [];
+                $currentRank = 1;
+                $i = 0;
                 
-                while ($currentIndex < $count) {
-                    $tieGroup = [$scoresForRanking[$currentIndex]];
+                while ($i < count($scoreItems)) {
+                    $currentScore = $scoreItems[$i]['score'];
                     $tieCount = 1;
                     
-                    // Find all ties
-                    for ($j = $currentIndex + 1; $j < $count; $j++) {
-                        if ($scoresForRanking[$j]['score'] == $scoresForRanking[$currentIndex]['score']) {
-                            $tieGroup[] = $scoresForRanking[$j];
+                    for ($j = $i + 1; $j < count($scoreItems); $j++) {
+                        if ($scoreItems[$j]['score'] == $currentScore) {
                             $tieCount++;
                         } else {
                             break;
                         }
                     }
                     
-                    // Assign same rank to all tied items
-                    $rank = $currentIndex + 1;
-                    
-                    foreach ($tieGroup as $item) {
-                        $docId = $item['doc_id'];
-                        
-                        // Store per-evaluator rank
-                        if (!isset($evaluatorRanks[$docId])) {
-                            $evaluatorRanks[$docId] = [];
-                        }
-                        
-                        $evaluatorRanks[$docId][] = [
-                            'evaluator_id' => $evalId,
-                            'evaluator_name' => $evalName,
-                            'evaluator_number' => $evalIndex + 1,
-                            'rank' => $rank,
-                            'score' => $item['score']
-                        ];
-                        
-                        // Store for averaging
-                        if (!isset($allRankings[$docId])) {
-                            $allRankings[$docId] = [];
-                        }
-                        $allRankings[$docId][] = $rank;
+                    for ($k = 0; $k < $tieCount; $k++) {
+                        $docId = $scoreItems[$i + $k]['doc_id'];
+                        $ranks[$docId] = $currentRank;
                     }
                     
-                    $currentIndex += $tieCount;
+                    $i += $tieCount;
+                    $currentRank++;
+                }
+                
+                // Get order positions (1st, 2nd, 3rd, etc.)
+                $orderPositions = [];
+                foreach ($scoreItems as $index => $item) {
+                    $orderPositions[$item['doc_id']] = $index + 1;
+                }
+                
+                // Group by rank
+                $rankGroups = [];
+                foreach ($documentIds as $docId) {
+                    $rank = $ranks[$docId];
+                    if (!isset($rankGroups[$rank])) {
+                        $rankGroups[$rank] = [];
+                    }
+                    $rankGroups[$rank][] = $docId;
+                }
+                
+                // Sort rank groups by rank
+                ksort($rankGroups);
+                
+                // Calculate final rank (1224) for each group
+                $finalRanks = [];
+                $groupPosition = 1;
+                
+                foreach ($rankGroups as $rank => $groupDocIds) {
+                    $groupSize = count($groupDocIds);
+                    
+                    if ($groupSize == 1) {
+                        // Single document - final rank is the group position
+                        foreach ($groupDocIds as $docId) {
+                            $finalRanks[$docId] = $groupPosition;
+                        }
+                    } else {
+                        // Multiple documents - average the group positions
+                        $sumOfPositions = 0;
+                        for ($pos = $groupPosition; $pos < $groupPosition + $groupSize; $pos++) {
+                            $sumOfPositions += $pos;
+                        }
+                        $averagePosition = $sumOfPositions / $groupSize;
+                        
+                        // Format to 1 decimal if needed
+                        if (floor($averagePosition) == $averagePosition) {
+                            $finalRank = (int)$averagePosition;
+                        } else {
+                            $finalRank = round($averagePosition, 1);
+                        }
+                        
+                        foreach ($groupDocIds as $docId) {
+                            $finalRanks[$docId] = $finalRank;
+                        }
+                    }
+                    
+                    $groupPosition += $groupSize;
+                }
+                
+                // Store final ranks for this evaluator
+                foreach ($documentIds as $docId) {
+                    if (isset($finalRanks[$docId])) {
+                        if (!isset($allFinalRanks[$docId])) {
+                            $allFinalRanks[$docId] = [];
+                        }
+                        $allFinalRanks[$docId][] = $finalRanks[$docId];
+                    }
                 }
             }
             
-            // STEP 5: CALCULATE AVERAGE RANKS
-            $averageRanks = [];
+            // STEP 5: CALCULATE TOTAL RANK SCORE AND AVERAGE OF FINAL RANKS
+            $averageFinalRanks = [];
             foreach ($documentIds as $docId) {
-                if (isset($allRankings[$docId]) && !empty($allRankings[$docId])) {
-                    $ranks = $allRankings[$docId];
-                    $sum = array_sum($ranks);
-                    $count = count($ranks);
+                if (isset($allFinalRanks[$docId]) && !empty($allFinalRanks[$docId])) {
+                    $finalRanks = $allFinalRanks[$docId];
+                    $sum = array_sum($finalRanks);
+                    $count = count($finalRanks);
                     $average = $sum / $count;
                     
-                    // Format to 1 decimal place
-                    $formattedAverage = round($average, 1);
+                    // Format to 2 decimal places for average
+                    $formattedAverage = round($average, 2);
                     
-                    $averageRanks[$docId] = [
+                    $averageFinalRanks[$docId] = [
                         'doc_id' => $docId,
                         'title' => $allDocuments[$docId]['title'],
                         'column' => $documentColumns[$docId],
-                        'ranks' => $ranks,
+                        'final_ranks' => $finalRanks, // Array of final ranks from each evaluator
+                        'total_rank_score' => $sum,   // SUM of final ranks (NEW)
                         'average' => $average,
                         'formatted_average' => $formattedAverage,
-                        'sum' => $sum,
                         'count' => $count
                     ];
                 }
             }
             
-            // Sort average ranks by average (lower is better)
-            uasort($averageRanks, function($a, $b) {
+            // STEP 6: SORT BY AVERAGE FINAL RANK (LOWER IS BETTER)
+            uasort($averageFinalRanks, function($a, $b) {
                 if ($a['average'] == $b['average']) return 0;
                 return ($a['average'] < $b['average']) ? -1 : 1;
             });
             
-            // Add final rank position based on average
+            // STEP 7: ADD FINAL RANK POSITION BASED ON AVERAGE
             $finalPosition = 1;
-            foreach ($averageRanks as $docId => &$rankData) {
+            foreach ($averageFinalRanks as $docId => &$rankData) {
                 $rankData['final_rank'] = $finalPosition++;
             }
             
-            // STEP 6: BUILD RESPONSE
+            // STEP 8: PREPARE EVALUATOR NAMES FOR RESPONSE
+            $evaluatorNames = [];
+            foreach ($evaluatorData as $evalIndex => $evalItem) {
+                $evaluator = $evalItem->evaluator ?? $evalItem['evaluator'];
+                $evaluatorNames[] = [
+                    'id' => $evaluator['id'] ?? $evaluator->id,
+                    'name' => $evaluator['fullname'] ?? $evaluator->fullname,
+                    'number' => $evalIndex + 1
+                ];
+            }
+            
+            // STEP 9: BUILD RESPONSE
             $response['success'] = true;
             $response['data'] = [
                 'event' => [
@@ -1454,8 +1510,8 @@ if(isset($_POST['getAverageRank'])) {
                 ],
                 'documents' => $allDocuments,
                 'document_columns' => $documentColumns,
-                'evaluator_ranks' => $evaluatorRanks,
-                'average_ranks' => $averageRanks,
+                'evaluator_names' => $evaluatorNames,
+                'average_ranks' => $averageFinalRanks, // Now contains total_rank_score and final_ranks array
                 'summary' => [
                     'total_evaluators' => count($evaluatorData),
                     'total_documents' => count($documentIds),
