@@ -2464,7 +2464,6 @@ if (isset($_POST['incomingEndorsement'])) {
         $queries = "SELECT endorsement.id, 
             endorsement.senderid,
             endorsement.center, 
-            endorsement.campus,
             endorsement.file,  
             endorsement.drive_file_id,
             endorsement.drive_view_url,  
@@ -2472,21 +2471,30 @@ if (isset($_POST['incomingEndorsement'])) {
             endorsement.event, 
             endorsement.date,
             account_detail.usertype,
-            account_detail.email
+            account_detail.email,
+            account_detail.campus 
         FROM endorsement
         LEFT JOIN account_detail ON endorsement.senderid=account_detail.id
-        WHERE `status`='' OR `status` IS NULL"; //WHERE `status`='forwarded' OR `status` IS NULL";
+        WHERE `status`='' OR `status` IS NULL";
         
         foreach ($con->query($queries) as $val) {
             $data = new stdClass();
             $data->id = $val['id'];
             $data->senderid = $val['senderid'];
-            $data->campus = $val['campus'];
+            $data->center = $val['center'];
+            $data->campus = $val['campus']; // This comes from account_detail
             $data->event = $val['event'];
             $data->date = $val['date'];
             $data->senderType = $val['usertype'];
             $data->senderEmail = $val['email'];
             $data->researchDocs = [];
+            
+            // Determine location type based on center
+            if ($val['center'] === 'Extension') {
+                $data->locationType = 'campus';
+            } else {
+                $data->locationType = 'center';
+            }
             
             // Handle file URL with backward compatibility
             $legacyFile = $val['file'];
@@ -2525,7 +2533,7 @@ if (isset($_POST['incomingEndorsement'])) {
             // Set the file data as the file object (not just the URL)
             $data->file = $fileObject;
             
-            // UPDATED QUERY for research files
+            // Query for research files
             foreach ($con->query("SELECT 
                 `id`, 
                 `senderid`, 
@@ -2542,7 +2550,6 @@ if (isset($_POST['incomingEndorsement'])) {
                 `center`,
                 `event`,  
                 `status`, 
-                `campus`, 
                 `coauthor`,
                 `presenter`,
                 `category` 
@@ -2553,13 +2560,22 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->senderid = $v['senderid'];
                 $research->author = $v['author'];
                 $research->title = $v['title'];
-                $research->center = $v['center']; 
+                $research->center = $v['center'];
                 $research->event = $v['event'];
                 $research->status = $v['status'];
-                $research->campus = $v['campus'];
                 $research->coauthor = $v['coauthor'];
                 $research->presenter = $v['presenter'];
                 $research->category = $v['category'];
+                
+                // For Extension, we'll use the campus from account_detail
+                // For other centers, we'll use the center from researchfile
+                if ($val['center'] === 'Extension') {
+                    $research->displayLocation = $val['campus']; // Use account_detail.campus
+                    $research->locationType = 'campus';
+                } else {
+                    $research->displayLocation = $v['center']; // Use researchfile.center
+                    $research->locationType = 'center';
+                }
                 
                 // Handle research file with backward compatibility
                 $researchLegacyFile = $v['legacy_file'];
@@ -2633,8 +2649,8 @@ if (isset($_POST['researchDocsNew'])) {
                 researchfile.author,
                 researchfile.presenter,
                 researchfile.title,
-                researchfile.file,                    -- Local file path
-                researchfile.drive_view_url,          -- Google Drive view URL
+                researchfile.file,                    
+                researchfile.drive_view_url,        
                 researchfile.drive_file_id,
                 researchfile.drive_download_url,
                 researchfile.drive_folder_id,

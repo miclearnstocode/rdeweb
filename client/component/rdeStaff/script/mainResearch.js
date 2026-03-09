@@ -94,7 +94,7 @@ export const ResearchMain = () => {
             ]
         })
         const bodyPanel = () => {
-            const docs = ({date, campus, eventType, file, research, docId, status, sender, smail}) => {
+            const docs = ({date, eventType, file, research, docId, status, sender, smail, center, campus, locationType}) => {
                 let category, titleEntry
                 research.forEach(val=>{
                     category=val.category
@@ -1181,6 +1181,19 @@ export const ResearchMain = () => {
                     }
                     let [Date,Time]=date.split(' ')
                     let TimeFormat=TimeConvert(Time.split(":"))
+                    
+                    // Determine what to show for location
+                    let locationLabel = '';
+                    let locationValue = '';
+
+                    if (center === 'Extension (Extension)') {
+                        locationLabel = 'Campus: ';
+                        locationValue = campus || 'N/A'; // Use campus from account_detail
+                    } else {
+                        locationLabel = 'Center: ';
+                        locationValue = research.length > 0 ? research[0].center : center || 'N/A';
+                    }
+                    
                     return ($({
                         tag: 'div',
                         style: {
@@ -1190,13 +1203,15 @@ export const ResearchMain = () => {
                         child: [
                             details("Title: ", titleEntry),
                             details("Date: ", Date+" || "+TimeFormat),
-                            details("Campus: ", campus),
+                            details(locationLabel, locationValue),
                             details("Sender: ", sender),
                             details("Sender email: ", smail),
                             details("Event type: ", eventType),
-                            details("Category: ", category),]
+                            details("Category: ", category),
+                        ]
                     }))
                 }
+                
                 return ($({
                     tag: 'button',
                     style: {
@@ -1214,7 +1229,6 @@ export const ResearchMain = () => {
                         icon,
                         leftBox()
                     ],
-
                     event: {
                         type: 'click',
                         method: () => {
@@ -1248,6 +1262,8 @@ export const ResearchMain = () => {
                                 el.appendChild(docs({
                                     date: val.date,
                                     campus: val.campus,
+                                    center: val.center,
+                                    locationType: val.locationType,
                                     eventType: val.event,
                                     file: val.file,
                                     research: val.researchDocs,
@@ -6587,7 +6603,6 @@ export const ResearchMain = () => {
                                 ])
                                 request.Json()
                                 request.Send().then((data)=>{
-                                    //console.log('Received evaluator data for category/center:', data);
                                     
                                     let Titles = []
                                     let docSet = []
@@ -6732,13 +6747,13 @@ export const ResearchMain = () => {
                             tag:'div',
                             style:{
                                 height:'7vh',
-                                width:'1256px',
+                                width:'100%',
+                                maxWidth: 'auto',
                                 backgroundColor:'#2c3e50',
                                 display:'flex',
                                 justifyContent:'center',
                                 position: 'fixed',   
-                                bottom: '0',          
-                                left: '238px',   
+                                bottom: '0',            
                                 zIndex: '10',       
                                 padding: '10px 0'  
                             },
