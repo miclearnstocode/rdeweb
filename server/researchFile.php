@@ -258,6 +258,341 @@ function getResearchFileUrl($researchRecord) {
         ];
     }
 }
+//Helper function to check for duplicate research entries
+function checkDuplicateResearch($con, $researchData, $fileData = []) {
+    $result = [
+        'isDuplicate' => false,
+        'message' => '',
+        'existingRecord' => null,
+        'duplicateReason' => ''
+    ];
+    
+    try {
+        // Build query to check for existing records with same identity fields
+        $query = "SELECT 
+                    rf.id,
+                    rf.title,
+                    rf.author,
+                    rf.coauthor,
+                    rf.presenter,
+                    rf.event_id,
+                    rf.category,
+                    rf.center,
+                    rf.campus,
+                    rf.drive_file_id,
+                    rf.program_drive_file_id,
+                    rf.endorsementid,
+                    e.drive_file_id as endorsement_drive_file_id,
+                    el.name as event_name
+                  FROM researchfile rf
+                  LEFT JOIN endorsement e ON rf.endorsementid = e.id
+                  LEFT JOIN event_list el ON rf.event_id = el.id
+                  WHERE 1=1";
+        
+        $params = [];
+        $types = "";
+        
+        // Check identity fields
+        if (!empty($researchData['title'])) {
+            $query .= " AND rf.title = ?";
+            $params[] = $researchData['title'];
+            $types .= "s";
+        }
+        
+        if (!empty($researchData['author'])) {
+            $query .= " AND rf.author = ?";
+            $params[] = $researchData['author'];
+            $types .= "s";
+        }
+        
+        if (isset($researchData['coauthor'])) {
+            // Normalize coauthor for comparison (sort to handle different orders)
+            $coauthorInput = $researchData['coauthor'];
+            if (is_string($coauthorInput)) {
+                $coauthorArray = json_decode($coauthorInput, true);
+                if (is_array($coauthorArray)) {
+                    sort($coauthorArray);
+                    $coauthorInput = json_encode($coauthorArray);
+                }
+            }
+            
+            $query .= " AND rf.coauthor = ?";
+            $params[] = $coauthorInput;
+            $types .= "s";
+        }
+        
+        if (!empty($researchData['presenter'])) {
+            $query .= " AND rf.presenter = ?";
+            $params[] = $researchData['presenter'];
+            $types .= "s";
+        }
+        
+        if (!empty($researchData['event_id'])) {
+            $query .= " AND rf.event_id = ?";
+            $params[] = $researchData['event_id'];
+            $types .= "s";
+        }
+        
+        if (!empty($researchData['category'])) {
+            $query .= " AND rf.category = ?";
+            $params[] = $researchData['category'];
+            $types .= "s";
+        }
+        
+        if (!empty($researchData['center'])) {
+            $query .= " AND rf.center = ?";
+            $params[] = $researchData['center'];
+            $types .= "s";
+        }
+        
+        if (!empty($researchData['campus'])) {
+            $query .= " AND rf.campus = ?";
+            $params[] = $researchData['campus'];
+            $types .= "s";
+        }
+        
+        // If no identity fields provided, return early
+        if (empty($params)) {
+            $result['message'] = "No identity fields provided for duplicate check";
+            return $result;
+        }
+        
+        // Execute identity check
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+        
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        $stmt->execute();
+        $identityResult = $stmt->get_result();
+        
+        // Check for exact identity matches first
+        if ($identityResult->num_rows > 0) {
+            $existingRecord = $identityResult->fetch_assoc();
+            $result['isDuplicate'] = true;
+            $result['existingRecord'] = $existingRecord;
+            $result['duplicateReason'] = "A research entry with the same title, author, and event already exists";
+            $result['message'] = "Duplicate research entry detected. Please check existing submissions.";
+            return $result;
+        }
+        
+        // If no exact match, check for file-based duplicates (if file data provided)
+        if (!empty($fileData)) {
+            // Check for duplicate by file hashes
+            if (!empty($fileData['proposal_hash']) || !empty($fileData['program_hash']) || !empty($fileData['endorsement_hash'])) {
+                
+                $fileQuery = "SELECT 
+                                fh.research_id,
+                                rf.id,
+                                rf.title,
+                                rf.author,
+                                rf.drive_file_id,
+                                rf.program_drive_file_id,
+                                rf.endorsementid,
+                                fh.file_type,
+                                fh.file_hash
+                              FROM file_hashes fh
+                              JOIN researchfile rf ON fh.research_id = rf.id
+                              WHERE 1=1";
+                
+                $fileParams = [];
+                $fileTypes = "";
+                $fileConditions = [];
+                
+                // Check for duplicate research/proposal file by hash
+                if (!empty($fileData['proposal_hash'])) {
+                    $fileConditions[] = "(fh.file_hash = ? AND fh.file_type = 'proposal')";
+                    $fileParams[] = $fileData['proposal_hash'];
+                    $fileTypes .= "s";
+                }
+                
+                // Check for duplicate program file by hash
+                if (!empty($fileData['program_hash'])) {
+                    $fileConditions[] = "(fh.file_hash = ? AND fh.file_type = 'program')";
+                    $fileParams[] = $fileData['program_hash'];
+                    $fileTypes .= "s";
+                }
+                
+                // Check for duplicate endorsement file by hash
+                if (!empty($fileData['endorsement_hash'])) {
+                    $fileConditions[] = "(fh.file_hash = ? AND fh.file_type = 'endorsement')";
+                    $fileParams[] = $fileData['endorsement_hash'];
+                    $fileTypes .= "s";
+                }
+                
+                if (!empty($fileConditions)) {
+                    $fileQuery .= " AND (" . implode(" OR ", $fileConditions) . ")";
+                    $fileQuery .= " ORDER BY fh.created_at DESC LIMIT 1";
+                    
+                    $fileStmt = $con->prepare($fileQuery);
+                    if (!$fileStmt) {
+                        throw new Exception("Prepare failed for file hash check: " . $con->error);
+                    }
+                    
+                    if (!empty($fileParams)) {
+                        $fileStmt->bind_param($fileTypes, ...$fileParams);
+                    }
+                    
+                    $fileStmt->execute();
+                    $fileResult = $fileStmt->get_result();
+                    
+                    if ($fileResult->num_rows > 0) {
+                        $existingFileRecord = $fileResult->fetch_assoc();
+                        $result['isDuplicate'] = true;
+                        $result['existingRecord'] = $existingFileRecord;
+                        
+                        // Determine which file caused the duplicate
+                        if (!empty($fileData['proposal_hash']) && $existingFileRecord['file_type'] == 'proposal') {
+                            $result['duplicateReason'] = "The research/proposal file has already been uploaded for research ID {$existingFileRecord['research_id']}: '{$existingFileRecord['title']}' by {$existingFileRecord['author']}";
+                        } elseif (!empty($fileData['program_hash']) && $existingFileRecord['file_type'] == 'program') {
+                            $result['duplicateReason'] = "The program file has already been uploaded for research ID {$existingFileRecord['research_id']}: '{$existingFileRecord['title']}' by {$existingFileRecord['author']}";
+                        } elseif (!empty($fileData['endorsement_hash']) && $existingFileRecord['file_type'] == 'endorsement') {
+                            $result['duplicateReason'] = "The endorsement letter has already been used for research ID {$existingFileRecord['research_id']}: '{$existingFileRecord['title']}' by {$existingFileRecord['author']}";
+                        }
+                        
+                        $result['message'] = "Duplicate file detected. This file has been uploaded before.";
+                        return $result;
+                    }
+                }
+            }
+            
+            // Also check for endorsement ID duplicate (legacy check)
+            if (!empty($fileData['endorsement_id'])) {
+                $endorsementQuery = "SELECT 
+                                        rf.id,
+                                        rf.title,
+                                        rf.author
+                                     FROM researchfile rf
+                                     WHERE rf.endorsementid = ?
+                                     LIMIT 1";
+                
+                $endStmt = $con->prepare($endorsementQuery);
+                if ($endStmt) {
+                    $endStmt->bind_param("i", $fileData['endorsement_id']);
+                    $endStmt->execute();
+                    $endResult = $endStmt->get_result();
+                    
+                    if ($endResult->num_rows > 0) {
+                        $existingEndRecord = $endResult->fetch_assoc();
+                        $result['isDuplicate'] = true;
+                        $result['existingRecord'] = $existingEndRecord;
+                        $result['duplicateReason'] = "This endorsement letter has already been used for research ID {$existingEndRecord['id']}: '{$existingEndRecord['title']}' by {$existingEndRecord['author']}";
+                        $result['message'] = "Duplicate endorsement detected.";
+                        return $result;
+                    }
+                }
+            }
+        }
+        
+        return $result;
+        
+    } catch (Exception $e) {
+        error_log("Error in checkDuplicateResearch: " . $e->getMessage());
+        $result['message'] = "Error checking for duplicates: " . $e->getMessage();
+        return $result;
+    }
+}
+//Generate a hash for file content to detect identical files even with different names
+function generateFileHash($filePath) {
+    if (!file_exists($filePath)) {
+        return false;
+    }
+    
+    // Use SHA256 for better collision resistance
+    // Only hash first 1MB + last 1MB for performance with large files
+    $handle = fopen($filePath, 'rb');
+    if (!$handle) {
+        return false;
+    }
+    
+    $hashContext = hash_init('sha256');
+    $fileSize = filesize($filePath);
+    
+    if ($fileSize > 2 * 1024 * 1024) { // If file > 2MB
+        // Hash first 1MB
+        $firstChunk = fread($handle, 1024 * 1024);
+        hash_update($hashContext, $firstChunk);
+        
+        // Seek to last 1MB
+        fseek($handle, -1024 * 1024, SEEK_END);
+        $lastChunk = fread($handle, 1024 * 1024);
+        hash_update($hashContext, $lastChunk);
+    } else {
+        // Hash entire file
+        while (!feof($handle)) {
+            $chunk = fread($handle, 8192);
+            hash_update($hashContext, $chunk);
+        }
+    }
+    
+    fclose($handle);
+    return hash_final($hashContext);
+}
+
+// Store file hash in database for future duplicate detection Uses researchfile.id as foreign key
+function storeFileHash($con, $researchId, $fileType, $fileHash) {
+    // First check if this hash already exists for this research ID and file type
+    $checkQuery = "SELECT id FROM file_hashes WHERE research_id = ? AND file_type = ? AND file_hash = ?";
+    $checkStmt = $con->prepare($checkQuery);
+    
+    if ($checkStmt) {
+        $checkStmt->bind_param("iss", $researchId, $fileType, $fileHash);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        
+        if ($checkResult->num_rows > 0) {
+            // Already exists, no need to insert again
+            return true;
+        }
+    }
+    
+    // Insert new hash record
+    $query = "INSERT INTO file_hashes (research_id, file_type, file_hash, created_at) 
+              VALUES (?, ?, ?, NOW())";
+    
+    $stmt = $con->prepare($query);
+    if (!$stmt) {
+        error_log("Failed to prepare file hash insert: " . $con->error);
+        return false;
+    }
+    
+    $stmt->bind_param("iss", $researchId, $fileType, $fileHash);
+    return $stmt->execute();
+}
+
+// Check for duplicate by file hash
+function checkDuplicateByFileHash($con, $fileHash, $fileType) {
+    $query = "SELECT 
+                fh.research_id,
+                rf.id,
+                rf.title,
+                rf.author
+              FROM file_hashes fh
+              JOIN researchfile rf ON fh.research_id = rf.id
+              WHERE fh.file_hash = ? AND fh.file_type = ?
+              ORDER BY fh.created_at DESC
+              LIMIT 1";
+    
+    $stmt = $con->prepare($query);
+    if (!$stmt) {
+        error_log("Failed to prepare file hash check: " . $con->error);
+        return false;
+    }
+    
+    $stmt->bind_param("ss", $fileHash, $fileType);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        return $result->fetch_assoc();
+    }
+    
+    return false;
+}
 
 if (isset($_POST['uploadResearch'])) {
     // Temporarily disable the error-catching output buffer
@@ -269,7 +604,7 @@ if (isset($_POST['uploadResearch'])) {
     error_reporting(E_ALL);
     ini_set('display_errors', 0);
     
-    $center = $_POST['center'] ?? ''; // Use center from POST, not campus
+    $center = $_POST['center'] ?? '';
     $senderId = $_SESSION['userId'];
     $response = new stdClass();
     $response->message = '';
@@ -297,300 +632,390 @@ if (isset($_POST['uploadResearch'])) {
 
             if ($resss[0] !== 0) {
                 $userDisignation = $_SESSION['userDesignation'];
-                if(true) { // Temporarily bypass permission check
+                
+                // Get research data from POST
+                $title = $_POST['title'];
+                $author = $_POST['author'];
+                $category = $_POST['category'];
+                $center = $_POST['center'];
+                $coAuthor = $_POST['coAuthor'] ?? '[]';
+                $presenter = $_POST['presenter'];
+                
+                // Get event_id
+                $eventId = null;
+                $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
+                $eventStmt = $con->prepare($eventIdQuery);
+                $eventStmt->bind_param("s", $eventType);
+                $eventStmt->execute();
+                $eventResult = $eventStmt->get_result();
+                $eventRow = $eventResult->fetch_assoc();
+                $eventId = $eventRow ? $eventRow['id'] : null;
+                
+                // ===== DUPLICATE VALIDATION - STEP 1: Identity Check =====
+                // Prepare research data for duplicate check
+                $researchData = [
+                    'title' => $title,
+                    'author' => $author,
+                    'coauthor' => $coAuthor,
+                    'presenter' => $presenter,
+                    'event_id' => $eventId,
+                    'category' => $category,
+                    'center' => $center,
+                    'campus' => $center // Using center for campus field as in your code
+                ];
+                
+                // First, check for identity duplicates
+                $duplicateCheck = checkDuplicateResearch($con, $researchData);
+                
+                if ($duplicateCheck['isDuplicate']) {
+                    // Found duplicate by identity fields
+                    $response->message = "DUPLICATE DETECTED: " . $duplicateCheck['duplicateReason'] . 
+                                         "\n\nPlease check your submissions. If you believe this is a mistake, contact the system administrator.";
+                    $response->status = false;
                     
-                    // Get research data from POST (single entry)
-                    $title = $_POST['title'];
-                    $author = $_POST['author'];
-                    $category = $_POST['category'];
-                    $center = $_POST['center']; // This is the center name
-                    $coAuthor = $_POST['coAuthor'] ?? '[]';
-                    $presenter = $_POST['presenter'];
-                    
-                    // Debug log
-                    error_log("=== STARTING UPLOAD PROCESS ===");
-                    error_log("Title: $title");
-                    error_log("Author: $author");
-                    error_log("Event: $eventType");
-                    error_log("Center: $center");
-                    error_log("Category: $category");
-                    
-                    // 1. Upload Endorsement Letter to Google Drive
-                    if (!isset($_FILES['uploadedFileEndorsement']) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
-                        throw new Exception('Endorsement letter upload failed. Error code: ' . ($_FILES['uploadedFileEndorsement']['error'] ?? 'NO_FILE'));
-                    }
-                    
-                    $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
-                    $endorsementFileName = $_FILES['uploadedFileEndorsement']['name'];
-                    
-                    error_log("Uploading endorsement: $endorsementFileName");
-                    
-                    // Upload endorsement to Drive
-                    $endorsementDriveResult = uploadResearchToDrive(
-                        $tempEndorsementPath,
-                        $endorsementFileName,
-                        $eventType,
-                        $center,
-                        $category,
-                        $author,
-                        $title,
-                        'endorsement',
-                        false,
-                        true
-                    );
-                    
-                    if (!$endorsementDriveResult['success']) {
-                        throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
-                    }
-                    
-                    error_log("Endorsement uploaded successfully: " . $endorsementDriveResult['drive_file_id']);
-                    
-                    // Insert endorsement record with Drive metadata
-                    $defaultTime = date('Y-m-d H:i:s');
-                    
-                    // FIXED: Removed duplicate center column and corrected number of placeholders
-                    $query2 = "INSERT INTO endorsement (
-                        endorsement.senderid,
-                        endorsement.center,
-                        endorsement.file, 
-                        endorsement.drive_file_id,
-                        endorsement.drive_view_url,
-                        endorsement.drive_download_url,
-                        endorsement.drive_event_folder_id,
-                        endorsement.drive_center_folder_id,
-                        endorsement.drive_category_folder_id,
-                        endorsement.drive_entry_folder_id,
-                        endorsement.event,
-                        endorsement.status,
-                        endorsement.date
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"; // 13 placeholders
-
-                    $stateM = $con->prepare($query2);
-                    if (!$stateM) {
-                        throw new Exception("Prepare failed for endorsement: " . $con->error);
-                    }
-                    
-                    $sta = NULL;
-                    $endorsementFileJson = json_encode($endorsementDriveResult);
-                    
-                    // Extract values to avoid reference issues with null
-                    $drive_event_folder_id = $endorsementDriveResult['drive_event_folder_id'] ?? null;
-                    $drive_center_folder_id = $endorsementDriveResult['drive_center_folder_id'] ?? null;
-                    $drive_category_folder_id = $endorsementDriveResult['drive_category_folder_id'] ?? null;
-                    $drive_entry_folder_id = $endorsementDriveResult['drive_entry_folder_id'] ?? null;
-                    
-                    // FIXED: Removed $campus parameter and corrected to 13 parameters
-                    $stateM->bind_param(
-                        'sssssssssssss', // 13 's' parameters
-                        $senderId, 
-                        $center, // Use center, not campus
-                        $endorsementFileJson,
-                        $endorsementDriveResult['drive_file_id'],
-                        $endorsementDriveResult['drive_view_url'],
-                        $endorsementDriveResult['drive_download_url'],
-                        $drive_event_folder_id,
-                        $drive_center_folder_id,
-                        $drive_category_folder_id,
-                        $drive_entry_folder_id,
-                        $eventType, 
-                        $sta,
-                        $defaultTime
-                    );
-                    
-                    $st = $stateM->execute();
-                    
-                    if (!$st) {
-                        throw new Exception("Failed to execute endorsement insert: " . $stateM->error);
-                    }
-                    
-                    $endorsementId = $con->insert_id;
-                    error_log("Endorsement saved to DB with ID: $endorsementId");
-                    
-                    // 2. Upload Research File (SINGLE FILE)
-                    if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
-                        $errorCode = $_FILES['researchDoc']['error'] ?? 'NO_FILE';
-                        $errorMsg = "Research file upload failed. Error code: $errorCode";
-                        if ($errorCode == 1 || $errorCode == 2) {
-                            $errorMsg .= " (File too large)";
-                        } elseif ($errorCode == 3) {
-                            $errorMsg .= " (File only partially uploaded)";
-                        } elseif ($errorCode == 4) {
-                            $errorMsg .= " (No file selected)";
-                        }
-                        throw new Exception($errorMsg);
-                    }
-                    
-                    $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
-                    $researchFileName = $_FILES['researchDoc']['name'];
-                    
-                    error_log("Uploading research: $researchFileName");
-                    
-                    // Check if research file exists before uploading
-                    if (!file_exists($tempResearchPath)) {
-                        throw new Exception("Research file not found on server. Temp path: $tempResearchPath");
-                    }
-                    
-                    // Upload research paper to Google Drive
-                    $researchDriveResult = uploadResearchToDrive(
-                        $tempResearchPath,
-                        $researchFileName,
-                        $eventType,
-                        $center,
-                        $category,
-                        $author,
-                        $title,
-                        'research',
-                        false,
-                        false
-                    );
-                    
-                    if (!$researchDriveResult['success']) {
-                        throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
-                    }
-                    
-                    error_log("Research uploaded successfully: " . $researchDriveResult['drive_file_id']);
-                    
-                    // 3. Upload Program File (SINGLE FILE - OPTIONAL)
-                    $programDriveResult = null;
-                    $programFile = null;
-                    $programDriveFileId = null;
-                    $programDriveViewUrl = null;
-                    
-                    if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
-                        $tempProgramPath = $_FILES['programFile']['tmp_name'];
-                        $programFileName = $_FILES['programFile']['name'];
-                        
-                        error_log("Uploading program: $programFileName");
-                        
-                        // Check if program file exists before uploading
-                        if (file_exists($tempProgramPath)) {
-                            $programDriveResult = uploadResearchToDrive(
-                                $tempProgramPath,
-                                $programFileName,
-                                $eventType,
-                                $center,
-                                $category,
-                                $author,
-                                $title,
-                                'program',
-                                true,
-                                false
-                            );
-                            
-                            if ($programDriveResult && $programDriveResult['success']) {
-                                $programFile = json_encode($programDriveResult);
-                                $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
-                                $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
-                                error_log("Program uploaded successfully: " . $programDriveResult['drive_file_id']);
-                            }
-                        }
-                    } else {
-                        error_log("Program file not uploaded or has error: " . ($_FILES['programFile']['error'] ?? 'NOT_SET'));
-                    }
-                    
-                    // Get event_id
-                    $eventId = null;
-                    $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
-                    $eventStmt = $con->prepare($eventIdQuery);
-                    $eventStmt->bind_param("s", $eventType);
-                    $eventStmt->execute();
-                    $eventResult = $eventStmt->get_result();
-                    $eventRow = $eventResult->fetch_assoc();
-                    $eventId = $eventRow ? $eventRow['id'] : null;
-                    
-                    // Insert research record with Drive metadata
-                    $querV2 = "INSERT INTO researchfile(
-                        researchfile.senderid,
-                        researchfile.endorsementid,
-                        researchfile.author,
-                        researchfile.title,
-                        researchfile.center,
-                        researchfile.category,
-                        researchfile.drive_file_id,
-                        researchfile.drive_view_url,
-                        researchfile.drive_download_url,
-                        researchfile.drive_folder_id,
-                        researchfile.drive_event_folder_id,
-                        researchfile.drive_center_folder_id,
-                        researchfile.drive_category_folder_id,
-                        researchfile.drive_entry_folder_id,
-                        researchfile.program,
-                        researchfile.program_drive_file_id,
-                        researchfile.program_drive_view_url,
-                        researchfile.event,
-                        researchfile.event_id,
-                        researchfile.campus,
-                        researchfile.coauthor,
-                        researchfile.presenter,
-                        researchfile.reviews
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // 23 placeholders
-
-                    $rev = NULL;
-
-                    $stementResNew = $con->prepare($querV2);
-                    if (!$stementResNew) {
-                        throw new Exception("Prepare failed for researchfile: " . $con->error);
-                    }
-
-                    // Extract values to avoid reference issues with null
-                    $drive_folder_id = $researchDriveResult['drive_folder_id'] ?? null;
-                    $drive_event_folder_id = $researchDriveResult['drive_event_folder_id'] ?? null;
-                    $drive_center_folder_id = $researchDriveResult['drive_center_folder_id'] ?? null;
-                    $drive_category_folder_id = $researchDriveResult['drive_category_folder_id'] ?? null;
-                    $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
-
-                    // Debug: Count parameters
-                    error_log("Number of columns in query: 23");
-                    error_log("Number of variables to bind: 23");
-
-                    // Bind parameters - count should match: 23 parameters
-                    $bound = $stementResNew->bind_param(
-                        'sssssssssssssssssssssss', // 23 's' for strings (including NULL values)
-                        $senderId,
-                        $endorsementId,
-                        $author,
-                        $title,
-                        $center, // Use center
-                        $category,
-                        $researchDriveResult['drive_file_id'],
-                        $researchDriveResult['drive_view_url'],
-                        $researchDriveResult['drive_download_url'],
-                        $drive_folder_id,
-                        $drive_event_folder_id,
-                        $drive_center_folder_id,
-                        $drive_category_folder_id,
-                        $drive_entry_folder_id,
-                        $programFile,
-                        $programDriveFileId,
-                        $programDriveViewUrl,
-                        $eventType,
-                        $eventId,
-                        $center, // Use center for campus field as well (for backward compatibility)
-                        $coAuthor,
-                        $presenter,
-                        $rev
-                    );
-
-                    if (!$bound) {
-                        throw new Exception("Bind failed for researchfile: " . $stementResNew->error);
-                    }
-
-                    $state = $stementResNew->execute();
-
-                    if (!$state) {
-                        throw new Exception("Database error for $researchFileName: " . $stementResNew->error);
-                    }
-                    
-                    $researchFileId = $con->insert_id;
-                    $response->message = "$researchFileName uploaded to Google Drive successfully.\n";
-                    if ($programDriveResult && $programDriveResult['success']) {
-                        $response->message .= "Program attachment uploaded successfully.\n";
-                    }
-                    $response->status = true;
-                    
-                } else {
-                    $response->message = "This account is currently unable to submit endorsement letter.\n Please contact system administrator for permission...!";
+                    ob_clean();
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode($response);
+                    exit();
                 }
+                
+                // ===== STEP 2: File Hash Checks Before Upload =====
+                // Generate hashes for files before upload to check for duplicates
+                
+                // Check endorsement file if exists
+                if (isset($_FILES['uploadedFileEndorsement']) && $_FILES['uploadedFileEndorsement']['error'] === UPLOAD_ERR_OK) {
+                    $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
+                    $endorsementFileHash = generateFileHash($tempEndorsementPath);
+                    
+                    if ($endorsementFileHash) {
+                        $existingEndorsement = checkDuplicateByFileHash($con, $endorsementFileHash, 'endorsement');
+                        if ($existingEndorsement) {
+                            throw new Exception("DUPLICATE ENDORSEMENT: This endorsement letter file has already been used for research ID {$existingEndorsement['research_id']}: '{$existingEndorsement['title']}' by {$existingEndorsement['author']}");
+                        }
+                    }
+                }
+                
+                // Check research file if exists
+                if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
+                    $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
+                    $researchFileHash = generateFileHash($tempResearchPath);
+                    
+                    if ($researchFileHash) {
+                        $existingResearch = checkDuplicateByFileHash($con, $researchFileHash, 'proposal');
+                        if ($existingResearch) {
+                            throw new Exception("DUPLICATE RESEARCH: This research/proposal file has already been uploaded for research ID {$existingResearch['research_id']}: '{$existingResearch['title']}' by {$existingResearch['author']}");
+                        }
+                    }
+                }
+                
+                // Check program file if exists
+                $programFileHash = null;
+                if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                    $tempProgramPath = $_FILES['programFile']['tmp_name'];
+                    $programFileHash = generateFileHash($tempProgramPath);
+                    
+                    if ($programFileHash) {
+                        $existingProgram = checkDuplicateByFileHash($con, $programFileHash, 'program');
+                        if ($existingProgram) {
+                            throw new Exception("DUPLICATE PROGRAM: This program file has already been uploaded for research ID {$existingProgram['research_id']}: '{$existingProgram['title']}' by {$existingProgram['author']}");
+                        }
+                    }
+                }
+                
+                // If no duplicates found, proceed with uploads
+                
+                // 1. Upload Endorsement Letter to Google Drive
+                if (!isset($_FILES['uploadedFileEndorsement']) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
+                    throw new Exception('Endorsement letter upload failed. Error code: ' . ($_FILES['uploadedFileEndorsement']['error'] ?? 'NO_FILE'));
+                }
+                
+                $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
+                $endorsementFileName = $_FILES['uploadedFileEndorsement']['name'];
+                
+                // Upload endorsement to Drive
+                $endorsementDriveResult = uploadResearchToDrive(
+                    $tempEndorsementPath,
+                    $endorsementFileName,
+                    $eventType,
+                    $center,
+                    $category,
+                    $author,
+                    $title,
+                    'endorsement',
+                    false,
+                    true
+                );
+                
+                if (!$endorsementDriveResult['success']) {
+                    throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
+                }
+                
+                error_log("Endorsement uploaded successfully: " . $endorsementDriveResult['drive_file_id']);
+                
+                // Insert endorsement record with Drive metadata
+                $defaultTime = date('Y-m-d H:i:s');
+                
+                $query2 = "INSERT INTO endorsement (
+                    endorsement.senderid,
+                    endorsement.center,
+                    endorsement.file, 
+                    endorsement.drive_file_id,
+                    endorsement.drive_view_url,
+                    endorsement.drive_download_url,
+                    endorsement.drive_event_folder_id,
+                    endorsement.drive_center_folder_id,
+                    endorsement.drive_category_folder_id,
+                    endorsement.drive_entry_folder_id,
+                    endorsement.event,
+                    endorsement.status,
+                    endorsement.date
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+                $stateM = $con->prepare($query2);
+                if (!$stateM) {
+                    throw new Exception("Prepare failed for endorsement: " . $con->error);
+                }
+                
+                $sta = NULL;
+                $endorsementFileJson = json_encode($endorsementDriveResult);
+                
+                $drive_event_folder_id = $endorsementDriveResult['drive_event_folder_id'] ?? null;
+                $drive_center_folder_id = $endorsementDriveResult['drive_center_folder_id'] ?? null;
+                $drive_category_folder_id = $endorsementDriveResult['drive_category_folder_id'] ?? null;
+                $drive_entry_folder_id = $endorsementDriveResult['drive_entry_folder_id'] ?? null;
+                
+                $stateM->bind_param(
+                    'sssssssssssss',
+                    $senderId, 
+                    $center,
+                    $endorsementFileJson,
+                    $endorsementDriveResult['drive_file_id'],
+                    $endorsementDriveResult['drive_view_url'],
+                    $endorsementDriveResult['drive_download_url'],
+                    $drive_event_folder_id,
+                    $drive_center_folder_id,
+                    $drive_category_folder_id,
+                    $drive_entry_folder_id,
+                    $eventType, 
+                    $sta,
+                    $defaultTime
+                );
+                
+                $st = $stateM->execute();
+                
+                if (!$st) {
+                    throw new Exception("Failed to execute endorsement insert: " . $stateM->error);
+                }
+                
+                $endorsementId = $con->insert_id;
+                error_log("Endorsement saved to DB with ID: $endorsementId");
+                
+                // 2. Upload Research File
+                if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
+                    $errorCode = $_FILES['researchDoc']['error'] ?? 'NO_FILE';
+                    $errorMsg = "Research file upload failed. Error code: $errorCode";
+                    if ($errorCode == 1 || $errorCode == 2) {
+                        $errorMsg .= " (File too large)";
+                    } elseif ($errorCode == 3) {
+                        $errorMsg .= " (File only partially uploaded)";
+                    } elseif ($errorCode == 4) {
+                        $errorMsg .= " (No file selected)";
+                    }
+                    throw new Exception($errorMsg);
+                }
+                
+                $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
+                $researchFileName = $_FILES['researchDoc']['name'];
+                
+                error_log("Uploading research: $researchFileName");
+                
+                if (!file_exists($tempResearchPath)) {
+                    throw new Exception("Research file not found on server. Temp path: $tempResearchPath");
+                }
+                
+                // Upload research paper to Google Drive
+                $researchDriveResult = uploadResearchToDrive(
+                    $tempResearchPath,
+                    $researchFileName,
+                    $eventType,
+                    $center,
+                    $category,
+                    $author,
+                    $title,
+                    'research',
+                    false,
+                    false
+                );
+                
+                if (!$researchDriveResult['success']) {
+                    throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
+                }
+                
+                error_log("Research uploaded successfully: " . $researchDriveResult['drive_file_id']);
+                
+                // 3. Upload Program File (OPTIONAL)
+                $programDriveResult = null;
+                $programFile = null;
+                $programDriveFileId = null;
+                $programDriveViewUrl = null;
+                
+                if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                    $tempProgramPath = $_FILES['programFile']['tmp_name'];
+                    $programFileName = $_FILES['programFile']['name'];
+                    
+                    error_log("Uploading program: $programFileName");
+                    
+                    if (file_exists($tempProgramPath)) {
+                        $programDriveResult = uploadResearchToDrive(
+                            $tempProgramPath,
+                            $programFileName,
+                            $eventType,
+                            $center,
+                            $category,
+                            $author,
+                            $title,
+                            'program',
+                            true,
+                            false
+                        );
+                        
+                        if ($programDriveResult && $programDriveResult['success']) {
+                            $programFile = json_encode($programDriveResult);
+                            $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
+                            $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
+                            error_log("Program uploaded successfully: " . $programDriveResult['drive_file_id']);
+                        }
+                    }
+                } else {
+                    error_log("Program file not uploaded or has error: " . ($_FILES['programFile']['error'] ?? 'NOT_SET'));
+                }
+                
+                // ===== STEP 3: Final Duplicate Check Before Insert =====
+                // Prepare file data for duplicate check using hashes
+                $fileData = [
+                    'proposal_hash' => $researchFileHash ?? null,
+                    'program_hash' => $programFileHash,
+                    'endorsement_hash' => $endorsementFileHash ?? null,
+                    'endorsement_id' => $endorsementId
+                ];
+                
+                $finalDuplicateCheck = checkDuplicateResearch($con, $researchData, $fileData);
+                
+                if ($finalDuplicateCheck['isDuplicate']) {
+                    // Found duplicate - clean up uploaded files from Drive
+                    // You might want to implement a cleanup function here
+                    
+                    $response->message = "DUPLICATE DETECTED: " . $finalDuplicateCheck['duplicateReason'] . 
+                                         "\n\nUpload prevented to maintain data integrity.";
+                    $response->status = false;
+                    
+                    ob_clean();
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode($response);
+                    exit();
+                }
+                
+                // Insert research record with Drive metadata
+                $querV2 = "INSERT INTO researchfile(
+                    researchfile.senderid,
+                    researchfile.endorsementid,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.center,
+                    researchfile.category,
+                    researchfile.drive_file_id,
+                    researchfile.drive_view_url,
+                    researchfile.drive_download_url,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id,
+                    researchfile.drive_category_folder_id,
+                    researchfile.drive_entry_folder_id,
+                    researchfile.program,
+                    researchfile.program_drive_file_id,
+                    researchfile.program_drive_view_url,
+                    researchfile.event,
+                    researchfile.event_id,
+                    researchfile.campus,
+                    researchfile.coauthor,
+                    researchfile.presenter,
+                    researchfile.reviews
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+                $rev = NULL;
+
+                $stementResNew = $con->prepare($querV2);
+                if (!$stementResNew) {
+                    throw new Exception("Prepare failed for researchfile: " . $con->error);
+                }
+
+                $drive_folder_id = $researchDriveResult['drive_folder_id'] ?? null;
+                $drive_event_folder_id = $researchDriveResult['drive_event_folder_id'] ?? null;
+                $drive_center_folder_id = $researchDriveResult['drive_center_folder_id'] ?? null;
+                $drive_category_folder_id = $researchDriveResult['drive_category_folder_id'] ?? null;
+                $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
+
+                $bound = $stementResNew->bind_param(
+                    'sssssssssssssssssssssss',
+                    $senderId,
+                    $endorsementId,
+                    $author,
+                    $title,
+                    $center,
+                    $category,
+                    $researchDriveResult['drive_file_id'],
+                    $researchDriveResult['drive_view_url'],
+                    $researchDriveResult['drive_download_url'],
+                    $drive_folder_id,
+                    $drive_event_folder_id,
+                    $drive_center_folder_id,
+                    $drive_category_folder_id,
+                    $drive_entry_folder_id,
+                    $programFile,
+                    $programDriveFileId,
+                    $programDriveViewUrl,
+                    $eventType,
+                    $eventId,
+                    $center,
+                    $coAuthor,
+                    $presenter,
+                    $rev
+                );
+
+                if (!$bound) {
+                    throw new Exception("Bind failed for researchfile: " . $stementResNew->error);
+                }
+
+                $state = $stementResNew->execute();
+
+                if (!$state) {
+                    throw new Exception("Database error for $researchFileName: " . $stementResNew->error);
+                }
+                
+                $researchFileId = $con->insert_id;
+                
+                // ===== STEP 4: Store File Hashes for Future Duplicate Detection =====
+                // Store file hashes using researchfile.id as foreign key
+                if ($researchFileId) {
+                    if (isset($researchFileHash) && $researchFileHash) {
+                        storeFileHash($con, $researchFileId, 'proposal', $researchFileHash);
+                    }
+                    
+                    if (isset($programFileHash) && $programFileHash) {
+                        storeFileHash($con, $researchFileId, 'program', $programFileHash);
+                    }
+                    
+                    if (isset($endorsementFileHash) && $endorsementFileHash) {
+                        storeFileHash($con, $researchFileId, 'endorsement', $endorsementFileHash);
+                    }
+                }
+                
+                $response->message = "$researchFileName uploaded to Google Drive successfully.\n";
+                if ($programDriveResult && $programDriveResult['success']) {
+                    $response->message .= "Program attachment uploaded successfully.\n";
+                }
+                $response->status = true;
+                
             } else {
                 $response->message = "Sorry..., The event has closed.";
             }
@@ -608,7 +1033,6 @@ if (isset($_POST['uploadResearch'])) {
     echo json_encode($response);
     exit();
 }
-
 
 if (isset($_POST['acceptRequest'])) {
     $response = new stdClass();

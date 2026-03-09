@@ -1459,11 +1459,9 @@ const CreateNew = () => {
                                 firstInvalidField = field;
                             }
                             
-                            // Add visual feedback
                             field.style.border = '1px solid red';
                             field.style.boxShadow = '0 0 5px red';
                             
-                            // Add input event to remove error styling
                             const removeError = () => {
                                 field.style.border = '';
                                 field.style.boxShadow = '';
@@ -1534,25 +1532,13 @@ const CreateNew = () => {
                     
                     const fl = Filter(data)
                     if (fl.state) {
-                        // Add the current research entry to data
-                        data.research.push({...Temp}) // Create a copy
-                        
-                        // Prepare form data for submission
+                        data.research.push({...Temp}) 
                         const form = new FormData();
-                        
-                        // Add endorsement file
                         form.append('uploadedFileEndorsement', data.endorsement)
                         form.append('eventType', data.event)
-                        
-                        // Add research and program files (SINGLE FILES, not arrays)
-                        // Since we only have one research entry now
                         const researchEntry = data.research[0];
-                        
-                        // Add single research file
                         form.append('researchDoc', researchEntry.attachment)
                         form.append('programFile', researchEntry.program)
-                        
-                        // Add research metadata
                         form.append('title', researchEntry.title)
                         form.append('category', researchEntry.category)
                         form.append('center', researchEntry.center)
@@ -4893,7 +4879,6 @@ export const Research = () => {
             if (isActive) {
                 frame.appendChild(val.page())
             }
-
         })
     }
     return ($({
@@ -4906,6 +4891,5 @@ export const Research = () => {
             tabs({getRow: getTabsTable}),
             tabFrame({getFrame: getResFrame})
         ]
-
     }))
 }
