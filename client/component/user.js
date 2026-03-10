@@ -1,4 +1,4 @@
-import {$, UnderConstruction, Path} from '../lib/lib.js';
+import {$, UnderConstruction} from '../lib/lib.js';
 import {NavBar} from "./userComponent/script/navigation.js";
 import {Frame} from "./userComponent/script/userFrame.js";
 import {Button} from "./userComponent/script/navigation.js";

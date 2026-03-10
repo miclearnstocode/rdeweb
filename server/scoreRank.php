@@ -2,11 +2,8 @@
 // Set header FIRST before any output
 header('Content-Type: application/json; charset=utf-8');
 
-// Turn off error reporting to prevent notices/warnings from polluting output
 error_reporting(0);
 ini_set('display_errors', 0);
-
-// Start output buffering ONCE at the beginning
 if (ob_get_level() == 0) {
     ob_start();
 }
@@ -17,9 +14,7 @@ require_once( __DIR__ . '/db.php');
 /** @var TYPE_NAME $pass */
 /** @var TYPE_NAME $dbName */
 
-// Helper function to safely output JSON
 function output_json($response) {
-    // Clear any output that might have been generated
     while (ob_get_level() > 0) {
         ob_end_clean();
     }
@@ -42,13 +37,11 @@ if (isset($_POST['scoreRank'])) {
         $eventRow = $eventResult->fetch_assoc();
         $eventName = $eventRow ? $eventRow['name'] : 'Unknown Event';
         
-        // Add event info to response
         $response['event'] = [
             'id' => $eventId,
             'name' => $eventName
         ];
         
-        // Get categories/centers based on event type
         if ($eventId >= 13) {
             // NEW SYSTEM: Use center for events 13 and above
             $query = "SELECT 
@@ -172,144 +165,157 @@ if (isset($_POST['getDocPerRank'])) {
     $response = [];
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $eventId = $_POST['eventId'];
-        $itemId = $_POST['categoryId'];
+        $eventId = (int)$_POST['eventId'];
+        $itemId = isset($_POST['categoryId']) ? (int)$_POST['categoryId'] : 0;
         
-        if ($eventId >= 13) {
-            // NEW SYSTEM: Get by center
-            // If itemId is 0 or empty, get all centers for this event
-            if ($itemId == 0 || empty($itemId)) {
-                // Get all documents for this event (new system)
-                $query = "SELECT 
-                    researchfile.id,
-                    researchfile.title,
-                    researchfile.author,
-                    researchfile.campus,
-                    researchfile.center as name
-                FROM researchfile
-                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                LEFT JOIN event_list ON researchfile.event_id = event_list.id
-                WHERE endorsement.status = 'accepted' 
-                AND event_list.id = ?
-                AND researchfile.center IS NOT NULL
-                AND researchfile.center != ''";
-                    
-                $statement = $con->prepare($query);
-                $statement->bind_param("i", $eventId);
+        $limit = 10;
+        $lastId = isset($_POST['lastId']) ? (int)$_POST['lastId'] : 0;
+        
+        $isNewSystem = ($eventId >= 13);
+        
+        // SIMPLE query - just get basic document info without scores
+        if ($isNewSystem) {
+            if ($itemId == 0) {
+                $query = "SELECT r.id, r.title, r.author, r.campus, r.center as name
+                    FROM researchfile r
+                    INNER JOIN endorsement e ON r.endorsementid = e.id
+                    WHERE e.status = 'accepted' 
+                    AND r.event_id = ?
+                    AND r.center IS NOT NULL
+                    AND r.center != ''
+                    AND r.id > ?
+                    ORDER BY r.id ASC
+                    LIMIT ?";
+                $stmt = $con->prepare($query);
+                $stmt->bind_param("iii", $eventId, $lastId, $limit);
             } else {
-                // Get by specific center
-                $centerQuery = "SELECT name, code FROM center WHERE id = ?";
+                $centerQuery = "SELECT CONCAT(name, ' (', code, ')') as display FROM center WHERE id = ?";
                 $centerStmt = $con->prepare($centerQuery);
                 $centerStmt->bind_param("i", $itemId);
                 $centerStmt->execute();
                 $centerResult = $centerStmt->get_result();
                 $centerRow = $centerResult->fetch_assoc();
+                $centerDisplay = $centerRow ? $centerRow['display'] : '';
                 
-                if ($centerRow) {
-                    $centerDisplay = $centerRow['name'] . " (" . $centerRow['code'] . ")";
-                    
-                    $query = "SELECT 
-                        researchfile.id,
-                        researchfile.title,
-                        researchfile.author,
-                        researchfile.campus,
-                        researchfile.center as name
-                    FROM researchfile
-                    LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                    LEFT JOIN event_list ON researchfile.event_id = event_list.id
-                    WHERE endorsement.status = 'accepted' 
-                    AND event_list.id = ?
-                    AND researchfile.center = ?";
-                        
-                    $statement = $con->prepare($query);
-                    $statement->bind_param("is", $eventId, $centerDisplay);
+                if (!$centerDisplay) {
+                    output_json(['documents' => [], 'pagination' => ['nextLastId' => null, 'hasMore' => false]]);
                 }
+                
+                $query = "SELECT r.id, r.title, r.author, r.campus, r.center as name
+                    FROM researchfile r
+                    INNER JOIN endorsement e ON r.endorsementid = e.id
+                    WHERE e.status = 'accepted' 
+                    AND r.event_id = ?
+                    AND r.center = ?
+                    AND r.id > ?
+                    ORDER BY r.id ASC
+                    LIMIT ?";
+                $stmt = $con->prepare($query);
+                $stmt->bind_param("isii", $eventId, $centerDisplay, $lastId, $limit);
             }
         } else {
-            // OLD SYSTEM: Get by category
-            // If itemId is 0 or empty, get all categories for this event
-            if ($itemId == 0 || empty($itemId)) {
-                $query = "SELECT 
-                    researchfile.id,
-                    researchfile.title,
-                    researchfile.author,
-                    researchfile.campus,
-                    researchfile.category as name
-                FROM researchfile
-                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                LEFT JOIN event_list ON researchfile.event_id = event_list.id
-                WHERE endorsement.status = 'accepted' 
-                AND event_list.id = ?
-                AND researchfile.category IS NOT NULL
-                AND researchfile.category != ''";
-                    
-                $statement = $con->prepare($query);
-                $statement->bind_param("i", $eventId);
+            if ($itemId == 0) {
+                $query = "SELECT r.id, r.title, r.author, r.campus, r.category as name
+                    FROM researchfile r
+                    INNER JOIN endorsement e ON r.endorsementid = e.id
+                    WHERE e.status = 'accepted' 
+                    AND r.event_id = ?
+                    AND r.category IS NOT NULL
+                    AND r.category != ''
+                    AND r.id > ?
+                    ORDER BY r.id ASC
+                    LIMIT ?";
+                $stmt = $con->prepare($query);
+                $stmt->bind_param("iii", $eventId, $lastId, $limit);
             } else {
-                // Get by specific category
-                $query = "SELECT 
-                    researchfile.id,
-                    researchfile.title,
-                    researchfile.author,
-                    researchfile.campus,
-                    researchfile.category as name
-                FROM researchfile
-                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                LEFT JOIN event_list ON researchfile.event_id = event_list.id
-                WHERE endorsement.status = 'accepted' 
-                AND event_list.id = ?
-                AND researchfile.category IN (
-                    SELECT name FROM category WHERE id = ?
-                    UNION
-                    SELECT ? as name
-                )";
-                    
-                $statement = $con->prepare($query);
-                $statement->bind_param("iis", $eventId, $itemId, $itemId);
+                $query = "SELECT r.id, r.title, r.author, r.campus, r.category as name
+                    FROM researchfile r
+                    INNER JOIN endorsement e ON r.endorsementid = e.id
+                    WHERE e.status = 'accepted' 
+                    AND r.event_id = ?
+                    AND r.category = (SELECT name FROM category WHERE id = ?)
+                    AND r.id > ?
+                    ORDER BY r.id ASC
+                    LIMIT ?";
+                $stmt = $con->prepare($query);
+                $stmt->bind_param("iiii", $eventId, $itemId, $lastId, $limit);
             }
         }
         
-        if (isset($statement)) {
-            $statement->execute();
-            $result = $statement->get_result();
-
-            while ($row = $result->fetch_assoc()) {
-                $doc = new stdClass();
-                $doc->title = $row['title'];
-                $doc->id = $row['id'];
-                $doc->author = $row['author'];
-                $doc->campus = $row['campus'];
-                $doc->name = $row['name'];
-                $doc->criteria = [];
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $documents = [];
+        $lastLoadedId = 0;
+        
+        while ($row = $result->fetch_assoc()) {
+            $lastLoadedId = $row['id'];
+            
+            // Get scores in a separate, minimal query
+            $scoreQuery = "SELECT 
+                sb.score,
+                c.name as criteria_name,
+                c.percentage,
+                e.fullname as evaluator_name,
+                ROUND(sb.score * (c.percentage / 100), 2) as score_percent
+                FROM score_board sb
+                INNER JOIN criteria c ON sb.criteria_id = c.id
+                INNER JOIN evaluator e ON sb.eval_id = e.id
+                WHERE sb.doc_id = ?
+                ORDER BY e.id";
                 
-                // Get scores for this document
-                $queryB = "SELECT 
-                    evaluator.fullname,
-                    score_board.id,
-                    criteria.name,
-                    criteria.description,
-                    CONCAT(criteria.percentage,'%') as percentage,
-                    score_board.score,
-                    ROUND(score_board.score*(criteria.percentage/100),2) as scorePercent 
-                FROM score_board
-                LEFT JOIN criteria ON score_board.criteria_id = criteria.id
-                LEFT JOIN evaluator ON score_board.eval_id = evaluator.id
-                WHERE score_board.doc_id = ? 
-                ORDER BY evaluator.id";
-                    
-                $statement2 = $con->prepare($queryB);
-                $statement2->bind_param("s", $row['id']);
-                $statement2->execute();
-                $resultScoreBoard = $statement2->get_result();
-                
-                while ($row2 = $resultScoreBoard->fetch_assoc()) {
-                    $doc->criteria[] = $row2;
-                }
-                
-                $response[] = $doc;
+            $scoreStmt = $con->prepare($scoreQuery);
+            $scoreStmt->bind_param("i", $row['id']);
+            $scoreStmt->execute();
+            $scoreResult = $scoreStmt->get_result();
+            
+            $criteria = [];
+            $totalScore = 0;
+            
+            while ($scoreRow = $scoreResult->fetch_assoc()) {
+                $criteria[] = [
+                    'fullname' => $scoreRow['evaluator_name'],
+                    'criteria_name' => $scoreRow['criteria_name'],
+                    'score' => $scoreRow['score'],
+                    'scorePercent' => $scoreRow['score_percent']
+                ];
+                $totalScore += $scoreRow['score_percent'];
             }
+            $scoreStmt->close();
+            
+            $documents[] = [
+                'id' => $row['id'],
+                'title' => $row['title'],
+                'author' => $row['author'],
+                'campus' => $row['campus'],
+                'name' => $row['name'],
+                'total_score' => round($totalScore, 2),
+                'criteria' => $criteria
+            ];
         }
+        $stmt->close();
+        
+        // Check if more exist
+        $checkQuery = "SELECT 1 FROM researchfile r
+            INNER JOIN endorsement e ON r.endorsementid = e.id
+            WHERE e.status = 'accepted'
+            AND r.event_id = ?
+            AND r.id > ?
+            LIMIT 1";
+        $checkStmt = $con->prepare($checkQuery);
+        $checkStmt->bind_param("ii", $eventId, $lastLoadedId);
+        $checkStmt->execute();
+        $hasMore = $checkStmt->get_result()->num_rows > 0;
+        $checkStmt->close();
+        
+        $response['documents'] = $documents;
+        $response['pagination'] = [
+            'nextLastId' => $lastLoadedId ?: null,
+            'hasMore' => $hasMore,
+            'returnedCount' => count($documents)
+        ];
     }
     
+    $con->close();
     output_json($response);
 }

@@ -138,7 +138,7 @@ export const CapsuOffice = [
     "Crop Science Research & Development Center (CSRDC)",
     "Livestock Research & Development Center (LRDC)",
     "Fisheries Research & Development Center (FRDC)",
-    "Food and Industrial Technology Research & Development Center (FIRDC)",
+    "Food and Industrial Technology Research & Development Center (FITRDC)",
     "Social Science Research & Development Center (SSRDC)",
     "Machinery and Agricultural Technology Engineering Center (MATEC)",
     "Coconut Research and Development Center (Coco RDC)",

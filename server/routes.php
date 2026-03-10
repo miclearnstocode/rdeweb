@@ -81,6 +81,12 @@ get('/evaluator/$page','/index.html');  // For evaluator sub-pages
 
 // RDE Office routes
 get('/rdeOffice/communication','/index.html');
+get('/rdeOffice/completedResearch','/index.html'); 
+get('/rdeOffice/proposedResearch','/index.html');
+get('/rdeOffice/presentationResearch','/index.html');
+get('/rdeOffice/publication','/index.html'); 
+get('/rdeOffice/patentUM','/index.html');
+get('/rdeOffice/utilization','/index.html');
 get('/rdeOffice/$page','/index.html');
 
 // External routes
@@ -95,10 +101,6 @@ get('/barcode/a/b/c/d/e/f','barcode.html');
 get('/barcode/$path1/$path2/$path3/$path4/$path5/$path6','/index.html');
 
 // ========== CATCH-ALL ROUTES ==========
-// These should be LAST and handle any unmatched routes
-
-// For testing - you had this, keep it if needed
-get('/testRoute','server/session.php');
 
 // Dynamic parameter routes (like /$id, /$id/$id)
 // Use these SPARINGLY and put them LAST

@@ -1,33 +1,23 @@
-import {$, ConfirmationAlert, Waiting} from '../../../lib/lib.js'
-
+import {$} from '../../../lib/lib.js'
 import {Header} from "../../otherComponent/header.js";
-
 import {Communication} from "./communication.js";
-
 import {ResearchMain} from "./mainResearch.js";
-
 import {ExternalDocs} from "./externalFile.js";
-
-
-
-
+import { CompletedResearch } from "./completedResearch.js";
+import { ProposedResearch } from "./proposedResearch.js";
+import { PresentationResearch } from "./presentationResearch.js";
+import { Publication } from "./publication.js";
+import { PatentUM } from "./patentUM.js";
+import { Utilization } from "./utilization.js";
 
 const button=({label,event,url})=>{
-
     const getB=(b)=>{
-
         let current=window.location.href.replace(window.location.origin,'')
-
         let me=current.split('/')[2];
-
         let urls=url.replace(window.location.origin,'')
-
         if(me===urls.split('/')[2]){
-
-           b.className+=' activeStaffBot'
-
+            b.className+=' activeStaffBot'
         }
-
     }
 
     return($({
@@ -65,273 +55,213 @@ const button=({label,event,url})=>{
 }
 
 const Body=()=>{
-
     let mainBody
-
     const botArray=[]
 
     botArray.push({
-
         url:'/rdeOffice/communication',
-
         label:'Communication',
-
         button:button,
-
         page:Communication
-
     })
 
     botArray.push({
-
         url:'/rdeOffice/research',
-
-        label:'Event Documents',
-
+        label:'Event/Activity Documents',
         button:button,
-
         page:ResearchMain
     })
+
     botArray.push({
-
         url:'/rdeOffice/external',
-
         label:'External Files',
-
         button:button,
-
         page:ExternalDocs
-
-
-
     })
+
+    botArray.push({
+        url:'/rdeOffice/completedResearch',
+        label:'Completed Research',
+        button:button,
+        page:CompletedResearch
+    })
+    botArray.push({
+        url:'/rdeOffice/proposedResearch',
+        label:'Proposed Research',
+        button:button,
+        page:ProposedResearch
+    })
+    botArray.push({
+        url:'/rdeOffice/presentationResearch',
+        label:'Presented Research',
+        button:button,
+        page:PresentationResearch
+    })
+    botArray.push({
+        url:'/rdeOffice/publication',
+        label:'Publications',
+        button:button,
+        page:Publication
+    })
+    botArray.push({
+        url:'/rdeOffice/patentUM',
+        label:'Patents & UM',
+        button:button,
+        page:PatentUM
+    })
+    botArray.push({
+        url:'/rdeOffice/utilization',
+        label:'Utilization',
+        button:button,
+        page:Utilization
+    })
+
     const Tabs=()=>{
-
         const label=$({
-
             tag:'div',
-
             style:{
-
                 fontFamily:'arial black,sans-serif',
-
                 fontSize:'1.5vw',
-
                 color:'deepskyblue',
-
                 height:'10vh',
-
                 margin: 'auto',
-
                 width:'100%',
-
                 display:'flex',
-
-                justifyContent:'center'
-
+                justifyContent:'center',
+                backgroundColor:'#666', // Match the sidebar background
+                borderBottom:'1px solid #777', // Add a subtle separator
+                position:'sticky',
+                top:'0',
+                zIndex:'100'
             },
-
             child:[
-
                 $({
-
                     tag:'div',
-
                     text:'RDE OFFICE',
-
                     style:{
-
                         margin:'auto',
-
                         height:'fit-content',
-
                         width:'fit-content'
-
                     }
-
                 })
-
             ]
-
         })
-
-
-
-
 
         return($({
-
             tag:'div',
-
             style:{
-
                 width:'15%',
-
                 margin:'auto',
-
                 marginLeft:'0',
-
                 height:'100%',
-
-                backgroundColor:'#666'
-
+                backgroundColor:'#666',
+                display:'flex',
+                flexDirection:'column',
+                overflow:'hidden' // Hide overflow on the container
             },
-
             child:[
-
                 label,
-
                 $({
-
                     tag:'div',
-
                     style:{
-
                         width:'100%',
-
-                        height:'fit-content',
-
+                        height:'calc(100% - 10vh)', // Subtract label height
+                        overflowY: 'auto', // Add vertical scroll
+                        overflowX: 'hidden', // Hide horizontal scroll
                         paddingTop:'1vh',
-
                         paddingBottom:'1vh',
-
+                        // Custom scrollbar styling
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#888 #444',
                     },
-
-                    elementHandler:getBotHolder
-
+                    elementHandler: (el) => {
+                        // Add custom scrollbar styles for webkit browsers
+                        const style = document.createElement('style');
+                        style.textContent = `
+                            .tabs-scroll-container::-webkit-scrollbar {
+                                width: 6px;
+                            }
+                            .tabs-scroll-container::-webkit-scrollbar-track {
+                                background: #444;
+                                border-radius: 3px;
+                            }
+                            .tabs-scroll-container::-webkit-scrollbar-thumb {
+                                background: #888;
+                                border-radius: 3px;
+                            }
+                            .tabs-scroll-container::-webkit-scrollbar-thumb:hover {
+                                background: #aaa;
+                            }
+                        `;
+                        document.head.appendChild(style);
+                        
+                        el.className = 'tabs-scroll-container';
+                        getBotHolder(el);
+                    }
                 })
-
             ]
-
         }))
-
     }
-
-
 
     const getComponent=(el)=>{
-
         mainBody=el
-
         let current=window.location.href.replace(window.location.origin,'')
-
         let me=current.split('/')[2];
 
-
-
         botArray.forEach(val=>{
-
             let url=val.url.replace(window.location.origin,'')
-
             if(me===url.split('/')[2]){
-
                 el.appendChild(val.page())
-
             }
-
         })
-
     }
-
-
 
     const getBotHolder=(botHolder)=>{
-
         botArray.forEach(val=>{
-
             botHolder.appendChild(val.button({
-
                 label:val.label,
-
                 event:(event)=>{
-
                     window.location.assign(val.url)
-
                 },
-
                 url:val.url
-
             }))
-
         })
-
     }
 
     return($({
-
         tag:'div',
-
         style:{
-
             height: '94.5%',
-
             width: '100%',
-
             display:'flex',
-
             justifyContent:'center'
-
         },
-
         child:[
-
             Tabs(),
-
             $({
-
                 tag:'div',
-
                 style:{
-
-                  width:'84.8%',
-
-                  marginLeft:'0'
-
+                    width:'84.8%',
+                    marginLeft:'0',
+                    overflow:'hidden' // Prevent main content from overflowing
                 },
-
                 elementHandler:getComponent
-
             })
-
-
-
         ]
-
     }))
-
 }
-
-
-
-
 
 export const RdeOffice=()=>{
-
-
-
     return($({
-
         tag:'div',
-
         style:{
-
             width:'100%',
-
             height:'99.8vh',
-
         },
-
         externalStyle:'/client/component/rdeStaff/style/rdeOffice.css',
-
         child:[
-
             Header(),
-
             Body()
-
         ]
-
     }))
-
 }
-

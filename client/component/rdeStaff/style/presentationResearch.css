@@ -1,0 +1,284 @@
+
+/* Main container */
+.presentation-research-container {
+    position: relative;
+}
+
+/* Custom scrollbar */
+.presentation-research-container ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.presentation-research-container ::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.presentation-research-container ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.presentation-research-container ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Stat cards animations */
+.presentation-research-container .stat-card {
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.presentation-research-container .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: deepskyblue !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.presentation-research-container .stat-card:hover .fa-solid {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+/* Filter bar elements */
+.presentation-research-container .presentation-search-input:focus {
+    border-color: deepskyblue !important;
+    background-color: #3a3a3a !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+.presentation-research-container .presentation-type-filter:hover {
+    border-color: #666 !important;
+    background-color: #3a3a3a !important;
+}
+
+.presentation-research-container .presentation-type-filter:focus {
+    border-color: deepskyblue !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+.presentation-research-container .export-btn:hover {
+    background-color: #3a3a3a !important;
+    border-color: deepskyblue !important;
+    transform: translateY(-1px);
+}
+
+/* Category filter buttons */
+.presentation-research-container [style*="border-radius: 8px"] button {
+    position: relative;
+    overflow: hidden;
+}
+
+.presentation-research-container [style*="border-radius: 8px"] button:hover {
+    color: #fff !important;
+    background-color: #444 !important;
+}
+
+.presentation-research-container [style*="background-color: deepskyblue"] {
+    box-shadow: 0 2px 8px rgba(0, 191, 255, 0.3);
+}
+
+/* Table styles */
+.presentation-research-container table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.presentation-research-container th {
+    font-weight: 600;
+    background: linear-gradient(180deg, #2d2d2d 0%, #2a2a2a 100%);
+}
+
+.presentation-research-container th:hover .fa-solid {
+    opacity: 1 !important;
+}
+
+.presentation-research-container tbody tr {
+    transition: all 0.2s ease;
+}
+
+.presentation-research-container tbody tr:hover {
+    background-color: #333 !important;
+    transform: translateX(2px);
+}
+
+.presentation-research-container td {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.presentation-research-container td:hover {
+    background-color: rgba(0, 191, 255, 0.1);
+}
+
+/* Empty state animations */
+@keyframes floatIcons {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-15px) rotate(5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.presentation-research-container .empty-state .fa-chalkboard-user {
+    animation: floatIcons 4s ease-in-out infinite;
+}
+
+.presentation-research-container .empty-state .fa-earth-asia {
+    animation: floatIcons 4.5s ease-in-out infinite 0.5s;
+}
+
+.presentation-research-container .empty-state .fa-location-dot {
+    animation: floatIcons 5s ease-in-out infinite 1s;
+}
+
+/* Add button hover effect */
+.presentation-research-container button[style*="background-color: deepskyblue"]:hover {
+    background-color: #00a6d9 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 191, 255, 0.3);
+}
+
+.presentation-research-container button[style*="background-color: deepskyblue"]:active {
+    transform: translateY(0);
+}
+
+/* Import button hover */
+.presentation-research-container button[style*="border: 1px solid #444"]:hover {
+    background-color: #3a3a3a !important;
+    border-color: #666 !important;
+    transform: translateY(-1px);
+}
+
+/* Record count badge */
+.presentation-research-container .record-count {
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s ease;
+}
+
+/* Presentation type indicators */
+.presentation-type-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+/* Timeline view toggle (if needed) */
+.presentation-research-container .timeline-toggle {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.presentation-research-container .timeline-toggle:hover {
+    color: deepskyblue !important;
+}
+
+/* Zebra striping */
+.presentation-research-container tbody tr:nth-child(even) {
+    background-color: #2a2a2a;
+}
+
+.presentation-research-container tbody tr:nth-child(odd) {
+    background-color: #2d2d2d;
+}
+
+/* Responsive design */
+@media (max-width: 1400px) {
+    .presentation-research-container .stats-cards {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .presentation-research-container .presentation-search-input {
+        width: 220px !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .presentation-research-container .filter-bar {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .presentation-research-container [style*="gap: 20px"] {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .presentation-research-container .stats-cards {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .presentation-research-container [style*="gap: 8px"] {
+        flex-wrap: wrap;
+    }
+    
+    .presentation-research-container .presentation-type-filter {
+        min-width: 100% !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .presentation-research-container .stats-cards,
+    .presentation-research-container .filter-bar,
+    .presentation-research-container button {
+        display: none !important;
+    }
+    
+    .presentation-research-container table {
+        border: 1px solid #000;
+    }
+    
+    .presentation-research-container th {
+        background-color: #f0f0f0 !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+    }
+    
+    .presentation-research-container td {
+        color: #000 !important;
+        border-bottom: 1px solid #ccc !important;
+    }
+}
+
+/* Loading state animation */
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.presentation-research-container.loading .stat-card {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Success/Error notifications */
+.presentation-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    background-color: #333;
+    color: #fff;
+    font-size: 14px;
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    border-left: 4px solid deepskyblue;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

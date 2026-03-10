@@ -1635,3 +1635,194 @@ Stack trace:
 [04-Mar-2026 15:24:33 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
 [04-Mar-2026 15:24:33 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 794
 [04-Mar-2026 15:24:33 Asia/Manila] Found 1 research files for center: Extension (Extension)
+[09-Mar-2026 14:31:30 Asia/Manila] === researchFile API called ===
+[09-Mar-2026 14:31:30 Asia/Manila] Event ID: 13
+[09-Mar-2026 14:31:30 Asia/Manila] User ID: 45
+[09-Mar-2026 14:31:30 Asia/Manila] Event type: NEW (center-based)
+[09-Mar-2026 14:31:30 Asia/Manila] Grouping by: rf.center
+[09-Mar-2026 14:31:35 Asia/Manila] === researchFile API called ===
+[09-Mar-2026 14:31:35 Asia/Manila] Event ID: 13
+[09-Mar-2026 14:31:35 Asia/Manila] User ID: 45
+[09-Mar-2026 14:31:35 Asia/Manila] Event type: NEW (center-based)
+[09-Mar-2026 14:31:35 Asia/Manila] Grouping by: rf.center
+[09-Mar-2026 14:31:36 Asia/Manila] === researchFile API called ===
+[09-Mar-2026 14:31:36 Asia/Manila] Event ID: 13
+[09-Mar-2026 14:31:36 Asia/Manila] User ID: 45
+[09-Mar-2026 14:31:36 Asia/Manila] Event type: NEW (center-based)
+[09-Mar-2026 14:31:36 Asia/Manila] Grouping by: rf.center
+[09-Mar-2026 14:31:39 Asia/Manila] === researchFile API called ===
+[09-Mar-2026 14:31:39 Asia/Manila] Event ID: 13
+[09-Mar-2026 14:31:39 Asia/Manila] User ID: 45
+[09-Mar-2026 14:31:39 Asia/Manila] Event type: NEW (center-based)
+[09-Mar-2026 14:31:39 Asia/Manila] Grouping by: rf.center
+[09-Mar-2026 14:33:15 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[09-Mar-2026 14:33:15 Asia/Manila] Title: trialNumberTwo
+[09-Mar-2026 14:33:15 Asia/Manila] Author: Michael Estorque
+[09-Mar-2026 14:33:15 Asia/Manila] Event: 38th University Faculty In-House Review
+[09-Mar-2026 14:33:15 Asia/Manila] Center: Extension (Extension)
+[09-Mar-2026 14:33:15 Asia/Manila] Category: Extension
+[09-Mar-2026 14:33:15 Asia/Manila] Uploading endorsement: endorsement.pdf
+[09-Mar-2026 14:33:16 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_trialNumberTwo
+[09-Mar-2026 14:33:23 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1Q7ZaYjlUEau1a8kG9jBf8oVdd7a-ddyA
+[09-Mar-2026 14:33:25 Asia/Manila] Making file public: 1atgZTOFfiEYdaZodJrpFfFCF1iqWg4gb
+[09-Mar-2026 14:33:26 Asia/Manila] File 1atgZTOFfiEYdaZodJrpFfFCF1iqWg4gb is already public
+[09-Mar-2026 14:33:26 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[09-Mar-2026 14:33:26 Asia/Manila] Endorsement uploaded successfully: 1atgZTOFfiEYdaZodJrpFfFCF1iqWg4gb
+[09-Mar-2026 14:33:26 Asia/Manila] Endorsement saved to DB with ID: 523
+[09-Mar-2026 14:33:26 Asia/Manila] Uploading research: research_paper.pdf
+[09-Mar-2026 14:33:26 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_trialNumberTwo
+[09-Mar-2026 14:33:28 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1Q7ZaYjlUEau1a8kG9jBf8oVdd7a-ddyA
+[09-Mar-2026 14:33:31 Asia/Manila] Making file public: 1oX9h1qDSjvHGN4dY0k6f6HCb8deP1lWt
+[09-Mar-2026 14:33:31 Asia/Manila] File 1oX9h1qDSjvHGN4dY0k6f6HCb8deP1lWt is already public
+[09-Mar-2026 14:33:31 Asia/Manila] research file upload successful: research_paper.pdf
+[09-Mar-2026 14:33:31 Asia/Manila] Research uploaded successfully: 1oX9h1qDSjvHGN4dY0k6f6HCb8deP1lWt
+[09-Mar-2026 14:33:31 Asia/Manila] Uploading program: program_inHouse.pdf
+[09-Mar-2026 14:33:31 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_trialNumberTwo
+[09-Mar-2026 14:33:34 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1Q7ZaYjlUEau1a8kG9jBf8oVdd7a-ddyA
+[09-Mar-2026 14:33:36 Asia/Manila] Making file public: 1x1H5PXwIhBfGEEToJ9h2VD59IO5WS-E-
+[09-Mar-2026 14:33:36 Asia/Manila] File 1x1H5PXwIhBfGEEToJ9h2VD59IO5WS-E- is already public
+[09-Mar-2026 14:33:36 Asia/Manila] program file upload successful: program_inHouse.pdf
+[09-Mar-2026 14:33:36 Asia/Manila] Program uploaded successfully: 1x1H5PXwIhBfGEEToJ9h2VD59IO5WS-E-
+[09-Mar-2026 14:33:36 Asia/Manila] Number of columns in query: 23
+[09-Mar-2026 14:33:36 Asia/Manila] Number of variables to bind: 23
+[09-Mar-2026 15:07:45 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'account_detail.campus0' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2480
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2480): mysqli->query('SELECT endorsem...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2480
+[09-Mar-2026 15:08:58 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'account_detail.campus0' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2480
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2480): mysqli->query('SELECT endorsem...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2480
+[09-Mar-2026 15:09:06 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'account_detail.campus0' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2480
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2480): mysqli->query('SELECT endorsem...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2480
+[09-Mar-2026 15:12:14 Asia/Manila] Files to delete from Google Drive: ["1tYPw1TEtRSJfATq20xugYPAQq6tYEwkE","1BjrXZvJwJoLV-4ZtDjgdtuWMiZc2lWwc","1PQjRAXKrHhYQuSnm6rkwhjw9Ms2qOcne"]
+[09-Mar-2026 15:12:14 Asia/Manila] Moving Google Drive file to trash: 1tYPw1TEtRSJfATq20xugYPAQq6tYEwkE
+[09-Mar-2026 15:12:16 Asia/Manila] Successfully moved file to trash: 1tYPw1TEtRSJfATq20xugYPAQq6tYEwkE
+[09-Mar-2026 15:12:16 Asia/Manila] Successfully trashed file: 1tYPw1TEtRSJfATq20xugYPAQq6tYEwkE
+[09-Mar-2026 15:12:16 Asia/Manila] Moving Google Drive file to trash: 1BjrXZvJwJoLV-4ZtDjgdtuWMiZc2lWwc
+[09-Mar-2026 15:12:18 Asia/Manila] Successfully moved file to trash: 1BjrXZvJwJoLV-4ZtDjgdtuWMiZc2lWwc
+[09-Mar-2026 15:12:18 Asia/Manila] Successfully trashed file: 1BjrXZvJwJoLV-4ZtDjgdtuWMiZc2lWwc
+[09-Mar-2026 15:12:18 Asia/Manila] Moving Google Drive file to trash: 1PQjRAXKrHhYQuSnm6rkwhjw9Ms2qOcne
+[09-Mar-2026 15:12:20 Asia/Manila] Successfully moved file to trash: 1PQjRAXKrHhYQuSnm6rkwhjw9Ms2qOcne
+[09-Mar-2026 15:12:20 Asia/Manila] Successfully trashed file: 1PQjRAXKrHhYQuSnm6rkwhjw9Ms2qOcne
+[09-Mar-2026 15:12:20 Asia/Manila] Deleted 1 comments for research IDs: 520
+[09-Mar-2026 15:13:11 Asia/Manila] === STARTING UPLOAD PROCESS ===
+[09-Mar-2026 15:13:11 Asia/Manila] Title: TrialDocumentTwo
+[09-Mar-2026 15:13:11 Asia/Manila] Author: Michael Estorque
+[09-Mar-2026 15:13:11 Asia/Manila] Event: 38th University Faculty In-House Review
+[09-Mar-2026 15:13:11 Asia/Manila] Center: Social Science Research & Development Center (SSRDC)
+[09-Mar-2026 15:13:11 Asia/Manila] Category: Social Science
+[09-Mar-2026 15:13:11 Asia/Manila] Uploading endorsement: endorsement.pdf
+[09-Mar-2026 15:13:11 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Social Science -> Estorque_TrialDocumentTwo
+[09-Mar-2026 15:13:15 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1W5_0aE9ECsKa-2L5NNOm0nD3pT9WYZmi
+[09-Mar-2026 15:13:18 Asia/Manila] Making file public: 13oi-2V7GL_uamZYypEEGn46kIV6J-K9F
+[09-Mar-2026 15:13:18 Asia/Manila] File 13oi-2V7GL_uamZYypEEGn46kIV6J-K9F is already public
+[09-Mar-2026 15:13:18 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[09-Mar-2026 15:13:18 Asia/Manila] Endorsement uploaded successfully: 13oi-2V7GL_uamZYypEEGn46kIV6J-K9F
+[09-Mar-2026 15:13:18 Asia/Manila] Endorsement saved to DB with ID: 524
+[09-Mar-2026 15:13:18 Asia/Manila] Uploading research: research_paper.pdf
+[09-Mar-2026 15:13:18 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Social Science -> Estorque_TrialDocumentTwo
+[09-Mar-2026 15:13:21 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1W5_0aE9ECsKa-2L5NNOm0nD3pT9WYZmi
+[09-Mar-2026 15:13:23 Asia/Manila] Making file public: 1pdCcrH53eKnpeDnfY1Tv99eA1LLSvkNj
+[09-Mar-2026 15:13:24 Asia/Manila] File 1pdCcrH53eKnpeDnfY1Tv99eA1LLSvkNj is already public
+[09-Mar-2026 15:13:24 Asia/Manila] research file upload successful: research_paper.pdf
+[09-Mar-2026 15:13:24 Asia/Manila] Research uploaded successfully: 1pdCcrH53eKnpeDnfY1Tv99eA1LLSvkNj
+[09-Mar-2026 15:13:24 Asia/Manila] Uploading program: program_inHouse.pdf
+[09-Mar-2026 15:13:24 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Social Science Research & Development Center (SSRDC) -> Social Science -> Estorque_TrialDocumentTwo
+[09-Mar-2026 15:13:26 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1W5_0aE9ECsKa-2L5NNOm0nD3pT9WYZmi
+[09-Mar-2026 15:13:29 Asia/Manila] Making file public: 1ANsFQs3B4XsdzmZr4UtBR_fkhaIFmN16
+[09-Mar-2026 15:13:29 Asia/Manila] File 1ANsFQs3B4XsdzmZr4UtBR_fkhaIFmN16 is already public
+[09-Mar-2026 15:13:29 Asia/Manila] program file upload successful: program_inHouse.pdf
+[09-Mar-2026 15:13:29 Asia/Manila] Program uploaded successfully: 1ANsFQs3B4XsdzmZr4UtBR_fkhaIFmN16
+[09-Mar-2026 15:13:29 Asia/Manila] Number of columns in query: 23
+[09-Mar-2026 15:13:29 Asia/Manila] Number of variables to bind: 23
+[09-Mar-2026 15:34:32 Asia/Manila] Exception in uploadResearch: Unknown column 'date' in 'field list'
+[09-Mar-2026 16:14:38 Asia/Manila] Error in checkDuplicateResearch: Unknown column 'rf.date_uploaded' in 'field list'
+[09-Mar-2026 16:14:38 Asia/Manila] Exception in uploadResearch: Unknown column 'rf.date_uploaded' in 'field list'
+[09-Mar-2026 16:30:04 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_trialNumberTwos
+[09-Mar-2026 16:30:08 Asia/Manila] Uploading endorsement file: endorsement.pdf to folder: 1-yCcF5zk0CBFkIdGaopklVrzK27x8rnL
+[09-Mar-2026 16:30:10 Asia/Manila] Making file public: 17OnHb8OclPxrk_xPKOXVIqtitJa73QTr
+[09-Mar-2026 16:30:10 Asia/Manila] File 17OnHb8OclPxrk_xPKOXVIqtitJa73QTr is already public
+[09-Mar-2026 16:30:10 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[09-Mar-2026 16:30:10 Asia/Manila] Endorsement uploaded successfully: 17OnHb8OclPxrk_xPKOXVIqtitJa73QTr
+[09-Mar-2026 16:30:10 Asia/Manila] Endorsement saved to DB with ID: 525
+[09-Mar-2026 16:30:10 Asia/Manila] Uploading research: research_paper.pdf
+[09-Mar-2026 16:30:10 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_trialNumberTwos
+[09-Mar-2026 16:30:13 Asia/Manila] Uploading research file: research_paper.pdf to folder: 1-yCcF5zk0CBFkIdGaopklVrzK27x8rnL
+[09-Mar-2026 16:30:15 Asia/Manila] Making file public: 1cpBUVSmvDMGFb3ANDhHnwWUTOxLYyr9p
+[09-Mar-2026 16:30:16 Asia/Manila] File 1cpBUVSmvDMGFb3ANDhHnwWUTOxLYyr9p is already public
+[09-Mar-2026 16:30:16 Asia/Manila] research file upload successful: research_paper.pdf
+[09-Mar-2026 16:30:16 Asia/Manila] Research uploaded successfully: 1cpBUVSmvDMGFb3ANDhHnwWUTOxLYyr9p
+[09-Mar-2026 16:30:16 Asia/Manila] Uploading program: program_inHouse.pdf
+[09-Mar-2026 16:30:16 Asia/Manila] Creating folder structure for: 38th University Faculty In-House Review -> Extension (Extension) -> Extension -> Estorque_trialNumberTwos
+[09-Mar-2026 16:30:18 Asia/Manila] Uploading program file: program_inHouse.pdf to folder: 1-yCcF5zk0CBFkIdGaopklVrzK27x8rnL
+[09-Mar-2026 16:30:21 Asia/Manila] Making file public: 1necEJri5MNck92KQi3mIHYlK5spvNLim
+[09-Mar-2026 16:30:21 Asia/Manila] File 1necEJri5MNck92KQi3mIHYlK5spvNLim is already public
+[09-Mar-2026 16:30:21 Asia/Manila] program file upload successful: program_inHouse.pdf
+[09-Mar-2026 16:30:21 Asia/Manila] Program uploaded successfully: 1necEJri5MNck92KQi3mIHYlK5spvNLim
+[09-Mar-2026 17:55:53 Asia/Manila] === START rejectIndorse ===
+[09-Mar-2026 17:55:53 Asia/Manila] POST data: Array
+(
+    [docId] => 525
+    [fileUrl] => https://drive.google.com/file/d/17OnHb8OclPxrk_xPKOXVIqtitJa73QTr/preview
+    [reasonEnd] => undefined
+    [rejectIndorse] => true
+    [fileType] => EndorsementLetter:38th University Faculty In-House Review
+)
+
+[09-Mar-2026 17:55:53 Asia/Manila] Session ID: 1657588904430
+[09-Mar-2026 17:55:53 Asia/Manila] Database connected successfully
+[09-Mar-2026 17:55:53 Asia/Manila] RDE Staff Name: Nina Linan (Username: Nina)
+[09-Mar-2026 17:55:53 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 3338
+[09-Mar-2026 17:55:53 Asia/Manila] Email failed: Message could not be sent. Mailer Error: Invalid address:  (to): 
+[09-Mar-2026 17:56:44 Asia/Manila] Evaluator center (session): Extension (Extension)
+[09-Mar-2026 17:56:44 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[09-Mar-2026 17:56:44 Asia/Manila] Found 0 research files for center: Extension (Extension)
+[09-Mar-2026 17:57:09 Asia/Manila] Files to delete from Google Drive: ["13oi-2V7GL_uamZYypEEGn46kIV6J-K9F","1pdCcrH53eKnpeDnfY1Tv99eA1LLSvkNj","1ANsFQs3B4XsdzmZr4UtBR_fkhaIFmN16"]
+[09-Mar-2026 17:57:09 Asia/Manila] Moving Google Drive file to trash: 13oi-2V7GL_uamZYypEEGn46kIV6J-K9F
+[09-Mar-2026 17:57:12 Asia/Manila] Successfully moved file to trash: 13oi-2V7GL_uamZYypEEGn46kIV6J-K9F
+[09-Mar-2026 17:57:12 Asia/Manila] Successfully trashed file: 13oi-2V7GL_uamZYypEEGn46kIV6J-K9F
+[09-Mar-2026 17:57:12 Asia/Manila] Moving Google Drive file to trash: 1pdCcrH53eKnpeDnfY1Tv99eA1LLSvkNj
+[09-Mar-2026 17:57:14 Asia/Manila] Successfully moved file to trash: 1pdCcrH53eKnpeDnfY1Tv99eA1LLSvkNj
+[09-Mar-2026 17:57:14 Asia/Manila] Successfully trashed file: 1pdCcrH53eKnpeDnfY1Tv99eA1LLSvkNj
+[09-Mar-2026 17:57:14 Asia/Manila] Moving Google Drive file to trash: 1ANsFQs3B4XsdzmZr4UtBR_fkhaIFmN16
+[09-Mar-2026 17:57:16 Asia/Manila] Successfully moved file to trash: 1ANsFQs3B4XsdzmZr4UtBR_fkhaIFmN16
+[09-Mar-2026 17:57:16 Asia/Manila] Successfully trashed file: 1ANsFQs3B4XsdzmZr4UtBR_fkhaIFmN16
+[09-Mar-2026 17:57:16 Asia/Manila] Deleted 0 comments for research IDs: 522
+[09-Mar-2026 17:57:31 Asia/Manila] Files to delete from Google Drive: ["1atgZTOFfiEYdaZodJrpFfFCF1iqWg4gb","1oX9h1qDSjvHGN4dY0k6f6HCb8deP1lWt","1x1H5PXwIhBfGEEToJ9h2VD59IO5WS-E-"]
+[09-Mar-2026 17:57:31 Asia/Manila] Moving Google Drive file to trash: 1atgZTOFfiEYdaZodJrpFfFCF1iqWg4gb
+[09-Mar-2026 17:57:33 Asia/Manila] Successfully moved file to trash: 1atgZTOFfiEYdaZodJrpFfFCF1iqWg4gb
+[09-Mar-2026 17:57:33 Asia/Manila] Successfully trashed file: 1atgZTOFfiEYdaZodJrpFfFCF1iqWg4gb
+[09-Mar-2026 17:57:33 Asia/Manila] Moving Google Drive file to trash: 1oX9h1qDSjvHGN4dY0k6f6HCb8deP1lWt
+[09-Mar-2026 17:57:35 Asia/Manila] Successfully moved file to trash: 1oX9h1qDSjvHGN4dY0k6f6HCb8deP1lWt
+[09-Mar-2026 17:57:35 Asia/Manila] Successfully trashed file: 1oX9h1qDSjvHGN4dY0k6f6HCb8deP1lWt
+[09-Mar-2026 17:57:35 Asia/Manila] Moving Google Drive file to trash: 1x1H5PXwIhBfGEEToJ9h2VD59IO5WS-E-
+[09-Mar-2026 17:57:37 Asia/Manila] Successfully moved file to trash: 1x1H5PXwIhBfGEEToJ9h2VD59IO5WS-E-
+[09-Mar-2026 17:57:37 Asia/Manila] Successfully trashed file: 1x1H5PXwIhBfGEEToJ9h2VD59IO5WS-E-
+[09-Mar-2026 17:57:37 Asia/Manila] Deleted 0 comments for research IDs: 521
+[09-Mar-2026 18:00:19 Asia/Manila] Evaluator center (session): Extension (Extension)
+[09-Mar-2026 18:00:19 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[09-Mar-2026 18:00:19 Asia/Manila] Found 0 research files for center: Extension (Extension)
+[09-Mar-2026 18:00:25 Asia/Manila] Evaluator center (session): Extension (Extension)
+[09-Mar-2026 18:00:25 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[09-Mar-2026 18:00:25 Asia/Manila] Found 0 research files for center: Extension (Extension)
+[09-Mar-2026 18:00:30 Asia/Manila] Evaluator center (session): Extension (Extension)
+[09-Mar-2026 18:00:30 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[09-Mar-2026 18:00:30 Asia/Manila] Found 0 research files for center: Extension (Extension)

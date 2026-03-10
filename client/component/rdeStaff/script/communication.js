@@ -1,8 +1,4 @@
-    import {
-
-    $,
-
-    base64ToArrayBuffer,
+    import {$,
 
     ConfirmationAlert,
 

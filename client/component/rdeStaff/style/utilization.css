@@ -1,0 +1,384 @@
+/* utilization.css */
+
+/* Main container */
+.utilization-container {
+    position: relative;
+}
+
+/* Custom scrollbar */
+.utilization-container ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.utilization-container ::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.utilization-container ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.utilization-container ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Stat cards */
+.utilization-container .stat-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.utilization-container .stat-card:hover {
+    transform: translateY(-3px);
+    border-color: deepskyblue !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.utilization-container .stat-card:hover .fa-solid {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+/* Beneficiary badges */
+.utilization-container .beneficiary-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.utilization-container .beneficiary-badge:hover {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+}
+
+/* Program type badges */
+.utilization-container .program-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.utilization-container .program-type-badge:hover {
+    background-color: #3a3a3a !important;
+    border-color: #666 !important;
+}
+
+/* Document links */
+.utilization-container .doc-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.utilization-container .doc-link:hover {
+    background-color: #444 !important;
+    border-color: deepskyblue !important;
+    color: #fff !important;
+}
+
+.utilization-container .doc-link:hover .fa-file-pdf {
+    color: #ff4444 !important;
+}
+
+/* Filter bar elements */
+.utilization-container .utilization-search-input:focus {
+    border-color: deepskyblue !important;
+    background-color: #3a3a3a !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+.utilization-container .beneficiary-filter:hover,
+.utilization-container .sector-filter:hover {
+    border-color: #666 !important;
+    background-color: #3a3a3a !important;
+}
+
+.utilization-container .beneficiary-filter:focus,
+.utilization-container .sector-filter:focus {
+    border-color: deepskyblue !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+.utilization-container .export-btn:hover {
+    background-color: #3a3a3a !important;
+    border-color: deepskyblue !important;
+    transform: translateY(-1px);
+}
+
+/* Category filter buttons */
+.utilization-container [style*="border-radius: 8px"] button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.utilization-container [style*="border-radius: 8px"] button:hover {
+    color: #fff !important;
+    background-color: #444 !important;
+}
+
+.utilization-container [style*="background-color: deepskyblue"] {
+    box-shadow: 0 2px 8px rgba(0, 191, 255, 0.3);
+}
+
+/* Table styles */
+.utilization-container table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.utilization-container th {
+    font-weight: 600;
+    background: linear-gradient(180deg, #2d2d2d 0%, #2a2a2a 100%);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.utilization-container th:hover .fa-solid {
+    opacity: 1 !important;
+    color: deepskyblue !important;
+}
+
+.utilization-container tbody tr {
+    transition: all 0.2s ease;
+}
+
+.utilization-container tbody tr:hover {
+    background-color: #333 !important;
+    transform: translateX(2px);
+}
+
+.utilization-container td {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.utilization-container td:hover {
+    background-color: rgba(0, 191, 255, 0.1);
+}
+
+/* Empty state animations */
+@keyframes floatHand {
+    0% { transform: translateY(0px) rotate(-5deg); }
+    50% { transform: translateY(-15px) rotate(0deg); }
+    100% { transform: translateY(0px) rotate(-5deg); }
+}
+
+@keyframes floatPeople {
+    0% { transform: translateY(0px) rotate(10deg); }
+    50% { transform: translateY(-12px) rotate(5deg); }
+    100% { transform: translateY(0px) rotate(10deg); }
+}
+
+@keyframes floatSeed {
+    0% { transform: translateY(0px) rotate(-15deg); }
+    50% { transform: translateY(-10px) rotate(-10deg); }
+    100% { transform: translateY(0px) rotate(-15deg); }
+}
+
+@keyframes floatBuilding {
+    0% { transform: translateY(0px) rotate(20deg); }
+    50% { transform: translateY(-8px) rotate(15deg); }
+    100% { transform: translateY(0px) rotate(20deg); }
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+}
+
+.utilization-container .empty-state .fa-hand-holding-heart {
+    animation: floatHand 5s ease-in-out infinite;
+}
+
+.utilization-container .empty-state .fa-people-arrows {
+    animation: floatPeople 5.5s ease-in-out infinite 0.5s;
+}
+
+.utilization-container .empty-state .fa-seedling {
+    animation: floatSeed 6s ease-in-out infinite 1s;
+}
+
+.utilization-container .empty-state .fa-building {
+    animation: floatBuilding 6.5s ease-in-out infinite 1.5s;
+}
+
+/* Add button hover effect */
+.utilization-container button[style*="background-color: deepskyblue"]:hover {
+    background-color: #00a6d9 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 191, 255, 0.4);
+}
+
+.utilization-container button[style*="background-color: deepskyblue"]:active {
+    transform: translateY(0);
+}
+
+/* Import button hover */
+.utilization-container button[style*="border: 2px solid #444"]:hover {
+    background-color: #3a3a3a !important;
+    border-color: #666 !important;
+    transform: translateY(-1px);
+}
+
+/* Record count badge */
+.utilization-container .record-count {
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #333, #2a2a2a);
+}
+
+/* Trainees count highlight */
+.trainees-highlight {
+    font-weight: 600;
+    color: #4caf50;
+}
+
+/* Beneficiary type indicators */
+.beneficiary-legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    color: #666;
+    font-size: 13px;
+}
+
+/* Zebra striping */
+.utilization-container tbody tr:nth-child(even) {
+    background-color: #2a2a2a;
+}
+
+.utilization-container tbody tr:nth-child(odd) {
+    background-color: #2d2d2d;
+}
+
+/* Responsive design */
+@media (max-width: 1400px) {
+    .utilization-container .stats-cards {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .utilization-container .utilization-search-input {
+        width: 220px !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .utilization-container .filter-bar {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .utilization-container [style*="gap: 20px"] {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .utilization-container .beneficiary-filter,
+    .utilization-container .sector-filter {
+        min-width: 140px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .utilization-container .stats-cards {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .utilization-container [style*="gap: 8px"] {
+        flex-wrap: wrap;
+    }
+    
+    .utilization-container .beneficiary-filter,
+    .utilization-container .sector-filter {
+        min-width: 100% !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .utilization-container .stats-cards,
+    .utilization-container .filter-bar,
+    .utilization-container button,
+    .utilization-container .beneficiary-badge,
+    .utilization-container .program-type-badge,
+    .utilization-container .doc-link {
+        display: none !important;
+    }
+    
+    .utilization-container table {
+        border: 1px solid #000;
+    }
+    
+    .utilization-container th {
+        background-color: #f0f0f0 !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+    }
+    
+    .utilization-container td {
+        color: #000 !important;
+        border-bottom: 1px solid #ccc !important;
+    }
+}
+
+/* Tooltip styles */
+.utilization-container [data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+.utilization-container [data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background-color: #333;
+    color: #fff;
+    font-size: 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    border: 1px solid #444;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.utilization-container [data-tooltip]:hover:before {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 10px);
+}
+
+/* Impact/outcome highlight */
+.outcome-positive {
+    color: #4caf50;
+    font-weight: 500;
+}
+
+.outcome-neutral {
+    color: #ff9800;
+    font-weight: 500;
+}
+
+/* Beneficiary count animation */
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-card .beneficiary-count {
+    animation: countUp 0.5s ease-out;
+}

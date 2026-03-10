@@ -1,0 +1,177 @@
+
+
+/* Container styles */
+.proposed-research-container {
+    position: relative;
+}
+
+/* Custom scrollbar */
+.proposed-research-container ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.proposed-research-container ::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.proposed-research-container ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.proposed-research-container ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Stats cards hover effect */
+.proposed-research-container [style*="background-color: #333"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: deepskyblue !important;
+}
+
+/* Filter buttons hover effects */
+.proposed-research-container button[style*="background-color: #333"]:hover {
+    background-color: #444 !important;
+    border-color: deepskyblue !important;
+}
+
+.proposed-research-container .filter-btn:hover,
+.proposed-research-container .export-btn:hover {
+    background-color: #444 !important;
+    border-color: deepskyblue !important;
+}
+
+/* Category filter buttons */
+.proposed-research-container button[style*="border-radius: 6px"]:hover {
+    background-color: #444 !important;
+    color: #fff !important;
+}
+
+.proposed-research-container button[style*="background-color: deepskyblue"]:hover {
+    opacity: 0.9;
+}
+
+/* Table row hover */
+.proposed-research-container tbody tr:hover {
+    background-color: #333 !important;
+}
+
+/* Table cell hover */
+.proposed-research-container td:hover {
+    background-color: rgba(0, 191, 255, 0.1);
+}
+
+/* Empty state animations */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.proposed-research-container .empty-state .fa-flask {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Search input focus */
+.proposed-research-container .research-search-input:focus {
+    border-color: deepskyblue !important;
+    background-color: #3a3a3a !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+/* Add button hover */
+.proposed-research-container button[style*="background-color: deepskyblue"]:hover {
+    background-color: #00a6d9 !important;
+    transform: scale(1.02);
+}
+
+/* Import button hover */
+.proposed-research-container button[style*="border: 1px solid #444"]:hover {
+    background-color: #3a3a3a !important;
+    border-color: #666 !important;
+}
+
+/* Sort icon hover */
+.proposed-research-container th:hover .fa-sort {
+    color: deepskyblue !important;
+    opacity: 1 !important;
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.proposed-research-container .skeleton-cell {
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* Responsive design */
+@media (max-width: 1400px) {
+    .proposed-research-container [style*="min-width: 180px"] {
+        min-width: 150px !important;
+    }
+    
+    .proposed-research-container .research-search-input {
+        width: 200px !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .proposed-research-container [style*="gap: 15px"] {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .proposed-research-container [style*="justify-content: space-between"] {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+}
+
+/* Active filter state */
+.proposed-research-container button.active-filter {
+    background-color: deepskyblue !important;
+    color: #fff !important;
+}
+
+/* Table header sticky effect */
+.proposed-research-container thead th {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Zebra striping for table */
+.proposed-research-container tbody tr:nth-child(even) {
+    background-color: #2a2a2a;
+}
+
+.proposed-research-container tbody tr:nth-child(odd) {
+    background-color: #2d2d2d;
+}
+
+/* Print styles */
+@media print {
+    .proposed-research-container .stats-cards,
+    .proposed-research-container .filter-bar,
+    .proposed-research-container button {
+        display: none !important;
+    }
+    
+    .proposed-research-container table {
+        border: 1px solid #000;
+    }
+    
+    .proposed-research-container th {
+        background-color: #f0f0f0 !important;
+        color: #000 !important;
+    }
+    
+    .proposed-research-container td {
+        color: #000 !important;
+    }
+}

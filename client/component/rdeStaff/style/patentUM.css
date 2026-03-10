@@ -1,0 +1,403 @@
+
+/* Main container */
+.patent-um-container {
+    position: relative;
+}
+
+/* Custom scrollbar */
+.patent-um-container ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.patent-um-container ::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.patent-um-container ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.patent-um-container ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Stat cards */
+.patent-um-container .stat-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.patent-um-container .stat-card:hover {
+    transform: translateY(-3px);
+    border-color: deepskyblue !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.patent-um-container .stat-card:hover .fa-solid {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+/* Status badges */
+.patent-um-container .status-badge {
+    display: inline-block;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.patent-um-container .status-badge:hover {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+}
+
+/* Status-specific badge styles */
+.patent-um-container .status-filed {
+    background-color: #ff980020 !important;
+    color: #ff9800 !important;
+    border-color: #ff980040 !important;
+}
+
+.patent-um-container .status-published {
+    background-color: #2196f320 !important;
+    color: #2196f3 !important;
+    border-color: #2196f340 !important;
+}
+
+.patent-um-container .status-granted {
+    background-color: #4caf5020 !important;
+    color: #4caf50 !important;
+    border-color: #4caf5040 !important;
+}
+
+.patent-um-container .status-pending {
+    background-color: #9c27b020 !important;
+    color: #9c27b0 !important;
+    border-color: #9c27b040 !important;
+}
+
+.patent-um-container .status-expired {
+    background-color: #f4433620 !important;
+    color: #f44336 !important;
+    border-color: #f4433640 !important;
+}
+
+/* Type badges */
+.patent-um-container .type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.patent-um-container .type-badge:hover {
+    background-color: #3a3a3a !important;
+    border-color: #666 !important;
+}
+
+.patent-um-container .type-badge .fa-solid {
+    transition: all 0.2s ease;
+}
+
+.patent-um-container .type-badge:hover .fa-solid {
+    color: #fff !important;
+}
+
+/* Filter bar elements */
+.patent-um-container .patent-search-input:focus {
+    border-color: deepskyblue !important;
+    background-color: #3a3a3a !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+.patent-um-container .status-filter:hover,
+.patent-um-container .type-filter:hover {
+    border-color: #666 !important;
+    background-color: #3a3a3a !important;
+}
+
+.patent-um-container .status-filter:focus,
+.patent-um-container .type-filter:focus {
+    border-color: deepskyblue !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+.patent-um-container .export-btn:hover {
+    background-color: #3a3a3a !important;
+    border-color: deepskyblue !important;
+    transform: translateY(-1px);
+}
+
+/* Category filter buttons */
+.patent-um-container [style*="border-radius: 8px"] button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.patent-um-container [style*="border-radius: 8px"] button:hover {
+    color: #fff !important;
+    background-color: #444 !important;
+}
+
+.patent-um-container [style*="background-color: deepskyblue"] {
+    box-shadow: 0 2px 8px rgba(0, 191, 255, 0.3);
+}
+
+/* Table styles */
+.patent-um-container table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.patent-um-container th {
+    font-weight: 600;
+    background: linear-gradient(180deg, #2d2d2d 0%, #2a2a2a 100%);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.patent-um-container th:hover .fa-solid {
+    opacity: 1 !important;
+    color: deepskyblue !important;
+}
+
+.patent-um-container tbody tr {
+    transition: all 0.2s ease;
+}
+
+.patent-um-container tbody tr:hover {
+    background-color: #333 !important;
+    transform: translateX(2px);
+}
+
+.patent-um-container td {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.patent-um-container td:hover {
+    background-color: rgba(0, 191, 255, 0.1);
+}
+
+/* Empty state animations */
+@keyframes floatCertificate {
+    0% { transform: translateY(0px) rotate(-10deg); }
+    50% { transform: translateY(-15px) rotate(-5deg); }
+    100% { transform: translateY(0px) rotate(-10deg); }
+}
+
+@keyframes floatGears {
+    0% { transform: translateY(0px) rotate(15deg); }
+    50% { transform: translateY(-10px) rotate(20deg); }
+    100% { transform: translateY(0px) rotate(15deg); }
+}
+
+@keyframes floatTrophy {
+    0% { transform: translateY(0px) rotate(-20deg); }
+    50% { transform: translateY(-8px) rotate(-15deg); }
+    100% { transform: translateY(0px) rotate(-20deg); }
+}
+
+.patent-um-container .empty-state .fa-certificate {
+    animation: floatCertificate 5s ease-in-out infinite;
+}
+
+.patent-um-container .empty-state .fa-gears {
+    animation: floatGears 5.5s ease-in-out infinite 0.5s;
+}
+
+.patent-um-container .empty-state .fa-trophy {
+    animation: floatTrophy 6s ease-in-out infinite 1s;
+}
+
+/* Add button hover effect */
+.patent-um-container button[style*="background-color: deepskyblue"]:hover {
+    background-color: #00a6d9 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 191, 255, 0.3);
+}
+
+.patent-um-container button[style*="background-color: deepskyblue"]:active {
+    transform: translateY(0);
+}
+
+/* Import button hover */
+.patent-um-container button[style*="border: 1px solid #444"]:hover {
+    background-color: #3a3a3a !important;
+    border-color: #666 !important;
+    transform: translateY(-1px);
+}
+
+/* Download template button specific hover */
+.patent-um-container button[style*="Download Template"]:hover {
+    background-color: #3a3a3a !important;
+    border-color: #4caf50 !important;
+}
+
+/* Record count badge */
+.patent-um-container .record-count {
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #333, #2a2a2a);
+}
+
+/* Patent number style */
+.patent-number {
+    font-family: 'JetBrains Mono', monospace;
+    color: #ffd700;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* Inventors list */
+.inventors-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.inventor-tag {
+    background-color: #333;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: #aaa;
+    border: 1px solid #444;
+}
+
+/* Zebra striping */
+.patent-um-container tbody tr:nth-child(even) {
+    background-color: #2a2a2a;
+}
+
+.patent-um-container tbody tr:nth-child(odd) {
+    background-color: #2d2d2d;
+}
+
+/* Responsive design */
+@media (max-width: 1400px) {
+    .patent-um-container .stats-cards {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .patent-um-container .patent-search-input {
+        width: 220px !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .patent-um-container .filter-bar {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .patent-um-container [style*="gap: 20px"] {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .patent-um-container .status-filter,
+    .patent-um-container .type-filter {
+        min-width: 130px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .patent-um-container .stats-cards {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .patent-um-container [style*="gap: 8px"] {
+        flex-wrap: wrap;
+    }
+    
+    .patent-um-container .status-filter,
+    .patent-um-container .type-filter {
+        min-width: 100% !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .patent-um-container .stats-cards,
+    .patent-um-container .filter-bar,
+    .patent-um-container button,
+    .patent-um-container .status-badge,
+    .patent-um-container .type-badge {
+        display: none !important;
+    }
+    
+    .patent-um-container table {
+        border: 1px solid #000;
+    }
+    
+    .patent-um-container th {
+        background-color: #f0f0f0 !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+    }
+    
+    .patent-um-container td {
+        color: #000 !important;
+        border-bottom: 1px solid #ccc !important;
+    }
+}
+
+/* Tooltip styles */
+.patent-um-container [data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+.patent-um-container [data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 12px;
+    background-color: #333;
+    color: #fff;
+    font-size: 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    border: 1px solid #444;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.patent-um-container [data-tooltip]:hover:before {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 10px);
+}
+
+/* IP indicator */
+.ip-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background-color: rgba(0,191,255,0.2);
+    padding: 8px 16px;
+    border-radius: 30px;
+    border: 1px solid deepskyblue;
+    white-space: nowrap;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+    100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+}

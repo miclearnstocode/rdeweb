@@ -1,0 +1,148 @@
+
+
+/* Custom scrollbar */
+.completed-research-container ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.completed-research-container ::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.completed-research-container ::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.completed-research-container ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Table hover effects */
+tbody tr:hover {
+    background-color: #3a3a3a !important;
+}
+
+/* Selected row state */
+tbody tr.selected {
+    background-color: #2c4a5a !important;
+    border-left: 3px solid deepskyblue;
+}
+
+/* Empty state animations */
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.empty-state .fa-folder-open {
+    animation: pulse 2s infinite ease-in-out;
+}
+
+/* Search input focus effect */
+.research-search-input:focus {
+    border-color: deepskyblue !important;
+    background-color: rgba(255,255,255,0.15) !important;
+    box-shadow: 0 0 0 2px rgba(0, 191, 255, 0.1);
+}
+
+/* Export button hover effect */
+.export-btn:hover {
+    background-color: #444 !important;
+    border-color: deepskyblue !important;
+}
+
+.export-btn:active {
+    transform: scale(0.98);
+}
+
+/* Table header sticky effect */
+thead th {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Cell hover effect */
+td:hover {
+    background-color: rgba(0, 191, 255, 0.1);
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.skeleton-cell {
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+    height: 20px;
+    border-radius: 4px;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 1200px) {
+    .research-search-input {
+        width: 200px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .research-search-input {
+        width: 150px !important;
+    }
+    
+    h2 {
+        font-size: 16px !important;
+    }
+}
+
+/* Table row zebra striping */
+tbody tr:nth-child(even) {
+    background-color: #2a2a2a;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #2d2d2d;
+}
+
+/* Focus visible for accessibility */
+.research-search-input:focus-visible,
+.export-btn:focus-visible {
+    outline: 2px solid deepskyblue;
+    outline-offset: 2px;
+}
+
+/* Tooltip for truncated content */
+td {
+    position: relative;
+}
+
+td[title] {
+    cursor: help;
+}
+
+/* Print styles */
+@media print {
+    .research-search-input,
+    .export-btn {
+        display: none !important;
+    }
+    
+    table {
+        border: 1px solid #000;
+    }
+    
+    th {
+        background-color: #f0f0f0 !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+    }
+    
+    td {
+        color: #000 !important;
+        border-bottom: 1px solid #ccc !important;
+    }
+}
