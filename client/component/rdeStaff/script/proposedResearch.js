@@ -1,10 +1,30 @@
-import { $ } from "../../../lib/lib.js";
+import { $, Waiting } from "../../../lib/lib.js"
 
 export const ProposedResearch = () => {
-    let mainTableContainer;
-    let tableBody;
+    let mainTableContainer
+    let tableBody
+    let scrollContainer
+    let researchData = []
+    let filteredData = []
+    let activeFilter = 'all'
+    let activeStatusFilter = ''
+    let currentEditItem = null
+    let facultyPositions = []
+    let modalElement = null
+    let loadingElement = null
+    let isLoading = false
+    let hasMore = true
+    let nextCursor = null
+    let totalCount = 0
+    let loadedCount = 0
+    let stats = {
+        total: 0,
+        inHouseReview: 0,
+        symposium: 0,
+        thisYear: 0
+    }
     
-    // Columns for proposed research (based on the provided header)
+    // Columns for proposed research
     const columns = [
         { field: 'year', header: 'YEAR', width: '70px' },
         { field: 'paperTrailNo', header: 'PAPER TRAIL NO.', width: '100px' },
@@ -12,21 +32,1109 @@ export const ProposedResearch = () => {
         { field: 'category', header: 'CATEGORY', width: '120px' },
         { field: 'title', header: 'TITLE', width: '300px' },
         { field: 'authors', header: 'AUTHOR/S', width: '250px' },
-        { field: 'facultyResearcher', header: 'FACULTY RESEARCHER', width: '180px' },
+        { field: 'facultyResearcher', header: 'FACULTY RESEARCHER', width: '250px' },
         { field: 'academicRank', header: 'Academic Rank', width: '100px' },
         { field: 'nonAcademicRank', header: 'Non-Academic Rank', width: '120px' },
         { field: 'jobOrder', header: 'Job Order', width: '80px' },
-        { field: 'dateStarted', header: 'Date Started (MMM-DD-YYYY)', width: '150px' }
-    ];
+        { field: 'inhouseLocal', header: 'In-house Review Local (Campus/Satellite College)', width: '200px' },
+        { field: 'inhouseUniversity', header: 'In-house Review University Level', width: '200px' },
+        { field: 'symposiumLocal', header: 'Symposium Local (Campus/Satellite College)', width: '200px' },
+        { field: 'symposiumUniversity', header: 'Symposium University Level', width: '200px' },
+        { field: 'dateStarted', header: 'Date Started (MMM-DD-YYYY)', width: '150px' },
+        { field: 'actions', header: 'ACTIONS', width: '80px' }
+    ]
 
-    const getMainContainer = (el) => {
-        mainTableContainer = el;
-    };
+    // Show loading
+    const showLoading = () => {
+        if (!loadingElement) {
+            loadingElement = Waiting()
+            document.body.appendChild(loadingElement)
+        }
+    }
 
-    const getTableBody = (el) => {
-        tableBody = el;
+    // Hide loading
+    const hideLoading = () => {
+        if (loadingElement) {
+            loadingElement.remove()
+            loadingElement = null
+        }
+    }
+
+    // Show loading indicator at bottom
+    const showBottomLoading = () => {
+        if (!tableBody) return
         
-        // Create empty state with proposed research specific message
+        const loadingRow = document.createElement('tr')
+        loadingRow.id = 'loading-row'
+        loadingRow.style.backgroundColor = '#2d2d2d'
+        
+        const loadingCell = document.createElement('td')
+        loadingCell.colSpan = columns.length
+        loadingCell.style.padding = '20px'
+        loadingCell.style.textAlign = 'center'
+        loadingCell.style.color = '#aaa'
+        loadingCell.innerHTML = '<span class="fa-solid fa-spinner fa-spin"></span> Loading more...'
+        
+        loadingRow.appendChild(loadingCell)
+        tableBody.appendChild(loadingRow)
+    }
+
+    // Remove bottom loading indicator
+    const removeBottomLoading = () => {
+        const loadingRow = document.getElementById('loading-row')
+        if (loadingRow) {
+            loadingRow.remove()
+        }
+    }
+
+    // Fetch data from API with cursor
+    const fetchProposedResearch = async (cursor = null) => {
+        if (isLoading || (!cursor && !hasMore && researchData.length > 0)) return
+        
+        isLoading = true
+        
+        if (!cursor) {
+            showLoading()
+        } else {
+            showBottomLoading()
+        }
+        
+        try {
+            const formData = new FormData()
+            formData.append('action', 'fetch')
+            if (cursor) {
+                formData.append('cursor', cursor)
+            }
+            
+            const response = await fetch('/proposedresearch', {
+                method: 'POST',
+                body: formData
+            })
+            
+            const result = await response.json()
+            
+            if (result.status) {
+                const newData = result.data || []
+                
+                if (!cursor) {
+                    // First page - replace data
+                    researchData = newData
+                    stats = result.stats || {
+                        total: 0,
+                        inHouseReview: 0,
+                        symposium: 0,
+                        thisYear: 0
+                    }
+                    
+                    // IMPORTANT: Update totalCount from stats.total
+                    totalCount = stats.total || 0
+                } else {
+                    // Subsequent pages - append data
+                    researchData = [...researchData, ...newData]
+                }
+                
+                // Update pagination info
+                if (result.pagination) {
+                    nextCursor = result.pagination.next_cursor
+                    hasMore = result.pagination.has_more
+                    loadedCount = result.pagination.loaded + (cursor ? researchData.length : 0)
+                }
+                
+                // Apply current filters
+                applyFilters()
+                
+                // Update stats cards only on first load
+                if (!cursor) {
+                    updateStatsCards()
+                }
+                
+                // Update the count display
+                if (window.updateFilterCount) {
+                    window.updateFilterCount()
+                }
+            } else {
+                console.error('Failed to fetch data:', result.message)
+                if (!cursor) {
+                    showEmptyState()
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching proposed research:', error)
+            if (!cursor) {
+                showEmptyState()
+            }
+        } finally {
+            isLoading = false
+            removeBottomLoading()
+            hideLoading()
+        }
+    }
+
+    // Apply current filters to data
+    const applyFilters = () => {
+        // Start with all research data
+        let filtered = [...researchData]
+        
+        // Apply type filter
+        if (activeFilter !== 'all') {
+            filtered = filtered.filter(item => item.eventType === activeFilter)
+        }
+        
+        // Apply status filter
+        if (activeStatusFilter) {
+            filtered = filtered.filter(item => {
+                if (activeStatusFilter === 'waiting_for_revised') {
+                    return (item.inhouseUniversity === 'waiting for revised proposal' || 
+                        item.symposiumUniversity === 'waiting for revised proposal')
+                } else if (activeStatusFilter === 'submitted_revised') {
+                    return (item.inhouseUniversity === 'submitted revised proposal' || 
+                        item.symposiumUniversity === 'submitted revised proposal')
+                }
+                return true
+            })
+        }
+        
+        filteredData = filtered
+        updateTableWithData()
+        
+        // Update the count display after filtering
+        if (window.updateFilterCount) {
+            window.updateFilterCount()
+        }
+    }
+
+    // Handle scroll for infinite loading
+    const handleScroll = () => {
+        if (!scrollContainer || isLoading || !hasMore) return
+        
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+        const threshold = 200 // Load more when 200px from bottom
+        
+        if (scrollHeight - scrollTop - clientHeight < threshold) {
+            fetchProposedResearch(nextCursor)
+        }
+    }
+
+    // Update table with filtered data
+    const updateTableWithData = () => {
+        if (!tableBody) return
+        
+        // Clear table body
+        tableBody.innerHTML = ''
+        
+        if (filteredData.length === 0) {
+            showEmptyState()
+            return
+        }
+        
+        // Remove empty state if it exists
+        const emptyState = tableBody.querySelector('.empty-state')
+        if (emptyState) {
+            emptyState.remove()
+        }
+        
+        // Add data rows
+        filteredData.forEach(item => {
+            tableBody.appendChild(createDataRow(item))
+        })
+        
+        // Update loaded count display
+        updateLoadedCount()
+    }
+
+    // Update loaded count
+    const updateLoadedCount = () => {
+        if (window.updateFilterCount) {
+            window.updateFilterCount()
+        }
+    }
+
+    // Format faculty researcher to display each on new line with proper wrapping
+    const formatFacultyResearcher = (facultyResearcher) => {
+        if (!facultyResearcher || facultyResearcher === '—') return '—'
+        
+        // Split by ' & ' and ',' to get individual names
+        let names = []
+        
+        // Handle the case with ' & ' (last name)
+        if (facultyResearcher.includes(' & ')) {
+            const parts = facultyResearcher.split(' & ')
+            // Add all parts, but we need to split the first part by commas
+            const firstPart = parts[0]
+            if (firstPart.includes(', ')) {
+                names = [...firstPart.split(', '), parts[1]]
+            } else {
+                names = [firstPart, parts[1]]
+            }
+        } else if (facultyResearcher.includes(', ')) {
+            // Just comma-separated
+            names = facultyResearcher.split(', ')
+        } else {
+            // Single name
+            names = [facultyResearcher]
+        }
+        
+        // Create a div with each name on a new line, with proper wrapping
+        return $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                width: '100%',
+                maxWidth: '100%'
+            },
+            child: names.map(name => 
+                $({
+                    tag: 'span',
+                    text: name.trim(),
+                    style: {
+                        display: 'block',
+                        lineHeight: '1.4',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        wordWrap: 'break-word',
+                        width: '100%',
+                        padding: '2px 0'
+                    }
+                })
+            )
+        })
+    }
+
+    // Open edit modal
+    const openEditModal = async (item) => {
+        currentEditItem = item
+        showLoading()
+        
+        // Fetch latest data including academic positions
+        try {
+            const formData = new FormData()
+            formData.append('action', 'get')
+            formData.append('id', item.edit_id || item.id) // Use edit_id from mapping
+            
+            const response = await fetch('/proposedresearch', {
+                method: 'POST',
+                body: formData
+            })
+            
+            const result = await response.json()
+            
+            if (result.status) {
+                const academic_positions = result.data.academic_positions || []
+                const all_researchers = result.data.all_researchers || []
+                
+                console.log('All researchers:', all_researchers)
+                console.log('Academic positions:', academic_positions)
+                
+                if (all_researchers.length > 0) {
+                    // Create a map of existing positions by faculty name
+                    const positionsMap = {}
+                    academic_positions.forEach(pos => {
+                        positionsMap[pos.faculty_name] = pos
+                    })
+                    
+                    // Build facultyPositions array with all researchers
+                    facultyPositions = all_researchers.map(faculty_name => {
+                        const existing = positionsMap[faculty_name]
+                        return {
+                            faculty_name: faculty_name,
+                            academic_rank: existing?.academic_rank || '',
+                            non_academic_rank: existing?.non_academic_rank || '',
+                            job_order: existing?.job_order || ''
+                        }
+                    })
+                } else {
+                    facultyPositions = academic_positions
+                }
+                
+                console.log('Faculty positions after mapping:', facultyPositions)
+            }
+        } catch (error) {
+            console.error('Error fetching research details:', error)
+            // Parse from the facultyResearcher string as fallback
+            if (item.facultyResearcher && item.facultyResearcher !== '—') {
+                let all_researchers = []
+                if (item.facultyResearcher.includes(' & ')) {
+                    const parts = item.facultyResearcher.split(' & ')
+                    const firstPart = parts[0]
+                    if (firstPart.includes(', ')) {
+                        all_researchers = [...firstPart.split(', '), parts[1]]
+                    } else {
+                        all_researchers = [firstPart, parts[1]]
+                    }
+                } else if (item.facultyResearcher.includes(', ')) {
+                    all_researchers = item.facultyResearcher.split(', ')
+                } else {
+                    all_researchers = [item.facultyResearcher]
+                }
+                
+                facultyPositions = all_researchers.map(faculty_name => ({
+                    faculty_name: faculty_name,
+                    academic_rank: '',
+                    non_academic_rank: '',
+                    job_order: ''
+                }))
+            }
+        } finally {
+            hideLoading()
+        }
+        
+        renderModal()
+    }
+
+    // Close modal
+    const closeModal = () => {
+        if (modalElement) {
+            modalElement.remove()
+            modalElement = null
+            currentEditItem = null
+            facultyPositions = []
+        }
+    }
+
+    // Save changes
+    const saveChanges = async () => {
+        if (!currentEditItem) return
+        
+        showLoading()
+        
+        // Collect data from form
+        const facultyData = []
+        const facultyRows = document.querySelectorAll('.faculty-row')
+        
+        console.log('Found faculty rows:', facultyRows.length)
+        
+        facultyRows.forEach((row, index) => {
+            const faculty_name = row.dataset.facultyName
+            const academic_rank = row.querySelector('.academic-rank-input')?.value || ''
+            const non_academic_rank = row.querySelector('.non-academic-rank-input')?.value || ''
+            const job_order = row.querySelector('.job-order-input')?.value || ''
+            
+            console.log(`Faculty ${index + 1}:`, {
+                faculty_name,
+                academic_rank,
+                non_academic_rank,
+                job_order
+            })
+            
+            // Include all faculty
+            facultyData.push({
+                faculty_name: faculty_name,
+                academic_rank: academic_rank,
+                non_academic_rank: non_academic_rank,
+                job_order: job_order
+            })
+        })
+        
+        console.log('Sending faculty data:', facultyData)
+        
+        try {
+            // Send as JSON
+            const response = await fetch('/proposedresearch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'save_positions',
+                    research_id: currentEditItem.edit_id || currentEditItem.id,
+                    duplicate_group_id: currentEditItem.duplicate_group_id
+                })
+            })
+            
+            const result = await response.json()
+            console.log('Save response:', result)
+            
+            if (result.status) {
+                // Refresh data
+                researchData = [] // Clear data
+                filteredData = []
+                hasMore = true
+                nextCursor = null
+                await fetchProposedResearch() // Reload from first page
+                closeModal()
+            } else {
+                alert('Error saving data: ' + result.message)
+            }
+        } catch (error) {
+            console.error('Error saving data:', error)
+            alert('Error saving data: ' + error.message)
+        } finally {
+            hideLoading()
+        }
+    }
+
+    // Render modal (same as before)
+    const renderModal = () => {
+        if (modalElement) {
+            modalElement.remove()
+        }
+        
+        modalElement = $({
+            tag: 'div',
+            style: {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: '1000',
+                fontFamily: 'Segoe UI, sans-serif'
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '12px',
+                        width: '900px',
+                        maxWidth: '95%',
+                        maxHeight: '90%',
+                        overflow: 'auto',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        // Modal header
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '20px 24px',
+                                borderBottom: '1px solid #444',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                position: 'sticky',
+                                top: '0',
+                                backgroundColor: '#2d2d2d',
+                                zIndex: '1'
+                            },
+                            child: [
+                                $({
+                                    tag: 'h2',
+                                    text: 'Edit Academic Positions',
+                                    style: {
+                                        margin: '0',
+                                        fontSize: '20px',
+                                        fontWeight: '500',
+                                        color: '#fff'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-times' },
+                                    style: {
+                                        fontSize: '20px',
+                                        color: '#888',
+                                        cursor: 'pointer',
+                                        padding: '8px',
+                                        borderRadius: '4px',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeModal
+                                    },
+                                    event2: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = '#444'
+                                            e.target.style.color = '#fff'
+                                        }
+                                    },
+                                    event3: {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
+                                            e.target.style.color = '#888'
+                                        }
+                                    }
+                                })
+                            ]
+                        }),
+                        
+                        // Research info
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '16px 24px',
+                                backgroundColor: '#333',
+                                borderBottom: '1px solid #444'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        fontSize: '14px',
+                                        color: '#aaa',
+                                        marginBottom: '4px'
+                                    },
+                                    text: 'Research Title:'
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        fontSize: '16px',
+                                        color: '#fff',
+                                        fontWeight: '500',
+                                        wordBreak: 'break-word'
+                                    },
+                                    text: currentEditItem?.title || ''
+                                })
+                            ]
+                        }),
+                        
+                        // Faculty rows
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '20px 24px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'grid',
+                                        gridTemplateColumns: '250px 180px 180px 100px',
+                                        gap: '12px',
+                                        padding: '10px 0',
+                                        borderBottom: '1px solid #444',
+                                        marginBottom: '10px',
+                                        fontWeight: '600',
+                                        fontSize: '12px',
+                                        color: '#aaa',
+                                        textTransform: 'uppercase'
+                                    },
+                                    child: [
+                                        $({ tag: 'div', text: 'Faculty Name' }),
+                                        $({ tag: 'div', text: 'Academic Rank' }),
+                                        $({ tag: 'div', text: 'Non-Academic Rank' }),
+                                        $({ tag: 'div', text: 'Job Order' })
+                                    ]
+                                }),
+                                ...facultyPositions.map(faculty => {
+                                    // Create the div element
+                                    const rowDiv = document.createElement('div')
+                                    rowDiv.className = 'faculty-row'
+                                    rowDiv.setAttribute('data-faculty-name', faculty.faculty_name)
+                                    
+                                    // Set styles
+                                    Object.assign(rowDiv.style, {
+                                        display: 'grid',
+                                        gridTemplateColumns: '250px 180px 180px 100px',
+                                        gap: '12px',
+                                        marginBottom: '10px',
+                                        alignItems: 'center'
+                                    })
+                                    
+                                    // Create and append children
+                                    const nameDiv = document.createElement('div')
+                                    nameDiv.style.cssText = 'color: #ddd; font-size: 14px; word-break: break-word;'
+                                    nameDiv.textContent = faculty.faculty_name
+                                    
+                                    const academicInput = document.createElement('input')
+                                    academicInput.type = 'text'
+                                    academicInput.className = 'academic-rank-input'
+                                    academicInput.placeholder = 'e.g., Professor 1'
+                                    academicInput.value = faculty.academic_rank || ''
+                                    Object.assign(academicInput.style, {
+                                        padding: '8px 10px',
+                                        backgroundColor: '#333',
+                                        border: '1px solid #444',
+                                        borderRadius: '6px',
+                                        color: '#fff',
+                                        fontSize: '13px',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease',
+                                        width: '100%'
+                                    })
+                                    academicInput.addEventListener('focus', (e) => {
+                                        e.target.style.borderColor = 'deepskyblue'
+                                        e.target.style.backgroundColor = '#3d3d3d'
+                                    })
+                                    academicInput.addEventListener('blur', (e) => {
+                                        e.target.style.borderColor = '#444'
+                                        e.target.style.backgroundColor = '#333'
+                                    })
+                                    
+                                    const nonAcademicInput = document.createElement('input')
+                                    nonAcademicInput.type = 'text'
+                                    nonAcademicInput.className = 'non-academic-rank-input'
+                                    nonAcademicInput.placeholder = 'e.g., Admin Staff'
+                                    nonAcademicInput.value = faculty.non_academic_rank || ''
+                                    Object.assign(nonAcademicInput.style, {
+                                        padding: '8px 10px',
+                                        backgroundColor: '#333',
+                                        border: '1px solid #444',
+                                        borderRadius: '6px',
+                                        color: '#fff',
+                                        fontSize: '13px',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease',
+                                        width: '100%'
+                                    })
+                                    nonAcademicInput.addEventListener('focus', (e) => {
+                                        e.target.style.borderColor = 'deepskyblue'
+                                        e.target.style.backgroundColor = '#3d3d3d'
+                                    })
+                                    nonAcademicInput.addEventListener('blur', (e) => {
+                                        e.target.style.borderColor = '#444'
+                                        e.target.style.backgroundColor = '#333'
+                                    })
+                                    
+                                    const jobOrderInput = document.createElement('input')
+                                    jobOrderInput.type = 'text'
+                                    jobOrderInput.className = 'job-order-input'
+                                    jobOrderInput.placeholder = 'e.g., JO-001'
+                                    jobOrderInput.value = faculty.job_order || ''
+                                    Object.assign(jobOrderInput.style, {
+                                        padding: '8px 10px',
+                                        backgroundColor: '#333',
+                                        border: '1px solid #444',
+                                        borderRadius: '6px',
+                                        color: '#fff',
+                                        fontSize: '13px',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease',
+                                        width: '100%'
+                                    })
+                                    jobOrderInput.addEventListener('focus', (e) => {
+                                        e.target.style.borderColor = 'deepskyblue'
+                                        e.target.style.backgroundColor = '#3d3d3d'
+                                    })
+                                    jobOrderInput.addEventListener('blur', (e) => {
+                                        e.target.style.borderColor = '#444'
+                                        e.target.style.backgroundColor = '#333'
+                                    })
+                                    
+                                    rowDiv.appendChild(nameDiv)
+                                    rowDiv.appendChild(academicInput)
+                                    rowDiv.appendChild(nonAcademicInput)
+                                    rowDiv.appendChild(jobOrderInput)
+                                    
+                                    return rowDiv
+                                })
+                            ]
+                        }),
+                        
+                        // Modal footer with buttons
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '20px 24px',
+                                borderTop: '1px solid #444',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '12px',
+                                position: 'sticky',
+                                bottom: '0',
+                                backgroundColor: '#2d2d2d'
+                            },
+                            child: [
+                                $({
+                                    tag: 'button',
+                                    text: 'Cancel',
+                                    style: {
+                                        padding: '10px 24px',
+                                        backgroundColor: 'transparent',
+                                        border: '1px solid #444',
+                                        borderRadius: '6px',
+                                        color: '#aaa',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeModal
+                                    },
+                                    event2: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = '#333'
+                                            e.target.style.borderColor = '#666'
+                                        }
+                                    },
+                                    event3: {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
+                                            e.target.style.borderColor = '#444'
+                                        }
+                                    }
+                                }),
+                                $({
+                                    tag: 'button',
+                                    text: 'Save Changes',
+                                    style: {
+                                        padding: '10px 24px',
+                                        backgroundColor: 'deepskyblue',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        color: '#fff',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: saveChanges
+                                    },
+                                    event2: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = '#00a6d1'
+                                            e.target.style.transform = 'translateY(-2px)'
+                                            e.target.style.boxShadow = '0 5px 15px rgba(0, 191, 255, 0.3)'
+                                        }
+                                    },
+                                    event3: {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = 'deepskyblue'
+                                            e.target.style.transform = 'translateY(0)'
+                                            e.target.style.boxShadow = 'none'
+                                        }
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                })
+            ]
+        })
+        
+        document.body.appendChild(modalElement)
+    }
+
+    // Create action buttons
+    const createActionButtons = (item) => {
+        return $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                gap: '8px',
+                justifyContent: 'center'
+            },
+            child: [
+                $({
+                    tag: 'span',
+                    att: { className: 'fa-solid fa-pen' },
+                    style: {
+                        color: 'deepskyblue',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease'
+                    },
+                    title: 'Edit academic positions',
+                    event: {
+                        type: 'click',
+                        method: (e) => {
+                            e.stopPropagation()
+                            openEditModal(item)
+                        }
+                    },
+                    event2: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.target.style.backgroundColor = 'rgba(0, 191, 255, 0.2)'
+                        }
+                    },
+                    event3: {
+                        type: 'mouseleave',
+                        method: (e) => {
+                            e.target.style.backgroundColor = 'transparent'
+                        }
+                    }
+                })
+            ]
+        })
+    }
+
+    // Create a data row
+    const createDataRow = (item) => {
+        const cells = columns.map(col => {
+            let cellContent = item[col.field] || '—'
+            let cellStyle = {
+                padding: '14px 8px',
+                fontSize: '13px',
+                color: '#ddd',
+                borderBottom: '1px solid #444',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                wordWrap: 'break-word',
+                fontFamily: 'Segoe UI, sans-serif',
+                lineHeight: '1.4',
+                verticalAlign: 'top',
+                maxWidth: col.width || 'auto'
+            }
+
+            // For the status columns, create badges if there's a value
+            if (col.field === 'inhouseUniversity' && item.inhouseUniversity) {
+                return createStatusCell(item.inhouseUniversity, 'inhouse', cellStyle)
+            }
+            if (col.field === 'symposiumUniversity' && item.symposiumUniversity) {
+                return createStatusCell(item.symposiumUniversity, 'symposium', cellStyle)
+            }
+            
+            // For actions column
+            if (col.field === 'actions') {
+                return $({
+                    tag: 'td',
+                    style: { ...cellStyle, textAlign: 'center' },
+                    child: [createActionButtons(item)]
+                })
+            }
+            
+            // For academic rank, non-academic rank, and job order columns
+            if (['academicRank', 'nonAcademicRank', 'jobOrder'].includes(col.field)) {
+                return $({
+                    tag: 'td',
+                    style: cellStyle,
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px'
+                            },
+                            child: (item.all_researchers || []).map((name, index) => {
+                                const pos = item.academic_positions?.[index]
+                                let value = '—'
+
+                                if (pos) {
+                                    if (col.field === 'academicRank') value = pos.academic_rank || '—'
+                                    if (col.field === 'nonAcademicRank') value = pos.non_academic_rank || '—'
+                                    if (col.field === 'jobOrder') value = pos.job_order || '—'
+                                }
+
+                                return $({
+                                    tag: 'div',
+                                    text: value,
+                                    style: {
+                                        minHeight: '22px',
+                                        whiteSpace: 'normal',
+                                        wordBreak: 'break-word',
+                                        padding: '2px 0'
+                                    }
+                                })
+                            })
+                        })
+                    ]
+                })
+            }
+
+            // For authors field, use all_researchers to display all authors
+            if (col.field === 'authors' && item.all_researchers && item.all_researchers.length > 0) {
+                return $({
+                    tag: 'td',
+                    style: cellStyle,
+                    child: [formatAuthors(item.all_researchers)]
+                })
+            }
+
+            // For faculty researcher field, format with line breaks and proper wrapping
+            if (col.field === 'facultyResearcher' && item.facultyResearcher && item.facultyResearcher !== '—') {
+                return $({
+                    tag: 'td',
+                    style: cellStyle,
+                    child: [formatFacultyResearcher(item.facultyResearcher)]
+                })
+            }
+
+            // For all other fields
+            return $({
+                tag: 'td',
+                style: cellStyle,
+                text: cellContent
+            })
+        })
+
+        return $({
+            tag: 'tr',
+            style: {
+                backgroundColor: '#2d2d2d',
+                transition: 'all 0.2s ease'
+            },
+            child: cells,
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = '#333'
+                }
+            },
+            event2: {
+                type: 'mouseleave',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = '#2d2d2d'
+                }
+            }
+        })
+    }
+
+    // Format authors to display each on new line with proper wrapping
+    const formatAuthors = (allResearchers) => {
+        if (!allResearchers || allResearchers.length === 0) return '—'
+        
+        return $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                width: '100%',
+                maxWidth: '100%'
+            },
+            child: allResearchers.map(name => 
+                $({
+                    tag: 'span',
+                    text: name.trim(),
+                    style: {
+                        display: 'block',
+                        lineHeight: '1.4',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        wordWrap: 'break-word',
+                        width: '100%',
+                        padding: '2px 0'
+                    }
+                })
+            )
+        })
+    }
+
+    // Create status cell with badge
+    const createStatusCell = (status, type, baseStyle) => {
+        let color = type === 'inhouse' ? '#ffb347' : '#7ccf7c'
+        let bgColor = type === 'inhouse' ? '#3a2d1a' : '#1a3a2d'
+        
+        // Format status text
+        let displayText = status || '—'
+        if (displayText !== '—') {
+            displayText = displayText.split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ')
+        }
+        
+        return $({
+            tag: 'td',
+            style: { ...baseStyle, backgroundColor: bgColor },
+            child: [
+                $({
+                    tag: 'span',
+                    style: {
+                        display: 'inline-block',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        backgroundColor: `${color}20`,
+                        color: color,
+                        border: `1px solid ${color}40`
+                    },
+                    text: displayText
+                })
+            ]
+        })
+    }
+
+    // Update statistics cards
+    const updateStatsCards = () => {
+        const statsContainer = document.querySelector('.stats-cards-container')
+        if (!statsContainer) return
+        
+        statsContainer.innerHTML = ''
+        
+        const statElements = [
+            { label: 'Total Proposed', value: stats.total, icon: 'fa-file-lines', color: 'deepskyblue' },
+            { label: 'In-House Review', value: stats.inHouseReview, icon: 'fa-users', color: '#ff9800' },
+            { label: 'Symposium', value: stats.symposium, icon: 'fa-microphone', color: '#4caf50' },
+            { label: 'This Year', value: stats.thisYear, icon: 'fa-calendar', color: '#00bcd4' }
+        ]
+        
+        statElements.forEach(stat => {
+            const statCard = $({
+                tag: 'div',
+                style: {
+                    backgroundColor: '#333',
+                    borderRadius: '12px',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '15px',
+                    flex: '1',
+                    minWidth: '160px',
+                    border: '1px solid #444',
+                    transition: 'transform 0.2s ease'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '12px',
+                            backgroundColor: `${stat.color}20`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: `fa-solid ${stat.icon}` },
+                                style: { color: stat.color, fontSize: '24px' }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: { display: 'flex', flexDirection: 'column' },
+                        child: [
+                            $({
+                                tag: 'span',
+                                text: stat.value,
+                                style: {
+                                    fontSize: '28px',
+                                    fontWeight: '600',
+                                    color: '#fff',
+                                    lineHeight: '1.2'
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: stat.label,
+                                style: {
+                                    fontSize: '12px',
+                                    color: '#aaa',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px'
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+            
+            statsContainer.appendChild(statCard)
+        })
+    }
+
+    // Show empty state
+    const showEmptyState = () => {
+        if (!tableBody) return
+        
+        tableBody.innerHTML = ''
+        
         const emptyState = $({
             tag: 'div',
             att: { className: 'empty-state' },
@@ -71,93 +1179,98 @@ export const ProposedResearch = () => {
                         textAlign: 'center',
                         lineHeight: '1.6'
                     }
-                }),
-                $({
-                    tag: 'div',
-                    style: {
-                        marginTop: '30px',
-                        display: 'flex',
-                        gap: '15px'
-                    },
-                    child: [
-                        $({
-                            tag: 'button',
-                            style: {
-                                backgroundColor: 'deepskyblue',
-                                border: 'none',
-                                borderRadius: '20px',
-                                padding: '10px 24px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                transition: 'all 0.3s ease',
-                                border: '1px solid transparent'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-plus' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Add Proposed Research'
-                                })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Add proposed research clicked');
-                                    // Will implement later
-                                }
-                            }
-                        }),
-                        $({
-                            tag: 'button',
-                            style: {
-                                backgroundColor: 'transparent',
-                                border: '1px solid #444',
-                                borderRadius: '20px',
-                                padding: '10px 24px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                transition: 'all 0.3s ease'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-upload' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Import Data'
-                                })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Import data clicked');
-                                    // Will implement later
-                                }
-                            }
-                        })
-                    ]
                 })
             ]
-        });
-        el.appendChild(emptyState);
-    };
+        })
+        
+        tableBody.appendChild(emptyState)
+    }
+
+    // Filter functions with highlighting
+    const filterByType = (type) => {
+        activeFilter = type
+        applyFilters()
+        updateFilterButtons()
+    }
+
+    const filterByStatus = (status) => {
+        activeStatusFilter = status
+        applyFilters()
+    }
+
+    const searchResearch = (searchTerm) => {
+        if (!searchTerm) {
+            applyFilters()
+        } else {
+            const term = searchTerm.toLowerCase()
+            filteredData = researchData.filter(item => 
+                item.title?.toLowerCase().includes(term) ||
+                item.authors?.toLowerCase().includes(term) ||
+                item.facultyResearcher?.toLowerCase().includes(term) ||
+                item.paperTrailNo?.toLowerCase().includes(term) ||
+                item.category?.toLowerCase().includes(term) ||
+                item.campus?.toLowerCase().includes(term) ||
+                item.center?.toLowerCase().includes(term)
+            )
+            updateTableWithData()
+            
+            // Update the count display after search
+            if (window.updateFilterCount) {
+                window.updateFilterCount()
+            }
+        }
+    }
+
+    // Update filter button styles based on active filter
+    const updateFilterButtons = () => {
+        const filterContainer = document.querySelector('.filter-buttons-container')
+        if (!filterContainer) return
+        
+        const buttons = filterContainer.children
+        for (let button of buttons) {
+            const buttonText = button.textContent.toLowerCase()
+            if ((activeFilter === 'all' && buttonText === 'all') ||
+                (activeFilter === 'inhouse' && buttonText.includes('in-house')) ||
+                (activeFilter === 'symposium' && buttonText.includes('symposium'))) {
+                button.style.backgroundColor = 'deepskyblue'
+                button.style.color = '#fff'
+            } else {
+                button.style.backgroundColor = 'transparent'
+                button.style.color = '#aaa'
+            }
+        }
+    }
+
+    const getMainContainer = (el) => {
+        mainTableContainer = el
+    }
+
+    const getTableBody = (el) => {
+        tableBody = el
+    }
+
+    const getScrollContainer = (el) => {
+        scrollContainer = el
+        // Add scroll event listener
+        scrollContainer.addEventListener('scroll', handleScroll)
+        // Fetch data when scroll container is ready
+        fetchProposedResearch()
+    }
 
     // Filter and search bar
     const FilterBar = () => {
+        // Create a reference to the count span
+        let countSpan
+        
+        const updateCount = () => {
+            if (countSpan) {
+                countSpan.textContent = `Showing ${filteredData.length} of ${totalCount} records`
+            }
+        }
+        
+        // Expose updateCount to parent scope
+        window.updateFilterCount = updateCount
+        
         return $({
             tag: 'div',
             style: {
@@ -208,6 +1321,7 @@ export const ProposedResearch = () => {
                         }),
                         $({
                             tag: 'div',
+                            att: { className: 'filter-buttons-container' },
                             style: {
                                 display: 'flex',
                                 gap: '10px',
@@ -229,6 +1343,10 @@ export const ProposedResearch = () => {
                                         fontWeight: '500',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => filterByType('all')
                                     }
                                 }),
                                 $({
@@ -244,6 +1362,10 @@ export const ProposedResearch = () => {
                                         fontWeight: '500',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => filterByType('inhouse')
                                     }
                                 }),
                                 $({
@@ -259,9 +1381,26 @@ export const ProposedResearch = () => {
                                         fontWeight: '500',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => filterByType('symposium')
                                     }
                                 })
                             ]
+                        }),
+                        $({
+                            tag: 'span',
+                            att: { className: 'loaded-count' },
+                            style: {
+                                fontSize: '12px',
+                                color: '#888',
+                                marginLeft: '10px'
+                            },
+                            text: `Showing 0 of 0 records`, // Initial text
+                            elementHandler: (el) => {
+                                countSpan = el // Store reference to the span
+                            }
                         })
                     ]
                 }),
@@ -312,173 +1451,88 @@ export const ProposedResearch = () => {
                                     event: {
                                         type: 'input',
                                         method: (e) => {
-                                            console.log('Searching:', e.target.value);
+                                            searchResearch(e.target.value)
                                         }
                                     }
                                 })
                             ]
                         }),
                         $({
-                            tag: 'button',
-                            att: { className: 'filter-btn' },
+                            tag: 'select',
                             style: {
                                 backgroundColor: '#333',
                                 border: '1px solid #444',
                                 borderRadius: '20px',
-                                padding: '10px 16px',
+                                padding: '10px 32px 10px 16px',
                                 color: '#fff',
-                                cursor: 'pointer',
                                 fontSize: '14px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                transition: 'all 0.3s ease'
+                                outline: 'none',
+                                cursor: 'pointer',
+                                appearance: 'none',
+                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 10px center',
+                                backgroundSize: '16px',
+                                minWidth: '180px'
                             },
                             child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-filter' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Filter'
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'button',
-                            att: { className: 'export-btn' },
-                            style: {
-                                backgroundColor: 'transparent',
-                                border: '1px solid #444',
-                                borderRadius: '20px',
-                                padding: '10px 16px',
-                                color: '#fff',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                transition: 'all 0.3s ease'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-download' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Export'
-                                })
-                            ]
+                                $({ tag: 'option', att: { value: '' }, text: 'All Status' }),
+                                $({ tag: 'option', att: { value: 'waiting_for_revised' }, text: 'Waiting for Revised Proposal' }),
+                                $({ tag: 'option', att: { value: 'submitted_revised' }, text: 'Submitted Revised Proposal' })
+                            ],
+                            event: {
+                                type: 'change',
+                                method: (e) => {
+                                    filterByStatus(e.target.value)
+                                }
+                            }
                         })
                     ]
                 })
             ]
-        });
-    };
+        })
+    }
 
     // Statistics cards
     const StatsCards = () => {
-        const stats = [
-            { label: 'Total Proposed', value: '0', icon: 'fa-file-lines', color: 'deepskyblue' },
-            { label: 'In-House Review', value: '0', icon: 'fa-users', color: '#ff9800' },
-            { label: 'Symposium', value: '0', icon: 'fa-microphone', color: '#4caf50' },
-            { label: 'This Year', value: '0', icon: 'fa-calendar', color: '#e91e63' }
-        ];
-
-        const statCards = stats.map(stat => {
-            return $({
-                tag: 'div',
-                style: {
-                    backgroundColor: '#333',
-                    borderRadius: '12px',
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '15px',
-                    flex: '1',
-                    minWidth: '180px',
-                    border: '1px solid #444',
-                    transition: 'transform 0.2s ease'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '12px',
-                            backgroundColor: `${stat.color}20`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        },
-                        child: [
-                            $({
-                                tag: 'span',
-                                att: { className: `fa-solid ${stat.icon}` },
-                                style: { color: stat.color, fontSize: '24px' }
-                            })
-                        ]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: { display: 'flex', flexDirection: 'column' },
-                        child: [
-                            $({
-                                tag: 'span',
-                                text: stat.value,
-                                style: {
-                                    fontSize: '28px',
-                                    fontWeight: '600',
-                                    color: '#fff',
-                                    lineHeight: '1.2'
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: stat.label,
-                                style: {
-                                    fontSize: '13px',
-                                    color: '#aaa',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px'
-                                }
-                            })
-                        ]
-                    })
-                ]
-            });
-        });
-
         return $({
             tag: 'div',
+            att: { className: 'stats-cards-container' },
             style: {
-                display: 'flex',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
                 backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444',
-                flexWrap: 'wrap'
-            },
-            child: statCards
-        });
-    };
+                borderBottom: '1px solid #444'
+            }
+        })
+    }
 
     // Table header component
     const TableHeader = () => {
         const headerCells = columns.map(col => {
+            let backgroundColor = '#2d2d2d'
+            let textColor = '#bbb'
+            
+            if (col.field.includes('inhouse')) {
+                backgroundColor = '#3a2d1a'
+                textColor = '#ffb347'
+            } else if (col.field.includes('symposium')) {
+                backgroundColor = '#1a3a2d'
+                textColor = '#7ccf7c'
+            }
+
             return $({
                 tag: 'th',
                 style: {
                     padding: '14px 8px',
                     textAlign: 'left',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fontWeight: '600',
-                    color: '#bbb',
-                    backgroundColor: '#2d2d2d',
-                    borderBottom: '2px solid #444',
+                    color: textColor,
+                    backgroundColor: backgroundColor,
+                    borderBottom: col.field.includes('inhouse') || col.field.includes('symposium') ? '2px solid #666' : '2px solid #444',
                     whiteSpace: 'nowrap',
                     minWidth: col.width,
                     position: 'sticky',
@@ -507,15 +1561,15 @@ export const ProposedResearch = () => {
                                 att: { className: 'fa-solid fa-sort' },
                                 style: { 
                                     fontSize: '10px', 
-                                    color: '#666',
+                                    color: textColor,
                                     opacity: '0.5'
                                 }
                             })
                         ]
                     })
                 ]
-            });
-        });
+            })
+        })
 
         return $({
             tag: 'thead',
@@ -525,50 +1579,8 @@ export const ProposedResearch = () => {
                     child: headerCells
                 })
             ]
-        });
-    };
-
-    // Sample loading skeleton rows
-    const LoadingSkeleton = () => {
-        const skeletonRows = [];
-        
-        for (let i = 0; i < 5; i++) {
-            const cells = columns.map(() => {
-                return $({
-                    tag: 'td',
-                    style: {
-                        padding: '16px 8px',
-                        borderBottom: '1px solid #444'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            att: { className: 'skeleton-cell' },
-                            style: {
-                                height: '16px',
-                                width: '80%',
-                                backgroundColor: '#333',
-                                borderRadius: '4px'
-                            }
-                        })
-                    ]
-                });
-            });
-
-            skeletonRows.push(
-                $({
-                    tag: 'tr',
-                    style: { backgroundColor: '#2a2a2a' },
-                    child: cells
-                })
-            );
-        }
-
-        return $({
-            tag: 'tbody',
-            child: skeletonRows
-        });
-    };
+        })
+    }
 
     // Main table component
     const DataTable = () => {
@@ -576,11 +1588,12 @@ export const ProposedResearch = () => {
             tag: 'div',
             style: {
                 width: '100%',
-                height: 'calc(100% - 180px)', // Adjust based on header + stats
+                height: 'calc(100% - 220px)',
                 overflow: 'auto',
                 backgroundColor: '#2a2a2a',
                 position: 'relative'
             },
+            elementHandler: getScrollContainer,
             child: [
                 $({
                     tag: 'table',
@@ -599,8 +1612,8 @@ export const ProposedResearch = () => {
                     ]
                 })
             ]
-        });
-    };
+        })
+    }
 
     return $({
         tag: 'div',
@@ -621,27 +1634,25 @@ export const ProposedResearch = () => {
             FilterBar(),
             DataTable()
         ]
-    });
-};
+    })
+}
 
 // Utility functions for later use
 export const formatProposedDate = (date) => {
-    if (!date) return '—';
-    const d = new Date(date);
+    if (!date) return '—'
+    const d = new Date(date)
     return d.toLocaleDateString('en-US', { 
         month: 'short', 
         day: '2-digit', 
         year: 'numeric' 
-    }).replace(/,/g, '');
-};
+    }).replace(/,/g, '')
+}
 
 export const getProposedResearchStats = (data) => {
-    // This function will calculate statistics from the data
-    // Will be implemented when backend data is available
     return {
-        total: 0,
-        inHouseReview: 0,
-        symposium: 0,
-        thisYear: 0
-    };
-};
+        total: data.length,
+        inHouseReview: data.filter(item => item.eventType === 'inhouse').length,
+        symposium: data.filter(item => item.eventType === 'symposium').length,
+        thisYear: data.filter(item => item.year === new Date().getFullYear().toString()).length
+    }
+}
