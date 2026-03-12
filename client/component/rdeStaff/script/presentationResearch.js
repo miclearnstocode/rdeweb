@@ -1,39 +1,274 @@
-import { $ } from "../../../lib/lib.js";
+import { $, Waiting } from "../../../lib/lib.js"
 
 export const PresentationResearch = () => {
-    let mainTableContainer;
-    let tableBody;
+    let mainTableContainer
+    let tableBody
+    let scrollContainer
+    let modalElement = null
+    let loadingElement = null
+    let researchData = []
+    let filteredData = []
+    let researchOptions = []
+    let selectedResearch = null
+    let currentFilter = 'All' // Track current active filter
+    
+    // Pagination state
+    let loadedCount = 0 
+    let isLoading = false
+    let hasMore = true
+    let nextCursor = null
+    let totalCount = 0
+    let cursorStack = [] 
+    let currentDirection = 'next'
+    let isLoadingMore = false
+    let isLoadingPrev = false
+    
+    // Stats state
+    let currentStats = {
+        total: 0,
+        university: 0,
+        international: 0,
+        national: 0,
+        regional: 0
+    }
     
     // Columns for presentation research
     const columns = [
-        { field: 'dateCompleted', header: 'Date of Completion (MMM-DD-YYYY)', width: '150px' },
+        { field: 'date_completed', header: 'Date of Completion (MMM-DD-YYYY)', width: '150px' },
         { field: 'title', header: 'Title of Research', width: '300px' },
-        { field: 'forumTitle', header: 'Title of Forum', width: '250px' },
+        { field: 'forum_title', header: 'Title of Forum', width: '250px' },
         { field: 'venue', header: 'Venue', width: '200px' },
-        { field: 'forumType', header: 'Forum Type', width: '150px' },
-        { field: 'presentationDate', header: 'Date of Presentation', width: '150px' },
-        { field: 'presentationType', header: 'Presentation Type', width: '180px' },
-        { field: 'authors', header: 'Author/s', width: '250px' },
+        { field: 'university', header: 'University', width: '120px' },
+        { field: 'international', header: 'International', width: '120px' },
+        { field: 'national', header: 'National', width: '120px' },
+        { field: 'regional', header: 'Regional', width: '120px' },
+        { field: 'presentation_date', header: 'Date of Presentation', width: '150px' },
+        { field: 'presentor', header: 'Presentor', width: '250px' },
         { field: 'campus', header: 'Campus/Center', width: '120px' },
-        { field: 'category', header: 'Category', width: '120px' }
-    ];
+        { field: 'category', header: 'Category', width: '120px' },
+        { field: 'actions', header: 'ACTIONS', width: '100px' }
+    ]
 
-    // Presentation type options
-    const presentationTypes = [
-        'University',
-        'International Conference',
-        'National Conference',
-        'Regional Conference'
-    ];
+    // Forum type options
+    const forumTypes = [
+        'International',
+        'National',
+        'Regional'
+    ]
 
-    const getMainContainer = (el) => {
-        mainTableContainer = el;
-    };
+    // Show loading
+    const showLoading = () => {
+        if (!loadingElement) {
+            loadingElement = Waiting()
+            document.body.appendChild(loadingElement)
+        }
+    }
 
-    const getTableBody = (el) => {
-        tableBody = el;
+    // Hide loading
+    const hideLoading = () => {
+        if (loadingElement) {
+            loadingElement.remove()
+            loadingElement = null
+        }
+    }
+
+    // Fetch research papers for dropdown
+    const fetchResearchPapers = async () => {
+        try {
+            const formData = new FormData()
+            formData.append('action', 'get_research_papers')
+            
+            const response = await fetch('/presentedresearch', {
+                method: 'POST',
+                body: formData
+            })
+            
+            const result = await response.json()
+            
+            if (result.status) {
+                researchOptions = result.data || []
+            }
+        } catch (error) {
+            console.error('Error fetching research papers:', error)
+        }
+    }
+
+    // Fetch presentation data with cursor pagination
+    const fetchPresentations = async (cursor = null, direction = 'next') => {
+        if (isLoading) return
         
-        // Create empty state with presentation research specific message
+        isLoading = true
+        
+        if (!cursor) {
+            showLoading()
+            // Reset on first load
+            cursorStack = []
+        }
+        
+        try {
+            const formData = new FormData()
+            formData.append('action', 'fetch')
+            if (cursor) {
+                formData.append('cursor', cursor)
+                formData.append('direction', direction)
+            }
+            
+            const response = await fetch('/presentedresearch', {
+                method: 'POST',
+                body: formData
+            })
+            
+            const result = await response.json()
+            
+            if (result.status) {
+                const newData = result.data || []
+                
+                if (!cursor) {
+                    // First page - replace data
+                    researchData = newData
+                    filteredData = [...researchData]
+                    
+                    // Update stats
+                    if (result.stats) {
+                        currentStats = result.stats
+                        totalCount = result.stats.total || 0
+                        updateStats()
+                    }
+                } else {
+                    if (direction === 'next') {
+                        // Append to bottom
+                        researchData = [...researchData, ...newData]
+                    } else {
+                        // Prepend to top
+                        researchData = [...newData, ...researchData]
+                    }
+                    
+                    // Reapply current filter after adding new data
+                    applyFilter(currentFilter)
+                }
+                
+                // Update pagination info
+                if (result.pagination) {
+                    nextCursor = result.pagination.next_cursor
+                    hasMore = result.pagination.has_more
+                }
+                
+                updateTableWithData()
+                updateRecordCount()
+                
+                // Maintain scroll position when loading previous
+                if (direction === 'prev' && cursor) {
+                    setTimeout(() => {
+                        const firstRow = tableBody?.firstChild
+                        if (firstRow) {
+                            firstRow.scrollIntoView({ behavior: 'auto', block: 'start' })
+                        }
+                    }, 100)
+                }
+            } else {
+                if (!cursor) {
+                    showEmptyState()
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching presentations:', error)
+            if (!cursor) {
+                showEmptyState()
+            }
+        } finally {
+            isLoading = false
+            isLoadingMore = false
+            isLoadingPrev = false
+            hideLoading()
+        }
+    }
+
+    // Apply filter based on selected type
+    const applyFilter = (filterType) => {
+        currentFilter = filterType
+        
+        if (filterType === 'All') {
+            filteredData = [...researchData]
+        } else {
+            const filterField = filterType.toLowerCase()
+            filteredData = researchData.filter(item => {
+                // Check if the item has a checkmark (✓) for this filter type
+                return item[filterField] === '✓' || item[filterField] === 1 || item[filterField] === '1'
+            })
+        }
+        
+        updateFilterButtons(filterType)
+        updateTableWithData()
+        updateRecordCount()
+    }
+
+    // Handle scroll for infinite loading (both directions)
+    const handleScroll = () => {
+        if (!scrollContainer || isLoading) return
+        
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+        
+        // Load more when scrolling down (near bottom)
+        if (scrollHeight - scrollTop - clientHeight < 200 && hasMore && !isLoadingMore) {
+            isLoadingMore = true
+            currentDirection = 'next'
+            if (nextCursor) {
+                cursorStack.push(nextCursor)
+                fetchPresentations(nextCursor, 'next')
+            }
+        }
+        
+        // Load previous when scrolling up (near top)
+        if (scrollTop < 200 && cursorStack.length > 0 && !isLoadingPrev) {
+            isLoadingPrev = true
+            currentDirection = 'prev'
+            const prevCursor = cursorStack.pop()
+            fetchPresentations(prevCursor, 'prev')
+        }
+    }
+
+    // Update statistics
+    const updateStats = () => {
+        const statValues = document.querySelectorAll('.stat-value')
+        if (statValues.length >= 5) {
+            statValues[0].textContent = currentStats.total || 0
+            statValues[1].textContent = currentStats.university || 0
+            statValues[2].textContent = currentStats.international || 0
+            statValues[3].textContent = currentStats.national || 0
+            statValues[4].textContent = currentStats.regional || 0
+        }
+    }
+
+    // Update record count
+    const updateRecordCount = () => {
+        const recordCount = document.querySelector('.record-count')
+        if (recordCount) {
+            recordCount.textContent = `${filteredData.length} of ${totalCount} records`
+        }
+    }
+
+    // Update table with data
+    const updateTableWithData = () => {
+        if (!tableBody) return
+        
+        tableBody.innerHTML = ''
+        
+        if (filteredData.length === 0) {
+            showEmptyState()
+            return
+        }
+        
+        filteredData.forEach(item => {
+            tableBody.appendChild(createDataRow(item))
+        })
+    }
+
+    // Show empty state
+    const showEmptyState = () => {
+        if (!tableBody) return
+        
+        tableBody.innerHTML = ''
+        
         const emptyState = $({
             tag: 'div',
             att: { className: 'empty-state' },
@@ -108,108 +343,970 @@ export const PresentationResearch = () => {
                 }),
                 $({
                     tag: 'div',
-                    text: 'Research papers presented at international pitching, Capiz State University,',
-                    style: { 
-                        fontSize: '14px', 
-                        opacity: 0.7,
-                        textAlign: 'center',
-                        lineHeight: '1.6'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'and presentations outside CAPSU will appear here',
+                    text: 'Click the Actions to edit presentation of research',
                     style: { 
                         fontSize: '14px', 
                         opacity: 0.7,
                         marginBottom: '30px',
                         textAlign: 'center'
                     }
+                })
+            ]
+        })
+        
+        tableBody.appendChild(emptyState)
+    }
+
+    // Create data row
+    const createDataRow = (item) => {
+        const cells = columns.map(col => {
+            let cellContent = item[col.field] || '—'
+            let cellStyle = {
+                padding: '14px 8px',
+                fontSize: '13px',
+                color: '#ddd',
+                borderBottom: '1px solid #444',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                fontFamily: 'Segoe UI, sans-serif',
+                lineHeight: '1.4',
+                verticalAlign: 'top'
+            }
+
+            // Special styling for forum type columns
+            if (['university', 'international', 'national', 'regional'].includes(col.field)) {
+                if (cellContent === '✓') {
+                    cellStyle.backgroundColor = 'rgba(0, 191, 255, 0.1)'
+                    cellStyle.color = 'deepskyblue'
+                    cellStyle.fontWeight = '500'
+                    cellStyle.textAlign = 'center'
+                } else {
+                    cellStyle.textAlign = 'center'
+                }
+            }
+
+            if (col.field === 'actions') {
+                return $({
+                    tag: 'td',
+                    style: { ...cellStyle, textAlign: 'center' },
+                    child: [createActionButtons(item)]
+                })
+            }
+
+            if (col.field === 'date_completed' || col.field === 'presentation_date') {
+                cellContent = formatDate(item[col.field])
+            }
+
+            return $({
+                tag: 'td',
+                style: cellStyle,
+                text: cellContent
+            })
+        })
+
+        return $({
+            tag: 'tr',
+            style: {
+                backgroundColor: '#2d2d2d',
+                transition: 'all 0.2s ease'
+            },
+            child: cells,
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = '#333'
+                }
+            },
+            event2: {
+                type: 'mouseleave',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = '#2d2d2d'
+                }
+            }
+        })
+    }
+
+    // Create action buttons
+    const createActionButtons = (item) => {
+        return $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                gap: '8px',
+                justifyContent: 'center'
+            },
+            child: [
+                $({
+                    tag: 'span',
+                    att: { className: 'fa-solid fa-eye' },
+                    style: {
+                        color: 'deepskyblue',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease'
+                    },
+                    title: 'View details',
+                    event: {
+                        type: 'click',
+                        method: (e) => {
+                            e.stopPropagation()
+                            viewPresentation(item)
+                        }
+                    }
                 }),
+                $({
+                    tag: 'span',
+                    att: { className: 'fa-solid fa-pen' },
+                    style: {
+                        color: '#ffb347',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease'
+                    },
+                    title: 'Edit',
+                    event: {
+                        type: 'click',
+                        method: (e) => {
+                            e.stopPropagation()
+                            editPresentation(item)
+                        }
+                    }
+                })
+            ]
+        })
+    }
+
+    // Format date
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === '—') return '—'
+        const date = new Date(dateString)
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: '2-digit', 
+            year: 'numeric' 
+        }).replace(/,/g, '')
+    }
+
+    // View presentation
+    const viewPresentation = (item) => {
+        selectedResearch = item
+        renderModal('view')
+    }
+
+    // Edit presentation
+    const editPresentation = (item) => {
+        selectedResearch = item
+        renderModal('edit')
+    }
+
+    // Handle research selection
+    const handleResearchSelect = (researchId) => {
+        const research = researchOptions.find(r => r.id == researchId)
+        if (research) {
+            selectedResearch = research
+            
+            // Update campus and category fields
+            const campusInput = document.querySelector('input[name="campus"]')
+            const categoryInput = document.querySelector('input[name="category"]')
+            const presentorSelect = document.querySelector('select[name="presentor"]')
+            
+            if (campusInput) campusInput.value = research.campus || ''
+            if (categoryInput) categoryInput.value = research.category || ''
+            
+            // Update presentor dropdown
+            if (presentorSelect) {
+                presentorSelect.innerHTML = '<option value="">Select Presentor</option>'
+                
+                // Add all researchers as options
+                if (research.all_researchers && Array.isArray(research.all_researchers)) {
+                    research.all_researchers.forEach(name => {
+                        if (name && name !== 'NULL') {
+                            const option = document.createElement('option')
+                            option.value = name
+                            option.textContent = name
+                            presentorSelect.appendChild(option)
+                        }
+                    })
+                }
+            }
+        }
+    }
+
+    // Close modal
+    const closeModal = () => {
+        if (modalElement) {
+            modalElement.remove()
+            modalElement = null
+        }
+    }
+
+    // Render modal
+    const renderModal = (mode) => {
+        if (modalElement) {
+            modalElement.remove()
+        }
+        
+        const isViewMode = mode === 'view'
+        const isEditMode = mode === 'edit'
+        const isAddMode = mode === 'add'
+        
+        modalElement = $({
+            tag: 'div',
+            style: {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: '1000',
+                fontFamily: 'Segoe UI, sans-serif'
+            },
+            child: [
                 $({
                     tag: 'div',
                     style: {
-                        display: 'flex',
-                        gap: '15px',
-                        flexWrap: 'wrap',
-                        justifyContent: 'center'
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '12px',
+                        width: '900px',
+                        maxWidth: '95%',
+                        maxHeight: '90%',
+                        overflow: 'auto',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                        border: '1px solid #444'
                     },
                     child: [
+                        // Modal header
                         $({
-                            tag: 'button',
+                            tag: 'div',
                             style: {
-                                backgroundColor: 'deepskyblue',
-                                border: 'none',
-                                borderRadius: '30px',
-                                padding: '12px 28px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
+                                padding: '20px 24px',
+                                borderBottom: '1px solid #444',
                                 display: 'flex',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
-                                gap: '10px',
-                                transition: 'all 0.3s ease',
-                                boxShadow: '0 4px 12px rgba(0, 191, 255, 0.2)'
+                                position: 'sticky',
+                                top: '0',
+                                backgroundColor: '#2d2d2d',
+                                zIndex: '1'
                             },
                             child: [
                                 $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-plus-circle' }
+                                    tag: 'h2',
+                                    text: isViewMode ? 'View Presentation' : (isEditMode ? 'Edit Presentation' : 'Add New Presentation'),
+                                    style: {
+                                        margin: '0',
+                                        fontSize: '20px',
+                                        fontWeight: '500',
+                                        color: '#fff'
+                                    }
                                 }),
                                 $({
                                     tag: 'span',
-                                    text: 'Add Presentation'
+                                    att: { className: 'fa-solid fa-times' },
+                                    style: {
+                                        fontSize: '20px',
+                                        color: '#888',
+                                        cursor: 'pointer',
+                                        padding: '8px',
+                                        borderRadius: '4px',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeModal
+                                    }
                                 })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Add presentation clicked');
-                                }
-                            }
+                            ]
                         }),
+                        // Modal body - Form
                         $({
-                            tag: 'button',
+                            tag: 'form',
+                            att: { id: 'presentation-form' },
                             style: {
-                                backgroundColor: 'transparent',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '12px 28px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                transition: 'all 0.3s ease'
+                                padding: '24px'
                             },
                             child: [
+                                // Title of Research with search (for add mode)
+                                ...(isAddMode ? [
+                                    $({
+                                        tag: 'div',
+                                        style: { marginBottom: '20px' },
+                                        child: [
+                                            $({
+                                                tag: 'label',
+                                                text: 'Title of Research *',
+                                                style: {
+                                                    display: 'block',
+                                                    marginBottom: '8px',
+                                                    color: '#aaa',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    position: 'relative'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'input',
+                                                        att: {
+                                                            type: 'text',
+                                                            id: 'research-search',
+                                                            placeholder: 'Type to search research papers...',
+                                                            autocomplete: 'off',
+                                                            required: true
+                                                        },
+                                                        style: {
+                                                            width: '100%',
+                                                            padding: '10px',
+                                                            backgroundColor: '#333',
+                                                            border: '1px solid #444',
+                                                            borderRadius: '6px',
+                                                            color: '#fff',
+                                                            fontSize: '14px',
+                                                            outline: 'none'
+                                                        },
+                                                        event: {
+                                                            type: 'input',
+                                                            method: (e) => {
+                                                                const searchTerm = e.target.value.toLowerCase()
+                                                                const suggestionsContainer = document.getElementById('research-suggestions')
+                                                                
+                                                                if (searchTerm.length < 2) {
+                                                                    suggestionsContainer.style.display = 'none'
+                                                                    return
+                                                                }
+                                                                
+                                                                const filtered = researchOptions.filter(r => 
+                                                                    r.title?.toLowerCase().includes(searchTerm) ||
+                                                                    r.author?.toLowerCase().includes(searchTerm)
+                                                                ).slice(0, 10)
+                                                                
+                                                                if (filtered.length === 0) {
+                                                                    suggestionsContainer.innerHTML = '<div style="padding: 10px; color: #888;">No results found</div>'
+                                                                    suggestionsContainer.style.display = 'block'
+                                                                    return
+                                                                }
+                                                                
+                                                                suggestionsContainer.innerHTML = ''
+                                                                filtered.forEach(r => {
+                                                                    const item = document.createElement('div')
+                                                                    item.style.cssText = `
+                                                                        padding: 12px 15px;
+                                                                        cursor: pointer;
+                                                                        border-bottom: 1px solid #444;
+                                                                        transition: all 0.2s ease;
+                                                                        color: #fff;
+                                                                    `
+                                                                    item.innerHTML = `
+                                                                        <div style="font-weight: 500; margin-bottom: 4px;">${escapeHtml(r.title)}</div>
+                                                                        <div style="font-size: 12px; color: #aaa;">Author: ${escapeHtml(r.author || 'N/A')} | Campus: ${escapeHtml(r.campus || 'N/A')}</div>
+                                                                    `
+                                                                    item.addEventListener('mouseenter', () => {
+                                                                        item.style.backgroundColor = '#3a3a3a'
+                                                                    })
+                                                                    item.addEventListener('mouseleave', () => {
+                                                                        item.style.backgroundColor = 'transparent'
+                                                                    })
+                                                                    item.addEventListener('click', () => {
+                                                                        document.getElementById('research-search').value = r.title
+                                                                        suggestionsContainer.style.display = 'none'
+                                                                        handleResearchSelect(r.id)
+                                                                    })
+                                                                    suggestionsContainer.appendChild(item)
+                                                                })
+                                                                suggestionsContainer.style.display = 'block'
+                                                            }
+                                                        },
+                                                        event2: {
+                                                            type: 'blur',
+                                                            method: (e) => {
+                                                                setTimeout(() => {
+                                                                    document.getElementById('research-suggestions').style.display = 'none'
+                                                                }, 200)
+                                                            }
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'div',
+                                                        att: { id: 'research-suggestions' },
+                                                        style: {
+                                                            position: 'absolute',
+                                                            top: '100%',
+                                                            left: '0',
+                                                            right: '0',
+                                                            maxHeight: '300px',
+                                                            overflowY: 'auto',
+                                                            backgroundColor: '#2d2d2d',
+                                                            border: '1px solid #444',
+                                                            borderRadius: '6px',
+                                                            marginTop: '4px',
+                                                            display: 'none',
+                                                            zIndex: '1000',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                                                        }
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    })
+                                ] : [
+                                    // Hidden research_id for edit/view
+                                    $({
+                                        tag: 'input',
+                                        att: {
+                                            type: 'hidden',
+                                            name: 'research_id',
+                                            value: selectedResearch?.research_id || selectedResearch?.id || ''
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'input',
+                                        att: {
+                                            type: 'hidden',
+                                            name: 'id',
+                                            value: selectedResearch?.id || ''
+                                        }
+                                    }),
+                                    // Title of Research (read-only for edit/view)
+                                    $({
+                                        tag: 'div',
+                                        style: { marginBottom: '20px' },
+                                        child: [
+                                            $({
+                                                tag: 'label',
+                                                text: 'Title of Research',
+                                                style: {
+                                                    display: 'block',
+                                                    marginBottom: '8px',
+                                                    color: '#aaa',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'input',
+                                                att: {
+                                                    type: 'text',
+                                                    value: selectedResearch?.title || '',
+                                                    readonly: true
+                                                },
+                                                style: {
+                                                    width: '100%',
+                                                    padding: '10px',
+                                                    backgroundColor: '#2a2a2a',
+                                                    border: '1px solid #444',
+                                                    borderRadius: '6px',
+                                                    color: '#aaa',
+                                                    fontSize: '14px',
+                                                    outline: 'none'
+                                                }
+                                            })
+                                        ]
+                                    })
+                                ]),
+                                
+                                // Presentor Selection
                                 $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-file-import' }
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Presentor *',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'select',
+                                            att: {
+                                                name: 'presentor',
+                                                required: true,
+                                                disabled: isViewMode
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                outline: 'none',
+                                                cursor: isViewMode ? 'default' : 'pointer'
+                                            },
+                                            child: [
+                                                $({ tag: 'option', att: { value: '' }, text: '-- Select Presentor --' })
+                                            ]
+                                        })
+                                    ]
                                 }),
+                                
+                                // Date Completed
                                 $({
-                                    tag: 'span',
-                                    text: 'Bulk Import'
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Date of Completion *',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'date',
+                                                name: 'date_completed',
+                                                required: true,
+                                                value: selectedResearch?.date_completed || '',
+                                                disabled: isViewMode
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            }
+                                        })
+                                    ]
+                                }),
+                                
+                                // Forum Title - Input field with existing value as placeholder
+                                $({
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Title of Forum *',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'text',
+                                                name: 'forum_title',
+                                                placeholder: selectedResearch?.forum_title || 'Enter forum title',
+                                                required: true,
+                                                disabled: isViewMode
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            }
+                                        }),
+                                        // Show existing value as hint
+                                        ...(!isViewMode && selectedResearch?.forum_title ? [
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    marginTop: '4px',
+                                                    fontSize: '11px',
+                                                    color: '#888',
+                                                    fontStyle: 'italic'
+                                                },
+                                                text: `Previous: ${selectedResearch.forum_title}`
+                                            })
+                                        ] : [])
+                                    ]
+                                }),
+                                
+                                // Venue - Input field with existing value as placeholder
+                                $({
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Venue *',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'text',
+                                                name: 'venue',
+                                                placeholder: selectedResearch?.venue || 'Enter venue',
+                                                required: true,
+                                                disabled: isViewMode
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            }
+                                        }),
+                                        // Show existing value as hint
+                                        ...(!isViewMode && selectedResearch?.venue && selectedResearch.venue !== '—' ? [
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    marginTop: '4px',
+                                                    fontSize: '11px',
+                                                    color: '#888',
+                                                    fontStyle: 'italic'
+                                                },
+                                                text: `Previous: ${selectedResearch.venue}`
+                                            })
+                                        ] : [])
+                                    ]
+                                }),
+                                
+                                // Forum Type Selection
+                                $({
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Forum Type *',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'select',
+                                            att: {
+                                                name: 'forum_type',
+                                                required: true,
+                                                disabled: isViewMode
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            },
+                                            child: [
+                                                $({ tag: 'option', att: { value: '' }, text: '-- Select Forum Type --' }),
+                                                ...forumTypes.map(type => 
+                                                    $({ 
+                                                        tag: 'option', 
+                                                        att: { 
+                                                            value: type,
+                                                            selected: selectedResearch?.forum_type === type
+                                                        },
+                                                        text: type 
+                                                    })
+                                                )
+                                            ]
+                                        })
+                                    ]
+                                }),
+                                
+                                // Presentation Date
+                                $({
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Date of Presentation *',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'date',
+                                                name: 'presentation_date',
+                                                required: true,
+                                                value: selectedResearch?.presentation_date || '',
+                                                disabled: isViewMode
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            }
+                                        })
+                                    ]
+                                }),
+                                
+                                // Campus (auto-filled)
+                                $({
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Campus/Center',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'text',
+                                                name: 'campus',
+                                                value: selectedResearch?.campus || '',
+                                                readonly: true
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: '#2a2a2a',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#aaa',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            }
+                                        })
+                                    ]
+                                }),
+                                
+                                // Category (auto-filled)
+                                $({
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Category',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'text',
+                                                name: 'category',
+                                                value: selectedResearch?.category || '',
+                                                readonly: true
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: '#2a2a2a',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#aaa',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            }
+                                        })
+                                    ]
+                                }),
+                                
+                                // Modal footer
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        justifyContent: 'flex-end',
+                                        gap: '12px',
+                                        marginTop: '24px',
+                                        borderTop: '1px solid #444',
+                                        paddingTop: '20px'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'button',
+                                            att: { type: 'button' },
+                                            text: 'Cancel',
+                                            style: {
+                                                padding: '10px 24px',
+                                                backgroundColor: 'transparent',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#aaa',
+                                                fontSize: '14px',
+                                                cursor: 'pointer'
+                                            },
+                                            event: {
+                                                type: 'click',
+                                                method: closeModal
+                                            }
+                                        }),
+                                        ...(!isViewMode ? [
+                                            $({
+                                                tag: 'button',
+                                                att: { type: 'button' },
+                                                text: isEditMode ? 'Update' : 'Save',
+                                                style: {
+                                                    padding: '10px 24px',
+                                                    backgroundColor: 'deepskyblue',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    color: '#fff',
+                                                    fontSize: '14px',
+                                                    cursor: 'pointer'
+                                                },
+                                                event: {
+                                                    type: 'click',
+                                                    method: savePresentation
+                                                }
+                                            })
+                                        ] : [])
+                                    ]
                                 })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Bulk import clicked');
-                                }
-                            }
+                            ]
                         })
                     ]
                 })
             ]
-        });
-        el.appendChild(emptyState);
-    };
+        })
+        
+        document.body.appendChild(modalElement)
+        
+        // If in add mode, fetch research papers
+        if (isAddMode) {
+            fetchResearchPapers()
+        }
+        
+        // If in edit/view mode, populate form
+        if (selectedResearch && (isEditMode || isViewMode)) {
+            // Populate presentor dropdown
+            const presentorSelect = document.querySelector('select[name="presentor"]')
+            if (presentorSelect && selectedResearch.all_researchers) {
+                presentorSelect.innerHTML = '<option value="">-- Select Presentor --</option>'
+                selectedResearch.all_researchers.forEach(name => {
+                    const option = document.createElement('option')
+                    option.value = name
+                    option.textContent = name
+                    if (name === selectedResearch.presentor) {
+                        option.selected = true
+                    }
+                    presentorSelect.appendChild(option)
+                })
+            }
+        }
+    }
 
-    // Filter and search bar with presentation type filter
+    // Save presentation - NOTE: This is disabled since we're not using presentation_research table
+    const savePresentation = async () => {
+        alert('Presentations are managed through the endorsement system. Please use the endorsement module to update presentation details.')
+        closeModal()
+    }
+
+    const getMainContainer = (el) => {
+        mainTableContainer = el
+    }
+
+    const getTableBody = (el) => {
+        tableBody = el
+    }
+
+    const getScrollContainer = (el) => {
+        scrollContainer = el
+        // Add scroll event listener
+        scrollContainer.addEventListener('scroll', handleScroll)
+        // Fetch data when scroll container is ready
+        fetchPresentations()
+    }
+
+    // Update filter button styles with hover effects
+    const updateFilterButtons = (active) => {
+        const filterButtons = document.querySelectorAll('.filter-btn')
+        
+        filterButtons.forEach(button => {
+            const buttonText = button.textContent.trim()
+            
+            if (buttonText === active) {
+                button.style.backgroundColor = 'deepskyblue'
+                button.style.color = '#fff'
+                button.style.opacity = '1'
+            } else {
+                button.style.backgroundColor = 'transparent'
+                button.style.color = '#aaa'
+                button.style.opacity = '0.8'
+            }
+            
+            // Add hover effect
+            button.addEventListener('mouseenter', () => {
+                if (buttonText !== active) {
+                    button.style.backgroundColor = '#3a3a3a'
+                    button.style.color = '#fff'
+                }
+            })
+            
+            button.addEventListener('mouseleave', () => {
+                if (buttonText !== active) {
+                    button.style.backgroundColor = 'transparent'
+                    button.style.color = '#aaa'
+                }
+            })
+        })
+    }
+
+    // Filter and search bar
     const FilterBar = () => {
         return $({
             tag: 'div',
@@ -271,12 +1368,13 @@ export const PresentationResearch = () => {
                                         fontFamily: 'monospace',
                                         border: '1px solid #444'
                                     },
-                                    text: '0 records'
+                                    text: '0 of 0 records'
                                 })
                             ]
                         }),
                         $({
                             tag: 'div',
+                            att: { className: 'filter-buttons-container' },
                             style: {
                                 display: 'flex',
                                 gap: '8px',
@@ -286,11 +1384,13 @@ export const PresentationResearch = () => {
                                 border: '1px solid #444'
                             },
                             child: [
+                                // All button
                                 $({
                                     tag: 'button',
+                                    att: { className: 'filter-btn' },
                                     text: 'All',
                                     style: {
-                                        backgroundColor: 'deepskyblue',
+                                        backgroundColor: 'deepskyblue', // Active by default
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 20px',
@@ -298,11 +1398,40 @@ export const PresentationResearch = () => {
                                         fontSize: '13px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        opacity: '1'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => applyFilter('All')
                                     }
                                 }),
+                                // University button
                                 $({
                                     tag: 'button',
+                                    att: { className: 'filter-btn' },
+                                    text: 'University',
+                                    style: {
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        padding: '8px 20px',
+                                        color: '#aaa',
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        opacity: '0.8'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => applyFilter('University')
+                                    }
+                                }),
+                                // International button
+                                $({
+                                    tag: 'button',
+                                    att: { className: 'filter-btn' },
                                     text: 'International',
                                     style: {
                                         backgroundColor: 'transparent',
@@ -313,12 +1442,19 @@ export const PresentationResearch = () => {
                                         fontSize: '13px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        opacity: '0.8'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => applyFilter('International')
                                     }
                                 }),
+                                // National button
                                 $({
                                     tag: 'button',
-                                    text: 'Local',
+                                    att: { className: 'filter-btn' },
+                                    text: 'National',
                                     style: {
                                         backgroundColor: 'transparent',
                                         border: 'none',
@@ -328,12 +1464,19 @@ export const PresentationResearch = () => {
                                         fontSize: '13px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        opacity: '0.8'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => applyFilter('National')
                                     }
                                 }),
+                                // Regional button
                                 $({
                                     tag: 'button',
-                                    text: 'Outside CAPSU',
+                                    att: { className: 'filter-btn' },
+                                    text: 'Regional',
                                     style: {
                                         backgroundColor: 'transparent',
                                         border: 'none',
@@ -343,7 +1486,12 @@ export const PresentationResearch = () => {
                                         fontSize: '13px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        opacity: '0.8'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => applyFilter('Regional')
                                     }
                                 })
                             ]
@@ -399,229 +1547,363 @@ export const PresentationResearch = () => {
                                     event: {
                                         type: 'input',
                                         method: (e) => {
-                                            console.log('Searching:', e.target.value);
+                                            const term = e.target.value.toLowerCase()
+                                            filteredData = researchData.filter(item => 
+                                                item.title?.toLowerCase().includes(term) ||
+                                                item.forum_title?.toLowerCase().includes(term) ||
+                                                item.presentor?.toLowerCase().includes(term) ||
+                                                item.venue?.toLowerCase().includes(term)
+                                            )
+                                            updateTableWithData()
+                                            updateRecordCount()
                                         }
                                     }
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'select',
-                            att: {
-                                className: 'presentation-type-filter'
-                            },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 32px 10px 16px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                outline: 'none',
-                                cursor: 'pointer',
-                                appearance: 'none',
-                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 10px center',
-                                backgroundSize: '16px',
-                                minWidth: '180px'
-                            },
-                            child: [
-                                $({ tag: 'option', att: { value: '' }, text: 'All Presentation Types' }),
-                                ...presentationTypes.map(type => 
-                                    $({ tag: 'option', att: { value: type.toLowerCase().replace(/\s+/g, '_') }, text: type })
-                                )
-                            ]
-                        }),
-                        $({
-                            tag: 'button',
-                            att: { className: 'export-btn' },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 20px',
-                                color: '#fff',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                transition: 'all 0.3s ease'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-download' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Export'
                                 })
                             ]
                         })
                     ]
                 })
             ]
-        });
-    };
+        })
+    }
 
-    // Statistics cards for presentation metrics
+    // Statistics cards
     const StatsCards = () => {
-        const stats = [
-            { 
-                label: 'Total Presentations', 
-                value: '0', 
-                icon: 'fa-presentation-screen',
-                color: 'deepskyblue',
-                subtext: 'All time'
-            },
-            { 
-                label: 'International Pitching', 
-                value: '0', 
-                icon: 'fa-earth-asia',
-                color: '#4caf50',
-                subtext: 'Global reach'
-            },
-            { 
-                label: 'Capiz State University', 
-                value: '0', 
-                icon: 'fa-building-columns',
-                color: '#ff9800',
-                subtext: 'Local institutions'
-            },
-            { 
-                label: 'Outside CAPSU', 
-                value: '0', 
-                icon: 'fa-location-dot',
-                color: '#e91e63',
-                subtext: 'External venues'
-            }
-        ];
-
-        const statCards = stats.map(stat => {
-            return $({
-                tag: 'div',
-                att: { className: 'stat-card' },
-                style: {
-                    backgroundColor: '#2d2d2d',
-                    borderRadius: '16px',
-                    padding: '18px 22px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    flex: '1',
-                    minWidth: '200px',
-                    border: '1px solid #444',
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    overflow: 'hidden'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            position: 'absolute',
-                            top: '0',
-                            right: '0',
-                            width: '80px',
-                            height: '80px',
-                            background: `radial-gradient(circle at top right, ${stat.color}20, transparent 70%)`,
-                            borderRadius: '50%',
-                            zIndex: '0'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '54px',
-                            height: '54px',
-                            borderRadius: '16px',
-                            backgroundColor: `${stat.color}15`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: `1px solid ${stat.color}30`,
-                            position: 'relative',
-                            zIndex: '1'
-                        },
-                        child: [
-                            $({
-                                tag: 'span',
-                                att: { className: `fa-solid ${stat.icon}` },
-                                style: { color: stat.color, fontSize: '26px' }
-                            })
-                        ]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: { 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            position: 'relative',
-                            zIndex: '1'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    alignItems: 'baseline',
-                                    gap: '8px'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'span',
-                                        text: stat.value,
-                                        style: {
-                                            fontSize: '32px',
-                                            fontWeight: '700',
-                                            color: '#fff',
-                                            lineHeight: '1.2',
-                                            letterSpacing: '-1px'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        text: stat.subtext,
-                                        style: {
-                                            fontSize: '11px',
-                                            color: '#666',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.5px'
-                                        }
-                                    })
-                                ]
-                            }),
-                            $({
-                                tag: 'span',
-                                text: stat.label,
-                                style: {
-                                    fontSize: '13px',
-                                    color: '#aaa',
-                                    fontWeight: '500'
-                                }
-                            })
-                        ]
-                    })
-                ]
-            });
-        });
-
         return $({
             tag: 'div',
             att: { className: 'stats-cards' },
             style: {
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
                 backgroundColor: '#2a2a2a',
                 borderBottom: '1px solid #444'
             },
-            child: statCards
-        });
-    };
+            child: [
+                // Total Presentations
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(0, 191, 255, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(0, 191, 255, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-chalkboard-user' },
+                                    style: { color: 'deepskyblue', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { 
+                                display: 'flex', 
+                                flexDirection: 'column'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Total',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // University
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(255, 152, 0, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(255, 152, 0, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-building-columns' },
+                                    style: { color: '#ff9800', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { 
+                                display: 'flex', 
+                                flexDirection: 'column'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'University',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // International
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(76, 175, 80, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-earth-asia' },
+                                    style: { color: '#4caf50', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { 
+                                display: 'flex', 
+                                flexDirection: 'column'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'International',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // National
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(233, 30, 99, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(233, 30, 99, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-flag' },
+                                    style: { color: '#e91e63', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { 
+                                display: 'flex', 
+                                flexDirection: 'column'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'National',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // Regional
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(156, 39, 176, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-location-dot' },
+                                    style: { color: '#9c27b0', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { 
+                                display: 'flex', 
+                                flexDirection: 'column'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Regional',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                })
+            ]
+        })
+    }
 
     // Table header component
     const TableHeader = () => {
@@ -651,44 +1933,18 @@ export const PresentationResearch = () => {
                         style: { 
                             display: 'flex', 
                             alignItems: 'center', 
-                            gap: '8px',
-                            cursor: 'pointer',
-                            userSelect: 'none'
+                            gap: '8px'
                         },
                         child: [
                             $({
                                 tag: 'span',
                                 text: col.header
-                            }),
-                            $({
-                                tag: 'span',
-                                att: { className: 'fa-solid fa-arrow-up-wide-short' },
-                                style: { 
-                                    fontSize: '11px', 
-                                    color: '#555',
-                                    opacity: '0.5',
-                                    transition: 'all 0.2s ease'
-                                }
                             })
-                        ],
-                        event: {
-                            type: 'mouseenter',
-                            method: (e) => {
-                                const icon = e.currentTarget.querySelector('.fa-solid');
-                                if (icon) icon.style.color = 'deepskyblue';
-                            }
-                        },
-                        event2: {
-                            type: 'mouseleave',
-                            method: (e) => {
-                                const icon = e.currentTarget.querySelector('.fa-solid');
-                                if (icon) icon.style.color = '#555';
-                            }
-                        }
+                        ]
                     })
                 ]
-            });
-        });
+            })
+        })
 
         return $({
             tag: 'thead',
@@ -698,67 +1954,8 @@ export const PresentationResearch = () => {
                     child: headerCells
                 })
             ]
-        });
-    };
-
-    // Timeline view for presentations
-    const TimelineView = () => {
-        const years = ['2025', '2024', '2023'];
-        
-        return $({
-            tag: 'div',
-            att: { className: 'timeline-view' },
-            style: {
-                display: 'none', // Hidden by default, can be toggled
-                padding: '20px',
-                backgroundColor: '#2d2d2d',
-                borderBottom: '1px solid #444'
-            },
-            child: years.map(year => {
-                return $({
-                    tag: 'div',
-                    style: {
-                        marginBottom: '16px'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                fontSize: '16px',
-                                fontWeight: '600',
-                                color: '#fff',
-                                marginBottom: '10px',
-                                padding: '0 10px'
-                            },
-                            text: year
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                display: 'flex',
-                                gap: '10px',
-                                flexWrap: 'wrap'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        backgroundColor: '#333',
-                                        borderRadius: '8px',
-                                        padding: '8px 16px',
-                                        border: '1px solid #444',
-                                        color: '#aaa',
-                                        fontSize: '13px'
-                                    },
-                                    text: 'No presentations yet'
-                                })
-                            ]
-                        })
-                    ]
-                });
-            })
-        });
-    };
+        })
+    }
 
     // Main table component
     const DataTable = () => {
@@ -766,11 +1963,12 @@ export const PresentationResearch = () => {
             tag: 'div',
             style: {
                 width: '100%',
-                height: 'calc(100% - 200px)', // Adjust based on header + stats
+                height: 'calc(100% - 300px)',
                 overflow: 'auto',
                 backgroundColor: '#2a2a2a',
                 position: 'relative'
             },
+            elementHandler: getScrollContainer,
             child: [
                 $({
                     tag: 'table',
@@ -789,8 +1987,8 @@ export const PresentationResearch = () => {
                     ]
                 })
             ]
-        });
-    };
+        })
+    }
 
     return $({
         tag: 'div',
@@ -811,39 +2009,16 @@ export const PresentationResearch = () => {
             FilterBar(),
             DataTable()
         ]
-    });
-};
+    })
+}
 
-// Utility functions for presentation research
-export const formatPresentationDate = (date) => {
-    if (!date) return '—';
-    const d = new Date(date);
-    return d.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: '2-digit', 
-        year: 'numeric' 
-    }).replace(/,/g, '');
-};
-
-export const getPresentationTypeColor = (type) => {
-    const colors = {
-        'international_pitching': '#4caf50',
-        'capizState_university_local': '#ff9800',
-        'presentation_outside_capsu': '#e91e63',
-        'international_conference': '#2196f3',
-        'national_conference': '#9c27b0',
-        'regional_conference': '#00bcd4'
-    };
-    return colors[type] || '#aaa';
-};
-
-export const getPresentationStats = (data) => {
-    // This function will calculate statistics from the data
-    // Will be implemented when backend data is available
-    return {
-        total: 0,
-        internationalPitching: 0,
-        capizStateUniversity: 0,
-        outsideCAPSU: 0
-    };
-};
+// Helper function to escape HTML
+function escapeHtml(unsafe) {
+    if (!unsafe) return ''
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;")
+}

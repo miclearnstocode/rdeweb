@@ -260,7 +260,7 @@ if(isset($_POST['reqCommentIndiv2'])){
     echo json_encode($res);
 }
 
-// Add endpoint to update isCommented status
+//endpoint to update isCommented status
 if(isset($_POST['updateCommentStatus'])){
     $docId = $_POST['docId'];
     $evalId = $_SESSION['userId'];
