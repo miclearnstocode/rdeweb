@@ -11,14 +11,16 @@ export const PresentationResearch = () => {
     let researchOptions = []
     let selectedResearch = null
     let currentFilter = 'All'
-    
-    // Pagination state - FIXED
     let isLoading = false
     let hasMore = true
     let nextCursor = null
     let totalCount = 0
     let initialLoadDone = false
-    
+    let searchMode = false
+    let searchTerm = ''
+    let searchCursor = null
+    let searchHasMore = true
+
     // Stats state
     let currentStats = {
         total: 0,
@@ -30,19 +32,19 @@ export const PresentationResearch = () => {
     
     // Columns for presentation research
     const columns = [
-        { field: 'date_completed', header: 'Date of Completion (MMM-DD-YYYY)', width: '150px' },
-        { field: 'title', header: 'Title of Research', width: '300px' },
+        { field: 'date_completed', header: 'Date of Completion', width: '150px' },
+        { field: 'title', header: 'Title of Research', width: '500px', position: 'fixed' },
         { field: 'forum_title', header: 'Title of Forum', width: '250px' },
         { field: 'venue', header: 'Venue', width: '200px' },
         { field: 'university', header: 'University/Local', width: '140px' },
         { field: 'regional', header: 'Regional', width: '120px' },
         { field: 'national', header: 'National', width: '120px' },
         { field: 'international', header: 'International', width: '120px' },
-        { field: 'presentation_date', header: 'Date of Presentation', width: '150px' },
+        { field: 'presentation_date', header: 'Date of Presentation', width: '160px' },
         { field: 'presentor', header: 'Presentor', width: '250px' },
         { field: 'campus', header: 'Campus/Center', width: '120px' },
         { field: 'category', header: 'Category', width: '120px' },
-        { field: 'actions', header: 'ACTIONS', width: '100px' }
+        { field: 'actions', header: 'ACTIONS', width: '70px' }
     ]
 
     // Forum type options
@@ -89,8 +91,8 @@ export const PresentationResearch = () => {
         }
     }
 
-    // Fetch presentation data with cursor pagination - FIXED
-    const fetchPresentations = async (cursor = null, direction = 'next') => {
+    // Update fetchPresentations to accept level parameter
+    const fetchPresentations = async (cursor = null, direction = 'next', search = null, level = null) => {
         if (isLoading) return
         
         isLoading = true
@@ -98,18 +100,37 @@ export const PresentationResearch = () => {
         if (!cursor) {
             showLoading()
             // Reset on first load
-            researchData = []
-            filteredData = []
-            hasMore = true
-            nextCursor = null
+            if (!searchMode) {
+                researchData = []
+                filteredData = []
+                hasMore = true
+                nextCursor = null
+            }
         }
         
         try {
             const formData = new FormData()
-            formData.append('action', 'fetch')
+            
+            // Determine which action to use
+            if (searchMode || search) {
+                formData.append('action', 'search_presentations')
+                if (search) {
+                    formData.append('search', search)
+                } else if (searchTerm) {
+                    formData.append('search', searchTerm)
+                }
+            } else {
+                formData.append('action', 'fetch')
+            }
+            
             if (cursor) {
                 formData.append('cursor', cursor)
                 formData.append('direction', direction)
+            }
+            
+            // Add level filter if provided
+            if (level) {
+                formData.append('level', level)
             }
             
             const response = await fetch('/presentedresearch', {
@@ -124,7 +145,17 @@ export const PresentationResearch = () => {
                 
                 if (!cursor) {
                     // First page - replace data
-                    researchData = newData
+                    if (searchMode) {
+                        researchData = newData
+                        filteredData = newData
+                        searchCursor = result.pagination?.next_cursor || null
+                        searchHasMore = result.pagination?.has_more || false
+                    } else {
+                        researchData = newData
+                        filteredData = newData
+                        nextCursor = result.pagination?.next_cursor || null
+                        hasMore = result.pagination?.has_more || false
+                    }
                     
                     // Update stats
                     if (result.stats) {
@@ -136,20 +167,25 @@ export const PresentationResearch = () => {
                     if (direction === 'next') {
                         // Append to bottom
                         researchData = [...researchData, ...newData]
+                        filteredData = [...filteredData, ...newData]
                     } else {
                         // Prepend to top
                         researchData = [...newData, ...researchData]
+                        filteredData = [...newData, ...filteredData]
+                    }
+                    
+                    // Update pagination info based on mode
+                    if (searchMode) {
+                        searchCursor = result.pagination?.next_cursor || null
+                        searchHasMore = result.pagination?.has_more || false
+                    } else {
+                        nextCursor = result.pagination?.next_cursor || null
+                        hasMore = result.pagination?.has_more || false
                     }
                 }
                 
-                // Update pagination info
-                if (result.pagination) {
-                    nextCursor = result.pagination.next_cursor
-                    hasMore = result.pagination.has_more
-                }
-                
-                // Apply current filter
-                applyFilter(currentFilter, false) // Don't re-fetch, just filter existing data
+                updateTableWithData()
+                updateRecordCount()
                 
                 // Maintain scroll position when loading previous
                 if (direction === 'prev' && cursor && tableBody?.firstChild) {
@@ -174,45 +210,23 @@ export const PresentationResearch = () => {
         }
     }
 
-    // Apply filter based on selected type - FIXED
-    const applyFilter = (filterType, shouldFetch = true) => {
-        currentFilter = filterType
-        
-        if (filterType === 'All') {
-            filteredData = [...researchData]
-        } else {
-            const filterField = filterType.toLowerCase()
-            
-            filteredData = researchData.filter(item => {
-                // Check if the item has a checkmark for this filter type
-                if (filterField === 'university') {
-                    return item.university === '✓' || item.level === 'university'
-                } else if (filterField === 'international') {
-                    return item.international === '✓' || item.level === 'international'
-                } else if (filterField === 'national') {
-                    return item.national === '✓' || item.level === 'national'
-                } else if (filterField === 'regional') {
-                    return item.regional === '✓' || item.level === 'regional'
-                }
-                return false
-            })
-        }
-        
-        updateFilterButtons(filterType)
-        updateTableWithData()
-        updateRecordCount()
-    }
-
-    // Handle scroll for infinite loading - FIXED
+    // Handle scroll for infinite loading
     const handleScroll = () => {
-        if (!scrollContainer || isLoading || !hasMore) return
+        if (!scrollContainer || isLoading) return
         
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
         
         // Load more when scrolling down (near bottom) - with 300px threshold
-        if (scrollHeight - scrollTop - clientHeight < 300 && hasMore && !isLoading) {
-            if (nextCursor) {
-                fetchPresentations(nextCursor, 'next')
+        if (scrollHeight - scrollTop - clientHeight < 300) {
+            if (searchMode && searchHasMore && !isLoading) {
+                if (searchCursor) {
+                    fetchPresentations(searchCursor, 'next', searchTerm, null)
+                }
+            } else if (!searchMode && hasMore && !isLoading) {
+                if (nextCursor) {
+                    const level = currentFilter === 'All' ? null : currentFilter.toLowerCase().replace('/local', '')
+                    fetchPresentations(nextCursor, 'next', null, level)
+                }
             }
         }
     }
@@ -349,7 +363,7 @@ export const PresentationResearch = () => {
 
     // Create data row
     const createDataRow = (item) => {
-        const cells = columns.map(col => {
+        const cells = columns.map((col, index) => {
             let cellContent = item[col.field] || '—'
             let cellStyle = {
                 padding: '14px 8px',
@@ -360,7 +374,12 @@ export const PresentationResearch = () => {
                 wordBreak: 'break-word',
                 fontFamily: 'Segoe UI, sans-serif',
                 lineHeight: '1.4',
-                verticalAlign: 'top'
+                verticalAlign: 'top',
+                width: col.width,
+                minWidth: col.width,
+                maxWidth: col.width,
+                boxSizing: 'border-box',
+                overflow: 'hidden'
             }
             
             // Special handling for forum_title column
@@ -1487,12 +1506,13 @@ export const PresentationResearch = () => {
         scrollContainer = el
         // Add scroll event listener
         scrollContainer.addEventListener('scroll', handleScroll)
-        // Fetch data when scroll container is ready
-        fetchPresentations()
+        // Fetch data when scroll container is ready with current filter
+        const level = currentFilter === 'All' ? null : currentFilter.toLowerCase().replace('/local', '')
+        fetchPresentations(null, 'next', null, level)
         fetchResearchPapers()
     }
 
-    // Update filter button styles
+    // Update filter button styles - ONLY update styles, don't trigger any data fetching
     const updateFilterButtons = (active) => {
         const filterButtons = document.querySelectorAll('.filter-btn')
         
@@ -1508,31 +1528,8 @@ export const PresentationResearch = () => {
                 button.style.color = '#aaa'
                 button.style.opacity = '0.8'
             }
-            
-            // Remove existing event listeners to avoid duplicates
-            const newButton = button.cloneNode(true)
-            button.parentNode.replaceChild(newButton, button)
-            
-            // Add hover effect to new button
-            newButton.addEventListener('mouseenter', () => {
-                if (newButton.textContent.trim() !== active) {
-                    newButton.style.backgroundColor = '#3a3a3a'
-                    newButton.style.color = '#fff'
-                }
-            })
-            
-            newButton.addEventListener('mouseleave', () => {
-                if (newButton.textContent.trim() !== active) {
-                    newButton.style.backgroundColor = 'transparent'
-                    newButton.style.color = '#aaa'
-                }
-            })
-            
-            // Add click handler
-            newButton.addEventListener('click', () => applyFilter(newButton.textContent.trim()))
         })
     }
-
     // Filter and search bar
     const FilterBar = () => {
         return $({
@@ -1599,6 +1596,7 @@ export const PresentationResearch = () => {
                                 })
                             ]
                         }),
+                        // Filter buttons container - MOVED OUTSIDE THE SEARCH INPUT
                         $({
                             tag: 'div',
                             att: { className: 'filter-buttons-container' },
@@ -1613,7 +1611,7 @@ export const PresentationResearch = () => {
                             child: [
                                 $({
                                     tag: 'button',
-                                    att: { className: 'filter-btn' },
+                                    att: { className: 'filter-btn', 'data-filter': 'all' },
                                     text: 'All',
                                     style: {
                                         backgroundColor: 'deepskyblue',
@@ -1626,11 +1624,26 @@ export const PresentationResearch = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         opacity: '1'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            // Reset filter and fetch all
+                                            currentFilter = 'All'
+                                            searchMode = false
+                                            searchTerm = ''
+                                            researchData = []
+                                            filteredData = []
+                                            hasMore = true
+                                            nextCursor = null
+                                            fetchPresentations(null, 'next', null, null)
+                                            updateFilterButtons('All')
+                                        }
                                     }
                                 }),
                                 $({
                                     tag: 'button',
-                                    att: { className: 'filter-btn' },
+                                    att: { className: 'filter-btn', 'data-filter': 'university' },
                                     text: 'University/Local',
                                     style: {
                                         backgroundColor: 'transparent',
@@ -1643,11 +1656,26 @@ export const PresentationResearch = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         opacity: '0.8'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            // Filter by university
+                                            currentFilter = 'University/Local'
+                                            searchMode = false
+                                            searchTerm = ''
+                                            researchData = []
+                                            filteredData = []
+                                            hasMore = true
+                                            nextCursor = null
+                                            fetchPresentations(null, 'next', null, 'university')
+                                            updateFilterButtons('University/Local')
+                                        }
                                     }
                                 }),
                                 $({
                                     tag: 'button',
-                                    att: { className: 'filter-btn' },
+                                    att: { className: 'filter-btn', 'data-filter': 'regional' },
                                     text: 'Regional',
                                     style: {
                                         backgroundColor: 'transparent',
@@ -1660,11 +1688,26 @@ export const PresentationResearch = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         opacity: '0.8'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            // Filter by regional
+                                            currentFilter = 'Regional'
+                                            searchMode = false
+                                            searchTerm = ''
+                                            researchData = []
+                                            filteredData = []
+                                            hasMore = true
+                                            nextCursor = null
+                                            fetchPresentations(null, 'next', null, 'regional')
+                                            updateFilterButtons('Regional')
+                                        }
                                     }
                                 }),
                                 $({
                                     tag: 'button',
-                                    att: { className: 'filter-btn' },
+                                    att: { className: 'filter-btn', 'data-filter': 'national' },
                                     text: 'National',
                                     style: {
                                         backgroundColor: 'transparent',
@@ -1677,11 +1720,26 @@ export const PresentationResearch = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         opacity: '0.8'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            // Filter by national
+                                            currentFilter = 'National'
+                                            searchMode = false
+                                            searchTerm = ''
+                                            researchData = []
+                                            filteredData = []
+                                            hasMore = true
+                                            nextCursor = null
+                                            fetchPresentations(null, 'next', null, 'national')
+                                            updateFilterButtons('National')
+                                        }
                                     }
                                 }),
                                 $({
                                     tag: 'button',
-                                    att: { className: 'filter-btn' },
+                                    att: { className: 'filter-btn', 'data-filter': 'international' },
                                     text: 'International',
                                     style: {
                                         backgroundColor: 'transparent',
@@ -1694,12 +1752,28 @@ export const PresentationResearch = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         opacity: '0.8'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            // Filter by international
+                                            currentFilter = 'International'
+                                            searchMode = false
+                                            searchTerm = ''
+                                            researchData = []
+                                            filteredData = []
+                                            hasMore = true
+                                            nextCursor = null
+                                            fetchPresentations(null, 'next', null, 'international')
+                                            updateFilterButtons('International')
+                                        }
                                     }
                                 })
                             ]
                         })
                     ]
                 }),
+                // Search input - SEPARATE FROM FILTER BUTTONS
                 $({
                     tag: 'div',
                     style: {
@@ -1748,23 +1822,35 @@ export const PresentationResearch = () => {
                                     },
                                     event: {
                                         type: 'input',
-                                        method: (e) => {
-                                            const term = e.target.value.toLowerCase()
-                                            filteredData = researchData.filter(item => 
-                                                (item.title && item.title.toLowerCase().includes(term)) ||
-                                                (item.forum_title && Array.isArray(item.forum_title) && 
-                                                 item.forum_title.some(title => title.toLowerCase().includes(term))) ||
-                                                (typeof item.forum_title === 'string' && item.forum_title.toLowerCase().includes(term)) ||
-                                                (item.presentor && Array.isArray(item.presentor) && 
-                                                 item.presentor.some(p => p.toLowerCase().includes(term))) ||
-                                                (typeof item.presentor === 'string' && item.presentor.toLowerCase().includes(term)) ||
-                                                (item.venue && Array.isArray(item.venue) && 
-                                                 item.venue.some(v => v.toLowerCase().includes(term))) ||
-                                                (typeof item.venue === 'string' && item.venue.toLowerCase().includes(term))
-                                            )
-                                            updateTableWithData()
-                                            updateRecordCount()
-                                        }
+                                        method: debounce(async (e) => {
+                                            const term = e.target.value.trim()
+                                            
+                                            if (term === '') {
+                                                // Clear search mode and reload normal data with current filter
+                                                searchMode = false
+                                                searchTerm = ''
+                                                searchCursor = null
+                                                searchHasMore = true
+                                                
+                                                // Reload with current filter
+                                                const level = currentFilter === 'All' ? null : currentFilter.toLowerCase().replace('/local', '')
+                                                await fetchPresentations(null, 'next', null, level)
+                                            } else {
+                                                // Enter search mode
+                                                searchMode = true
+                                                searchTerm = term
+                                                searchCursor = null
+                                                searchHasMore = true
+                                                
+                                                // Clear current data and show loading
+                                                researchData = []
+                                                filteredData = []
+                                                updateTableWithData()
+                                                
+                                                // Fetch search results (without level filter)
+                                                await fetchPresentations(null, 'next', term, null)
+                                            }
+                                        }, 300)
                                     }
                                 })
                             ]
@@ -2127,13 +2213,16 @@ export const PresentationResearch = () => {
                     backgroundColor: '#2d2d2d',
                     borderBottom: '2px solid #444',
                     whiteSpace: 'nowrap',
+                    width: col.width,
                     minWidth: col.width,
+                    maxWidth: col.width,
                     position: 'sticky',
                     top: '0',
                     zIndex: '10',
                     fontFamily: 'Segoe UI, sans-serif',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.5px',
+                    boxSizing: 'border-box'
                 },
                 child: [
                     $({
@@ -2182,6 +2271,7 @@ export const PresentationResearch = () => {
                     tag: 'table',
                     style: {
                         width: '100%',
+                        tableLayout: 'fixed', // This is the key fix!
                         borderCollapse: 'separate',
                         borderSpacing: '0',
                         minWidth: 'max-content'
@@ -2219,8 +2309,17 @@ export const PresentationResearch = () => {
         ]
     })
 }
-
-// Helper function to escape HTML
+    function debounce(func, wait) {
+        let timeout
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout)
+                func(...args)
+            }
+            clearTimeout(timeout)
+            timeout = setTimeout(later, wait)
+        }
+    }
 function escapeHtml(unsafe) {
     if (!unsafe) return ''
     return String(unsafe)

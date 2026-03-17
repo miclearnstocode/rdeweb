@@ -175,7 +175,7 @@ class ProposedResearchAPI {
                         e.date as endorsement_date,
                         YEAR(e.date) as endorsement_year
                     FROM endorsement e
-                    INNER JOIN researchfile rf ON e.senderid = rf.id
+                    INNER JOIN researchfile rf ON e.id = rf.id
                     WHERE e.status = 'accepted'
                     AND rf.event_id IS NOT NULL
                     AND rf.event_id != 0
@@ -374,7 +374,7 @@ class ProposedResearchAPI {
                             e.id as endorsement_id,
                             e.status as endorsement_status
                         FROM researchfile rf
-                        INNER JOIN endorsement e ON rf.id = e.senderid
+                        INNER JOIN endorsement e ON rf.id = e.id
                         WHERE rf.id = ? AND e.status = 'accepted'
                         LIMIT 1";
                 
@@ -574,7 +574,7 @@ class ProposedResearchAPI {
                             rf.event_id,
                             COUNT(DISTINCT rf.id) as count
                         FROM researchfile rf
-                        INNER JOIN endorsement e ON rf.id = e.senderid
+                        INNER JOIN endorsement e ON rf.id = e.id
                         WHERE e.status = 'accepted' 
                         AND rf.event_id IS NOT NULL 
                         AND rf.event_id != 0

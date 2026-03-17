@@ -34,7 +34,6 @@ class PresentationAPI {
                  INNER JOIN endorsement e ON rf.endorsementid = e.id
                  WHERE e.status = 'accepted'
                  AND rf.event_id IS NOT NULL
-                 AND rf.event_id != 0
                  AND e.date IS NOT NULL
                  ORDER BY year DESC";
         
@@ -72,7 +71,6 @@ class PresentationAPI {
                         AND e.status = 'accepted'
                     )
                     AND rf.event_id IS NOT NULL
-                    AND rf.event_id != 0
                     ORDER BY rf.title ASC";
             
             $result = $this->con->query($query);
@@ -144,18 +142,20 @@ class PresentationAPI {
         
         echo json_encode($this->response);
     }
+    
     public function fetchPresentations() {
         try {
             $cursor = $_POST['cursor'] ?? null;
             $direction = $_POST['direction'] ?? 'next';
             $year = $_POST['year'] ?? null;
             $level = $_POST['level'] ?? null;
+            $search = $_POST['search'] ?? '';
             $limit = 15;
             
             // Get accurate stats from the dedicated method
             $stats = $this->getStatsFromResearch();
             
-            // FIXED: Use endorsement as the primary table since each endorsement is a record
+            // Base query
             $query = "SELECT 
                         e.id as endorsement_id,
                         e.date as endorsement_date,
@@ -171,43 +171,76 @@ class PresentationAPI {
                         rf.event as event_title,
                         rf.event_id
                     FROM endorsement e
-                    INNER JOIN researchfile rf ON e.id = rf.id
+                    INNER JOIN researchfile rf ON rf.endorsementid = e.id
                     WHERE e.status = 'accepted'
-                    AND rf.event_id IS NOT NULL
-                    AND rf.event_id != 0";
+                    AND rf.event_id IS NOT NULL";
+
+            // Add level filter based on presentation_research
+            if (!empty($level)) {
+                if ($level === 'university') {
+                    // University: No external presentations
+                    $query .= " AND NOT EXISTS (
+                        SELECT 1 FROM presentation_research pr 
+                        WHERE pr.research_id = rf.id
+                    )";
+                } else {
+                    // International/National/Regional: Must have matching presentation
+                    $query .= " AND EXISTS (
+                        SELECT 1 FROM presentation_research pr 
+                        WHERE pr.research_id = rf.id 
+                        AND LOWER(pr.forum_type) = '" . $this->con->real_escape_string(strtolower($level)) . "'
+                    )";
+                }
+            }
+
+            // Add search
+            if (!empty($search)) {
+                $search = $this->con->real_escape_string($search);
+                $query .= " AND (
+                    rf.title LIKE '%$search%' 
+                    OR rf.event LIKE '%$search%'
+                    OR rf.author LIKE '%$search%'
+                    OR rf.presenter LIKE '%$search%'
+                    OR rf.category LIKE '%$search%'
+                    OR rf.campus LIKE '%$search%'
+                    OR rf.center LIKE '%$search%'
+                    OR EXISTS (
+                        SELECT 1 FROM presentation_research pr 
+                        WHERE pr.research_id = rf.id 
+                        AND (
+                            pr.forum_title LIKE '%$search%'
+                            OR pr.venue LIKE '%$search%'
+                            OR pr.presentor LIKE '%$search%'
+                            OR pr.forum_type LIKE '%$search%'
+                        )
+                    )
+                )";
+            }
             
-            // Add year filter if provided
+            // Add year filter
             if ($year) {
                 $query .= " AND YEAR(e.date) = " . intval($year);
             }
-            
-            // Add level filter if provided - we'll handle this after fetching
-            // because it depends on presentation_research data
-            
-            // FIXED: Cursor pagination using endorsement.id (unique per endorsement)
+
+            // Cursor pagination
             if ($cursor) {
                 if ($direction === 'next') {
-                    // For next page (older records), get endorsements with ID less than cursor
                     $query .= " AND e.id < " . intval($cursor);
                 } else {
-                    // For previous page (newer records), get endorsements with ID greater than cursor
                     $query .= " AND e.id > " . intval($cursor);
                 }
             }
 
-            // Order by endorsement ID for consistent pagination
+            // Order by endorsement ID
             if ($direction === 'next') {
-                // For next page (newest to oldest), order by ID DESC
                 $query .= " ORDER BY e.id DESC";
             } else {
-                // For previous page (oldest to newest), order by ID ASC
                 $query .= " ORDER BY e.id ASC";
             }
             
-            // Add limit (fetch one extra to determine if there are more)
             $query .= " LIMIT " . ($limit + 1);
             
-            error_log("Fetch query: " . $query);
+            error_log("Fetch query with level=" . ($level ?: 'null') . ": " . $query);
             
             $result = $this->con->query($query);
             
@@ -228,11 +261,10 @@ class PresentationAPI {
             // Check if we have more records
             if (count($rows) > $limit) {
                 $hasMore = true;
-                // Remove the extra record
                 array_pop($rows);
             }
             
-            // Process each row (each row represents one endorsement)
+            // Process each row
             foreach ($rows as $row) {
                 $researchId = $row['research_id'];
                 $endorsementId = $row['endorsement_id'];
@@ -250,49 +282,23 @@ class PresentationAPI {
                                 WHERE research_id = " . intval($researchId);
                 
                 $externalResult = $this->con->query($externalQuery);
-                $allForumTitles = [];
-                $allVenues = [];
-                $allPresentationDates = [];
-                $allCompletionDates = [];
-                $allPresentors = [];
+                
+                // Initialize arrays - start empty
+                $forumTitles = [];
+                $venues = [];
+                $presentationDates = [];
+                $completionDates = [];
+                $presentors = [];
                 $hasInternational = false;
                 $hasNational = false;
                 $hasRegional = false;
                 
-                // Add university forum title from the endorsement's event
-                if (!empty($row['event_title']) && $row['event_title'] !== 'NULL') {
-                    $allForumTitles[] = $row['event_title'];
-                }
-                
+                // Process external presentations
                 if ($externalResult) {
                     while ($extRow = $externalResult->fetch_assoc()) {
-                        // Collect all forum titles
-                        if (!empty($extRow['forum_title']) && $extRow['forum_title'] !== 'NULL') {
-                            $allForumTitles[] = $extRow['forum_title'];
-                        }
-                        
-                        // Collect all venues
-                        if (!empty($extRow['venue']) && $extRow['venue'] !== 'NULL') {
-                            $allVenues[] = $extRow['venue'];
-                        }
-                        
-                        // Collect all presentation dates
-                        if (!empty($extRow['presentation_date'])) {
-                            $allPresentationDates[] = date('Y-m-d', strtotime($extRow['presentation_date']));
-                        }
-                        
-                        // Collect all completion dates from external presentations
-                        if (!empty($extRow['pr_date_completed'])) {
-                            $allCompletionDates[] = date('Y-m-d', strtotime($extRow['pr_date_completed']));
-                        }
-                        
-                        // Collect all presentors
-                        if (!empty($extRow['presentor']) && $extRow['presentor'] !== 'NULL') {
-                            $allPresentors[] = $extRow['presentor'];
-                        }
-                        
-                        // Set flags based on forum type
                         $forumType = strtolower($extRow['forum_type'] ?? '');
+                        
+                        // Set flags (track what types exist)
                         if ($forumType === 'international') {
                             $hasInternational = true;
                         } else if ($forumType === 'national') {
@@ -300,19 +306,79 @@ class PresentationAPI {
                         } else if ($forumType === 'regional') {
                             $hasRegional = true;
                         }
+                        
+                        // Determine if this presentation should be included based on filter
+                        $includeThisPresentation = false;
+                        
+                        if (empty($level)) {
+                            // ALL filter - include ALL external presentations
+                            $includeThisPresentation = true;
+                        } else if ($level === 'university') {
+                            // UNIVERSITY filter - include NO external presentations
+                            $includeThisPresentation = false;
+                        } else if ($level === $forumType) {
+                            // Specific filter (international/national/regional) - include ONLY matching type
+                            $includeThisPresentation = true;
+                        }
+                        
+                        if ($includeThisPresentation) {
+                            if (!empty($extRow['forum_title']) && $extRow['forum_title'] !== 'NULL') {
+                                $forumTitles[] = $extRow['forum_title'];
+                            }
+                            if (!empty($extRow['venue']) && $extRow['venue'] !== 'NULL') {
+                                $venues[] = $extRow['venue'];
+                            }
+                            if (!empty($extRow['presentation_date'])) {
+                                $presentationDates[] = date('Y-m-d', strtotime($extRow['presentation_date']));
+                            }
+                            if (!empty($extRow['pr_date_completed'])) {
+                                $completionDates[] = date('Y-m-d', strtotime($extRow['pr_date_completed']));
+                            }
+                            if (!empty($extRow['presentor']) && $extRow['presentor'] !== 'NULL') {
+                                $presentors[] = $extRow['presentor'];
+                            }
+                        }
                     }
                 }
                 
-                // Parse coauthors for all researchers
+                // Determine if university data should be included
+                $includeUniversityData = false;
+                
+                if (empty($level)) {
+                    // ALL filter - include university data
+                    $includeUniversityData = true;
+                } else if ($level === 'university') {
+                    // UNIVERSITY filter - include university data
+                    $includeUniversityData = true;
+                } else {
+                    // INTERNATIONAL/NATIONAL/REGIONAL filter - NEVER include university data
+                    $includeUniversityData = false;
+                }
+                
+                if ($includeUniversityData) {
+                    // Add university forum title
+                    if (!empty($row['event_title']) && $row['event_title'] !== 'NULL') {
+                        $forumTitles[] = $row['event_title'];
+                    }
+                    
+                    // Add presenter from researchfile
+                    if (!empty($row['presenter']) && $row['presenter'] !== 'NULL') {
+                        $presentors[] = $row['presenter'];
+                    }
+                    
+                    // For symposiums, add endorsement date
+                    $eventName = strtolower($row['event_title'] ?? '');
+                    $isSymposium = (strpos($eventName, 'symposium') !== false);
+                    if ($isSymposium && !empty($row['endorsement_date'])) {
+                        $completionDates[] = date('Y-m-d', strtotime($row['endorsement_date']));
+                        $presentationDates[] = date('Y-m-d', strtotime($row['endorsement_date']));
+                    }
+                }
+                
+                // Parse coauthors for all researchers (always include authors)
                 $coauthor = $row['coauthor'];
                 $coauthors = [];
                 $allResearchers = [];
-                
-                // Add presenter from researchfile
-                if (!empty($row['presenter']) && $row['presenter'] !== 'NULL') {
-                    $allResearchers[] = $row['presenter'];
-                    $allPresentors[] = $row['presenter'];
-                }
                 
                 // Add main author
                 if (!empty($row['author']) && $row['author'] !== 'NULL') {
@@ -341,35 +407,11 @@ class PresentationAPI {
                     }
                 }
                 
-                // Remove duplicates from allResearchers
+                // Remove duplicates
                 $allResearchers = array_values(array_unique($allResearchers));
-                $allPresentors = array_values(array_unique($allPresentors));
+                $presentors = array_values(array_unique($presentors));
                 
-                // Determine if this is a Symposium or In-House Review
-                $eventName = strtolower($row['event_title'] ?? '');
-                $isSymposium = (strpos($eventName, 'symposium') !== false);
-                
-                // For symposiums, add endorsement date
-                if ($isSymposium) {
-                    if (!empty($row['endorsement_date'])) {
-                        $allCompletionDates[] = date('Y-m-d', strtotime($row['endorsement_date']));
-                        $allPresentationDates[] = date('Y-m-d', strtotime($row['endorsement_date']));
-                    }
-                }
-                
-                // Remove duplicates from all collections
-                $allForumTitles = array_values(array_unique(array_filter($allForumTitles)));
-                $allVenues = array_values(array_unique(array_filter($allVenues)));
-                $allPresentationDates = array_values(array_unique(array_filter($allPresentationDates)));
-                $allCompletionDates = array_values(array_unique(array_filter($allCompletionDates)));
-                
-                // Set flags
-                $university = '✓';
-                $international = $hasInternational ? '✓' : '—';
-                $national = $hasNational ? '✓' : '—';
-                $regional = $hasRegional ? '✓' : '—';
-                
-                // Determine primary level
+                // Determine primary level (for display purposes only)
                 $primaryLevel = 'university';
                 if ($hasInternational) {
                     $primaryLevel = 'international';
@@ -379,59 +421,53 @@ class PresentationAPI {
                     $primaryLevel = 'regional';
                 }
                 
-                // Create a unique ID for this presentation record (combination of endorsement_id and research_id)
+                // Remove duplicates from collections
+                $forumTitles = array_values(array_unique(array_filter($forumTitles)));
+                $venues = array_values(array_unique(array_filter($venues)));
+                $presentationDates = array_values(array_unique(array_filter($presentationDates)));
+                $completionDates = array_values(array_unique(array_filter($completionDates)));
+                
+                // Set flags for checkmarks (always show what exists in the database)
+                $university = '✓';
+                $international = $hasInternational ? '✓' : '—';
+                $national = $hasNational ? '✓' : '—';
+                $regional = $hasRegional ? '✓' : '—';
+                
+                // Create a unique ID
                 $presentationId = $endorsementId . '_' . $researchId;
                 
                 $presentation = [
-                    'id' => $presentationId, // Unique identifier for frontend
+                    'id' => $presentationId,
                     'endorsement_id' => (int)$endorsementId,
                     'research_id' => (int)$researchId,
                     'title' => $row['title'] ?? '',
                     'campus' => $row['campus'] ?? $row['center'] ?? '—',
                     'category' => $row['category'] ?? '—',
                     'all_researchers' => $allResearchers,
-                    'presentor' => $allPresentors,
-                    'date_completed' => $allCompletionDates,
-                    'forum_title' => $allForumTitles,
-                    'venue' => $allVenues,
-                    'presentation_date' => $allPresentationDates,
+                    'presentor' => $presentors,
+                    'date_completed' => $completionDates,
+                    'forum_title' => $forumTitles,
+                    'venue' => $venues,
+                    'presentation_date' => $presentationDates,
                     'university' => $university,
                     'international' => $international,
                     'national' => $national,
                     'regional' => $regional,
                     'presentation_type' => $primaryLevel,
                     'level' => $primaryLevel,
-                    'event_type' => $isSymposium ? 'Symposium' : 'In-House Review'
+                    'event_type' => (strpos(strtolower($row['event_title'] ?? ''), 'symposium') !== false) ? 'Symposium' : 'In-House Review'
                 ];
                 
+                // Add to results
                 $allPresentations[] = $presentation;
             }
             
-            // Apply level filter if provided (after fetching)
-            if ($level && !empty($allPresentations)) {
-                $filteredPresentations = [];
-                foreach ($allPresentations as $p) {
-                    if ($level === 'university' && $p['level'] === 'university') {
-                        $filteredPresentations[] = $p;
-                    } else if ($level === 'international' && $p['level'] === 'international') {
-                        $filteredPresentations[] = $p;
-                    } else if ($level === 'national' && $p['level'] === 'national') {
-                        $filteredPresentations[] = $p;
-                    } else if ($level === 'regional' && $p['level'] === 'regional') {
-                        $filteredPresentations[] = $p;
-                    }
-                }
-                $allPresentations = $filteredPresentations;
-            }
-            
-            // Set next cursor for pagination (using the last endorsement_id)
+            // Set next cursor
             if (!empty($rows)) {
                 if ($direction === 'next') {
-                    // For next direction, use the LAST record's endorsement_id
                     $lastRow = end($rows);
                     $nextCursor = $lastRow['endorsement_id'];
                 } else {
-                    // For previous direction, use the FIRST record's endorsement_id
                     $firstRow = reset($rows);
                     $nextCursor = $firstRow['endorsement_id'];
                 }
@@ -469,8 +505,7 @@ class PresentationAPI {
                         INNER JOIN endorsement e ON rf.endorsementid = e.id
                         LEFT JOIN presentation_research pr ON rf.id = pr.research_id
                         WHERE e.status = 'accepted'
-                        AND rf.event_id IS NOT NULL
-                        AND rf.event_id != 0";
+                        AND rf.event_id IS NOT NULL";
             
             $totalResult = $this->con->query($totalQuery);
             $totalRow = $totalResult->fetch_assoc();
@@ -482,7 +517,6 @@ class PresentationAPI {
                         INNER JOIN endorsement e ON rf.endorsementid = e.id
                         WHERE e.status = 'accepted'
                         AND rf.event_id IS NOT NULL
-                        AND rf.event_id != 0
                         AND (LOWER(rf.event) LIKE '%university%' 
                             OR LOWER(rf.event) LIKE '%in-house%' 
                             OR LOWER(rf.event) LIKE '%symposium%'
@@ -507,7 +541,6 @@ class PresentationAPI {
                         INNER JOIN presentation_research pr ON rf.id = pr.research_id
                         WHERE e.status = 'accepted'
                         AND rf.event_id IS NOT NULL
-                        AND rf.event_id != 0
                         AND LOWER(pr.forum_type) = 'international'";
             
             $intResult = $this->con->query($intQuery);
@@ -521,7 +554,6 @@ class PresentationAPI {
                         INNER JOIN presentation_research pr ON rf.id = pr.research_id
                         WHERE e.status = 'accepted'
                         AND rf.event_id IS NOT NULL
-                        AND rf.event_id != 0
                         AND LOWER(pr.forum_type) = 'national'";
             
             $natResult = $this->con->query($natQuery);
@@ -535,7 +567,6 @@ class PresentationAPI {
                         INNER JOIN presentation_research pr ON rf.id = pr.research_id
                         WHERE e.status = 'accepted'
                         AND rf.event_id IS NOT NULL
-                        AND rf.event_id != 0
                         AND LOWER(pr.forum_type) = 'regional'";
             
             $regResult = $this->con->query($regQuery);
@@ -682,6 +713,383 @@ class PresentationAPI {
         
         echo json_encode($this->response);
     }
+    public function searchPresentations() {
+        try {
+            $cursor = $_POST['cursor'] ?? null;
+            $direction = $_POST['direction'] ?? 'next';
+            $searchTerm = $_POST['search'] ?? '';
+            $year = $_POST['year'] ?? null;
+            $level = $_POST['level'] ?? null;
+            $limit = 15;
+            
+            // Get stats (optional - you might want search-specific stats)
+            $stats = $this->getStatsFromResearch();
+            
+            // Base query - using endorsement as primary table (like fetchPresentations)
+            $query = "SELECT 
+                        e.id as endorsement_id,
+                        e.date as endorsement_date,
+                        e.status,
+                        rf.id as research_id,
+                        rf.author,
+                        rf.presenter,
+                        rf.coauthor,
+                        rf.title,
+                        rf.category,
+                        rf.campus,
+                        rf.center,
+                        rf.event as event_title,
+                        rf.event_id
+                    FROM endorsement e
+                    INNER JOIN researchfile rf ON rf.endorsementid = e.id
+                    WHERE e.status = 'accepted'
+                    AND rf.event_id IS NOT NULL";
+            
+            if (!empty($searchTerm)) {
+                $searchTerm = $this->con->real_escape_string($searchTerm);
+                $query .= " AND (
+                    rf.title LIKE '%$searchTerm%' 
+                    OR rf.author LIKE '%$searchTerm%'
+                    OR rf.presenter LIKE '%$searchTerm%'
+                    OR rf.event LIKE '%$searchTerm%'
+                    OR rf.category LIKE '%$searchTerm%'
+                    OR rf.campus LIKE '%$searchTerm%'
+                    OR rf.center LIKE '%$searchTerm%'
+                    OR EXISTS (
+                        SELECT 1 FROM presentation_research pr 
+                        WHERE pr.research_id = rf.id 
+                        AND (
+                            pr.forum_title LIKE '%$searchTerm%'
+                            OR pr.venue LIKE '%$searchTerm%'
+                            OR pr.presentor LIKE '%$searchTerm%'
+                        )
+                    )
+                )";
+            }
+            
+            // Add year filter if provided
+            if ($year) {
+                $query .= " AND YEAR(e.date) = " . intval($year);
+            }
+            
+            // Add level filter if provided
+            if ($level) {
+                if ($level === 'university') {
+                    $query .= " AND NOT EXISTS (
+                        SELECT 1 FROM presentation_research pr 
+                        WHERE pr.research_id = rf.id
+                    )";
+                } else {
+                    $query .= " AND EXISTS (
+                        SELECT 1 FROM presentation_research pr 
+                        WHERE pr.research_id = rf.id 
+                        AND LOWER(pr.forum_type) = '" . $this->con->real_escape_string(strtolower($level)) . "'
+                    )";
+                }
+            }
+            
+            // Add cursor condition for pagination
+            if ($cursor) {
+                if ($direction === 'next') {
+                    $query .= " AND e.id < " . intval($cursor);
+                } else {
+                    $query .= " AND e.id > " . intval($cursor);
+                }
+            }
+
+            // Order by endorsement ID for consistent pagination
+            if ($direction === 'next') {
+                $query .= " ORDER BY e.id DESC";
+            } else {
+                $query .= " ORDER BY e.id ASC";
+            }
+            
+            // Add limit
+            $query .= " LIMIT " . ($limit + 1);
+            
+            error_log("Search query: " . $query);
+            
+            $result = $this->con->query($query);
+            
+            if (!$result) {
+                throw new Exception("Query failed: " . $this->con->error);
+            }
+            
+            $allPresentations = [];
+            $hasMore = false;
+            $nextCursor = null;
+            $rows = [];
+            
+            // Fetch all rows first
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+            
+            // Check if we have more records
+            if (count($rows) > $limit) {
+                $hasMore = true;
+                array_pop($rows);
+            }
+            
+            // Process each row (exactly like fetchPresentations)
+            foreach ($rows as $row) {
+                $researchId = $row['research_id'];
+                $endorsementId = $row['endorsement_id'];
+                
+                // Get all external presentations for this research
+                $externalQuery = "SELECT 
+                                    id as pr_id,
+                                    presentor,
+                                    forum_title,
+                                    venue,
+                                    presentation_date,
+                                    forum_type,
+                                    date_completed as pr_date_completed
+                                FROM presentation_research 
+                                WHERE research_id = " . intval($researchId);
+                
+                $externalResult = $this->con->query($externalQuery);
+                $allForumTitles = [];
+                $allVenues = [];
+                $allPresentationDates = [];
+                $allCompletionDates = [];
+                $allPresentors = [];
+                $hasInternational = false;
+                $hasNational = false;
+                $hasRegional = false;
+                
+                // Add university forum title
+                if (!empty($row['event_title']) && $row['event_title'] !== 'NULL') {
+                    $allForumTitles[] = $row['event_title'];
+                }
+                
+                if ($externalResult) {
+                    while ($extRow = $externalResult->fetch_assoc()) {
+                        // Collect all forum titles
+                        if (!empty($extRow['forum_title']) && $extRow['forum_title'] !== 'NULL') {
+                            $allForumTitles[] = $extRow['forum_title'];
+                        }
+                        
+                        // Collect all venues
+                        if (!empty($extRow['venue']) && $extRow['venue'] !== 'NULL') {
+                            $allVenues[] = $extRow['venue'];
+                        }
+                        
+                        // Collect all presentation dates
+                        if (!empty($extRow['presentation_date'])) {
+                            $allPresentationDates[] = date('Y-m-d', strtotime($extRow['presentation_date']));
+                        }
+                        
+                        // Collect all completion dates
+                        if (!empty($extRow['pr_date_completed'])) {
+                            $allCompletionDates[] = date('Y-m-d', strtotime($extRow['pr_date_completed']));
+                        }
+                        
+                        // Collect all presentors
+                        if (!empty($extRow['presentor']) && $extRow['presentor'] !== 'NULL') {
+                            $allPresentors[] = $extRow['presentor'];
+                        }
+                        
+                        // Set flags based on forum type
+                        $forumType = strtolower($extRow['forum_type'] ?? '');
+                        if ($forumType === 'international') {
+                            $hasInternational = true;
+                        } else if ($forumType === 'national') {
+                            $hasNational = true;
+                        } else if ($forumType === 'regional') {
+                            $hasRegional = true;
+                        }
+                    }
+                }
+                
+                // Parse coauthors for all researchers
+                $coauthor = $row['coauthor'];
+                $coauthors = [];
+                $allResearchers = [];
+                
+                // Add presenter
+                if (!empty($row['presenter']) && $row['presenter'] !== 'NULL') {
+                    $allResearchers[] = $row['presenter'];
+                    $allPresentors[] = $row['presenter'];
+                }
+                
+                // Add main author
+                if (!empty($row['author']) && $row['author'] !== 'NULL') {
+                    $allResearchers[] = $row['author'];
+                }
+                
+                // Parse coauthors
+                if (!empty($coauthor) && $coauthor !== 'NULL') {
+                    if (is_string($coauthor) && (strpos($coauthor, '[') === 0 || strpos($coauthor, '{') === 0)) {
+                        $coauthors = json_decode($coauthor, true);
+                        if (is_array($coauthors)) {
+                            foreach ($coauthors as $co) {
+                                if (!empty($co) && $co !== 'NULL') {
+                                    $allResearchers[] = $co;
+                                }
+                            }
+                        }
+                    } else {
+                        $coauthors = explode(',', $coauthor);
+                        foreach ($coauthors as $co) {
+                            $co = trim($co);
+                            if (!empty($co) && $co !== 'NULL') {
+                                $allResearchers[] = $co;
+                            }
+                        }
+                    }
+                }
+                
+                // Remove duplicates
+                $allResearchers = array_values(array_unique($allResearchers));
+                $allPresentors = array_values(array_unique($allPresentors));
+                
+                // Determine if this is a Symposium
+                $eventName = strtolower($row['event_title'] ?? '');
+                $isSymposium = (strpos($eventName, 'symposium') !== false);
+                
+                // For symposiums, add endorsement date
+                if ($isSymposium) {
+                    if (!empty($row['endorsement_date'])) {
+                        $allCompletionDates[] = date('Y-m-d', strtotime($row['endorsement_date']));
+                        $allPresentationDates[] = date('Y-m-d', strtotime($row['endorsement_date']));
+                    }
+                }
+                
+                // Remove duplicates from collections
+                $allForumTitles = array_values(array_unique(array_filter($allForumTitles)));
+                $allVenues = array_values(array_unique(array_filter($allVenues)));
+                $allPresentationDates = array_values(array_unique(array_filter($allPresentationDates)));
+                $allCompletionDates = array_values(array_unique(array_filter($allCompletionDates)));
+                
+                // Set flags
+                $university = '✓';
+                $international = $hasInternational ? '✓' : '—';
+                $national = $hasNational ? '✓' : '—';
+                $regional = $hasRegional ? '✓' : '—';
+                
+                // Determine primary level
+                $primaryLevel = 'university';
+                if ($hasInternational) {
+                    $primaryLevel = 'international';
+                } else if ($hasNational) {
+                    $primaryLevel = 'national';
+                } else if ($hasRegional) {
+                    $primaryLevel = 'regional';
+                }
+                
+                // Create unique ID
+                $presentationId = $endorsementId . '_' . $researchId;
+                
+                $presentation = [
+                    'id' => $presentationId,
+                    'endorsement_id' => (int)$endorsementId,
+                    'research_id' => (int)$researchId,
+                    'title' => $row['title'] ?? '',
+                    'campus' => $row['campus'] ?? $row['center'] ?? '—',
+                    'category' => $row['category'] ?? '—',
+                    'all_researchers' => $allResearchers,
+                    'presentor' => $allPresentors,
+                    'date_completed' => $allCompletionDates,
+                    'forum_title' => $allForumTitles,
+                    'venue' => $allVenues,
+                    'presentation_date' => $allPresentationDates,
+                    'university' => $university,
+                    'international' => $international,
+                    'national' => $national,
+                    'regional' => $regional,
+                    'presentation_type' => $primaryLevel,
+                    'level' => $primaryLevel,
+                    'event_type' => $isSymposium ? 'Symposium' : 'In-House Review'
+                ];
+                
+                $allPresentations[] = $presentation;
+            }
+            
+            // Apply level filter if provided
+            if ($level && !empty($allPresentations)) {
+                $filteredPresentations = [];
+                foreach ($allPresentations as $p) {
+                    if ($level === 'university' && $p['level'] === 'university') {
+                        $filteredPresentations[] = $p;
+                    } else if ($level === 'international' && $p['level'] === 'international') {
+                        $filteredPresentations[] = $p;
+                    } else if ($level === 'national' && $p['level'] === 'national') {
+                        $filteredPresentations[] = $p;
+                    } else if ($level === 'regional' && $p['level'] === 'regional') {
+                        $filteredPresentations[] = $p;
+                    }
+                }
+                $allPresentations = $filteredPresentations;
+            }
+            
+            // Set next cursor
+            if (!empty($rows)) {
+                if ($direction === 'next') {
+                    $lastRow = end($rows);
+                    $nextCursor = $lastRow['endorsement_id'];
+                } else {
+                    $firstRow = reset($rows);
+                    $nextCursor = $firstRow['endorsement_id'];
+                }
+            }
+            
+            // Get total count for search results
+            $countQuery = "SELECT COUNT(*) as total 
+                        FROM endorsement e
+                        INNER JOIN researchfile rf ON rf.endorsementid = e.id
+                        WHERE e.status = 'accepted'
+                        AND rf.event_id IS NOT NULL";
+            
+            if (!empty($searchTerm)) {
+                $searchTerm = $this->con->real_escape_string($searchTerm);
+                $countQuery .= " AND (
+                    rf.title LIKE '%$searchTerm%' 
+                    OR rf.author LIKE '%$searchTerm%'
+                    OR rf.presenter LIKE '%$searchTerm%'
+                    OR rf.event LIKE '%$searchTerm%'
+                    OR rf.category LIKE '%$searchTerm%'
+                    OR rf.campus LIKE '%$searchTerm%'
+                    OR rf.center LIKE '%$searchTerm%'
+                    OR EXISTS (
+                        SELECT 1 FROM presentation_research pr 
+                        WHERE pr.research_id = rf.id 
+                        AND (
+                            pr.forum_title LIKE '%$searchTerm%'
+                            OR pr.venue LIKE '%$searchTerm%'
+                            OR pr.presentor LIKE '%$searchTerm%'
+                        )
+                    )
+                )";
+            }
+            
+            if ($year) {
+                $countQuery .= " AND YEAR(e.date) = " . intval($year);
+            }
+            
+            $countResult = $this->con->query($countQuery);
+            $countRow = $countResult->fetch_assoc();
+            $totalCount = (int)($countRow['total'] ?? 0);
+            
+            $this->response->status = true;
+            $this->response->message = 'Search completed successfully';
+            $this->response->data = $allPresentations;
+            $this->response->stats = $stats; // Optional: include stats
+            $this->response->pagination = [
+                'next_cursor' => $nextCursor,
+                'has_more' => $hasMore,
+                'total' => $totalCount,
+                'loaded' => count($allPresentations),
+                'direction' => $direction
+            ];
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
+            error_log("Error in searchPresentations: " . $e->getMessage());
+        }
+        
+        echo json_encode($this->response);
+    }
 
 }
 
@@ -720,6 +1128,9 @@ switch ($action) {
         
     case 'fetch':
         $api->fetchPresentations();
+        break;
+    case 'search_presentations':  // Add this case
+        $api->searchPresentations();
         break;
     case 'save':
         $api->savePresentation();
