@@ -10,18 +10,14 @@ export const PresentationResearch = () => {
     let filteredData = []
     let researchOptions = []
     let selectedResearch = null
-    let currentFilter = 'All' // Track current active filter
+    let currentFilter = 'All'
     
-    // Pagination state
-    let loadedCount = 0 
+    // Pagination state - FIXED
     let isLoading = false
     let hasMore = true
     let nextCursor = null
     let totalCount = 0
-    let cursorStack = [] 
-    let currentDirection = 'next'
-    let isLoadingMore = false
-    let isLoadingPrev = false
+    let initialLoadDone = false
     
     // Stats state
     let currentStats = {
@@ -38,10 +34,10 @@ export const PresentationResearch = () => {
         { field: 'title', header: 'Title of Research', width: '300px' },
         { field: 'forum_title', header: 'Title of Forum', width: '250px' },
         { field: 'venue', header: 'Venue', width: '200px' },
-        { field: 'university', header: 'University', width: '120px' },
-        { field: 'international', header: 'International', width: '120px' },
-        { field: 'national', header: 'National', width: '120px' },
+        { field: 'university', header: 'University/Local', width: '140px' },
         { field: 'regional', header: 'Regional', width: '120px' },
+        { field: 'national', header: 'National', width: '120px' },
+        { field: 'international', header: 'International', width: '120px' },
         { field: 'presentation_date', header: 'Date of Presentation', width: '150px' },
         { field: 'presentor', header: 'Presentor', width: '250px' },
         { field: 'campus', header: 'Campus/Center', width: '120px' },
@@ -93,7 +89,7 @@ export const PresentationResearch = () => {
         }
     }
 
-    // Fetch presentation data with cursor pagination
+    // Fetch presentation data with cursor pagination - FIXED
     const fetchPresentations = async (cursor = null, direction = 'next') => {
         if (isLoading) return
         
@@ -102,7 +98,10 @@ export const PresentationResearch = () => {
         if (!cursor) {
             showLoading()
             // Reset on first load
-            cursorStack = []
+            researchData = []
+            filteredData = []
+            hasMore = true
+            nextCursor = null
         }
         
         try {
@@ -126,7 +125,6 @@ export const PresentationResearch = () => {
                 if (!cursor) {
                     // First page - replace data
                     researchData = newData
-                    filteredData = [...researchData]
                     
                     // Update stats
                     if (result.stats) {
@@ -142,9 +140,6 @@ export const PresentationResearch = () => {
                         // Prepend to top
                         researchData = [...newData, ...researchData]
                     }
-                    
-                    // Reapply current filter after adding new data
-                    applyFilter(currentFilter)
                 }
                 
                 // Update pagination info
@@ -153,16 +148,13 @@ export const PresentationResearch = () => {
                     hasMore = result.pagination.has_more
                 }
                 
-                updateTableWithData()
-                updateRecordCount()
+                // Apply current filter
+                applyFilter(currentFilter, false) // Don't re-fetch, just filter existing data
                 
                 // Maintain scroll position when loading previous
-                if (direction === 'prev' && cursor) {
+                if (direction === 'prev' && cursor && tableBody?.firstChild) {
                     setTimeout(() => {
-                        const firstRow = tableBody?.firstChild
-                        if (firstRow) {
-                            firstRow.scrollIntoView({ behavior: 'auto', block: 'start' })
-                        }
+                        tableBody.firstChild.scrollIntoView({ behavior: 'auto', block: 'start' })
                     }, 100)
                 }
             } else {
@@ -177,23 +169,32 @@ export const PresentationResearch = () => {
             }
         } finally {
             isLoading = false
-            isLoadingMore = false
-            isLoadingPrev = false
             hideLoading()
+            initialLoadDone = true
         }
     }
 
-    // Apply filter based on selected type
-    const applyFilter = (filterType) => {
+    // Apply filter based on selected type - FIXED
+    const applyFilter = (filterType, shouldFetch = true) => {
         currentFilter = filterType
         
         if (filterType === 'All') {
             filteredData = [...researchData]
         } else {
             const filterField = filterType.toLowerCase()
+            
             filteredData = researchData.filter(item => {
-                // Check if the item has a checkmark (✓) for this filter type
-                return item[filterField] === '✓' || item[filterField] === 1 || item[filterField] === '1'
+                // Check if the item has a checkmark for this filter type
+                if (filterField === 'university') {
+                    return item.university === '✓' || item.level === 'university'
+                } else if (filterField === 'international') {
+                    return item.international === '✓' || item.level === 'international'
+                } else if (filterField === 'national') {
+                    return item.national === '✓' || item.level === 'national'
+                } else if (filterField === 'regional') {
+                    return item.regional === '✓' || item.level === 'regional'
+                }
+                return false
             })
         }
         
@@ -202,28 +203,17 @@ export const PresentationResearch = () => {
         updateRecordCount()
     }
 
-    // Handle scroll for infinite loading (both directions)
+    // Handle scroll for infinite loading - FIXED
     const handleScroll = () => {
-        if (!scrollContainer || isLoading) return
+        if (!scrollContainer || isLoading || !hasMore) return
         
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
         
-        // Load more when scrolling down (near bottom)
-        if (scrollHeight - scrollTop - clientHeight < 200 && hasMore && !isLoadingMore) {
-            isLoadingMore = true
-            currentDirection = 'next'
+        // Load more when scrolling down (near bottom) - with 300px threshold
+        if (scrollHeight - scrollTop - clientHeight < 300 && hasMore && !isLoading) {
             if (nextCursor) {
-                cursorStack.push(nextCursor)
                 fetchPresentations(nextCursor, 'next')
             }
-        }
-        
-        // Load previous when scrolling up (near top)
-        if (scrollTop < 200 && cursorStack.length > 0 && !isLoadingPrev) {
-            isLoadingPrev = true
-            currentDirection = 'prev'
-            const prevCursor = cursorStack.pop()
-            fetchPresentations(prevCursor, 'prev')
         }
     }
 
@@ -372,17 +362,89 @@ export const PresentationResearch = () => {
                 lineHeight: '1.4',
                 verticalAlign: 'top'
             }
-
+            
+            // Special handling for forum_title column
+            if (col.field === 'forum_title') {
+                let forumTitles = []
+                
+                if (Array.isArray(item.forum_title)) {
+                    forumTitles = item.forum_title.filter(title => title && title !== '—' && title !== 'NULL')
+                } else if (item.forum_title && item.forum_title !== '—' && item.forum_title !== 'NULL') {
+                    forumTitles = [item.forum_title]
+                }
+                
+                if (forumTitles.length === 0) {
+                    return $({
+                        tag: 'td',
+                        style: cellStyle,
+                        text: '—'
+                    })
+                } else {
+                    const bulletListHtml = '<ul style="margin:0; padding-left:20px; list-style-type:disc; color:#ddd;">' + 
+                        forumTitles.map(title => `<li style="margin-bottom:4px; font-size:12px;">${escapeHtml(title)}</li>`).join('') + 
+                        '</ul>'
+                    
+                    return $({
+                        tag: 'td',
+                        style: { ...cellStyle, verticalAlign: 'top' },
+                        html: bulletListHtml
+                    })
+                }
+            }
+            
             // Special styling for forum type columns
             if (['university', 'international', 'national', 'regional'].includes(col.field)) {
-                if (cellContent === '✓') {
-                    cellStyle.backgroundColor = 'rgba(0, 191, 255, 0.1)'
-                    cellStyle.color = 'deepskyblue'
-                    cellStyle.fontWeight = '500'
-                    cellStyle.textAlign = 'center'
-                } else {
-                    cellStyle.textAlign = 'center'
+                if (col.field === 'university') {
+                    if (item.university === '✓' || item.level === 'university') {
+                        cellContent = '✓'
+                        cellStyle.backgroundColor = 'rgba(0, 191, 255, 0.1)'
+                        cellStyle.color = 'deepskyblue'
+                        cellStyle.fontWeight = '500'
+                        cellStyle.textAlign = 'center'
+                    } else {
+                        cellContent = '—'
+                        cellStyle.textAlign = 'center'
+                    }
+                } else if (col.field === 'international') {
+                    if (item.international === '✓' || item.level === 'international') {
+                        cellContent = '✓'
+                        cellStyle.backgroundColor = 'rgba(76, 175, 80, 0.1)'
+                        cellStyle.color = '#4caf50'
+                        cellStyle.fontWeight = '500'
+                        cellStyle.textAlign = 'center'
+                    } else {
+                        cellContent = '—'
+                        cellStyle.textAlign = 'center'
+                    }
+                } else if (col.field === 'national') {
+                    if (item.national === '✓' || item.level === 'national') {
+                        cellContent = '✓'
+                        cellStyle.backgroundColor = 'rgba(233, 30, 99, 0.1)'
+                        cellStyle.color = '#e91e63'
+                        cellStyle.fontWeight = '500'
+                        cellStyle.textAlign = 'center'
+                    } else {
+                        cellContent = '—'
+                        cellStyle.textAlign = 'center'
+                    }
+                } else if (col.field === 'regional') {
+                    if (item.regional === '✓' || item.level === 'regional') {
+                        cellContent = '✓'
+                        cellStyle.backgroundColor = 'rgba(156, 39, 176, 0.1)'
+                        cellStyle.color = '#9c27b0'
+                        cellStyle.fontWeight = '500'
+                        cellStyle.textAlign = 'center'
+                    } else {
+                        cellContent = '—'
+                        cellStyle.textAlign = 'center'
+                    }
                 }
+                
+                return $({
+                    tag: 'td',
+                    style: cellStyle,
+                    text: cellContent
+                })
             }
 
             if (col.field === 'actions') {
@@ -392,11 +454,148 @@ export const PresentationResearch = () => {
                     child: [createActionButtons(item)]
                 })
             }
-
-            if (col.field === 'date_completed' || col.field === 'presentation_date') {
-                cellContent = formatDate(item[col.field])
+            
+            // Special handling for date_completed
+            if (col.field === 'date_completed') {
+                let completionDates = []
+                
+                if (Array.isArray(item.date_completed)) {
+                    completionDates = item.date_completed
+                        .filter(date => date && date !== '—')
+                        .map(date => formatDate(date))
+                } else if (item.date_completed && item.date_completed !== '—') {
+                    completionDates = [formatDate(item.date_completed)]
+                }
+                
+                if (completionDates.length === 0) {
+                    return $({
+                        tag: 'td',
+                        style: cellStyle,
+                        text: '—'
+                    })
+                } else if (completionDates.length === 1) {
+                    return $({
+                        tag: 'td',
+                        style: cellStyle,
+                        text: completionDates[0]
+                    })
+                } else {
+                    const bulletList = $({
+                        tag: 'ul',
+                        style: {
+                            margin: '0',
+                            padding: '0',
+                            paddingLeft: '20px',
+                            listStyleType: 'disc',
+                            color: '#ddd'
+                        },
+                        child: completionDates.map(date => 
+                            $({
+                                tag: 'li',
+                                text: date,
+                                style: {
+                                    marginBottom: '4px',
+                                    fontSize: '12px'
+                                }
+                            })
+                        )
+                    })
+                    
+                    return $({
+                        tag: 'td',
+                        style: { ...cellStyle, verticalAlign: 'top' },
+                        child: [bulletList]
+                    })
+                }
             }
 
+            // Special handling for presentation_date
+            if (col.field === 'presentation_date') {
+                let presentationDates = []
+                
+                if (Array.isArray(item.presentation_date)) {
+                    presentationDates = item.presentation_date
+                        .filter(date => date && date !== '—')
+                        .map(date => formatDate(date))
+                } else if (item.presentation_date && item.presentation_date !== '—') {
+                    presentationDates = [formatDate(item.presentation_date)]
+                }
+                
+                if (presentationDates.length === 0) {
+                    return $({
+                        tag: 'td',
+                        style: cellStyle,
+                        text: '—'
+                    })
+                } else if (presentationDates.length === 1) {
+                    return $({
+                        tag: 'td',
+                        style: cellStyle,
+                        text: presentationDates[0]
+                    })
+                } else {
+                    const bulletList = $({
+                        tag: 'ul',
+                        style: {
+                            margin: '0',
+                            padding: '0',
+                            paddingLeft: '20px',
+                            listStyleType: 'disc',
+                            color: '#ddd'
+                        },
+                        child: presentationDates.map(date => 
+                            $({
+                                tag: 'li',
+                                text: date,
+                                style: {
+                                    marginBottom: '4px',
+                                    fontSize: '12px'
+                                }
+                            })
+                        )
+                    })
+                    
+                    return $({
+                        tag: 'td',
+                        style: { ...cellStyle, verticalAlign: 'top' },
+                        child: [bulletList]
+                    })
+                }
+            }
+            
+            if (col.field === 'presentor') {
+                let presentors = []
+
+                if (Array.isArray(item.presentor)) {
+                    presentors = item.presentor.map(p => {
+                        if (!p || p === 'NULL') {
+                            return '—'
+                        }
+                        return p
+                    })
+                } else if (item.presentor && item.presentor !== 'NULL') {
+                    presentors = [item.presentor]
+                } else {
+                    presentors = ['—']
+                }
+                
+                presentors = [...new Set(presentors)]
+                
+                const bulletListHtml = '<ul style="margin:0; padding-left:20px; list-style-type:disc; color:#ddd;">' + 
+                    presentors.map(name => {
+                        const safeName = escapeHtml(name)
+                        return `<li style="margin-bottom:4px; font-size:12px;">${safeName}</li>`
+                    }).join('') + 
+                    '</ul>'
+                
+                return $({
+                    tag: 'td',
+                    style: { ...cellStyle, verticalAlign: 'top' },
+                    html: bulletListHtml
+                })
+            }
+            
+            // For regular text fields
             return $({
                 tag: 'td',
                 style: cellStyle,
@@ -438,26 +637,6 @@ export const PresentationResearch = () => {
             child: [
                 $({
                     tag: 'span',
-                    att: { className: 'fa-solid fa-eye' },
-                    style: {
-                        color: 'deepskyblue',
-                        cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        transition: 'all 0.2s ease'
-                    },
-                    title: 'View details',
-                    event: {
-                        type: 'click',
-                        method: (e) => {
-                            e.stopPropagation()
-                            viewPresentation(item)
-                        }
-                    }
-                }),
-                $({
-                    tag: 'span',
                     att: { className: 'fa-solid fa-pen' },
                     style: {
                         color: '#ffb347',
@@ -483,57 +662,23 @@ export const PresentationResearch = () => {
     // Format date
     const formatDate = (dateString) => {
         if (!dateString || dateString === '—') return '—'
-        const date = new Date(dateString)
-        return date.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: '2-digit', 
-            year: 'numeric' 
-        }).replace(/,/g, '')
-    }
-
-    // View presentation
-    const viewPresentation = (item) => {
-        selectedResearch = item
-        renderModal('view')
+        try {
+            const date = new Date(dateString)
+            if (isNaN(date.getTime())) return '—'
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: '2-digit', 
+                year: 'numeric' 
+            }).replace(/,/g, '')
+        } catch (e) {
+            return '—'
+        }
     }
 
     // Edit presentation
     const editPresentation = (item) => {
         selectedResearch = item
         renderModal('edit')
-    }
-
-    // Handle research selection
-    const handleResearchSelect = (researchId) => {
-        const research = researchOptions.find(r => r.id == researchId)
-        if (research) {
-            selectedResearch = research
-            
-            // Update campus and category fields
-            const campusInput = document.querySelector('input[name="campus"]')
-            const categoryInput = document.querySelector('input[name="category"]')
-            const presentorSelect = document.querySelector('select[name="presentor"]')
-            
-            if (campusInput) campusInput.value = research.campus || ''
-            if (categoryInput) categoryInput.value = research.category || ''
-            
-            // Update presentor dropdown
-            if (presentorSelect) {
-                presentorSelect.innerHTML = '<option value="">Select Presentor</option>'
-                
-                // Add all researchers as options
-                if (research.all_researchers && Array.isArray(research.all_researchers)) {
-                    research.all_researchers.forEach(name => {
-                        if (name && name !== 'NULL') {
-                            const option = document.createElement('option')
-                            option.value = name
-                            option.textContent = name
-                            presentorSelect.appendChild(option)
-                        }
-                    })
-                }
-            }
-        }
     }
 
     // Close modal
@@ -550,9 +695,7 @@ export const PresentationResearch = () => {
             modalElement.remove()
         }
         
-        const isViewMode = mode === 'view'
         const isEditMode = mode === 'edit'
-        const isAddMode = mode === 'add'
         
         modalElement = $({
             tag: 'div',
@@ -600,7 +743,7 @@ export const PresentationResearch = () => {
                             child: [
                                 $({
                                     tag: 'h2',
-                                    text: isViewMode ? 'View Presentation' : (isEditMode ? 'Edit Presentation' : 'Add New Presentation'),
+                                    text: 'Edit Presentation',
                                     style: {
                                         margin: '0',
                                         fontSize: '20px',
@@ -634,187 +777,59 @@ export const PresentationResearch = () => {
                                 padding: '24px'
                             },
                             child: [
-                                // Title of Research with search (for add mode)
-                                ...(isAddMode ? [
-                                    $({
-                                        tag: 'div',
-                                        style: { marginBottom: '20px' },
-                                        child: [
-                                            $({
-                                                tag: 'label',
-                                                text: 'Title of Research *',
-                                                style: {
-                                                    display: 'block',
-                                                    marginBottom: '8px',
-                                                    color: '#aaa',
-                                                    fontSize: '13px',
-                                                    fontWeight: '500'
-                                                }
-                                            }),
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    position: 'relative'
-                                                },
-                                                child: [
-                                                    $({
-                                                        tag: 'input',
-                                                        att: {
-                                                            type: 'text',
-                                                            id: 'research-search',
-                                                            placeholder: 'Type to search research papers...',
-                                                            autocomplete: 'off',
-                                                            required: true
-                                                        },
-                                                        style: {
-                                                            width: '100%',
-                                                            padding: '10px',
-                                                            backgroundColor: '#333',
-                                                            border: '1px solid #444',
-                                                            borderRadius: '6px',
-                                                            color: '#fff',
-                                                            fontSize: '14px',
-                                                            outline: 'none'
-                                                        },
-                                                        event: {
-                                                            type: 'input',
-                                                            method: (e) => {
-                                                                const searchTerm = e.target.value.toLowerCase()
-                                                                const suggestionsContainer = document.getElementById('research-suggestions')
-                                                                
-                                                                if (searchTerm.length < 2) {
-                                                                    suggestionsContainer.style.display = 'none'
-                                                                    return
-                                                                }
-                                                                
-                                                                const filtered = researchOptions.filter(r => 
-                                                                    r.title?.toLowerCase().includes(searchTerm) ||
-                                                                    r.author?.toLowerCase().includes(searchTerm)
-                                                                ).slice(0, 10)
-                                                                
-                                                                if (filtered.length === 0) {
-                                                                    suggestionsContainer.innerHTML = '<div style="padding: 10px; color: #888;">No results found</div>'
-                                                                    suggestionsContainer.style.display = 'block'
-                                                                    return
-                                                                }
-                                                                
-                                                                suggestionsContainer.innerHTML = ''
-                                                                filtered.forEach(r => {
-                                                                    const item = document.createElement('div')
-                                                                    item.style.cssText = `
-                                                                        padding: 12px 15px;
-                                                                        cursor: pointer;
-                                                                        border-bottom: 1px solid #444;
-                                                                        transition: all 0.2s ease;
-                                                                        color: #fff;
-                                                                    `
-                                                                    item.innerHTML = `
-                                                                        <div style="font-weight: 500; margin-bottom: 4px;">${escapeHtml(r.title)}</div>
-                                                                        <div style="font-size: 12px; color: #aaa;">Author: ${escapeHtml(r.author || 'N/A')} | Campus: ${escapeHtml(r.campus || 'N/A')}</div>
-                                                                    `
-                                                                    item.addEventListener('mouseenter', () => {
-                                                                        item.style.backgroundColor = '#3a3a3a'
-                                                                    })
-                                                                    item.addEventListener('mouseleave', () => {
-                                                                        item.style.backgroundColor = 'transparent'
-                                                                    })
-                                                                    item.addEventListener('click', () => {
-                                                                        document.getElementById('research-search').value = r.title
-                                                                        suggestionsContainer.style.display = 'none'
-                                                                        handleResearchSelect(r.id)
-                                                                    })
-                                                                    suggestionsContainer.appendChild(item)
-                                                                })
-                                                                suggestionsContainer.style.display = 'block'
-                                                            }
-                                                        },
-                                                        event2: {
-                                                            type: 'blur',
-                                                            method: (e) => {
-                                                                setTimeout(() => {
-                                                                    document.getElementById('research-suggestions').style.display = 'none'
-                                                                }, 200)
-                                                            }
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'div',
-                                                        att: { id: 'research-suggestions' },
-                                                        style: {
-                                                            position: 'absolute',
-                                                            top: '100%',
-                                                            left: '0',
-                                                            right: '0',
-                                                            maxHeight: '300px',
-                                                            overflowY: 'auto',
-                                                            backgroundColor: '#2d2d2d',
-                                                            border: '1px solid #444',
-                                                            borderRadius: '6px',
-                                                            marginTop: '4px',
-                                                            display: 'none',
-                                                            zIndex: '1000',
-                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-                                                        }
-                                                    })
-                                                ]
-                                            })
-                                        ]
-                                    })
-                                ] : [
-                                    // Hidden research_id for edit/view
-                                    $({
-                                        tag: 'input',
-                                        att: {
-                                            type: 'hidden',
-                                            name: 'research_id',
-                                            value: selectedResearch?.research_id || selectedResearch?.id || ''
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'input',
-                                        att: {
-                                            type: 'hidden',
-                                            name: 'id',
-                                            value: selectedResearch?.id || ''
-                                        }
-                                    }),
-                                    // Title of Research (read-only for edit/view)
-                                    $({
-                                        tag: 'div',
-                                        style: { marginBottom: '20px' },
-                                        child: [
-                                            $({
-                                                tag: 'label',
-                                                text: 'Title of Research',
-                                                style: {
-                                                    display: 'block',
-                                                    marginBottom: '8px',
-                                                    color: '#aaa',
-                                                    fontSize: '13px',
-                                                    fontWeight: '500'
-                                                }
-                                            }),
-                                            $({
-                                                tag: 'input',
-                                                att: {
-                                                    type: 'text',
-                                                    value: selectedResearch?.title || '',
-                                                    readonly: true
-                                                },
-                                                style: {
-                                                    width: '100%',
-                                                    padding: '10px',
-                                                    backgroundColor: '#2a2a2a',
-                                                    border: '1px solid #444',
-                                                    borderRadius: '6px',
-                                                    color: '#aaa',
-                                                    fontSize: '14px',
-                                                    outline: 'none'
-                                                }
-                                            })
-                                        ]
-                                    })
-                                ]),
+                                // Hidden fields
+                                $({
+                                    tag: 'input',
+                                    att: {
+                                        type: 'hidden',
+                                        name: 'research_id',
+                                        value: selectedResearch?.research_id || selectedResearch?.id || ''
+                                    }
+                                }),
+                                $({
+                                    tag: 'input',
+                                    att: {
+                                        type: 'hidden',
+                                        name: 'presentation_id',
+                                        value: selectedResearch?.pr_id || selectedResearch?.presentation_id || ''
+                                    }
+                                }),
+                                // Title of Research
+                                $({
+                                    tag: 'div',
+                                    style: { marginBottom: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'label',
+                                            text: 'Title of Research',
+                                            style: {
+                                                display: 'block',
+                                                marginBottom: '8px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'text',
+                                                value: selectedResearch?.title || '',
+                                                readonly: true
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: '#2a2a2a',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#aaa',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            }
+                                        })
+                                    ]
+                                }),
                                 
                                 // Presentor Selection
                                 $({
@@ -835,24 +850,67 @@ export const PresentationResearch = () => {
                                         $({
                                             tag: 'select',
                                             att: {
-                                                name: 'presentor',
-                                                required: true,
-                                                disabled: isViewMode
+                                                name: 'presentor_select',
+                                                id: 'presentor-select'
                                             },
                                             style: {
                                                 width: '100%',
                                                 padding: '10px',
-                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                backgroundColor: '#333',
                                                 border: '1px solid #444',
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
                                                 outline: 'none',
-                                                cursor: isViewMode ? 'default' : 'pointer'
+                                                cursor: 'pointer',
+                                                marginBottom: '10px',
+                                                display: 'block'
                                             },
                                             child: [
-                                                $({ tag: 'option', att: { value: '' }, text: '-- Select Presentor --' })
-                                            ]
+                                                $({ tag: 'option', att: { value: '' }, text: '-- Select Presentor --' }),
+                                                ...(selectedResearch?.all_researchers?.map(name => 
+                                                    $({ 
+                                                        tag: 'option', 
+                                                        att: { value: name },
+                                                        text: name 
+                                                    })
+                                                ) || []),
+                                                $({ tag: 'option', att: { value: 'others' }, text: '-- Others (Enter manually) --' })
+                                            ],
+                                            event: {
+                                                type: 'change',
+                                                method: (e) => {
+                                                    const select = e.target
+                                                    const customInput = document.getElementById('presentor-custom')
+                                                    
+                                                    if (select.value === 'others') {
+                                                        select.style.display = 'none'
+                                                        customInput.style.display = 'block'
+                                                        customInput.focus()
+                                                        select.value = ''
+                                                    }
+                                                }
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'text',
+                                                name: 'presentor',
+                                                id: 'presentor-custom',
+                                                placeholder: 'Enter presentor name'
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                padding: '10px',
+                                                backgroundColor: '#333',
+                                                border: '1px solid #444',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                outline: 'none',
+                                                display: 'none'
+                                            }
                                         })
                                     ]
                                 }),
@@ -878,14 +936,12 @@ export const PresentationResearch = () => {
                                             att: {
                                                 type: 'date',
                                                 name: 'date_completed',
-                                                required: true,
-                                                value: selectedResearch?.date_completed || '',
-                                                disabled: isViewMode
+                                                required: true
                                             },
                                             style: {
                                                 width: '100%',
                                                 padding: '10px',
-                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                backgroundColor: '#333',
                                                 border: '1px solid #444',
                                                 borderRadius: '6px',
                                                 color: '#fff',
@@ -896,7 +952,7 @@ export const PresentationResearch = () => {
                                     ]
                                 }),
                                 
-                                // Forum Title - Input field with existing value as placeholder
+                                // Forum Title
                                 $({
                                     tag: 'div',
                                     style: { marginBottom: '20px' },
@@ -912,43 +968,58 @@ export const PresentationResearch = () => {
                                                 fontWeight: '500'
                                             }
                                         }),
+                                        ...(selectedResearch?.forum_title && selectedResearch.forum_title !== '—' ? [
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    marginBottom: '8px',
+                                                    padding: '8px 12px',
+                                                    backgroundColor: '#2a2a2a',
+                                                    border: '1px solid #444',
+                                                    borderRadius: '6px',
+                                                    color: '#888',
+                                                    fontSize: '13px',
+                                                    fontStyle: 'italic',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: { className: 'fa-solid fa-history' },
+                                                        style: { color: '#666', fontSize: '12px' }
+                                                    }),
+                                                    $({
+                                                        tag: 'span',
+                                                        text: `Previous: ${selectedResearch.forum_title}`
+                                                    })
+                                                ]
+                                            })
+                                        ] : []),
                                         $({
                                             tag: 'input',
                                             att: {
                                                 type: 'text',
                                                 name: 'forum_title',
-                                                placeholder: selectedResearch?.forum_title || 'Enter forum title',
-                                                required: true,
-                                                disabled: isViewMode
+                                                placeholder: 'Enter new forum title',
+                                                required: true
                                             },
                                             style: {
                                                 width: '100%',
                                                 padding: '10px',
-                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                backgroundColor: '#333',
                                                 border: '1px solid #444',
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
                                                 outline: 'none'
                                             }
-                                        }),
-                                        // Show existing value as hint
-                                        ...(!isViewMode && selectedResearch?.forum_title ? [
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    marginTop: '4px',
-                                                    fontSize: '11px',
-                                                    color: '#888',
-                                                    fontStyle: 'italic'
-                                                },
-                                                text: `Previous: ${selectedResearch.forum_title}`
-                                            })
-                                        ] : [])
+                                        })
                                     ]
                                 }),
                                 
-                                // Venue - Input field with existing value as placeholder
+                                // Venue
                                 $({
                                     tag: 'div',
                                     style: { marginBottom: '20px' },
@@ -969,38 +1040,24 @@ export const PresentationResearch = () => {
                                             att: {
                                                 type: 'text',
                                                 name: 'venue',
-                                                placeholder: selectedResearch?.venue || 'Enter venue',
-                                                required: true,
-                                                disabled: isViewMode
+                                                placeholder: 'Enter venue',
+                                                required: true
                                             },
                                             style: {
                                                 width: '100%',
                                                 padding: '10px',
-                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                backgroundColor: '#333',
                                                 border: '1px solid #444',
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
                                                 outline: 'none'
                                             }
-                                        }),
-                                        // Show existing value as hint
-                                        ...(!isViewMode && selectedResearch?.venue && selectedResearch.venue !== '—' ? [
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    marginTop: '4px',
-                                                    fontSize: '11px',
-                                                    color: '#888',
-                                                    fontStyle: 'italic'
-                                                },
-                                                text: `Previous: ${selectedResearch.venue}`
-                                            })
-                                        ] : [])
+                                        })
                                     ]
                                 }),
                                 
-                                // Forum Type Selection
+                                // Forum Type
                                 $({
                                     tag: 'div',
                                     style: { marginBottom: '20px' },
@@ -1020,13 +1077,12 @@ export const PresentationResearch = () => {
                                             tag: 'select',
                                             att: {
                                                 name: 'forum_type',
-                                                required: true,
-                                                disabled: isViewMode
+                                                required: true
                                             },
                                             style: {
                                                 width: '100%',
                                                 padding: '10px',
-                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                backgroundColor: '#333',
                                                 border: '1px solid #444',
                                                 borderRadius: '6px',
                                                 color: '#fff',
@@ -1038,10 +1094,7 @@ export const PresentationResearch = () => {
                                                 ...forumTypes.map(type => 
                                                     $({ 
                                                         tag: 'option', 
-                                                        att: { 
-                                                            value: type,
-                                                            selected: selectedResearch?.forum_type === type
-                                                        },
+                                                        att: { value: type },
                                                         text: type 
                                                     })
                                                 )
@@ -1071,14 +1124,12 @@ export const PresentationResearch = () => {
                                             att: {
                                                 type: 'date',
                                                 name: 'presentation_date',
-                                                required: true,
-                                                value: selectedResearch?.presentation_date || '',
-                                                disabled: isViewMode
+                                                required: true
                                             },
                                             style: {
                                                 width: '100%',
                                                 padding: '10px',
-                                                backgroundColor: isViewMode ? '#2a2a2a' : '#333',
+                                                backgroundColor: '#333',
                                                 border: '1px solid #444',
                                                 borderRadius: '6px',
                                                 color: '#fff',
@@ -1089,7 +1140,7 @@ export const PresentationResearch = () => {
                                     ]
                                 }),
                                 
-                                // Campus (auto-filled)
+                                // Campus
                                 $({
                                     tag: 'div',
                                     style: { marginBottom: '20px' },
@@ -1127,7 +1178,7 @@ export const PresentationResearch = () => {
                                     ]
                                 }),
                                 
-                                // Category (auto-filled)
+                                // Category
                                 $({
                                     tag: 'div',
                                     style: { marginBottom: '20px' },
@@ -1195,26 +1246,24 @@ export const PresentationResearch = () => {
                                                 method: closeModal
                                             }
                                         }),
-                                        ...(!isViewMode ? [
-                                            $({
-                                                tag: 'button',
-                                                att: { type: 'button' },
-                                                text: isEditMode ? 'Update' : 'Save',
-                                                style: {
-                                                    padding: '10px 24px',
-                                                    backgroundColor: 'deepskyblue',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    color: '#fff',
-                                                    fontSize: '14px',
-                                                    cursor: 'pointer'
-                                                },
-                                                event: {
-                                                    type: 'click',
-                                                    method: savePresentation
-                                                }
-                                            })
-                                        ] : [])
+                                        $({
+                                            tag: 'button',
+                                            att: { type: 'button' },
+                                            text: 'Update',
+                                            style: {
+                                                padding: '10px 24px',
+                                                backgroundColor: 'deepskyblue',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                cursor: 'pointer'
+                                            },
+                                            event: {
+                                                type: 'click',
+                                                method: savePresentation
+                                            }
+                                        })
                                     ]
                                 })
                             ]
@@ -1226,34 +1275,204 @@ export const PresentationResearch = () => {
         
         document.body.appendChild(modalElement)
         
-        // If in add mode, fetch research papers
-        if (isAddMode) {
-            fetchResearchPapers()
-        }
-        
-        // If in edit/view mode, populate form
-        if (selectedResearch && (isEditMode || isViewMode)) {
-            // Populate presentor dropdown
-            const presentorSelect = document.querySelector('select[name="presentor"]')
-            if (presentorSelect && selectedResearch.all_researchers) {
-                presentorSelect.innerHTML = '<option value="">-- Select Presentor --</option>'
-                selectedResearch.all_researchers.forEach(name => {
-                    const option = document.createElement('option')
-                    option.value = name
-                    option.textContent = name
-                    if (name === selectedResearch.presentor) {
-                        option.selected = true
+        // Populate form with selectedResearch data
+        if (selectedResearch) {
+            const presentorSelect = document.getElementById('presentor-select')
+            const customInput = document.getElementById('presentor-custom')
+            
+            if (presentorSelect) {
+                // Clear existing options except the first placeholder
+                while (presentorSelect.options.length > 1) {
+                    presentorSelect.remove(1)
+                }
+                
+                // Add researchers if available
+                if (selectedResearch.all_researchers && Array.isArray(selectedResearch.all_researchers)) {
+                    selectedResearch.all_researchers.forEach(name => {
+                        if (name && name !== 'NULL' && name !== '—') {
+                            const option = document.createElement('option')
+                            option.value = name
+                            option.textContent = name
+                            presentorSelect.appendChild(option)
+                        }
+                    })
+                }
+                
+                // Add "Others" option
+                const othersOption = document.createElement('option')
+                othersOption.value = 'others'
+                othersOption.textContent = '-- Others (Enter manually) --'
+                presentorSelect.appendChild(othersOption)
+                
+                // Handle presentor selection
+                let currentPresentor = ''
+                if (Array.isArray(selectedResearch.presentor) && selectedResearch.presentor.length > 0) {
+                    currentPresentor = selectedResearch.presentor[0]
+                } else if (typeof selectedResearch.presentor === 'string') {
+                    currentPresentor = selectedResearch.presentor
+                }
+                
+                if (currentPresentor && currentPresentor !== '—' && currentPresentor !== 'NULL') {
+                    const researchers = selectedResearch.all_researchers || []
+                    const isInList = researchers.some(name => name === currentPresentor)
+                    
+                    if (isInList) {
+                        presentorSelect.value = currentPresentor
+                        presentorSelect.style.display = 'block'
+                        customInput.style.display = 'none'
+                        customInput.value = ''
+                    } else {
+                        presentorSelect.style.display = 'none'
+                        customInput.style.display = 'block'
+                        customInput.value = currentPresentor
+                        presentorSelect.value = ''
                     }
-                    presentorSelect.appendChild(option)
-                })
+                } else {
+                    presentorSelect.value = ''
+                    presentorSelect.style.display = 'block'
+                    customInput.style.display = 'none'
+                    customInput.value = ''
+                }
             }
+            
+            // Set date fields
+            setTimeout(() => {
+                // Date Completed
+                let dateCompleted = ''
+                if (Array.isArray(selectedResearch.date_completed) && selectedResearch.date_completed.length > 0) {
+                    dateCompleted = selectedResearch.date_completed[0]
+                } else if (typeof selectedResearch.date_completed === 'string') {
+                    dateCompleted = selectedResearch.date_completed
+                }
+                
+                if (dateCompleted && dateCompleted !== '—') {
+                    const dateCompletedInput = document.querySelector('input[name="date_completed"]')
+                    if (dateCompletedInput) {
+                        dateCompletedInput.value = dateCompleted
+                    }
+                }
+                
+                // Presentation Date
+                let presentationDate = ''
+                if (Array.isArray(selectedResearch.presentation_date) && selectedResearch.presentation_date.length > 0) {
+                    presentationDate = selectedResearch.presentation_date[0]
+                } else if (typeof selectedResearch.presentation_date === 'string') {
+                    presentationDate = selectedResearch.presentation_date
+                }
+                
+                if (presentationDate && presentationDate !== '—') {
+                    const presentationDateInput = document.querySelector('input[name="presentation_date"]')
+                    if (presentationDateInput) {
+                        presentationDateInput.value = presentationDate
+                    }
+                }
+                
+                // Venue
+                let venue = ''
+                if (Array.isArray(selectedResearch.venue) && selectedResearch.venue.length > 0) {
+                    venue = selectedResearch.venue[0]
+                } else if (typeof selectedResearch.venue === 'string') {
+                    venue = selectedResearch.venue
+                }
+                
+                if (venue && venue !== '—') {
+                    const venueInput = document.querySelector('input[name="venue"]')
+                    if (venueInput) {
+                        venueInput.value = venue
+                    }
+                }
+                
+                // Forum Type
+                if (selectedResearch.presentation_type) {
+                    const forumTypeSelect = document.querySelector('select[name="forum_type"]')
+                    if (forumTypeSelect) {
+                        forumTypeSelect.value = selectedResearch.presentation_type
+                    }
+                }
+            }, 100)
         }
     }
 
-    // Save presentation - NOTE: This is disabled since we're not using presentation_research table
+    // Save presentation
     const savePresentation = async () => {
-        alert('Presentations are managed through the endorsement system. Please use the endorsement module to update presentation details.')
-        closeModal()
+        const form = document.getElementById('presentation-form')
+        const formData = new FormData(form)
+        const researchId = selectedResearch?.research_id || selectedResearch?.id
+        const presentationId = selectedResearch?.pr_id || selectedResearch?.presentation_id || null
+        
+        if (!researchId) {
+            alert('Please select a research paper')
+            return
+        }
+        
+        // Get presentor value
+        const presentorSelect = document.getElementById('presentor-select')
+        const customInput = document.getElementById('presentor-custom')
+        let presentor = ''
+        
+        if (presentorSelect.style.display !== 'none' && presentorSelect.value) {
+            presentor = presentorSelect.value
+        } else if (customInput.style.display !== 'none' && customInput.value) {
+            presentor = customInput.value
+        }
+        
+        if (!presentor) {
+            alert('Please select or enter a presentor')
+            return
+        }
+        
+        // Get other form values
+        const dateCompleted = document.querySelector('input[name="date_completed"]').value
+        const forumTitle = document.querySelector('input[name="forum_title"]').value
+        const venue = document.querySelector('input[name="venue"]').value
+        const forumType = document.querySelector('select[name="forum_type"]').value
+        const presentationDate = document.querySelector('input[name="presentation_date"]').value
+        
+        if (!dateCompleted || !forumTitle || !venue || !forumType || !presentationDate) {
+            alert('Please fill in all required fields')
+            return
+        }
+        
+        const saveData = new FormData()
+        saveData.append('action', 'save')
+        saveData.append('research_id', researchId)
+        saveData.append('presentor', presentor)
+        saveData.append('date_completed', dateCompleted)
+        saveData.append('forum_title', forumTitle)
+        saveData.append('venue', venue)
+        saveData.append('forum_type', forumType)
+        saveData.append('presentation_date', presentationDate)
+        
+        if (presentationId) {
+            saveData.append('id', presentationId)
+        }
+        
+        showLoading()
+        try {
+            const response = await fetch('/presentedresearch', {
+                method: 'POST',
+                body: saveData
+            })
+            
+            const result = await response.json()
+            
+            if (result.status) {
+                closeModal()
+                // Reset and reload data
+                researchData = []
+                filteredData = []
+                hasMore = true
+                nextCursor = null
+                await fetchPresentations()
+            } else {
+                alert('Error saving presentation: ' + (result.message || 'Unknown error'))
+            }
+        } catch (error) {
+            console.error('Error saving presentation:', error)
+            alert('Error saving presentation')
+        } finally {
+            hideLoading()
+        }
     }
 
     const getMainContainer = (el) => {
@@ -1270,9 +1489,10 @@ export const PresentationResearch = () => {
         scrollContainer.addEventListener('scroll', handleScroll)
         // Fetch data when scroll container is ready
         fetchPresentations()
+        fetchResearchPapers()
     }
 
-    // Update filter button styles with hover effects
+    // Update filter button styles
     const updateFilterButtons = (active) => {
         const filterButtons = document.querySelectorAll('.filter-btn')
         
@@ -1289,20 +1509,27 @@ export const PresentationResearch = () => {
                 button.style.opacity = '0.8'
             }
             
-            // Add hover effect
-            button.addEventListener('mouseenter', () => {
-                if (buttonText !== active) {
-                    button.style.backgroundColor = '#3a3a3a'
-                    button.style.color = '#fff'
+            // Remove existing event listeners to avoid duplicates
+            const newButton = button.cloneNode(true)
+            button.parentNode.replaceChild(newButton, button)
+            
+            // Add hover effect to new button
+            newButton.addEventListener('mouseenter', () => {
+                if (newButton.textContent.trim() !== active) {
+                    newButton.style.backgroundColor = '#3a3a3a'
+                    newButton.style.color = '#fff'
                 }
             })
             
-            button.addEventListener('mouseleave', () => {
-                if (buttonText !== active) {
-                    button.style.backgroundColor = 'transparent'
-                    button.style.color = '#aaa'
+            newButton.addEventListener('mouseleave', () => {
+                if (newButton.textContent.trim() !== active) {
+                    newButton.style.backgroundColor = 'transparent'
+                    newButton.style.color = '#aaa'
                 }
             })
+            
+            // Add click handler
+            newButton.addEventListener('click', () => applyFilter(newButton.textContent.trim()))
         })
     }
 
@@ -1384,13 +1611,12 @@ export const PresentationResearch = () => {
                                 border: '1px solid #444'
                             },
                             child: [
-                                // All button
                                 $({
                                     tag: 'button',
                                     att: { className: 'filter-btn' },
                                     text: 'All',
                                     style: {
-                                        backgroundColor: 'deepskyblue', // Active by default
+                                        backgroundColor: 'deepskyblue',
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 20px',
@@ -1400,17 +1626,12 @@ export const PresentationResearch = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         opacity: '1'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => applyFilter('All')
                                     }
                                 }),
-                                // University button
                                 $({
                                     tag: 'button',
                                     att: { className: 'filter-btn' },
-                                    text: 'University',
+                                    text: 'University/Local',
                                     style: {
                                         backgroundColor: 'transparent',
                                         border: 'none',
@@ -1422,57 +1643,8 @@ export const PresentationResearch = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         opacity: '0.8'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => applyFilter('University')
                                     }
                                 }),
-                                // International button
-                                $({
-                                    tag: 'button',
-                                    att: { className: 'filter-btn' },
-                                    text: 'International',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        opacity: '0.8'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => applyFilter('International')
-                                    }
-                                }),
-                                // National button
-                                $({
-                                    tag: 'button',
-                                    att: { className: 'filter-btn' },
-                                    text: 'National',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        opacity: '0.8'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => applyFilter('National')
-                                    }
-                                }),
-                                // Regional button
                                 $({
                                     tag: 'button',
                                     att: { className: 'filter-btn' },
@@ -1488,10 +1660,40 @@ export const PresentationResearch = () => {
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         opacity: '0.8'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => applyFilter('Regional')
+                                    }
+                                }),
+                                $({
+                                    tag: 'button',
+                                    att: { className: 'filter-btn' },
+                                    text: 'National',
+                                    style: {
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        padding: '8px 20px',
+                                        color: '#aaa',
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        opacity: '0.8'
+                                    }
+                                }),
+                                $({
+                                    tag: 'button',
+                                    att: { className: 'filter-btn' },
+                                    text: 'International',
+                                    style: {
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        padding: '8px 20px',
+                                        color: '#aaa',
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        opacity: '0.8'
                                     }
                                 })
                             ]
@@ -1549,10 +1751,16 @@ export const PresentationResearch = () => {
                                         method: (e) => {
                                             const term = e.target.value.toLowerCase()
                                             filteredData = researchData.filter(item => 
-                                                item.title?.toLowerCase().includes(term) ||
-                                                item.forum_title?.toLowerCase().includes(term) ||
-                                                item.presentor?.toLowerCase().includes(term) ||
-                                                item.venue?.toLowerCase().includes(term)
+                                                (item.title && item.title.toLowerCase().includes(term)) ||
+                                                (item.forum_title && Array.isArray(item.forum_title) && 
+                                                 item.forum_title.some(title => title.toLowerCase().includes(term))) ||
+                                                (typeof item.forum_title === 'string' && item.forum_title.toLowerCase().includes(term)) ||
+                                                (item.presentor && Array.isArray(item.presentor) && 
+                                                 item.presentor.some(p => p.toLowerCase().includes(term))) ||
+                                                (typeof item.presentor === 'string' && item.presentor.toLowerCase().includes(term)) ||
+                                                (item.venue && Array.isArray(item.venue) && 
+                                                 item.venue.some(v => v.toLowerCase().includes(term))) ||
+                                                (typeof item.venue === 'string' && item.venue.toLowerCase().includes(term))
                                             )
                                             updateTableWithData()
                                             updateRecordCount()
@@ -1581,7 +1789,7 @@ export const PresentationResearch = () => {
                 borderBottom: '1px solid #444'
             },
             child: [
-                // Total Presentations
+                // Total
                 $({
                     tag: 'div',
                     style: {
@@ -2015,7 +2223,7 @@ export const PresentationResearch = () => {
 // Helper function to escape HTML
 function escapeHtml(unsafe) {
     if (!unsafe) return ''
-    return unsafe
+    return String(unsafe)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
