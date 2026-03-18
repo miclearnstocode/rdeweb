@@ -1059,7 +1059,7 @@ export const PresentationResearch = () => {
                                             att: {
                                                 type: 'text',
                                                 name: 'venue',
-                                                placeholder: 'Enter venue',
+                                                placeholder: 'Forum venue',
                                                 required: true
                                             },
                                             style: {
