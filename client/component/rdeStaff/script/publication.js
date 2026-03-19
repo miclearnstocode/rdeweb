@@ -11,6 +11,27 @@ export const Publication = () => {
     let indexFilterContainer // Container for dynamic filter buttons
     let mainSearchTimeout // Timeout for search debouncing
 
+    // Close modal helper
+    function closeModal() {
+        if (modalOverlay) {
+            modalOverlay.style.opacity = '0'
+            setTimeout(() => {
+                if (modalOverlay && modalOverlay.parentNode) {
+                    modalOverlay.parentNode.removeChild(modalOverlay)
+                }
+            }, 300)
+        }
+    }
+
+    // Open edit publication modal
+    function openEditPublicationModal(publication) {
+        const modal = createPublicationModal(publication)
+        document.body.appendChild(modal)
+        setTimeout(() => {
+            modalOverlay.style.opacity = '1'
+        }, 10)
+    }
+
     // Search research titles from the database
     const searchResearchTitles = async (searchTerm) => {
         if (!searchTerm || searchTerm.length < 2) return []
@@ -303,7 +324,8 @@ export const Publication = () => {
         { field: 'issn', header: 'ISSN / ISBN', width: '130px', type: 'text', required: true },
         { field: 'index', header: 'Index', width: '100px', type: 'text', required: true, placeholder: 'Scopus, WOS, & etc.' },
         { field: 'doi', header: 'DOI', width: '200px', type: 'text', required: false },
-        { field: 'publication_link', header: 'Link / Site of Publication', width: '220px', type: 'text', required: true }
+        { field: 'publication_link', header: 'Link / Site of Publication', width: '220px', type: 'text', required: true },
+        { field: 'actions', header: 'Actions', width: '100px', type: 'actions' }
     ]
 
     // Index types with their colors
@@ -794,6 +816,57 @@ export const Publication = () => {
                 cellContent = formatPublicationDate(cellContent)
             }
 
+            if (col.field === 'actions') {
+                return $({
+                    tag: 'td',
+                    style: cellStyle,
+                    child: [
+                        $({
+                            tag: 'button',
+                            att: { title: 'Edit Publication' },
+                            style: {
+                                backgroundColor: 'transparent',
+                                border: '1px solid deepskyblue',
+                                color: 'deepskyblue',
+                                borderRadius: '4px',
+                                padding: '6px 12px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                transition: 'all 0.2s ease'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-pen-to-square' }
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: (e) => {
+                                    e.stopPropagation()
+                                    openEditPublicationModal(publication)
+                                }
+                            },
+                            event2: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    e.target.style.backgroundColor = 'deepskyblue'
+                                    e.target.style.color = '#fff'
+                                }
+                            },
+                            event3: {
+                                type: 'mouseleave',
+                                method: (e) => {
+                                    e.target.style.backgroundColor = 'transparent'
+                                    e.target.style.color = 'deepskyblue'
+                                }
+                            }
+                        })
+                    ]
+                })
+            }
+
             return $({
                 tag: 'td',
                 style: cellStyle,
@@ -862,20 +935,11 @@ export const Publication = () => {
         }, 10)
     }
 
-    // Close modal
-    const closeModal = () => {
-        if (modalOverlay) {
-            modalOverlay.style.opacity = '0'
-            setTimeout(() => {
-                if (modalOverlay && modalOverlay.parentNode) {
-                    modalOverlay.parentNode.removeChild(modalOverlay)
-                }
-            }, 300)
-        }
-    }
 
     // Create publication modal
-    const createPublicationModal = () => {
+    function createPublicationModal(editData = null) {
+        const isEdit = !!editData
+
         // Create form fields grid children
         const formFieldsGrid = $({
             tag: 'div',
@@ -884,7 +948,26 @@ export const Publication = () => {
                 gridTemplateColumns: 'repeat(2, 1fr)',
                 gap: '20px'
             },
-            child: columns.map(col => createFormField(col))
+            child: [
+                // Hidden ID field for editing
+                isEdit ? $({
+                    tag: 'input',
+                    att: { type: 'hidden', id: 'field-id', value: editData.id }
+                }) : null,
+                // Hidden research/endorsement IDs for editing (needed if we don't change them)
+                isEdit ? $({
+                    tag: 'input',
+                    att: { type: 'hidden', id: 'selected-research-id', value: editData.research_id }
+                }) : null,
+                isEdit ? $({
+                    tag: 'input',
+                    att: { type: 'hidden', id: 'selected-endorsement-id', value: editData.endorsement_id }
+                }) : null,
+                
+                ...columns
+                    .filter(col => col.field !== 'actions')
+                    .map(col => createFormField(col, editData))
+            ].filter(Boolean)
         })
 
         // Create form actions
@@ -934,7 +1017,7 @@ export const Publication = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        transition: 'all 0.2s ease'
+                        boxShadow: '0 4px 12px rgba(0, 191, 255, 0.2)'
                     },
                     child: [
                         $({
@@ -943,7 +1026,7 @@ export const Publication = () => {
                         }),
                         $({
                             tag: 'span',
-                            text: 'Save Publication'
+                            text: isEdit ? 'Update Publication' : 'Save Publication'
                         })
                     ],
                     event: {
@@ -1018,12 +1101,12 @@ export const Publication = () => {
                     child: [
                         $({
                             tag: 'span',
-                            att: { className: 'fa-solid fa-plus-circle' },
+                            att: { className: isEdit ? 'fa-solid fa-edit' : 'fa-solid fa-plus-circle' },
                             style: { color: 'deepskyblue', fontSize: '24px' }
                         }),
                         $({
                             tag: 'h2',
-                            text: 'Add New Publication',
+                            text: isEdit ? 'Edit Publication' : 'Add New Publication',
                             style: {
                                 color: '#fff',
                                 fontSize: '20px',
@@ -1094,8 +1177,10 @@ export const Publication = () => {
     }
 
     // Create form field based on column type
-    const createFormField = (column) => {
+    function createFormField(column, editData = null) {
+        const isEdit = !!editData
         const fieldId = `field-${column.field}`
+        const initialValue = isEdit ? (editData[column.field] || '') : ''
         let inputElement
 
         // Common label style
@@ -1123,6 +1208,34 @@ export const Publication = () => {
         }
 
         if (column.field === 'title') {
+            if (isEdit) {
+                // Return read-only version for edit mode
+                return $({
+                    tag: 'div',
+                    style: { display: 'flex', flexDirection: 'column' },
+                    child: [
+                        $({
+                            tag: 'label',
+                            style: labelStyle,
+                            text: column.header
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                ...inputBaseStyle,
+                                backgroundColor: '#222',
+                                color: '#888',
+                                borderStyle: 'dashed'
+                            },
+                            text: initialValue
+                        }),
+                        $({
+                            tag: 'input',
+                            att: { type: 'hidden', id: 'title-search-input', value: initialValue }
+                        })
+                    ]
+                })
+            }
             // Build the autocomplete search container and return early
             // so the generic input branches below don't overwrite it.
             const searchContainer = createTitleSearchField(column, inputBaseStyle)
@@ -1189,16 +1302,17 @@ export const Publication = () => {
                 child: [
                     $({
                         tag: 'option',
-                        att: { value: '', disabled: true, selected: true },
+                        att: { value: '', disabled: true, selected: !initialValue },
                         text: `Select ${column.header}`
                     }),
-                    ...options.map(opt =>
-                        $({
+                    ...options.map(opt => {
+                        const val = opt.value || opt
+                        return $({
                             tag: 'option',
-                            att: { value: opt.value || opt },
+                            att: { value: val, selected: val === initialValue },
                             text: opt.label || opt
                         })
-                    )
+                    })
                 ]
             })
         } else if (column.type === 'date') {
@@ -1208,6 +1322,7 @@ export const Publication = () => {
                     type: 'date',
                     id: fieldId,
                     name: fieldId,
+                    value: initialValue,
                     required: column.required ? true : undefined
                 },
                 style: inputBaseStyle
@@ -1219,6 +1334,7 @@ export const Publication = () => {
                     type: column.type || 'text',
                     id: fieldId,
                     name: fieldId,
+                    value: initialValue,
                     placeholder: column.placeholder || `${column.header}`,
                     required: column.required ? true : undefined
                 },
@@ -1264,6 +1380,10 @@ export const Publication = () => {
 
     // Save publication to database
     const savePublication = async () => {
+        // Check if we are editing
+        const editId = document.getElementById('field-id')?.value
+        const isEdit = !!editId
+
         // Get the selected research data from hidden fields
         const researchId = document.getElementById('selected-research-id')?.value
         const endorsementId = document.getElementById('selected-endorsement-id')?.value
@@ -1276,7 +1396,12 @@ export const Publication = () => {
 
         // Build FormData with the exact POST keys PHP expects
         const formData = new FormData()
-        formData.append('action', 'add')
+        formData.append('action', isEdit ? 'update' : 'add')
+        
+        if (isEdit) {
+            formData.append('id', editId)
+        }
+
         formData.append('research_id', researchId)
         formData.append('endorsement_id', endorsementId)
         formData.append('title', titleValue || '')
@@ -1306,7 +1431,7 @@ export const Publication = () => {
                 closeModal()
 
                 // Show success message
-                alert('Publication added successfully!')
+                alert(isEdit ? 'Publication updated successfully!' : 'Publication added successfully!')
             } else {
                 alert('Error: ' + result.message)
             }

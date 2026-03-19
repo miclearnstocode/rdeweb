@@ -312,6 +312,68 @@ class PublicationAPI {
             'count' => count($response)
         ]);
     }
+    /**
+     * Update an existing publication
+     */
+    public function updatePublication() {
+        $id = $_POST['id'] ?? '';
+        $published_title = $_POST['publishedTitle'] ?? '';
+        $publication_date = $_POST['publicationDate'] ?? '';
+        $journal_title = $_POST['journalTitle'] ?? '';
+        $volume = $_POST['volume'] ?? '';
+        $issue = $_POST['issue'] ?? '';
+        $issn = $_POST['issn'] ?? '';
+        $index_type = $_POST['index_type'] ?? '';
+        $doi = $_POST['doi'] ?? '';
+        $publication_link = $_POST['publication_link'] ?? '';
+
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'message' => 'Publication ID is required for update']);
+            return;
+        }
+
+        $query = "
+            UPDATE publications SET 
+                published_title = ?,
+                publication_date = ?,
+                journal_title = ?,
+                volume = ?,
+                issue = ?,
+                issn = ?,
+                index_type = ?,
+                doi = ?,
+                publication_link = ?,
+                updated_at = NOW()
+            WHERE id = ?
+        ";
+
+        $stmt = $this->con->prepare($query);
+        if (!$stmt) {
+            echo json_encode(['success' => false, 'message' => 'Update preparation failed: ' . $this->con->error]);
+            return;
+        }
+
+        $stmt->bind_param(
+            'sssssssssi',
+            $published_title,
+            $publication_date,
+            $journal_title,
+            $volume,
+            $issue,
+            $issn,
+            $index_type,
+            $doi,
+            $publication_link,
+            $id
+        );
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Publication updated successfully']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Update failed: ' . $stmt->error]);
+        }
+        $stmt->close();
+    }
 }
 
 // Initialize database connection
@@ -349,6 +411,9 @@ switch ($action) {
         break;
     case 'add':
         $api->addPublication();
+        break;
+    case 'update':
+        $api->updatePublication();
         break;
     case 'getAll':
         $api->getAllPublications();
