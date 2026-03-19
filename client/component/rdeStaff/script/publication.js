@@ -1,24 +1,309 @@
 import { $ } from "../../../lib/lib.js"
 
 export const Publication = () => {
-    let mainTableContainer
     let tableBody
     let modalOverlay
+    let statsContainer // Dynamic stats container
     let publications = [] // Store publications data
-    
+    let currentFilter = 'all' // Current active filter
+    let currentSearch = '' // Current search term
+    let mainTableContainer
+    let indexFilterContainer // Container for dynamic filter buttons
+    let mainSearchTimeout // Timeout for search debouncing
+
+    // Search research titles from the database
+    const searchResearchTitles = async (searchTerm) => {
+        if (!searchTerm || searchTerm.length < 2) return []
+
+        try {
+            const formData = new FormData()
+            formData.append('action', 'search')
+            formData.append('search', searchTerm)
+
+            const response = await fetch('/publish', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                return result.data
+            } else {
+                console.error('Search failed:', result.message)
+                return []
+            }
+        } catch (error) {
+            console.error('Error searching titles:', error)
+            return []
+        }
+    }
+
+    // Load all publications from database with filter and search options
+    const loadPublications = async (filter = currentFilter, search = currentSearch) => {
+        try {
+            currentFilter = filter
+            currentSearch = search
+            
+            const formData = new FormData()
+            formData.append('action', 'getAll')
+
+            if (currentFilter !== 'all') {
+                formData.append('index_filter', currentFilter.toLowerCase())
+            }
+            
+            if (currentSearch) {
+                formData.append('search', currentSearch)
+            }
+
+            const response = await fetch('/publish', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                publications = result.data
+                updateTableDisplay()
+                updateFilterUI()
+            }
+        } catch (error) {
+            console.error('Error loading publications:', error)
+        }
+    }
+
+    // Export current filtered publications to Excel
+    const exportToExcel = () => {
+        if (typeof XLSX === 'undefined') {
+            alert('Excel export library (SheetJS) is not loaded.')
+            return
+        }
+
+        // Apply current filter to our local publications list
+        const dataToExport = currentFilter.toLowerCase() === 'all'
+            ? publications
+            : publications.filter(p => (p.index || '').toLowerCase() === currentFilter.toLowerCase())
+
+        if (dataToExport.length === 0) {
+            alert(`No publications found for filter: ${currentFilter}`)
+            return
+        }
+
+        // Prepare the workbook data
+        const worksheetData = [
+            columns.map(col => col.header), // Headers
+            ...dataToExport.map(pub => columns.map(col => {
+                let value = pub[col.field]
+                if (col.field === 'publicationDate' && value) {
+                    value = formatPublicationDate(value)
+                }
+                return value || '—'
+            }))
+        ]
+
+        // Create workbook and sheet
+        const wb = XLSX.utils.book_new()
+        const ws = XLSX.utils.aoa_to_sheet(worksheetData)
+
+        // Basic styling: Column widths
+        ws['!cols'] = columns.map(col => ({ wch: 25 }))
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Publications')
+
+        // Generate filename
+        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+        const fileName = `Publications_${currentFilter.toUpperCase()}_${timestamp}.xlsx`
+
+        // Save file
+        XLSX.writeFile(wb, fileName)
+    }
+
+    setTimeout(() => {
+        loadPublications()
+    }, 100)
+    // Create title search field
+    const createTitleSearchField = (column, inputBaseStyle) => {
+        const containerId = 'title-search-container'
+        const inputId = 'title-search-input'
+        const resultsId = 'title-search-results'
+        const hiddenResearchId = 'selected-research-id'
+        const hiddenEndorsementId = 'selected-endorsement-id'
+
+        // Create container div
+        const container = $({
+            tag: 'div',
+            style: {
+                position: 'relative',
+                width: '100%'
+            }
+        })
+
+        // Create hidden inputs for storing selected research data
+        const hiddenResearchInput = $({
+            tag: 'input',
+            att: {
+                type: 'hidden',
+                id: hiddenResearchId,
+                name: 'selected_research_id'
+            }
+        })
+
+        const hiddenEndorsementInput = $({
+            tag: 'input',
+            att: {
+                type: 'hidden',
+                id: hiddenEndorsementId,
+                name: 'selected_endorsement_id'
+            }
+        })
+
+        // Create search input
+        const searchInput = $({
+            tag: 'input',
+            att: {
+                type: 'text',
+                id: inputId,
+                placeholder: 'Search completed research titles...',
+                autocomplete: 'off'
+            },
+            style: {
+                ...inputBaseStyle,
+                width: '100%'
+            }
+        })
+
+        // Create results dropdown
+        const resultsDropdown = $({
+            tag: 'div',
+            att: { id: resultsId },
+            style: {
+                position: 'absolute',
+                top: '100%',
+                left: '0',
+                right: '0',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                backgroundColor: '#333',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                marginTop: '4px',
+                display: 'none',
+                zIndex: '1000',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+            }
+        })
+
+        // Add event listener for search input
+        let searchTimeout
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout)
+            const searchTerm = e.target.value
+
+            if (searchTerm.length < 2) {
+                resultsDropdown.style.display = 'none'
+                return
+            }
+
+            searchTimeout = setTimeout(async () => {
+                const results = await searchResearchTitles(searchTerm)
+
+                // Clear previous results
+                resultsDropdown.innerHTML = ''
+
+                if (results.length === 0) {
+                    const noResult = $({
+                        tag: 'div',
+                        style: {
+                            padding: '10px',
+                            color: '#aaa',
+                            textAlign: 'center'
+                        },
+                        text: 'No matching research found'
+                    })
+                    resultsDropdown.appendChild(noResult)
+                } else {
+                    results.forEach(result => {
+                        const resultItem = $({
+                            tag: 'div',
+                            style: {
+                                padding: '10px',
+                                cursor: 'pointer',
+                                borderBottom: '1px solid #444',
+                                transition: 'background 0.2s ease'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: { color: '#fff', fontWeight: '500', marginBottom: '4px' },
+                                    text: result.title
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: { color: '#aaa', fontSize: '12px' },
+                                    text: `${Array.isArray(result.author) ? result.author.join(', ') : (result.author || 'No author')} • ${result.event || ''}`
+                                })
+                            ]
+                        })
+
+                        // Add click event to select this research
+                        resultItem.addEventListener('click', () => {
+                            // Set the search input value
+                            searchInput.value = result.title
+
+                            // Set hidden fields
+                            document.getElementById(hiddenResearchId).value = result.id
+                            document.getElementById(hiddenEndorsementId).value = result.endorsement_id
+
+                            // Hide dropdown
+                            resultsDropdown.style.display = 'none'
+
+
+                        })
+
+                        resultItem.addEventListener('mouseenter', (e) => {
+                            e.currentTarget.style.backgroundColor = '#444'
+                        })
+
+                        resultItem.addEventListener('mouseleave', (e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent'
+                        })
+
+                        resultsDropdown.appendChild(resultItem)
+                    })
+                }
+
+                resultsDropdown.style.display = 'block'
+            }, 300)
+        })
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) {
+                resultsDropdown.style.display = 'none'
+            }
+        })
+
+        // Assemble the container
+        container.appendChild(hiddenResearchInput)
+        container.appendChild(hiddenEndorsementInput)
+        container.appendChild(searchInput)
+        container.appendChild(resultsDropdown)
+
+        return container
+    }
     // Columns for publication research
     const columns = [
+        { field: 'title', header: 'Title of Completed Research', width: '350px', type: 'text', required: true },
         { field: 'publishedTitle', header: 'Published Title', width: '350px', type: 'text', required: true },
         { field: 'publicationDate', header: 'Date of Publication', width: '150px', type: 'date', required: true },
         { field: 'journalTitle', header: 'Title of Journal / Publication', width: '300px', type: 'text', required: true },
-        { field: 'volumeIssue', header: 'Volume & Issue', width: '120px', type: 'text', required: true },
+        { field: 'volume', header: 'Volume', width: '100px', type: 'text', required: true },
+        { field: 'issue', header: 'Issue', width: '100px', type: 'text', required: true },
         { field: 'issn', header: 'ISSN / ISBN', width: '130px', type: 'text', required: true },
-        { field: 'index', header: 'Index', width: '100px', type: 'select', required: true },
-        { field: 'authors', header: 'Author/s', width: '250px', type: 'text', required: true },
-        { field: 'campus', header: 'Campus/Center', width: '120px', type: 'select', required: true },
-        { field: 'category', header: 'Category', width: '120px', type: 'select', required: true },
+        { field: 'index', header: 'Index', width: '100px', type: 'text', required: true, placeholder: 'Scopus, WOS, & etc.' },
         { field: 'doi', header: 'DOI', width: '200px', type: 'text', required: false },
-        { field: 'quartile', header: 'Quartile', width: '80px', type: 'select', required: false }
+        { field: 'publication_link', header: 'Link / Site of Publication', width: '220px', type: 'text', required: true }
     ]
 
     // Index types with their colors
@@ -28,23 +313,9 @@ export const Publication = () => {
         { value: 'wos', label: 'WOS', color: '#ffffff', bgColor: '#4caf50' }
     ]
 
-    // Quartile options
-    const quartileOptions = ['Q1', 'Q2', 'Q3', 'Q4', 'N/A']
 
-    // Campus options
-    const campusOptions = [
-        'Roxas City Main', 'Dayao', 'Burias', 'Pontevedra', 'Sigma', 'Pilar',
-        'Tapaz', 'Dumarao', 'Crop Science Research & Developement C(CSRDC)',
-        'Livestock Research & Development C(LRDC)', 'Fisheries Research & Development C(FRDC)',
-        'Food and Industrial Technology Research & Development C(FITRDC)', 'Social Science Research & Development C(SSRDC)',
-        'Machinery and Agricultural Technology Engineering C(MATEC)', 'Coconut Research and Development C(Coco RDC)', 'Extension (Extension)'
-    ]
 
-    // Category options
-    const categoryOptions = [
-        'Agricultural Machinery', 'Development', 'Natural/Biological', 'Engineering', 'Extension', 'Food',
-        'Industrial', 'Information Technology', 'Social Science'
-    ]
+
 
     const getMainContainer = (el) => {
         mainTableContainer = el
@@ -55,13 +326,211 @@ export const Publication = () => {
         updateTableDisplay()
     }
 
+    // Individual stat card factory
+    const createSingleStatCard = (stat) => {
+        return $({
+            tag: 'div',
+            att: { className: 'stat-card' },
+            style: {
+                backgroundColor: '#2d2d2d',
+                borderRadius: '16px',
+                padding: '18px 22px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                flex: '1',
+                minWidth: '220px',
+                border: `1px solid ${stat.borderColor || '#444'}`,
+                transition: 'all 0.3s ease',
+                position: 'relative',
+                overflow: 'hidden'
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        position: 'absolute',
+                        top: '0',
+                        right: '0',
+                        width: '100px',
+                        height: '100px',
+                        background: `radial-gradient(circle at top right, ${stat.color}20, transparent 70%)`,
+                        borderRadius: '50%',
+                        zIndex: '0'
+                    }
+                }),
+                $({
+                    tag: 'div',
+                    style: {
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '16px',
+                        backgroundColor: `${stat.color}15`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: `1px solid ${stat.color}30`,
+                        position: 'relative',
+                        zIndex: '1'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: `fa-solid ${stat.icon}` },
+                            style: {
+                                color: stat.color,
+                                fontSize: '28px',
+                                textShadow: stat.textColor === '#000000' ? 'none' : '0 2px 4px rgba(0,0,0,0.2)'
+                            }
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        position: 'relative',
+                        zIndex: '1'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                gap: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { id: stat.id },
+                                    text: stat.value,
+                                    style: {
+                                        fontSize: '34px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2',
+                                        letterSpacing: '-1px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: stat.subtext,
+                                    style: {
+                                        fontSize: '11px',
+                                        color: '#666',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'span',
+                            text: stat.label,
+                            style: {
+                                color: '#aaa',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                marginTop: '4px'
+                            }
+                        })
+                    ]
+                })
+            ]
+        })
+    }
+
+    // Refresh stats cards to reflect current publications data
+    const refreshStats = () => {
+        if (!statsContainer) return
+
+        // Clear current stats
+        statsContainer.innerHTML = ''
+
+        // 1. Total Publications (Always first)
+        const baseStats = [
+            {
+                label: 'Total Publications',
+                id: 'stat-total',
+                value: publications.length.toString(),
+                icon: 'fa-book',
+                color: 'deepskyblue',
+                subtext: 'All time'
+            }
+        ]
+
+        // 2. Base index-based stats (Always show Scopus and WOS)
+        const fixedIndices = ['scopus', 'wos']
+
+        // Find all unique indices from data
+        const dataIndices = [...new Set(publications
+            .map(p => (p.index || '').toLowerCase())
+            .filter(idx => idx !== ''))]
+
+        // Combine fixed and dynamic, ensuring Scopus and WOS are always present
+        const allIndicesToShow = [...new Set([...fixedIndices, ...dataIndices])].sort()
+
+        const dynamicStats = allIndicesToShow.map(idx => {
+            const count = publications.filter(p => (p.index || '').toLowerCase() === idx).length
+            const config = indexTypes.find(i => i.value === idx) || {
+                label: formatIndexLabel(idx),
+                color: '#ffffff'
+            }
+
+            return {
+                label: config.label,
+                id: `stat-${idx}`,
+                value: count.toString(),
+                icon: idx === 'scopus' ? 'fa-magnifying-glass' : (idx === 'wos' ? 'fa-globe' : 'fa-check-circle'),
+                color: idx === 'scopus' ? '#ffd700' : (idx === 'wos' ? '#4caf50' : '#ffffff'),
+                subtext: idx,
+                textColor: idx === 'scopus' ? '#000000' : '#ffffff'
+            }
+        })
+
+        // Combine and render
+        const allStats = [...baseStats, ...dynamicStats]
+
+        allStats.forEach(stat => {
+            const card = createSingleStatCard(stat)
+            statsContainer.appendChild(card)
+        })
+
+        const recCount = document.querySelector('.record-count')
+        if (recCount) recCount.textContent = `${publications.length} publication${publications.length !== 1 ? 's' : ''}`
+    }
+
+    // Helper to format index labels nicely
+    const formatIndexLabel = (idx) => {
+        if (!idx) return ''
+        const val = idx.trim().toLowerCase()
+        if (val === 'all') return 'All'
+        if (val === 'scopus') return 'Scopus'
+        if (val === 'wos') return 'WOS'
+
+        const config = indexTypes.find(i => i.value === val)
+        if (config) return config.label
+
+        // Try to find the original casing from the publications data
+        const match = publications.find(p => (p.index || '').toLowerCase() === val)
+        if (match && match.index) return match.index
+
+        // Default to Title Case
+        return val.charAt(0).toUpperCase() + val.slice(1)
+    }
+
     // Function to update table display based on publications data
     const updateTableDisplay = () => {
         if (!tableBody) return
-        
+
+        // Refresh stats to reflect live data
+        refreshStats()
+
         // Clear table body
         tableBody.innerHTML = ''
-        
+
         if (publications.length === 0) {
             // Show empty state
             const emptyState = createEmptyState()
@@ -74,6 +543,77 @@ export const Publication = () => {
             })
         }
     }
+
+    // Helper to update filter buttons dynamically
+    const updateFilterUI = () => {
+        if (!indexFilterContainer) return
+
+        // Clear current buttons
+        indexFilterContainer.innerHTML = ''
+
+        // Base filter types
+        const baseTypes = ['All', 'Scopus', 'WOS']
+
+        // Get dynamic types from data that aren't in baseTypes
+        const dynamicTypesFromData = [...new Set(publications
+            .map(p => p.index)
+            .filter(idx => {
+                if (!idx) return false
+                const normalized = idx.toLowerCase()
+                return !baseTypes.some(b => b.toLowerCase() === normalized)
+            })
+        )].sort()
+
+        const allTypes = [...baseTypes, ...dynamicTypesFromData]
+
+        allTypes.forEach(type => {
+            const isActive = currentFilter.toLowerCase() === type.toLowerCase()
+            const btn = $({
+                tag: 'button',
+                text: formatIndexLabel(type),
+                att: {
+                    className: `filter-btn filter-${type.toLowerCase()}`,
+                    'data-type': type.toLowerCase()
+                },
+                style: {
+                    backgroundColor: isActive ? 'deepskyblue' : 'transparent',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 20px',
+                    color: isActive ? '#fff' : '#aaa',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => loadPublications(type.toLowerCase())
+                },
+                event2: {
+                    type: 'mouseenter',
+                    method: (e) => {
+                        if (currentFilter.toLowerCase() !== type.toLowerCase()) {
+                            e.target.style.backgroundColor = '#444'
+                            e.target.style.color = '#fff'
+                        }
+                    }
+                },
+                event3: {
+                    type: 'mouseleave',
+                    method: (e) => {
+                        if (currentFilter.toLowerCase() !== type.toLowerCase()) {
+                            e.target.style.backgroundColor = 'transparent'
+                            e.target.style.color = '#aaa'
+                        }
+                    }
+                }
+            })
+            indexFilterContainer.appendChild(btn)
+        })
+    }
+
+    // Refresh stat card numbers and generate new ones for unique index types
 
     // Create empty state
     const createEmptyState = () => {
@@ -112,8 +652,8 @@ export const Publication = () => {
                                         $({
                                             tag: 'span',
                                             att: { className: 'fa-solid fa-book-open' },
-                                            style: { 
-                                                fontSize: '100px', 
+                                            style: {
+                                                fontSize: '100px',
                                                 color: 'deepskyblue',
                                                 opacity: 0.2,
                                                 position: 'absolute',
@@ -125,8 +665,8 @@ export const Publication = () => {
                                         $({
                                             tag: 'span',
                                             att: { className: 'fa-solid fa-scroll' },
-                                            style: { 
-                                                fontSize: '70px', 
+                                            style: {
+                                                fontSize: '70px',
                                                 color: '#ffd700',
                                                 opacity: 0.25,
                                                 position: 'absolute',
@@ -138,8 +678,8 @@ export const Publication = () => {
                                         $({
                                             tag: 'span',
                                             att: { className: 'fa-solid fa-award' },
-                                            style: { 
-                                                fontSize: '50px', 
+                                            style: {
+                                                fontSize: '50px',
                                                 color: '#4caf50',
                                                 opacity: 0.3,
                                                 position: 'absolute',
@@ -153,8 +693,8 @@ export const Publication = () => {
                                 $({
                                     tag: 'div',
                                     text: 'No Published Research Found',
-                                    style: { 
-                                        fontSize: '26px', 
+                                    style: {
+                                        fontSize: '26px',
                                         marginBottom: '12px',
                                         fontWeight: '600',
                                         color: '#fff',
@@ -164,8 +704,8 @@ export const Publication = () => {
                                 $({
                                     tag: 'div',
                                     text: 'Published research papers in refereed journals, Scopus, WOS, and other',
-                                    style: { 
-                                        fontSize: '15px', 
+                                    style: {
+                                        fontSize: '15px',
                                         opacity: 0.7,
                                         textAlign: 'center',
                                         lineHeight: '1.6'
@@ -174,8 +714,8 @@ export const Publication = () => {
                                 $({
                                     tag: 'div',
                                     text: 'indexed publications will be displayed here',
-                                    style: { 
-                                        fontSize: '15px', 
+                                    style: {
+                                        fontSize: '15px',
                                         opacity: 0.7,
                                         marginBottom: '30px',
                                         textAlign: 'center'
@@ -219,6 +759,37 @@ export const Publication = () => {
                 })
             }
 
+            if (col.field === 'publication_link' && cellContent !== '—') {
+                return $({
+                    tag: 'td',
+                    style: cellStyle,
+                    child: [
+                        $({
+                            tag: 'a',
+                            text: cellContent,
+                            att: {
+                                href: cellContent.startsWith('http') ? cellContent : `https://${cellContent}`,
+                                target: '_blank',
+                                title: 'Open publication link'
+                            },
+                            style: {
+                                color: 'deepskyblue',
+                                textDecoration: 'none',
+                                fontWeight: '500'
+                            },
+                            event: {
+                                type: 'mouseenter',
+                                method: (e) => e.target.style.textDecoration = 'underline'
+                            },
+                            event2: {
+                                type: 'mouseleave',
+                                method: (e) => e.target.style.textDecoration = 'none'
+                            }
+                        })
+                    ]
+                })
+            }
+
             if (col.field === 'publicationDate' && cellContent !== '—') {
                 cellContent = formatPublicationDate(cellContent)
             }
@@ -255,11 +826,16 @@ export const Publication = () => {
 
     // Function to create index badge with color coding
     const createIndexBadge = (indexType) => {
-        const indexConfig = indexTypes.find(i => i.value === indexType) || indexTypes[0]
-        
+        const val = indexType ? indexType.toLowerCase() : ''
+        const indexConfig = indexTypes.find(i => i.value === val) || {
+            label: indexType,
+            bgColor: '#2a2a2a',
+            color: '#ffffff'
+        }
+
         return $({
             tag: 'span',
-            att: { className: `index-badge index-${indexType}` },
+            att: { className: `index-badge index-${val}` },
             style: {
                 padding: '6px 12px',
                 borderRadius: '20px',
@@ -270,7 +846,7 @@ export const Publication = () => {
                 display: 'inline-block',
                 backgroundColor: indexConfig.bgColor,
                 color: indexConfig.color,
-                border: indexType === 'refereed' ? '1px solid #444' : 'none',
+                border: (val === 'refereed' || !indexTypes.some(i => i.value === val)) ? '1px solid #444' : 'none',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
             },
             text: indexConfig.label
@@ -546,10 +1122,44 @@ export const Publication = () => {
             boxSizing: 'border-box'
         }
 
+        if (column.field === 'title') {
+            // Build the autocomplete search container and return early
+            // so the generic input branches below don't overwrite it.
+            const searchContainer = createTitleSearchField(column, inputBaseStyle)
+
+            const labelChildren = [
+                $({
+                    tag: 'span',
+                    text: column.header
+                }),
+                $({
+                    tag: 'span',
+                    text: ' *',
+                    style: { color: 'deepskyblue', marginLeft: '4px' }
+                })
+            ]
+
+            return $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column'
+                },
+                child: [
+                    $({
+                        tag: 'label',
+                        att: { for: 'title-search-input' },
+                        style: labelStyle,
+                        child: labelChildren
+                    }),
+                    searchContainer
+                ]
+            })
+        }
         // Create different input types
         if (column.type === 'select') {
             let options = []
-            
+
             if (column.field === 'index') {
                 options = indexTypes
             } else if (column.field === 'quartile') {
@@ -582,7 +1192,7 @@ export const Publication = () => {
                         att: { value: '', disabled: true, selected: true },
                         text: `Select ${column.header}`
                     }),
-                    ...options.map(opt => 
+                    ...options.map(opt =>
                         $({
                             tag: 'option',
                             att: { value: opt.value || opt },
@@ -609,7 +1219,7 @@ export const Publication = () => {
                     type: column.type || 'text',
                     id: fieldId,
                     name: fieldId,
-                    placeholder: `${column.header}`,
+                    placeholder: column.placeholder || `${column.header}`,
                     required: column.required ? true : undefined
                 },
                 style: inputBaseStyle
@@ -652,46 +1262,58 @@ export const Publication = () => {
         })
     }
 
-    // Update the savePublication function to properly get form data
-    const savePublication = () => {
-        const form = document.getElementById('publicationForm')
-        if (!form) return
+    // Save publication to database
+    const savePublication = async () => {
+        // Get the selected research data from hidden fields
+        const researchId = document.getElementById('selected-research-id')?.value
+        const endorsementId = document.getElementById('selected-endorsement-id')?.value
+        const titleValue = document.getElementById('title-search-input')?.value
 
-        // Get form data
-        const newPublication = {}
-        
-        columns.forEach(col => {
-            const fieldId = `field-${col.field}`
-            const field = form.elements[fieldId]
-            if (field) {
-                const value = field.value
-                if (value) {
-                    newPublication[col.field] = value
-                }
-            }
-        })
-
-        // Validate required fields
-        const missingRequired = columns
-            .filter(col => col.required && !newPublication[col.field])
-            .map(col => col.header)
-
-        if (missingRequired.length > 0) {
-            alert(`Please fill in required fields: ${missingRequired.join(', ')}`)
+        if (!researchId || !endorsementId) {
+            alert('Please select a research title from the suggestions first')
             return
         }
 
-        // Add to publications array
-        publications.push(newPublication)
-        
-        // Update table display
-        updateTableDisplay()
-        
-        // Close modal
-        closeModal()
-        
-        // Show success message (optional)
-        console.log('Publication added:', newPublication)
+        // Build FormData with the exact POST keys PHP expects
+        const formData = new FormData()
+        formData.append('action', 'add')
+        formData.append('research_id', researchId)
+        formData.append('endorsement_id', endorsementId)
+        formData.append('title', titleValue || '')
+        formData.append('publishedTitle', document.getElementById('field-publishedTitle')?.value || '')
+        formData.append('publicationDate', document.getElementById('field-publicationDate')?.value || '')
+        formData.append('journalTitle', document.getElementById('field-journalTitle')?.value || '')
+        formData.append('volume', document.getElementById('field-volume')?.value || '')
+        formData.append('issue', document.getElementById('field-issue')?.value || '')
+        formData.append('issn', document.getElementById('field-issn')?.value || '')
+        formData.append('index_type', document.getElementById('field-index')?.value || '')
+        formData.append('doi', document.getElementById('field-doi')?.value || '')
+        formData.append('publication_link', document.getElementById('field-publication_link')?.value || '')
+
+        try {
+            const response = await fetch('/publish', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                // Refresh publications list
+                await loadPublications()
+
+                // Close modal
+                closeModal()
+
+                // Show success message
+                alert('Publication added successfully!')
+            } else {
+                alert('Error: ' + result.message)
+            }
+        } catch (error) {
+            console.error('Error saving publication:', error)
+            alert('Failed to save publication')
+        }
     }
 
     // Filter and search bar with index filter
@@ -763,6 +1385,7 @@ export const Publication = () => {
                         }),
                         $({
                             tag: 'div',
+                            att: { className: 'index-filters' },
                             style: {
                                 display: 'flex',
                                 gap: '8px',
@@ -771,72 +1394,14 @@ export const Publication = () => {
                                 borderRadius: '12px',
                                 border: '1px solid #444'
                             },
-                            child: [
-                                $({
-                                    tag: 'button',
-                                    text: 'All',
-                                    style: {
-                                        backgroundColor: 'deepskyblue',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#fff',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Refereed',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Scopus',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'WOS',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                })
-                            ]
+                            elementHandler: (el) => {
+                                indexFilterContainer = el
+                                updateFilterUI()
+                            }
                         })
                     ]
                 }),
-                
+
                 // Right section - Search, filters, and action buttons
                 $({
                     tag: 'div',
@@ -871,7 +1436,7 @@ export const Publication = () => {
                                     tag: 'input',
                                     att: {
                                         type: 'text',
-                                        placeholder: 'Search publications...',
+                                        placeholder: 'Search completed research',
                                         className: 'publication-search-input'
                                     },
                                     style: {
@@ -888,73 +1453,17 @@ export const Publication = () => {
                                     event: {
                                         type: 'input',
                                         method: (e) => {
-                                            console.log('Searching:', e.target.value)
+                                            const term = e.target.value
+                                            clearTimeout(mainSearchTimeout)
+                                            mainSearchTimeout = setTimeout(() => {
+                                                loadPublications(currentFilter, term)
+                                            }, 400)
                                         }
                                     }
                                 })
                             ]
                         }),
-                        
-                        // Index filter dropdown
-                        $({
-                            tag: 'select',
-                            att: {
-                                className: 'index-filter'
-                            },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 32px 10px 16px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                outline: 'none',
-                                cursor: 'pointer',
-                                appearance: 'none',
-                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 10px center',
-                                backgroundSize: '16px',
-                                minWidth: '130px'
-                            },
-                            child: [
-                                $({ tag: 'option', att: { value: '' }, text: 'All Indexes' }),
-                                ...indexTypes.map(index => 
-                                    $({ tag: 'option', att: { value: index.value }, text: index.label })
-                                )
-                            ]
-                        }),
-                        
-                        // Quartile filter dropdown
-                        $({
-                            tag: 'select',
-                            att: {
-                                className: 'quartile-filter'
-                            },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 32px 10px 16px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                outline: 'none',
-                                cursor: 'pointer',
-                                appearance: 'none',
-                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 10px center',
-                                backgroundSize: '16px',
-                                minWidth: '120px'
-                            },
-                            child: [
-                                $({ tag: 'option', att: { value: '' }, text: 'All Quartiles' }),
-                                ...quartileOptions.map(quartile => 
-                                    $({ tag: 'option', att: { value: quartile }, text: quartile })
-                                )
-                            ]
-                        }),
-                        
+
                         // Action buttons group
                         $({
                             tag: 'div',
@@ -1001,43 +1510,7 @@ export const Publication = () => {
                                         method: openAddPublicationModal
                                     }
                                 }),
-                                
-                                // Import Publications button
-                                $({
-                                    tag: 'button',
-                                    att: { className: 'import-btn' },
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: '1px solid #444',
-                                        borderRadius: '30px',
-                                        padding: '10px 20px',
-                                        color: '#fff',
-                                        fontSize: '14px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        transition: 'all 0.3s ease'
-                                    },
-                                    child: [
-                                        $({
-                                            tag: 'span',
-                                            att: { className: 'fa-solid fa-file-import' }
-                                        }),
-                                        $({
-                                            tag: 'span',
-                                            text: 'Import'
-                                        })
-                                    ],
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            console.log('Import publications clicked')
-                                        }
-                                    }
-                                }),
-                                
+
                                 // Export button
                                 $({
                                     tag: 'button',
@@ -1064,7 +1537,11 @@ export const Publication = () => {
                                             tag: 'span',
                                             text: 'Export'
                                         })
-                                    ]
+                                    ],
+                                    event: {
+                                        type: 'click',
+                                        method: exportToExcel
+                                    }
                                 })
                             ]
                         })
@@ -1074,157 +1551,12 @@ export const Publication = () => {
         })
     }
 
+
     // Statistics cards for publication metrics
     const StatsCards = () => {
-        const stats = [
-            { 
-                label: 'Total Publications', 
-                value: publications.length.toString(), 
-                icon: 'fa-book',
-                color: 'deepskyblue',
-                subtext: 'All time'
-            },
-            { 
-                label: 'Scopus', 
-                value: publications.filter(p => p.index === 'scopus').length.toString(), 
-                icon: 'fa-magnifying-glass',
-                color: '#ffd700',
-                subtext: 'Yellow',
-                textColor: '#000000'
-            },
-            { 
-                label: 'WOS', 
-                value: publications.filter(p => p.index === 'wos').length.toString(), 
-                icon: 'fa-globe',
-                color: '#4caf50',
-                subtext: 'Green'
-            },
-            { 
-                label: 'Refereed', 
-                value: publications.filter(p => p.index === 'refereed').length.toString(), 
-                icon: 'fa-check-circle',
-                color: '#ffffff',
-                subtext: 'White',
-                borderColor: '#444'
-            }
-        ]
-
-        const statCards = stats.map(stat => {
-            return $({
-                tag: 'div',
-                att: { className: 'stat-card' },
-                style: {
-                    backgroundColor: '#2d2d2d',
-                    borderRadius: '16px',
-                    padding: '18px 22px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    flex: '1',
-                    minWidth: '200px',
-                    border: `1px solid ${stat.borderColor || '#444'}`,
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    overflow: 'hidden'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            position: 'absolute',
-                            top: '0',
-                            right: '0',
-                            width: '100px',
-                            height: '100px',
-                            background: `radial-gradient(circle at top right, ${stat.color}20, transparent 70%)`,
-                            borderRadius: '50%',
-                            zIndex: '0'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '56px',
-                            height: '56px',
-                            borderRadius: '16px',
-                            backgroundColor: `${stat.color}15`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: `1px solid ${stat.color}30`,
-                            position: 'relative',
-                            zIndex: '1'
-                        },
-                        child: [
-                            $({
-                                tag: 'span',
-                                att: { className: `fa-solid ${stat.icon}` },
-                                style: { 
-                                    color: stat.color, 
-                                    fontSize: '28px',
-                                    textShadow: stat.textColor === '#000000' ? 'none' : '0 2px 4px rgba(0,0,0,0.2)'
-                                }
-                            })
-                        ]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: { 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            position: 'relative',
-                            zIndex: '1'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    alignItems: 'baseline',
-                                    gap: '8px'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'span',
-                                        text: stat.value,
-                                        style: {
-                                            fontSize: '34px',
-                                            fontWeight: '700',
-                                            color: '#fff',
-                                            lineHeight: '1.2',
-                                            letterSpacing: '-1px'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        text: stat.subtext,
-                                        style: {
-                                            fontSize: '11px',
-                                            color: '#666',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.5px'
-                                        }
-                                    })
-                                ]
-                            }),
-                            $({
-                                tag: 'span',
-                                text: stat.label,
-                                style: {
-                                    fontSize: '13px',
-                                    color: '#aaa',
-                                    fontWeight: '500'
-                                }
-                            })
-                        ]
-                    })
-                ]
-            })
-        })
-
         return $({
             tag: 'div',
-            att: { className: 'stats-cards' },
+            att: { className: 'stats-cards-wrapper' },
             style: {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -1233,9 +1565,14 @@ export const Publication = () => {
                 backgroundColor: '#2a2a2a',
                 borderBottom: '1px solid #444'
             },
-            child: statCards
+            elementHandler: (el) => {
+                statsContainer = el
+                refreshStats()
+            }
         })
     }
+
+
 
     // Table header component
     const TableHeader = () => {
@@ -1262,9 +1599,9 @@ export const Publication = () => {
                 child: [
                     $({
                         tag: 'div',
-                        style: { 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: '8px',
                             cursor: 'pointer',
                             userSelect: 'none'
@@ -1277,8 +1614,8 @@ export const Publication = () => {
                             $({
                                 tag: 'span',
                                 att: { className: 'fa-solid fa-arrow-up-wide-short' },
-                                style: { 
-                                    fontSize: '11px', 
+                                style: {
+                                    fontSize: '11px',
                                     color: '#555',
                                     opacity: '0.5',
                                     transition: 'all 0.2s ease'
@@ -1373,10 +1710,10 @@ export const Publication = () => {
 export const formatPublicationDate = (date) => {
     if (!date) return '—'
     const d = new Date(date)
-    return d.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+    return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
     })
 }
 
@@ -1392,7 +1729,7 @@ export const getIndexColor = (indexType) => {
 export const createIndexBadgeElement = (indexType) => {
     const config = getIndexColor(indexType)
     const label = indexType.charAt(0).toUpperCase() + indexType.slice(1)
-    
+
     return $({
         tag: 'span',
         att: { className: `index-badge index-${indexType}` },
@@ -1410,15 +1747,4 @@ export const createIndexBadgeElement = (indexType) => {
         },
         text: label
     })
-}
-
-export const getPublicationStats = (data) => {
-    // This function will calculate statistics from the data
-    // Will be implemented when backend data is available
-    return {
-        total: 0,
-        scopus: 0,
-        wos: 0,
-        refereed: 0
-    }
 }
