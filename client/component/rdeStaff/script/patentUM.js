@@ -1,283 +1,1392 @@
-import { $ } from "../../../lib/lib.js";
+import { $, ValidatePDF } from "../../../lib/lib.js";
 
 export const PatentUM = () => {
     let mainTableContainer;
     let tableBody;
-    
-    // Columns for patent and utility model
-    const columns = [
-        { field: 'productName', header: 'Product Name', width: '250px' },
-        { field: 'methods', header: 'Methods / Process', width: '280px' },
-        { field: 'patentNumber', header: 'Patent Number', width: '150px' },
-        { field: 'productDescription', header: 'Product Description', width: '300px' },
-        { field: 'benefitingIndustry', header: 'Benefiting Industry / Community', width: '280px' },
-        { field: 'status', header: 'Status', width: '120px' },
-        { field: 'filingDate', header: 'Filing Date', width: '130px' },
-        { field: 'grantDate', header: 'Grant Date', width: '130px' },
-        { field: 'inventors', header: 'Inventors', width: '250px' },
-        { field: 'assignee', header: 'Assignee', width: '200px' },
-        { field: 'campus', header: 'Campus/Center', width: '120px' },
-        { field: 'type', header: 'Type', width: '120px' }
-    ];
+    const mainStyleTag = document.getElementById('patent-styles') || (() => {
+        const style = document.createElement('style');
+        style.id = 'patent-styles';
+        style.textContent = `
+            @keyframes fieldFadeIn {
+                from { opacity: 0; transform: translateY(15px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fields {
+                animation: fieldFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            }
+            .dynamic-container {
+                transition: height 0.3s ease;
+                min-height: 480px;
+            }
+            .form-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                align-items: start;
+            }
+            #dynamic-fields-container {
+                position: relative;
+            }
+            .tooltip-container {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                margin-left: 8px;
+                vertical-align: middle;
+            }
+            .help-icon {
+                color: #aaa;
+                font-size: 14px;
+                cursor: help;
+                transition: color 0.2s ease;
+            }
+            .help-icon:hover {
+                color: deepskyblue;
+            }
+            .tooltip-text {
+                visibility: hidden;
+                width: 220px;
+                background-color: #333;
+                color: #fff;
+                text-align: left;
+                border: 1px solid #444;
+                border-radius: 8px;
+                padding: 10px 12px;
+                position: absolute;
+                z-index: 100;
+                bottom: 150%;
+                left: 50%;
+                margin-left: -110px;
+                opacity: 0;
+                transition: opacity 0.3s, transform 0.3s;
+                transform: translateY(10px);
+                font-size: 11px;
+                font-weight: normal;
+                line-height: 1.4;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+                pointer-events: none;
+            }
+            .tooltip-text::after {
+                content: "";
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                margin-left: -5px;
+                border-width: 5px;
+                border-style: solid;
+                border-color: #333 transparent transparent transparent;
+            }
+            .tooltip-container:hover .tooltip-text {
+                visibility: visible;
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .custom-select-container {
+                position: relative;
+                width: 100%;
+            }
+            .custom-select-trigger {
+                cursor: pointer;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            .custom-options-list {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background-color: #333;
+                border: 1px solid #444;
+                border-radius: 12px;
+                margin-top: 8px;
+                max-height: 350px;
+                overflow-y: auto;
+                z-index: 2000;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+                display: none;
+                animation: fieldFadeIn 0.3s ease;
+            }
+            .custom-option {
+                padding: 12px 16px;
+                border-bottom: 1px solid #444;
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+            .custom-option:last-child {
+                border-bottom: none;
+            }
+            .custom-option:hover {
+                background-color: #444;
+            }
+            .option-label {
+                color: deepskyblue;
+                font-weight: 700;
+                font-size: 15px;
+                margin-bottom: 2px;
+            }
+            .option-desc {
+                color: #aaa;
+                font-size: 11px;
+                line-height: 1.3;
+            }
+            .custom-select-container.open .custom-options-list {
+                display: block;
+            }
+            .custom-select-container.open {
+                z-index: 2000 !important;
+            }
+            #dynamic-fields-container .form-grid > div {
+                position: relative !important;
+                z-index: 5; /* Base level for grid items */
+            }
+            .dynamic-container, .animate-fields, .form-grid {
+                overflow: visible !important;
+            }
+            .form-grid {
+                position: relative;
+                z-index: 50; /* Higher than the following container */
+            }
+            .description-container {
+                position: relative;
+                z-index: 1;
+                margin-top: 20px;
+            }
+        `;
+        document.head.appendChild(style);
+        return style;
+    })();
 
-    // Patent/UM status options
+    let currentSearch = '';
+    let currentType = '';
+    let mainSearchTimeout;
+
+    // IPR status options based on user requirements
     const statusOptions = [
         { value: 'filed', label: 'Filed', color: '#ff9800' },
-        { value: 'published', label: 'Published', color: '#2196f3' },
-        { value: 'granted', label: 'Granted', color: '#4caf50' },
-        { value: 'pending', label: 'Pending', color: '#9c27b0' },
-        { value: 'expired', label: 'Expired', color: '#f44336' }
+        { value: 'registered', label: 'Registered', color: '#4caf50' },
+        { value: 'downgrade', label: 'Downgrade', color: '#f44336' }
     ];
 
-    // Type options
+    // IPR Type options
     const typeOptions = [
         { value: 'patent', label: 'Patent', icon: 'fa-file-invoice' },
         { value: 'utility_model', label: 'Utility Model', icon: 'fa-cogs' },
+        { value: 'copyright', label: 'Copyright', icon: 'fa-copyright' },
         { value: 'industrial_design', label: 'Industrial Design', icon: 'fa-paint-brush' },
-        { value: 'invention', label: 'Invention', icon: 'fa-lightbulb' }
+        { value: 'trademark', label: 'Trademark', icon: 'fa-trademark' }
+    ];
+
+    // Campus options
+    const campusOptions = [
+        'Main (Roxas)',
+        'Pilar',
+        'Pontevedra',
+        'Sigma',
+        'Mambusao',
+        'Burias',
+        'Tapaz',
+        'Dayao',
+        'Dumarao'
+    ];
+
+    // Class of Work options (for Copyright)
+    const classOfWorkOptions = [
+        { label: 'Class A', desc: 'Books, pamphlets, articles and other writings (includes thesis and dissertations)' },
+        { label: 'Class B', desc: 'Periodicals and newspapers (includes electronic journals, magazines)' },
+        { label: 'Class C', desc: 'Lectures, sermons, addresses, dissertations, speeches prepared for oral delivery' },
+        { label: 'Class D', desc: 'Letters (includes circulars, encyclicals, electronic messages or emails)' },
+        { label: 'Class E', desc: 'Dramatic or dramatico-musical compositions; choreographic works and entertainment' },
+        { label: 'Class F', desc: 'Musical compositions, with or without words' },
+        { label: 'Class G', desc: 'Works of drawing, painting, architecture, sculpture, engraving, lithography; digital artworks' },
+        { label: 'Class H', desc: 'Original ornamental designs or models for articles of manufacture' },
+        { label: 'Class I', desc: 'Illustrations, maps, plans, sketches, charts and three-dimensional works' },
+        { label: 'Class K', desc: 'Photographic works; lantern slides' },
+        { label: 'Class L', desc: 'Audiovisual works and cinematographic works; audio-visual recordings' },
+        { label: 'Class M', desc: 'Pictorial illustrations and advertisements (includes product packaging graphical designs)' },
+        { label: 'Class N', desc: 'Computer programs (includes mobile applications and games)' },
+        { label: 'Class O', desc: 'Other literary, scholarly, scientific and artistic works (board games, flash cards, spreadsheets)' },
+        { label: 'Class P', desc: 'Sound recordings (Related Rights)' },
+        { label: 'Class Q', desc: 'Broadcast recordings (Related Rights)' },
+        { label: 'Class R', desc: 'Audiovisual performance (Related Rights)' }
+    ];
+
+    // Columns for the data table
+    const columns = [
+        { field: 'type', header: 'IPR Type', width: '150px' },
+        { field: 'productName', header: 'Title / Product Name', width: '300px' },
+        { field: 'caseNumber', header: 'Case Number', width: '180px' },
+        { field: 'patentNumber', header: 'Registration No.', width: '150px' },
+        { field: 'status', header: 'Status', width: '120px' },
+        { field: 'filingDate', header: 'Filing Date', width: '130px' },
+        { field: 'grantDate', header: 'Registration Date', width: '130px' },
+        { field: 'inventors', header: 'Inventors / Authors', width: '250px' },
+        { field: 'campus', header: 'Campus', width: '150px' },
+        { field: 'actions', header: 'Actions', width: '100px' }
     ];
 
     const getMainContainer = (el) => {
         mainTableContainer = el;
     };
 
-    const getTableBody = (el) => {
-        tableBody = el;
-        
-        // Create empty state with patent/UM specific message
-        const emptyState = $({
+    const openAddPatentModal = () => {
+        const modal = createPatentModal();
+        document.body.appendChild(modal);
+        // Animate in
+        setTimeout(() => {
+            const overlay = document.getElementById('patent-modal-overlay');
+            if (overlay) overlay.style.opacity = '1';
+        }, 10);
+    };
+
+    const closeModal = () => {
+        const overlay = document.getElementById('patent-modal-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }, 300);
+        }
+    };
+
+    // Search research titles from the database
+    const searchResearchTitles = async (searchTerm) => {
+        if (!searchTerm || searchTerm.length < 2) return [];
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'search_research');
+            formData.append('search', searchTerm);
+
+            const response = await fetch('/patentresearch', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                return result.data;
+            } else {
+                console.error('Search failed:', result.message);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error searching titles:', error);
+            return [];
+        }
+    };
+
+    // Create title search field
+    const createTitleSearchField = (inputBaseStyle) => {
+        const containerId = 'title-search-container';
+        const inputId = 'title-search-input';
+        const resultsId = 'title-search-results';
+        const hiddenResearchId = 'selected-research-id';
+        const hiddenEndorsementId = 'selected-endorsement-id';
+
+        const container = $({
             tag: 'div',
-            att: { className: 'empty-state' },
+            style: { position: 'relative', width: '100%' }
+        });
+
+        const hiddenResearchInput = $({
+            tag: 'input',
+            att: { type: 'hidden', id: hiddenResearchId, name: 'research_id' }
+        });
+
+        const hiddenEndorsementInput = $({
+            tag: 'input',
+            att: { type: 'hidden', id: hiddenEndorsementId, name: 'endorsement_id' }
+        });
+
+        const searchInput = $({
+            tag: 'input',
+            att: {
+                type: 'text',
+                id: inputId,
+                placeholder: 'Search completed research titles...',
+                autocomplete: 'off',
+                required: true
+            },
+            style: { ...inputBaseStyle, width: '100%' }
+        });
+
+        const resultsDropdown = $({
+            tag: 'div',
+            att: { id: resultsId },
             style: {
+                position: 'absolute',
+                top: '100%',
+                left: '0',
+                right: '0',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                backgroundColor: '#333',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                marginTop: '4px',
+                display: 'none',
+                zIndex: '1000',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+            }
+        });
+
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const searchTerm = e.target.value;
+
+            if (searchTerm.length < 2) {
+                resultsDropdown.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                const results = await searchResearchTitles(searchTerm);
+                resultsDropdown.innerHTML = '';
+
+                if (results.length === 0) {
+                    resultsDropdown.appendChild($({
+                        tag: 'div',
+                        style: { padding: '12px', color: '#888', textAlign: 'center', fontSize: '13px' },
+                        text: 'No matching accepted research found'
+                    }));
+                } else {
+                    results.forEach(result => {
+                        const item = $({
+                            tag: 'div',
+                            style: {
+                                padding: '10px 15px',
+                                cursor: 'pointer',
+                                borderBottom: '1px solid #444',
+                                transition: 'all 0.2s ease'
+                            },
+                            child: [
+                                $({ tag: 'div', style: { color: '#fff', fontWeight: '500', fontSize: '14px' }, text: result.title }),
+                                $({ tag: 'div', style: { color: '#aaa', fontSize: '12px', marginTop: '4px' }, text: `${result.author} • ${result.event}` })
+                            ]
+                        });
+
+                        item.addEventListener('click', () => {
+                            searchInput.value = result.title;
+                            hiddenResearchInput.value = result.id;
+                            hiddenEndorsementInput.value = result.endorsement_id;
+                            resultsDropdown.style.display = 'none';
+                        });
+
+                        item.addEventListener('mouseenter', () => item.style.backgroundColor = '#444');
+                        item.addEventListener('mouseleave', () => item.style.backgroundColor = 'transparent');
+                        resultsDropdown.appendChild(item);
+                    });
+                }
+                resultsDropdown.style.display = 'block';
+            }, 300);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) resultsDropdown.style.display = 'none';
+        });
+
+        container.appendChild(hiddenResearchInput);
+        container.appendChild(hiddenEndorsementInput);
+        container.appendChild(searchInput);
+        container.appendChild(resultsDropdown);
+
+        return container;
+    };
+
+    const createPatentModal = (patent = null) => {
+        const isEdit = !!patent;
+        const inputBaseStyle = {
+            backgroundColor: '#333',
+            border: '1px solid #444',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            color: '#fff',
+            fontSize: '14px',
+            width: '100%',
+            outline: 'none',
+            transition: 'border-color 0.2s ease'
+        };
+
+        const labelStyle = {
+            display: 'block',
+            marginBottom: '8px',
+            color: '#aaa',
+            fontSize: '13px',
+            fontWeight: '500',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+        };
+
+        const formGroupStyle = { marginBottom: '20px' };
+
+        // Helper to create form group
+        const createFormGroup = (label, input, span = 1, tooltip = null) => {
+            const labelChildren = [$({ tag: 'span', text: label })];
+
+            if (tooltip) {
+                labelChildren.push($({
+                    tag: 'div',
+                    att: { className: 'tooltip-container' },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fa-solid fa-circle-question help-icon' } }),
+                        $({ tag: 'div', att: { className: 'tooltip-text' }, text: tooltip })
+                    ]
+                }));
+            }
+
+            return $({
+                tag: 'div',
+                style: { ...formGroupStyle, gridColumn: span === 2 ? 'span 2' : 'auto' },
+                child: [
+                    $({ tag: 'label', style: { ...labelStyle, display: 'flex', alignItems: 'center' }, child: labelChildren }),
+                    input
+                ]
+            });
+        };
+
+        // Function to render dynamic fields based on IPR type
+        const renderDynamicFields = (type, data = null) => {
+            const container = document.getElementById('dynamic-fields-container');
+            if (!container) return;
+
+            // Clear with a quick fade out effect if possible, but here we just immediate clear and animate children
+            container.innerHTML = '';
+            container.className = 'dynamic-container';
+
+            const grid = $({
+                tag: 'div',
+                att: { className: 'animate-fields form-grid' }
+            });
+
+            // Update Modal Title dynamically
+            const modalTitleEl = document.getElementById('modal-title');
+            if (modalTitleEl) {
+                const typeLabel = typeOptions.find(opt => opt.value === type)?.label || 'IP Record';
+                const isEdit = modalTitleEl.getAttribute('data-edit') === 'true';
+                modalTitleEl.innerText = `${isEdit ? 'Edit' : 'Add New'} ${typeLabel}`;
+            }
+
+            // Common dynamic fields
+            const statusField = $({
+                tag: 'select',
+                att: { name: 'status', required: true, id: 'field-status' },
+                style: { ...inputBaseStyle, appearance: 'none' },
+                child: statusOptions.map(opt => $({ tag: 'option', att: { value: opt.value, selected: data?.status === opt.value }, text: opt.label })),
+                event: {
+                    type: 'change',
+                    method: (e) => {
+                        const regNoGroup = document.getElementById('reg-no-group');
+                        const regDateGroup = document.getElementById('reg-date-group');
+                        const regNoInput = regNoGroup?.querySelector('input');
+                        const regDateInput = regDateGroup?.querySelector('input');
+
+                        if (regNoGroup && regDateGroup) {
+                            const isVisible = e.target.value !== 'filed';
+                            regNoGroup.style.display = isVisible ? 'block' : 'none';
+                            regDateGroup.style.display = isVisible ? 'block' : 'none';
+
+                            if (regNoInput) regNoInput.required = isVisible;
+                            if (regDateInput) regDateInput.required = isVisible;
+                        }
+                    }
+                }
+            });
+
+            const campusSelect = $({
+                tag: 'select',
+                att: { name: 'campus', required: true },
+                style: { ...inputBaseStyle, appearance: 'none' },
+                child: campusOptions.map(camp => $({ tag: 'option', att: { value: camp, selected: data?.campus === camp }, text: camp }))
+            });
+
+            // Initial visibility logic for registration fields
+            const initialStatus = data?.status || 'filed';
+            const regDisplay = initialStatus !== 'filed' ? 'block' : 'none';
+
+            if (type === 'patent' || type === 'utility_model' || type === 'industrial_design') {
+                // Shared fields for Tech-heavy IPR - 12 slots total
+                const isID = type === 'industrial_design';
+
+                grid.appendChild(createFormGroup('Case Number (CAPSU IPMO Year-000)', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'caseNumber', placeholder: 'CAPSU IPMO 2026-001', value: data?.caseNumber || '', required: true },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Research Title Search', createTitleSearchField(inputBaseStyle), 1,
+                    'Linking your IP record to a research title in the database automatically fetches the research title. Type at least 2 characters to see suggestions.'
+                ));
+
+                const techTitle = isID ? 'ID Title' : 'Technology Name';
+                grid.appendChild(createFormGroup(techTitle, $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'productName', required: true, value: data?.productName || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Inventor/s', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'inventors', required: true, value: data?.inventors || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Campus', campusSelect));
+
+                if (!isID) {
+                    grid.appendChild(createFormGroup('Agent', $({
+                        tag: 'input',
+                        att: { type: 'text', name: 'agent', value: data?.agent || '' },
+                        style: inputBaseStyle
+                    })));
+                }
+
+                grid.appendChild(createFormGroup('Application / Filing Date', $({
+                    tag: 'input',
+                    att: { type: 'date', name: 'filingDate', required: true, value: data?.filingDate || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Application Number', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'applicationNumber', required: true, value: data?.applicationNumber || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Publication / Issued Date', $({
+                    tag: 'input',
+                    att: { type: 'date', name: 'publicationDate', required: true, value: data?.publicationDate || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Status', statusField));
+
+                grid.appendChild($({
+                    tag: 'div',
+                    att: { id: 'reg-no-group' },
+                    style: { display: regDisplay },
+                    child: [
+                        $({ tag: 'label', style: labelStyle, text: 'Registration Number' }),
+                        $({ tag: 'input', att: { type: 'text', name: 'patentNumber', value: data?.patentNumber || '', required: initialStatus !== 'filed' }, style: inputBaseStyle })
+                    ]
+                }));
+
+                grid.appendChild($({
+                    tag: 'div',
+                    att: { id: 'reg-date-group' },
+                    style: { display: regDisplay },
+                    child: [
+                        $({ tag: 'label', style: labelStyle, text: 'Registration Date' }),
+                        $({ tag: 'input', att: { type: 'date', name: 'grantDate', value: data?.grantDate || '', required: initialStatus !== 'filed' }, style: inputBaseStyle })
+                    ]
+                }));
+
+                if (isID) {
+                    grid.appendChild(createFormGroup('Expiration Date', $({
+                        tag: 'input',
+                        att: { type: 'date', name: 'expirationDate', required: true, value: data?.expirationDate || '' },
+                        style: inputBaseStyle
+                    })));
+                }
+
+                // File upload section for technical IPRs
+                if (type === 'patent' || type === 'utility_model' || type === 'industrial_design') {
+                    const isID = type === 'industrial_design';
+                    grid.appendChild($({
+                        tag: 'div',
+                        style: { gridColumn: 'span 2', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #444', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' },
+                        child: [
+                            $({ tag: 'i', att: { className: 'fa-solid fa-file-arrow-up' }, style: { color: 'deepskyblue', fontSize: '18px' } }),
+                            $({ tag: 'h4', text: 'Upload Files (Cloud Storage)', style: { margin: '0', color: 'deepskyblue', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' } })
+                        ]
+                    }));
+
+                    // Different file requirements based on type
+                    const fileFields = isID ? [
+                        { label: 'ID Application Form', name: 'application_form_file', db_url: 'application_form_url', accept: '.pdf' },
+                        { label: 'Specification', name: 'specification_file', db_url: 'specification_url', accept: '.pdf' },
+                        { label: 'Drawing', name: 'drawing_file', db_url: 'drawing_url', accept: '.pdf,.png,.jpg,.jpeg' },
+                        { label: 'Photo of the Technology', name: 'patent_image', db_url: 'image', accept: 'image/*' }
+                    ] : [
+                        { label: 'Patent Application Form', name: 'application_form_file', db_url: 'application_form_url', accept: '.pdf' },
+                        { label: 'Abstract', name: 'abstract_file', db_url: 'abstract_url', accept: '.pdf' },
+                        { label: 'Claims', name: 'claims_file', db_url: 'claims_url', accept: '.pdf' },
+                        { label: 'Technical Description', name: 'description_file', db_url: 'description_file_url', accept: '.pdf' },
+                        { label: 'Technical Drawing (Optional)', name: 'drawing_file', db_url: 'drawing_url', accept: '.pdf,.png,.jpg,.jpeg' },
+                        { label: 'Photo of the Technology', name: 'patent_image', db_url: 'image', accept: 'image/*' }
+                    ];
+
+                    fileFields.forEach(f => {
+                        const currentUrl = data ? data[f.db_url] : null;
+                        const fileInput = $({
+                            tag: 'div',
+                            style: { display: 'flex', flexDirection: 'column', gap: '5px' },
+                            child: [
+                                $({
+                                    tag: 'input',
+                                    att: { type: 'file', name: f.name, accept: f.accept },
+                                    style: { ...inputBaseStyle, padding: '8px' },
+                                    event: {
+                                        type: 'change',
+                                        method: async (e) => {
+                                            const file = e.target.files[0];
+                                            if (!file) return;
+
+                                            // Real-time validation for PDF fields (Application Form, Specification, Abstract, etc.)
+                                            if (f.accept === '.pdf') {
+                                                const check = await ValidatePDF(file);
+                                                if (!check.valid) {
+                                                    alert(`File Validation Failed: ${check.error}`);
+                                                    e.target.value = ''; // Clear invalid file
+                                                }
+                                            }
+                                        }
+                                    }
+                                }),
+                                currentUrl ? $({
+                                    tag: 'a',
+                                    att: { href: currentUrl, target: '_blank', className: 'view-current-file' },
+                                    style: { fontSize: '11px', color: 'deepskyblue', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' },
+                                    child: [
+                                        $({ tag: 'i', att: { className: 'fa-solid fa-eye' } }),
+                                        $({ tag: 'span', text: 'View Current Attachment' }),
+                                        $({ tag: 'input', att: { type: 'hidden', name: `current_${f.db_url}`, value: currentUrl } })
+                                    ]
+                                }) : null
+                            ].filter(Boolean)
+                        });
+                        grid.appendChild(createFormGroup(f.label, fileInput));
+                    });
+                }
+
+            } else if (type === 'copyright') {
+                // Copyright specific - Balanced layout
+                grid.appendChild(createFormGroup('Title', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'productName', required: true, value: data?.productName || '' },
+                    style: inputBaseStyle
+                }), 2));
+
+                grid.appendChild(createFormGroup('Author/s', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'inventors', required: true, value: data?.inventors || '' },
+                    style: inputBaseStyle
+                }), 2));
+
+                grid.appendChild(createFormGroup('Campus', campusSelect));
+
+                grid.appendChild(createFormGroup('Application / Filing Date', $({
+                    tag: 'input',
+                    att: { type: 'date', name: 'filingDate', required: true, value: data?.filingDate || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Class of Work', (() => {
+                    const selectedVal = data?.classOfWork || '';
+                    const selectedOption = classOfWorkOptions.find(o => o.label === selectedVal) || { label: 'Select Class...', desc: 'Please choose classification' };
+
+                    const trigger = $({
+                        tag: 'div',
+                        att: { className: 'custom-select-trigger', id: 'class-work-trigger' },
+                        style: { ...inputBaseStyle, height: 'auto', minHeight: '45px', padding: '8px 16px' },
+                        child: [
+                            $({ tag: 'div', att: { className: 'option-label' }, text: selectedOption.label }),
+                            $({ tag: 'div', att: { className: 'option-desc' }, text: selectedOption.desc })
+                        ]
+                    });
+
+                    const hiddenInput = $({ tag: 'input', att: { type: 'hidden', name: 'classOfWork', required: true, value: selectedVal } });
+
+                    const optionsList = $({
+                        tag: 'div',
+                        att: { className: 'custom-options-list' },
+                        child: classOfWorkOptions.map(opt => $({
+                            tag: 'div',
+                            att: { className: 'custom-option' },
+                            child: [
+                                $({ tag: 'div', att: { className: 'option-label' }, text: opt.label }),
+                                $({ tag: 'div', att: { className: 'option-desc' }, text: opt.desc })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: (e) => {
+                                    trigger.querySelector('.option-label').innerText = opt.label;
+                                    trigger.querySelector('.option-desc').innerText = opt.desc;
+                                    hiddenInput.value = opt.label;
+                                    container.classList.remove('open');
+                                }
+                            }
+                        }))
+                    });
+
+                    const container = $({
+                        tag: 'div',
+                        att: { className: 'custom-select-container' },
+                        child: [trigger, hiddenInput, optionsList],
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                e.stopPropagation();
+                                container.classList.toggle('open');
+                                document.addEventListener('click', () => {
+                                    container.classList.remove('open');
+                                }, { once: true });
+                            }
+                        }
+                    });
+
+                    return container;
+                })()));
+
+                grid.appendChild(createFormGroup('Status', statusField));
+
+                grid.appendChild($({
+                    tag: 'div',
+                    att: { id: 'reg-no-group' },
+                    style: { display: regDisplay },
+                    child: [
+                        $({ tag: 'label', style: labelStyle, text: 'Registration Number' }),
+                        $({ tag: 'input', att: { type: 'text', name: 'patentNumber', value: data?.patentNumber || '', required: initialStatus !== 'filed' }, style: inputBaseStyle })
+                    ]
+                }));
+
+                grid.appendChild($({
+                    tag: 'div',
+                    att: { id: 'reg-date-group' },
+                    style: { display: regDisplay },
+                    child: [
+                        $({ tag: 'label', style: labelStyle, text: 'Registration Date' }),
+                        $({ tag: 'input', att: { type: 'date', name: 'grantDate', value: data?.grantDate || '', required: initialStatus !== 'filed' }, style: inputBaseStyle })
+                    ]
+                }));
+
+                grid.appendChild($({
+                    tag: 'div',
+                    style: { gridColumn: 'span 2', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #444', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fa-solid fa-file-arrow-up' }, style: { color: 'deepskyblue', fontSize: '18px' } }),
+                        $({ tag: 'h4', text: 'Upload Files (Cloud Storage)', style: { margin: '0', color: 'deepskyblue', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' } })
+                    ]
+                }));
+
+                const fileFields = [
+                    { label: 'Copyright Forms', name: 'copyright_forms_file', db_url: 'copyright_forms_url', accept: '.pdf' },
+                    { label: 'Supplemental Document (Optional)', name: 'supplemental_file', db_url: 'supplemental_url', accept: '.pdf' },
+                    { label: 'Deed of Assignment', name: 'deed_assignment_file', db_url: 'deed_assignment_url', accept: '.pdf' },
+                    { label: 'Affidavit of Ownership', name: 'affidavit_file', db_url: 'affidavit_url', accept: '.pdf' },
+                    { label: 'IDs of Authors', name: 'ids_authors_file', db_url: 'ids_authors_url', accept: '.pdf,.png,.jpg,.jpeg' },
+                    { label: 'Creative Works (Original Specimen)', name: 'creative_work_file', db_url: 'creative_work_url', accept: '.pdf,.png,.jpg,.jpeg' }
+                ];
+
+                fileFields.forEach(f => {
+                    const currentUrl = data ? data[f.db_url] : null;
+                    const fileInput = $({
+                        tag: 'div',
+                        style: { display: 'flex', flexDirection: 'column', gap: '5px' },
+                        child: [
+                            $({
+                                tag: 'input',
+                                att: { type: 'file', name: f.name, accept: f.accept },
+                                style: { ...inputBaseStyle, padding: '8px' },
+                                event: {
+                                    type: 'change',
+                                    method: async (e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        if (f.accept === '.pdf') {
+                                            const check = await ValidatePDF(file);
+                                            if (!check.valid) {
+                                                alert(`File Validation Failed: ${check.error}`);
+                                                e.target.value = '';
+                                            }
+                                        }
+                                    }
+                                }
+                            }),
+                            currentUrl ? $({
+                                tag: 'a',
+                                att: { href: currentUrl, target: '_blank', className: 'view-current-file' },
+                                style: { fontSize: '11px', color: 'deepskyblue', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' },
+                                child: [
+                                    $({ tag: 'i', att: { className: 'fa-solid fa-eye' } }),
+                                    $({ tag: 'span', text: 'View Current Attachment' }),
+                                    $({ tag: 'input', att: { type: 'hidden', name: `current_${f.db_url}`, value: currentUrl } })
+                                ]
+                            }) : null
+                        ].filter(Boolean)
+                    });
+                    grid.appendChild(createFormGroup(f.label, fileInput));
+                });
+
+            } else if (type === 'trademark') {
+                // Trademark specific
+                grid.appendChild(createFormGroup('Title', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'productName', required: true, value: data?.productName || '' },
+                    style: inputBaseStyle
+                }), 2));
+
+                grid.appendChild(createFormGroup('Registrant', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'registrant', required: true, value: data?.registrant || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Application / Filing Date', $({
+                    tag: 'input',
+                    att: { type: 'date', name: 'filingDate', required: true, value: data?.filingDate || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Application Number', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'applicationNumber', required: true, value: data?.applicationNumber || '' },
+                    style: inputBaseStyle
+                })));
+
+                grid.appendChild(createFormGroup('Status', statusField));
+
+                grid.appendChild($({
+                    tag: 'div',
+                    att: { id: 'reg-no-group' },
+                    style: { display: regDisplay },
+                    child: [
+                        $({ tag: 'label', style: labelStyle, text: 'Registration Number' }),
+                        $({ tag: 'input', att: { type: 'text', name: 'patentNumber', value: data?.patentNumber || '', required: initialStatus !== 'filed' }, style: inputBaseStyle })
+                    ]
+                }));
+
+                grid.appendChild($({
+                    tag: 'div',
+                    att: { id: 'reg-date-group' },
+                    style: { display: regDisplay },
+                    child: [
+                        $({ tag: 'label', style: labelStyle, text: 'Registration Date' }),
+                        $({ tag: 'input', att: { type: 'date', name: 'grantDate', value: data?.grantDate || '', required: initialStatus !== 'filed' }, style: inputBaseStyle })
+                    ]
+                }));
+
+                grid.appendChild($({
+                    tag: 'div',
+                    style: { gridColumn: 'span 2', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #444', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fa-solid fa-file-arrow-up' }, style: { color: 'deepskyblue', fontSize: '18px' } }),
+                        $({ tag: 'h4', text: 'Upload Files (Cloud Storage)', style: { margin: '0', color: 'deepskyblue', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' } })
+                    ]
+                }));
+
+                const fileFields = [
+                    { label: 'Trademark Application Form', name: 'application_form_file', db_url: 'application_form_url', accept: '.pdf' },
+                    { label: 'Photo of the Trademark', name: 'patent_image', db_url: 'image', accept: 'image/*' }
+                ];
+
+                fileFields.forEach(f => {
+                    const currentUrl = data ? data[f.db_url] : null;
+                    const fileInput = $({
+                        tag: 'div',
+                        style: { display: 'flex', flexDirection: 'column', gap: '5px' },
+                        child: [
+                            $({
+                                tag: 'input',
+                                att: { type: 'file', name: f.name, accept: f.accept },
+                                style: { ...inputBaseStyle, padding: '8px' },
+                                event: {
+                                    type: 'change',
+                                    method: async (e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        if (f.accept === '.pdf') {
+                                            const check = await ValidatePDF(file);
+                                            if (!check.valid) {
+                                                alert(`File Validation Failed: ${check.error}`);
+                                                e.target.value = '';
+                                            }
+                                        }
+                                    }
+                                }
+                            }),
+                            currentUrl ? $({
+                                tag: 'a',
+                                att: { href: currentUrl, target: '_blank', className: 'view-current-file' },
+                                style: { fontSize: '11px', color: 'deepskyblue', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' },
+                                child: [
+                                    $({ tag: 'i', att: { className: 'fa-solid fa-eye' } }),
+                                    $({ tag: 'span', text: 'View Current Attachment' }),
+                                    $({ tag: 'input', att: { type: 'hidden', name: `current_${f.db_url}`, value: currentUrl } })
+                                ]
+                            }) : null
+                        ].filter(Boolean)
+                    });
+                    grid.appendChild(createFormGroup(f.label, fileInput));
+                });
+            }
+
+            // Description and Image at the bottom (for others)
+            const hasTechnicalUploads = ['patent', 'utility_model', 'industrial_design', 'copyright', 'trademark'].includes(type);
+            const bottomGrid = $({
+                tag: 'div',
+                att: { className: 'animate-fields description-container' },
+                style: { display: 'flex', flexDirection: 'column', gap: '20px' },
+                child: [
+                    $({
+                        tag: 'div',
+                        child: [
+                            $({ tag: 'label', style: labelStyle, text: 'Product Description' }),
+                            $({ tag: 'textarea', att: { name: 'productDescription', rows: '4' }, style: { ...inputBaseStyle, resize: 'vertical' }, text: data?.productDescription || '' })
+                        ]
+                    }),
+                    // Only show generic photo for non-technical types that don't have specialized uploads
+                    !hasTechnicalUploads ? $({
+                        tag: 'div',
+                        child: [
+                            $({ tag: 'label', style: labelStyle, text: 'Resource Photo' }),
+                            $({
+                                tag: 'div',
+                                style: { display: 'flex', flexDirection: 'column', gap: '10px' },
+                                child: [
+                                    $({
+                                        tag: 'input',
+                                        att: { type: 'file', name: 'patent_image', accept: 'image/*' },
+                                        style: { ...inputBaseStyle, padding: '8px' }
+                                    }),
+                                    data?.image ? $({
+                                        tag: 'div',
+                                        style: { display: 'flex', alignItems: 'center', gap: '10px' },
+                                        child: [
+                                            $({ tag: 'img', att: { src: data.image }, style: { width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #444' } }),
+                                            $({ tag: 'span', text: 'Current Photo', style: { color: '#888', fontSize: '12px' } }),
+                                            $({ tag: 'input', att: { type: 'hidden', name: 'current_image', value: data.image } })
+                                        ]
+                                    }) : null
+                                ].filter(Boolean)
+                            })
+                        ]
+                    }) : null
+                ].filter(Boolean)
+            });
+
+            container.appendChild(grid);
+            container.appendChild(bottomGrid);
+        };
+
+        const overlay = $({
+            tag: 'div',
+            att: { id: 'patent-modal-overlay' },
+            style: {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                backgroundColor: 'rgba(0,0,0,0.85)',
+                backdropFilter: 'blur(5px)',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: '350px',
-                width: '100%',
-                color: '#888',
-                fontFamily: 'Segoe UI, sans-serif'
+                zIndex: '2000',
+                opacity: '0',
+                transition: 'opacity 0.3s ease'
+            },
+            event: {
+                type: 'click',
+                method: (e) => {
+                    if (e.target.id === 'patent-modal-overlay') closeModal();
+                }
             },
             child: [
                 $({
                     tag: 'div',
                     style: {
-                        position: 'relative',
-                        width: '180px',
-                        height: '180px',
-                        marginBottom: '24px'
+                        backgroundColor: '#222',
+                        width: '90%',
+                        maxWidth: '800px',
+                        maxHeight: '90vh',
+                        borderRadius: '20px',
+                        border: '1px solid #444',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
                     },
                     child: [
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-certificate' },
-                            style: { 
-                                fontSize: '100px', 
-                                color: 'deepskyblue',
-                                opacity: 0.2,
-                                position: 'absolute',
-                                left: '0',
-                                top: '0',
-                                transform: 'rotate(-10deg)'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-gears' },
-                            style: { 
-                                fontSize: '80px', 
-                                color: '#4caf50',
-                                opacity: 0.2,
-                                position: 'absolute',
-                                right: '-10px',
-                                bottom: '10px',
-                                transform: 'rotate(15deg)'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-trophy' },
-                            style: { 
-                                fontSize: '60px', 
-                                color: '#ffd700',
-                                opacity: 0.25,
-                                position: 'absolute',
-                                left: '-15px',
-                                bottom: '20px',
-                                transform: 'rotate(-20deg)'
-                            }
-                        }),
+                        // Modal Header
                         $({
                             tag: 'div',
                             style: {
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                color: '#fff',
-                                backgroundColor: 'rgba(0,191,255,0.2)',
-                                padding: '8px 16px',
-                                borderRadius: '30px',
-                                border: '1px solid deepskyblue',
-                                whiteSpace: 'nowrap'
-                            },
-                            text: 'IP'
-                        })
-                    ]
-                }),
-                $({
-                    tag: 'div',
-                    text: 'No Patent / Utility Model Records',
-                    style: { 
-                        fontSize: '26px', 
-                        marginBottom: '12px',
-                        fontWeight: '600',
-                        color: '#fff',
-                        letterSpacing: '-0.5px'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'Patents, utility models, industrial designs, and inventions',
-                    style: { 
-                        fontSize: '15px', 
-                        opacity: 0.7,
-                        textAlign: 'center',
-                        lineHeight: '1.6'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'with intellectual property protection will be displayed here',
-                    style: { 
-                        fontSize: '15px', 
-                        opacity: 0.7,
-                        marginBottom: '30px',
-                        textAlign: 'center'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    style: {
-                        display: 'flex',
-                        gap: '15px',
-                        flexWrap: 'wrap',
-                        justifyContent: 'center'
-                    },
-                    child: [
-                        $({
-                            tag: 'button',
-                            style: {
-                                backgroundColor: 'deepskyblue',
-                                border: 'none',
-                                borderRadius: '30px',
-                                padding: '14px 32px',
-                                color: '#fff',
-                                fontSize: '15px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
+                                padding: '24px 32px',
+                                borderBottom: '1px solid #333',
                                 display: 'flex',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
-                                gap: '10px',
-                                transition: 'all 0.3s ease',
-                                boxShadow: '0 4px 12px rgba(0, 191, 255, 0.2)'
+                                backgroundColor: '#2a2a2a'
                             },
                             child: [
                                 $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-plus-circle' }
+                                    tag: 'div',
+                                    style: { display: 'flex', alignItems: 'center', gap: '15px' },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: `fa-solid ${isEdit ? 'fa-edit' : 'fa-plus-circle'}` },
+                                            style: { color: 'deepskyblue', fontSize: '24px' }
+                                        }),
+                                        $({
+                                            tag: 'h2',
+                                            att: { id: 'modal-title', 'data-edit': isEdit ? 'true' : 'false' },
+                                            text: isEdit ? 'Edit Record' : 'Add New Record',
+                                            style: { color: '#fff', fontSize: '20px', fontWeight: '600', margin: '0' }
+                                        })
+                                    ]
                                 }),
                                 $({
-                                    tag: 'span',
-                                    text: 'Add Patent/UM'
+                                    tag: 'button',
+                                    att: { className: 'fa-solid fa-xmark' },
+                                    style: {
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        color: '#666',
+                                        fontSize: '20px',
+                                        cursor: 'pointer',
+                                        transition: 'color 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeModal,
+                                        type2: 'mouseenter',
+                                        method2: (e) => e.target.style.color = '#fff',
+                                        type3: 'mouseleave',
+                                        method3: (e) => e.target.style.color = '#666'
+                                    }
                                 })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Add patent/UM clicked');
-                                }
-                            }
+                            ]
                         }),
+                        // Modal Body (Scrollable)
                         $({
-                            tag: 'button',
-                            style: {
-                                backgroundColor: 'transparent',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '14px 32px',
-                                color: '#fff',
-                                fontSize: '15px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                transition: 'all 0.3s ease'
-                            },
+                            tag: 'div',
+                            style: { padding: '32px', overflowY: 'auto', flex: '1' },
                             child: [
                                 $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-file-import' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Bulk Import'
+                                    tag: 'form',
+                                    att: { id: 'patent-form' },
+                                    child: [
+                                        // IPR Type Dropdown (Top - determines other fields)
+                                        $({
+                                            tag: 'div',
+                                            style: formGroupStyle,
+                                            child: [
+                                                $({ tag: 'label', style: labelStyle, text: 'IPR Type' }),
+                                                $({
+                                                    tag: 'select',
+                                                    att: { name: 'type', required: true },
+                                                    style: { ...inputBaseStyle, appearance: 'none' },
+                                                    child: typeOptions.map(opt => $({ tag: 'option', att: { value: opt.value, selected: patent?.type === opt.value }, text: opt.label })),
+                                                    event: {
+                                                        type: 'change',
+                                                        method: (e) => {
+                                                            renderDynamicFields(e.target.value, patent);
+                                                        }
+                                                    }
+                                                })
+                                            ]
+                                        }),
+                                        // Container for dynamic fields
+                                        $({
+                                            tag: 'div',
+                                            att: { id: 'dynamic-fields-container' },
+                                            elementHandler: (el) => {
+                                                // Initial render
+                                                setTimeout(() => {
+                                                    renderDynamicFields(patent?.type || 'patent', patent);
+                                                }, 0);
+                                            }
+                                        })
+                                    ]
                                 })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Bulk import clicked');
-                                }
-                            }
+                            ]
                         }),
+                        // Modal Footer
                         $({
-                            tag: 'button',
+                            tag: 'div',
                             style: {
-                                backgroundColor: 'transparent',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '14px 32px',
-                                color: '#fff',
-                                fontSize: '15px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
+                                padding: '24px 32px',
+                                borderTop: '1px solid #333',
                                 display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                transition: 'all 0.3s ease'
+                                justifyContent: 'flex-end',
+                                gap: '12px',
+                                backgroundColor: '#2a2a2a'
                             },
                             child: [
                                 $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-download' }
+                                    tag: 'button',
+                                    text: 'Cancel',
+                                    style: {
+                                        backgroundColor: 'transparent',
+                                        border: '1px solid #444',
+                                        color: '#aaa',
+                                        padding: '10px 24px',
+                                        borderRadius: '30px',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeModal,
+                                        type2: 'mouseenter',
+                                        method2: (e) => { e.target.style.backgroundColor = '#333'; e.target.style.color = '#fff'; },
+                                        type3: 'mouseleave',
+                                        method3: (e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#aaa'; }
+                                    }
                                 }),
                                 $({
-                                    tag: 'span',
-                                    text: 'Download Template'
+                                    tag: 'button',
+                                    text: isEdit ? 'Update Record' : 'Save Record',
+                                    style: {
+                                        backgroundColor: 'deepskyblue',
+                                        border: 'none',
+                                        color: '#fff',
+                                        padding: '10px 32px',
+                                        borderRadius: '30px',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        boxShadow: '0 4px 15px rgba(0, 191, 255, 0.3)',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: async (e) => {
+                                            const btn = e.target;
+                                            const originalText = btn.textContent;
+                                            btn.disabled = true;
+                                            btn.textContent = 'Saving...';
+
+                                            const form = document.getElementById('patent-form');
+                                            const formData = new FormData(form);
+                                            formData.append('action', isEdit ? 'update' : 'save');
+                                            if (isEdit) formData.append('id', patent.id);
+
+                                            try {
+                                                const response = await fetch('/patentresearch', {
+                                                    method: 'POST',
+                                                    body: formData
+                                                });
+                                                const result = await response.json();
+                                                if (result.success) {
+                                                    closeModal();
+                                                    loadPatents();
+                                                } else {
+                                                    alert('Error: ' + result.message);
+                                                }
+                                            } catch (err) {
+                                                console.error(err);
+                                                alert('Network error occurred.');
+                                            } finally {
+                                                btn.disabled = false;
+                                                btn.textContent = originalText;
+                                            }
+                                        }
+                                    }
                                 })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Download template clicked');
-                                }
-                            }
+                            ]
                         })
                     ]
                 })
             ]
         });
-        el.appendChild(emptyState);
+
+        return overlay;
+    };
+
+    const loadPatents = async () => {
+        try {
+            const formData = new FormData();
+            formData.append('action', 'getAll');
+            if (currentSearch) formData.append('search', currentSearch);
+            if (currentType) formData.append('type', currentType);
+
+            const response = await fetch('/patentresearch', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                updateTableDisplay(result.data);
+                // Also update stats since we have new data
+                updateStats(result.data);
+            }
+        } catch (error) {
+            console.error('Error loading records:', error);
+        }
+    };
+
+    const updateTableDisplay = (data) => {
+        if (!tableBody) return;
+        tableBody.innerHTML = '';
+
+        const recordCountEl = document.querySelector('.record-count');
+        if (recordCountEl) recordCountEl.textContent = `${data.length} records`;
+
+        if (data.length === 0) {
+            tableBody.appendChild(createEmptyState());
+        } else {
+            data.forEach(item => {
+                tableBody.appendChild(createPatentRow(item));
+            });
+        }
+    };
+
+    const createPatentRow = (item) => {
+        const row = $({
+            tag: 'tr',
+            style: { transition: 'background 0.2s ease' },
+            event: {
+                type: 'mouseenter',
+                method: (e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)',
+                type2: 'mouseleave',
+                method2: (e) => e.currentTarget.style.backgroundColor = 'transparent'
+            },
+            child: columns.map(col => {
+                let content = item[col.field] || '—';
+                const style = {
+                    padding: '16px 12px',
+                    fontSize: '13px',
+                    color: '#ddd',
+                    borderBottom: '1px solid #444',
+                    whiteSpace: 'nowrap',
+                    fontFamily: 'Segoe UI, sans-serif',
+                    maxWidth: col.width,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                };
+
+                if (col.field === 'status') content = createStatusBadge(item.status);
+                if (col.field === 'type') content = createTypeBadge(item.type);
+                if (col.field === 'filingDate' || col.field === 'grantDate') content = formatPatentDate(item[col.field]);
+
+                if (col.field === 'image') {
+                    if (item.image) {
+                        content = $({
+                            tag: 'a',
+                            att: { href: item.image, target: '_blank' },
+                            style: { color: 'deepskyblue', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' },
+                            child: [
+                                $({ tag: 'span', att: { className: 'fa-solid fa-image' } }),
+                                $({ tag: 'span', text: 'View' })
+                            ]
+                        });
+                    } else {
+                        content = '—';
+                    }
+                }
+
+                if (col.field === 'actions') {
+                    content = $({
+                        tag: 'div',
+                        style: { display: 'flex', gap: '10px' },
+                        child: [
+                            $({
+                                tag: 'button',
+                                att: { className: 'fa-solid fa-edit', title: 'Edit' },
+                                style: { background: 'transparent', border: 'none', color: 'deepskyblue', cursor: 'pointer', fontSize: '16px' },
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        const modal = createPatentModal(item);
+                                        document.body.appendChild(modal);
+                                        setTimeout(() => {
+                                            const overlay = document.getElementById('patent-modal-overlay');
+                                            if (overlay) overlay.style.opacity = '1';
+                                        }, 10);
+                                    }
+                                }
+                            }),
+                            $({
+                                tag: 'button',
+                                att: { className: 'fa-solid fa-trash', title: 'Delete' },
+                                style: { background: 'transparent', border: 'none', color: '#f44336', cursor: 'pointer', fontSize: '16px' },
+                                event: {
+                                    type: 'click',
+                                    method: async () => {
+                                        if (confirm(`Are you sure you want to delete this ${item.type.replace('_', ' ')} record?`)) {
+                                            const fd = new FormData();
+                                            fd.append('action', 'delete');
+                                            fd.append('id', item.id);
+                                            fd.append('type', item.type);
+                                            const resp = await fetch('/patentresearch', { method: 'POST', body: fd });
+                                            const res = await resp.json();
+                                            if (res.success) loadPatents();
+                                        }
+                                    }
+                                }
+                            })
+                        ]
+                    });
+                }
+
+                return $({ tag: 'td', style, child: [content].flat() });
+            })
+        });
+        return row;
+    };
+
+    const createEmptyState = () => {
+        return $({
+            tag: 'tr',
+            child: [
+                $({
+                    tag: 'td',
+                    att: { colSpan: columns.length },
+                    style: { padding: '0' },
+                    child: [
+                        $({
+                            tag: 'div',
+                            att: { className: 'empty-state' },
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '350px',
+                                width: '100%',
+                                color: '#888',
+                                fontFamily: 'Segoe UI, sans-serif'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: { position: 'relative', width: '180px', height: '180px', marginBottom: '24px' },
+                                    child: [
+                                        $({ tag: 'span', att: { className: 'fa-solid fa-certificate' }, style: { fontSize: '100px', color: 'deepskyblue', opacity: 0.2, position: 'absolute', left: '0', top: '0', transform: 'rotate(-10deg)' } }),
+                                        $({ tag: 'span', att: { className: 'fa-solid fa-gears' }, style: { fontSize: '80px', color: '#4caf50', opacity: 0.2, position: 'absolute', right: '-10px', bottom: '10px', transform: 'rotate(15deg)' } }),
+                                        $({ tag: 'span', att: { className: 'fa-solid fa-trophy' }, style: { fontSize: '60px', color: '#ffd700', opacity: 0.25, position: 'absolute', left: '-15px', bottom: '20px', transform: 'rotate(-20deg)' } }),
+                                        $({ tag: 'div', style: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '14px', fontWeight: 'bold', color: '#fff', backgroundColor: 'rgba(0,191,255,0.2)', padding: '8px 16px', borderRadius: '30px', border: '1px solid deepskyblue', whiteSpace: 'nowrap' }, text: 'IP' })
+                                    ]
+                                }),
+                                $({ tag: 'div', text: 'No Patent / Utility Model Records', style: { fontSize: '26px', marginBottom: '12px', fontWeight: '600', color: '#fff', letterSpacing: '-0.5px' } }),
+                                $({ tag: 'div', text: 'Patents, utility models, industrial designs, and inventions', style: { fontSize: '15px', opacity: 0.7, textAlign: 'center', lineHeight: '1.6' } }),
+                                $({ tag: 'div', text: 'with intellectual property protection will be displayed here', style: { fontSize: '15px', opacity: 0.7, marginBottom: '30px', textAlign: 'center' } })
+                            ]
+                        })
+                    ]
+                })
+            ]
+        });
+    };
+
+    const getTableBody = (el) => {
+        tableBody = el;
+        loadPatents();
     };
 
     // Function to create status badge with color coding
     const createStatusBadge = (status) => {
         const statusConfig = statusOptions.find(s => s.value === status) || statusOptions[0];
-        
+
         return $({
             tag: 'span',
             att: { className: `status-badge status-${status}` },
@@ -301,7 +1410,7 @@ export const PatentUM = () => {
     // Function to create type badge with icon
     const createTypeBadge = (type) => {
         const typeConfig = typeOptions.find(t => t.value === type) || typeOptions[0];
-        
+
         return $({
             tag: 'span',
             att: { className: `type-badge type-${type}` },
@@ -372,7 +1481,7 @@ export const PatentUM = () => {
                                 }),
                                 $({
                                     tag: 'h2',
-                                    text: 'Patents & Utility Models',
+                                    text: 'Intellectual Property Records',
                                     style: {
                                         color: '#fff',
                                         fontFamily: 'Segoe UI, sans-serif',
@@ -409,67 +1518,44 @@ export const PatentUM = () => {
                                 border: '1px solid #444'
                             },
                             child: [
-                                $({
+                                'All', 'Patent', 'Utility Model', 'Copyright', 'Industrial Design', 'Trademark'
+                            ].map(type => {
+                                const val = type === 'All' ? '' : type.toLowerCase().replace(' ', '_');
+                                const isActive = currentType === val;
+
+                                return $({
                                     tag: 'button',
-                                    text: 'All',
+                                    text: type,
+                                    att: { className: `filter-btn-${val || 'all'}` },
                                     style: {
-                                        backgroundColor: 'deepskyblue',
+                                        backgroundColor: isActive ? 'deepskyblue' : 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 20px',
-                                        color: '#fff',
+                                        color: isActive ? '#fff' : '#aaa',
                                         fontSize: '13px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: (e) => {
+                                            currentType = val;
+                                            // Refresh all buttons in this horizontal bar
+                                            const parent = e.target.parentElement;
+                                            Array.from(parent.children).forEach(btn => {
+                                                btn.style.backgroundColor = 'transparent';
+                                                btn.style.color = '#aaa';
+                                            });
+                                            e.target.style.backgroundColor = 'deepskyblue';
+                                            e.target.style.color = '#fff';
+
+                                            loadPatents();
+                                        }
                                     }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Patents',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Utility Models',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Industrial Design',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                })
-                            ]
+                                });
+                            })
                         })
                     ]
                 }),
@@ -505,7 +1591,7 @@ export const PatentUM = () => {
                                     tag: 'input',
                                     att: {
                                         type: 'text',
-                                        placeholder: 'Search patents...',
+                                        placeholder: 'Search IP records...',
                                         className: 'patent-search-input'
                                     },
                                     style: {
@@ -522,7 +1608,12 @@ export const PatentUM = () => {
                                     event: {
                                         type: 'input',
                                         method: (e) => {
-                                            console.log('Searching:', e.target.value);
+                                            const term = e.target.value;
+                                            currentSearch = term;
+                                            clearTimeout(mainSearchTimeout);
+                                            mainSearchTimeout = setTimeout(() => {
+                                                loadPatents();
+                                            }, 400);
                                         }
                                     }
                                 })
@@ -551,7 +1642,7 @@ export const PatentUM = () => {
                             },
                             child: [
                                 $({ tag: 'option', att: { value: '' }, text: 'All Status' }),
-                                ...statusOptions.map(status => 
+                                ...statusOptions.map(status =>
                                     $({ tag: 'option', att: { value: status.value }, text: status.label })
                                 )
                             ]
@@ -579,10 +1670,44 @@ export const PatentUM = () => {
                             },
                             child: [
                                 $({ tag: 'option', att: { value: '' }, text: 'All Types' }),
-                                ...typeOptions.map(type => 
+                                ...typeOptions.map(type =>
                                     $({ tag: 'option', att: { value: type.value }, text: type.label })
                                 )
                             ]
+                        }),
+                        // Add Patent/UM button
+                        $({
+                            tag: 'button',
+                            att: { className: 'add-patent-btn' },
+                            style: {
+                                backgroundColor: 'deepskyblue',
+                                border: 'none',
+                                borderRadius: '30px',
+                                padding: '10px 20px',
+                                color: '#fff',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 2px 8px rgba(0, 191, 255, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-plus-circle' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Add IP Record'
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: openAddPatentModal
+                            }
                         }),
                         $({
                             tag: 'button',
@@ -620,30 +1745,34 @@ export const PatentUM = () => {
     // Statistics cards
     const StatsCards = () => {
         const stats = [
-            { 
-                label: 'Total IP Records', 
-                value: '0', 
+            {
+                label: 'Total IP Records',
+                value: '0',
+                id: 'stat-total',
                 icon: 'fa-file-invoice',
                 color: 'deepskyblue',
                 subtext: 'All time'
             },
-            { 
-                label: 'Patents', 
-                value: '0', 
+            {
+                label: 'Patents',
+                value: '0',
+                id: 'stat-patent',
                 icon: 'fa-certificate',
                 color: '#4caf50',
                 subtext: 'Granted & Pending'
             },
-            { 
-                label: 'Utility Models', 
-                value: '0', 
+            {
+                label: 'Utility Models',
+                value: '0',
+                id: 'stat-um',
                 icon: 'fa-cogs',
                 color: '#ff9800',
                 subtext: 'Filed'
             },
-            { 
-                label: 'Granted', 
-                value: '0', 
+            {
+                label: 'Registered',
+                value: '0',
+                id: 'stat-registered',
                 icon: 'fa-trophy',
                 color: '#ffd700',
                 subtext: 'Approved',
@@ -701,8 +1830,8 @@ export const PatentUM = () => {
                             $({
                                 tag: 'span',
                                 att: { className: `fa-solid ${stat.icon}` },
-                                style: { 
-                                    color: stat.color, 
+                                style: {
+                                    color: stat.color,
                                     fontSize: '28px',
                                     textShadow: stat.textColor === '#000000' ? 'none' : '0 2px 4px rgba(0,0,0,0.2)'
                                 }
@@ -711,8 +1840,8 @@ export const PatentUM = () => {
                     }),
                     $({
                         tag: 'div',
-                        style: { 
-                            display: 'flex', 
+                        style: {
+                            display: 'flex',
                             flexDirection: 'column',
                             position: 'relative',
                             zIndex: '1'
@@ -804,9 +1933,9 @@ export const PatentUM = () => {
                 child: [
                     $({
                         tag: 'div',
-                        style: { 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: '8px',
                             cursor: 'pointer',
                             userSelect: 'none'
@@ -819,8 +1948,8 @@ export const PatentUM = () => {
                             $({
                                 tag: 'span',
                                 att: { className: 'fa-solid fa-arrow-up-wide-short' },
-                                style: { 
-                                    fontSize: '11px', 
+                                style: {
+                                    fontSize: '11px',
                                     color: '#555',
                                     opacity: '0.5',
                                     transition: 'all 0.2s ease'
@@ -886,6 +2015,43 @@ export const PatentUM = () => {
                 });
             }
 
+            if (col.field === 'actions') {
+                return $({
+                    tag: 'td',
+                    style: cellStyle,
+                    child: [
+                        $({
+                            tag: 'button',
+                            att: { title: 'Edit Patent/UM' },
+                            style: {
+                                backgroundColor: 'transparent',
+                                border: '1px solid deepskyblue',
+                                color: 'deepskyblue',
+                                borderRadius: '4px',
+                                padding: '6px 12px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                transition: 'all 0.2s ease'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-pen-to-square' }
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: (e) => {
+                                    e.stopPropagation();
+                                    console.log('Edit clicked for sample row');
+                                }
+                            }
+                        })
+                    ]
+                });
+            }
+
             if (col.field === 'productName') cellContent = 'Solar-Powered Irrigation System';
             if (col.field === 'methods') cellContent = 'Photovoltaic cells, water pump controller, moisture sensors';
             if (col.field === 'patentNumber') cellContent = 'PH/UT/2025/00123';
@@ -925,6 +2091,29 @@ export const PatentUM = () => {
                 }
             }
         });
+    };
+
+    const updateRecordCount = (count) => {
+        const el = document.querySelector('.record-count');
+        if (el) el.innerText = `${count} record${count !== 1 ? 's' : ''}`;
+    };
+
+    const updateStats = (data) => {
+        if (!data) return;
+        const total = data.length;
+        const patents = data.filter(i => i.type === 'patent').length;
+        const ums = data.filter(i => i.type === 'utility_model').length;
+        const registered = data.filter(i => i.status === 'registered').length;
+
+        const totalEl = document.getElementById('stat-total');
+        const patentEl = document.getElementById('stat-patent');
+        const umEl = document.getElementById('stat-um');
+        const regEl = document.getElementById('stat-registered');
+
+        if (totalEl) totalEl.innerText = total;
+        if (patentEl) patentEl.innerText = patents;
+        if (umEl) umEl.innerText = ums;
+        if (regEl) regEl.innerText = registered;
     };
 
     // Main table component
@@ -985,10 +2174,10 @@ export const PatentUM = () => {
 export const formatPatentDate = (date) => {
     if (!date) return '—';
     const d = new Date(date);
-    return d.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+    return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
     });
 };
 
@@ -1004,8 +2193,6 @@ export const getStatusColor = (status) => {
 };
 
 export const getPatentStats = (data) => {
-    // This function will calculate statistics from the data
-    // Will be implemented when backend data is available
     return {
         total: 0,
         patents: 0,
