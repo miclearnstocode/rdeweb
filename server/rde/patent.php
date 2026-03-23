@@ -7,29 +7,34 @@ header('Content-Type: application/json');
 // Define allowed tables and their specific columns for centralized access
 $table_map = [
     'patent' => [
-        'research_id', 'endorsement_id', 'productName', 'patentNumber', 'productDescription', 
-        'status', 'filingDate', 'grantDate', 'inventors', 'caseNumber', 'applicationNumber', 
-        'publicationDate', 'agent', 'campus', 'image',
-        'application_form_url', 'abstract_url', 'claims_url', 'drawing_url', 'description_file_url'
+        'research_id', 'endorsement_id', 'caseNumber', 'technologyName', 'inventors', 
+        'campus', 'agent', 'applicationDate', 'applicationNumber', 'publicationDate', 
+        'status', 'patentFormURL', 'abstractURL', 'claimsURL', 
+        'technicalDescriptionURL', 'technicalDrawingURL', 'photoTechnologyURL',
+        'registrationNumber', 'registrationDate'
     ],
     'utility_model' => [
-        'research_id', 'endorsement_id', 'productName', 'patentNumber', 'productDescription', 
-        'status', 'filingDate', 'grantDate', 'inventors', 'caseNumber', 'applicationNumber', 
-        'publicationDate', 'agent', 'campus', 'image',
-        'application_form_url', 'abstract_url', 'claims_url', 'drawing_url', 'description_file_url'
+        'research_id', 'endorsement_id', 'caseNumberUM', 'technologyNameUM', 'inventorsUM', 
+        'campusUM', 'agentUM', 'applicationDateUM', 'applicationNumberUM', 'publicationDateUM', 
+        'statusUM', 'patentFormURLUM', 'abstractURLUM', 'claimsURLUM', 
+        'technicalDescriptionURLUM', 'technicalDrawingURLUM', 'photoTechnologyURLUM',
+        'registrationNumber', 'registrationDate'
     ],
     'copyright' => [
-        'productName', 'patentNumber', 'productDescription', 'status', 'filingDate', 'grantDate', 
-        'inventors', 'classOfWork', 'campus', 'image',
-        'copyright_forms_url', 'supplemental_url', 'deed_assignment_url', 'affidavit_url', 'ids_authors_url', 'creative_work_url'
+        'title', 'author', 'campus', 'applicationDate', 'classOfWork', 'status', 'photoWorksURL', 
+        'copyrightFormsURL', 'supplementalDocumentURL', 'deedAssignmentURL', 'affidavitOwnershipURL', 
+        'idAuthorURL', 'creativeWorksURL', 'registrationNumber', 'registrationDate'
     ],
     'industrial_design' => [
-        'research_id', 'endorsement_id', 'productName', 'patentNumber', 'productDescription', 
-        'status', 'filingDate', 'grantDate', 'inventors', 'caseNumber', 'applicationNumber', 
-        'publicationDate', 'expirationDate', 'campus', 'image',
-        'application_form_url', 'specification_url', 'drawing_url'
+        'research_id', 'endorsement_id', 'caseNumber', 'idTitle', 'invertors', 'campus', 'agent', 
+        'applicationDate', 'applicationNumber', 'publicationDate', 'status', 'applicationFormURL', 
+        'abstractURL', 'claimsURL', 'technicalDescriptionURL', 'technicalDrawingURL', 'photoTechnologyURL',
+        'registrationNumber', 'registrationDate'
     ],
-    'trademark' => ['research_id', 'endorsement_id', 'productName', 'patentNumber', 'productDescription', 'status', 'filingDate', 'grantDate', 'registrant', 'applicationNumber', 'expirationDate', 'campus', 'image', 'application_form_url']
+    'trademark' => [
+        'title', 'registrant', 'applicationDate', 'applicationNumber', 'status', 
+        'trademarkFormURL', 'photoTrademarkURL', 'registrationNumber', 'registrationDate'
+    ]
 ];
 
 require_once(__DIR__ . '/../../config/patent_folder.php');
@@ -37,6 +42,14 @@ require_once(__DIR__ . '/../../config/patent_folder.php');
 $action = $_POST['action'] ?? '';
 
 switch ($action) {
+    case '':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && $_SERVER['CONTENT_LENGTH'] > 0) {
+            echo json_encode(['success' => false, 'message' => 'The uploaded file/s or post request is too large for the server. Check post_max_size and upload_max_filesize in php.ini.']);
+            exit;
+        }
+        echo json_encode(['success' => false, 'message' => 'Invalid action']);
+        break;
+
     case 'search_research':
         $search = $_POST['search'] ?? '';
         $searchTerm = "%$search%";
@@ -75,7 +88,7 @@ switch ($action) {
         $data = [];
         foreach ($columns as $col) {
             // Check for existing URLs passed from frontend
-            if (strpos($col, '_url') !== false || $col === 'image') {
+            if (strpos($col, 'URL') !== false || $col === 'photoTechnologyURL' || $col === 'patent_image' || strpos($col, '_url') !== false) {
                 $data[$col] = $_POST['current_' . $col] ?? null;
                 continue;
             }
@@ -85,30 +98,61 @@ switch ($action) {
         }
 
         // Handle GDrive File Uploads
-        $file_config = [
-            'patent_image'          => 'image',
-            'application_form_file' => 'application_form_url',
-            'abstract_file'         => 'abstract_url',
-            'claims_file'           => 'claims_url',
-            'drawing_file'          => 'drawing_url',
-            'description_file'      => 'description_file_url',
-            'specification_file'    => 'specification_url',
-            'copyright_forms_file'  => 'copyright_forms_url',
-            'supplemental_file'     => 'supplemental_url',
-            'deed_assignment_file'  => 'deed_assignment_url',
-            'affidavit_file'        => 'affidavit_url',
-            'ids_authors_file'      => 'ids_authors_url',
-            'creative_work_file'    => 'creative_work_url'
+        $file_config = [];
+        $mappings = [
+            'photoTechnologyURL_file'      => 'photoTechnologyURL',
+            'photoTechnologyURLUM_file'    => 'photoTechnologyURLUM',
+            'patentFormURL_file'           => 'patentFormURL',
+            'patentFormURLUM_file'         => 'patentFormURLUM',
+            'abstractURL_file'             => 'abstractURL',
+            'abstractURLUM_file'           => 'abstractURLUM',
+            'claimsURL_file'               => 'claimsURL',
+            'claimsURLUM_file'             => 'claimsURLUM',
+            'technicalDrawingURL_file'     => 'technicalDrawingURL',
+            'technicalDrawingURLUM_file'   => 'technicalDrawingURLUM',
+            'technicalDescriptionURL_file' => 'technicalDescriptionURL',
+            'technicalDescriptionURLUM_file' => 'technicalDescriptionURLUM',
+            'application_form_file'        => 'applicationFormURL',
+            'copyright_forms_file'         => 'copyrightFormsURL',
+            'supplemental_file'            => 'supplementalDocumentURL',
+            'deed_assignment_file'         => 'deedAssignmentURL',
+            'affidavit_file'               => 'affidavitOwnershipURL',
+            'ids_authors_file'             => 'idAuthorURL',
+            'creative_work_file'           => 'creativeWorksURL',
+            'photo_works_file'             => 'photoWorksURL',
+            'trademark_form_file'          => 'trademarkFormURL',
+            'photo_trademark_file'         => 'photoTrademarkURL'
         ];
+
+        // Legacy fallbacks
+        // Legacy fallbacks (No change needed as they might still be sent from other forms if any)
+        $legacy = [
+            'photoTechnologyURL'       => 'photoTechnologyURL',
+            'patentFormURL'            => 'applicationFormURL',
+            'abstractURL'              => 'abstractURL',
+            'claimsURL'                => 'claimsURL',
+            'technicalDrawingURL'      => 'technicalDrawingURL',
+            'technicalDescriptionURL'  => 'technicalDescriptionURL'
+        ];
+
+        foreach ($mappings as $input => $db_col) {
+            if (in_array($db_col, $columns)) {
+                $file_config[$input] = $db_col;
+            } elseif (isset($legacy[$db_col]) && in_array($legacy[$db_col], $columns)) {
+                $file_config[$input] = $legacy[$db_col];
+            }
+        }
 
         try {
             $drive = null;
-            $image_product_name = $_POST['productName'] ?? 'Unnamed Product';
-            $campus_name = $_POST['campus'] ?? 'Main Campus';
+            $sfx = ($table === 'utility_model') ? 'UM' : (($table === 'industrial_design') ? 'Indus' : '');
+            $image_product_name = $_POST['technologyName' . $sfx] ?? $_POST['technologyName'] ?? $_POST['productName'] ?? 'Unnamed Product';
+            $campus_name = $_POST['campus' . $sfx] ?? $_POST['campus'] ?? 'Main Campus';
+            $status = $_POST['status' . $sfx] ?? $_POST['status'] ?? 'Filed';
 
             // Get standard IP folder ID for this record (creates folders as needed)
             require_once(__DIR__ . '/../../config/patent_folder.php');
-            $recordFolderId = getIPFolderId($table, $campus_name, $image_product_name);
+            $recordFolderId = getIPFolderId($table, $campus_name, $image_product_name, $status);
 
             foreach ($file_config as $input_name => $db_col) {
                 if (isset($_FILES[$input_name]) && $_FILES[$input_name]['error'] === UPLOAD_ERR_OK) {
@@ -123,24 +167,49 @@ switch ($action) {
                     if ($uploadResult['success']) {
                         $drive->makeFilePublic($uploadResult['id']);
                         $data[$db_col] = $uploadResult['view_url'];
+                    } else {
+                        throw new Exception("GDrive Upload Failed for $input_name: " . ($uploadResult['error'] ?? 'Unknown error'));
                     }
                 }
             }
         } catch (Exception $e) {
             error_log("GDrive Upload Error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => "File Upload Error: " . $e->getMessage()]);
+            exit;
         }
 
         if ($action === 'save') {
+             // Check for missing mandatory fields before execution (only for Patent/UM where they are NOT NULL)
+            if ($table === 'patent' || $table === 'utility_model' || $table === 'industrial_design') {
+                $isID = ($table === 'industrial_design');
+                $isUM = ($table === 'utility_model');
+                $sfx = $isUM ? 'UM' : '';
+                
+                $mandatory_files = [
+                    ($isID ? 'applicationFormURL' : 'patentFormURL' . $sfx),
+                    'abstractURL' . $sfx,
+                    'claimsURL' . $sfx,
+                    'technicalDrawingURL' . $sfx,
+                    'photoTechnologyURL' . $sfx
+                ];
+                
+                foreach ($mandatory_files as $mand) {
+                    if (empty($data[$mand])) {
+                        echo json_encode(['success' => false, 'message' => "Mandatory file URL is missing for $mand."]);
+                        exit;
+                    }
+                }
+            }
+
             $cols_str = implode(', ', array_keys($data));
             $placeholders = implode(', ', array_fill(0, count($data), '?'));
             $sql = "INSERT INTO $table ($cols_str) VALUES ($placeholders)";
-            
             $stmt = $conn->prepare($sql);
             $types = "";
             $values = [];
             foreach ($data as $k => $v) {
                 $values[] = $v;
-                $types .= (is_numeric($v) && $k !== 'patentNumber' && $k !== 'caseNumber' && $k !== 'applicationNumber') ? 'i' : 's';
+                $types .= ($k === 'research_id' || $k === 'endorsement_id' || $k === 'id') ? 'i' : 's';
             }
             $stmt->bind_param($types, ...$values);
         } else {
@@ -152,7 +221,7 @@ switch ($action) {
             $values = [];
             foreach ($data as $k => $v) {
                 $values[] = $v;
-                $types .= (is_numeric($v) && $k !== 'patentNumber' && $k !== 'caseNumber' && $k !== 'applicationNumber') ? 'i' : 's';
+                $types .= ($k === 'research_id' || $k === 'endorsement_id' || $k === 'id') ? 'i' : 's';
             }
             $types .= "i";
             $values[] = $id;
@@ -206,12 +275,29 @@ switch ($action) {
             $sql = "SELECT $select_fields FROM $table p $join_sql WHERE 1=1";
             
             if ($search) {
-                $sql .= " AND (p.productName LIKE ? OR p.patentNumber LIKE ?)";
+                // Handle different column names for different tables
+                if ($table === 'industrial_design') {
+                    $sql .= " AND (p.idTitle LIKE ? OR p.applicationNumber LIKE ?)";
+                } elseif ($table === 'utility_model') {
+                    $sql .= " AND (p.technologyNameUM LIKE ? OR p.applicationNumberUM LIKE ?)";
+                } elseif ($table === 'patent') {
+                    $sql .= " AND (p.technologyName LIKE ? OR p.applicationNumber LIKE ?)";
+                } elseif ($table === 'copyright' || $table === 'trademark') {
+                    $sql .= " AND p.title LIKE ?";
+                    $search_params_count = 1;
+                } else {
+                    $sql .= " AND (p.productName LIKE ? OR p.patentNumber LIKE ?)";
+                }
             }
             
             $stmt = $conn->prepare($sql);
             if ($search) {
-                $stmt->bind_param('ss', $searchTerm, $searchTerm);
+                if (isset($search_params_count) && $search_params_count === 1) {
+                    $stmt->bind_param('s', $searchTerm);
+                } else {
+                    $stmt->bind_param('ss', $searchTerm, $searchTerm);
+                }
+                unset($search_params_count);
             }
             
             $stmt->execute();
@@ -228,4 +314,4 @@ switch ($action) {
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;
-}
+}

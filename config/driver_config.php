@@ -60,7 +60,8 @@ class GoogleDriveService {
                 'q' => $query,
                 'fields' => 'files(id, name)',
                 'supportsAllDrives' => true,
-                'includeItemsFromAllDrives' => true
+                'includeItemsFromAllDrives' => true,
+                'corpora' => 'allDrives'
             ]);
             
             if (count($result->getFiles()) > 0) {
@@ -101,6 +102,7 @@ class GoogleDriveService {
         }
         
         try {
+            error_log("GDrive: Uploading $fileName to folder $folderId");
             $fileMetadata = new Google_Service_Drive_DriveFile([
                 'name' => $fileName,
                 'parents' => [$folderId]
