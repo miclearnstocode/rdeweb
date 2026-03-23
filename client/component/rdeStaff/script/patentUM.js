@@ -498,7 +498,14 @@ export const PatentUM = () => {
                 tag: 'select',
                 att: { name: 'campus', required: true },
                 style: { ...inputBaseStyle, appearance: 'none' },
-                child: campusOptions.map(camp => $({ tag: 'option', att: { value: (camp === data?.campusUM ? data.campusUM : data?.campus) === camp }, text: camp }))
+                child: campusOptions.map(camp => $({ 
+                    tag: 'option', 
+                    att: { 
+                        value: camp, 
+                        selected: (data?.campus || data?.campusUM) === camp 
+                    }, 
+                    text: camp 
+                }))
             });
 
             const initialStatus = data?.status || data?.statusUM || 'filed';
@@ -552,7 +559,9 @@ export const PatentUM = () => {
                     style: inputBaseStyle
                 })));
 
+                campusSelect.setAttribute('name', 'campus' + sfx);
                 grid.appendChild(createFormGroup('Campus', campusSelect));
+
 
                 grid.appendChild(createFormGroup('Agent', $({
                     tag: 'input',
@@ -581,7 +590,9 @@ export const PatentUM = () => {
                     style: inputBaseStyle
                 })));
 
+                statusField.setAttribute('name', 'status' + sfx);
                 grid.appendChild(createFormGroup('Status', statusField));
+
                 grid.appendChild(regNoGroup);
                 grid.appendChild(regDateGroup);
 
@@ -658,7 +669,9 @@ export const PatentUM = () => {
                     style: inputBaseStyle
                 }), 2));
 
+                campusSelect.setAttribute('name', 'campus');
                 grid.appendChild(createFormGroup('Campus', campusSelect));
+
 
                 grid.appendChild(createFormGroup('Application / Filing Date', $({
                     tag: 'input',
@@ -721,9 +734,11 @@ export const PatentUM = () => {
                     });
 
                     return container;
-                })()));
+                })(), 1, null, { zIndex: 1000 }));
 
+                statusField.setAttribute('name', 'status');
                 grid.appendChild(createFormGroup('Status', statusField));
+
                 grid.appendChild(regNoGroup);
                 grid.appendChild(regDateGroup);
 
@@ -812,7 +827,9 @@ export const PatentUM = () => {
                     style: inputBaseStyle
                 })));
 
+                statusField.setAttribute('name', 'status');
                 grid.appendChild(createFormGroup('Status', statusField));
+
                 grid.appendChild(regNoGroup);
                 grid.appendChild(regDateGroup);
 

@@ -16,11 +16,6 @@ function getIPFolderId($ipType, $campus, $productName, $status)
     // 2. Status Level (e.g., "Filed", "Registered", "Downgraded")
     $statusName = $status ?: "Unspecified Status";
     $statusLabel = ucwords($statusName);
-    // Pluralize status for folder names consistently
-    if (!str_ends_with(strtolower($statusLabel), 's')) {
-        $statusLabel .= 's';
-    }
-    // "Fileds" looks weird, let's keep it singular or handle "Filed" specially? 
     // User requested: "filed", "registered" and "downgraded"
     $statusFolderId = $drive->findOrCreateFolder($statusLabel, $ipMainFolderId);
     if (!$statusFolderId) { error_log("Failed to find/create Status Folder: $statusLabel"); return null; }
