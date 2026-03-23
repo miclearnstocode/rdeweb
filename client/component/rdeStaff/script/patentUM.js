@@ -214,12 +214,12 @@ export const PatentUM = () => {
     // Columns for the data table
     const columns = [
         { field: 'type', header: 'IPR Type', width: '150px' },
-        { field: 'productName', header: 'Title / Product Name', width: '300px' },
+        { field: 'technologyName', header: 'Title / Technology Name', width: '300px' },
         { field: 'caseNumber', header: 'Case Number', width: '180px' },
-        { field: 'patentNumber', header: 'Registration No.', width: '150px' },
+        { field: 'applicationNumber', header: 'Application No.', width: '150px' },
         { field: 'status', header: 'Status', width: '120px' },
-        { field: 'filingDate', header: 'Filing Date', width: '130px' },
-        { field: 'grantDate', header: 'Registration Date', width: '130px' },
+        { field: 'applicationDate', header: 'Application Date', width: '130px' },
+        { field: 'publicationDate', header: 'Publication Date', width: '130px' },
         { field: 'inventors', header: 'Inventors / Authors', width: '250px' },
         { field: 'campus', header: 'Campus', width: '150px' },
         { field: 'actions', header: 'Actions', width: '100px' }
@@ -287,7 +287,7 @@ export const PatentUM = () => {
 
         const container = $({
             tag: 'div',
-            style: { position: 'relative', width: '100%' }
+            style: { position: 'relative', width: '100%', zIndex: '100' }
         });
 
         const hiddenResearchInput = $({
@@ -423,7 +423,7 @@ export const PatentUM = () => {
         const formGroupStyle = { marginBottom: '20px' };
 
         // Helper to create form group
-        const createFormGroup = (label, input, span = 1, tooltip = null) => {
+        const createFormGroup = (label, input, span = 1, tooltip = null, customStyle = {}, groupId = null) => {
             const labelChildren = [$({ tag: 'span', text: label })];
 
             if (tooltip) {
@@ -439,7 +439,8 @@ export const PatentUM = () => {
 
             return $({
                 tag: 'div',
-                style: { ...formGroupStyle, gridColumn: span === 2 ? 'span 2' : 'auto' },
+                att: groupId ? { id: groupId } : {},
+                style: { ...formGroupStyle, ...customStyle, gridColumn: span === 2 ? 'span 2' : 'auto', position: customStyle.zIndex ? 'relative' : 'static' },
                 child: [
                     $({ tag: 'label', style: { ...labelStyle, display: 'flex', alignItems: 'center' }, child: labelChildren }),
                     input
@@ -466,7 +467,7 @@ export const PatentUM = () => {
             if (modalTitleEl) {
                 const typeLabel = typeOptions.find(opt => opt.value === type)?.label || 'IP Record';
                 const isEdit = modalTitleEl.getAttribute('data-edit') === 'true';
-                modalTitleEl.innerText = `${isEdit ? 'Edit' : 'Add New'} ${typeLabel}`;
+                modalTitleEl.innerText = `${isEdit ? 'Edit' : 'New'} ${typeLabel}`;
             }
 
             // Common dynamic fields
@@ -484,7 +485,7 @@ export const PatentUM = () => {
                         const regDateInput = regDateGroup?.querySelector('input');
 
                         if (regNoGroup && regDateGroup) {
-                            const isVisible = e.target.value !== 'filed';
+                            const isVisible = e.target.value === 'registered';
                             regNoGroup.style.display = isVisible ? 'block' : 'none';
                             regDateGroup.style.display = isVisible ? 'block' : 'none';
 
@@ -505,162 +506,138 @@ export const PatentUM = () => {
             // Initial visibility logic for registration fields
             const initialStatus = data?.status || 'filed';
             const regDisplay = initialStatus !== 'filed' ? 'block' : 'none';
-
             if (type === 'patent' || type === 'utility_model' || type === 'industrial_design') {
-                // Shared fields for Tech-heavy IPR - 12 slots total
+                // Shared fields for Tech-heavy IPR
                 const isID = type === 'industrial_design';
+                const sfx = isID ? 'Indus' : '';
 
                 grid.appendChild(createFormGroup('Case Number (CAPSU IPMO Year-000)', $({
                     tag: 'input',
-                    att: { type: 'text', name: 'caseNumber', placeholder: 'CAPSU IPMO 2026-001', value: data?.caseNumber || '', required: true },
+                    att: { type: 'text', name: 'caseNumber' + sfx, placeholder: 'CAPSU IPMO 2026-001', value: data?.['caseNumber' + sfx] || data?.caseNumber || '', required: true },
                     style: inputBaseStyle
                 })));
 
                 grid.appendChild(createFormGroup('Research Title Search', createTitleSearchField(inputBaseStyle), 1,
-                    'Linking your IP record to a research title in the database automatically fetches the research title. Type at least 2 characters to see suggestions.'
+                    'Linking your IP record to a research title in the database automatically fetches the research title. Type at least 2 characters to see suggestions.',
+                    { zIndex: 1000 }
                 ));
 
                 const techTitle = isID ? 'ID Title' : 'Technology Name';
                 grid.appendChild(createFormGroup(techTitle, $({
                     tag: 'input',
-                    att: { type: 'text', name: 'productName', required: true, value: data?.productName || '' },
+                    att: { type: 'text', name: 'technologyName' + sfx, required: true, value: data?.['technologyName' + sfx] || data?.technologyName || data?.productName || '' },
                     style: inputBaseStyle
                 })));
 
                 grid.appendChild(createFormGroup('Inventor/s', $({
                     tag: 'input',
-                    att: { type: 'text', name: 'inventors', required: true, value: data?.inventors || '' },
+                    att: { type: 'text', name: 'inventors' + sfx, required: true, value: data?.['inventors' + sfx] || data?.inventors || '' },
                     style: inputBaseStyle
                 })));
 
                 grid.appendChild(createFormGroup('Campus', campusSelect));
 
-                if (!isID) {
-                    grid.appendChild(createFormGroup('Agent', $({
-                        tag: 'input',
-                        att: { type: 'text', name: 'agent', value: data?.agent || '' },
-                        style: inputBaseStyle
-                    })));
-                }
+                grid.appendChild(createFormGroup('Agent', $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'agent' + sfx, value: data?.['agent' + sfx] || data?.agent || '' },
+                    style: inputBaseStyle
+                })));
 
                 grid.appendChild(createFormGroup('Application / Filing Date', $({
                     tag: 'input',
-                    att: { type: 'date', name: 'filingDate', required: true, value: data?.filingDate || '' },
+                    att: { type: 'date', name: 'applicationDate' + sfx, required: true, value: data?.['applicationDate' + sfx] || data?.applicationDate || data?.filingDate || '' },
                     style: inputBaseStyle
                 })));
 
                 grid.appendChild(createFormGroup('Application Number', $({
                     tag: 'input',
-                    att: { type: 'text', name: 'applicationNumber', required: true, value: data?.applicationNumber || '' },
+                    att: { type: 'text', name: 'applicationNumber' + sfx, required: true, value: data?.['applicationNumber' + sfx] || data?.applicationNumber || '' },
                     style: inputBaseStyle
                 })));
 
                 grid.appendChild(createFormGroup('Publication / Issued Date', $({
                     tag: 'input',
-                    att: { type: 'date', name: 'publicationDate', required: true, value: data?.publicationDate || '' },
+                    att: { type: 'date', name: 'publicationDate' + sfx, required: true, value: data?.['publicationDate' + sfx] || data?.publicationDate || '' },
                     style: inputBaseStyle
                 })));
 
                 grid.appendChild(createFormGroup('Status', statusField));
 
+                const regNoField = $({
+                    tag: 'input',
+                    att: { type: 'text', name: 'registrationNumber' + sfx, value: data?.['registrationNumber' + sfx] || data?.registrationNumber || '', required: initialStatus === 'registered' },
+                    style: inputBaseStyle
+                });
+                const regDateField = $({
+                    tag: 'input',
+                    att: { type: 'date', name: 'registrationDate' + sfx, value: data?.['registrationDate' + sfx] || data?.registrationDate || '', required: initialStatus === 'registered' },
+                    style: inputBaseStyle
+                });
+
+                const regNoGroup = createFormGroup('Registration Number', regNoField, 1, null, { display: initialStatus === 'registered' ? 'block' : 'none' }, 'reg-no-group');
+                const regDateGroup = createFormGroup('Registration Date', regDateField, 1, null, { display: initialStatus === 'registered' ? 'block' : 'none' }, 'reg-date-group');
+
+                grid.appendChild(regNoGroup);
+                grid.appendChild(regDateGroup);
+
+                // File upload section
                 grid.appendChild($({
                     tag: 'div',
-                    att: { id: 'reg-no-group' },
-                    style: { display: regDisplay },
+                    style: { gridColumn: 'span 2', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #444', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' },
                     child: [
-                        $({ tag: 'label', style: labelStyle, text: 'Registration Number' }),
-                        $({ tag: 'input', att: { type: 'text', name: 'patentNumber', value: data?.patentNumber || '', required: initialStatus !== 'filed' }, style: inputBaseStyle })
+                        $({ tag: 'i', att: { className: 'fa-solid fa-file-arrow-up' }, style: { color: 'deepskyblue', fontSize: '18px' } }),
+                        $({ tag: 'h4', text: 'Upload Files (Cloud Storage)', style: { margin: '0', color: 'deepskyblue', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' } })
                     ]
                 }));
 
-                grid.appendChild($({
-                    tag: 'div',
-                    att: { id: 'reg-date-group' },
-                    style: { display: regDisplay },
-                    child: [
-                        $({ tag: 'label', style: labelStyle, text: 'Registration Date' }),
-                        $({ tag: 'input', att: { type: 'date', name: 'grantDate', value: data?.grantDate || '', required: initialStatus !== 'filed' }, style: inputBaseStyle })
-                    ]
-                }));
+                const fileFields = [
+                    { label: 'Application Form', name: 'patentFormURL' + sfx + '_file', db_url: 'patentFormURL' + sfx, accept: '.pdf' },
+                    { label: 'Abstract', name: 'abstractURL' + sfx + '_file', db_url: 'abstractURL' + sfx, accept: '.pdf' },
+                    { label: 'Claims', name: 'claimsURL' + sfx + '_file', db_url: 'claimsURL' + sfx, accept: '.pdf' },
+                    { label: 'Technical Description', name: 'technicalDescriptionURL' + sfx + '_file', db_url: 'technicalDescriptionURL' + sfx, accept: '.pdf' },
+                    { label: 'Technical Drawing/s', name: 'technicalDrawingURL' + sfx + '_file', db_url: 'technicalDrawingURL' + sfx, accept: 'image/*' },
+                    { label: 'Photo of the Technology', name: 'photoTechnologyURL' + sfx + '_file', db_url: 'photoTechnologyURL' + sfx, accept: 'image/*' },
+                ];
 
-                if (isID) {
-                    grid.appendChild(createFormGroup('Expiration Date', $({
-                        tag: 'input',
-                        att: { type: 'date', name: 'expirationDate', required: true, value: data?.expirationDate || '' },
-                        style: inputBaseStyle
-                    })));
-                }
-
-                // File upload section for technical IPRs
-                if (type === 'patent' || type === 'utility_model' || type === 'industrial_design') {
-                    const isID = type === 'industrial_design';
-                    grid.appendChild($({
+                fileFields.forEach(f => {
+                    const currentUrl = data ? data[f.db_url] : null;
+                    const fileInput = $({
                         tag: 'div',
-                        style: { gridColumn: 'span 2', marginTop: '20px', marginBottom: '10px', borderBottom: '1px solid #444', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' },
+                        style: { display: 'flex', flexDirection: 'column', gap: '5px' },
                         child: [
-                            $({ tag: 'i', att: { className: 'fa-solid fa-file-arrow-up' }, style: { color: 'deepskyblue', fontSize: '18px' } }),
-                            $({ tag: 'h4', text: 'Upload Files (Cloud Storage)', style: { margin: '0', color: 'deepskyblue', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' } })
-                        ]
-                    }));
-
-                    // Different file requirements based on type
-                    const fileFields = isID ? [
-                        { label: 'ID Application Form', name: 'application_form_file', db_url: 'application_form_url', accept: '.pdf' },
-                        { label: 'Specification', name: 'specification_file', db_url: 'specification_url', accept: '.pdf' },
-                        { label: 'Drawing', name: 'drawing_file', db_url: 'drawing_url', accept: '.pdf,.png,.jpg,.jpeg' },
-                        { label: 'Photo of the Technology', name: 'patent_image', db_url: 'image', accept: 'image/*' }
-                    ] : [
-                        { label: 'Patent Application Form', name: 'application_form_file', db_url: 'application_form_url', accept: '.pdf' },
-                        { label: 'Abstract', name: 'abstract_file', db_url: 'abstract_url', accept: '.pdf' },
-                        { label: 'Claims', name: 'claims_file', db_url: 'claims_url', accept: '.pdf' },
-                        { label: 'Technical Description', name: 'description_file', db_url: 'description_file_url', accept: '.pdf' },
-                        { label: 'Technical Drawing (Optional)', name: 'drawing_file', db_url: 'drawing_url', accept: '.pdf,.png,.jpg,.jpeg' },
-                        { label: 'Photo of the Technology', name: 'patent_image', db_url: 'image', accept: 'image/*' }
-                    ];
-
-                    fileFields.forEach(f => {
-                        const currentUrl = data ? data[f.db_url] : null;
-                        const fileInput = $({
-                            tag: 'div',
-                            style: { display: 'flex', flexDirection: 'column', gap: '5px' },
-                            child: [
-                                $({
-                                    tag: 'input',
-                                    att: { type: 'file', name: f.name, accept: f.accept },
-                                    style: { ...inputBaseStyle, padding: '8px' },
-                                    event: {
-                                        type: 'change',
-                                        method: async (e) => {
-                                            const file = e.target.files[0];
-                                            if (!file) return;
-
-                                            // Real-time validation for PDF fields (Application Form, Specification, Abstract, etc.)
-                                            if (f.accept === '.pdf') {
-                                                const check = await ValidatePDF(file);
-                                                if (!check.valid) {
-                                                    alert(`File Validation Failed: ${check.error}`);
-                                                    e.target.value = ''; // Clear invalid file
-                                                }
+                            $({
+                                tag: 'input',
+                                att: { type: 'file', name: f.name, accept: f.accept, required: !currentUrl },
+                                style: { ...inputBaseStyle, padding: '8px' },
+                                event: {
+                                    type: 'change',
+                                    method: async (e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        if (f.accept === '.pdf') {
+                                            const check = await ValidatePDF(file);
+                                            if (!check.valid) {
+                                                alert(`File Validation Failed: ${check.error}`);
+                                                e.target.value = '';
                                             }
                                         }
                                     }
-                                }),
-                                currentUrl ? $({
-                                    tag: 'a',
-                                    att: { href: currentUrl, target: '_blank', className: 'view-current-file' },
-                                    style: { fontSize: '11px', color: 'deepskyblue', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' },
-                                    child: [
-                                        $({ tag: 'i', att: { className: 'fa-solid fa-eye' } }),
-                                        $({ tag: 'span', text: 'View Current Attachment' }),
-                                        $({ tag: 'input', att: { type: 'hidden', name: `current_${f.db_url}`, value: currentUrl } })
-                                    ]
-                                }) : null
-                            ].filter(Boolean)
-                        });
-                        grid.appendChild(createFormGroup(f.label, fileInput));
+                                }
+                            }),
+                            currentUrl ? $({
+                                tag: 'a',
+                                att: { href: currentUrl, target: '_blank', className: 'view-current-file' },
+                                style: { fontSize: '11px', color: 'deepskyblue', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' },
+                                child: [
+                                    $({ tag: 'i', att: { className: 'fa-solid fa-eye' } }),
+                                    $({ tag: 'span', text: 'View Current Attachment' }),
+                                    $({ tag: 'input', att: { type: 'hidden', name: `current_${f.db_url}`, value: currentUrl } })
+                                ]
+                            }) : null
+                        ].filter(Boolean)
                     });
-                }
-
+                    grid.appendChild(createFormGroup(f.label, fileInput));
+                });
             } else if (type === 'copyright') {
                 // Copyright specific - Balanced layout
                 grid.appendChild(createFormGroup('Title', $({
@@ -772,6 +749,7 @@ export const PatentUM = () => {
                 }));
 
                 const fileFields = [
+                    { label: 'Photo of works', name: 'patent_image', db_url: 'patent_image', accept: 'image/*' },
                     { label: 'Copyright Forms', name: 'copyright_forms_file', db_url: 'copyright_forms_url', accept: '.pdf' },
                     { label: 'Supplemental Document (Optional)', name: 'supplemental_file', db_url: 'supplemental_url', accept: '.pdf' },
                     { label: 'Deed of Assignment', name: 'deed_assignment_file', db_url: 'deed_assignment_url', accept: '.pdf' },
@@ -879,7 +857,7 @@ export const PatentUM = () => {
 
                 const fileFields = [
                     { label: 'Trademark Application Form', name: 'application_form_file', db_url: 'application_form_url', accept: '.pdf' },
-                    { label: 'Photo of the Trademark', name: 'patent_image', db_url: 'image', accept: 'image/*' }
+                    { label: 'Photo of the Trademark', name: 'patent_image', db_url: 'patent_image', accept: 'image/*' }
                 ];
 
                 fileFields.forEach(f => {
@@ -930,13 +908,6 @@ export const PatentUM = () => {
                 att: { className: 'animate-fields description-container' },
                 style: { display: 'flex', flexDirection: 'column', gap: '20px' },
                 child: [
-                    $({
-                        tag: 'div',
-                        child: [
-                            $({ tag: 'label', style: labelStyle, text: 'Product Description' }),
-                            $({ tag: 'textarea', att: { name: 'productDescription', rows: '4' }, style: { ...inputBaseStyle, resize: 'vertical' }, text: data?.productDescription || '' })
-                        ]
-                    }),
                     // Only show generic photo for non-technical types that don't have specialized uploads
                     !hasTechnicalUploads ? $({
                         tag: 'div',
@@ -1035,7 +1006,7 @@ export const PatentUM = () => {
                                         $({
                                             tag: 'h2',
                                             att: { id: 'modal-title', 'data-edit': isEdit ? 'true' : 'false' },
-                                            text: isEdit ? 'Edit Record' : 'Add New Record',
+                                            text: isEdit ? 'Edit Record' : 'New Record',
                                             style: { color: '#fff', fontSize: '20px', fontWeight: '600', margin: '0' }
                                         })
                                     ]
@@ -1251,7 +1222,7 @@ export const PatentUM = () => {
                 method2: (e) => e.currentTarget.style.backgroundColor = 'transparent'
             },
             child: columns.map(col => {
-                let content = item[col.field] || '—';
+                let content = item[col.field] || item[col.field + 'Indus'] || '—';
                 const style = {
                     padding: '16px 12px',
                     fontSize: '13px',
@@ -1266,7 +1237,7 @@ export const PatentUM = () => {
 
                 if (col.field === 'status') content = createStatusBadge(item.status);
                 if (col.field === 'type') content = createTypeBadge(item.type);
-                if (col.field === 'filingDate' || col.field === 'grantDate') content = formatPatentDate(item[col.field]);
+                if (col.field === 'applicationDate' || col.field === 'publicationDate') content = formatPatentDate(item[col.field]);
 
                 if (col.field === 'image') {
                     if (item.image) {
@@ -1328,7 +1299,11 @@ export const PatentUM = () => {
                     });
                 }
 
-                return $({ tag: 'td', style, child: [content].flat() });
+                if (typeof content === 'string') {
+                    return $({ tag: 'td', style, text: content });
+                } else {
+                    return $({ tag: 'td', style, child: [content].flat() });
+                }
             })
         });
         return row;
