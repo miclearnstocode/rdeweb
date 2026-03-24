@@ -14,7 +14,7 @@ export const LoadLocation = (url) => {
     window.location.assign(url)
 }
 
-export const $ = ({tag, att, text, html, child, elementHandler, style, externalStyle, event}) => {
+export const $ = ({ tag, att, text, html, child, elementHandler, style, externalStyle, event }) => {
     let Tag
     if (externalStyle) {
         const link = document.createElement('link')
@@ -55,7 +55,7 @@ export const $ = ({tag, att, text, html, child, elementHandler, style, externalS
     return Tag;
 }
 
-export const Fragment = ({child}) => {
+export const Fragment = ({ child }) => {
     const fragment = document.createDocumentFragment()
     if (child) {
         child.forEach(val => {
@@ -65,7 +65,7 @@ export const Fragment = ({child}) => {
     return fragment
 }
 
-export const Ordinate = ({width, height, ordinateX, ordinateY}) => {
+export const Ordinate = ({ width, height, ordinateX, ordinateY }) => {
     return {
         WDX: height / ordinateY,
         WDY: width / ordinateX
@@ -86,7 +86,7 @@ export const formatSize = (bytes, decimalPoint) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm));
 }
 
-export const CanvasRender = ({pdf, canvas, fileUrl, getSource}) => {
+export const CanvasRender = ({ pdf, canvas, fileUrl, getSource }) => {
     pdf.ctx = canvas.getContext('2d')
     let currentPage = 1;
 
@@ -105,7 +105,7 @@ export const CanvasRender = ({pdf, canvas, fileUrl, getSource}) => {
     const renderPage = (num) => {
         pdf.Rendering = true
         pdf.doc.getPage(num).then(page => {
-            let viewport = page.getViewport({scale: pdf.scale})
+            let viewport = page.getViewport({ scale: pdf.scale })
 
 
             canvas.width = viewport.width
@@ -149,7 +149,7 @@ export const CapsuOffice = [
 export const getCenterCode = (displayName) => {
     if (!displayName) return "";
     if (displayName === "Extension") return "Extension";
-    
+
     const match = displayName.match(/\(([^)]+)\)/);
     return match ? match[1] : displayName;
 }
@@ -333,7 +333,7 @@ export function dataURLtoFile(dataurl, filename) {
         u8arr[n] = bstr.charCodeAt(n);
     }
 
-    return new File([u8arr], filename, {type: mime});
+    return new File([u8arr], filename, { type: mime });
 }
 
 
@@ -391,7 +391,7 @@ export class Request {
 
 }
 
-export const Move = ({panel, object,getLocation}) => {
+export const Move = ({ panel, object, getLocation }) => {
     let currentX, currentY, initialX, initialY
     let xOffset = 0;
     let yOffset = 0;
@@ -465,11 +465,11 @@ export const TimeConvert = (time) => {
     const [h, m, s] = time
     if (h >= 0 && h < 12) {
         state = "a.m."
-        hour = h*1
+        hour = h * 1
     } else {
         state = "p.m."
         if (h === 12 && m > 0) {
-            hour = h*1
+            hour = h * 1
         } else {
             hour = h % 12
         }
@@ -480,7 +480,7 @@ export const TimeConvert = (time) => {
 export const Zip = (data) => {
     const zip = new JSZip();
     zip.file("hello.txt", "Hello[p my)6cxsw2q");
-    zip.generateAsync({type: "base64"}).then(function (base64) {
+    zip.generateAsync({ type: "base64" }).then(function (base64) {
         window.location = "data:application/zip;base64," + base64;
     }, function (err) {
         console.log(err)
@@ -500,7 +500,7 @@ export const ResizeImage = (imageUrl, get) => {
             var width = img.width;
             var height = img.height;
 
-// Change the resizing logic
+            // Change the resizing logic
             if (width > height) {
                 if (width > MAX_WIDTH) {
                     height = height * (MAX_WIDTH / width);
@@ -545,11 +545,11 @@ export const Dim = (file) => {
     }
 }
 
-export const baseCheck=(base,dat)=>{
-    let key=Object.keys(dat)
-    let baseKey=Object.keys(base)
-    for(let x=0;x<key.length;x++){
-        if(dat[key[x]]!==base[baseKey[x]]){
+export const baseCheck = (base, dat) => {
+    let key = Object.keys(dat)
+    let baseKey = Object.keys(base)
+    for (let x = 0; x < key.length; x++) {
+        if (dat[key[x]] !== base[baseKey[x]]) {
             return true
         }
     }
@@ -557,53 +557,53 @@ export const baseCheck=(base,dat)=>{
 }
 
 
-export class CanvasPdf{
-    constructor(object,pdfLib,docId) {
+export class CanvasPdf {
+    constructor(object, pdfLib, docId) {
         this.object = object
-        this.pdf=pdfLib
-        this.docId=docId
+        this.pdf = pdfLib
+        this.docId = docId
     }
-    getFile(file){
-        this.buffer=new Promise( async function(res,rej){
-            setTimeout( async () => {
+    getFile(file) {
+        this.buffer = new Promise(async function (res, rej) {
+            setTimeout(async () => {
                 res(await fetch('/' + file).then((res) => res.arrayBuffer()));
                 res("No data")
-            },1000)
+            }, 1000)
         })
     }
-    pdfDoc(){
+    pdfDoc() {
         this.buffer.then(async res => {
             this.pdfBuff = await this.pdf.load(res)
-            this.pages=this.pdfBuff.getPages()
+            this.pages = this.pdfBuff.getPages()
         })
 
     }
 
 }
 
-export const SearchMethod=({nodeList,textArray,display})=>{
+export const SearchMethod = ({ nodeList, textArray, display }) => {
     const list = nodeList
-    list.forEach(node=>{
-        node.style.display=display
+    list.forEach(node => {
+        node.style.display = display
     })
-    let searchText=textArray.map(val=>{
-        return val.replace('_',' ')
+    let searchText = textArray.map(val => {
+        return val.replace('_', ' ')
     })
-    searchText.forEach(valText=>{
+    searchText.forEach(valText => {
         for (let val of list) {
-            if(valText!==''){
+            if (valText !== '') {
                 if (!val.innerText.toUpperCase().includes(valText)) {
-                    if(val.style.display !== 'none'){
+                    if (val.style.display !== 'none') {
                         val.style.display = 'none'
                     }
 
                 } else {
-                    if(val.innerText.toUpperCase().includes(valText)){
-                        if(val.style.display !== 'none'){
+                    if (val.innerText.toUpperCase().includes(valText)) {
+                        if (val.style.display !== 'none') {
                             val.style.display = display
                         }
 
-                    }else{
+                    } else {
                         val.style.display = 'none'
                     }
 
@@ -614,9 +614,9 @@ export const SearchMethod=({nodeList,textArray,display})=>{
 
         }
     })
-    list.forEach(val=>{
-        searchText.forEach(text=>{
-            if(!val.innerText.toUpperCase().includes(text.toUpperCase())){
+    list.forEach(val => {
+        searchText.forEach(text => {
+            if (!val.innerText.toUpperCase().includes(text.toUpperCase())) {
                 val.style.display = 'none'
             }
         })
@@ -624,10 +624,10 @@ export const SearchMethod=({nodeList,textArray,display})=>{
 }
 export const UnderConstruction = ({ message = "This feature is under construction", duration = 3000 }) => {
     let notificationContainer;
-    
+
     const getContainer = (el) => {
         notificationContainer = el;
-        
+
         // Auto remove after duration
         setTimeout(() => {
             if (notificationContainer && notificationContainer.remove) {
@@ -698,3 +698,226 @@ export const UnderConstruction = ({ message = "This feature is under constructio
         ]
     }))
 }
+
+export const ValidatePDF = (file, maxSizeMB = 10) => {
+    return new Promise((resolve) => {
+        if (!file) {
+            resolve({ valid: false, error: 'No file selected' });
+            return;
+        }
+
+        // 1. Basic Extension Check
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+            resolve({ valid: false, error: 'Invalid file extension. Expected .pdf' });
+            return;
+        }
+
+        // 2. Size Check
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+        if (file.size > maxSizeBytes) {
+            resolve({ valid: false, error: 'File is too large. Max size: ' + maxSizeMB + 'MB.' });
+            return;
+        }
+
+        // 3. Magic Number Check (%PDF)
+        const reader = new FileReader();
+        const blob = file.slice(0, 4);
+        reader.onload = (e) => {
+            const arr = new Uint8Array(e.target.result);
+            let header = '';
+            for (let i = 0; i < arr.length; i++) {
+                header += String.fromCharCode(arr[i]);
+            }
+
+            if (header !== '%PDF') {
+                resolve({ valid: false, error: 'Invalid document structure (PDF header missing).' });
+            } else {
+                resolve({ valid: true, error: null });
+            }
+        };
+        reader.onerror = () => resolve({ valid: false, error: 'Failed to read file.' });
+        reader.readAsArrayBuffer(blob);
+    });
+}
+
+export const DeleteConfirmModal = (title = "Delete Record", message = "Are you sure you want to delete this?") => {
+    return new Promise((resolve) => {
+        const modalId = 'modern-delete-modal-' + Date.now();
+        
+        const closeModal = (result) => {
+            const overlay = document.getElementById(modalId);
+            if (overlay) {
+                overlay.style.opacity = '0';
+                const content = overlay.querySelector('.modal-content');
+                if (content) content.style.transform = 'scale(0.9) translateY(20px)';
+                
+                setTimeout(() => {
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                    resolve(result);
+                }, 300);
+            }
+        };
+
+        const modalOverlay = $({
+            tag: 'div',
+            att: { id: modalId },
+            style: {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                backdropFilter: 'blur(5px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: '99999',
+                opacity: '0',
+                transition: 'opacity 0.3s ease',
+                fontFamily: "'Inter', 'Segoe UI', sans-serif"
+            },
+            event: {
+                type: 'click',
+                method: (e) => {
+                    if (e.target.id === modalId) closeModal(false);
+                }
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    att: { className: 'modal-content' },
+                    style: {
+                        backgroundColor: '#1e1e1e',
+                        width: '90%',
+                        maxWidth: '400px',
+                        borderRadius: '24px',
+                        padding: '32px',
+                        border: '1px solid #333',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        transform: 'scale(0.9) translateY(20px)',
+                        transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center'
+                    },
+                    child: [
+                        // Warning Icon
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '50%',
+                                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyCenter: 'center',
+                                marginBottom: '24px',
+                                color: '#f44336',
+                                fontSize: '32px'
+                            },
+                            child: [
+                                $({ tag: 'span', att: { className: 'fa-solid fa-trash-can' }, style: { margin: 'auto' } })
+                            ]
+                        }),
+                        // Title
+                        $({
+                            tag: 'h3',
+                            text: title,
+                            style: {
+                                color: '#fff',
+                                fontSize: '20px',
+                                fontWeight: '700',
+                                margin: '0 0 12px 0'
+                            }
+                        }),
+                        // Message
+                        $({
+                            tag: 'p',
+                            text: message,
+                            style: {
+                                color: '#aaa',
+                                fontSize: '14px',
+                                lineHeight: '1.6',
+                                margin: '0 0 32px 0'
+                            }
+                        }),
+                        // Buttons
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                gap: '12px',
+                                width: '100%'
+                            },
+                            child: [
+                                // Cancel Button
+                                $({
+                                    tag: 'button',
+                                    text: 'Cancel',
+                                    style: {
+                                        flex: '1',
+                                        backgroundColor: '#333',
+                                        border: 'none',
+                                        color: '#fff',
+                                        padding: '12px 0',
+                                        borderRadius: '12px',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.2s'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => closeModal(false),
+                                        type2: 'mouseenter',
+                                        method2: (e) => e.target.style.backgroundColor = '#444',
+                                        type3: 'mouseleave',
+                                        method3: (e) => e.target.style.backgroundColor = '#333'
+                                    }
+                                }),
+                                // Delete Button
+                                $({
+                                    tag: 'button',
+                                    text: 'Delete',
+                                    style: {
+                                        flex: '1',
+                                        backgroundColor: '#f44336',
+                                        border: 'none',
+                                        color: '#fff',
+                                        padding: '12px 0',
+                                        borderRadius: '12px',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                        boxShadow: '0 4px 12px rgba(244, 67, 54, 0.3)'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => closeModal(true),
+                                        type2: 'mouseenter',
+                                        method2: (e) => e.target.style.backgroundColor = '#d32f2f',
+                                        type3: 'mouseleave',
+                                        method3: (e) => e.target.style.backgroundColor = '#f44336'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                })
+            ]
+        });
+
+        document.body.appendChild(modalOverlay);
+        
+        // Trigger animations
+        setTimeout(() => {
+            modalOverlay.style.opacity = '1';
+            const content = modalOverlay.querySelector('.modal-content');
+            if (content) content.style.transform = 'scale(1) translateY(0)';
+        }, 10);
+    });
+};

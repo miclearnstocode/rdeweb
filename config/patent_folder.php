@@ -13,14 +13,7 @@ function getIPFolderId($ipType, $campus, $productName, $status)
     $ipMainFolderId = $drive->findOrCreateFolder("Intellectual Property Records", $rootId);
     if (!$ipMainFolderId) { error_log("Failed to find/create Main IP Folder"); return null; }
 
-    // 2. Status Level (e.g., "Filed", "Registered", "Downgraded")
-    $statusName = $status ?: "Unspecified Status";
-    $statusLabel = ucwords($statusName);
-    // User requested: "filed", "registered" and "downgraded"
-    $statusFolderId = $drive->findOrCreateFolder($statusLabel, $ipMainFolderId);
-    if (!$statusFolderId) { error_log("Failed to find/create Status Folder: $statusLabel"); return null; }
-
-    // 3. IP Type Level (e.g., "Patents", "Utility Models")
+    // 2. IP Type Level (e.g., "Patents", "Utility Models")
     $ipTypeLabels = [
         'patent' => 'Patents',
         'utility_model' => 'Utility Models',
@@ -29,18 +22,35 @@ function getIPFolderId($ipType, $campus, $productName, $status)
         'trademark' => 'Trademarks'
     ];
     $ipTypeName = $ipTypeLabels[$ipType] ?? ucwords(str_replace('_', ' ', $ipType));
-    $typeFolderId = $drive->findOrCreateFolder($ipTypeName, $statusFolderId);
-    if (!$typeFolderId) { error_log("Failed to find/create IP Type Folder: $ipTypeName"); return null; }
+    $ipTypeFolderId = $drive->findOrCreateFolder($ipTypeName, $ipMainFolderId);
+    if (!$ipTypeFolderId) { error_log("Failed to find/create IP Type Folder: $ipTypeName"); return null; }
+
+    // 3. Status Level (e.g., "Filed", "Registered", "Downgraded")
+    $statusName = $status ?: "Unspecified Status";
+    $statusLabel = cleanFolderNameForDrive(ucwords($statusName));
+    $statusFolderId = $drive->findOrCreateFolder($statusLabel, $ipTypeFolderId);
+    if (!$statusFolderId) { error_log("Failed to find/create Status Folder: $statusLabel"); return null; }
 
     // 4. Campus Level
-    $campusName = $campus ?: "Unspecified Campus";
-    $campusFolderId = $drive->findOrCreateFolder($campusName, $typeFolderId);
+    $campusName = cleanFolderNameForDrive($campus ?: "Unspecified Campus");
+    $campusFolderId = $drive->findOrCreateFolder($campusName, $statusFolderId);
     if (!$campusFolderId) { error_log("Failed to find/create Campus Folder: $campusName"); return null; }
 
     // 5. Record Level (The final destination for all files)
-    $finalRecordName = $productName ?: "Unnamed Record";
+    $finalRecordName = cleanFolderNameForDrive($productName ?: "Sample Only");
     $finalFolderId = $drive->findOrCreateFolder($finalRecordName, $campusFolderId);
     if (!$finalFolderId) { error_log("Failed to find/create Final Record Folder: $finalRecordName"); return null; }
 
     return $finalFolderId;
+}
+
+function cleanFolderNameForDrive($name) {
+    $clean = preg_replace('/[^\w\s\-_.,()&]/', '', $name);
+    $clean = preg_replace('/\s+/', ' ', $clean);
+    $clean = trim($clean);
+    $clean = rtrim($clean, '.,');
+    if (strlen($clean) > 200) {
+        $clean = substr($clean, 0, 197) . '...';
+    }
+    return $clean;
 }

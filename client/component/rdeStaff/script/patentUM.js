@@ -1,4 +1,4 @@
-import { $, ValidatePDF } from "../../../lib/lib.js";
+import { $, ValidatePDF, DeleteConfirmModal } from "../../../lib/lib.js";
 
 export const PatentUM = () => {
     let mainTableContainer;
@@ -152,6 +152,47 @@ export const PatentUM = () => {
                 z-index: 1;
                 margin-top: 20px;
             }
+            .radio-group {
+                display: flex;
+                gap: 12px;
+                padding: 4px 0;
+            }
+            .radio-item {
+                position: relative;
+                flex: 1;
+            }
+            .radio-item input[type="radio"] {
+                position: absolute;
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            .radio-label {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 16px;
+                background: #333;
+                border: 1px solid #444;
+                border-radius: 8px;
+                color: #aaa;
+                font-size: 13px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                text-align: center;
+                white-space: nowrap;
+            }
+            .radio-item input[type="radio"]:checked + .radio-label {
+                background: rgba(0, 191, 255, 0.15);
+                border-color: deepskyblue;
+                color: #fff;
+                box-shadow: 0 0 10px rgba(0, 191, 255, 0.2);
+            }
+            .radio-label:hover {
+                border-color: #666;
+            }
+
         `;
         document.head.appendChild(style);
         return style;
@@ -213,11 +254,11 @@ export const PatentUM = () => {
 
     // Columns for the data table
     const columns = [
-        { field: 'type', header: 'IPR Type', width: '150px' },
+        { field: 'type', header: 'IPR Type', width: '180px' },
         { field: 'technologyName', header: 'Title / Technology Name', width: '300px' },
         { field: 'caseNumber', header: 'Case Number', width: '180px' },
         { field: 'applicationNumber', header: 'Application No.', width: '150px' },
-        { field: 'status', header: 'Status', width: '120px' },
+        { field: 'status', header: 'Status', width: '150px' },
         { field: 'applicationDate', header: 'Application Date', width: '130px' },
         { field: 'publicationDate', header: 'Publication Date', width: '130px' },
         { field: 'inventors', header: 'Inventors / Authors', width: '250px' },
@@ -470,46 +511,68 @@ export const PatentUM = () => {
                 modalTitleEl.innerText = `${isEdit ? 'Edit' : 'New'} ${typeLabel}`;
             }
 
-            // Common dynamic fields
-            const statusField = $({
-                tag: 'select',
-                att: { name: 'status', required: true, id: 'field-status' },
-                style: { ...inputBaseStyle, appearance: 'none' },
-                child: statusOptions.map(opt => $({ tag: 'option', att: { value: opt.value, selected: (data?.status || data?.statusUM) === opt.value }, text: opt.label })),
-                event: {
-                    type: 'change',
-                    method: (e) => {
-                        const regNoGroup = document.getElementById('reg-no-group');
-                        const regDateGroup = document.getElementById('reg-date-group');
-                        const isVisible = e.target.value === 'registered';
-                        
-                        if (regNoGroup) regNoGroup.style.display = isVisible ? 'block' : 'none';
-                        if (regDateGroup) regDateGroup.style.display = isVisible ? 'block' : 'none';
+            // Suffix and dynamic values logic
+            const sfx = type === 'utility_model' ? 'UM' : '';
+            const statusName = 'status' + sfx;
+            const actualStatusOptions = statusOptions.filter(opt => type === 'patent' || opt.value !== 'downgrade');
+            const initialStatusValue = (data?.status || data?.statusUM || 'filed');
+            const isRegistered = initialStatusValue === 'registered';
 
-                        const regNoInput = regNoGroup?.querySelector('input');
-                        const regDateInput = regDateGroup?.querySelector('input');
-                        if (regNoInput) regNoInput.required = isVisible;
-                        if (regDateInput) regDateInput.required = isVisible;
-                    }
-                }
+            // Common dynamic fields - Status as Radio Group
+            const statusField = $({
+                tag: 'div',
+                att: { className: 'radio-group' },
+                child: actualStatusOptions.map(opt => {
+                    const radioId = `status-${opt.value}`;
+                    return $({
+                        tag: 'div',
+                        att: { className: 'radio-item' },
+                        child: [
+                            $({
+                                tag: 'input',
+                                att: {
+                                    type: 'radio',
+                                    name: statusName,
+                                    value: opt.value,
+                                    id: radioId,
+                                    checked: initialStatusValue === opt.value,
+                                    required: true
+                                },
+                                event: {
+                                    type: 'change',
+                                    method: (e) => {
+                                        const isVisible = e.target.value === 'registered';
+                                        const regNoGroup = document.getElementById('reg-no-group');
+                                        const regDateGroup = document.getElementById('reg-date-group');
+                                        if (regNoGroup) regNoGroup.style.display = isVisible ? 'block' : 'none';
+                                        if (regDateGroup) regDateGroup.style.display = isVisible ? 'block' : 'none';
+
+                                        const regNoInput = regNoGroup?.querySelector('input');
+                                        const regDateInput = regDateGroup?.querySelector('input');
+                                        if (regNoInput) regNoInput.required = isVisible;
+                                        if (regDateInput) regDateInput.required = isVisible;
+                                    }
+                                }
+                            }),
+                            $({ tag: 'label', att: { htmlFor: radioId, className: 'radio-label' }, text: opt.label })
+                        ]
+                    });
+                })
             });
 
             const campusSelect = $({
                 tag: 'select',
-                att: { name: 'campus', required: true },
+                att: { name: 'campus' + sfx, required: true },
                 style: { ...inputBaseStyle, appearance: 'none' },
-                child: campusOptions.map(camp => $({ 
-                    tag: 'option', 
-                    att: { 
-                        value: camp, 
-                        selected: (data?.campus || data?.campusUM) === camp 
-                    }, 
-                    text: camp 
+                child: campusOptions.map(camp => $({
+                    tag: 'option',
+                    att: {
+                        value: camp,
+                        selected: (data?.campus || data?.campusUM) === camp
+                    },
+                    text: camp
                 }))
             });
-
-            const initialStatus = data?.status || data?.statusUM || 'filed';
-            const isRegistered = initialStatus === 'registered';
 
             const regNoField = $({
                 tag: 'input',
@@ -559,7 +622,6 @@ export const PatentUM = () => {
                     style: inputBaseStyle
                 })));
 
-                campusSelect.setAttribute('name', 'campus' + sfx);
                 grid.appendChild(createFormGroup('Campus', campusSelect));
 
 
@@ -590,7 +652,6 @@ export const PatentUM = () => {
                     style: inputBaseStyle
                 })));
 
-                statusField.setAttribute('name', 'status' + sfx);
                 grid.appendChild(createFormGroup('Status', statusField));
 
                 grid.appendChild(regNoGroup);
@@ -669,7 +730,6 @@ export const PatentUM = () => {
                     style: inputBaseStyle
                 }), 2));
 
-                campusSelect.setAttribute('name', 'campus');
                 grid.appendChild(createFormGroup('Campus', campusSelect));
 
 
@@ -736,7 +796,7 @@ export const PatentUM = () => {
                     return container;
                 })(), 1, null, { zIndex: 1000 }));
 
-                statusField.setAttribute('name', 'status');
+
                 grid.appendChild(createFormGroup('Status', statusField));
 
                 grid.appendChild(regNoGroup);
@@ -827,7 +887,7 @@ export const PatentUM = () => {
                     style: inputBaseStyle
                 })));
 
-                statusField.setAttribute('name', 'status');
+
                 grid.appendChild(createFormGroup('Status', statusField));
 
                 grid.appendChild(regNoGroup);
@@ -885,7 +945,9 @@ export const PatentUM = () => {
                             }) : null
                         ].filter(Boolean)
                     });
+                    grid.appendChild(createFormGroup(f.label, fileInput));
                 });
+
             }
 
             // Description and Image at the bottom (for others)
@@ -1272,7 +1334,11 @@ export const PatentUM = () => {
                                 event: {
                                     type: 'click',
                                     method: async () => {
-                                        if (confirm(`Are you sure you want to delete this ${item.type.replace('_', ' ')} record?`)) {
+                                        const confirmed = await DeleteConfirmModal(
+                                            `Delete ${item.type.replace('_', ' ')}?`,
+                                            `Are you sure you want to delete this record? This will also MOVE all its associated files in Google Drive to TRASH.`
+                                        );
+                                        if (confirmed) {
                                             const fd = new FormData();
                                             fd.append('action', 'delete');
                                             fd.append('id', item.id);
@@ -1583,62 +1649,6 @@ export const PatentUM = () => {
                                 })
                             ]
                         }),
-                        $({
-                            tag: 'select',
-                            att: {
-                                className: 'status-filter'
-                            },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 32px 10px 16px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                outline: 'none',
-                                cursor: 'pointer',
-                                appearance: 'none',
-                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 10px center',
-                                backgroundSize: '16px',
-                                minWidth: '140px'
-                            },
-                            child: [
-                                $({ tag: 'option', att: { value: '' }, text: 'All Status' }),
-                                ...statusOptions.map(status =>
-                                    $({ tag: 'option', att: { value: status.value }, text: status.label })
-                                )
-                            ]
-                        }),
-                        $({
-                            tag: 'select',
-                            att: {
-                                className: 'type-filter'
-                            },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 32px 10px 16px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                outline: 'none',
-                                cursor: 'pointer',
-                                appearance: 'none',
-                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 10px center',
-                                backgroundSize: '16px',
-                                minWidth: '150px'
-                            },
-                            child: [
-                                $({ tag: 'option', att: { value: '' }, text: 'All Types' }),
-                                ...typeOptions.map(type =>
-                                    $({ tag: 'option', att: { value: type.value }, text: type.label })
-                                )
-                            ]
-                        }),
                         // Add Patent/UM button
                         $({
                             tag: 'button',
@@ -1672,33 +1682,6 @@ export const PatentUM = () => {
                                 type: 'click',
                                 method: openAddPatentModal
                             }
-                        }),
-                        $({
-                            tag: 'button',
-                            att: { className: 'export-btn' },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 20px',
-                                color: '#fff',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                transition: 'all 0.3s ease'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-download' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Export'
-                                })
-                            ]
                         })
                     ]
                 })
@@ -1715,32 +1698,31 @@ export const PatentUM = () => {
                 id: 'stat-total',
                 icon: 'fa-file-invoice',
                 color: 'deepskyblue',
-                subtext: 'All time'
+                subtext: 'Accumulated'
             },
             {
-                label: 'Patents',
+                label: 'Filed',
                 value: '0',
-                id: 'stat-patent',
-                icon: 'fa-certificate',
-                color: '#4caf50',
-                subtext: 'Granted & Pending'
-            },
-            {
-                label: 'Utility Models',
-                value: '0',
-                id: 'stat-um',
-                icon: 'fa-cogs',
+                id: 'stat-filed',
+                icon: 'fa-file-signature',
                 color: '#ff9800',
-                subtext: 'Filed'
+                subtext: 'IP Filings'
             },
             {
                 label: 'Registered',
                 value: '0',
                 id: 'stat-registered',
-                icon: 'fa-trophy',
-                color: '#ffd700',
-                subtext: 'Approved',
-                textColor: '#000000'
+                icon: 'fa-certificate',
+                color: '#4caf50',
+                subtext: 'Success Cases'
+            },
+            {
+                label: 'Downgraded',
+                value: '0',
+                id: 'stat-downgraded',
+                icon: 'fa-level-down-alt',
+                color: '#f44336',
+                subtext: 'Status Changed'
             }
         ];
 
@@ -1821,6 +1803,7 @@ export const PatentUM = () => {
                                 child: [
                                     $({
                                         tag: 'span',
+                                        att: { id: stat.id },
                                         text: stat.value,
                                         style: {
                                             fontSize: '34px',
@@ -2065,19 +2048,22 @@ export const PatentUM = () => {
     const updateStats = (data) => {
         if (!data) return;
         const total = data.length;
-        const patents = data.filter(i => i.type === 'patent').length;
-        const ums = data.filter(i => i.type === 'utility_model').length;
-        const registered = data.filter(i => i.status === 'registered').length;
+        const filed = data.filter(i => (i.status || i.statusUM || '').toLowerCase() === 'filed').length;
+        const registered = data.filter(i => (i.status || i.statusUM || '').toLowerCase() === 'registered').length;
+        const downgraded = data.filter(i => {
+            const s = (i.status || i.statusUM || '').toLowerCase();
+            return s === 'downgrade' || s === 'downgraded';
+        }).length;
 
         const totalEl = document.getElementById('stat-total');
-        const patentEl = document.getElementById('stat-patent');
-        const umEl = document.getElementById('stat-um');
-        const regEl = document.getElementById('stat-registered');
+        const filedEl = document.getElementById('stat-filed');
+        const registeredEl = document.getElementById('stat-registered');
+        const downgradedEl = document.getElementById('stat-downgraded');
 
         if (totalEl) totalEl.innerText = total;
-        if (patentEl) patentEl.innerText = patents;
-        if (umEl) umEl.innerText = ums;
-        if (regEl) regEl.innerText = registered;
+        if (filedEl) filedEl.innerText = filed;
+        if (registeredEl) registeredEl.innerText = registered;
+        if (downgradedEl) downgradedEl.innerText = downgraded;
     };
 
     // Main table component

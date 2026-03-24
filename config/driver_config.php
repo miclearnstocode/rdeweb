@@ -41,36 +41,38 @@ class GoogleDriveService {
         $this->rootFolderId = $folderId;
     }
     
-    // Method to find or create folder in Shared Drive
-    public function findOrCreateFolder($folderName, $parentId = null) {
+    // Method to search for an existing folder without creating it
+    public function findFolder($folderName, $parentId = null) {
         $service = $this->service;
         $parentId = $parentId ?: $this->rootFolderId;
         
-        // Clean folder name for query
         $escapedFolderName = str_replace("'", "\\'", $folderName);
-        
-        // Search for existing folder
         $query = "name='$escapedFolderName' and mimeType='application/vnd.google-apps.folder'";
-        $query .= " and '$parentId' in parents";
-        $query .= " and trashed=false";
+        $query .= " and '$parentId' in parents and trashed=false";
         
         try {
-            // First try without driveId (simpler search)
             $result = $service->files->listFiles([
                 'q' => $query,
                 'fields' => 'files(id, name)',
                 'supportsAllDrives' => true,
-                'includeItemsFromAllDrives' => true,
-                'corpora' => 'allDrives'
+                'includeItemsFromAllDrives' => true
             ]);
             
             if (count($result->getFiles()) > 0) {
                 return $result->getFiles()[0]->getId();
             }
         } catch (Exception $e) {
-            // If that fails, try with driveId if we can extract it
-            error_log("Simple search failed, trying with driveId: " . $e->getMessage());
+            error_log("Folder search failed for $folderName: " . $e->getMessage());
         }
+        return null;
+    }
+
+    // Method to find or create folder in Shared Drive
+    public function findOrCreateFolder($folderName, $parentId = null) {
+        $existingId = $this->findFolder($folderName, $parentId);
+        if ($existingId) return $existingId;
+        
+        $parentId = $parentId ?: $this->rootFolderId;
         
         // Create new folder
         $fileMetadata = new Google_Service_Drive_DriveFile([
@@ -79,7 +81,7 @@ class GoogleDriveService {
             'parents' => [$parentId]
         ]);
         
-        $folder = $service->files->create($fileMetadata, [
+        $folder = $this->service->files->create($fileMetadata, [
             'fields' => 'id',
             'supportsAllDrives' => true
         ]);

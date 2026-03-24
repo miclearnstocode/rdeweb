@@ -146,13 +146,15 @@ switch ($action) {
         try {
             $drive = null;
             $sfx = ($table === 'utility_model') ? 'UM' : (($table === 'industrial_design') ? 'Indus' : '');
-            $image_product_name = $_POST['technologyName' . $sfx] ?? $_POST['technologyName'] ?? $_POST['productName'] ?? 'Unnamed Product';
+            $image_product_name = $_POST['title'] ?? $_POST['technologyName' . $sfx] ?? $_POST['technologyName'] ?? $_POST['idTitle'] ?? $_POST['productName'] ?? 'Sample Only';
             $campus_name = $_POST['campus' . $sfx] ?? $_POST['campus'] ?? 'Main Campus';
             $status = $_POST['status' . $sfx] ?? $_POST['status'] ?? 'Filed';
 
-            // Get standard IP folder ID for this record (creates folders as needed)
-            require_once(__DIR__ . '/../../config/patent_folder.php');
             $recordFolderId = getIPFolderId($table, $campus_name, $image_product_name, $status);
+
+            if (!$recordFolderId) {
+                throw new Exception("Google Drive Error: Could not determine or create the destination folder ('$image_product_name') in the Shared Drive.");
+            }
 
             foreach ($file_config as $input_name => $db_col) {
                 if (isset($_FILES[$input_name]) && $_FILES[$input_name]['error'] === UPLOAD_ERR_OK) {
@@ -241,12 +243,62 @@ switch ($action) {
         $allowed = ['patent', 'utility_model', 'copyright', 'industrial_design', 'trademark'];
         $table = in_array($type, $allowed) ? $type : 'patent';
 
+        // 1. Fetch record first to get file URLs
+        $stmt = $conn->prepare("SELECT * FROM $table WHERE id = ?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $record = $stmt->get_result()->fetch_assoc();
+
+        if ($record) {
+            $drive = new GoogleDriveService();
+            
+            // Reconstruct folder search parameters
+            $sfx = ($table === 'utility_model') ? 'UM' : (($table === 'industrial_design') ? 'Indus' : '');
+            $image_product_name = $record['title'] ?? $record['technologyName' . $sfx] ?? $record['technologyName'] ?? $record['idTitle'] ?? $record['productName'] ?? 'Sample Only';
+            $campus_name = $record['campus' . $sfx] ?? $record['campus'] ?? 'Main Campus';
+            $status = $record['status' . $sfx] ?? $record['status'] ?? 'Filed';
+
+            // 1. Identify the record's main folder and trash it (Search only)
+            require_once(__DIR__ . '/../../config/patent_folder.php');
+            $recordFolderId = findIPFolder($drive, $table, $campus_name, $image_product_name, $status);
+            if ($recordFolderId) {
+                try {
+                    $drive->trashFile($recordFolderId);
+                } catch (Exception $e) {
+                    error_log("Failed to trash folder $recordFolderId for record $id: " . $e->getMessage());
+                }
+            }
+
+            // Helper function to extract Drive ID from URL
+            $extractId = function($url) {
+                if (!$url) return null;
+                if (preg_match('/\/d\/([^\/]+)\//', $url, $matches)) return $matches[1];
+                if (preg_match('/id=([^&]+)/', $url, $matches)) return $matches[1];
+                return null;
+            };
+
+            // 2. Trash individual files (belt and suspenders)
+            foreach ($record as $key => $value) {
+                if (strpos($key, 'URL') !== false || $key === 'patent_image' || strpos($key, '_url') !== false) {
+                    $fileId = $extractId($value);
+                    if ($fileId && $fileId !== $recordFolderId) {
+                        try {
+                            $drive->trashFile($fileId);
+                        } catch (Exception $e) {
+                            error_log("Failed to trash file $fileId for record $id: " . $e->getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Delete from database
         $sql = "DELETE FROM $table WHERE id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('i', $id);
         
         if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Record deleted successfully from ' . $table]);
+            echo json_encode(['success' => true, 'message' => 'Record and associated files removed successfully']);
         } else {
             echo json_encode(['success' => false, 'message' => $conn->error]);
         }
@@ -275,29 +327,32 @@ switch ($action) {
             $sql = "SELECT $select_fields FROM $table p $join_sql WHERE 1=1";
             
             if ($search) {
-                // Handle different column names for different tables
                 if ($table === 'industrial_design') {
-                    $sql .= " AND (p.idTitle LIKE ? OR p.applicationNumber LIKE ?)";
+                    $sql .= " AND (p.idTitle LIKE ? OR p.caseNumber LIKE ? OR p.invertors LIKE ? OR p.applicationNumber LIKE ?)";
+                    $num_params = 4;
                 } elseif ($table === 'utility_model') {
-                    $sql .= " AND (p.technologyNameUM LIKE ? OR p.applicationNumberUM LIKE ?)";
+                    $sql .= " AND (p.technologyNameUM LIKE ? OR p.caseNumberUM LIKE ? OR p.inventorsUM LIKE ? OR p.applicationNumberUM LIKE ?)";
+                    $num_params = 4;
                 } elseif ($table === 'patent') {
-                    $sql .= " AND (p.technologyName LIKE ? OR p.applicationNumber LIKE ?)";
-                } elseif ($table === 'copyright' || $table === 'trademark') {
-                    $sql .= " AND p.title LIKE ?";
-                    $search_params_count = 1;
+                    $sql .= " AND (p.technologyName LIKE ? OR p.caseNumber LIKE ? OR p.inventors LIKE ? OR p.applicationNumber LIKE ?)";
+                    $num_params = 4;
+                } elseif ($table === 'copyright') {
+                    $sql .= " AND (p.title LIKE ? OR p.author LIKE ? OR p.registrationNumber LIKE ?)";
+                    $num_params = 3;
+                } elseif ($table === 'trademark') {
+                    $sql .= " AND (p.title LIKE ? OR p.registrant LIKE ? OR p.registrationNumber LIKE ?)";
+                    $num_params = 3;
                 } else {
                     $sql .= " AND (p.productName LIKE ? OR p.patentNumber LIKE ?)";
+                    $num_params = 2;
                 }
             }
             
             $stmt = $conn->prepare($sql);
             if ($search) {
-                if (isset($search_params_count) && $search_params_count === 1) {
-                    $stmt->bind_param('s', $searchTerm);
-                } else {
-                    $stmt->bind_param('ss', $searchTerm, $searchTerm);
-                }
-                unset($search_params_count);
+                $types = str_repeat('s', $num_params);
+                $params = array_fill(0, $num_params, $searchTerm);
+                $stmt->bind_param($types, ...$params);
             }
             
             $stmt->execute();
