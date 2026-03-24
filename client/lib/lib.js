@@ -30,7 +30,15 @@ export const $ = ({ tag, att, text, html, child, elementHandler, style, external
         console.log('tag is missing..!')
     }
     if (event) {
-        Tag.addEventListener(event.type, event.method)
+        Object.keys(event).forEach(key => {
+            if (key.startsWith('type')) {
+                const suffix = key.replace('type', '');
+                const methodKey = 'method' + suffix;
+                if (event[methodKey]) {
+                    Tag.addEventListener(event[key], event[methodKey]);
+                }
+            }
+        });
     }
     if (text) {
         Tag.innerText = text
@@ -813,7 +821,7 @@ export const DeleteConfirmModal = (title = "Delete Record", message = "Are you s
                                 backgroundColor: 'rgba(244, 67, 54, 0.1)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyCenter: 'center',
+                                justifyContent: 'center',
                                 marginBottom: '24px',
                                 color: '#f44336',
                                 fontSize: '32px'

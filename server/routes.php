@@ -52,11 +52,16 @@ post('/formPost','server/formPost.php');
 post('/abstain','server/abstain.php');
 post('/overridedocs','server/override.php');
 post('/filesUmd','server/umd_file.php');
+post('/completeresearch', 'server/rde/completedResearch.php');
+post('/internalfunded', 'server/rde/internallyFunded.php');
+post('/monitor', 'server/rde/monitoring.php');
+post('/patentresearch', 'server/rde/patent.php');
+post('/presentedresearch', 'server/rde/presentation.php');
+post('/proposedresearch', 'server/rde/proposed.php');
+post('/publish', 'server/rde/publication.php');
+post('/utilization', 'server/rde/utilization.php');
 
-// ========== SPA ROUTES (GET) ==========
-// These serve index.html for your React/Vue/SPA pages
-
-// ROOT route - important!
+// ROOT route
 get('/','server/auth.php');  // This handles redirects based on login status
 
 // Account routes
@@ -88,6 +93,7 @@ get('/rdeOffice/publication','/index.html');
 get('/rdeOffice/patentUM','/index.html');
 get('/rdeOffice/utilization','/index.html');
 get('/rdeOffice/$page','/index.html');
+get('/rdeOffice/certification','/index.html');
 
 // External routes
 get('/external/users/a/b/c/b/c/d/e/v1','external/index.php');
