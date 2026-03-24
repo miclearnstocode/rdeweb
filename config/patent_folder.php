@@ -54,3 +54,40 @@ function cleanFolderNameForDrive($name) {
     }
     return $clean;
 }
+
+function findIPFolder($drive, $ipType, $campus, $productName, $status)
+{
+    $rootId = $drive->getRootFolderId();
+
+    // 1. Intellectual Property Records
+    $ipMainFolderId = $drive->findFolder("Intellectual Property Records", $rootId);
+    if (!$ipMainFolderId) return null;
+
+    // 2. IP Type
+    $ipTypeLabels = [
+        'patent' => 'Patents',
+        'utility_model' => 'Utility Models',
+        'industrial_design' => 'Industrial Designs',
+        'copyright' => 'Copyrights',
+        'trademark' => 'Trademarks'
+    ];
+    $ipTypeName = $ipTypeLabels[$ipType] ?? ucwords(str_replace('_', ' ', $ipType));
+    $ipTypeFolderId = $drive->findFolder($ipTypeName, $ipMainFolderId);
+    if (!$ipTypeFolderId) return null;
+
+    // 3. Status
+    $statusName = $status ?: "Unspecified Status";
+    $statusLabel = cleanFolderNameForDrive(ucwords($statusName));
+    $statusFolderId = $drive->findFolder($statusLabel, $ipTypeFolderId);
+    if (!$statusFolderId) return null;
+
+    // 4. Campus
+    $campusName = cleanFolderNameForDrive($campus ?: "Unspecified Campus");
+    $campusFolderId = $drive->findFolder($campusName, $statusFolderId);
+    if (!$campusFolderId) return null;
+
+    // 5. Record
+    $finalRecordName = cleanFolderNameForDrive($productName ?: "Sample Only");
+    return $drive->findFolder($finalRecordName, $campusFolderId);
+}
+
