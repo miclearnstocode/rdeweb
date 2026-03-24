@@ -107,10 +107,10 @@ class UtilizationAPI {
                     $originalName = $_FILES['supportDocs']['name'][$i];
                     $fileSize = $_FILES['supportDocs']['size'][$i];
 
-                    // Rename: utilization_ProgramTitle_N.pdf
-                    $cleanProgTitle = cleanNameForDrive($programTitle);
-                    $suffix = $fileCount > 1 ? '_' . ($i + 1) : '';
-                    $driveFileName = "Utilization_{$cleanProgTitle}{$suffix}.pdf";
+                    // Rename: Utilization_OriginalFileName.pdf
+                    $pathInfo = pathinfo($originalName);
+                    $cleanFileName = cleanNameForDrive($pathInfo['filename']);
+                    $driveFileName = "Utilization {$cleanFileName}.pdf";
 
                     $uploadResult = $drive->uploadFile($tmpPath, $driveFileName, $targetFolderId, 'application/pdf');
 
@@ -250,6 +250,152 @@ class UtilizationAPI {
         }
         $stmt->close();
     }
+
+    public function updateProgram() {
+        $id = $_POST['id'] ?? null;
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'message' => 'ID is required']);
+            return;
+        }
+
+        $research_id = $_POST['research_id'] ?? null;
+        $endorsement_id = $_POST['endorsement_id'] ?? null;
+        $programTitle = $_POST['programTitle'] ?? '';
+        $dateConducted = $_POST['dateConducted'] ?? '';
+        $traineesCount = $_POST['traineesCount'] ?? '';
+        $supportLinks = $_POST['supportLinks'] ?? '';
+
+        if (empty($programTitle) || empty($dateConducted) || empty($traineesCount)) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+            return;
+        }
+
+        // Fetch existing record to check for old metadata
+        $existingFileQuery = "SELECT supportDocs, supportDocsMetadata FROM utilization_programs WHERE id = ?";
+        $stmt = $this->con->prepare($existingFileQuery);
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $existingResult = $stmt->get_result();
+        $existingRow = $existingResult->fetch_assoc();
+
+        $oldSupportDocsMeta = $existingRow['supportDocsMetadata'] ? json_decode($existingRow['supportDocsMetadata'], true) : [];
+        
+        // Files the user wants to keep (sent as JSON from frontend)
+        $keptFilesMetadata = isset($_POST['keptFilesMetadata']) ? json_decode($_POST['keptFilesMetadata'], true) : $oldSupportDocsMeta;
+        
+        // 1. Identify and trash removed files
+        if (!empty($oldSupportDocsMeta)) {
+            $drive = new GoogleDriveService();
+            foreach ($oldSupportDocsMeta as $oldFile) {
+                $stillExists = false;
+                foreach ($keptFilesMetadata as $keptFile) {
+                    if ($oldFile['file_id'] === $keptFile['file_id']) {
+                        $stillExists = true;
+                        break;
+                    }
+                }
+                
+                if (!$stillExists && !empty($oldFile['file_id'])) {
+                    try {
+                        $drive->trashFile($oldFile['file_id']);
+                    } catch (Exception $e) {
+                        error_log("Failed to trash old file {$oldFile['file_id']}: " . $e->getMessage());
+                    }
+                }
+            }
+        }
+
+        // 2. Handle new file uploads
+        $newSupportDocsUrls = [];
+        $newSupportDocsMetadata = [];
+
+        if (isset($_FILES['supportDocs']) && !empty($_FILES['supportDocs']['name'][0])) {
+            try {
+                if (!isset($drive)) $drive = new GoogleDriveService();
+                
+                // Re-find target folder
+                $targetFolderId = $this->getResearchFolderId($research_id);
+                if (empty($targetFolderId)) {
+                    $cleanTitle = cleanNameForDrive($programTitle);
+                    $utilizationRootId = $drive->findOrCreateFolder('Utilization Programs', $drive->getRootFolderId());
+                    $targetFolderId = $drive->findOrCreateFolder($cleanTitle, $utilizationRootId);
+                }
+
+                $fileCount = count($_FILES['supportDocs']['name']);
+                for ($i = 0; $i < $fileCount; $i++) {
+                    if ($_FILES['supportDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
+
+                    $tmpPath = $_FILES['supportDocs']['tmp_name'][$i];
+                    $originalName = $_FILES['supportDocs']['name'][$i];
+                    $fileSize = $_FILES['supportDocs']['size'][$i];
+
+                    // Rename: Utilization_OriginalFileName.pdf
+                    $pathInfo = pathinfo($originalName);
+                    $cleanFileName = cleanNameForDrive($pathInfo['filename']);
+                    $driveFileName = "Utilization_{$cleanFileName}.pdf";
+
+                    $uploadResult = $drive->uploadFile($tmpPath, $driveFileName, $targetFolderId, 'application/pdf');
+
+                    if ($uploadResult['success']) {
+                        $fileId = $uploadResult['id'];
+                        $drive->makeFilePublic($fileId);
+                        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+                        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+
+                        $newSupportDocsUrls[] = $viewUrl;
+                        $newSupportDocsMetadata[] = [
+                            'file_id' => $fileId,
+                            'file_name' => $driveFileName,
+                            'original_name' => $originalName,
+                            'view_url' => $viewUrl,
+                            'download_url' => $downloadUrl,
+                            'size' => $fileSize,
+                            'folder_id' => $targetFolderId
+                        ];
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("Utilization Drive update error: " . $e->getMessage());
+                echo json_encode(['success' => false, 'message' => 'File update failed: ' . $e->getMessage()]);
+                return;
+            }
+        }
+
+        // 3. Merge kept and new metadata
+        $finalMetadata = array_merge($keptFilesMetadata, $newSupportDocsMetadata);
+        $supportDocsMetaJson = json_encode($finalMetadata);
+        
+        // 4. Update supportDocs (URLs string) merging manual links + all drive URLs
+        $driveUrls = array_map(function($f) { return $f['view_url']; }, $finalMetadata);
+        
+        $allUrls = [];
+        if (!empty($supportLinks)) {
+            $linkParts = array_map('trim', explode(',', $supportLinks));
+            $allUrls = array_merge($allUrls, array_filter($linkParts));
+        }
+        $allUrls = array_merge($allUrls, $driveUrls);
+        $supportDocs = implode(', ', $allUrls);
+
+        $query = "UPDATE utilization_programs SET 
+                    research_id = ?, 
+                    endorsement_id = ?, 
+                    programTitle = ?, 
+                    dateConducted = ?, 
+                    traineesCount = ?, 
+                    supportDocs = ?, 
+                    supportDocsMetadata = ? 
+                  WHERE id = ?";
+        
+        $stmt = $this->con->prepare($query);
+        $stmt->bind_param('iississi', $research_id, $endorsement_id, $programTitle, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson, $id);
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Program updated successfully']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Update failed: ' . $stmt->error]);
+        }
+        $stmt->close();
+    }
 }
 
 // Global $conn from db.php
@@ -265,6 +411,9 @@ switch ($action) {
         break;
     case 'getAll':
         $api->getAllPrograms();
+        break;
+    case 'update':
+        $api->updateProgram();
         break;
     case 'delete':
         $api->deleteProgram();

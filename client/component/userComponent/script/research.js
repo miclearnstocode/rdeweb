@@ -187,6 +187,7 @@ const CreateNew = () => {
 
     const labelRes = $({
         tag: 'div',
+        att: { className: 'form-header' },
         style: {
             fontFamily: 'arial black,sans-serif',
             color: '#bbb',
@@ -272,6 +273,7 @@ const CreateNew = () => {
                     padding: '.4rem',
                     borderRadius: '.5vw'
                 },
+                att: { className: 'form-section' },
                 child: [leb, input]
             }))
         }
@@ -1026,6 +1028,7 @@ const CreateNew = () => {
 
         return ($({
             tag: 'div',
+            att: { className: 'form-main-content' },
             style: {
                 height: 'fit-content',
                 paddingTop: '1vh',

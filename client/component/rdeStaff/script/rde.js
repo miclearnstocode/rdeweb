@@ -9,6 +9,7 @@ import { PresentationResearch } from "./presentationResearch.js";
 import { Publication } from "./publication.js";
 import { PatentUM } from "./patentUM.js";
 import { Utilization } from "./utilization.js";
+import { CertificationResearch } from "./certificationResearch.js";
 
 const button=({label,event,url})=>{
     const getB=(b)=>{
@@ -115,7 +116,12 @@ const Body=()=>{
         button:button,
         page:Utilization
     })
-
+    botArray.push({
+        url:'/rdeOffice/certification',
+        label:'Certifications',
+        button:button,
+        page:CertificationResearch
+    })
     const Tabs=()=>{
         const label=$({
             tag:'div',

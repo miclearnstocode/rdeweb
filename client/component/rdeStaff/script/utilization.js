@@ -1,4 +1,4 @@
-import { $ } from "../../../lib/lib.js";
+import { $, DeleteConfirmModal } from "../../../lib/lib.js";
 
 export const Utilization = () => {
     let mainTableContainer;
@@ -9,9 +9,10 @@ export const Utilization = () => {
         { field: 'researchTitle', header: 'Research Title', width: '250px', type: 'search', required: false },
         { field: 'programTitle', header: 'Program Title', width: '300px', type: 'text', required: true },
         { field: 'dateConducted', header: 'Date Conducted', width: '150px', type: 'date', required: true },
-        { field: 'traineesCount', header: 'No. of Trainees/Beneficiaries', width: '200px', type: 'number', required: true },
-        { field: 'supportLinks', header: 'Link to Support Documents', width: '180px', type: 'url', required: false },
-        { field: 'supportDocs', header: 'Upload Support Documents', width: '180px', type: 'file', required: false }
+        { field: 'traineesCount', header: 'No. of Trainees/Beneficiaries', width: '180px', type: 'number', required: true },
+        { field: 'supportLinks', header: 'Link to Support Documents', width: '160px', type: 'url', required: false },
+        { field: 'supportDocs', header: 'Upload Support Documents', width: '160px', type: 'file', required: false },
+        { field: 'actions', header: 'Actions', width: '80px', type: 'actions', required: false }
     ];
 
     let selectedResearchId = null;
@@ -36,18 +37,28 @@ export const Utilization = () => {
         }
     };
 
-    const openAddProgramModal = () => {
-        selectedResearchId = null;
-        selectedEndorsementId = null;
-        selectedResearchTitle = '';
-        const modal = createProgramModal();
+    const openProgramModal = (data = null) => {
+        if (data) {
+            selectedResearchId = data.research_id;
+            selectedEndorsementId = data.endorsement_id;
+            selectedResearchTitle = data.research_title || '';
+        } else {
+            selectedResearchId = null;
+            selectedEndorsementId = null;
+            selectedResearchTitle = '';
+        }
+        const modal = createProgramModal(data);
         document.body.appendChild(modal);
         setTimeout(() => {
             modal.style.opacity = '1';
         }, 10);
     };
 
-    const createFormField = (column) => {
+    const openAddProgramModal = () => openProgramModal();
+
+    const openEditProgramModal = (data) => openProgramModal(data);
+
+    const createFormField = (column, initialValue = null) => {
         const fieldId = `field-${column.field}`;
         const labelStyle = {
             display: 'block',
@@ -111,7 +122,8 @@ export const Utilization = () => {
                     type: 'text',
                     id: fieldId,
                     placeholder: 'Search for accepted research title...',
-                    autoComplete: 'off'
+                    autoComplete: 'off',
+                    value: initialValue || selectedResearchTitle
                 },
                 style: inputBaseStyle
             });
@@ -131,44 +143,44 @@ export const Utilization = () => {
                     body.append('search', term);
 
                     fetch('/utilization', { method: 'POST', body })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success && data.data.length > 0) {
-                            resultsDropdown.innerHTML = '';
-                            data.data.forEach(res => {
-                                const item = $({
-                                    tag: 'div',
-                                    style: {
-                                        padding: '12px 16px',
-                                        cursor: 'pointer',
-                                        borderBottom: '1px solid #3a3a3a',
-                                        fontSize: '13px',
-                                        color: '#ddd',
-                                        transition: 'background 0.2s'
-                                    },
-                                    child: [
-                                        $({ tag: 'div', text: res.title, style: { fontWeight: '600', marginBottom: '4px' } }),
-                                        $({ tag: 'div', text: res.author, style: { fontSize: '11px', color: '#888' } })
-                                    ]
-                                });
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success && data.data.length > 0) {
+                                resultsDropdown.innerHTML = '';
+                                data.data.forEach(res => {
+                                    const item = $({
+                                        tag: 'div',
+                                        style: {
+                                            padding: '12px 16px',
+                                            cursor: 'pointer',
+                                            borderBottom: '1px solid #3a3a3a',
+                                            fontSize: '13px',
+                                            color: '#ddd',
+                                            transition: 'background 0.2s'
+                                        },
+                                        child: [
+                                            $({ tag: 'div', text: res.title, style: { fontWeight: '600', marginBottom: '4px' } }),
+                                            $({ tag: 'div', text: res.author, style: { fontSize: '11px', color: '#888' } })
+                                        ]
+                                    });
 
-                                item.addEventListener('mouseenter', () => { item.style.backgroundColor = '#444'; });
-                                item.addEventListener('mouseleave', () => { item.style.backgroundColor = 'transparent'; });
-                                item.addEventListener('click', () => {
-                                    searchInput.value = res.title;
-                                    selectedResearchId = res.id;
-                                    selectedEndorsementId = res.endorsement_id;
-                                    selectedResearchTitle = res.title;
-                                    resultsDropdown.style.display = 'none';
-                                    searchInput.style.borderColor = '#4caf50';
+                                    item.addEventListener('mouseenter', () => { item.style.backgroundColor = '#444'; });
+                                    item.addEventListener('mouseleave', () => { item.style.backgroundColor = 'transparent'; });
+                                    item.addEventListener('click', () => {
+                                        searchInput.value = res.title;
+                                        selectedResearchId = res.id;
+                                        selectedEndorsementId = res.endorsement_id;
+                                        selectedResearchTitle = res.title;
+                                        resultsDropdown.style.display = 'none';
+                                        searchInput.style.borderColor = '#4caf50';
+                                    });
+                                    resultsDropdown.appendChild(item);
                                 });
-                                resultsDropdown.appendChild(item);
-                            });
-                            resultsDropdown.style.display = 'block';
-                        } else {
-                            resultsDropdown.style.display = 'none';
-                        }
-                    });
+                                resultsDropdown.style.display = 'block';
+                            } else {
+                                resultsDropdown.style.display = 'none';
+                            }
+                        });
                 }, 400);
             });
 
@@ -268,7 +280,18 @@ export const Utilization = () => {
                 addLinkBtn.style.backgroundColor = 'transparent';
             });
 
-            linksContainer.appendChild(createLinkInputRow());
+            if (initialValue) {
+                const existingLinks = initialValue.split(',').map(l => l.trim()).filter(l => l && l.startsWith('http') && !l.includes('drive.google.com'));
+                if (existingLinks.length > 0) {
+                    existingLinks.forEach(link => {
+                        linksContainer.appendChild(createLinkInputRow(link));
+                    });
+                } else {
+                    linksContainer.appendChild(createLinkInputRow());
+                }
+            } else {
+                linksContainer.appendChild(createLinkInputRow());
+            }
 
             return $({
                 tag: 'div',
@@ -280,6 +303,9 @@ export const Utilization = () => {
         // Special handling for support document file uploads
         if (column.field === 'supportDocs') {
             const fileList = [];
+            let existingFiles = initialValue ? JSON.parse(initialValue) : [];
+            let keptFiles = [...existingFiles];
+            let deletedFileIds = [];
 
             const fileListContainer = $({
                 tag: 'div',
@@ -289,14 +315,59 @@ export const Utilization = () => {
 
             const updateFileListUI = () => {
                 fileListContainer.innerHTML = '';
+                
+                // Show kept existing files
+                keptFiles.forEach((fileMeta, idx) => {
+                    const row = $({
+                        tag: 'div',
+                        att: { className: 'file-list-row existing-file' },
+                        style: {
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '10px 14px', backgroundColor: 'rgba(76, 175, 80, 0.05)',
+                            borderRadius: '8px', border: '1px solid rgba(76, 175, 80, 0.2)'
+                        },
+                        child: [
+                            $({ tag: 'span', att: { className: 'fa-solid fa-cloud' }, style: { color: '#4caf50', fontSize: '16px' } }),
+                            $({
+                                tag: 'div', style: { flex: '1', overflow: 'hidden' },
+                                child: [
+                                    $({ tag: 'div', text: fileMeta.original_name || fileMeta.file_name, style: { color: '#ddd', fontSize: '13px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' } }),
+                                    $({ tag: 'div', text: 'Existing Document (Stored in Cloud)', style: { color: '#666', fontSize: '10px', marginTop: '2px' } })
+                                ]
+                            })
+                        ]
+                    });
+
+                    const removeBtn = $({
+                        tag: 'button',
+                        style: {
+                            backgroundColor: 'transparent', border: 'none',
+                            color: '#666', cursor: 'pointer', padding: '6px', fontSize: '13px',
+                            transition: 'color 0.2s'
+                        },
+                        child: [$({ tag: 'span', att: { className: 'fa-solid fa-trash-can' } })]
+                    });
+                    removeBtn.addEventListener('click', () => {
+                        deletedFileIds.push(fileMeta.file_id);
+                        keptFiles.splice(idx, 1);
+                        updateFileListUI();
+                    });
+                    removeBtn.addEventListener('mouseenter', () => { removeBtn.style.color = '#ff4d4d'; });
+                    removeBtn.addEventListener('mouseleave', () => { removeBtn.style.color = '#666'; });
+                    row.appendChild(removeBtn);
+
+                    fileListContainer.appendChild(row);
+                });
+
+                // Show newly added files
                 fileList.forEach((file, idx) => {
                     const row = $({
                         tag: 'div',
-                        att: { className: 'file-list-row' },
+                        att: { className: 'file-list-row new-file' },
                         style: {
                             display: 'flex', alignItems: 'center', gap: '10px',
-                            padding: '10px 14px', backgroundColor: '#333',
-                            borderRadius: '8px', border: '1px solid #444'
+                            padding: '10px 14px', backgroundColor: 'rgba(0, 191, 255, 0.05)',
+                            borderRadius: '8px', border: '1px solid rgba(0, 191, 255, 0.2)'
                         },
                         child: [
                             $({ tag: 'span', att: { className: 'fa-solid fa-file-pdf' }, style: { color: '#e74c3c', fontSize: '16px' } }),
@@ -304,7 +375,7 @@ export const Utilization = () => {
                                 tag: 'div', style: { flex: '1', overflow: 'hidden' },
                                 child: [
                                     $({ tag: 'div', text: file.name, style: { color: '#ddd', fontSize: '13px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' } }),
-                                    $({ tag: 'div', text: `${(file.size / 1024).toFixed(1)} KB`, style: { color: '#666', fontSize: '11px', marginTop: '2px' } })
+                                    $({ tag: 'div', text: `${(file.size / 1024).toFixed(1)} KB - New Upload`, style: { color: '#888', fontSize: '11px', marginTop: '2px' } })
                                 ]
                             })
                         ]
@@ -354,7 +425,7 @@ export const Utilization = () => {
                 },
                 child: [
                     $({ tag: 'span', att: { className: 'fa-solid fa-cloud-arrow-up' }, style: { fontSize: '32px', color: '#555', marginBottom: '10px', display: 'block' } }),
-                    $({ tag: 'div', text: 'Click or drag PDF files here', style: { color: '#888', fontSize: '14px', marginBottom: '4px' } }),
+                    $({ tag: 'div', text: initialValue ? 'Click or drag PDF files to add/replace support documents' : 'Click or drag PDF files here', style: { color: '#888', fontSize: '14px', marginBottom: '4px' } }),
                     $({ tag: 'div', text: 'You can upload multiple documents', style: { color: '#555', fontSize: '12px' } })
                 ]
             });
@@ -380,6 +451,12 @@ export const Utilization = () => {
             });
 
             dropZone._getFiles = () => fileList;
+            dropZone._getKeptMetadata = () => JSON.stringify(keptFiles);
+
+            // Initial UI update if there are existing files
+            if (existingFiles.length > 0) {
+                setTimeout(updateFileListUI, 10);
+            }
 
             return $({
                 tag: 'div',
@@ -395,7 +472,8 @@ export const Utilization = () => {
                 type: column.type || 'text',
                 id: fieldId,
                 placeholder: `Enter ${column.header.toLowerCase()}...`,
-                required: !!column.required
+                required: !!column.required,
+                value: initialValue || ''
             },
             style: inputBaseStyle
         });
@@ -412,14 +490,30 @@ export const Utilization = () => {
     };
 
 
-    const createProgramModal = () => {
+    const createProgramModal = (programData = null) => {
+        const isEdit = !!programData;
         const fieldsContainer = $({
             tag: 'div',
             style: { display: 'flex', flexDirection: 'column', gap: '20px' }
         });
 
         columns.forEach(col => {
-            fieldsContainer.appendChild(createFormField(col));
+            if (col.type !== 'actions') {
+                let initialValue = programData ? programData[col.field] : null;
+                // Field mapping for researchTitle/research_title
+                if (col.field === 'researchTitle' && programData) {
+                    initialValue = programData.research_title || '';
+                }
+                // For supportDocs, we provide metadata for pre-filling
+                if (col.field === 'supportDocs' && programData) {
+                    initialValue = programData.supportDocsMetadata || null;
+                }
+                // For supportLinks, we might have merged URLs (manual + drive) in programData.supportDocs
+                if (col.field === 'supportLinks' && programData) {
+                    initialValue = programData['supportDocs'] || '';
+                }
+                fieldsContainer.appendChild(createFormField(col, initialValue));
+            }
         });
 
         const modalHeader = $({
@@ -439,11 +533,11 @@ export const Utilization = () => {
                         $({
                             tag: 'span',
                             att: { className: 'fa-solid fa-circle-plus' },
-                            style: { color: 'deepskyblue', fontSize: '24px' }
+                            style: { color: isEdit ? '#f39c12' : 'deepskyblue', fontSize: '24px' }
                         }),
                         $({
                             tag: 'h2',
-                            text: 'Add Utilization Program',
+                            text: isEdit ? 'Edit Utilization Program' : 'Add Utilization Program',
                             style: { color: '#fff', margin: '0', fontSize: '20px', fontWeight: '600' }
                         })
                     ]
@@ -478,17 +572,17 @@ export const Utilization = () => {
 
         const saveBtn = $({
             tag: 'button',
-            text: 'Save Program',
+            text: isEdit ? 'Update Program' : 'Save Program',
             style: {
                 padding: '10px 32px',
-                backgroundColor: 'deepskyblue',
+                backgroundColor: isEdit ? '#f39c12' : 'deepskyblue',
                 border: 'none',
                 color: '#fff',
                 borderRadius: '30px',
                 cursor: 'pointer',
                 fontSize: '14px',
                 fontWeight: '600',
-                boxShadow: '0 4px 12px rgba(0, 191, 255, 0.2)'
+                boxShadow: isEdit ? '0 4px 12px rgba(243, 156, 18, 0.2)' : '0 4px 12px rgba(0, 191, 255, 0.2)'
             },
             event: {
                 type: 'click',
@@ -527,45 +621,49 @@ export const Utilization = () => {
 
                     // Save to backend
                     const fetchBody = new FormData();
-                    fetchBody.append('action', 'add');
+                    fetchBody.append('action', isEdit ? 'update' : 'add');
+                    if (isEdit) fetchBody.append('id', programData.id);
                     Object.keys(formData).forEach(key => {
                         fetchBody.append(key, formData[key]);
                     });
 
                     // Append support document files
                     const dropZoneEl = document.getElementById('support-docs-drop-zone');
-                    if (dropZoneEl && dropZoneEl._getFiles) {
-                        const files = dropZoneEl._getFiles();
-                        files.forEach(file => {
-                            fetchBody.append('supportDocs[]', file);
-                        });
+                    if (dropZoneEl) {
+                        if (dropZoneEl._getFiles) {
+                            const files = dropZoneEl._getFiles();
+                            files.forEach(file => {
+                                fetchBody.append('supportDocs[]', file);
+                            });
+                        }
+                        if (isEdit && dropZoneEl._getKeptMetadata) {
+                            fetchBody.append('keptFilesMetadata', dropZoneEl._getKeptMetadata());
+                        }
                     }
 
                     saveBtn.disabled = true;
-                    saveBtn.innerText = 'Saving...';
+                    saveBtn.innerText = isEdit ? 'Updating...' : 'Saving...';
 
                     fetch('/utilization', {
                         method: 'POST',
                         body: fetchBody
                     })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log('Program saved:', data);
-                            closeModal();
-                            fetchPrograms();
-                        } else {
-                            alert('Error: ' + data.message);
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                closeModal();
+                                fetchPrograms();
+                            } else {
+                                alert('Error: ' + data.message);
+                                saveBtn.disabled = false;
+                                saveBtn.innerText = isEdit ? 'Update Program' : 'Save Program';
+                            }
+                        })
+                        .catch(err => {
+                            alert('Failed to save program');
                             saveBtn.disabled = false;
-                            saveBtn.innerText = 'Save Program';
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Save error:', err);
-                        alert('Failed to save program');
-                        saveBtn.disabled = false;
-                        saveBtn.innerText = 'Save Program';
-                    });
+                            saveBtn.innerText = isEdit ? 'Update Program' : 'Save Program';
+                        });
                 }
             }
         });
@@ -645,13 +743,13 @@ export const Utilization = () => {
             method: 'POST',
             body: body
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                renderTable(data.data);
-            }
-        })
-        .catch(err => console.error('Fetch error:', err));
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderTable(data.data);
+                }
+            })
+            .catch(err => console.error('Fetch error:', err));
     };
 
     const renderTable = (data) => {
@@ -1010,7 +1108,6 @@ export const Utilization = () => {
                             event: {
                                 type: 'click',
                                 method: () => {
-                                    console.log('Exporting utilization data...');
                                 }
                             }
                         })
@@ -1034,14 +1131,16 @@ export const Utilization = () => {
                     color: '#aaa',
                     backgroundColor: '#2d2d2d',
                     borderBottom: '2px solid #444',
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'normal',
+                    width: col.width,
                     minWidth: col.width,
                     position: 'sticky',
                     top: '0',
                     zIndex: '10',
                     fontFamily: 'Segoe UI, sans-serif',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.5px',
+                    verticalAlign: 'middle'
                 },
                 child: [
                     $({
@@ -1103,7 +1202,7 @@ export const Utilization = () => {
     // Function to create document links (handles multiple)
     const createDocLinks = (linksStr) => {
         if (!linksStr || linksStr === '—') return $({ tag: 'span', text: '—' });
-        
+
         const links = linksStr.split(',').map(l => l.trim()).filter(l => l !== '');
         if (links.length === 0) return $({ tag: 'span', text: '—' });
 
@@ -1115,7 +1214,7 @@ export const Utilization = () => {
                 try {
                     const u = new URL(url);
                     label = u.hostname.replace('www.', '').split('.')[0];
-                } catch(e) {}
+                } catch (e) { }
 
                 return $({
                     tag: 'a',
@@ -1178,8 +1277,12 @@ export const Utilization = () => {
                 fontSize: '13px',
                 color: '#ddd',
                 borderBottom: '1px solid #444',
-                whiteSpace: 'nowrap',
-                fontFamily: 'Segoe UI, sans-serif'
+                whiteSpace: 'normal',
+                width: col.width,
+                minWidth: col.width,
+                fontFamily: 'Segoe UI, sans-serif',
+                verticalAlign: 'middle',
+                wordBreak: 'break-word'
             };
 
             if (col.field === 'supportLinks') {
@@ -1219,7 +1322,7 @@ export const Utilization = () => {
 
                 return $({
                     tag: 'td',
-                    style: { ...cellStyle, whiteSpace: 'normal' },
+                    style: { ...cellStyle, whiteSpace: 'normal', display: 'table-cell', verticalAlign: 'middle' },
                     child: [linksContainer]
                 });
             }
@@ -1274,7 +1377,7 @@ export const Utilization = () => {
 
                 return $({
                     tag: 'td',
-                    style: { ...cellStyle, whiteSpace: 'normal' },
+                    style: { ...cellStyle, whiteSpace: 'normal', display: 'table-cell', verticalAlign: 'middle' },
                     child: [docsContainer]
                 });
             }
@@ -1292,6 +1395,120 @@ export const Utilization = () => {
 
             if (col.field === 'traineesCount') {
                 cellContent = `${item[col.field]} participants`;
+            }
+
+            if (col.field === 'actions') {
+                const editBtn = $({
+                    tag: 'button',
+                    style: {
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#f39c12',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '50%',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    },
+                    child: [$({ tag: 'span', att: { className: 'fa-solid fa-pen-to-square' } })],
+                    event: {
+                        type: 'click',
+                        method: (e) => {
+                            e.stopPropagation();
+                            openEditProgramModal(item);
+                        }
+                    }
+                });
+
+                editBtn.addEventListener('mouseenter', () => {
+                    editBtn.style.backgroundColor = 'rgba(243, 156, 18, 0.1)';
+                    editBtn.style.transform = 'scale(1.1)';
+                });
+                editBtn.addEventListener('mouseleave', () => {
+                    editBtn.style.backgroundColor = 'transparent';
+                    editBtn.style.transform = 'scale(1)';
+                });
+
+                const deleteBtn = $({
+                    tag: 'button',
+                    style: {
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        color: '#f44336',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '50%',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    },
+                    child: [$({ tag: 'span', att: { className: 'fa-solid fa-trash-can' } })],
+                    event: {
+                        type: 'click',
+                        method: async (e) => {
+                            e.stopPropagation();
+                            const confirmed = await DeleteConfirmModal(
+                                "Delete Program",
+                                `Are you sure you want to delete the program "${item.programTitle}"?`
+                            );
+                            
+                            if (confirmed) {
+                                const body = new FormData();
+                                body.append('action', 'delete');
+                                body.append('id', item.id);
+                                
+                                try {
+                                    const res = await fetch('/utilization', {
+                                        method: 'POST',
+                                        body: body
+                                    });
+                                    const data = await res.json();
+                                    if (data.success) {
+                                        fetchPrograms();
+                                    } else {
+                                        alert('Delete failed: ' + data.message);
+                                    }
+                                } catch (err) {
+                                    alert('Failed to delete program');
+                                }
+                            }
+                        }
+                    }
+                });
+
+                deleteBtn.addEventListener('mouseenter', () => {
+                    deleteBtn.style.backgroundColor = 'rgba(244, 67, 54, 0.1)';
+                    deleteBtn.style.transform = 'scale(1.1)';
+                });
+                deleteBtn.addEventListener('mouseleave', () => {
+                    deleteBtn.style.backgroundColor = 'transparent';
+                    deleteBtn.style.transform = 'scale(1)';
+                });
+
+                return $({
+                    tag: 'td',
+                    style: { 
+                        ...cellStyle, 
+                        textAlign: 'center',
+                        verticalAlign: 'middle',
+                        borderBottom: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                gap: '8px',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            },
+                            child: [editBtn, deleteBtn]
+                        })
+                    ]
+                });
             }
 
             return $({
@@ -1342,7 +1559,7 @@ export const Utilization = () => {
                         width: '100%',
                         borderCollapse: 'separate',
                         borderSpacing: '0',
-                        minWidth: 'max-content'
+                        tableLayout: 'fixed'
                     },
                     child: [
                         TableHeader(),

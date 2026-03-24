@@ -1691,7 +1691,7 @@ export const Publication = () => {
                 borderBottom: '1px solid #444'
             },
             elementHandler: (el) => {
-                statsContainer = el
+                statsContainer = el;
                 refreshStats()
             }
         })

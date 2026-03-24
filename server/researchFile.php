@@ -1,7 +1,6 @@
 <?php
-// For debugging - output errors to log file, NOT to browser
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // DO NOT display errors - breaks JSON
+ini_set('display_errors', 0); 
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/drive_errors.log');
 
@@ -50,7 +49,6 @@ require_once __DIR__ . '/Mailer/mailTemplate.php';
 require_once __DIR__ . '/Mailer/MailSender.php';
 date_default_timezone_set('Asia/Manila');
 
-// Function to get center code from center name (fixed mapping)
 function getCenterCode($centerName) {
     // Mapping of full center names to their codes
     $centerMapping = [
