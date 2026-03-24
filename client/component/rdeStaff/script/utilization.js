@@ -3,428 +3,824 @@ import { $ } from "../../../lib/lib.js";
 export const Utilization = () => {
     let mainTableContainer;
     let tableBody;
-    
+
     // Columns for utilization and extension programs
     const columns = [
-        { field: 'programTitle', header: 'Program Title', width: '300px' },
-        { field: 'dateConducted', header: 'Date Conducted', width: '150px' },
-        { field: 'traineesCount', header: 'No. of Trainees/Beneficiaries', width: '200px' },
-        { field: 'supportDocs', header: 'Link to Support Documents', width: '180px' },
-        { field: 'beneficiaryType', header: 'Beneficiary Type', width: '180px' },
-        { field: 'beneficiarySector', header: 'Industry/Sector', width: '200px' },
-        { field: 'beneficiaryName', header: 'Beneficiary/Community', width: '220px' },
-        { field: 'programType', header: 'Program Type', width: '150px' },
-        { field: 'implementingCampus', header: 'Implementing Campus', width: '150px' },
-        { field: 'researchUtilized', header: 'Research Utilized', width: '250px' },
-        { field: 'outcome', header: 'Outcome/Impact', width: '250px' },
-        { field: 'fundingSource', header: 'Funding Source', width: '180px' }
+        { field: 'researchTitle', header: 'Research Title', width: '250px', type: 'search', required: false },
+        { field: 'programTitle', header: 'Program Title', width: '300px', type: 'text', required: true },
+        { field: 'dateConducted', header: 'Date Conducted', width: '150px', type: 'date', required: true },
+        { field: 'traineesCount', header: 'No. of Trainees/Beneficiaries', width: '200px', type: 'number', required: true },
+        { field: 'supportLinks', header: 'Link to Support Documents', width: '180px', type: 'url', required: false },
+        { field: 'supportDocs', header: 'Upload Support Documents', width: '180px', type: 'file', required: false }
     ];
 
-    // Beneficiary types
-    const beneficiaryTypes = [
-        { value: 'industry', label: 'Industry', icon: 'fa-industry', color: '#4caf50' },
-        { value: 'community', label: 'Community', icon: 'fa-people-group', color: '#2196f3' },
-        { value: 'extension', label: 'Extension', icon: 'fa-hand-holding-heart', color: '#ff9800' },
-        { value: 'academic', label: 'Academic', icon: 'fa-school', color: '#9c27b0' },
-        { value: 'government', label: 'Government', icon: 'fa-building-flag', color: '#e91e63' },
-        { value: 'private', label: 'Private Sector', icon: 'fa-briefcase', color: '#00bcd4' }
-    ];
+    let selectedResearchId = null;
+    let selectedEndorsementId = null;
+    let selectedResearchTitle = '';
 
-    // Program types
-    const programTypes = [
-        { value: 'training', label: 'Training', icon: 'fa-chalkboard-user' },
-        { value: 'seminar', label: 'Seminar', icon: 'fa-users' },
-        { value: 'workshop', label: 'Workshop', icon: 'fa-screwdriver-wrench' },
-        { value: 'forum', label: 'Forum', icon: 'fa-comments' },
-        { value: 'consultancy', label: 'Consultancy', icon: 'fa-handshake' },
-        { value: 'technology_transfer', label: 'Technology Transfer', icon: 'fa-arrow-right-arrow-left' },
-        { value: 'extension_service', label: 'Extension Service', icon: 'fa-tree' },
-        { value: 'community_outreach', label: 'Community Outreach', icon: 'fa-heart' }
-    ];
-
-    // Industry sectors
-    const industrySectors = [
-        'Agriculture', 'Fisheries', 'Livestock', 'Food Processing',
-        'Manufacturing', 'Information Technology'
-    ];
-
+    let modalOverlay;
+    let searchTimeout;
     const getMainContainer = (el) => {
         mainTableContainer = el;
     };
 
-    const getTableBody = (el) => {
-        tableBody = el;
-        
-        // Create empty state with utilization/extension specific message
-        const emptyState = $({
-            tag: 'div',
-            att: { className: 'empty-state' },
-            style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '350px',
-                width: '100%',
-                color: '#888',
-                fontFamily: 'Segoe UI, sans-serif'
-            },
-            child: [
-                $({
-                    tag: 'div',
-                    style: {
-                        position: 'relative',
-                        width: '200px',
-                        height: '200px',
-                        marginBottom: '24px'
-                    },
-                    child: [
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-hand-holding-heart' },
-                            style: { 
-                                fontSize: '100px', 
-                                color: 'deepskyblue',
-                                opacity: 0.2,
-                                position: 'absolute',
-                                left: '0',
-                                top: '20px',
-                                transform: 'rotate(-5deg)'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-people-arrows' },
-                            style: { 
-                                fontSize: '90px', 
-                                color: '#4caf50',
-                                opacity: 0.2,
-                                position: 'absolute',
-                                right: '0',
-                                bottom: '20px',
-                                transform: 'rotate(10deg)'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-seedling' },
-                            style: { 
-                                fontSize: '70px', 
-                                color: '#ff9800',
-                                opacity: 0.25,
-                                position: 'absolute',
-                                left: '20px',
-                                bottom: '0',
-                                transform: 'rotate(-15deg)'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-building' },
-                            style: { 
-                                fontSize: '60px', 
-                                color: '#e91e63',
-                                opacity: 0.2,
-                                position: 'absolute',
-                                right: '30px',
-                                top: '0',
-                                transform: 'rotate(20deg)'
-                            }
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                width: '80px',
-                                height: '80px',
-                                backgroundColor: 'rgba(0,191,255,0.1)',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                border: '2px dashed deepskyblue',
-                                animation: 'pulse 2s infinite'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-chart-line' },
-                                    style: { fontSize: '30px', color: 'deepskyblue' }
-                                })
-                            ]
-                        })
-                    ]
-                }),
-                $({
-                    tag: 'div',
-                    text: 'No Utilization / Extension Programs',
-                    style: { 
-                        fontSize: '26px', 
-                        marginBottom: '12px',
-                        fontWeight: '600',
-                        color: '#fff',
-                        letterSpacing: '-0.5px'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'Training programs, extension services, technology transfer, and community',
-                    style: { 
-                        fontSize: '15px', 
-                        opacity: 0.7,
-                        textAlign: 'center',
-                        lineHeight: '1.6'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'outreach activities benefiting industry and communities will be displayed here',
-                    style: { 
-                        fontSize: '15px', 
-                        opacity: 0.7,
-                        marginBottom: '30px',
-                        textAlign: 'center'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    style: {
-                        display: 'flex',
-                        gap: '20px',
-                        flexWrap: 'wrap',
-                        justifyContent: 'center'
-                    },
-                    child: [
-                        $({
-                            tag: 'button',
-                            style: {
-                                backgroundColor: 'deepskyblue',
-                                border: 'none',
-                                borderRadius: '40px',
-                                padding: '14px 36px',
-                                color: '#fff',
-                                fontSize: '16px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                transition: 'all 0.3s ease',
-                                boxShadow: '0 8px 20px rgba(0, 191, 255, 0.3)'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-circle-plus' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Add Program'
-                                })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Add program clicked');
-                                }
-                            }
-                        }),
-                        $({
-                            tag: 'button',
-                            style: {
-                                backgroundColor: 'transparent',
-                                border: '2px solid #444',
-                                borderRadius: '40px',
-                                padding: '14px 36px',
-                                color: '#fff',
-                                fontSize: '16px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                transition: 'all 0.3s ease'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-cloud-upload-alt' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Import Programs'
-                                })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    console.log('Import programs clicked');
-                                }
-                            }
-                        })
-                    ]
-                }),
-                $({
-                    tag: 'div',
-                    style: {
-                        marginTop: '30px',
-                        display: 'flex',
-                        gap: '30px',
-                        color: '#666',
-                        fontSize: '13px'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: { display: 'flex', alignItems: 'center', gap: '8px' },
-                            child: [
-                                $({ tag: 'span', att: { className: 'fa-solid fa-industry' }, style: { color: '#4caf50' } }),
-                                $({ tag: 'span', text: 'Industry' })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: { display: 'flex', alignItems: 'center', gap: '8px' },
-                            child: [
-                                $({ tag: 'span', att: { className: 'fa-solid fa-people-group' }, style: { color: '#2196f3' } }),
-                                $({ tag: 'span', text: 'Community' })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: { display: 'flex', alignItems: 'center', gap: '8px' },
-                            child: [
-                                $({ tag: 'span', att: { className: 'fa-solid fa-hand-holding-heart' }, style: { color: '#ff9800' } }),
-                                $({ tag: 'span', text: 'Extension' })
-                            ]
-                        })
-                    ]
-                })
-            ]
-        });
-        el.appendChild(emptyState);
-    };
-
-    // Function to create beneficiary type badge
-    const createBeneficiaryBadge = (type) => {
-        const typeConfig = beneficiaryTypes.find(t => t.value === type) || beneficiaryTypes[0];
-        
-        return $({
-            tag: 'span',
-            att: { className: `beneficiary-badge beneficiary-${type}` },
-            style: {
-                padding: '6px 12px',
-                borderRadius: '30px',
-                fontSize: '12px',
-                fontWeight: '500',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: `${typeConfig.color}15`,
-                color: typeConfig.color,
-                border: `1px solid ${typeConfig.color}30`,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-            },
-            child: [
-                $({
-                    tag: 'span',
-                    att: { className: `fa-solid ${typeConfig.icon}` },
-                    style: { fontSize: '12px' }
-                }),
-                $({
-                    tag: 'span',
-                    text: typeConfig.label
-                })
-            ]
-        });
-    };
-
-    // Function to create program type badge
-    const createProgramTypeBadge = (type) => {
-        const typeConfig = programTypes.find(t => t.value === type) || programTypes[0];
-        
-        return $({
-            tag: 'span',
-            att: { className: `program-type-badge` },
-            style: {
-                padding: '4px 10px',
-                borderRadius: '20px',
-                fontSize: '11px',
-                fontWeight: '500',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                backgroundColor: '#333',
-                color: '#aaa',
-                border: '1px solid #444'
-            },
-            child: [
-                $({
-                    tag: 'span',
-                    att: { className: `fa-solid ${typeConfig.icon}` },
-                    style: { fontSize: '10px', color: 'deepskyblue' }
-                }),
-                $({
-                    tag: 'span',
-                    text: typeConfig.label
-                })
-            ]
-        });
-    };
-
-    // Function to create document link button
-    const createDocLink = (url, label = 'View Document') => {
-        return $({
-            tag: 'a',
-            att: {
-                href: url || '#',
-                target: '_blank',
-                className: 'doc-link'
-            },
-            style: {
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 12px',
-                backgroundColor: '#333',
-                borderRadius: '20px',
-                color: 'deepskyblue',
-                textDecoration: 'none',
-                fontSize: '12px',
-                border: '1px solid #444',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer'
-            },
-            child: [
-                $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-file-pdf' },
-                    style: { fontSize: '12px' }
-                }),
-                $({
-                    tag: 'span',
-                    text: label
-                })
-            ],
-            event: {
-                type: 'mouseenter',
-                method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#444';
-                    e.currentTarget.style.borderColor = 'deepskyblue';
+    // Modal Helpers
+    const closeModal = () => {
+        if (modalOverlay) {
+            modalOverlay.style.opacity = '0';
+            setTimeout(() => {
+                if (modalOverlay && modalOverlay.parentNode) {
+                    modalOverlay.parentNode.removeChild(modalOverlay);
                 }
+            }, 300);
+        }
+    };
+
+    const openAddProgramModal = () => {
+        selectedResearchId = null;
+        selectedEndorsementId = null;
+        selectedResearchTitle = '';
+        const modal = createProgramModal();
+        document.body.appendChild(modal);
+        setTimeout(() => {
+            modal.style.opacity = '1';
+        }, 10);
+    };
+
+    const createFormField = (column) => {
+        const fieldId = `field-${column.field}`;
+        const labelStyle = {
+            display: 'block',
+            marginBottom: '8px',
+            color: '#aaa',
+            fontSize: '13px',
+            fontWeight: '500'
+        };
+
+        const inputBaseStyle = {
+            width: '100%',
+            padding: '12px',
+            backgroundColor: '#333',
+            border: '1px solid #444',
+            borderRadius: '8px',
+            color: '#fff',
+            fontSize: '14px',
+            outline: 'none',
+            boxSizing: 'border-box',
+            transition: 'borderColor 0.2s ease'
+        };
+
+        const label = $({
+            tag: 'label',
+            att: { htmlFor: fieldId },
+            style: labelStyle,
+            child: [
+                $({ tag: 'span', text: column.header })
+            ]
+        });
+
+        // Add asterisk if required
+        if (column.required) {
+            label.appendChild($({ tag: 'span', text: ' *', style: { color: 'deepskyblue', marginLeft: '4px' } }));
+        }
+
+        // Special handling for research title search
+        if (column.field === 'researchTitle') {
+            const resultsDropdown = $({
+                tag: 'div',
+                style: {
+                    position: 'absolute',
+                    top: '100%',
+                    left: '0',
+                    width: '100%',
+                    backgroundColor: '#333',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    zIndex: '1000',
+                    display: 'none',
+                    marginTop: '4px',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.4)'
+                }
+            });
+
+            const searchInput = $({
+                tag: 'input',
+                att: {
+                    type: 'text',
+                    id: fieldId,
+                    placeholder: 'Search for accepted research title...',
+                    autoComplete: 'off'
+                },
+                style: inputBaseStyle
+            });
+
+            searchInput.addEventListener('focus', () => { searchInput.style.borderColor = 'deepskyblue'; });
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.trim();
+                if (term.length < 2) {
+                    resultsDropdown.style.display = 'none';
+                    return;
+                }
+
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    const body = new FormData();
+                    body.append('action', 'search_research');
+                    body.append('search', term);
+
+                    fetch('/utilization', { method: 'POST', body })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.data.length > 0) {
+                            resultsDropdown.innerHTML = '';
+                            data.data.forEach(res => {
+                                const item = $({
+                                    tag: 'div',
+                                    style: {
+                                        padding: '12px 16px',
+                                        cursor: 'pointer',
+                                        borderBottom: '1px solid #3a3a3a',
+                                        fontSize: '13px',
+                                        color: '#ddd',
+                                        transition: 'background 0.2s'
+                                    },
+                                    child: [
+                                        $({ tag: 'div', text: res.title, style: { fontWeight: '600', marginBottom: '4px' } }),
+                                        $({ tag: 'div', text: res.author, style: { fontSize: '11px', color: '#888' } })
+                                    ]
+                                });
+
+                                item.addEventListener('mouseenter', () => { item.style.backgroundColor = '#444'; });
+                                item.addEventListener('mouseleave', () => { item.style.backgroundColor = 'transparent'; });
+                                item.addEventListener('click', () => {
+                                    searchInput.value = res.title;
+                                    selectedResearchId = res.id;
+                                    selectedEndorsementId = res.endorsement_id;
+                                    selectedResearchTitle = res.title;
+                                    resultsDropdown.style.display = 'none';
+                                    searchInput.style.borderColor = '#4caf50';
+                                });
+                                resultsDropdown.appendChild(item);
+                            });
+                            resultsDropdown.style.display = 'block';
+                        } else {
+                            resultsDropdown.style.display = 'none';
+                        }
+                    });
+                }, 400);
+            });
+
+            // Close dropdown on click outside
+            document.addEventListener('click', (e) => {
+                if (!searchContainer.contains(e.target)) resultsDropdown.style.display = 'none';
+            });
+
+            const searchContainer = $({
+                tag: 'div',
+                style: { position: 'relative', display: 'flex', flexDirection: 'column' },
+                child: [searchInput, resultsDropdown]
+            });
+
+            return $({
+                tag: 'div',
+                style: { display: 'flex', flexDirection: 'column', gap: '4px' },
+                child: [label, searchContainer]
+            });
+        }
+
+        // Special handling for multiple support document links
+        if (column.field === 'supportLinks') {
+            const linksContainer = $({
+                tag: 'div',
+                att: { id: 'support-links-container' },
+                style: { display: 'flex', flexDirection: 'column', gap: '8px' }
+            });
+
+            const createLinkInputRow = (value = '') => {
+                const input = $({
+                    tag: 'input',
+                    att: {
+                        type: 'url',
+                        className: 'support-doc-link-input',
+                        placeholder: 'https://...',
+                        value: value
+                    },
+                    style: { ...inputBaseStyle, flex: '1' }
+                });
+
+                input.addEventListener('focus', () => { input.style.borderColor = 'deepskyblue'; });
+                input.addEventListener('blur', () => { input.style.borderColor = '#444'; });
+
+                const removeBtn = $({
+                    tag: 'button',
+                    style: {
+                        backgroundColor: 'transparent', border: 'none',
+                        color: '#666', cursor: 'pointer', padding: '8px',
+                        fontSize: '14px', transition: 'color 0.2s ease'
+                    },
+                    child: [$({ tag: 'span', att: { className: 'fa-solid fa-trash-can' } })]
+                });
+                removeBtn.addEventListener('click', () => {
+                    const rows = linksContainer.querySelectorAll('.link-input-row');
+                    if (rows.length > 1) {
+                        removeBtn.closest('.link-input-row').remove();
+                    } else {
+                        removeBtn.closest('.link-input-row').querySelector('input').value = '';
+                    }
+                });
+                removeBtn.addEventListener('mouseenter', () => { removeBtn.style.color = '#ff4d4d'; });
+                removeBtn.addEventListener('mouseleave', () => { removeBtn.style.color = '#666'; });
+
+                return $({
+                    tag: 'div',
+                    att: { className: 'link-input-row' },
+                    style: { display: 'flex', gap: '8px', alignItems: 'center' },
+                    child: [input, removeBtn]
+                });
+            };
+
+            const addLinkBtn = $({
+                tag: 'button',
+                style: {
+                    alignSelf: 'flex-start', backgroundColor: 'transparent',
+                    border: '1px dashed #555', borderRadius: '8px',
+                    color: '#888', padding: '8px 16px', fontSize: '12px',
+                    cursor: 'pointer', marginTop: '4px',
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    transition: 'all 0.2s ease'
+                },
+                child: [
+                    $({ tag: 'span', att: { className: 'fa-solid fa-plus-circle' } }),
+                    $({ tag: 'span', text: 'Add another link' })
+                ]
+            });
+            addLinkBtn.addEventListener('click', () => { linksContainer.appendChild(createLinkInputRow()); });
+            addLinkBtn.addEventListener('mouseenter', () => {
+                addLinkBtn.style.borderColor = 'deepskyblue';
+                addLinkBtn.style.color = 'deepskyblue';
+                addLinkBtn.style.backgroundColor = 'rgba(0,191,255,0.05)';
+            });
+            addLinkBtn.addEventListener('mouseleave', () => {
+                addLinkBtn.style.borderColor = '#555';
+                addLinkBtn.style.color = '#888';
+                addLinkBtn.style.backgroundColor = 'transparent';
+            });
+
+            linksContainer.appendChild(createLinkInputRow());
+
+            return $({
+                tag: 'div',
+                style: { display: 'flex', flexDirection: 'column', gap: '4px' },
+                child: [label, linksContainer, addLinkBtn]
+            });
+        }
+
+        // Special handling for support document file uploads
+        if (column.field === 'supportDocs') {
+            const fileList = [];
+
+            const fileListContainer = $({
+                tag: 'div',
+                att: { id: 'support-docs-file-list' },
+                style: { display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }
+            });
+
+            const updateFileListUI = () => {
+                fileListContainer.innerHTML = '';
+                fileList.forEach((file, idx) => {
+                    const row = $({
+                        tag: 'div',
+                        att: { className: 'file-list-row' },
+                        style: {
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '10px 14px', backgroundColor: '#333',
+                            borderRadius: '8px', border: '1px solid #444'
+                        },
+                        child: [
+                            $({ tag: 'span', att: { className: 'fa-solid fa-file-pdf' }, style: { color: '#e74c3c', fontSize: '16px' } }),
+                            $({
+                                tag: 'div', style: { flex: '1', overflow: 'hidden' },
+                                child: [
+                                    $({ tag: 'div', text: file.name, style: { color: '#ddd', fontSize: '13px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' } }),
+                                    $({ tag: 'div', text: `${(file.size / 1024).toFixed(1)} KB`, style: { color: '#666', fontSize: '11px', marginTop: '2px' } })
+                                ]
+                            })
+                        ]
+                    });
+
+                    const removeBtn = $({
+                        tag: 'button',
+                        style: {
+                            backgroundColor: 'transparent', border: 'none',
+                            color: '#666', cursor: 'pointer', padding: '6px', fontSize: '13px'
+                        },
+                        child: [$({ tag: 'span', att: { className: 'fa-solid fa-xmark' } })]
+                    });
+                    removeBtn.addEventListener('click', () => {
+                        fileList.splice(idx, 1);
+                        updateFileListUI();
+                    });
+                    removeBtn.addEventListener('mouseenter', () => { removeBtn.style.color = '#ff4d4d'; });
+                    removeBtn.addEventListener('mouseleave', () => { removeBtn.style.color = '#666'; });
+                    row.appendChild(removeBtn);
+
+                    fileListContainer.appendChild(row);
+                });
+            };
+
+            const hiddenInput = $({
+                tag: 'input',
+                att: { type: 'file', id: fieldId, accept: '.pdf', multiple: true },
+                style: { display: 'none' }
+            });
+            hiddenInput.addEventListener('change', (e) => {
+                Array.from(e.target.files).forEach(f => {
+                    if (f.type === 'application/pdf') fileList.push(f);
+                });
+                updateFileListUI();
+                hiddenInput.value = '';
+            });
+
+            const dropZone = $({
+                tag: 'div',
+                att: { id: 'support-docs-drop-zone' },
+                style: {
+                    border: '2px dashed #444', borderRadius: '12px',
+                    padding: '30px 20px', textAlign: 'center',
+                    cursor: 'pointer', transition: 'all 0.3s ease',
+                    backgroundColor: '#2d2d2d'
+                },
+                child: [
+                    $({ tag: 'span', att: { className: 'fa-solid fa-cloud-arrow-up' }, style: { fontSize: '32px', color: '#555', marginBottom: '10px', display: 'block' } }),
+                    $({ tag: 'div', text: 'Click or drag PDF files here', style: { color: '#888', fontSize: '14px', marginBottom: '4px' } }),
+                    $({ tag: 'div', text: 'You can upload multiple documents', style: { color: '#555', fontSize: '12px' } })
+                ]
+            });
+
+            dropZone.addEventListener('click', () => hiddenInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = 'deepskyblue';
+                dropZone.style.backgroundColor = 'rgba(0,191,255,0.05)';
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.borderColor = '#444';
+                dropZone.style.backgroundColor = '#2d2d2d';
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#444';
+                dropZone.style.backgroundColor = '#2d2d2d';
+                Array.from(e.dataTransfer.files).forEach(f => {
+                    if (f.type === 'application/pdf') fileList.push(f);
+                });
+                updateFileListUI();
+            });
+
+            dropZone._getFiles = () => fileList;
+
+            return $({
+                tag: 'div',
+                style: { display: 'flex', flexDirection: 'column', gap: '4px' },
+                child: [label, hiddenInput, dropZone, fileListContainer]
+            });
+        }
+
+
+        const input = $({
+            tag: 'input',
+            att: {
+                type: column.type || 'text',
+                id: fieldId,
+                placeholder: `Enter ${column.header.toLowerCase()}...`,
+                required: !!column.required
             },
-            event2: {
-                type: 'mouseleave',
-                method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#333';
-                    e.currentTarget.style.borderColor = '#444';
+            style: inputBaseStyle
+        });
+
+        // Add event listeners directly as lib.js only supports one 'event' object
+        input.addEventListener('focus', () => { input.style.borderColor = 'deepskyblue'; });
+        input.addEventListener('blur', () => { input.style.borderColor = '#444'; });
+
+        return $({
+            tag: 'div',
+            style: { display: 'flex', flexDirection: 'column' },
+            child: [label, input]
+        });
+    };
+
+
+    const createProgramModal = () => {
+        const fieldsContainer = $({
+            tag: 'div',
+            style: { display: 'flex', flexDirection: 'column', gap: '20px' }
+        });
+
+        columns.forEach(col => {
+            fieldsContainer.appendChild(createFormField(col));
+        });
+
+        const modalHeader = $({
+            tag: 'div',
+            style: {
+                padding: '24px',
+                borderBottom: '1px solid #3a3a3a',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: { display: 'flex', alignItems: 'center', gap: '12px' },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-circle-plus' },
+                            style: { color: 'deepskyblue', fontSize: '24px' }
+                        }),
+                        $({
+                            tag: 'h2',
+                            text: 'Add Utilization Program',
+                            style: { color: '#fff', margin: '0', fontSize: '20px', fontWeight: '600' }
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'span',
+                    att: { className: 'fa-solid fa-times' },
+                    style: { cursor: 'pointer', color: '#666', fontSize: '20px' },
+                    event: {
+                        type: 'click',
+                        method: closeModal
+                    }
+                })
+            ]
+        });
+
+        const cancelBtn = $({
+            tag: 'button',
+            text: 'Cancel',
+            style: {
+                padding: '10px 24px',
+                backgroundColor: 'transparent',
+                border: '1px solid #444',
+                color: '#aaa',
+                borderRadius: '30px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+            },
+            event: { type: 'click', method: closeModal }
+        });
+
+        const saveBtn = $({
+            tag: 'button',
+            text: 'Save Program',
+            style: {
+                padding: '10px 32px',
+                backgroundColor: 'deepskyblue',
+                border: 'none',
+                color: '#fff',
+                borderRadius: '30px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                boxShadow: '0 4px 12px rgba(0, 191, 255, 0.2)'
+            },
+            event: {
+                type: 'click',
+                method: () => {
+                    const formData = {};
+                    let hasError = false;
+
+                    columns.forEach(col => {
+                        if (col.field === 'supportDocs') {
+                            // Files are handled separately via FormData below
+                        } else if (col.field === 'supportLinks') {
+                            const linkInputs = document.querySelectorAll('.support-doc-link-input');
+                            const links = Array.from(linkInputs)
+                                .map(input => input.value.trim())
+                                .filter(val => val !== '');
+                            formData['supportLinks'] = links.join(', ');
+                        } else if (col.field === 'researchTitle') {
+                            formData['research_id'] = selectedResearchId;
+                            formData['endorsement_id'] = selectedEndorsementId;
+                        } else {
+                            const input = document.getElementById(`field-${col.field}`);
+                            if (input) {
+                                formData[col.field] = input.value;
+                                if (col.required && !input.value.trim()) {
+                                    input.style.borderColor = '#ff4d4d';
+                                    hasError = true;
+                                }
+                            }
+                        }
+                    });
+
+                    if (hasError) {
+                        console.warn('Please fill in all required fields');
+                        return;
+                    }
+
+                    // Save to backend
+                    const fetchBody = new FormData();
+                    fetchBody.append('action', 'add');
+                    Object.keys(formData).forEach(key => {
+                        fetchBody.append(key, formData[key]);
+                    });
+
+                    // Append support document files
+                    const dropZoneEl = document.getElementById('support-docs-drop-zone');
+                    if (dropZoneEl && dropZoneEl._getFiles) {
+                        const files = dropZoneEl._getFiles();
+                        files.forEach(file => {
+                            fetchBody.append('supportDocs[]', file);
+                        });
+                    }
+
+                    saveBtn.disabled = true;
+                    saveBtn.innerText = 'Saving...';
+
+                    fetch('/utilization', {
+                        method: 'POST',
+                        body: fetchBody
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Program saved:', data);
+                            closeModal();
+                            fetchPrograms();
+                        } else {
+                            alert('Error: ' + data.message);
+                            saveBtn.disabled = false;
+                            saveBtn.innerText = 'Save Program';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Save error:', err);
+                        alert('Failed to save program');
+                        saveBtn.disabled = false;
+                        saveBtn.innerText = 'Save Program';
+                    });
                 }
             }
         });
+
+        const modalFooter = $({
+            tag: 'div',
+            style: {
+                padding: '20px 24px',
+                borderTop: '1px solid #3a3a3a',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                backgroundColor: '#252525'
+            },
+            child: [cancelBtn, saveBtn]
+        });
+
+        const modalContent = $({
+            tag: 'div',
+            style: {
+                backgroundColor: '#2a2a2a',
+                width: '90%',
+                maxWidth: '500px',
+                borderRadius: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+                overflow: 'hidden',
+                border: '1px solid #3a3a3a'
+            },
+            child: [
+                modalHeader,
+                $({
+                    tag: 'div',
+                    style: { padding: '24px', maxHeight: '70vh', overflowY: 'auto' },
+                    child: [fieldsContainer]
+                }),
+                modalFooter
+            ]
+        });
+
+        modalOverlay = $({
+            tag: 'div',
+            style: {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.85)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: '10000',
+                opacity: '0',
+                transition: 'opacity 0.3s ease',
+                backdropFilter: 'blur(8px)'
+            },
+            child: [modalContent]
+        });
+
+        return modalOverlay;
     };
+
+
+    const getTableBody = (el) => {
+        tableBody = el;
+        fetchPrograms();
+    };
+
+    const fetchPrograms = (searchTerm = '') => {
+        const body = new FormData();
+        body.append('action', 'getAll');
+        if (searchTerm) body.append('search', searchTerm);
+
+        fetch('/utilization', {
+            method: 'POST',
+            body: body
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderTable(data.data);
+            }
+        })
+        .catch(err => console.error('Fetch error:', err));
+    };
+
+    const renderTable = (data) => {
+        if (!tableBody) return;
+        tableBody.innerHTML = '';
+
+        // Update record count in UI if it exists
+        const countEl = document.querySelector('.record-count');
+        if (countEl) countEl.innerText = `${data.length} programs`;
+
+        if (data.length === 0) {
+            // Create empty state row with proper colSpan
+            const emptyStateRow = $({
+                tag: 'tr',
+                child: [
+                    $({
+                        tag: 'td',
+                        att: { colSpan: columns.length },
+                        style: { border: 'none', padding: '0' },
+                        child: [
+                            $({
+                                tag: 'div',
+                                att: { className: 'empty-state' },
+                                style: {
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    height: '450px',
+                                    width: '100%',
+                                    color: '#888',
+                                    fontFamily: 'Segoe UI, sans-serif',
+                                    textAlign: 'center'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            position: 'relative',
+                                            width: '200px',
+                                            height: '200px',
+                                            marginBottom: '24px'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                att: { className: 'fa-solid fa-hand-holding-heart' },
+                                                style: {
+                                                    fontSize: '100px',
+                                                    color: 'deepskyblue',
+                                                    opacity: 0.2,
+                                                    position: 'absolute',
+                                                    left: '0',
+                                                    top: '20px',
+                                                    transform: 'rotate(-5deg)'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                att: { className: 'fa-solid fa-people-arrows' },
+                                                style: {
+                                                    fontSize: '90px',
+                                                    color: '#4caf50',
+                                                    opacity: 0.2,
+                                                    position: 'absolute',
+                                                    right: '0',
+                                                    bottom: '20px',
+                                                    transform: 'rotate(10deg)'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                att: { className: 'fa-solid fa-seedling' },
+                                                style: {
+                                                    fontSize: '70px',
+                                                    color: '#ff9800',
+                                                    opacity: 0.25,
+                                                    position: 'absolute',
+                                                    left: '20px',
+                                                    bottom: '0',
+                                                    transform: 'rotate(-15deg)'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                att: { className: 'fa-solid fa-building' },
+                                                style: {
+                                                    fontSize: '60px',
+                                                    color: '#e91e63',
+                                                    opacity: 0.2,
+                                                    position: 'absolute',
+                                                    right: '30px',
+                                                    top: '0',
+                                                    transform: 'rotate(20deg)'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: 'translate(-50%, -50%)',
+                                                    width: '80px',
+                                                    height: '80px',
+                                                    backgroundColor: 'rgba(0,191,255,0.1)',
+                                                    borderRadius: '50%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    border: '2px dashed deepskyblue',
+                                                    animation: 'pulse 2s infinite'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: { className: 'fa-solid fa-chart-line' },
+                                                        style: { fontSize: '30px', color: 'deepskyblue' }
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        text: 'No Utilization / Extension Programs',
+                                        style: {
+                                            fontSize: '26px',
+                                            marginBottom: '12px',
+                                            fontWeight: '600',
+                                            color: '#fff',
+                                            letterSpacing: '-0.5px'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        text: 'Training programs, extension services, technology transfer, and community',
+                                        style: {
+                                            fontSize: '15px',
+                                            opacity: 0.7,
+                                            textAlign: 'center',
+                                            lineHeight: '1.6'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        text: 'outreach activities benefiting industry and communities will be displayed here',
+                                        style: {
+                                            fontSize: '15px',
+                                            opacity: 0.7,
+                                            marginBottom: '30px',
+                                            textAlign: 'center'
+                                        }
+                                    })
+                                ]
+                            })
+                        ]
+                    })
+                ]
+            });
+            tableBody.appendChild(emptyStateRow);
+            return;
+        }
+
+        data.forEach(item => {
+            tableBody.appendChild(DataRow(item));
+        });
+    };
+
 
     // Filter and search bar
     const FilterBar = () => {
@@ -491,79 +887,6 @@ export const Utilization = () => {
                                     text: '0 programs'
                                 })
                             ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                display: 'flex',
-                                gap: '8px',
-                                backgroundColor: '#333',
-                                padding: '4px',
-                                borderRadius: '12px',
-                                border: '1px solid #444'
-                            },
-                            child: [
-                                $({
-                                    tag: 'button',
-                                    text: 'All',
-                                    style: {
-                                        backgroundColor: 'deepskyblue',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#fff',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Industry',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Community',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Extension',
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '8px 20px',
-                                        color: '#aaa',
-                                        fontSize: '13px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
-                                    }
-                                })
-                            ]
                         })
                     ]
                 }),
@@ -616,67 +939,47 @@ export const Utilization = () => {
                                     event: {
                                         type: 'input',
                                         method: (e) => {
-                                            console.log('Searching:', e.target.value);
+                                            clearTimeout(searchTimeout);
+                                            searchTimeout = setTimeout(() => {
+                                                fetchPrograms(e.target.value);
+                                            }, 350);
                                         }
                                     }
                                 })
                             ]
                         }),
                         $({
-                            tag: 'select',
-                            att: {
-                                className: 'beneficiary-filter'
-                            },
+                            tag: 'button',
+                            att: { className: 'add-program-btn' },
                             style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
+                                backgroundColor: 'deepskyblue',
+                                border: 'none',
                                 borderRadius: '30px',
-                                padding: '10px 32px 10px 16px',
+                                padding: '10px 20px',
                                 color: '#fff',
-                                fontSize: '14px',
-                                outline: 'none',
                                 cursor: 'pointer',
-                                appearance: 'none',
-                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 10px center',
-                                backgroundSize: '16px',
-                                minWidth: '160px'
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 4px 12px rgba(0, 191, 255, 0.2)'
                             },
                             child: [
-                                $({ tag: 'option', att: { value: '' }, text: 'All Beneficiaries' }),
-                                ...beneficiaryTypes.map(type => 
-                                    $({ tag: 'option', att: { value: type.value }, text: type.label })
-                                )
-                            ]
-                        }),
-                        $({
-                            tag: 'select',
-                            att: {
-                                className: 'sector-filter'
-                            },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 32px 10px 16px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                outline: 'none',
-                                cursor: 'pointer',
-                                appearance: 'none',
-                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundPosition: 'right 10px center',
-                                backgroundSize: '16px',
-                                minWidth: '150px'
-                            },
-                            child: [
-                                $({ tag: 'option', att: { value: '' }, text: 'All Sectors' }),
-                                ...industrySectors.map(sector => 
-                                    $({ tag: 'option', att: { value: sector.toLowerCase().replace(/\s+/g, '_') }, text: sector })
-                                )
-                            ]
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-circle-plus' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Add Program'
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: openAddProgramModal
+                            }
                         }),
                         $({
                             tag: 'button',
@@ -703,7 +1006,13 @@ export const Utilization = () => {
                                     tag: 'span',
                                     text: 'Export'
                                 })
-                            ]
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    console.log('Exporting utilization data...');
+                                }
+                            }
                         })
                     ]
                 })
@@ -711,165 +1020,6 @@ export const Utilization = () => {
         });
     };
 
-    // Statistics cards
-    const StatsCards = () => {
-        const stats = [
-            { 
-                label: 'Total Programs', 
-                value: '0', 
-                icon: 'fa-calendar-alt',
-                color: 'deepskyblue',
-                subtext: 'All time'
-            },
-            { 
-                label: 'Total Beneficiaries', 
-                value: '0', 
-                icon: 'fa-users',
-                color: '#4caf50',
-                subtext: 'Individuals'
-            },
-            { 
-                label: 'Industry Partners', 
-                value: '0', 
-                icon: 'fa-industry',
-                color: '#ff9800',
-                subtext: 'Companies'
-            },
-            { 
-                label: 'Communities Served', 
-                value: '0', 
-                icon: 'fa-people-group',
-                color: '#e91e63',
-                subtext: 'Barangays'
-            }
-        ];
-
-        const statCards = stats.map(stat => {
-            return $({
-                tag: 'div',
-                att: { className: 'stat-card' },
-                style: {
-                    backgroundColor: '#2d2d2d',
-                    borderRadius: '16px',
-                    padding: '18px 22px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    flex: '1',
-                    minWidth: '200px',
-                    border: '1px solid #444',
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    overflow: 'hidden'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            position: 'absolute',
-                            top: '0',
-                            right: '0',
-                            width: '100px',
-                            height: '100px',
-                            background: `radial-gradient(circle at top right, ${stat.color}20, transparent 70%)`,
-                            borderRadius: '50%',
-                            zIndex: '0'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '56px',
-                            height: '56px',
-                            borderRadius: '16px',
-                            backgroundColor: `${stat.color}15`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: `1px solid ${stat.color}30`,
-                            position: 'relative',
-                            zIndex: '1'
-                        },
-                        child: [
-                            $({
-                                tag: 'span',
-                                att: { className: `fa-solid ${stat.icon}` },
-                                style: { 
-                                    color: stat.color, 
-                                    fontSize: '28px'
-                                }
-                            })
-                        ]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: { 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            position: 'relative',
-                            zIndex: '1'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    alignItems: 'baseline',
-                                    gap: '8px'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'span',
-                                        text: stat.value,
-                                        style: {
-                                            fontSize: '34px',
-                                            fontWeight: '700',
-                                            color: '#fff',
-                                            lineHeight: '1.2',
-                                            letterSpacing: '-1px'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        text: stat.subtext,
-                                        style: {
-                                            fontSize: '11px',
-                                            color: '#666',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.5px'
-                                        }
-                                    })
-                                ]
-                            }),
-                            $({
-                                tag: 'span',
-                                text: stat.label,
-                                style: {
-                                    fontSize: '13px',
-                                    color: '#aaa',
-                                    fontWeight: '500'
-                                }
-                            })
-                        ]
-                    })
-                ]
-            });
-        });
-
-        return $({
-            tag: 'div',
-            att: { className: 'stats-cards' },
-            style: {
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '16px',
-                padding: '20px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444'
-            },
-            child: statCards
-        });
-    };
 
     // Table header component
     const TableHeader = () => {
@@ -896,9 +1046,9 @@ export const Utilization = () => {
                 child: [
                     $({
                         tag: 'div',
-                        style: { 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: '8px',
                             cursor: 'pointer',
                             userSelect: 'none'
@@ -911,8 +1061,8 @@ export const Utilization = () => {
                             $({
                                 tag: 'span',
                                 att: { className: 'fa-solid fa-arrow-up-wide-short' },
-                                style: { 
-                                    fontSize: '11px', 
+                                style: {
+                                    fontSize: '11px',
                                     color: '#555',
                                     opacity: '0.5',
                                     transition: 'all 0.2s ease'
@@ -940,6 +1090,7 @@ export const Utilization = () => {
 
         return $({
             tag: 'thead',
+            att: { className: 'utilization-table-header' },
             child: [
                 $({
                     tag: 'tr',
@@ -949,10 +1100,79 @@ export const Utilization = () => {
         });
     };
 
-    // Sample data row (for demonstration)
-    const SampleDataRow = () => {
+    // Function to create document links (handles multiple)
+    const createDocLinks = (linksStr) => {
+        if (!linksStr || linksStr === '—') return $({ tag: 'span', text: '—' });
+        
+        const links = linksStr.split(',').map(l => l.trim()).filter(l => l !== '');
+        if (links.length === 0) return $({ tag: 'span', text: '—' });
+
+        return $({
+            tag: 'div',
+            style: { display: 'flex', flexWrap: 'wrap', gap: '6px' },
+            child: links.map((url, idx) => {
+                let label = 'Doc';
+                try {
+                    const u = new URL(url);
+                    label = u.hostname.replace('www.', '').split('.')[0];
+                } catch(e) {}
+
+                return $({
+                    tag: 'a',
+                    att: {
+                        href: url,
+                        target: '_blank',
+                        className: 'doc-link',
+                        title: url
+                    },
+                    style: {
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        backgroundColor: '#333',
+                        borderRadius: '12px',
+                        color: 'deepskyblue',
+                        textDecoration: 'none',
+                        fontSize: '11px',
+                        border: '1px solid #444',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-file-pdf' },
+                            style: { fontSize: '10px' }
+                        }),
+                        $({
+                            tag: 'span',
+                            text: links.length > 1 ? `${label} ${idx + 1}` : label
+                        })
+                    ],
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.backgroundColor = '#404040';
+                            e.currentTarget.style.borderColor = 'deepskyblue';
+                        }
+                    },
+                    event2: {
+                        type: 'mouseleave',
+                        method: (e) => {
+                            e.currentTarget.style.backgroundColor = '#333';
+                            e.currentTarget.style.borderColor = '#444';
+                        }
+                    }
+                });
+            })
+        });
+    };
+
+    // Dynamic data row
+    const DataRow = (item) => {
         const cells = columns.map(col => {
-            let cellContent = '—';
+            let cellContent = item[col.field] || '—';
             let cellStyle = {
                 padding: '16px 12px',
                 fontSize: '13px',
@@ -962,39 +1182,117 @@ export const Utilization = () => {
                 fontFamily: 'Segoe UI, sans-serif'
             };
 
-            if (col.field === 'beneficiaryType') {
-                return $({
-                    tag: 'td',
-                    style: cellStyle,
-                    child: [createBeneficiaryBadge('industry')]
+            if (col.field === 'supportLinks') {
+                const linksContainer = $({
+                    tag: 'div',
+                    style: { display: 'flex', flexDirection: 'column', gap: '4px' }
                 });
-            }
 
-            if (col.field === 'programType') {
+                const linksStr = item.supportDocs || '';
+                if (linksStr) {
+                    const urls = linksStr.split(',').map(u => u.trim()).filter(u => u && u.startsWith('http'));
+                    if (urls.length > 0) {
+                        urls.forEach((url, idx) => {
+                            const link = $({
+                                tag: 'a',
+                                att: { href: url, target: '_blank' },
+                                style: {
+                                    color: 'deepskyblue', textDecoration: 'none',
+                                    fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px',
+                                    padding: '2px 0', transition: 'color 0.2s'
+                                },
+                                child: [
+                                    $({ tag: 'span', att: { className: 'fa-solid fa-arrow-up-right-from-square' }, style: { fontSize: '10px' } }),
+                                    $({ tag: 'span', text: `Link ${idx + 1}` })
+                                ]
+                            });
+                            link.addEventListener('mouseenter', () => { link.style.color = '#fff'; });
+                            link.addEventListener('mouseleave', () => { link.style.color = 'deepskyblue'; });
+                            linksContainer.appendChild(link);
+                        });
+                    } else {
+                        linksContainer.appendChild($({ tag: 'span', text: '—', style: { color: '#666' } }));
+                    }
+                } else {
+                    linksContainer.appendChild($({ tag: 'span', text: '—', style: { color: '#666' } }));
+                }
+
                 return $({
                     tag: 'td',
-                    style: cellStyle,
-                    child: [createProgramTypeBadge('training')]
+                    style: { ...cellStyle, whiteSpace: 'normal' },
+                    child: [linksContainer]
                 });
             }
 
             if (col.field === 'supportDocs') {
+                const docsContainer = $({
+                    tag: 'div',
+                    style: { display: 'flex', flexDirection: 'column', gap: '4px' }
+                });
+
+                let metadata = [];
+                try {
+                    if (item.supportDocsMetadata) {
+                        metadata = JSON.parse(item.supportDocsMetadata);
+                    }
+                } catch (e) { /* ignore parse errors */ }
+
+                if (metadata.length > 0) {
+                    metadata.forEach((fileMeta, idx) => {
+                        const link = $({
+                            tag: 'a',
+                            att: { href: fileMeta.view_url, target: '_blank' },
+                            style: {
+                                color: 'deepskyblue', textDecoration: 'none',
+                                fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '4px 0', transition: 'color 0.2s'
+                            },
+                            child: [
+                                $({ tag: 'span', att: { className: 'fa-solid fa-file-pdf' }, style: { color: '#e74c3c', fontSize: '12px' } }),
+                                $({ tag: 'span', text: fileMeta.file_name || `Document ${idx + 1}` })
+                            ]
+                        });
+                        link.addEventListener('mouseenter', () => { link.style.color = '#fff'; });
+                        link.addEventListener('mouseleave', () => { link.style.color = 'deepskyblue'; });
+                        docsContainer.appendChild(link);
+                    });
+                } else if (item.supportDocs) {
+                    // Fallback: render old comma-separated URLs
+                    const urls = item.supportDocs.split(',').map(u => u.trim()).filter(u => u);
+                    urls.forEach((url, idx) => {
+                        const link = $({
+                            tag: 'a',
+                            att: { href: url, target: '_blank' },
+                            style: { color: 'deepskyblue', textDecoration: 'none', fontSize: '12px' },
+                            text: `Doc ${idx + 1}`
+                        });
+                        docsContainer.appendChild(link);
+                    });
+                } else {
+                    docsContainer.appendChild($({ tag: 'span', text: '—', style: { color: '#666' } }));
+                }
+
                 return $({
                     tag: 'td',
-                    style: cellStyle,
-                    child: [createDocLink('#', 'Training Report.pdf')]
+                    style: { ...cellStyle, whiteSpace: 'normal' },
+                    child: [docsContainer]
                 });
             }
 
-            if (col.field === 'programTitle') cellContent = 'Skills Training for Farmers on Modern Agricultural Techniques';
-            if (col.field === 'dateConducted') cellContent = 'Mar 15-17, 2025';
-            if (col.field === 'traineesCount') cellContent = '45 participants';
-            if (col.field === 'beneficiarySector') cellContent = 'Agriculture';
-            if (col.field === 'beneficiaryName') cellContent = 'Pilar Farmers Association';
-            if (col.field === 'implementingCampus') cellContent = 'Pilar Campus';
-            if (col.field === 'researchUtilized') cellContent = 'Organic Farming Technology';
-            if (col.field === 'outcome') cellContent = 'Increased crop yield by 30%';
-            if (col.field === 'fundingSource') cellContent = 'DA-RFO VI';
+
+            if (col.field === 'researchTitle') {
+                cellContent = item['research_title'] || '—';
+                cellStyle.color = cellContent === '—' ? '#666' : 'deepskyblue';
+                cellStyle.fontSize = '12px';
+            }
+
+            if (col.field === 'dateConducted') {
+                cellContent = formatUtilizationDate(item[col.field]);
+            }
+
+            if (col.field === 'traineesCount') {
+                cellContent = `${item[col.field]} participants`;
+            }
 
             return $({
                 tag: 'td',
@@ -1073,7 +1371,6 @@ export const Utilization = () => {
         externalStyle: '/client/component/rdeStaff/style/utilization.css',
         elementHandler: getMainContainer,
         child: [
-            StatsCards(),
             FilterBar(),
             DataTable()
         ]
@@ -1084,20 +1381,20 @@ export const Utilization = () => {
 export const formatUtilizationDate = (date) => {
     if (!date) return '—';
     const d = new Date(date);
-    return d.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+    return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
     });
 };
 
 export const formatDateRange = (startDate, endDate) => {
     if (!startDate) return '—';
     if (!endDate) return formatUtilizationDate(startDate);
-    
+
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 };
 

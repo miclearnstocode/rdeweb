@@ -110,6 +110,16 @@
     transform: translateY(-1px);
 }
 
+.utilization-container .add-program-btn:hover {
+    background-color: #00a6d9 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 191, 255, 0.3) !important;
+}
+
+.utilization-container .add-program-btn:active {
+    transform: translateY(0);
+}
+
 /* Category filter buttons */
 .utilization-container [style*="border-radius: 8px"] button {
     position: relative;
@@ -139,6 +149,11 @@
     position: sticky;
     top: 0;
     z-index: 10;
+}
+
+/* Table header styles */
+.utilization-table-header {
+    display: table-header-group;
 }
 
 .utilization-container th:hover .fa-solid {
