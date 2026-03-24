@@ -163,8 +163,8 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
             $pathInfo = pathinfo($fileName);
             $nameOnly = $pathInfo['filename'];
             $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
-            // Use the exact literal suffix requested: Local-InHouseReview
-            $suffix = '_Local-InHouseReview';
+            // Use the exact literal suffix requested: Local In House Review
+            $suffix = ' Local In-House Review';
             $prefixedFileName = $cleanEventName . '_' . $nameOnly . $suffix . $extension;
         } else {
             // Default naming for others
