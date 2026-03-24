@@ -80,7 +80,7 @@
     overflow-x: hidden;
 }
 
-.createPan > div {
+.createPan>div {
     max-width: 'auto';
     margin: 0 auto;
     background: rgba(30, 30, 30, 0.95);
@@ -92,7 +92,10 @@
 }
 
 /* Modern Form Elements */
-textarea, input[type="text"], input[type="search"], select {
+textarea,
+input[type="text"],
+input[type="search"],
+select {
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid #3a3a3a;
     border-radius: 10px;
@@ -104,7 +107,9 @@ textarea, input[type="text"], input[type="search"], select {
     width: 100%;
 }
 
-textarea:focus, input:focus, select:focus {
+textarea:focus,
+input:focus,
+select:focus {
     border-color: deepskyblue;
     box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
     outline: none;
@@ -121,7 +126,7 @@ textarea:focus, input:focus, select:focus {
     overflow: hidden;
 }
 
-.messagePanelRes > div {
+.messagePanelRes>div {
     flex: 1;
     min-width: 0;
     height: 100%;
@@ -195,7 +200,9 @@ textarea:focus, input:focus, select:focus {
 }
 
 /* Icon styling */
-.serIc, .fa-search, .fa-magnifying-glass {
+.serIc,
+.fa-search,
+.fa-magnifying-glass {
     color: deepskyblue;
     font-size: 16px;
     display: flex;
@@ -207,13 +214,14 @@ textarea:focus, input:focus, select:focus {
     from {
         width: 200px;
     }
+
     to {
         width: 300px;
     }
 }
 
 /* Ensure the right panel layout is correct */
-.allPanel > div:first-child {
+.allPanel>div:first-child {
     height: auto !important;
     min-height: auto !important;
     display: flex;
@@ -223,13 +231,15 @@ textarea:focus, input:focus, select:focus {
 }
 
 /* Fix the right panel layout */
-.allPanel > div:first-child {
+.allPanel>div:first-child {
     height: auto !important;
     min-height: 70px;
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* Change from center to flex-start */
-    padding-left: 16px !important; /* Add left padding */
+    justify-content: flex-start;
+    /* Change from center to flex-start */
+    padding-left: 16px !important;
+    /* Add left padding */
 }
 
 /* Ensure the search box container in right panel matches left panel */
@@ -239,12 +249,14 @@ textarea:focus, input:focus, select:focus {
 }
 
 /* Fix the icon styling */
-.fa-magnifying-glass, .fa-search {
+.fa-magnifying-glass,
+.fa-search {
     font-size: 16px;
     color: deepskyblue;
     display: flex;
     align-items: center;
 }
+
 /* Modern Document List Items */
 .listRes {
     background: #1e1e1e;
@@ -262,6 +274,7 @@ textarea:focus, input:focus, select:focus {
     transform: translateX(4px);
     box-shadow: 0 4px 12px rgba(0, 191, 255, 0.15);
 }
+
 /* Popup Container - Highest z-index */
 .popup-container {
     position: fixed;
@@ -400,6 +413,7 @@ textarea:focus, input:focus, select:focus {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -411,6 +425,7 @@ textarea:focus, input:focus, select:focus {
         opacity: 1;
         transform: translateX(0);
     }
+
     to {
         opacity: 0;
         transform: translateX(100%);
@@ -436,16 +451,16 @@ textarea:focus, input:focus, select:focus {
         right: 16px;
         max-width: 320px;
     }
-    
+
     .status-popup {
         min-width: 260px;
         padding: 14px 16px;
     }
-    
+
     .popup-title {
         font-size: 14px;
     }
-    
+
     .popup-message {
         font-size: 12px;
     }
@@ -453,6 +468,7 @@ textarea:focus, input:focus, select:focus {
 
 /* Print styles - hide popups when printing */
 @media print {
+
     .popup-container,
     .status-popup {
         display: none !important;
@@ -482,7 +498,8 @@ textarea:focus, input:focus, select:focus {
 }
 
 /* Resubmit Button */
-.resubmitBtn, .endorsCnt .resubmit-button {
+.resubmitBtn,
+.endorsCnt .resubmit-button {
     background: linear-gradient(135deg, #f97316, #ea580c) !important;
     border: none !important;
     border-radius: 8px !important;
@@ -496,25 +513,29 @@ textarea:focus, input:focus, select:focus {
     gap: 6px !important;
 }
 
-.resubmitBtn:hover, .endorsCnt .resubmit-button:hover {
+.resubmitBtn:hover,
+.endorsCnt .resubmit-button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
+
 /* Find this section around line 680-700 and replace with: */
 .endorsCnt {
-    background-image: radial-gradient(rgba(100,100,100,0.5), black);
-    color: white !important;  /* Change from deepskyblue to white */
+    background-image: radial-gradient(rgba(100, 100, 100, 0.5), black);
+    color: white !important;
+    /* Change from deepskyblue to white */
 }
 
 .endorsCnt:hover {
-    background-image: radial-gradient(black, rgba(100,100,100,0.3));
+    background-image: radial-gradient(black, rgba(100, 100, 100, 0.3));
     transition: .3s;
-    color: white !important;  /* Keep white on hover */
+    color: white !important;
+    /* Keep white on hover */
     text-shadow: 0 0 .3vw ghostwhite;
 }
 
 /* Also update any specific button text inside endorsCnt */
-.endorsCnt div, 
+.endorsCnt div,
 .endorsCnt span {
     color: white !important;
 }
@@ -527,12 +548,14 @@ textarea:focus, input:focus, select:focus {
 
 /* For the Delete button */
 .delRes {
-    color: white !important;  /* Change from deepskyblue to white */
+    color: white !important;
+    /* Change from deepskyblue to white */
     border-radius: .5vw;
 }
 
 .delRes:hover {
-    color: white !important;  /* Keep white on hover */
+    color: white !important;
+    /* Keep white on hover */
     text-shadow: 0 0 .2vw ghostwhite;
 }
 
@@ -557,14 +580,18 @@ textarea:focus, input:focus, select:focus {
 }
 
 /* File Upload Areas */
-.resAtt, .cover, .selectEv {
+.resAtt,
+.cover,
+.selectEv {
     border: 1px solid rgba(0, 191, 255, 0.3);
     border-radius: 12px;
     transition: all 0.2s ease;
     background: linear-gradient(145deg, #2a2a2a, #222);
 }
 
-.resAtt:hover, .cover:hover, .selectEv:hover {
+.resAtt:hover,
+.cover:hover,
+.selectEv:hover {
     border-color: deepskyblue;
     background: linear-gradient(145deg, #2d2d2d, #252525);
     box-shadow: 0 4px 16px rgba(0, 191, 255, 0.2);
@@ -621,7 +648,9 @@ textarea:focus, input:focus, select:focus {
 }
 
 /* Control Buttons */
-.viewListRes, .delRes, .addCo {
+.viewListRes,
+.delRes,
+.addCo {
     color: deepskyblue;
     transition: all 0.2s ease;
     cursor: pointer;
@@ -629,7 +658,9 @@ textarea:focus, input:focus, select:focus {
     border-radius: 6px;
 }
 
-.viewListRes:hover, .delRes:hover, .addCo:hover {
+.viewListRes:hover,
+.delRes:hover,
+.addCo:hover {
     background: rgba(0, 191, 255, 0.1);
     transform: scale(1.05);
 }
@@ -640,11 +671,11 @@ textarea:focus, input:focus, select:focus {
         flex-direction: column;
         padding: 12px;
     }
-    
+
     .searchInputRes:focus {
         width: 200px;
     }
-    
+
     .popup-container {
         max-width: 320px;
         right: 16px;
@@ -658,6 +689,7 @@ textarea:focus, input:focus, select:focus {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -696,4 +728,3 @@ textarea:focus, input:focus, select:focus {
 .flex-shrink-0 {
     flex-shrink: 0 !important;
 }
-

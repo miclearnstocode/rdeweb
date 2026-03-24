@@ -55,11 +55,11 @@ function getCenterCode($centerName) {
     // Mapping of full center names to their codes
     $centerMapping = [
         'Crop Science Research & Developement Center' => 'CSRDC',
-        'Crop Science Research & Development Center' => 'CSRDC', // Alternative spelling
+        'Crop Science Research & Development Center' => 'CSRDC', 
         'Livestock Research & Development Center' => 'LRDC',
         'Fisheries Research & Development Center' => 'FRDC',
         'Food and Industrial Technology Research & Development Center' => 'FIRDC',
-        'Food and Industrial Technology Research & Developm...' => 'FIRDC', // Truncated version
+        'Food and Industrial Technology Research & Developm...' => 'FITRDC', 
         'Social Science Research & Development Center' => 'SSRDC',
         'Machinery and Agricultural Technology Engineering Center' => 'MATEC',
         'Coconut Research and Development Center' => 'CocoRDC',
@@ -158,11 +158,24 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         // Determine which folder to upload to based on file type
         $targetFolderId = $folders['entry_folder_id'];
         
+        // Special naming for program files: EventName_OriginalFileName_Category-Title.ext
+        if ($type === 'program' || $isProgram) {
+            $pathInfo = pathinfo($fileName);
+            $nameOnly = $pathInfo['filename'];
+            $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
+            // Use the exact literal suffix requested: Local-InHouseReview
+            $suffix = '_Local-InHouseReview';
+            $prefixedFileName = $cleanEventName . '_' . $nameOnly . $suffix . $extension;
+        } else {
+            // Default naming for others
+            $prefixedFileName = $cleanEventName . '_' . $fileName;
+        }
+        
         // 2. Upload the file to appropriate folder
-        error_log("Uploading $type file: $fileName to folder: $targetFolderId");
+        error_log("Uploading $type file: $prefixedFileName to folder: $targetFolderId");
         $uploadResult = $drive->uploadFile(
             $tempFilePath,
-            $fileName,
+            $prefixedFileName,
             $targetFolderId
         );
 
