@@ -1,5 +1,114 @@
 import { $ } from "../../../../lib/lib.js";
 
+function highlightName(text, name) {
+    if (!name || !text) return text;
+
+    // Clean name and split into parts, converted to lower case
+    const cleanName = name.replace(/[,.]/g, '');
+    const nameParts = cleanName.trim().split(/\s+/).filter(p => p.length > 0)
+        .map(p => p.toLowerCase());
+
+    if (nameParts.length === 0) return text;
+
+    // Split text into tokens (words and non-words)
+    const tokens = text.split(/(\b[\w-]+\b)/);
+
+    // Identify words
+    const words = [];
+    for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i] && /^[\w-]+$/.test(tokens[i])) {
+            words.push({
+                text: tokens[i],
+                index: i,
+                isMatch: nameParts.includes(tokens[i].toLowerCase())
+            });
+        }
+    }
+
+    const clusters = [];
+    let currentCluster = [];
+
+    for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        if (w.isMatch) {
+            if (currentCluster.length === 0) {
+                currentCluster.push(w);
+            } else {
+                const lastW = currentCluster[currentCluster.length - 1];
+                let canJoin = true;
+
+                for (let j = lastW.index + 1; j < w.index; j++) {
+                    const t = tokens[j];
+                    if (/^[\w-]+$/.test(t)) {
+                        if (t.length > 3 || t.toLowerCase() === 'and') {
+                            canJoin = false;
+                            break;
+                        }
+                    } else {
+                        if (t.includes(',') || t.includes('&')) {
+                            canJoin = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (canJoin) {
+                    currentCluster.push(w);
+                } else {
+                    clusters.push(currentCluster);
+                    currentCluster = [w];
+                }
+            }
+        }
+    }
+    if (currentCluster.length > 0) {
+        clusters.push(currentCluster);
+    }
+
+    const validClusters = clusters.filter(c => {
+        const hasLongWord = c.some(w => w.text.length > 2);
+        return (c.length >= 2 && hasLongWord) || (c.length === 1 && nameParts.length === 1);
+    });
+
+    if (validClusters.length === 0) return text;
+
+    const highlightTarget = new Array(tokens.length).fill(false);
+    for (const c of validClusters) {
+        const startIndex = c[0].index;
+        const endIndex = c[c.length - 1].index;
+        for (let j = startIndex; j <= endIndex; j++) {
+            highlightTarget[j] = true;
+        }
+    }
+
+    let result = '';
+    let isHighlighting = false;
+
+    for (let i = 0; i < tokens.length; i++) {
+        if (!tokens[i]) continue;
+
+        if (highlightTarget[i]) {
+            if (!isHighlighting) {
+                result += '<span style="text-decoration:underline; font-weight:700; color:#000;">';
+                isHighlighting = true;
+            }
+            result += tokens[i];
+        } else {
+            if (isHighlighting) {
+                result += '</span>';
+                isHighlighting = false;
+            }
+            result += tokens[i];
+        }
+    }
+
+    if (isHighlighting) {
+        result += '</span>';
+    }
+
+    return result;
+}
+
 // Certificate Modal Component
 export const CertificateModal = ({ onGenerate, onCancel }) => {
     let modalElement;
@@ -549,7 +658,7 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                             att: {
                                 type: 'date',
                                 id: 'issue-date',
-                                value: '2026-03-09'
+                                value: new Date().toISOString().split('T')[0]
                             },
                             style: {
                                 width: '100%',
@@ -722,7 +831,8 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                     method: () => {
                                         // Collect form data
                                         const controlNo = document.getElementById('control-number')?.value || '';
-                                        const fullName = document.getElementById('full-name')?.value || '';
+                                        const fullNameInput = document.getElementById('full-name')?.value || '';
+                                        const fullName = fullNameInput.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                                         const campus = document.getElementById('campus')?.value || '';
                                         const issueDate = document.getElementById('issue-date')?.value || '';
 
@@ -744,7 +854,7 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
 
                                         const certificateData = {
                                             controlNo: `RES${controlNo}`,
-                                            fullName: fullName.toUpperCase(),
+                                            fullName: fullName,
                                             campus: campus,
                                             researches: researches,
                                             issueDate: issueDate
@@ -764,11 +874,18 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
 
 // Certificate HTML Renderer
 export const renderCertificateHTML = (data, controlNo) => {
-    const formattedDate = data.issueDate ? new Date(data.issueDate).toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    }) : '______';
+
+    const formattedDate = data.issueDate ? (() => {
+        const d = new Date(data.issueDate + 'T00:00:00');
+        const day = d.getDate();
+        const suffix = day === 1 || day === 21 || day === 31 ? 'st'
+            : day === 2 || day === 22 ? 'nd'
+                : day === 3 || day === 23 ? 'rd'
+                    : 'th';
+        const month = d.toLocaleDateString('en-US', { month: 'long' });
+        const year = d.getFullYear();
+        return `${day}${suffix} day of ${month} ${year}`;
+    })() : '______';
 
     // ─── Shared CSS (same as before, injected once) ───────────────────────────
     const sharedCSS = `
@@ -846,7 +963,8 @@ export const renderCertificateHTML = (data, controlNo) => {
  
         .control-no {
             font-size: 19px;
-            margin-bottom: 35px;
+            margin-bottom: 15px;
+            font-weight: bold;
         }
  
         .control-no span.blue {
@@ -856,7 +974,7 @@ export const renderCertificateHTML = (data, controlNo) => {
  
         .title-certification {
             text-align: center;
-            font-size: 42px;
+            font-size: 30px;
             letter-spacing: 20px;
             margin: 10px 0;
             text-transform: uppercase;
@@ -886,6 +1004,7 @@ export const renderCertificateHTML = (data, controlNo) => {
             margin-left: 60px;
             margin-top: 15px;
             margin-bottom: 0;
+            line-height: 1.0;
         }
  
         .research-item {
@@ -906,6 +1025,7 @@ export const renderCertificateHTML = (data, controlNo) => {
         .date-line {
             font-size: 19px;
             margin-bottom: 20px;
+            font-weight: normal;
         }
  
         .signature-section {
@@ -925,11 +1045,10 @@ export const renderCertificateHTML = (data, controlNo) => {
  
         .vp-title { font-size: 18px; }
  
-        /* ── Print overrides ─────────────────────────── */
         @media print {
             @page {
                 size: A4;
-                margin: 0;          /* we handle margins via .certificate-content */
+                margin: 0;        
             }
  
             body {
@@ -956,7 +1075,7 @@ export const renderCertificateHTML = (data, controlNo) => {
                 position: fixed;
                 top: 0; left: 0;
                 width: 100%; height: 100%;
-                z-index: -1;
+                z-index: 0;
                 background-image: url('/client/images/header.png') !important;
                 background-size: cover;
                 background-repeat: no-repeat;
@@ -981,7 +1100,7 @@ export const renderCertificateHTML = (data, controlNo) => {
     // ─── Research item HTML snippet (reused in both sandbox & final output) ──
     const itemHTML = (r, globalIdx) => `
         <div class="research-item" data-idx="${globalIdx}">
-            <div style="font-weight:600; margin-bottom:5px;">
+            <div style="font-weight:600; margin-bottom:5px; font-style:italic;">
                 ${globalIdx + 1}. ${r.title}
             </div>
             <div style="margin-left:30px; color:#555; font-style:italic;">
@@ -999,7 +1118,7 @@ export const renderCertificateHTML = (data, controlNo) => {
             to the rules and policies of the University.
         </div>
         <div class="date-line">
-            Issued this <strong>${formattedDate}</strong> at Capiz State University,
+            Issued this ${formattedDate} at Capiz State University,
             Roxas City, Capiz.
         </div>
         <div class="signature-section">
@@ -1014,8 +1133,8 @@ export const renderCertificateHTML = (data, controlNo) => {
         </div>
         <div class="control-no">
             RDE Control No.
-            <span class="blue">${(data.controlNo || controlNo || '').slice(0, 3)}</span>
-            ${(data.controlNo || controlNo || '').slice(3)}
+            <span class="blue">${(data.controlNo).slice(0, 3)}</span>
+            <span class="blue">${(data.controlNo).slice(3)}</span>
         </div>
         <div class="title-certification">CERTIFICATION</div>
         <div class="cert-text">
@@ -1042,7 +1161,11 @@ export const renderCertificateHTML = (data, controlNo) => {
             <div class="research-list" id="page-N-list" style="margin-top:50px;"></div>
         </div>`;
 
-    const researchJSON = JSON.stringify(data.researches || []);
+    const highlightedResearches = (data.researches || []).map(r => ({
+        ...r,
+        authors: highlightName(r.authors, data.fullName)
+    }));
+    const researchJSON = JSON.stringify(highlightedResearches);
 
     return `<!DOCTYPE html>
 <html>
@@ -1101,7 +1224,7 @@ export const renderCertificateHTML = (data, controlNo) => {
     const itemHeights = researches.map((r, i) => {
         return measure(\`
             <div class="research-item">
-                <div style="font-weight:600; margin-bottom:5px;">
+                <div style="font-weight:600; margin-bottom:5px; font-style:italic;">
                     \${i + 1}. \${r.title}
                 </div>
                 <div style="margin-left:30px; color:#555; font-style:italic;">
@@ -1165,7 +1288,7 @@ export const renderCertificateHTML = (data, controlNo) => {
         const listHTML = page.items.map(function (idx) {
             const r = researches[idx];
             return \`<div class="research-item">
-                <div style="font-weight:600; margin-bottom:5px;">
+                <div style="font-weight:600; margin-bottom:5px; font-style:italic;">
                     \${idx + 1}. \${r.title}
                 </div>
                 <div style="margin-left:30px; color:#555; font-style:italic;">
