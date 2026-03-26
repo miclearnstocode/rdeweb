@@ -903,7 +903,6 @@ export const renderCertificateHTML = (data, controlNo) => {
             print-color-adjust: exact;
         }
  
-        /* ── Page shell ─────────────────────────────── */
         .certificate-container {
             width: 210mm;
             min-height: 297mm;
@@ -926,44 +925,31 @@ export const renderCertificateHTML = (data, controlNo) => {
             pointer-events: none;
         }
  
-        /*
-         * Content area = A4 minus margins
-         *   top/left/right : 2.54 cm  →  ~96 px each  (@ 96 dpi screen)
-         *   bottom         : 3.40 cm  →  ~129 px
-         *
-         * Available height for content
-         *   297mm - 2.54cm - 3.4cm = 291.06mm usable page height
-         *   In pixels @ 96dpi: 297mm≈1122px  2.54cm≈96px  3.4cm≈129px
-         *   usable ≈ 1122 - 96 - 129 = 897px  (screen)
-         *
-         * We use CSS to hard-clip and JS to measure before building pages.
-         */
         .certificate-content {
             position: absolute;
             z-index: 2;
-            /* exact margins */
             top:    2.54cm;
             left:   2.54cm;
             right:  2.54cm;
-            bottom: 3.4cm;          /* ← respects footer */
-            overflow: hidden;       /* clips anything that overshoots */
+            bottom: 2.54cm;    
+            overflow: hidden;     
             display: flex;
             flex-direction: column;
         }
  
-        /* ── Typography ─────────────────────────────── */
         .office-header {
             text-align: center;
             color: #1a237e;
-            font-size: 26px;
+            font-size: 21px;
             font-family: 'Arial', sans-serif;
-            margin-top: 125px;
-            margin-bottom: 25px;
+            margin-top: 60px;
+            margin-bottom: 15px;
         }
  
         .control-no {
-            font-size: 19px;
-            margin-bottom: 15px;
+            font-size: 15px;
+            font-family: 'Times New Roman';
+            margin-bottom: 10px;
             font-weight: bold;
         }
  
@@ -974,14 +960,15 @@ export const renderCertificateHTML = (data, controlNo) => {
  
         .title-certification {
             text-align: center;
-            font-size: 30px;
+            font-size: 29px;
+            font-family: 'Times New Roman';
             letter-spacing: 20px;
-            margin: 10px 0;
             text-transform: uppercase;
         }
  
         .cert-text {
-            font-size: 20px;
+            font-size: 16px;
+            font-family: 'Times New Roman';
             line-height: 1.8;
             margin-top: 20px;
             width: 100%;
@@ -996,6 +983,7 @@ export const renderCertificateHTML = (data, controlNo) => {
         .label-unit {
             text-align: center;
             font-size: 16px;
+            font-family: 'Times New Roman';
             margin-top: 5px;
             margin-bottom: 30px;
         }
@@ -1005,6 +993,8 @@ export const renderCertificateHTML = (data, controlNo) => {
             margin-top: 15px;
             margin-bottom: 0;
             line-height: 1.0;
+            font-size: 16px;
+            font-family: 'Times New Roman';
         }
  
         .research-item {
@@ -1016,14 +1006,16 @@ export const renderCertificateHTML = (data, controlNo) => {
         .closing-paragraph {
             text-align: justify;
             text-justify: inter-word;
-            font-size: 19px;
+            font-size: 16px;
+            font-family: 'Times New Roman';
             line-height: 1.6;
             margin-top: 10px;
             margin-bottom: 30px;
         }
  
         .date-line {
-            font-size: 19px;
+            font-size: 16px;
+            font-family: Times New Roman;
             margin-bottom: 20px;
             font-weight: normal;
         }
@@ -1048,22 +1040,29 @@ export const renderCertificateHTML = (data, controlNo) => {
         @media print {
             @page {
                 size: A4;
-                margin: 0;        
+                margin: 0mm !important;
             }
- 
-            body {
+
+            html, body {
                 background: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                width: 210mm !important;
+                height: 297mm !important;
             }
- 
+
             .certificate-container {
-                width: 210mm;
-                height: 297mm;
+                width: 210mm !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
                 margin: 0 !important;
+                padding: 0 !important;
                 box-shadow: none !important;
                 page-break-after: always;
                 break-after: page;
+                position: relative !important;
+                left: 0 !important;
+                right: 0 !important;
             }
  
             .certificate-container:last-child {
@@ -1074,25 +1073,27 @@ export const renderCertificateHTML = (data, controlNo) => {
             .print-bg {
                 position: fixed;
                 top: 0; left: 0;
-                width: 100%; height: 100%;
+                width: 210mm;
+                height: 297mm;
                 z-index: 0;
                 background-image: url('/client/images/header.png') !important;
-                background-size: cover;
+                background-size: 210mm 297mm;
                 background-repeat: no-repeat;
+                background-position: top left;
             }
         }
  
-        /* ── Measurement sandbox (invisible, off-screen) ─ */
+
         #measure-sandbox {
             position: fixed;
             top: -9999px;
             left: -9999px;
-            width: 165mm;          /* content width = 210mm - 2×2.54cm ≈ 165mm */
+            width: 165mm;        
             visibility: hidden;
             pointer-events: none;
             font-family: 'Times New Roman', serif;
             font-size: 20px;
-            line-height: 1.8;
+            line-height: 1.0;
             color: #000;
         }
     `;
@@ -1189,38 +1190,30 @@ export const renderCertificateHTML = (data, controlNo) => {
     const page1Header = ${JSON.stringify(page1HeaderHTML)};
     const contHeader  = ${JSON.stringify(contHeaderHTML)};
  
-    /* ── px per mm at screen resolution ──────────────────────────────────── */
-    const PX_PER_MM   = 96 / 25.4;                       // ≈ 3.7795
+    const PX_PER_MM   = 96 / 25.4;                       
     const PAGE_H_MM   = 297;
-    const TOP_MM      = 25.4;                             // 2.54 cm
-    const BOT_MM      = 34.0;                             // 3.40 cm
-    const AVAIL_MM    = PAGE_H_MM - TOP_MM - BOT_MM;     // 237.6 mm
-    const AVAIL_PX    = AVAIL_MM * PX_PER_MM;            // ≈ 897 px (screen)
+    const TOP_MM      = 25.4;                             
+    const BOT_MM      = 34.0;                             
+    const AVAIL_MM    = PAGE_H_MM - TOP_MM - BOT_MM;     
+    const AVAIL_PX    = AVAIL_MM * PX_PER_MM;            
  
-    /* Page 1 has extra fixed header content (~460 px measured below). */
     const SANDBOX   = document.getElementById('measure-sandbox');
     const ROOT      = document.getElementById('pages-root');
  
-    /* ── Measure a chunk of HTML and return its offsetHeight ─────────────── */
     function measure(html) {
         SANDBOX.innerHTML = html;
-        // Force layout
         void SANDBOX.offsetHeight;
         const h = SANDBOX.scrollHeight;
         SANDBOX.innerHTML = '';
         return h;
     }
  
-    /* ── Measure the fixed page-1 header (everything above the list) ─────── */
-    /* We strip the empty research-list div so we only get the header cost.   */
     const p1HeaderCost = measure(
         page1Header.replace('<div class="research-list" id="page-1-list"></div>', '')
     );
  
-    /* ── Measure the signature block ─────────────────────────────────────── */
     const sigCost = measure(sigHTML);
  
-    /* ── Measure each research item individually ─────────────────────────── */
     const itemHeights = researches.map((r, i) => {
         return measure(\`
             <div class="research-item">
@@ -1234,38 +1227,33 @@ export const renderCertificateHTML = (data, controlNo) => {
         \`);
     });
  
-    /* ── Distribute items across pages ───────────────────────────────────── */
-    const pages = [];          // each element: { items: [indices], isFirst, hasSig }
+    const pages = [];          
     let pageItems  = [];
     let usedHeight = p1HeaderCost;
     let isFirst    = true;
  
     for (let i = 0; i < researches.length; i++) {
         const itemH = itemHeights[i];
-        const remaining = researches.length - i;        // items still to place (incl. this)
+        const remaining = researches.length - i;       
         const isLast    = (i === researches.length - 1);
  
-        /* Does the current item + (sig if last) fit? */
         const needSig   = isLast;
         const testH     = usedHeight + itemH + (needSig ? sigCost : 0);
  
         if (testH > AVAIL_PX && pageItems.length > 0) {
-            /* Flush current page WITHOUT sig, start new page */
             pages.push({ items: [...pageItems], isFirst, hasSig: false });
             pageItems  = [];
-            usedHeight = 0;      // continuation pages have no fixed header cost
+            usedHeight = 0;     
             isFirst    = false;
         }
  
         pageItems.push(i);
         usedHeight += itemH;
  
-        /* After adding, check if sig fits on this same page (for last item) */
         if (isLast) {
             if (usedHeight + sigCost <= AVAIL_PX) {
                 pages.push({ items: [...pageItems], isFirst, hasSig: true });
             } else {
-                /* Sig doesn't fit — flush items, new page for sig only */
                 pages.push({ items: [...pageItems], isFirst, hasSig: false });
                 pages.push({ items: [], isFirst: false, hasSig: true });
             }
@@ -1273,18 +1261,15 @@ export const renderCertificateHTML = (data, controlNo) => {
         }
     }
  
-    /* Edge case: no researches at all */
     if (researches.length === 0) {
         pages.push({ items: [], isFirst: true, hasSig: true });
     }
  
-    /* ── Build HTML for each page ─────────────────────────────────────────── */
     let globalIdx = 0;
  
     pages.forEach(function (page, pIdx) {
         const isLastPage = (pIdx === pages.length - 1);
  
-        /* Item markup */
         const listHTML = page.items.map(function (idx) {
             const r = researches[idx];
             return \`<div class="research-item">
@@ -1297,14 +1282,13 @@ export const renderCertificateHTML = (data, controlNo) => {
             </div>\`;
         }).join('');
  
-        /* Inject list into appropriate header template */
         let contentHTML;
         if (page.isFirst) {
             contentHTML = page1Header.replace(
                 '<div class="research-list" id="page-1-list"></div>',
                 \`<div class="research-list">\${listHTML}</div>\`
             );
-            /* Close .cert-text opened in page1Header */
+
             contentHTML += '</div>';
         } else {
             contentHTML = contHeader.replace(
@@ -1328,8 +1312,17 @@ export const renderCertificateHTML = (data, controlNo) => {
             </div>
         \`);
     });
+    const allPages = ROOT.querySelectorAll('.certificate-container');
+    const totalPages = allPages.length;
+
+    allPages.forEach(function(pageEl, idx) {
+            const pageNum = idx + 1;
+            const footer = document.createElement('div');
+            footer.style.cssText = 'position:absolute; bottom:10mm; right:2.54cm; margin-bottom: 85px; font-family:Times New Roman; font-size:16px; color:#555; z-index:3; text-align:right;';
+            footer.innerHTML = 'Page ' + pageNum + ' of ' + totalPages + '<br><span style="font-size:9pt; margin-bottom: 80px; color:blue; font-family: Times New Roman;">${(data.controlNo).slice(0, 3)} ${(data.controlNo).slice(3)}</span>';
+            pageEl.appendChild(footer);
+        });
  
-    /* ── Auto-print after fonts load ─────────────────────────────────────── */
     if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(function () {
             setTimeout(function () { window.print(); }, 400);
