@@ -5,6 +5,12 @@ export const CertificationResearch = () => {
     let mainContainer;
     let tableBody;
     let modalContainer;
+    let statsData = {
+        total: 0,
+        thisMonth: 0,
+        thisYear: 0,
+        uniqueFaculty: 0
+    };
 
     // Columns for certification log table
     const columns = [
@@ -16,16 +22,49 @@ export const CertificationResearch = () => {
         { field: 'actions', header: 'Actions', width: '120px' }
     ];
 
-    // Statistics (initially empty)
-    const sampleData = [];
-
     const getMainContainer = (el) => {
         mainContainer = el;
+        loadStats();
         loadReports();
     };
 
     const getTableBody = (el) => {
         tableBody = el;
+    };
+
+    // Function to load statistics
+    const loadStats = async () => {
+        try {
+            const res = await fetch('/server/rde/certification.php?action=getStats');
+            const stats = await res.json();
+            
+            if (stats.success) {
+                statsData = {
+                    total: stats.total,
+                    thisMonth: stats.thisMonth,
+                    thisYear: stats.thisYear,
+                    uniqueFaculty: stats.uniqueFaculty
+                };
+                
+                // Update the stats cards if they're already rendered
+                updateStatsCards();
+            }
+        } catch (err) {
+            console.error('Failed to load statistics:', err);
+        }
+    };
+
+    // Function to update stats cards dynamically
+    const updateStatsCards = () => {
+        const statValues = document.querySelectorAll('.stat-value');
+        const statSubtitles = document.querySelectorAll('.stat-subtitle');
+        
+        if (statValues.length >= 4) {
+            statValues[0].textContent = statsData.total;
+            statValues[1].textContent = statsData.thisMonth;
+            statValues[2].textContent = statsData.thisYear;
+            statValues[3].textContent = statsData.uniqueFaculty;
+        }
     };
 
     const createLogRow = (record) => {
@@ -61,24 +100,55 @@ export const CertificationResearch = () => {
                 $({ tag: 'td', text: record.dateTimeRelease, style: { padding: '16px 12px', color: '#888', fontSize: '13px' } }),
                 $({
                     tag: 'td',
-                    style: { padding: '16px 12px', textAlign: 'right' },
+                    style: { padding: '16px 12px', textAlign: 'center' },
                     child: [
                         $({
                             tag: 'button',
-                            att: { title: 'View / Print' },
+                            att: { 
+                                title: 'Print Certificate',
+                                className: 'print-btn'
+                            },
                             style: {
                                 backgroundColor: 'transparent',
                                 border: 'none',
                                 color: '#aaa',
                                 cursor: 'pointer',
-                                fontSize: '14px',
                                 padding: '8px',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '32px',
+                                height: '32px'
                             },
-                            child: [$({ tag: 'span', att: { className: 'fa-solid fa-eye' } })],
+                            child: [$({ 
+                                tag: 'img',
+                                att: { 
+                                    src: '/client/images/icon/certificatePrint/printer.png',
+                                    alt: 'Print'
+                                },
+                                style: { 
+                                    width: '18px', 
+                                    height: '18px',
+                                    objectFit: 'contain'
+                                }
+                            })],
                             event: {
                                 type: 'click',
                                 method: () => showCertificatePreview(record.certificateData, record.controlNo)
+                            },
+                            event2: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#3a3a3a';
+                                }
+                            },
+                            event3: {
+                                type: 'mouseleave',
+                                method: (e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                }
                             }
                         })
                     ]
@@ -114,6 +184,12 @@ export const CertificationResearch = () => {
                     </td></tr>`;
                 }
             }
+            
+            // Update the record count in filter bar
+            const recordCountSpan = document.querySelector('.record-count');
+            if (recordCountSpan && logs) {
+                recordCountSpan.textContent = `${logs.length} records`;
+            }
         } catch (err) {
             console.error('Failed to load certification logs:', err);
         }
@@ -139,7 +215,8 @@ export const CertificationResearch = () => {
                     if (result.success) {
                         // Success! Trigger visual print and add to table
                         generateCertificate(data);
-                        loadReports(); // Refresh the table
+                        await loadReports(); // Refresh the table
+                        await loadStats(); // Refresh the statistics
                         modalContainer.remove();
                     } else {
                         alert('Error saving certificate: ' + result.message);
@@ -160,22 +237,10 @@ export const CertificationResearch = () => {
 
     // Function to show certificate preview
     const showCertificatePreview = (data, controlNo) => {
-        // This would open the certificate in a new window or modal
-        // For now, we'll just log
         console.log('Preview certificate:', data, controlNo);
-
-        // In a real implementation, you might open a new window with the certificate
         const printWindow = window.open('', '_blank');
         printWindow.document.write(renderCertificateHTML(data, controlNo));
         printWindow.document.close();
-    };
-
-    // Function to print certificate
-    const printCertificate = (data, controlNo) => {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(renderCertificateHTML(data, controlNo));
-        printWindow.document.close();
-        printWindow.print();
     };
 
     // Search and filter bar
@@ -229,7 +294,7 @@ export const CertificationResearch = () => {
                                 fontFamily: 'monospace',
                                 border: '1px solid #444'
                             },
-                            text: `${sampleData.length} records`
+                            text: '0 records'
                         })
                     ]
                 }),
@@ -331,28 +396,28 @@ export const CertificationResearch = () => {
         const stats = [
             {
                 label: 'Total Certificates',
-                value: sampleData.length.toString(),
+                value: statsData.total,
                 icon: 'fa-certificate',
                 color: 'deepskyblue',
                 subtext: 'All time'
             },
             {
                 label: 'This Month',
-                value: '0',
+                value: statsData.thisMonth,
                 icon: 'fa-calendar-alt',
                 color: '#4caf50',
-                subtext: 'Mar 2026'
+                subtext: new Date().toLocaleString('default', { month: 'short', year: 'numeric' })
             },
             {
                 label: 'This Year',
-                value: '0',
+                value: statsData.thisYear,
                 icon: 'fa-calendar-check',
                 color: '#ff9800',
-                subtext: '2026'
+                subtext: new Date().getFullYear().toString()
             },
             {
                 label: 'Unique Faculty',
-                value: '0',
+                value: statsData.uniqueFaculty,
                 icon: 'fa-users',
                 color: '#e91e63',
                 subtext: 'Recipients'
@@ -432,7 +497,8 @@ export const CertificationResearch = () => {
                                 child: [
                                     $({
                                         tag: 'span',
-                                        text: stat.value,
+                                        att: { className: 'stat-value' },
+                                        text: stat.value.toString(),
                                         style: {
                                             fontSize: '30px',
                                             fontWeight: '700',
@@ -443,6 +509,7 @@ export const CertificationResearch = () => {
                                     }),
                                     $({
                                         tag: 'span',
+                                        att: { className: 'stat-subtitle' },
                                         text: stat.subtext,
                                         style: {
                                             fontSize: '11px',

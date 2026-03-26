@@ -976,32 +976,68 @@ export const renderCertificateHTML = (data, controlNo) => {
  
         .full-line-value {
             border-bottom: 1px solid black;
-            font-weight: bold;
             display: inline-block;
+            line-height: 1.0;
         }
  
         .label-unit {
             text-align: center;
             font-size: 16px;
             font-family: 'Times New Roman';
-            margin-top: 5px;
             margin-bottom: 30px;
+            line-height: 1.0;
         }
  
         .research-list {
-            margin-left: 60px;
+            margin-left: 30px;
             margin-top: 15px;
             margin-bottom: 0;
             line-height: 1.0;
             font-size: 16px;
             font-family: 'Times New Roman';
+            text-align: justify;
         }
  
         .research-item {
             margin-bottom: 20px;
         }
+
+        .research-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-style: italic;
+            font-family: Times New Roman;
+            font-size: 16px;
+            padding-left: 17px;
+            text-indent: -17px;
+        }
+
+        .research-authors {
+            margin-left: 30px;
+            color: #555;
+            font-style: italic;
+            font-size: 16px;
+            font-family: Times New Roman;
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+            margin-left: 17px;
+        }
+
+        .research-authors-label {
+            font-size: 16px;
+            font-family: Times New Roman;
+            white-space: nowrap;
+            min-width: 30px;
+        }
+
+        .research-authors-names {
+            flex: 1;
+            text-align: justify;
+            text-justify: inter-word;
+        }
         .research-item:last-child {
-            margin-bottom: 0;
+            margin: 30px 0 0 0;
         }
         .closing-paragraph {
             text-align: justify;
@@ -1098,14 +1134,14 @@ export const renderCertificateHTML = (data, controlNo) => {
         }
     `;
 
-    // ─── Research item HTML snippet (reused in both sandbox & final output) ──
     const itemHTML = (r, globalIdx) => `
         <div class="research-item" data-idx="${globalIdx}">
-            <div style="font-weight:600; margin-bottom:5px; font-style:italic;">
+            <div class="research-title">
                 ${globalIdx + 1}. ${r.title}
             </div>
-            <div style="margin-left:30px; color:#555; font-style:italic;">
-                Author/s: ${r.authors}
+            <div class="research-authors">
+                <span class="research-authors-label">Author/s:</span>
+                <span class="research-authors-names">${r.authors}</span>
             </div>
         </div>`;
 
@@ -1217,16 +1253,17 @@ export const renderCertificateHTML = (data, controlNo) => {
     const itemHeights = researches.map((r, i) => {
         return measure(\`
             <div class="research-item">
-                <div style="font-weight:600; margin-bottom:5px; font-style:italic;">
+                <div class="research-title">
                     \${i + 1}. \${r.title}
                 </div>
-                <div style="margin-left:30px; color:#555; font-style:italic;">
-                    Author/s: \${r.authors}
+                <div class="research-authors">
+                    <span class="research-authors-label">Author/s:</span>
+                    <span class="research-authors-names">\${r.authors}</span>
                 </div>
             </div>
         \`);
     });
- 
+
     const pages = [];          
     let pageItems  = [];
     let usedHeight = p1HeaderCost;
@@ -1273,15 +1310,16 @@ export const renderCertificateHTML = (data, controlNo) => {
         const listHTML = page.items.map(function (idx) {
             const r = researches[idx];
             return \`<div class="research-item">
-                <div style="font-weight:600; margin-bottom:5px; font-style:italic;">
+                <div class="research-title">
                     \${idx + 1}. \${r.title}
                 </div>
-                <div style="margin-left:30px; color:#555; font-style:italic;">
-                    Author/s: \${r.authors}
+                <div class="research-authors">
+                    <span class="research-authors-label">Author/s:</span>
+                    <span class="research-authors-names">\${r.authors}</span>
                 </div>
             </div>\`;
         }).join('');
- 
+
         let contentHTML;
         if (page.isFirst) {
             contentHTML = page1Header.replace(

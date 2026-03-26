@@ -142,9 +142,59 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => $conn->error]);
         }
         break;
-
+        
+        case 'getStats':
+            // Get total certificates from certification_log
+            $totalCertSql = "SELECT COUNT(*) as total FROM certification_log";
+            $totalResult = $conn->query($totalCertSql);
+            $totalCertificates = $totalResult->fetch_assoc()['total'];
+            
+            // Get this month's certificates
+            $currentMonth = date('Y-m');
+            $thisMonthSql = "SELECT COUNT(*) as total FROM certification_log WHERE DATE_FORMAT(date, '%Y-%m') = '$currentMonth'";
+            $thisMonthResult = $conn->query($thisMonthSql);
+            $thisMonth = $thisMonthResult->fetch_assoc()['total'];
+            
+            // Get this year's certificates
+            $currentYear = date('Y');
+            $thisYearSql = "SELECT COUNT(*) as total FROM certification_log WHERE YEAR(date) = '$currentYear'";
+            $thisYearResult = $conn->query($thisYearSql);
+            $thisYear = $thisYearResult->fetch_assoc()['total'];
+            
+            // Get unique faculty from researchfile (author, coauthor, presenter)
+            // Only from accepted endorsements
+            $uniqueFacultySql = "SELECT author, coauthor, presenter FROM researchfile rf
+                                INNER JOIN endorsement e ON rf.endorsementid = e.id
+                                WHERE e.status = 'accepted'";
+            $facultyResult = $conn->query($uniqueFacultySql);
+            
+            $uniqueFacultyNames = [];
+            if ($facultyResult) {
+                while ($row = $facultyResult->fetch_assoc()) {
+                    $authors = decodeAuthors($row['author']);
+                    $coauthors = decodeAuthors($row['coauthor']);
+                    $presenters = decodeAuthors($row['presenter']);
+                    
+                    foreach (array_merge($authors, $coauthors, $presenters) as $name) {
+                        $name = trim($name);
+                        if ($name) {
+                            $uniqueFacultyNames[$name] = true;
+                        }
+                    }
+                }
+            }
+            
+            $uniqueFaculty = count($uniqueFacultyNames);
+            
+            echo json_encode([
+                'success' => true,
+                'total' => $totalCertificates,
+                'thisMonth' => $thisMonth,
+                'thisYear' => $thisYear,
+                'uniqueFaculty' => $uniqueFaculty
+            ]);
+            break;
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;
 }
-?>

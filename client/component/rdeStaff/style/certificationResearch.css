@@ -1,0 +1,222 @@
+/* certificationResearch.css */
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #333;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Stat cards */
+.stat-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    border-color: deepskyblue !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card:hover .fa-solid {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+/* Search input */
+.cert-search-input:focus {
+    border-color: deepskyblue !important;
+    background-color: #3a3a3a !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+/* Generate button */
+button[style*="background-color: deepskyblue"]:hover {
+    background-color: #00a6d9 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 191, 255, 0.3);
+}
+
+button[style*="background-color: deepskyblue"]:active {
+    transform: translateY(0);
+}
+
+/* Table styles */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+th {
+    font-weight: 600;
+    background: linear-gradient(180deg, #2d2d2d 0%, #2a2a2a 100%);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+th:hover .fa-solid {
+    opacity: 1 !important;
+    color: deepskyblue !important;
+}
+
+tbody tr {
+    transition: all 0.2s ease;
+}
+
+tbody tr:hover {
+    background-color: #333 !important;
+    transform: translateX(2px);
+}
+
+td {
+    transition: all 0.2s ease;
+}
+
+td:hover {
+    background-color: rgba(0, 191, 255, 0.1);
+}
+
+/* Action buttons */
+td button:hover {
+    background-color: #3a3a3a !important;
+    border-color: deepskyblue !important;
+}
+
+/* Empty state */
+.empty-state .fa-certificate {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+/* Record count badge */
+.record-count {
+    font-family: 'JetBrains Mono', monospace;
+    background: linear-gradient(135deg, #333, #2a2a2a);
+}
+
+/* Modal animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Form inputs */
+.research-title-input:focus,
+.authors-input:focus,
+#control-number:focus,
+#full-name:focus,
+#issue-date:focus {
+    border-color: deepskyblue !important;
+    background-color: #3a3a3a !important;
+    box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+}
+
+/* Research group */
+.research-group {
+    transition: all 0.2s ease;
+}
+
+.research-group:hover {
+    border-color: deepskyblue !important;
+    background-color: #404040 !important;
+}
+
+/* Remove button */
+.research-group button:hover {
+    color: #ff6666 !important;
+}
+
+/* Add research button */
+button[style*="border: 1px solid deepskyblue"]:hover {
+    background-color: rgba(0, 191, 255, 0.1) !important;
+    transform: translateY(-1px);
+}
+
+/* Zebra striping */
+tbody tr:nth-child(even) {
+    background-color: #2a2a2a;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #2d2d2d;
+}
+
+/* Responsive design */
+@media (max-width: 1400px) {
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .cert-search-input {
+        width: 220px !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .filter-bar {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    [style*="gap: 20px"] {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-cards {
+        grid-template-columns: 1fr !important;
+    }
+    
+    [style*="gap: 8px"] {
+        flex-wrap: wrap;
+    }
+}
+
+/* Print styles */
+@media print {
+    .stats-cards,
+    .filter-bar,
+    button {
+        display: none !important;
+    }
+    
+    table {
+        border: 1px solid #000;
+    }
+    
+    th {
+        background-color: #f0f0f0 !important;
+        color: #000 !important;
+    }
+    
+    td {
+        color: #000 !important;
+    }
+}
