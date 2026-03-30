@@ -772,6 +772,7 @@ export const Research = () => {
     }
 
     const createActionButtons = (rowData) => {
+        const docStatus = (rowData.status || 'pending').toLowerCase();
         const container = $({
             tag: 'div',
             style: {
@@ -780,6 +781,54 @@ export const Research = () => {
                 justifyContent: 'center'
             }
         })
+
+        if (docStatus === 'rejected') {
+            // Resubmit button
+            const resubmitBtn = $({
+                tag: 'button',
+                att: { className: 'action-btn resubmit-btn', title: 'Resubmit Document' },
+                style: {
+                    background: '#2196F3',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-redo' }, style: { color: 'white', fontSize: '14px' } })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => handleResubmit(rowData.endorsement_id || rowData.id, rowData.endorsementFile)
+                }
+            });
+
+            // Delete button
+            const deleteBtn = $({
+                tag: 'button',
+                att: { className: 'action-btn delete-btn', title: 'Delete Document' },
+                style: {
+                    background: '#f44336',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-trash-alt' }, style: { color: 'white', fontSize: '14px' } })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => deleteDocument(rowData)
+                }
+            });
+
+            container.appendChild(resubmitBtn);
+            container.appendChild(deleteBtn);
+            return container;
+        }
 
         // View Comments button (replacing View button)
         const viewCommentsBtn = $({
@@ -1683,12 +1732,13 @@ export const Research = () => {
     const editDocument = (doc) => {
         // Pre-fill form data
         formData = {
-            eventName: doc.eventName || '',
-            title: doc.title || '',
-            category: doc.category || '',
-            presenter: doc.presenter || '',
-            author: doc.author || '',
-            coAuthors: doc.coAuthors || [],
+            eventName: doc.eventName,
+            title: doc.title,
+            center: doc.center,
+            category: doc.category,
+            presenter: doc.presenter,
+            author: doc.author,
+            coAuthors: doc.coAuthors,
             researchFile: null,
             programFile: null,
             endorsementFile: null
@@ -2327,7 +2377,35 @@ export const Research = () => {
             }
         })
 
-        fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#fff', marginBottom: '16px', fontSize: '16px' } }))
+        // Add a header with note for edit mode
+        const fileHeader = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px'
+            },
+            child: [
+                $({ tag: 'h4', text: 'Attachments', style: { color: '#fff', fontSize: '16px', margin: 0 } }),
+                isEdit ? $({
+                    tag: 'div',
+                    style: {
+                        fontSize: '12px',
+                        color: '#FF9800',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                    },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { fontSize: '11px' } }),
+                        $({ tag: 'span', text: 'Leave fields blank to keep current files' })
+                    ]
+                }) : null
+            ].filter(Boolean)
+        })
+
+        fileSection.appendChild(fileHeader)
 
         const fileGrid = $({
             tag: 'div',
@@ -2338,9 +2416,10 @@ export const Research = () => {
             }
         })
 
-        fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }))
-        fileGrid.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }))
-        fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
+        // Pass showNote parameter to FileUploadField when in edit mode
+        fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile', showNote: isEdit }))
+        fileGrid.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile', showNote: isEdit }))
+        fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile', showNote: isEdit }))
 
         fileSection.appendChild(fileGrid)
         formBody.appendChild(fileSection)

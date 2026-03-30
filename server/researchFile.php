@@ -1657,6 +1657,7 @@ if (isset($_POST['researchReviewed'])) {
                 researchfile.presenter,
                 researchfile.title,
                 researchfile.id as docId,
+                researchfile.center,
                 researchfile.category,
                 researchfile.reviews,
                 researchfile.drive_view_url as file,
@@ -1677,6 +1678,7 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->presenter = $res['presenter'];
                 $researchDocs->title = $res['title'];
                 $researchDocs->docId = $res['docId'];
+                $researchDocs->center = $res['center'];
                 $researchDocs->category = $res['category'];
                 $researchDocs->comment = $res['reviews'];
                 $researchDocs->researchFile = $res['file']; // Google Drive URL
