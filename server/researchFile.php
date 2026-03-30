@@ -1650,7 +1650,7 @@ if (isset($_POST['researchReviewed'])) {
             $endorsement->ResearchDocs = [];
             $enID = $val['id'];
             
-            // UPDATED QUERY for Google Drive
+            // UPDATED QUERY to include program_drive_view_url
             $queryResearch = "SELECT 
                 researchfile.author,
                 researchfile.coauthor,
@@ -1665,6 +1665,8 @@ if (isset($_POST['researchReviewed'])) {
                 researchfile.drive_folder_id,
                 researchfile.drive_event_folder_id,
                 researchfile.drive_center_folder_id,
+                researchfile.program_drive_view_url,
+                researchfile.program_drive_file_id,
                 researchfile.deletestate
             FROM `researchfile` WHERE `senderid`='$userId' AND `endorsementid`='$enID'";
             
@@ -1683,6 +1685,8 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->drive_folder_id = $res['drive_folder_id'];
                 $researchDocs->drive_event_folder_id = $res['drive_event_folder_id'];
                 $researchDocs->drive_center_folder_id = $res['drive_center_folder_id'];
+                $researchDocs->program_drive_view_url = $res['program_drive_view_url'];
+                $researchDocs->program_drive_file_id = $res['program_drive_file_id']; 
                 $researchDocs->deleteState = $res['deletestate'];
                 
                 $endorsement->ResearchDocs[] = $researchDocs;
@@ -2516,40 +2520,34 @@ if (isset($_POST['saveResearchPer'])) {
     echo json_encode($response);
     exit();
 }
-
+//get research files for events
 if (isset($_POST['researchFile'])) {
-    // Clear output buffers
     while (ob_get_level()) ob_end_clean();
-    
-    // Set memory limit for this operation
     ini_set('memory_limit', '256M');
     set_time_limit(30);
-    
+
     $response = new stdClass();
     $response->status = false;
     $response->list = [];
     $response->message = '';
-    
+
     try {
-        // Check required parameters - ONLY eventId is required
         if (!isset($_POST['eventId']) || intval($_POST['eventId']) === 0) {
             throw new Exception('Event ID is required');
         }
-        
+
         $userId = isset($_SESSION['userId']) ? intval($_SESSION['userId']) : 0;
         $eventId = intval($_POST['eventId']);
         
-        error_log("=== researchFile API called ===");
-        error_log("Event ID: " . $eventId);
-        error_log("User ID: " . $userId);
-        
+        // Get search term if provided
+        $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
+
         if ($con = new mysqli($host, $username, $pass, $dbName)) {
             $con->set_charset("utf8mb4");
-            
-            // FIRST: Get the event name for response
+
+            // Get the event name
             $eventName = '';
-            $eventNameQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
-            $eventNameStmt = $con->prepare($eventNameQuery);
+            $eventNameStmt = $con->prepare("SELECT name FROM event_list WHERE id = ? LIMIT 1");
             if ($eventNameStmt) {
                 $eventNameStmt->bind_param('i', $eventId);
                 $eventNameStmt->execute();
@@ -2559,17 +2557,14 @@ if (isset($_POST['researchFile'])) {
                 }
                 $eventNameStmt->close();
             }
-            
-            // Determine which column to use based on event ID
-            $isNewEvent = ($eventId >= 13);
-            $groupByColumn = $isNewEvent ? 'rf.center' : 'rf.campus';
 
-            error_log("Event type: " . ($isNewEvent ? 'NEW (center-based)' : 'OLD (campus-based)'));
-            error_log("Grouping by: " . $groupByColumn);
+            $isNewEvent = ($eventId >= 13);
 
             $query = "SELECT 
                 rf.id,
                 rf.author,
+                rf.coauthor,
+                rf.presenter,
                 rf.title,
                 rf.drive_view_url,
                 rf.drive_file_id,
@@ -2578,141 +2573,144 @@ if (isset($_POST['researchFile'])) {
                 rf.category,
                 rf.campus,
                 rf.center,
-                DATE_FORMAT(e.date, '%Y-%m-%d') as date,
-                " . $groupByColumn . " as group_name
+                el.name as event_name
             FROM researchfile rf
             INNER JOIN endorsement e ON e.id = rf.endorsementid
+            INNER JOIN event_list el ON el.id = rf.event_id
             WHERE e.status = 'accepted'
-            AND rf.event_id = ?";  // Only ONE placeholder
+            AND rf.event_id = ?";
 
-            // Add column-specific filters
             if ($isNewEvent) {
-                // NEW EVENTS (ID >= 13) - Group by CENTER
                 $query .= " AND rf.center IS NOT NULL AND rf.center != ''";
             } else {
-                // OLD EVENTS (ID < 13) - Group by CAMPUS
                 $query .= " AND rf.campus IS NOT NULL AND rf.campus != ''";
             }
+            
+            // Add search condition if search term is provided
+            if (!empty($searchTerm)) {
+                $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
+                $query .= " AND (
+                    rf.author LIKE ? OR 
+                    rf.coauthor LIKE ? OR 
+                    rf.presenter LIKE ? OR 
+                    rf.title LIKE ? OR 
+                    rf.campus LIKE ? OR 
+                    rf.center LIKE ?
+                )";
+            }
 
-            // Add limits to prevent memory issues
-            $query .= " GROUP BY rf.id 
-                        ORDER BY group_name, rf.title 
-                        LIMIT 500";
+            // Add ORDER BY to ensure consistent ordering
+            $query .= " ORDER BY el.name, " . ($isNewEvent ? "rf.center" : "rf.campus") . ", rf.title";
 
             $stmt = $con->prepare($query);
-            if (!$stmt) {
-                throw new Exception('Prepare failed: ' . $con->error);
-            }
+            if (!$stmt) throw new Exception('Prepare failed: ' . $con->error);
 
-            // Bind only ONE parameter - the eventId
-            $stmt->bind_param('i', $eventId);
+            // Bind parameters
+            if (!empty($searchTerm)) {
+                $searchPattern = '%' . $searchTerm . '%';
+                $stmt->bind_param('issssss', $eventId, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern);
+            } else {
+                $stmt->bind_param('i', $eventId);
+            }
+            
             $stmt->execute();
             $result = $stmt->get_result();
-            
-            // Group results by campus or center
+
             $groupedResults = [];
-            $totalProcessed = 0;
-            $maxGroups = 50;
-            $maxItemsPerGroup = 100;
             
-            if ($result) {
+            if ($result && $result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
-                    $groupName = $row['group_name'];
+                    // Get location based on event type
+                    $location = $isNewEvent 
+                        ? ($row['center'] ?? 'N/A')
+                        : ($row['campus'] ?? 'N/A');
                     
-                    // Skip if group name is empty
-                    if (empty($groupName)) {
-                        continue;
-                    }
-                    
-                    // Limit number of groups
-                    if (count($groupedResults) >= $maxGroups) {
-                        error_log("Reached maximum groups limit: " . $maxGroups);
-                        break;
-                    }
-                    
-                    if (!isset($groupedResults[$groupName])) {
-                        $groupedResults[$groupName] = [
-                            'name' => $groupName,
-                            'list' => []
+                    // Use event name + location as the grouping key
+                    $currentEventName = $row['event_name'] ?: $eventName;
+                    $key = $currentEventName . '|' . $location;
+
+                    if (!isset($groupedResults[$key])) {
+                        $groupedResults[$key] = [
+                            'name'     => $currentEventName,     // → Event Name column
+                            'location' => $location,              // → Campus/Center column
+                            'list'     => []
                         ];
                     }
-                    
-                    // Limit items per group
-                    if (count($groupedResults[$groupName]['list']) >= $maxItemsPerGroup) {
-                        continue;
-                    }
-                    
+
                     $data = new stdClass();
                     $data->author = htmlspecialchars($row['author'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $data->title = htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $data->id = intval($row['id']);
-                    
-                    // Prioritize Google Drive URL if available
+                    $data->coauthor = htmlspecialchars($row['coauthor'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->presenter = htmlspecialchars($row['presenter'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->title  = htmlspecialchars($row['title']  ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->id     = intval($row['id']);
+
                     if (!empty($row['drive_view_url'])) {
-                        $data->file = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
-                        $data->file_type = 'drive';
-                        $data->drive_file_id = htmlspecialchars($row['drive_file_id'] ?? '', ENT_QUOTES, 'UTF-8');
-                        $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', FILTER_SANITIZE_URL);
-                    } else if (!empty($row['local_file'])) {
-                        $data->file = htmlspecialchars($row['local_file'], ENT_QUOTES, 'UTF-8');
+                        $data->file              = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
+                        $data->file_type         = 'drive';
+                        $data->drive_file_id     = htmlspecialchars($row['drive_file_id'] ?? '', ENT_QUOTES, 'UTF-8');
+                        $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', ENT_QUOTES, 'UTF-8');
+                    } elseif (!empty($row['local_file'])) {
+                        $data->file      = htmlspecialchars($row['local_file'], ENT_QUOTES, 'UTF-8');
                         $data->file_type = 'local';
                     } else {
-                        $data->file = null;
+                        $data->file      = null;
                         $data->file_type = 'none';
                     }
-                    
+
                     $data->category = htmlspecialchars($row['category'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $data->center = htmlspecialchars($row['center'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $data->campus = htmlspecialchars($row['campus'] ?? '', ENT_QUOTES, 'UTF-8');
-                    
-                    $groupedResults[$groupName]['list'][] = $data;
-                    $totalProcessed++;
+                    $data->center   = htmlspecialchars($row['center']   ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->campus   = htmlspecialchars($row['campus']   ?? '', ENT_QUOTES, 'UTF-8');
+
+                    $groupedResults[$key]['list'][] = $data;
                 }
                 
+                // Store the number of rows BEFORE freeing the result
+                $totalRows = $result->num_rows;
+                
+                // Now it's safe to free the result
                 $result->free();
-            }
-            
-            // Convert to indexed array and sort groups
-            $response->list = array_values($groupedResults);
-            
-            // Sort groups alphabetically
-            if (!empty($response->list)) {
+                
+                // Convert to indexed array
+                $response->list = array_values($groupedResults);
+                
+                // Sort by event name then location
                 usort($response->list, function($a, $b) {
-                    return strcasecmp($a['name'], $b['name']);
+                    $nameCompare = strcasecmp($a['name'], $b['name']);
+                    if ($nameCompare !== 0) return $nameCompare;
+                    return strcasecmp($a['location'], $b['location']);
                 });
+                
+                // Set status to true since we have data
+                $response->status = true;
+                $response->message = 'Retrieved ' . count($response->list) . ' groups with ' . $totalRows . ' total files';
+                $response->search_term = $searchTerm;
+                
+            } else {
+                // No data found
+                $response->status = true; // Still true, just empty result
+                $response->message = empty($searchTerm) ? 'No research documents found for this event' : 'No matching research documents found';
+                $response->list = [];
+                $response->search_term = $searchTerm;
             }
-            
-            $response->status = true;
-            $response->event_id = $eventId;
-            $response->event_name = $eventName;
-            $response->is_center_based = $isNewEvent;
-            $response->message = 'Successfully retrieved ' . count($response->list) . ' ' . 
-                                ($isNewEvent ? 'centers' : 'campuses') . 
-                                ' with ' . $totalProcessed . ' files';
-            
+
             $stmt->close();
             $con->close();
-            
-            // Clear memory
-            unset($groupedResults, $result);
-            
+
         } else {
             throw new Exception('Database connection failed');
         }
-        
+
     } catch (Exception $e) {
         error_log("researchFile error: " . $e->getMessage());
         $response->message = 'Error: ' . $e->getMessage();
-        $response->status = false;
-        $response->list = [];
+        $response->status  = false;
+        $response->list    = [];
     }
-    
-    // Send JSON response
+
     header('Content-Type: application/json; charset=utf-8');
     header('X-Content-Type-Options: nosniff');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
-    
     echo json_encode($response, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
     exit();
 }
@@ -3091,7 +3089,8 @@ if (isset($_POST['researchDocsNew'])) {
                 researchfile.drive_folder_id,
                 researchfile.drive_event_folder_id,
                 researchfile.drive_center_folder_id,
-                researchfile.status,
+                researchfile.program_drive_view_url,
+                researchfile.program_drive_file_id,
                 researchfile.category,
                 researchfile.center,
                 researchfile.deletestate,           
@@ -3099,11 +3098,8 @@ if (isset($_POST['researchDocsNew'])) {
                 endorsement.campus,
                 endorsement.event,
                 endorsement.date,
-                researchfile.endorsementid,
-                researchfile.rejected_by,
-                researchfile.accepted_by,
-                researchfile.rejected_date,
-                researchfile.accepted_date
+                endorsement.status,
+                researchfile.endorsementid
             FROM researchfile
             LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
             WHERE endorsement.status='accepted'";
@@ -3132,6 +3128,8 @@ if (isset($_POST['researchDocsNew'])) {
             $data->drive_folder_id = $val['drive_folder_id'];
             $data->drive_event_folder_id = $val['drive_event_folder_id'];
             $data->drive_center_folder_id = $val['drive_center_folder_id'];
+            $data->program_drive_view_url = $val['program_drive_view_url'];
+            $data->program_drive_file_id = $val['program_drive_file_id'];
             $data->center = $val['center'];
             $data->status = $val['status'];
             $data->category = $val['category'];

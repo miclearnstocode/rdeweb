@@ -91,6 +91,28 @@ if(isset($_POST['getEventName'])){
     exit();
 }
 
+if(isset($_POST['getEventList'])){
+    $response = [];
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        // Select both id and name so the frontend can use ev.id and ev.name
+        $query = "SELECT event_list.id, event_list.name FROM event_list ORDER BY event_list.name ASC";
+        $statement = $con->prepare($query);
+        if ($statement) {
+            $statement->execute();
+            $result = $statement->get_result();
+            while ($row = $result->fetch_assoc()) {
+                $response[] = $row;
+            }
+            $result->free();
+            $statement->close();
+        }
+        $con->close();
+    }
+    ob_clean();
+    echo json_encode($response);
+    exit();
+}
+
 if(isset($_POST['getEventAdmin'])){
     $response=[];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {

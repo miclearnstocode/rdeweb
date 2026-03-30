@@ -25,8 +25,7 @@ const openViewResearchesModal = () => {
             justifyContent: 'center',
             zIndex: 10002,
             backdropFilter: 'blur(5px)'
-        },
-        elementHandler: (el) => { }
+        }
     })
 
     const modalContent = $({
@@ -72,16 +71,68 @@ const openViewResearchesModal = () => {
         ]
     })
 
-    // Search Bar
+    // Search + Filter Bar
     const searchContainer = $({
         tag: 'div',
         style: {
             padding: '16px 24px',
             borderBottom: '1px solid rgba(255,255,255,0.1)',
-            flexShrink: 0
+            flexShrink: 0,
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'center',
+            flexWrap: 'wrap'
         }
     })
 
+    // --- Event Filter Dropdown ---
+    const eventFilterWrapper = $({
+        tag: 'div',
+        style: {
+            display: 'flex',
+            alignItems: 'center',
+            backgroundColor: '#2a2a2a',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            gap: '10px',
+            minWidth: '260px',
+            flex: '0 0 auto'
+        }
+    })
+
+    const filterIcon = $({
+        tag: 'i',
+        att: { className: 'fas fa-calendar-alt' },
+        style: { color: '#666', fontSize: '16px' }
+    })
+
+    const eventSelect = $({
+        tag: 'select',
+        style: {
+            flex: 1,
+            backgroundColor: 'transparent',
+            border: 'none',
+            outline: 'none',
+            color: '#6d6d6dff',
+            fontSize: '14px',
+            cursor: 'pointer',
+            appearance: 'none',
+            WebkitAppearance: 'none'
+        }
+    })
+
+    // Placeholder option
+    const placeholderOption = $({
+        tag: 'option',
+        text: 'Select an event...',
+        att: { value: '', disabled: true, selected: true }
+    })
+    eventSelect.appendChild(placeholderOption)
+
+    eventFilterWrapper.appendChild(filterIcon)
+    eventFilterWrapper.appendChild(eventSelect)
+
+    // --- Search Bar ---
     const searchWrapper = $({
         tag: 'div',
         style: {
@@ -90,7 +141,8 @@ const openViewResearchesModal = () => {
             backgroundColor: '#2a2a2a',
             borderRadius: '8px',
             padding: '8px 16px',
-            gap: '12px'
+            gap: '12px',
+            flex: 1
         }
     })
 
@@ -99,12 +151,19 @@ const openViewResearchesModal = () => {
         att: { className: 'fas fa-search' },
         style: { color: '#666', fontSize: '16px' }
     })
-
+    const debounce = (func, delay) => {
+        let timeoutId
+        return function (...args) {
+            clearTimeout(timeoutId)
+            timeoutId = setTimeout(() => func.apply(this, args), delay)
+        }
+    }
+    // Search input event handler (find this in your code around line 150-200)
     const searchInput = $({
         tag: 'input',
         att: {
             type: 'text',
-            placeholder: 'Search by event name, campus/center, or file name...'
+            placeholder: 'Search by event name, campus/center, author, co-author, presenter, or file name...'
         },
         style: {
             flex: 1,
@@ -116,51 +175,22 @@ const openViewResearchesModal = () => {
         },
         event: {
             type: 'input',
-            method: (e) => {
-                const searchTerm = e.target.value.toLowerCase()
-                const rows = tableBody.querySelectorAll('tr')
-                let hasVisible = false
+            method: debounce((e) => {
+                const searchTerm = e.target.value.trim()
+                const selectedEventId = eventSelect.value
 
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase()
-                    if (text.includes(searchTerm)) {
-                        row.style.display = ''
-                        hasVisible = true
-                    } else {
-                        row.style.display = 'none'
-                    }
-                })
-
-                // Show/hide no results message
-                const noResults = tableBody.querySelector('.no-results-row')
-                if (!hasVisible && rows.length > 0) {
-                    if (!noResults) {
-                        const noResultsRow = $({
-                            tag: 'tr',
-                            att: { className: 'no-results-row' },
-                            child: [
-                                $({
-                                    tag: 'td',
-                                    att: { colSpan: 3 },
-                                    style: { padding: '40px', textAlign: 'center', color: '#666' },
-                                    child: [
-                                        $({ tag: 'i', att: { className: 'fas fa-search' }, style: { fontSize: '32px', display: 'block', marginBottom: '12px' } }),
-                                        $({ tag: 'div', text: 'No matching results found', style: { fontSize: '14px' } })
-                                    ]
-                                })
-                            ]
-                        })
-                        tableBody.appendChild(noResultsRow)
-                    }
-                } else if (noResults) {
-                    noResults.remove()
+                if (selectedEventId) {
+                    // Reload data with search term
+                    loadResearchData(selectedEventId, searchTerm)
                 }
-            }
+            }, 500) // Debounce to avoid too many requests
         }
     })
 
     searchWrapper.appendChild(searchIcon)
     searchWrapper.appendChild(searchInput)
+
+    searchContainer.appendChild(eventFilterWrapper)
     searchContainer.appendChild(searchWrapper)
 
     // Table Container
@@ -207,23 +237,9 @@ const openViewResearchesModal = () => {
     // Table Body
     const tableBody = $({ tag: 'tbody' })
     table.appendChild(tableBody)
-
-    // Empty state
-    const emptyRow = $({ tag: 'tr' })
-    const emptyCell = $({
-        tag: 'td',
-        att: { colSpan: 3 },
-        style: { padding: '60px', textAlign: 'center', color: '#666' }
-    })
-    emptyCell.appendChild($({ tag: 'i', att: { className: 'fas fa-folder-open' }, style: { fontSize: '48px', display: 'block', marginBottom: '16px' } }))
-    emptyCell.appendChild($({ tag: 'div', text: 'No research documents available', style: { fontSize: '16px', marginBottom: '8px' } }))
-    emptyCell.appendChild($({ tag: 'div', text: 'Upload documents to view them here', style: { fontSize: '14px' } }))
-    emptyRow.appendChild(emptyCell)
-    tableBody.appendChild(emptyRow)
-
     tableContainer.appendChild(table)
 
-    // Footer with close button
+    // Footer
     const footer = $({
         tag: 'div',
         style: {
@@ -261,88 +277,31 @@ const openViewResearchesModal = () => {
     modal.appendChild(modalContent)
     document.body.appendChild(modal)
 
-    // Function to add data to table (call this when you have data)
-    window.addResearchToViewModal = (eventName, campus, files) => {
-        // Remove empty state if exists
-        const emptyState = tableBody.querySelector('.empty-state-row')
-        if (emptyState) emptyState.remove()
-
-        // Check if event group already exists
-        let existingGroup = null
-        const rows = tableBody.querySelectorAll('tr')
-        for (let row of rows) {
-            if (row.getAttribute('data-event') === eventName && row.getAttribute('data-campus') === campus) {
-                existingGroup = row
-                break
-            }
-        }
-
-        if (existingGroup) {
-            // Add file to existing group
-            const filesCell = existingGroup.querySelector('.files-cell')
-            if (filesCell) {
-                const fileTag = createFileTag(files)
-                filesCell.appendChild(fileTag)
-            }
-        } else {
-            // Create new row
-            const row = $({
-                tag: 'tr',
-                att: {
-                    'data-event': eventName,
-                    'data-campus': campus
-                },
-                style: { borderBottom: '1px solid rgba(255,255,255,0.05)' }
-            })
-
-            // Event Name cell
-            const eventCell = $({
-                tag: 'td',
-                text: eventName,
-                style: {
-                    padding: '16px 12px',
-                    color: '#e0e0e0',
-                    fontSize: '14px',
-                    verticalAlign: 'top'
-                }
-            })
-
-            // Campus/Center cell
-            const campusCell = $({
-                tag: 'td',
-                text: campus,
-                style: {
-                    padding: '16px 12px',
-                    color: '#e0e0e0',
-                    fontSize: '14px',
-                    verticalAlign: 'top'
-                }
-            })
-
-            // Files cell
-            const filesCell = $({
-                tag: 'td',
-                att: { className: 'files-cell' },
-                style: {
-                    padding: '16px 12px',
-                    verticalAlign: 'top'
-                }
-            })
-
-            const fileTag = createFileTag(files)
-            filesCell.appendChild(fileTag)
-
-            row.appendChild(eventCell)
-            row.appendChild(campusCell)
-            row.appendChild(filesCell)
-            tableBody.appendChild(row)
-        }
+    // ── Helper: show a placeholder message in the table body ──
+    const setTableMessage = (iconClass, mainText, subText = '') => {
+        tableBody.innerHTML = ''
+        const row = $({
+            tag: 'tr',
+            child: [
+                $({
+                    tag: 'td',
+                    att: { colSpan: 3 },
+                    style: { padding: '60px', textAlign: 'center', color: '#666' },
+                    child: [
+                        $({ tag: 'i', att: { className: iconClass }, style: { fontSize: '40px', display: 'block', marginBottom: '14px' } }),
+                        $({ tag: 'div', text: mainText, style: { fontSize: '16px', marginBottom: '6px', color: '#888' } }),
+                        ...(subText ? [$({ tag: 'div', text: subText, style: { fontSize: '13px', color: '#555' } })] : [])
+                    ]
+                })
+            ]
+        })
+        tableBody.appendChild(row)
     }
 
-    // Helper function to create file tag
-    const createFileTag = (fileInfo) => {
-        const fileName = typeof fileInfo === 'string' ? fileInfo : fileInfo.name
-        const isGoogleDrive = fileName.includes('drive.google.com')
+    // Function to create file tag with access control
+    const createFileTag = (fileInfo, docId, fileType, fileUrl, presenter) => {
+        const fileName = fileInfo.title || fileInfo.name || 'Untitled'
+        const isDrive = fileType === 'drive'
 
         const tag = $({
             tag: 'div',
@@ -357,35 +316,387 @@ const openViewResearchesModal = () => {
                 cursor: 'pointer',
                 transition: 'all 0.2s'
             },
+            att: {
+                title: `${fileName} | Presenter: ${presenter || 'Not specified'}`
+            },
             event: {
                 type: 'click',
-                method: () => {
-                    if (isGoogleDrive) {
-                        window.open(fileName, '_blank')
-                    } else {
-                        alert(`View file: ${fileName}`)
-                        // Add your file viewing logic here
+                method: async () => {
+                    let loading = Waiting()
+                    modal.appendChild(loading)
+                    const remove = () => {
+                        if (loading && loading.remove) loading.remove()
+                    }
+
+                    const form = new FormData()
+                    form.append("checkAccess", "true")
+                    form.append("docId", docId)
+
+                    try {
+                        const response = await fetch('/requestDocs', {
+                            method: 'POST',
+                            body: form
+                        })
+
+                        if (response.ok) {
+                            const dat = await response.json()
+                            remove()
+
+                            if (dat.status === 'allowed') {
+                                if (isDrive && fileUrl) {
+                                    window.open(fileUrl, '_blank')
+                                } else if (fileUrl) {
+                                    const viewer = createFileViewer(docId, fileUrl, fileType)
+                                    if (viewer) document.body.appendChild(viewer)
+                                } else {
+                                    alert('File not found or unavailable')
+                                }
+                            } else if (dat.status === 'requested') {
+                                modal.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
+                                    window.location.reload()
+                                }))
+                            } else {
+                                setTimeout(() => {
+                                    if (confirm("You don't have permission to open this file.\nDo you want to send a request?")) {
+                                        const req = new Request('/requestDocs')
+                                        const formReq = []
+                                        formReq.push({ name: 'sendRequest', value: 'true' })
+                                        formReq.push({ name: 'docId', value: docId })
+                                        req.Post(formReq)
+                                        req.Json()
+                                        req.Send().then(data => {
+                                            modal.appendChild(ConfirmationAlert(data.message, () => {
+                                                window.location.reload()
+                                            }))
+                                        })
+                                    }
+                                }, 50)
+                            }
+                        } else {
+                            remove()
+                            alert('Error checking access. Please try again.')
+                        }
+                    } catch (error) {
+                        remove()
+                        console.error('Error checking access:', error)
+                        alert('Error checking file access. Please try again.')
                     }
                 }
             },
             child: [
                 $({
                     tag: 'i',
-                    att: { className: isGoogleDrive ? 'fab fa-google-drive' : 'fas fa-file-pdf' },
-                    style: { color: isGoogleDrive ? '#0F9D58' : '#f44336', fontSize: '14px' }
+                    att: { className: isDrive ? 'fab fa-google-drive' : 'fas fa-file-pdf' },
+                    style: { color: isDrive ? '#0F9D58' : '#f44336', fontSize: '14px' }
                 }),
                 $({
                     tag: 'span',
-                    text: typeof fileInfo === 'string' ? fileInfo.split('/').pop() : fileInfo.name,
-                    style: { color: '#fff', fontSize: '12px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }
+                    text: fileName.length > 50 ? fileName.substring(0, 47) + '...' : fileName,
+                    style: {
+                        color: '#fff',
+                        fontSize: '12px',
+                        maxWidth: '200px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                    }
                 })
             ]
         })
 
         return tag
     }
-}
 
+    // File viewer component
+    const createFileViewer = (docID, fileUrl = null, fileType = 'local') => {
+        let mainP
+        const file = (url, type) => {
+            if (type === 'drive') {
+                window.open(url, '_blank')
+                return null
+            }
+
+            const isGoogleDriveUrl = url.includes('drive.google.com')
+            const fileViewer = isGoogleDriveUrl
+                ? $({ tag: 'iframe', att: { src: url, type: 'application/pdf' }, style: { width: '100%', height: '100%', border: 'none' } })
+                : $({ tag: 'object', att: { data: url.startsWith('/') ? url : '/' + url, type: 'application/pdf' }, style: { width: '100%', height: '100%' } })
+
+            return $({
+                tag: 'div',
+                style: { margin: 'auto', width: '80%', height: '98%', position: 'relative' },
+                child: [
+                    $({
+                        tag: 'div',
+                        att: { className: 'fa-solid fa-circle-xmark' },
+                        style: { fontSize: '3vw', position: 'absolute', left: '-4vw', color: 'deepskyblue', cursor: 'pointer' },
+                        event: { type: 'click', method: () => { if (mainP && mainP.remove) mainP.remove() } }
+                    }),
+                    fileViewer
+                ]
+            })
+        }
+
+        if (fileType === 'drive') {
+            window.open(fileUrl, '_blank')
+            return null
+        }
+
+        return $({
+            tag: 'div',
+            style: {
+                width: '100%', height: '100%', position: 'fixed',
+                top: '0', left: '0',
+                backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
+                display: 'flex', justifyContent: 'center', zIndex: 10003
+            },
+            elementHandler: (el) => {
+                mainP = el
+                const viewer = file(fileUrl, fileType)
+                if (viewer) el.appendChild(viewer)
+            }
+        })
+    }
+
+    // ── Load event list into the dropdown ──
+    const loadEventList = async () => {
+        // Disable select while loading
+        eventSelect.disabled = true
+
+        // Show a loading option
+        const loadingOption = $({
+            tag: 'option',
+            text: 'Loading events...',
+            att: { value: '', disabled: true }
+        })
+        eventSelect.appendChild(loadingOption)
+
+        try {
+            const formData = new FormData()
+            formData.append('getEventList', 'true')
+
+            const response = await fetch('/eventRequest', {
+                method: 'POST',
+                body: formData
+            })
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+
+            const data = await response.json()
+
+            // Remove loading option
+            loadingOption.remove()
+
+            const events = data.events || data.list || data || []
+
+            if (!Array.isArray(events) || events.length === 0) {
+                const noEventsOption = $({
+                    tag: 'option',
+                    text: 'No events available',
+                    att: { value: '', disabled: true }
+                })
+                eventSelect.appendChild(noEventsOption)
+                return
+            }
+
+            events.forEach(ev => {
+                const option = $({
+                    tag: 'option',
+                    text: ev.name,
+                    att: { value: ev.id }
+                })
+                eventSelect.appendChild(option)
+            })
+
+            // If a current event is already known, pre-select it and load data immediately
+            const preselect = window.currentEventId || parseInt(localStorage.getItem('currentEventId'))
+            if (preselect) {
+                eventSelect.value = preselect
+                loadResearchData(preselect)
+            } else {
+                // Show a "pick an event" prompt in the table
+                setTableMessage('fas fa-hand-pointer', 'Select an event above to view its research documents')
+            }
+
+        } catch (err) {
+            console.error('Failed to load event list:', err)
+            loadingOption && loadingOption.remove()
+
+            const errOption = $({
+                tag: 'option',
+                text: 'Failed to load events',
+                att: { value: '', disabled: true }
+            })
+            eventSelect.appendChild(errOption)
+
+            setTableMessage('fas fa-exclamation-triangle', 'Could not load event list', err.message)
+        } finally {
+            eventSelect.disabled = false
+        }
+    }
+
+    // ── Wire up the dropdown → reload table on change ──
+    eventSelect.addEventListener('change', (e) => {
+        const selectedId = parseInt(e.target.value)
+        if (!selectedId) return
+
+        // Clear search box so results aren't filtered after switching events
+        searchInput.value = ''
+
+        loadResearchData(selectedId)
+    })
+
+    const loadResearchData = async (eventId, searchTerm = '') => {
+        tableBody.innerHTML = ''   // clear previous rows
+
+        const loadingRow = $({
+            tag: 'tr',
+            child: [
+                $({
+                    tag: 'td',
+                    att: { colSpan: 3 },
+                    style: { padding: '40px', textAlign: 'center', color: '#666' },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '12px' } }),
+                        $({ tag: 'div', text: searchTerm ? `Searching for "${searchTerm}"...` : 'Loading research documents...', style: { fontSize: '14px' } })
+                    ]
+                })
+            ]
+        })
+        tableBody.appendChild(loadingRow)
+
+        try {
+            const formData = new FormData()
+            formData.append('researchFile', 'true')
+            formData.append('eventId', eventId)
+            if (searchTerm) {
+                formData.append('search', searchTerm)
+            }
+
+            const response = await fetch('/uploadResearchFile', {
+                method: 'POST',
+                body: formData
+            })
+
+            loadingRow.remove()
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+
+            const data = await response.json()
+
+            // Check if the response has status true or if we have data
+            if (data.status === false && (!data.list || data.list.length === 0)) {
+                throw new Error(data.message || 'Server returned an error')
+            }
+
+            if (data.list && data.list.length > 0) {
+                data.list.forEach(group => {
+                    // Only show groups that have files (they will only have files if they matched the search)
+                    if (group.list && group.list.length > 0) {
+                        addResearchToTable(
+                            group.name,      // Event Name column
+                            group.location,  // Campus/Center column  
+                            group.list       // Files list
+                        )
+                    }
+                })
+
+                // Show message if no results after search
+                if (searchTerm && data.list.length === 0) {
+                    setTableMessage('fas fa-search', 'No matching results found', `No documents match "${searchTerm}"`)
+                }
+            } else {
+                if (searchTerm) {
+                    setTableMessage('fas fa-search', 'No matching results found', `No documents match "${searchTerm}"`)
+                } else {
+                    setTableMessage('fas fa-folder-open', 'No research documents available', 'Upload documents to view them here')
+                }
+            }
+
+        } catch (error) {
+            console.error('Error loading research data:', error)
+            loadingRow.remove && loadingRow.remove()
+
+            tableBody.innerHTML = ''
+            const errorRow = $({
+                tag: 'tr',
+                child: [
+                    $({
+                        tag: 'td',
+                        att: { colSpan: 3 },
+                        style: { padding: '40px', textAlign: 'center', color: '#ff6b6b' },
+                        child: [
+                            $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '32px', display: 'block', marginBottom: '12px' } }),
+                            $({ tag: 'div', text: 'Failed to load research documents', style: { fontSize: '16px', marginBottom: '8px' } }),
+                            $({ tag: 'div', text: error.message, style: { fontSize: '12px', opacity: 0.7 } }),
+                            $({
+                                tag: 'button',
+                                text: 'Retry',
+                                style: { marginTop: '16px', padding: '8px 16px', backgroundColor: '#444', border: 'none', borderRadius: '6px', color: '#fff', cursor: 'pointer' },
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        tableBody.innerHTML = ''
+                                        loadResearchData(eventId, searchTerm)
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+            tableBody.appendChild(errorRow)
+        }
+    }
+
+    const addResearchToTable = (eventName, location, files) => {
+        const row = $({
+            tag: 'tr',
+            att: { 'data-event': `${eventName} ${location} ${files.map(f => f.title || '').join(' ')}` },
+            style: { borderBottom: '1px solid rgba(255,255,255,0.05)' }
+        })
+
+        const eventCell = $({
+            tag: 'td',
+            text: eventName,  // ← This should be the event name
+            style: { padding: '16px 12px', color: '#e0e0e0', fontSize: '14px', verticalAlign: 'top', fontWeight: '500' }
+        })
+
+        const locationCell = $({
+            tag: 'td',
+            text: location,   // ← This should be the campus/center
+            style: { padding: '16px 12px', color: '#e0e0e0', fontSize: '14px', verticalAlign: 'top' }
+        })
+
+        const filesCell = $({
+            tag: 'td',
+            att: { className: 'files-cell' },
+            style: { padding: '16px 12px', verticalAlign: 'top' }
+        })
+
+        if (files.length === 0) {
+            filesCell.appendChild($({ tag: 'span', text: 'No files', style: { color: '#666', fontSize: '12px' } }))
+        } else {
+            files.forEach(file => {
+                const fileTag = createFileTag(
+                    { title: file.title, name: file.title },
+                    file.id,
+                    file.file_type,
+                    file.file,
+                    file.author
+                )
+                filesCell.appendChild(fileTag)
+            })
+        }
+
+        row.appendChild(eventCell)
+        row.appendChild(locationCell)
+        row.appendChild(filesCell)
+        tableBody.appendChild(row)
+    }
+
+    // ── Kick everything off ──
+    loadEventList()
+}
 // Modern Document Management Component
 export const Research = () => {
     let mainContainer
@@ -2531,7 +2842,6 @@ export const Research = () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('API Response (filtered by senderid):', data);
 
                     // Clear loading state
                     tbody.innerHTML = '';
@@ -2570,12 +2880,6 @@ export const Research = () => {
                                         }
                                     }
 
-                                    // Debug log to see what's coming from API
-                                    console.log('Research Doc:', {
-                                        title: researchDoc.title,
-                                        program_drive_view_url: researchDoc.program_drive_view_url,
-                                        program_drive_file_id: researchDoc.program_drive_file_id
-                                    });
 
                                     // Create document object for table
                                     const documentObj = {
