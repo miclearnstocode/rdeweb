@@ -949,9 +949,8 @@ if (isset($_POST['uploadResearch'])) {
                     researchfile.event_id,
                     researchfile.campus,
                     researchfile.coauthor,
-                    researchfile.presenter,
-                    researchfile.reviews
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    researchfile.presenter
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 $rev = NULL;
 
@@ -1075,6 +1074,10 @@ if (isset($_POST['acceptRequest'])) {
             if ($status) {
                 $response->status = true;
                 
+                // ============================================
+                // UNCOMMENTED AND FIXED EMAIL SENDING CODE
+                // ============================================
+                
                 $from = new stdClass();
                 $from->email = $rdeEmail;
                 $from->password = $emailPassword;
@@ -1125,7 +1128,6 @@ if (isset($_POST['acceptRequest'])) {
     
     echo json_encode($response);
 }
-
 // this is for evaluator
 if (isset($_POST['researchSubmit'])) {
     $response = new stdClass();
@@ -1654,7 +1656,6 @@ if (isset($_POST['researchReviewed'])) {
                 researchfile.presenter,
                 researchfile.title,
                 researchfile.id as docId,
-                researchfile.center,
                 researchfile.category,
                 researchfile.drive_view_url as file,
                 researchfile.drive_file_id,
@@ -1673,7 +1674,6 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->presenter = $res['presenter'];
                 $researchDocs->title = $res['title'];
                 $researchDocs->docId = $res['docId'];
-                $researchDocs->center = $res['center'];
                 $researchDocs->category = $res['category'];
                 $researchDocs->researchFile = $res['file']; // Google Drive URL
                 $researchDocs->drive_file_id = $res['drive_file_id'];
@@ -2131,7 +2131,7 @@ if (isset($_POST['getEndorse'])) {
                     researchfile.drive_view_url as file,
                     researchfile.drive_file_id,
                     researchfile.drive_download_url,
-                    researchfile.endorsementid,
+                    researchfile.endorsement,
                     researchfile.title,
                     researchfile.category,
                     researchfile.campus,
@@ -2146,7 +2146,7 @@ if (isset($_POST['getEndorse'])) {
                     $data->file = $v['file']; // Google Drive URL
                     $data->drive_file_id = $v['drive_file_id'];
                     $data->drive_download_url = $v['drive_download_url'];
-                    $data->endorsement = $v['endorsementid'];
+                    $data->endorsement = $v['endorsement'];
                     $data->userId = $serderId;
                     $data->signurl = $_SESSION['userEsign'];
                     
@@ -2276,8 +2276,7 @@ if (isset($_POST['delResearch'])) {
     $docId = $_POST['docId'];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $researchFile = "";
-        $query = "SELECT `file` FROM `researchfile` WHERE `id`='$docId'";
-        foreach ($con->query($query) as $val) {
+        foreach ($con->query("SELECT `file` FROM `researchfile` WHERE `id`='$docId'") as $val) {
             $researchFile = $val['file'];
         }
         if (count($reviews) <= 0) {
@@ -2377,7 +2376,8 @@ if (isset($_POST['systemResearchFile'])) {
                 $data = new stdClass();
                 $data->researchFile = $val['researchfile'];
                 $data->endorsementFile = $val['endoresment'];
-                $data->title = $val['title'];   
+                $data->title = $val['title'];
+                $data->reviews = $val['comments'];
                 $data->author = $val['author'];
                 $data->authorId = $val['authorid'];
                 $data->date = $val['date'];
@@ -2814,23 +2814,6 @@ if (isset($_POST['searchResearch'])) {
     exit();
 }
 
-if (isset($_POST['declineDel'])) {
-    $response = new stdClass();
-    $response->status = false;
-    $response->message = '';
-    $docId = $_POST['docId'];
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        if ($con->query("UPDATE `researchfile` SET `deletestate`=null WHERE `id`='$docId'")) {
-            $response->status = true;
-        } else {
-            $response->message = $con->error;
-        }
-    } else {
-        $response->message = $con->error;
-    }
-    echo json_encode($response);
-}
-
 if (isset($_POST['acceptDel'])) {
     $response = new stdClass();
     $response->status = false;
@@ -3056,7 +3039,7 @@ if (isset($_POST['researchDocsNew'])) {
                 researchfile.program_drive_view_url,
                 researchfile.program_drive_file_id,
                 researchfile.category,
-                researchfile.center,         
+                researchfile.center,       
                 endorsement.center,
                 endorsement.campus,
                 endorsement.event,
@@ -3146,6 +3129,7 @@ if (isset($_POST['commentRequest'])) {
     }
     echo json_encode($response);
 }
+
 
 if (isset($_POST['grantDeleteResearchRequest'])) {
     $response = new stdClass();
@@ -3240,7 +3224,7 @@ if (isset($_POST['rejectIndorse'])) {
             // 2. Update researchfile status to 'rejected' (this table has the new columns)
             $researchUpdateQuery = "UPDATE researchfile SET status='rejected' WHERE endorsementid=?";
             $researchStmt = $con->prepare($researchUpdateQuery);
-            $researchStmt->bind_param("ss", $staffId, $docId);
+            $researchStmt->bind_param("i", $docId);
             $researchStmt->execute();
 
             // 3. Insert into rejecteddocs table (this is where rejection records should go)
