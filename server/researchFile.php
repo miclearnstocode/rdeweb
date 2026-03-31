@@ -605,6 +605,141 @@ function checkDuplicateByFileHash($con, $fileHash, $fileType) {
     return false;
 }
 
+function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
+    // Center to code mapping
+    $centerCodes = [
+        'Crop Science Research & Developement Center (CSRDC)' => 'A',
+        'Livestock Research & Development Center (LRDC)' => 'B',
+        'Fisheries Research & Development Center (FRDC)' => 'C',
+        'Food and Industrial Technology Research & Development Center (FIRDC)' => 'D',
+        'Social Science Research & Development Center (SSRDC)' => 'E',
+        'Machinery and Agricultural Technology Engineering Center (MATEC)' => 'F',
+        'Coconut Research and Development Center (Coco RDC)' => 'G',
+        'Extension (Extension)' => 'H'
+    ];
+    
+    // Get center code
+    $centerCode = $centerCodes[$center] ?? 'X';
+    
+    // FIRST: Check if this research already has a paper trail number from a previous submission
+    // Match by title and author (case-insensitive, trimmed)
+    $checkExistingQuery = "SELECT paper_trail_no, center, event_id 
+                          FROM researchfile 
+                          WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+                          AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+                          AND paper_trail_no IS NOT NULL 
+                          AND paper_trail_no != ''
+                          LIMIT 1";
+    
+    $checkStmt = $con->prepare($checkExistingQuery);
+    if (!$checkStmt) {
+        throw new Exception("Failed to prepare existing check query: " . $con->error);
+    }
+    
+    $checkStmt->bind_param("ss", $title, $author);
+    $checkStmt->execute();
+    $existingResult = $checkStmt->get_result();
+    $existingPaper = $existingResult->fetch_assoc();
+    
+    // If existing paper trail number found, return it (maintain consistency)
+    if ($existingPaper && !empty($existingPaper['paper_trail_no'])) {
+        return $existingPaper['paper_trail_no'];
+    }
+    
+    // SECOND: If no existing paper trail number, check for duplicate submissions
+    // (same title and author but no paper trail number yet - should use same center logic)
+    $checkDuplicateQuery = "SELECT id, center, event_id 
+                           FROM researchfile 
+                           WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+                           AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+                           LIMIT 1";
+    
+    $dupStmt = $con->prepare($checkDuplicateQuery);
+    if (!$dupStmt) {
+        throw new Exception("Failed to prepare duplicate check query: " . $con->error);
+    }
+    
+    $dupStmt->bind_param("ss", $title, $author);
+    $dupStmt->execute();
+    $dupResult = $dupStmt->get_result();
+    $duplicate = $dupResult->fetch_assoc();
+    
+    // If duplicate found but no paper trail number, we need to generate one
+    // Use the original submission's center (not the current one) for consistency
+    if ($duplicate) {
+        // Use the center from the original submission
+        $originalCenter = $duplicate['center'];
+        $centerCode = $centerCodes[$originalCenter] ?? 'X';
+        
+        // Get the original submission's event year
+        $originalEventId = $duplicate['event_id'];
+        $yearQuery = "SELECT YEAR(date) as year FROM event_list WHERE id = ? LIMIT 1";
+        $yearStmt = $con->prepare($yearQuery);
+        if ($yearStmt) {
+            $yearStmt->bind_param("i", $originalEventId);
+            $yearStmt->execute();
+            $yearResult = $yearStmt->get_result();
+            $yearRow = $yearResult->fetch_assoc();
+            $eventYear = $yearRow['year'] ?? date('Y');
+            $yearStmt->close();
+        } else {
+            $eventYear = date('Y');
+        }
+    } else {
+        // THIRD: No existing paper trail number and no duplicate - generate new one
+        // Get event year from event_list for the current submission
+        $yearQuery = "SELECT YEAR(date) as year FROM event_list WHERE id = ? LIMIT 1";
+        $yearStmt = $con->prepare($yearQuery);
+        if (!$yearStmt) {
+            throw new Exception("Failed to prepare year query: " . $con->error);
+        }
+        
+        $yearStmt->bind_param("i", $eventId);
+        $yearStmt->execute();
+        $yearResult = $yearStmt->get_result();
+        $yearRow = $yearResult->fetch_assoc();
+        
+        if (!$yearRow || !$yearRow['year']) {
+            throw new Exception("Could not determine event year for event ID: $eventId");
+        }
+        
+        $eventYear = $yearRow['year'];
+        $yearStmt->close();
+    }
+    
+    // Get the next sequence number for this year and center
+    $pattern = $eventYear . '-' . $centerCode . '-%';
+    
+    $seqQuery = "SELECT MAX(CAST(SUBSTRING_INDEX(paper_trail_no, '-', -1) AS UNSIGNED)) as max_seq 
+                 FROM researchfile 
+                 WHERE paper_trail_no LIKE ?";
+    
+    $seqStmt = $con->prepare($seqQuery);
+    if (!$seqStmt) {
+        throw new Exception("Failed to prepare sequence query: " . $con->error);
+    }
+    
+    $seqStmt->bind_param("s", $pattern);
+    $seqStmt->execute();
+    $seqResult = $seqStmt->get_result();
+    $seqRow = $seqResult->fetch_assoc();
+    
+    $nextSeq = ($seqRow['max_seq'] ?? 0) + 1;
+    
+    // Format with leading zeros (3 digits)
+    $formattedSeq = str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
+    
+    // Generate the paper trail number
+    $paperTrailNo = $eventYear . '-' . $centerCode . '-' . $formattedSeq;
+    
+    // Clean up statements
+    $checkStmt->close();
+    if (isset($dupStmt)) $dupStmt->close();
+    if (isset($seqStmt)) $seqStmt->close();
+    
+    return $paperTrailNo;
+}
+
 if (isset($_POST['uploadResearch'])) {
     // Temporarily disable the error-catching output buffer
     ob_end_clean();
@@ -925,9 +1060,10 @@ if (isset($_POST['uploadResearch'])) {
                     echo json_encode($response);
                     exit();
                 }
-                
-                // Insert research record with Drive metadata
+                $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
+
                 $querV2 = "INSERT INTO researchfile(
+                    researchfile.paper_trail_no,
                     researchfile.senderid,
                     researchfile.endorsementid,
                     researchfile.author,
@@ -949,8 +1085,9 @@ if (isset($_POST['uploadResearch'])) {
                     researchfile.event_id,
                     researchfile.campus,
                     researchfile.coauthor,
-                    researchfile.presenter
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    researchfile.presenter,
+                    researchfile.status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 $rev = NULL;
 
@@ -966,7 +1103,8 @@ if (isset($_POST['uploadResearch'])) {
                 $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
 
                 $bound = $stementResNew->bind_param(
-                    'sssssssssssssssssssssss',
+                    'ssssssssssssssssssssssss',  // 24 's' parameters
+                    $paperTrailNo, 
                     $senderId,
                     $endorsementId,
                     $author,
@@ -989,7 +1127,7 @@ if (isset($_POST['uploadResearch'])) {
                     $center,
                     $coAuthor,
                     $presenter,
-                    $rev
+                    $rev 
                 );
 
                 if (!$bound) {
@@ -1003,7 +1141,8 @@ if (isset($_POST['uploadResearch'])) {
                 }
                 
                 $researchFileId = $con->insert_id;
-                
+                $response->paper_trail_no = $paperTrailNo;
+
                 // ===== STEP 4: Store File Hashes for Future Duplicate Detection =====
                 // Store file hashes using researchfile.id as foreign key
                 if ($researchFileId) {

@@ -23,7 +23,7 @@ const openViewResearchesModal = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10002,
+            zIndex: 102,
             backdropFilter: 'blur(5px)'
         }
     })
@@ -323,7 +323,7 @@ const openViewResearchesModal = () => {
                 type: 'click',
                 method: async () => {
                     let loading = Waiting()
-                    modal.appendChild(loading)
+                    document.body.appendChild(loading)
                     const remove = () => {
                         if (loading && loading.remove) loading.remove()
                     }
@@ -343,16 +343,26 @@ const openViewResearchesModal = () => {
                             remove()
 
                             if (dat.status === 'allowed') {
-                                if (isDrive && fileUrl) {
-                                    window.open(fileUrl, '_blank')
+                                // Only handle Google Drive files
+                                if (fileUrl && (fileUrl.includes('drive.google.com') || fileUrl.includes('drive.google.com/file/d/'))) {
+                                    // Extract file ID for better embedding
+                                    let embedUrl = fileUrl
+                                    if (fileUrl.includes('/file/d/')) {
+                                        const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
+                                        if (fileIdMatch && fileIdMatch[1]) {
+                                            embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
+                                        }
+                                    }
+                                    // Open in new tab
+                                    window.open(embedUrl, '_blank')
                                 } else if (fileUrl) {
-                                    const viewer = createFileViewer(docId, fileUrl, fileType)
-                                    if (viewer) document.body.appendChild(viewer)
+                                    // If it's a Google Drive URL but doesn't match pattern, still try to open
+                                    window.open(fileUrl, '_blank')
                                 } else {
-                                    alert('File not found or unavailable')
+                                    alert('File URL not available')
                                 }
                             } else if (dat.status === 'requested') {
-                                modal.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
+                                document.body.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
                                     window.location.reload()
                                 }))
                             } else {
@@ -365,7 +375,7 @@ const openViewResearchesModal = () => {
                                         req.Post(formReq)
                                         req.Json()
                                         req.Send().then(data => {
-                                            modal.appendChild(ConfirmationAlert(data.message, () => {
+                                            document.body.appendChild(ConfirmationAlert(data.message, () => {
                                                 window.location.reload()
                                             }))
                                         })
@@ -386,8 +396,8 @@ const openViewResearchesModal = () => {
             child: [
                 $({
                     tag: 'i',
-                    att: { className: isDrive ? 'fab fa-google-drive' : 'fas fa-file-pdf' },
-                    style: { color: isDrive ? '#0F9D58' : '#f44336', fontSize: '14px' }
+                    att: { className: 'fab fa-google-drive' },
+                    style: { color: '#0F9D58', fontSize: '14px' }
                 }),
                 $({
                     tag: 'span',
@@ -407,52 +417,161 @@ const openViewResearchesModal = () => {
         return tag
     }
 
-    // File viewer component
-    const createFileViewer = (docID, fileUrl = null, fileType = 'local') => {
-        let mainP
-        const file = (url, type) => {
-            if (type === 'drive') {
-                window.open(url, '_blank')
-                return null
-            }
-
-            const isGoogleDriveUrl = url.includes('drive.google.com')
-            const fileViewer = isGoogleDriveUrl
-                ? $({ tag: 'iframe', att: { src: url, type: 'application/pdf' }, style: { width: '100%', height: '100%', border: 'none' } })
-                : $({ tag: 'object', att: { data: url.startsWith('/') ? url : '/' + url, type: 'application/pdf' }, style: { width: '100%', height: '100%' } })
-
-            return $({
-                tag: 'div',
-                style: { margin: 'auto', width: '80%', height: '98%', position: 'relative' },
-                child: [
-                    $({
-                        tag: 'div',
-                        att: { className: 'fa-solid fa-circle-xmark' },
-                        style: { fontSize: '3vw', position: 'absolute', left: '-4vw', color: 'deepskyblue', cursor: 'pointer' },
-                        event: { type: 'click', method: () => { if (mainP && mainP.remove) mainP.remove() } }
-                    }),
-                    fileViewer
-                ]
-            })
-        }
-
-        if (fileType === 'drive') {
-            window.open(fileUrl, '_blank')
+    // File viewer component - simplified for Google Drive only
+    const createFileViewer = (docID, fileUrl = null, fileType = 'drive') => {
+        // Only handle Google Drive files
+        if (!fileUrl || !fileUrl.includes('drive.google.com')) {
+            console.error('Invalid or non-Google Drive file URL')
             return null
         }
+
+        // Extract Google Drive file ID for better embedding
+        let embedUrl = fileUrl
+        if (fileUrl.includes('/file/d/')) {
+            const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
+            if (fileIdMatch && fileIdMatch[1]) {
+                embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
+            }
+        }
+
+        let mainP
+
+        const fileViewer = $({
+            tag: 'iframe',
+            att: {
+                src: embedUrl,
+                title: 'Document Viewer'
+            },
+            style: {
+                width: '100%',
+                height: '100%',
+                border: 'none',
+                borderRadius: '8px'
+            }
+        })
 
         return $({
             tag: 'div',
             style: {
-                width: '100%', height: '100%', position: 'fixed',
-                top: '0', left: '0',
+                width: '100%',
+                height: '100%',
+                position: 'fixed',
+                top: '0',
+                left: '0',
                 backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-                display: 'flex', justifyContent: 'center', zIndex: 10003
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 100,
+                backdropFilter: 'blur(5px)'
             },
             elementHandler: (el) => {
                 mainP = el
-                const viewer = file(fileUrl, fileType)
-                if (viewer) el.appendChild(viewer)
+
+                const modalContent = $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#1e1e1e',
+                        borderRadius: '12px',
+                        width: '90%',
+                        maxWidth: '1200px',
+                        height: '80vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '16px 24px',
+                                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                backgroundColor: '#1e1e1e'
+                            },
+                            child: [
+                                $({
+                                    tag: 'h3',
+                                    text: 'Document Viewer',
+                                    style: { color: '#fff', margin: 0, fontSize: '18px' }
+                                }),
+                                $({
+                                    tag: 'i',
+                                    att: { className: 'fas fa-times' },
+                                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            if (mainP && mainP.remove) mainP.remove()
+                                        }
+                                    }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                flex: 1,
+                                padding: '20px',
+                                overflow: 'auto'
+                            },
+                            child: [fileViewer]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '16px 24px',
+                                borderTop: '1px solid rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '12px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'button',
+                                    text: 'Open in New Tab',
+                                    style: {
+                                        padding: '8px 24px',
+                                        backgroundColor: '#2196F3',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        color: '#fff',
+                                        cursor: 'pointer'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            window.open(embedUrl, '_blank')
+                                        }
+                                    }
+                                }),
+                                $({
+                                    tag: 'button',
+                                    text: 'Close',
+                                    style: {
+                                        padding: '8px 24px',
+                                        backgroundColor: '#444',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        color: '#fff',
+                                        cursor: 'pointer'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            if (mainP && mainP.remove) mainP.remove()
+                                        }
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                })
+
+                el.appendChild(modalContent)
             }
         })
     }
@@ -772,7 +891,6 @@ export const Research = () => {
     }
 
     const createActionButtons = (rowData) => {
-        const docStatus = (rowData.status || 'pending').toLowerCase();
         const container = $({
             tag: 'div',
             style: {
@@ -781,54 +899,6 @@ export const Research = () => {
                 justifyContent: 'center'
             }
         })
-
-        if (docStatus === 'rejected') {
-            // Resubmit button
-            const resubmitBtn = $({
-                tag: 'button',
-                att: { className: 'action-btn resubmit-btn', title: 'Resubmit Document' },
-                style: {
-                    background: '#2196F3',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                },
-                child: [
-                    $({ tag: 'i', att: { className: 'fas fa-redo' }, style: { color: 'white', fontSize: '14px' } })
-                ],
-                event: {
-                    type: 'click',
-                    method: () => handleResubmit(rowData.endorsement_id || rowData.id, rowData.endorsementFile)
-                }
-            });
-
-            // Delete button
-            const deleteBtn = $({
-                tag: 'button',
-                att: { className: 'action-btn delete-btn', title: 'Delete Document' },
-                style: {
-                    background: '#f44336',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '6px 10px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                },
-                child: [
-                    $({ tag: 'i', att: { className: 'fas fa-trash-alt' }, style: { color: 'white', fontSize: '14px' } })
-                ],
-                event: {
-                    type: 'click',
-                    method: () => deleteDocument(rowData)
-                }
-            });
-
-            container.appendChild(resubmitBtn);
-            container.appendChild(deleteBtn);
-            return container;
-        }
 
         // View Comments button (replacing View button)
         const viewCommentsBtn = $({
@@ -919,7 +989,7 @@ export const Research = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 10000,
+                zIndex: 100,
                 backdropFilter: 'blur(4px)'
             },
             elementHandler: (el) => { commentsModal = el; }
@@ -1448,7 +1518,7 @@ export const Research = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 10000,
+                zIndex: 100,
                 backdropFilter: 'blur(4px)'
             },
             child: [
@@ -1613,7 +1683,7 @@ export const Research = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 10000,
+                zIndex: 100,
                 backdropFilter: 'blur(4px)'
             },
             child: [
@@ -1732,13 +1802,12 @@ export const Research = () => {
     const editDocument = (doc) => {
         // Pre-fill form data
         formData = {
-            eventName: doc.eventName,
-            title: doc.title,
-            center: doc.center,
-            category: doc.category,
-            presenter: doc.presenter,
-            author: doc.author,
-            coAuthors: doc.coAuthors,
+            eventName: doc.eventName || '',
+            title: doc.title || '',
+            category: doc.category || '',
+            presenter: doc.presenter || '',
+            author: doc.author || '',
+            coAuthors: doc.coAuthors || [],
             researchFile: null,
             programFile: null,
             endorsementFile: null
@@ -1832,7 +1901,7 @@ export const Research = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 10000,
+                zIndex: 100,
                 backdropFilter: 'blur(4px)'
             },
             child: [
@@ -1980,7 +2049,7 @@ export const Research = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 10001,
+                zIndex: 101,
                 backdropFilter: 'blur(5px)'
             },
             elementHandler: (el) => { uploadModal = el }
@@ -2377,35 +2446,7 @@ export const Research = () => {
             }
         })
 
-        // Add a header with note for edit mode
-        const fileHeader = $({
-            tag: 'div',
-            style: {
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '16px'
-            },
-            child: [
-                $({ tag: 'h4', text: 'Attachments', style: { color: '#fff', fontSize: '16px', margin: 0 } }),
-                isEdit ? $({
-                    tag: 'div',
-                    style: {
-                        fontSize: '12px',
-                        color: '#FF9800',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                    },
-                    child: [
-                        $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { fontSize: '11px' } }),
-                        $({ tag: 'span', text: 'Leave fields blank to keep current files' })
-                    ]
-                }) : null
-            ].filter(Boolean)
-        })
-
-        fileSection.appendChild(fileHeader)
+        fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#fff', marginBottom: '16px', fontSize: '16px' } }))
 
         const fileGrid = $({
             tag: 'div',
@@ -2416,10 +2457,9 @@ export const Research = () => {
             }
         })
 
-        // Pass showNote parameter to FileUploadField when in edit mode
-        fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile', showNote: isEdit }))
-        fileGrid.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile', showNote: isEdit }))
-        fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile', showNote: isEdit }))
+        fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }))
+        fileGrid.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }))
+        fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
 
         fileSection.appendChild(fileGrid)
         formBody.appendChild(fileSection)
@@ -2611,7 +2651,7 @@ export const Research = () => {
                                 }
 
                                 // Update stats if you have them
-                                updateStats();
+                                updateStatsFromData();
                             }
 
                             // Show success message
