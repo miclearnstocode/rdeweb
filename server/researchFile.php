@@ -1059,7 +1059,7 @@ if (isset($_POST['acceptRequest'])) {
 
         if ($con->query("UPDATE `endorsement` SET `status`='accepted'  WHERE `id`='$docId'")) {
             //Update ALL researchfile records under this endorsement
-            $updateResearchQuery = "UPDATE `researchfile` SET `status`='accepted', `accepted_by`=?, `accepted_date`=NOW() WHERE `endorsementid`=?";
+            $updateResearchQuery = "UPDATE `researchfile` SET `status`='accepted' WHERE `endorsementid`=?";
             $updateStmt = $con->prepare($updateResearchQuery);
             $updateStmt->bind_param("ss", $_SESSION['userId'], $docId);
             $updateStmt->execute();
@@ -1074,10 +1074,6 @@ if (isset($_POST['acceptRequest'])) {
 
             if ($status) {
                 $response->status = true;
-                
-                // ============================================
-                // UNCOMMENTED AND FIXED EMAIL SENDING CODE
-                // ============================================
                 
                 $from = new stdClass();
                 $from->email = $rdeEmail;
@@ -1129,6 +1125,7 @@ if (isset($_POST['acceptRequest'])) {
     
     echo json_encode($response);
 }
+
 // this is for evaluator
 if (isset($_POST['researchSubmit'])) {
     $response = new stdClass();
@@ -1659,7 +1656,6 @@ if (isset($_POST['researchReviewed'])) {
                 researchfile.id as docId,
                 researchfile.center,
                 researchfile.category,
-                researchfile.reviews,
                 researchfile.drive_view_url as file,
                 researchfile.drive_file_id,
                 researchfile.drive_download_url,
@@ -1667,8 +1663,7 @@ if (isset($_POST['researchReviewed'])) {
                 researchfile.drive_event_folder_id,
                 researchfile.drive_center_folder_id,
                 researchfile.program_drive_view_url,
-                researchfile.program_drive_file_id,
-                researchfile.deletestate
+                researchfile.program_drive_file_id
             FROM `researchfile` WHERE `senderid`='$userId' AND `endorsementid`='$enID'";
             
             foreach ($con->query($queryResearch) as $res) {
@@ -1680,7 +1675,6 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->docId = $res['docId'];
                 $researchDocs->center = $res['center'];
                 $researchDocs->category = $res['category'];
-                $researchDocs->comment = $res['reviews'];
                 $researchDocs->researchFile = $res['file']; // Google Drive URL
                 $researchDocs->drive_file_id = $res['drive_file_id'];
                 $researchDocs->drive_download_url = $res['drive_download_url'];
@@ -1689,7 +1683,6 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->drive_center_folder_id = $res['drive_center_folder_id'];
                 $researchDocs->program_drive_view_url = $res['program_drive_view_url'];
                 $researchDocs->program_drive_file_id = $res['program_drive_file_id']; 
-                $researchDocs->deleteState = $res['deletestate'];
                 
                 $endorsement->ResearchDocs[] = $researchDocs;
             }
@@ -1966,10 +1959,8 @@ if (isset($_POST['researchFileAdmin'])) {
             researchfile.category,
             researchfile.campus,
             researchfile.coauthor as proponent,
-            researchfile.reviews,
             researchfile.status,
-            researchfile.event,
-            researchfile.deletestate
+            researchfile.event
         FROM `researchfile`";
         
         foreach ($con->query($queryAd) as $val) {
@@ -1988,10 +1979,8 @@ if (isset($_POST['researchFileAdmin'])) {
             $data->campus = $val['campus'];
             $data->proponent = $val['proponent'];
             $data->date = $val['date'];
-            $data->reviews = $val['reviews'];
             $data->status = $val['status'];
             $data->event = $val['event'];
-            $data->deletestate = $val['deletestate'];
             
             if (is_null($val['status'])) {
                 array_splice($response->list, 0, 0, [$data]);
@@ -2142,15 +2131,13 @@ if (isset($_POST['getEndorse'])) {
                     researchfile.drive_view_url as file,
                     researchfile.drive_file_id,
                     researchfile.drive_download_url,
-                    researchfile.endorsement,
+                    researchfile.endorsementid,
                     researchfile.title,
                     researchfile.category,
                     researchfile.campus,
                     researchfile.coauthor,
                     researchfile.presenter,
-                    researchfile.reviews,
-                    researchfile.status,
-                    researchfile.approval
+                    researchfile.status
                 FROM `researchfile`") as $v) {
                     
                     $data = new stdClass();
@@ -2159,7 +2146,7 @@ if (isset($_POST['getEndorse'])) {
                     $data->file = $v['file']; // Google Drive URL
                     $data->drive_file_id = $v['drive_file_id'];
                     $data->drive_download_url = $v['drive_download_url'];
-                    $data->endorsement = $v['endorsement'];
+                    $data->endorsement = $v['endorsementid'];
                     $data->userId = $serderId;
                     $data->signurl = $_SESSION['userEsign'];
                     
@@ -2183,7 +2170,6 @@ if (isset($_POST['getEndorse'])) {
                     $data->year = $v['year'];
                     $data->month = $v['month'];
                     $data->date = $v['month'] . '/' . $v['date'] . '/' . $v['year'];
-                    $data->reviews = $v['reviews'];
                     $data->status = $v['status'];
                     $response->list[] = $data;
                 }
@@ -2290,12 +2276,9 @@ if (isset($_POST['delResearch'])) {
     $docId = $_POST['docId'];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $researchFile = "";
-        $reviews = [];
-        foreach ($con->query("SELECT `file`,`approval` ,`reviews` FROM `researchfile` WHERE `id`='$docId'") as $val) {
+        $query = "SELECT `file` FROM `researchfile` WHERE `id`='$docId'";
+        foreach ($con->query($query) as $val) {
             $researchFile = $val['file'];
-            if ($val['reviews'] !== null) {
-                $reviews = json_decode($val['reviews']);
-            }
         }
         if (count($reviews) <= 0) {
             if ($con->query("DELETE FROM `researchfile` WHERE `id`='$docId'")) {
@@ -2394,8 +2377,7 @@ if (isset($_POST['systemResearchFile'])) {
                 $data = new stdClass();
                 $data->researchFile = $val['researchfile'];
                 $data->endorsementFile = $val['endoresment'];
-                $data->title = $val['title'];
-                $data->reviews = $val['comments'];
+                $data->title = $val['title'];   
                 $data->author = $val['author'];
                 $data->authorId = $val['authorid'];
                 $data->date = $val['date'];
@@ -2405,26 +2387,6 @@ if (isset($_POST['systemResearchFile'])) {
         }
     } else {
         $response->message .= $con->error;
-    }
-    echo json_encode($response);
-}
-
-if (isset($_POST['researchDeleteRequest'])) {
-    $response = new stdClass();
-    $response->status = false;
-    $response->message = '';
-    $docId = $_POST['docId'];
-    $reason = $_POST['reason'];
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query = "UPDATE `researchfile` SET `deletestate`='$reason' WHERE`id`='$docId'";
-        if ($con->query($query)) {
-            $response->status = 'true';
-            $response->message = "Request Sent...!";
-        } else {
-            $response->message = $con->error;
-        }
-    } else {
-        $response->message = $con->error;
     }
     echo json_encode($response);
 }
@@ -3094,8 +3056,7 @@ if (isset($_POST['researchDocsNew'])) {
                 researchfile.program_drive_view_url,
                 researchfile.program_drive_file_id,
                 researchfile.category,
-                researchfile.center,
-                researchfile.deletestate,           
+                researchfile.center,         
                 endorsement.center,
                 endorsement.campus,
                 endorsement.event,
@@ -3110,7 +3071,6 @@ if (isset($_POST['researchDocsNew'])) {
             $data = new stdClass();
             $data->id = $val['id'];
             $data->senderid = $val['senderid'];
-            $data->deletestate = $val['deletestate'];
             $data->author = $val['author'];
             $data->title = $val['title'];
             
@@ -3182,23 +3142,6 @@ if (isset($_POST['commentRequest'])) {
             $data->evalName = $val['fullname'];
             $data->campus = $val['campus'];
             $response[] = $data;
-        }
-    }
-    echo json_encode($response);
-}
-
-if (isset($_POST['getDeleteRequest'])) {
-    $response = new stdClass();
-    $response->message = "";
-    $docId = $_POST['docId'];
-    $query = "SELECT
-    researchfile.deletestate
-    FROM
-    researchfile
-    WHERE researchfile.id='$docId'";
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        foreach ($con->query($query) as $val) {
-            $response->message = $val['deletestate'];
         }
     }
     echo json_encode($response);
@@ -3295,7 +3238,7 @@ if (isset($_POST['rejectIndorse'])) {
             $statement->execute();
 
             // 2. Update researchfile status to 'rejected' (this table has the new columns)
-            $researchUpdateQuery = "UPDATE researchfile SET status='rejected', rejected_by=?, rejected_date=NOW() WHERE endorsementid=?";
+            $researchUpdateQuery = "UPDATE researchfile SET status='rejected' WHERE endorsementid=?";
             $researchStmt = $con->prepare($researchUpdateQuery);
             $researchStmt->bind_param("ss", $staffId, $docId);
             $researchStmt->execute();
@@ -3872,8 +3815,6 @@ if (isset($_POST['resubmitDocument'])) {
         
         // Set status to NULL (waiting for acceptance)
         $updates[] = "status = NULL";
-        $updates[] = "rejected_by = NULL";
-        $updates[] = "rejected_date = NULL";
         $updates[] = "resubmitted = 1";
         $updates[] = "resubmit_count = ?";
         $params[] = $resubmitCount;
