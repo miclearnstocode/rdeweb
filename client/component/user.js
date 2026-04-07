@@ -1,14 +1,14 @@
-import {$, UnderConstruction} from '../lib/lib.js';
-import {NavBar} from "./userComponent/script/navigation.js";
-import {Frame} from "./userComponent/script/userFrame.js";
-import {Button} from "./userComponent/script/navigation.js";
-import {Research} from "./userComponent/script/research.js";
-import {Error} from "../error.js";
-import {Header} from "./otherComponent/header.js";
-import {Settings} from "./userComponent/script/settings.js";
-import {Create} from "./userComponent/script/create.js";
-import {Files} from "./userComponent/script/Files.js";
-import {ReqButton} from "./userComponent/script/Request.js";
+import { $, UnderConstruction } from '../lib/lib.js';
+import { NavBar } from "./userComponent/script/navigation.js";
+import { Frame } from "./userComponent/script/userFrame.js";
+import { Button } from "./userComponent/script/navigation.js";
+import { Research } from "./userComponent/script/research.js";
+import { Error } from "../error.js";
+import { Header } from "./otherComponent/header.js";
+import { Settings } from "./userComponent/script/settings.js";
+import { Create } from "./userComponent/script/create.js";
+import { Files } from "./userComponent/script/Files.js";
+import { ReqButton } from "./userComponent/script/Request.js";
 
 // Map of tab IDs to their components and configurations
 const tabs = {
@@ -21,7 +21,7 @@ const tabs = {
         disabled: false,
         index: 0
     },
-    
+
     'proposal-tab': {
         url: '/user/create/share',
         urlPattern: '/user/create/',
@@ -31,7 +31,7 @@ const tabs = {
         disabled: true,  // This tab is disabled
         index: 1
     },
-    
+
     'communication-tab': {
         url: '/user/systemFiles',
         urlPattern: '/user/systemFiles',
@@ -41,7 +41,7 @@ const tabs = {
         disabled: true,  // This tab is disabled
         index: 2
     },
-    
+
     'settings-tab': {
         url: '/user/settings/userInfo',
         urlPattern: '/user/settings/',
@@ -58,44 +58,44 @@ const tabOrder = ['research-tab', 'proposal-tab', 'communication-tab', 'settings
 
 //Logo of RDE
 export const UserPanel = () => {
-    
+
     const currentPath = window.location.pathname;
 
     let needsRedirect = false;
     let redirectUrl = '/user/research/submittedDocs/submittedFiles'; // Default to research tab
-    
+
     Object.entries(tabs).forEach(([tabId, tab]) => {
         if (currentPath.startsWith(tab.urlPattern) && tab.disabled) {
             console.warn(`⚠ Visiting disabled tab URL: ${tabId} (${tab.label}). Redirecting to research tab.`);
             needsRedirect = true;
         }
     });
-    
+
 
     if (needsRedirect) {
- 
+
         window.location.replace(redirectUrl);
         return null; // Return null to prevent rendering
     }
-    
+
     // Determine active tab based on URL pattern matching
     let activeTabId = 'research-tab'; // Default to research tab
-    
+
     // Find which tab matches the current URL (only check enabled tabs)
     Object.entries(tabs).forEach(([tabId, tab]) => {
         const matches = !tab.disabled && currentPath.startsWith(tab.urlPattern);
-        
+
         if (!tab.disabled && currentPath.startsWith(tab.urlPattern)) {
             activeTabId = tabId;
             //console.log(`✓ Setting active tab to: ${tabId} (${tab.label})`);
         }
     });
-    
+
     // DOUBLE CHECK: If somehow activeTabId is a disabled tab, force it to research-tab
     if (tabs[activeTabId]?.disabled) {
         activeTabId = 'research-tab';
     }
-    
+
     const Props = {
         getNav: (nav) => {
             nav.appendChild($({
@@ -142,14 +142,14 @@ export const UserPanel = () => {
                     })
                 ]
             }))
-            
+
             nav.appendChild(ReqButton());
-            
+
             // Render tabs in the specified order
             tabOrder.forEach((tabId) => {
                 const tab = tabs[tabId];
                 if (!tab) return;
-                
+
                 // Create the button
                 const button = Button({
                     icon: {
@@ -172,26 +172,25 @@ export const UserPanel = () => {
                         }
                     }
                 });
-                
+
                 // CRITICAL: Force remove any existing active classes
                 button.className = button.className
-                    .replace(/active-nav/g, '')
+                    .replace(/userAnimate/g, '')
                     .replace(/disabled-tab/g, '')
                     .trim();
-                
+
                 // Add disabled class if tab is disabled
                 if (tab.disabled) {
                     button.className += ' disabled-tab';
                 }
-                
+
                 // Add active class ONLY if this is the active tab AND it's not disabled
                 if (tabId === activeTabId && !tab.disabled) {
-                    button.className += ' active-nav';
-                    //console.log(`✅ Added active-nav to: ${tabId}`);
+                    button.className += ' userAnimate';
                 } else {
-                    //console.log(`❌ No active-nav for: ${tabId} (activeTabId=${activeTabId}, disabled=${tab.disabled})`);
+                    // not active
                 }
-                
+
                 const buttonWrapper = $({
                     tag: 'div',
                     att: {
@@ -200,24 +199,24 @@ export const UserPanel = () => {
                     },
                     child: [button]
                 });
-                
+
                 nav.appendChild(buttonWrapper);
             });
         },
         getFrame: (frame) => {
             frame.className = 'modern-frame';
-            
+
             // Get the active tab by ID - ensure it's not disabled
             let activeTab = tabs[activeTabId];
-            
+
             // If active tab is disabled, force to research tab
             if (activeTab?.disabled) {
                 activeTabId = 'research-tab';
                 activeTab = tabs['research-tab'];
             }
-            
+
             //console.log('Rendering frame for tab:', activeTabId, activeTab?.label);
-            
+
             if (activeTab && !activeTab.disabled) {
                 const pageWrapper = $({
                     tag: 'div',
@@ -235,13 +234,13 @@ export const UserPanel = () => {
             }
         }
     }
-    
+
     // Only add Header if root element exists
     const root = document.getElementById('root');
     if (root) {
         root.appendChild(Header());
     }
-    
+
     return ($({
         tag: 'div',
         externalStyle: '/client/component/userComponent/userComponentStyle/user.css',
