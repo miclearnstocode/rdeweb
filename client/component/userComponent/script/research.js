@@ -653,6 +653,45 @@ const openViewResearchesModal = () => {
         }
     }
 
+    eventSelect.addEventListener('change', (e) => {
+        const selectedEventName = e.target.value;
+        const isSymposium = selectedEventName.toLowerCase().includes('symposium');
+
+        // Show/hide date fields
+        if (dateFieldsContainer) {
+            dateFieldsContainer.style.display = isSymposium ? 'grid' : 'none';
+        }
+
+        // Show/hide program file upload based on event type
+        if (programFileContainer) {
+            programFileContainer.style.display = isSymposium ? 'none' : 'block';
+        }
+
+        // Make date fields required for Symposium
+        if (isSymposium) {
+            dateStartedField.setAttribute('required', 'required');
+            dateCompletedField.setAttribute('required', 'required');
+        } else {
+            dateStartedField.removeAttribute('required');
+            dateCompletedField.removeAttribute('required');
+        }
+    });
+    programFileContainer.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }));
+
+    // Update fileGrid to conditionally include program file
+    const fileGrid = $({
+        tag: 'div',
+        style: {
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '20px'
+        }
+    });
+
+    fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }));
+    fileGrid.appendChild(programFileContainer);
+    fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }));
+
     // ── Wire up the dropdown → reload table on change ──
     eventSelect.addEventListener('change', (e) => {
         const selectedId = parseInt(e.target.value)
@@ -830,7 +869,9 @@ export const Research = () => {
         coAuthors: [],
         researchFile: null,
         programFile: null,
-        endorsementFile: null
+        endorsementFile: null,
+        date_started: null,
+        date_Completed: null
     }
 
     // Center categories mapping
@@ -2036,6 +2077,9 @@ export const Research = () => {
     const openUploadModal = (isEdit = false, editData = null) => {
         let titleInput, categorySelect, centerSelect, authorInput, presenterInput, coAuthorInput, coAuthorList
         let eventSelect
+        let dateStartedField, dateCompletedField
+        let dateFieldsContainer
+        let programFileContainer
 
         const modal = $({
             tag: 'div',
@@ -2131,26 +2175,50 @@ export const Research = () => {
                 type: 'change',
                 method: (e) => {
                     if (e && e.target) {
-                        formData.eventName = e.target.value
+                        const selectedEventName = e.target.value
+                        formData.eventName = selectedEventName
+
+                        // Check if selected event is Symposium
+                        const isSymposium = selectedEventName.toLowerCase().includes('symposium')
+
+                        // Update file grid columns - ADD THIS LINE HERE
+                        fileGrid.style.gridTemplateColumns = isSymposium ? '1fr 1fr' : '1fr 1fr 1fr';
+                        // Show/hide date fields
+                        if (dateFieldsContainer) {
+                            dateFieldsContainer.style.display = isSymposium ? 'grid' : 'none'
+                        }
+
+                        // Show/hide program file upload
+                        if (programFileContainer) {
+                            programFileContainer.style.display = isSymposium ? 'none' : 'block'
+                        }
+
+                        // Make date fields required for Symposium
+                        if (isSymposium) {
+                            if (dateStartedField) dateStartedField.setAttribute('required', 'required')
+                            if (dateCompletedField) dateCompletedField.setAttribute('required', 'required')
+                        } else {
+                            if (dateStartedField) dateStartedField.removeAttribute('required')
+                            if (dateCompletedField) dateCompletedField.removeAttribute('required')
+                            // Clear date values if not Symposium
+                            if (!isSymposium) {
+                                formData.date_started = null
+                                formData.date_Completed = null
+                                if (dateStartedField) dateStartedField.value = ''
+                                if (dateCompletedField) dateCompletedField.value = ''
+                            }
+                        }
                     }
                 }
             },
             elementHandler: async (el) => {
-                // Check if el exists before using it
                 if (!el) return;
-
-                // Clear existing options
                 el.innerHTML = '';
 
-                // Add default option
                 const defaultOption = $({
                     tag: 'option',
                     text: '-- Select Event Name --',
-                    att: {
-                        disabled: true,
-                        selected: true,
-                        value: ''
-                    }
+                    att: { disabled: true, selected: true, value: '' }
                 });
                 el.appendChild(defaultOption);
 
@@ -2169,14 +2237,8 @@ export const Research = () => {
                             el.appendChild($({
                                 tag: 'option',
                                 text: val.name,
-                                style: {
-                                    backgroundColor: '#2a2a2a',
-                                    fontSize: '14px'
-                                },
-                                att: {
-                                    id: val.id,
-                                    value: val.name
-                                }
+                                style: { backgroundColor: '#2a2a2a', fontSize: '14px' },
+                                att: { id: val.id, value: val.name }
                             }));
                         });
                     } else {
@@ -2186,9 +2248,11 @@ export const Research = () => {
                     console.error('Error fetching events:', error);
                 }
 
-                // Set value if editing
                 if (isEdit && editData?.eventName) {
                     el.value = editData.eventName;
+                    // Trigger change event to set initial state
+                    const changeEvent = new Event('change');
+                    el.dispatchEvent(changeEvent);
                 }
             }
         })
@@ -2234,7 +2298,6 @@ export const Research = () => {
                 type: 'change',
                 method: (e) => {
                     formData.category = e.target.value
-                    // Update center options
                     if (centerSelect) {
                         const centers = categoryToCenters[e.target.value] || Object.keys(centerCategoryMapping)
                         centerSelect.innerHTML = ''
@@ -2425,6 +2488,67 @@ export const Research = () => {
         coAuthorField.appendChild(coAuthorInputGroup)
         coAuthorField.appendChild(coAuthorList)
 
+        // Date fields (only shown for Symposium events)
+        dateFieldsContainer = $({
+            tag: 'div',
+            style: {
+                display: 'none',  // Hidden by default
+                gridColumn: '1 / -1',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px',
+                marginTop: '20px',
+                paddingTop: '20px',
+                borderTop: '1px solid rgba(255,255,255,0.1)'
+            }
+        });
+
+        // Date Started field
+        const dateStartedWrapper = $({ tag: 'div' });
+        dateStartedWrapper.appendChild($({ tag: 'label', text: 'Date Started *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }));
+        dateStartedField = $({
+            tag: 'input',
+            att: { type: 'date', value: isEdit ? (editData?.date_started || '') : '' },
+            style: {
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px'
+            },
+            event: {
+                type: 'change',
+                method: (e) => { formData.date_started = e.target.value }
+            }
+        });
+        dateStartedWrapper.appendChild(dateStartedField);
+
+        // Date Completed field
+        const dateCompletedWrapper = $({ tag: 'div' });
+        dateCompletedWrapper.appendChild($({ tag: 'label', text: 'Date Completed *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }));
+        dateCompletedField = $({
+            tag: 'input',
+            att: { type: 'date', value: isEdit ? (editData?.date_Completed || '') : '' },
+            style: {
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px'
+            },
+            event: {
+                type: 'change',
+                method: (e) => { formData.date_Completed = e.target.value }
+            }
+        });
+        dateCompletedWrapper.appendChild(dateCompletedField);
+
+        dateFieldsContainer.appendChild(dateStartedWrapper);
+        dateFieldsContainer.appendChild(dateCompletedWrapper);
+
         // Add fields to two-column layout
         twoColumnLayout.appendChild(titleField)
         twoColumnLayout.appendChild(categoryField)
@@ -2432,6 +2556,7 @@ export const Research = () => {
         twoColumnLayout.appendChild(authorField)
         twoColumnLayout.appendChild(presenterField)
         twoColumnLayout.appendChild(coAuthorField)
+        twoColumnLayout.appendChild(dateFieldsContainer);
 
         formBody.appendChild(eventField)
         formBody.appendChild(twoColumnLayout)
@@ -2457,8 +2582,17 @@ export const Research = () => {
             }
         })
 
+        // Create program file container that can be hidden
+        programFileContainer = $({
+            tag: 'div',
+            style: {
+                display: 'block'  // Visible by default
+            }
+        })
+        programFileContainer.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }))
+
         fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }))
-        fileGrid.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }))
+        fileGrid.appendChild(programFileContainer)
         fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
 
         fileSection.appendChild(fileGrid)
@@ -2514,6 +2648,8 @@ export const Research = () => {
             event: {
                 type: 'click',
                 method: async () => {
+                    const isSymposium = formData.eventName.toLowerCase().includes('symposium');
+
                     // Validate required fields
                     if (!formData.eventName || !formData.title || !formData.category || !formData.center || !formData.author || !formData.presenter) {
                         alert('Please fill in all required fields (*)');
@@ -2522,8 +2658,14 @@ export const Research = () => {
 
                     // File validations for new uploads
                     if (!isEdit) {
-                        if (!formData.researchFile || !formData.programFile || !formData.endorsementFile) {
-                            alert('Please upload all required files');
+                        if (!formData.researchFile || !formData.endorsementFile) {
+                            alert('Please upload Research File and Endorsement Letter');
+                            return;
+                        }
+
+                        // For non-Symposium events, program file is required
+                        if (!isSymposium && !formData.programFile) {
+                            alert('Program file is required for non-Symposium events');
                             return;
                         }
 
@@ -2532,7 +2674,7 @@ export const Research = () => {
                             alert('Research file must be a valid PDF file');
                             return;
                         }
-                        if (formData.programFile && formData.programFile.type !== 'application/pdf') {
+                        if (!isSymposium && formData.programFile && formData.programFile.type !== 'application/pdf') {
                             alert('Program file must be a valid PDF file');
                             return;
                         }
@@ -2551,6 +2693,14 @@ export const Research = () => {
                         }
                     }
 
+                    // Validate date fields for Symposium
+                    if (isSymposium) {
+                        if (!formData.date_started || !formData.date_Completed) {
+                            alert('Please fill in Date Started and Date Completed for Symposium events');
+                            return;
+                        }
+                    }
+
                     // Show loading indicator
                     let loading = Waiting();
                     document.body.appendChild(loading);
@@ -2565,11 +2715,9 @@ export const Research = () => {
                         const form = new FormData();
 
                         if (isEdit) {
-                            // For edit mode - add update flag
                             form.append('updateResearch', 'true');
                             form.append('docId', editData.id);
                         } else {
-                            // For new upload
                             form.append('uploadResearch', 'true');
                         }
 
@@ -2582,34 +2730,37 @@ export const Research = () => {
                         form.append('presenter', formData.presenter);
                         form.append('coAuthor', JSON.stringify(formData.coAuthors || []));
 
-                        // Append files if they exist (for new uploads or if files were updated)
+                        // Append date fields only for Symposium
+                        if (isSymposium) {
+                            form.append('date_started', formData.date_started);
+                            form.append('date_Completed', formData.date_Completed);
+                        }
+
+                        // Append files
                         if (formData.endorsementFile) {
                             form.append('uploadedFileEndorsement', formData.endorsementFile);
                         }
                         if (formData.researchFile) {
                             form.append('researchDoc', formData.researchFile);
                         }
-                        if (formData.programFile) {
+                        // Only append program file if not Symposium
+                        if (!isSymposium && formData.programFile) {
                             form.append('programFile', formData.programFile);
                         }
 
-                        // Make the API request
                         const response = await fetch('/getresearch', {
                             method: 'POST',
                             body: form
                         });
 
-                        // Check if response is OK
                         if (!response.ok) {
                             throw new Error(`HTTP error! Status: ${response.status}`);
                         }
 
-                        // Parse response as JSON
                         const dat = await response.json();
                         removeLoading();
 
                         if (dat.status) {
-                            // Success - create/update the table row
                             const newDoc = {
                                 id: isEdit ? editData.id : (dat.docId || Date.now()),
                                 eventName: formData.eventName,
@@ -2623,11 +2774,12 @@ export const Research = () => {
                                 programFile: formData.programFile ? formData.programFile.name : (editData?.programFile || '—'),
                                 endorsementFile: formData.endorsementFile ? formData.endorsementFile.name : (editData?.endorsementFile || '—'),
                                 status: isEdit ? (editData.status || 'pending') : 'pending',
-                                date: new Date().toISOString()
+                                date: new Date().toISOString(),
+                                date_started: formData.date_started,
+                                date_Completed: formData.date_Completed
                             };
 
                             if (isEdit) {
-                                // Update existing row
                                 const rows = documentsTable.querySelectorAll('tr');
                                 for (let i = 1; i < rows.length; i++) {
                                     if (rows[i].cells[2]?.innerText === editData.title) {
@@ -2637,10 +2789,8 @@ export const Research = () => {
                                     }
                                 }
                             } else {
-                                // Add new row at the top
                                 const newRow = createTableRow(newDoc);
                                 const tbody = documentsTable.querySelector('tbody');
-                                // Remove empty state if exists
                                 const emptyState = tbody.querySelector('.empty-state-row');
                                 if (emptyState) emptyState.remove();
 
@@ -2649,16 +2799,12 @@ export const Research = () => {
                                 } else {
                                     tbody.appendChild(newRow);
                                 }
-
-                                // Update stats if you have them
                                 updateStatsFromData();
                             }
 
-                            // Show success message
                             document.body.appendChild(ConfirmationAlert(dat.message || (isEdit ? 'Document updated successfully!' : 'Document uploaded successfully!'), () => {
                                 modal.remove();
                                 if (!isEdit) {
-                                    // Reset form data
                                     formData = {
                                         eventName: '',
                                         eventId: '',
@@ -2670,18 +2816,15 @@ export const Research = () => {
                                         coAuthors: [],
                                         researchFile: null,
                                         programFile: null,
-                                        endorsementFile: null
+                                        endorsementFile: null,
+                                        date_started: null,
+                                        date_Completed: null
                                     };
                                 }
                             }));
-
                         } else {
-                            // Show error message from server
-                            document.body.appendChild(ConfirmationAlert(dat.message || 'Upload failed. Please try again.', () => {
-                                // Don't close modal on error
-                            }));
+                            document.body.appendChild(ConfirmationAlert(dat.message || 'Upload failed. Please try again.', () => { }));
                         }
-
                     } catch (err) {
                         removeLoading();
                         console.error('Error uploading document:', err);
@@ -3011,7 +3154,7 @@ export const Research = () => {
                                         coAuthors: coAuthors,
                                         status: endorsement.status || 'pending',
                                         researchFile: researchDoc.drive_view_url || researchDoc.researchFile || '—',
-                                        programFile: researchDoc.program_drive_view_url || researchDoc.program_drive_file_id || '—', // FIXED: Use program_drive_view_url
+                                        programFile: researchDoc.program_drive_view_url || researchDoc.program_drive_file_id || '—',
                                         endorsementFile: endorsement.drive_view_url || endorsement.endorsementFile || '—',
                                         drive_file_id: researchDoc.drive_file_id,
                                         drive_view_url: researchDoc.drive_view_url,
@@ -3019,9 +3162,10 @@ export const Research = () => {
                                         campus: endorsement.campus || researchDoc.campus,
                                         center: endorsement.center || researchDoc.center,
                                         date: endorsement.date,
-                                        program_drive_view_url: researchDoc.program_drive_view_url // Store for debugging
+                                        date_started: researchDoc.date_started || null,
+                                        date_Completed: researchDoc.date_Completed || null,
+                                        program_drive_view_url: researchDoc.program_drive_view_url
                                     };
-
                                     const row = createTableRow(documentObj);
                                     tbody.appendChild(row);
                                 });
