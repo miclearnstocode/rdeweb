@@ -165,7 +165,7 @@ const openFileInModal = (fileUrl, fileLabel) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10002,
+            zIndex: 102,
             backdropFilter: 'blur(4px)'
         },
         child: [
@@ -323,7 +323,7 @@ function createResubmitModal(params) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10001,
+            zIndex: 101,
             backdropFilter: 'blur(5px)'
         }
     })

@@ -600,7 +600,7 @@ const openViewResearchesModal = () => {
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
-            const data = await response.json()
+            const data = await response.text().then(text => text ? JSON.parse(text) : {})
 
             // Remove loading option
             loadingOption.remove()
@@ -653,44 +653,7 @@ const openViewResearchesModal = () => {
         }
     }
 
-    eventSelect.addEventListener('change', (e) => {
-        const selectedEventName = e.target.value;
-        const isSymposium = selectedEventName.toLowerCase().includes('symposium');
 
-        // Show/hide date fields
-        if (dateFieldsContainer) {
-            dateFieldsContainer.style.display = isSymposium ? 'grid' : 'none';
-        }
-
-        // Show/hide program file upload based on event type
-        if (programFileContainer) {
-            programFileContainer.style.display = isSymposium ? 'none' : 'block';
-        }
-
-        // Make date fields required for Symposium
-        if (isSymposium) {
-            dateStartedField.setAttribute('required', 'required');
-            dateCompletedField.setAttribute('required', 'required');
-        } else {
-            dateStartedField.removeAttribute('required');
-            dateCompletedField.removeAttribute('required');
-        }
-    });
-    programFileContainer.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }));
-
-    // Update fileGrid to conditionally include program file
-    const fileGrid = $({
-        tag: 'div',
-        style: {
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '20px'
-        }
-    });
-
-    fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }));
-    fileGrid.appendChild(programFileContainer);
-    fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }));
 
     // ── Wire up the dropdown → reload table on change ──
     eventSelect.addEventListener('change', (e) => {
@@ -739,7 +702,7 @@ const openViewResearchesModal = () => {
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
-            const data = await response.json()
+            const data = await response.text().then(text => text ? JSON.parse(text) : {})
 
             // Check if the response has status true or if we have data
             if (data.status === false && (!data.list || data.list.length === 0)) {
@@ -857,6 +820,42 @@ const openViewResearchesModal = () => {
 }
 // Modern Document Management Component
 export const Research = () => {
+    // Utility to update stats cards
+    const updateStatsFromData = (total, pending, approved, rejected) => {
+        const statsContainer = document.querySelector('.stats-container');
+        if (!statsContainer) return;
+
+        const statValues = statsContainer.querySelectorAll('.stat-value');
+        if (statValues.length >= 4) {
+            statValues[0].innerText = total;
+            statValues[1].innerText = pending;
+            statValues[2].innerText = approved;
+            statValues[3].innerText = rejected;
+        }
+    };
+
+    // Recalculate stats from the current table rows
+    const refreshStats = () => {
+        if (!documentsTable) return;
+        const rows = documentsTable.querySelectorAll('tbody tr:not(.empty-state-row):not(.loading-row)');
+        let total = rows.length;
+        let pending = 0;
+        let approved = 0;
+        let rejected = 0;
+
+        rows.forEach(row => {
+            const statusCell = row.cells[1];
+            if (statusCell) {
+                const statusText = statusCell.innerText.toLowerCase();
+                if (statusText.includes('pending')) pending++;
+                else if (statusText.includes('approved') || statusText.includes('accepted')) approved++;
+                else if (statusText.includes('rejected')) rejected++;
+            }
+        });
+
+        updateStatsFromData(total, pending, approved, rejected);
+    };
+
     let mainContainer
     let documentsTable
     let uploadModal
@@ -906,10 +905,12 @@ export const Research = () => {
         const styles = {
             pending: { bg: '#FF9800', text: 'Pending', icon: 'fa-clock' },
             approved: { bg: '#4CAF50', text: 'Approved', icon: 'fa-check-circle' },
+            accepted: { bg: '#4CAF50', text: 'Approved', icon: 'fa-check-circle' },
             rejected: { bg: '#f44336', text: 'Rejected', icon: 'fa-times-circle' },
             review: { bg: '#2196F3', text: 'Under Review', icon: 'fa-eye' }
         }
-        const config = styles[status] || styles.pending
+        const normalizedStatus = (status || '').toLowerCase();
+        const config = styles[normalizedStatus] || styles.pending
 
         return $({
             tag: 'span',
@@ -954,8 +955,8 @@ export const Research = () => {
                 transition: 'all 0.2s'
             },
             child: [
-                $({ tag: 'i', att: { className: 'fas fa-comment-dots' }, style: { color: 'white', fontSize: '14px' } }),
-                $({ tag: 'span', text: 'Comments', style: { marginLeft: '4px', fontSize: '12px', color: 'white' } })
+                $({ tag: 'i', att: { className: 'fas fa-comment-dots' }, style: { color: 'white', fontSize: '14px' } })
+                //$({ tag: 'span', text: 'Comments', style: { marginLeft: '4px', fontSize: '12px', color: 'white' } })
             ],
             event: {
                 type: 'click',
@@ -1005,8 +1006,43 @@ export const Research = () => {
             }
         })
 
-        container.appendChild(viewCommentsBtn)
-        container.appendChild(editBtn)
+        // Resubmit button (show only if rejected)
+        const normalizedStatus = rowData.status ? rowData.status.toLowerCase() : '';
+
+        if (normalizedStatus === 'rejected') {
+            const resubmitBtn = $({
+                tag: 'button',
+                att: { className: 'action-btn resubmit-btn', title: 'Resubmit Document' },
+                style: {
+                    background: '#2196F3',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-redo' }, style: { color: 'white', fontSize: '14px' } })
+                    //$({ tag: 'span', text: 'Resubmit', style: { fontSize: '12px', color: 'white' } })
+                ],
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        e.stopPropagation();
+                        handleResubmit(rowData.endorsement_id);
+                    }
+                }
+            })
+            container.appendChild(resubmitBtn)
+        }
+
+        if (normalizedStatus !== 'rejected') {
+            container.appendChild(viewCommentsBtn)
+            container.appendChild(editBtn)
+        }
         container.appendChild(deleteBtn)
 
         return container
@@ -1894,23 +1930,7 @@ export const Research = () => {
                         }
 
                         // Update stats after deletion
-                        const remainingRows = documentsTable.querySelectorAll('tbody tr:not(.empty-state-row)');
-                        let total = remainingRows.length;
-                        let pending = 0;
-                        let approved = 0;
-                        let rejected = 0;
-
-                        remainingRows.forEach(row => {
-                            const statusCell = row.cells[1];
-                            if (statusCell) {
-                                const statusText = statusCell.innerText.toLowerCase();
-                                if (statusText.includes('pending')) pending++;
-                                else if (statusText.includes('approved')) approved++;
-                                else if (statusText.includes('rejected')) rejected++;
-                            }
-                        });
-
-                        updateStatsFromData(total, pending, approved, rejected);
+                        refreshStats();
 
                         // Show success message
                         document.body.appendChild(ConfirmationAlert(result.message, () => {
@@ -2799,7 +2819,7 @@ export const Research = () => {
                                 } else {
                                     tbody.appendChild(newRow);
                                 }
-                                updateStatsFromData();
+                                refreshStats();
                             }
 
                             document.body.appendChild(ConfirmationAlert(dat.message || (isEdit ? 'Document updated successfully!' : 'Document uploaded successfully!'), () => {
@@ -3054,15 +3074,7 @@ export const Research = () => {
         container.appendChild(statsContainer)
         container.appendChild(tableContainer)
 
-        const updateStatsFromData = (total, pending, approved, rejected) => {
-            const statValues = statsContainer.querySelectorAll('.stat-value');
-            if (statValues.length >= 4) {
-                statValues[0].innerText = total;
-                statValues[1].innerText = pending;
-                statValues[2].innerText = approved;
-                statValues[3].innerText = rejected;
-            }
-        };
+
 
         const showEmptyState = () => {
             const emptyRow = $({ tag: 'tr', att: { className: 'empty-state-row' } });
@@ -3103,7 +3115,7 @@ export const Research = () => {
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
+                    const data = await response.text().then(text => text ? JSON.parse(text) : {});
 
                     // Clear loading state
                     tbody.innerHTML = '';
@@ -3123,7 +3135,7 @@ export const Research = () => {
                                     totalDocs++;
 
                                     // Count status from the endorsement level
-                                    const status = endorsement.status;
+                                    const status = (endorsement.status || '').toLowerCase();
                                     if (status === 'rejected') {
                                         rejectedCount++;
                                     } else if (status === 'accepted' || status === 'approved') {
