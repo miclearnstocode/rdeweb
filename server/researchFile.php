@@ -544,66 +544,41 @@ function generateFileHash($filePath) {
     return hash_final($hashContext);
 }
 
-// Store file hash in database for future duplicate detection Uses researchfile.id as foreign key
 function storeFileHash($con, $researchId, $fileType, $fileHash) {
-    // First check if this hash already exists for this research ID and file type
-    $checkQuery = "SELECT id FROM file_hashes WHERE research_id = ? AND file_type = ? AND file_hash = ?";
-    $checkStmt = $con->prepare($checkQuery);
-    
-    if ($checkStmt) {
-        $checkStmt->bind_param("iss", $researchId, $fileType, $fileHash);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-        
-        if ($checkResult->num_rows > 0) {
-            // Already exists, no need to insert again
-            return true;
-        }
-    }
-    
-    // Insert new hash record
     $query = "INSERT INTO file_hashes (research_id, file_type, file_hash, created_at) 
               VALUES (?, ?, ?, NOW())";
     
     $stmt = $con->prepare($query);
-    if (!$stmt) {
-        error_log("Failed to prepare file hash insert: " . $con->error);
-        return false;
+    if ($stmt) {
+        $stmt->bind_param("iss", $researchId, $fileType, $fileHash);
+        $stmt->execute();
+        $stmt->close();
     }
-    
-    $stmt->bind_param("iss", $researchId, $fileType, $fileHash);
-    return $stmt->execute();
 }
 
-// Check for duplicate by file hash
-function checkDuplicateByFileHash($con, $fileHash, $fileType) {
-    $query = "SELECT 
-                fh.research_id,
-                rf.id,
-                rf.title,
-                rf.author
-              FROM file_hashes fh
-              JOIN researchfile rf ON fh.research_id = rf.id
-              WHERE fh.file_hash = ? AND fh.file_type = ?
-              ORDER BY fh.created_at DESC
+function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventType) {
+    $query = "SELECT rf.id as research_id, rf.title, rf.author, rf.event 
+              FROM file_hashes fh 
+              JOIN researchfile rf ON fh.research_id = rf.id 
+              WHERE fh.file_hash = ? 
+              AND fh.file_type = ?
+              AND rf.event = ?
               LIMIT 1";
     
     $stmt = $con->prepare($query);
     if (!$stmt) {
-        error_log("Failed to prepare file hash check: " . $con->error);
-        return false;
+        return null;
     }
     
-    $stmt->bind_param("ss", $fileHash, $fileType);
+    $stmt->bind_param("sss", $fileHash, $fileType, $eventType);
     $stmt->execute();
     $result = $stmt->get_result();
+    $existing = $result->fetch_assoc();
+    $stmt->close();
     
-    if ($result->num_rows > 0) {
-        return $result->fetch_assoc();
-    }
-    
-    return false;
+    return $existing;
 }
+
 
 function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
     // Center to code mapping
@@ -786,6 +761,8 @@ if (isset($_POST['uploadResearch'])) {
                 $center = $_POST['center'];
                 $coAuthor = $_POST['coAuthor'] ?? '[]';
                 $presenter = $_POST['presenter'];
+                $date_started = $_POST['date_started'] ?? null;
+                $date_completed = $_POST['date_completed'] ?? null;
                 
                 // Get event_id
                 $eventId = null;
@@ -797,26 +774,29 @@ if (isset($_POST['uploadResearch'])) {
                 $eventRow = $eventResult->fetch_assoc();
                 $eventId = $eventRow ? $eventRow['id'] : null;
                 
-                // ===== DUPLICATE VALIDATION - STEP 1: Identity Check =====
-                // Prepare research data for duplicate check
-                $researchData = [
-                    'title' => $title,
-                    'author' => $author,
-                    'coauthor' => $coAuthor,
-                    'presenter' => $presenter,
-                    'event_id' => $eventId,
-                    'category' => $category,
-                    'center' => $center,
-                    'campus' => $center // Using center for campus field as in your code
-                ];
+                // ===== DUPLICATE VALIDATION - Check within SAME EVENT only =====
+                // Check if the same title and author already exists for this specific event
+                $duplicateCheckQuery = "SELECT COUNT(*) as count, id, title, author, event 
+                                       FROM researchfile 
+                                       WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+                                       AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+                                       AND event = ?
+                                       LIMIT 1";
                 
-                // First, check for identity duplicates
-                $duplicateCheck = checkDuplicateResearch($con, $researchData);
+                $dupStmt = $con->prepare($duplicateCheckQuery);
+                if (!$dupStmt) {
+                    throw new Exception("Prepare failed for duplicate check: " . $con->error);
+                }
                 
-                if ($duplicateCheck['isDuplicate']) {
-                    // Found duplicate by identity fields
-                    $response->message = "DUPLICATE DETECTED: " . $duplicateCheck['duplicateReason'] . 
-                                         "\n\nPlease check your submissions. If you believe this is a mistake, contact the system administrator.";
+                $dupStmt->bind_param("sss", $title, $author, $eventType);
+                $dupStmt->execute();
+                $dupResult = $dupStmt->get_result();
+                $existingRecord = $dupResult->fetch_assoc();
+                $dupStmt->close();
+                
+                if ($existingRecord && $existingRecord['count'] > 0) {
+                    // Duplicate found in the SAME event
+                    $response->message = "DUPLICATE DETECTED: A research with the title '{$title}' and author '{$author}' already exists for the event '{$eventType}'.\n\nPlease check your submissions. If you believe this is a mistake, contact the system administrator.";
                     $response->status = false;
                     
                     ob_clean();
@@ -825,7 +805,7 @@ if (isset($_POST['uploadResearch'])) {
                     exit();
                 }
                 
-                // ===== STEP 2: File Hash Checks Before Upload =====
+                // ===== FILE HASH CHECKS Before Upload (Check within SAME event) =====
                 // Generate hashes for files before upload to check for duplicates
                 
                 // Check endorsement file if exists
@@ -834,9 +814,9 @@ if (isset($_POST['uploadResearch'])) {
                     $endorsementFileHash = generateFileHash($tempEndorsementPath);
                     
                     if ($endorsementFileHash) {
-                        $existingEndorsement = checkDuplicateByFileHash($con, $endorsementFileHash, 'endorsement');
+                        $existingEndorsement = checkDuplicateByFileHashAndEvent($con, $endorsementFileHash, 'endorsement', $eventType);
                         if ($existingEndorsement) {
-                            throw new Exception("DUPLICATE ENDORSEMENT: This endorsement letter file has already been used for research ID {$existingEndorsement['research_id']}: '{$existingEndorsement['title']}' by {$existingEndorsement['author']}");
+                            throw new Exception("DUPLICATE ENDORSEMENT: This endorsement letter file has already been used for the same event '{$eventType}' for research ID {$existingEndorsement['research_id']}: '{$existingEndorsement['title']}' by {$existingEndorsement['author']}");
                         }
                     }
                 }
@@ -847,9 +827,9 @@ if (isset($_POST['uploadResearch'])) {
                     $researchFileHash = generateFileHash($tempResearchPath);
                     
                     if ($researchFileHash) {
-                        $existingResearch = checkDuplicateByFileHash($con, $researchFileHash, 'proposal');
+                        $existingResearch = checkDuplicateByFileHashAndEvent($con, $researchFileHash, 'proposal', $eventType);
                         if ($existingResearch) {
-                            throw new Exception("DUPLICATE RESEARCH: This research/proposal file has already been uploaded for research ID {$existingResearch['research_id']}: '{$existingResearch['title']}' by {$existingResearch['author']}");
+                            throw new Exception("DUPLICATE RESEARCH: This research/proposal file has already been used for the same event '{$eventType}' for research ID {$existingResearch['research_id']}: '{$existingResearch['title']}' by {$existingResearch['author']}");
                         }
                     }
                 }
@@ -861,9 +841,9 @@ if (isset($_POST['uploadResearch'])) {
                     $programFileHash = generateFileHash($tempProgramPath);
                     
                     if ($programFileHash) {
-                        $existingProgram = checkDuplicateByFileHash($con, $programFileHash, 'program');
+                        $existingProgram = checkDuplicateByFileHashAndEvent($con, $programFileHash, 'program', $eventType);
                         if ($existingProgram) {
-                            throw new Exception("DUPLICATE PROGRAM: This program file has already been uploaded for research ID {$existingProgram['research_id']}: '{$existingProgram['title']}' by {$existingProgram['author']}");
+                            throw new Exception("DUPLICATE PROGRAM: This program file has already been used for the same event '{$eventType}' for research ID {$existingProgram['research_id']}: '{$existingProgram['title']}' by {$existingProgram['author']}");
                         }
                     }
                 }
@@ -999,13 +979,15 @@ if (isset($_POST['uploadResearch'])) {
                 
                 error_log("Research uploaded successfully: " . $researchDriveResult['drive_file_id']);
                 
-                // 3. Upload Program File (OPTIONAL)
+                // 3. Upload Program File (OPTIONAL - only for non-Symposium)
                 $programDriveResult = null;
                 $programFile = null;
                 $programDriveFileId = null;
                 $programDriveViewUrl = null;
                 
-                if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                $isSymposium = stripos($eventType, 'symposium') !== false;
+                
+                if (!$isSymposium && isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
                     $tempProgramPath = $_FILES['programFile']['tmp_name'];
                     $programFileName = $_FILES['programFile']['name'];
                     
@@ -1033,34 +1015,21 @@ if (isset($_POST['uploadResearch'])) {
                         }
                     }
                 } else {
-                    error_log("Program file not uploaded or has error: " . ($_FILES['programFile']['error'] ?? 'NOT_SET'));
+                    error_log("Program file not required or not uploaded");
+                    // Set program fields to NULL
+                    $programFile = null;
+                    $programDriveFileId = null;
+                    $programDriveViewUrl = null;
                 }
                 
-                // ===== STEP 3: Final Duplicate Check Before Insert =====
-                // Prepare file data for duplicate check using hashes
-                $fileData = [
-                    'proposal_hash' => $researchFileHash ?? null,
-                    'program_hash' => $programFileHash,
-                    'endorsement_hash' => $endorsementFileHash ?? null,
-                    'endorsement_id' => $endorsementId
-                ];
-                
-                $finalDuplicateCheck = checkDuplicateResearch($con, $researchData, $fileData);
-                
-                if ($finalDuplicateCheck['isDuplicate']) {
-                    // Found duplicate - clean up uploaded files from Drive
-                    // You might want to implement a cleanup function here
-                    
-                    $response->message = "DUPLICATE DETECTED: " . $finalDuplicateCheck['duplicateReason'] . 
-                                         "\n\nUpload prevented to maintain data integrity.";
-                    $response->status = false;
-                    
-                    ob_clean();
-                    header('Content-Type: application/json; charset=utf-8');
-                    echo json_encode($response);
-                    exit();
-                }
                 $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
+
+                // Validate date fields for Symposium
+                if ($isSymposium) {
+                    if (empty($date_started) || empty($date_completed)) {
+                        throw new Exception("Date Started and Date Completed are required for Symposium events");
+                    }
+                }
 
                 $querV2 = "INSERT INTO researchfile(
                     researchfile.paper_trail_no,
@@ -1086,8 +1055,10 @@ if (isset($_POST['uploadResearch'])) {
                     researchfile.campus,
                     researchfile.coauthor,
                     researchfile.presenter,
-                    researchfile.status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    researchfile.status,
+                    researchfile.date_started,
+                    researchfile.date_completed
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 $rev = NULL;
 
@@ -1103,7 +1074,7 @@ if (isset($_POST['uploadResearch'])) {
                 $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
 
                 $bound = $stementResNew->bind_param(
-                    'ssssssssssssssssssssssss',  // 24 's' parameters
+                    'ssssssssssssssssssssssssss',  // 26 's' parameters
                     $paperTrailNo, 
                     $senderId,
                     $endorsementId,
@@ -1127,7 +1098,9 @@ if (isset($_POST['uploadResearch'])) {
                     $center,
                     $coAuthor,
                     $presenter,
-                    $rev 
+                    $rev,
+                    $date_started,
+                    $date_completed
                 );
 
                 if (!$bound) {
@@ -1143,8 +1116,7 @@ if (isset($_POST['uploadResearch'])) {
                 $researchFileId = $con->insert_id;
                 $response->paper_trail_no = $paperTrailNo;
 
-                // ===== STEP 4: Store File Hashes for Future Duplicate Detection =====
-                // Store file hashes using researchfile.id as foreign key
+                // ===== Store File Hashes for Future Duplicate Detection =====
                 if ($researchFileId) {
                     if (isset($researchFileHash) && $researchFileHash) {
                         storeFileHash($con, $researchFileId, 'proposal', $researchFileHash);
@@ -1199,7 +1171,7 @@ if (isset($_POST['acceptRequest'])) {
             //Update ALL researchfile records under this endorsement
             $updateResearchQuery = "UPDATE `researchfile` SET `status`='accepted' WHERE `endorsementid`=?";
             $updateStmt = $con->prepare($updateResearchQuery);
-            $updateStmt->bind_param("ss", $_SESSION['userId'], $docId);
+            $updateStmt->bind_param("s", $docId);
             $updateStmt->execute();
 
             $details = "RDE staff: $rdeStaff accepted endorsement letter for $event from $campus";
