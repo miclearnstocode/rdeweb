@@ -870,7 +870,7 @@ export const Research = () => {
         programFile: null,
         endorsementFile: null,
         date_started: null,
-        date_Completed: null
+        date_completed: null
     }
 
     // Center categories mapping
@@ -2212,22 +2212,6 @@ export const Research = () => {
                         if (programFileContainer) {
                             programFileContainer.style.display = isSymposium ? 'none' : 'block'
                         }
-
-                        // Make date fields required for Symposium
-                        if (isSymposium) {
-                            if (dateStartedField) dateStartedField.setAttribute('required', 'required')
-                            if (dateCompletedField) dateCompletedField.setAttribute('required', 'required')
-                        } else {
-                            if (dateStartedField) dateStartedField.removeAttribute('required')
-                            if (dateCompletedField) dateCompletedField.removeAttribute('required')
-                            // Clear date values if not Symposium
-                            if (!isSymposium) {
-                                formData.date_started = null
-                                formData.date_Completed = null
-                                if (dateStartedField) dateStartedField.value = ''
-                                if (dateCompletedField) dateCompletedField.value = ''
-                            }
-                        }
                     }
                 }
             },
@@ -2549,7 +2533,7 @@ export const Research = () => {
         dateCompletedWrapper.appendChild($({ tag: 'label', text: 'Date Completed *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }));
         dateCompletedField = $({
             tag: 'input',
-            att: { type: 'date', value: isEdit ? (editData?.date_Completed || '') : '' },
+            att: { type: 'date', value: isEdit ? (editData?.date_completed || '') : '' },
             style: {
                 width: '100%',
                 padding: '10px 12px',
@@ -2561,7 +2545,7 @@ export const Research = () => {
             },
             event: {
                 type: 'change',
-                method: (e) => { formData.date_Completed = e.target.value }
+                method: (e) => { formData.date_completed = e.target.value }
             }
         });
         dateCompletedWrapper.appendChild(dateCompletedField);
@@ -2715,7 +2699,7 @@ export const Research = () => {
 
                     // Validate date fields for Symposium
                     if (isSymposium) {
-                        if (!formData.date_started || !formData.date_Completed) {
+                        if (!formData.date_started || !formData.date_completed) {
                             alert('Please fill in Date Started and Date Completed for Symposium events');
                             return;
                         }
@@ -2753,7 +2737,7 @@ export const Research = () => {
                         // Append date fields only for Symposium
                         if (isSymposium) {
                             form.append('date_started', formData.date_started);
-                            form.append('date_Completed', formData.date_Completed);
+                            form.append('date_completed', formData.date_completed);
                         }
 
                         // Append files
@@ -2796,7 +2780,7 @@ export const Research = () => {
                                 status: isEdit ? (editData.status || 'pending') : 'pending',
                                 date: new Date().toISOString(),
                                 date_started: formData.date_started,
-                                date_Completed: formData.date_Completed
+                                date_completed: formData.date_completed
                             };
 
                             if (isEdit) {
@@ -2838,7 +2822,7 @@ export const Research = () => {
                                         programFile: null,
                                         endorsementFile: null,
                                         date_started: null,
-                                        date_Completed: null
+                                        date_completed: null
                                     };
                                 }
                             }));
@@ -3175,7 +3159,7 @@ export const Research = () => {
                                         center: endorsement.center || researchDoc.center,
                                         date: endorsement.date,
                                         date_started: researchDoc.date_started || null,
-                                        date_Completed: researchDoc.date_Completed || null,
+                                        date_completed: researchDoc.date_completed || null,
                                         program_drive_view_url: researchDoc.program_drive_view_url
                                     };
                                     const row = createTableRow(documentObj);

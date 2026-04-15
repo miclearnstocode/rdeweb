@@ -2,7 +2,6 @@ import { $ } from '../../../lib/lib.js'
 import { Header } from "../../otherComponent/header.js";
 import { Communication } from "./communication.js";
 import { ResearchMain } from "./mainResearch.js";
-import { ExternalDocs } from "./externalFile.js";
 import { CompletedResearch } from "./completedResearch.js";
 import { ProposedResearch } from "./proposedResearch.js";
 import { PresentationResearch } from "./presentationResearch.js";

@@ -11,29 +11,29 @@ $table_map = [
         'campus', 'agent', 'applicationDate', 'applicationNumber', 'publicationDate', 
         'status', 'patentFormURL', 'abstractURL', 'claimsURL', 
         'technicalDescriptionURL', 'technicalDrawingURL', 'photoTechnologyURL',
-        'registrationNumber', 'registrationDate'
+        'registrationNumber', 'registrationDate', 'senderId', 'submissionStatus'
     ],
     'utility_model' => [
         'research_id', 'endorsement_id', 'caseNumberUM', 'technologyNameUM', 'inventorsUM', 
         'campusUM', 'agentUM', 'applicationDateUM', 'applicationNumberUM', 'publicationDateUM', 
         'statusUM', 'patentFormURLUM', 'abstractURLUM', 'claimsURLUM', 
         'technicalDescriptionURLUM', 'technicalDrawingURLUM', 'photoTechnologyURLUM',
-        'registrationNumber', 'registrationDate'
+        'registrationNumber', 'registrationDate', 'senderId', 'submissionStatus'
     ],
     'copyright' => [
         'title', 'author', 'campus', 'applicationDate', 'classOfWork', 'status', 'photoWorksURL', 
         'copyrightFormsURL', 'supplementalDocumentURL', 'deedAssignmentURL', 'affidavitOwnershipURL', 
-        'idAuthorURL', 'creativeWorksURL', 'registrationNumber', 'registrationDate'
+        'idAuthorURL', 'creativeWorksURL', 'registrationNumber', 'registrationDate', 'senderId', 'submissionStatus'
     ],
     'industrial_design' => [
         'research_id', 'endorsement_id', 'caseNumber', 'idTitle', 'invertors', 'campus', 'agent', 
         'applicationDate', 'applicationNumber', 'publicationDate', 'status', 'applicationFormURL', 
         'abstractURL', 'claimsURL', 'technicalDescriptionURL', 'technicalDrawingURL', 'photoTechnologyURL',
-        'registrationNumber', 'registrationDate'
+        'registrationNumber', 'registrationDate', 'senderId', 'submissionStatus'
     ],
     'trademark' => [
         'title', 'registrant', 'applicationDate', 'applicationNumber', 'status', 
-        'trademarkFormURL', 'photoTrademarkURL', 'registrationNumber', 'registrationDate'
+        'trademarkFormURL', 'photoTrademarkURL', 'registrationNumber', 'registrationDate', 'senderId', 'submissionStatus'
     ]
 ];
 
@@ -78,6 +78,8 @@ switch ($action) {
 
     case 'save':
     case 'update':
+    case 'save_capsu':
+    case 'update_capsu':
         $id = $_POST['id'] ?? 0;
         $type = $_POST['type'] ?? 'patent';
         
@@ -180,7 +182,26 @@ switch ($action) {
             exit;
         }
 
-        if ($action === 'save') {
+        // Logic for Capsu User submission
+        if ($action === 'save_capsu' || $action === 'update_capsu') {
+            if (session_status() === PHP_SESSION_NONE) session_start();
+            $userId = $_SESSION['userId'] ?? null;
+            if (!$userId) {
+                echo json_encode(['success' => false, 'message' => 'Your session has expired. Please log in again.']);
+                exit;
+            }
+            $data['senderId'] = $userId;
+            if ($action === 'save_capsu') {
+                $data['submissionStatus'] = 'under review';
+            }
+        }
+
+        // RDE staff direct save/update — mark as verified immediately
+        if ($action === 'save' || $action === 'update') {
+            $data['submissionStatus'] = 'verified';
+        }
+
+        if ($action === 'save' || $action === 'save_capsu') {
              // Check for missing mandatory fields before execution (only for Patent/UM where they are NOT NULL)
             if ($table === 'patent' || $table === 'utility_model' || $table === 'industrial_design') {
                 $isID = ($table === 'industrial_design');
@@ -231,7 +252,8 @@ switch ($action) {
         }
         
         if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => "Record " . ($action === 'save' ? "saved" : "updated") . " in $table successfully"]);
+            $msgType = (strpos($action, 'save') !== false) ? "saved" : "updated";
+            echo json_encode(['success' => true, 'message' => "Record $msgType in $table successfully"]);
         } else {
             echo json_encode(['success' => false, 'message' => $conn->error]);
         }
@@ -307,6 +329,7 @@ switch ($action) {
     case 'getAll':
         $search = $_POST['search'] ?? '';
         $typeFilter = $_POST['type'] ?? '';
+        $submissionStatus = $_POST['submissionStatus'] ?? '';
         $searchTerm = "%$search%";
         
         $tables_to_query = [];
@@ -325,6 +348,22 @@ switch ($action) {
             $join_sql = $has_research ? " LEFT JOIN researchfile r ON p.research_id = r.id" : "";
             
             $sql = "SELECT $select_fields FROM $table p $join_sql WHERE 1=1";
+            
+            if (session_status() === PHP_SESSION_NONE) session_start();
+
+            if (isset($_SESSION['userType']) && $_SESSION['userType'] === 'CAPSUUSERS' && isset($_SESSION['userId'])) {
+                // CAPSU users: see only their own submissions (all statuses)
+                $sql .= " AND p.senderId = " . (int)$_SESSION['userId'];
+                if ($submissionStatus) {
+                    $sql .= " AND p.submissionStatus = '" . $conn->real_escape_string($submissionStatus) . "'";
+                }
+            } elseif ($submissionStatus) {
+                // Explicit filter (e.g. review modal requesting 'under review')
+                $sql .= " AND p.submissionStatus = '" . $conn->real_escape_string($submissionStatus) . "'";
+            } else {
+                // RDE staff main table: show only verified CAPSU submissions + directly-added records (NULL status)
+                $sql .= " AND (p.submissionStatus IS NULL OR p.submissionStatus = 'verified')";
+            }
             
             if ($search) {
                 if ($table === 'industrial_design') {
@@ -366,7 +405,72 @@ switch ($action) {
         echo json_encode(['success' => true, 'data' => $all_results]);
         break;
 
+    case 'get_next_case_number':
+        $type = $_POST['type'] ?? 'patent';
+        $table = array_key_exists($type, $table_map) ? $type : 'patent';
+        $sfx = ($table === 'utility_model') ? 'UM' : '';
+        $col = ($table === 'utility_model') ? 'caseNumberUM' : 'caseNumber';
+        
+        $year = date('Y');
+        $prefix = "CAPSU IPMO $year-";
+        $pattern = $prefix . "%";
+        
+        $sql = "SELECT $col FROM $table WHERE $col LIKE ? ORDER BY CAST(SUBSTRING_INDEX($col, '-', -1) AS UNSIGNED) DESC LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('s', $pattern);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $next_num = 1;
+        if ($row = $result->fetch_assoc()) {
+            $last_case = $row[$col];
+            $parts = explode('-', $last_case);
+            if (count($parts) > 1) {
+                $last_num = (int)$parts[1];
+                $next_num = $last_num + 1;
+            }
+        }
+        
+        $next_case = $prefix . str_pad($next_num, 3, '0', STR_PAD_LEFT);
+        echo json_encode(['success' => true, 'next_case' => $next_case]);
+        break;
+
+    case 'verify_capsu':
+        $id     = (int)($_POST['id'] ?? 0);
+        $type   = $_POST['type'] ?? 'patent';
+        $status = $_POST['status'] ?? 'verified';
+
+        // Whitelist allowed status values
+        $allowed_statuses = ['verified', 'rejected', 'accepted', 'under review'];
+        if (!in_array($status, $allowed_statuses)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid status value.']);
+            break;
+        }
+
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid record ID.']);
+            break;
+        }
+
+        $table = array_key_exists($type, $table_map) ? $type : 'patent';
+
+        $sql  = "UPDATE $table SET submissionStatus = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('si', $status, $id);
+
+        if ($stmt->execute()) {
+            if ($stmt->affected_rows > 0) {
+                echo json_encode(['success' => true, 'message' => "Record submission status set to '$status'."]);
+            } else {
+                echo json_encode(['success' => false, 'message' => "No record found with id=$id in table '$table'."]);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => $conn->error]);
+        }
+        break;
+
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
         break;
 }
+

@@ -168,7 +168,6 @@ class ProposedResearchAPI {
                         rf.category,
                         rf.campus,
                         rf.center,
-                        rf.accepted_date,
                         rf.file,
                         e.id as endorsement_id,
                         e.status as endorsement_status,

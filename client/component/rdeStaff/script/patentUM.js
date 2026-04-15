@@ -290,6 +290,516 @@ export const PatentUM = () => {
         }
     };
 
+    // ─── Under Review Modal ───────────────────────────────────────────────────
+
+    const openUnderReviewModal = () => {
+        const modal = createUnderReviewModal();
+        document.body.appendChild(modal);
+        setTimeout(() => {
+            const overlay = document.getElementById('under-review-modal-overlay');
+            if (overlay) overlay.style.opacity = '1';
+        }, 10);
+    };
+
+    const closeUnderReviewModal = () => {
+        const overlay = document.getElementById('under-review-modal-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }, 300);
+        }
+    };
+
+    // ── Inline document viewer modal ─────────────────────────────────────────
+    const openFileViewer = (url, label) => {
+        const isImage = /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(url) ||
+            url.includes('googleusercontent') && !url.endsWith('.pdf');
+
+        const closeViewer = () => {
+            const v = document.getElementById('ip-file-viewer-overlay');
+            if (v) { v.style.opacity = '0'; setTimeout(() => v.remove(), 280); }
+        };
+
+        const viewer = $({
+            tag: 'div',
+            att: { id: 'ip-file-viewer-overlay' },
+            style: {
+                position: 'fixed', inset: '0', backgroundColor: 'rgba(0,0,0,0.92)',
+                backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                zIndex: '9999', opacity: '0', transition: 'opacity 0.28s ease'
+            },
+            event: { type: 'click', method: e => { if (e.target.id === 'ip-file-viewer-overlay') closeViewer(); } },
+            child: [
+                // Toolbar
+                $({
+                    tag: 'div',
+                    style: {
+                        width: '94%', maxWidth: '1400px', display: 'flex',
+                        justifyContent: 'space-between', alignItems: 'center',
+                        padding: '10px 16px', backgroundColor: '#1a1a1a',
+                        borderRadius: '14px 14px 0 0', border: '1px solid #333', borderBottom: 'none'
+                    },
+                    child: [
+                        $({
+                            tag: 'div', style: { display: 'flex', alignItems: 'center', gap: '10px' },
+                            child: [
+                                $({
+                                    tag: 'i', att: { className: isImage ? 'fa-solid fa-image' : 'fa-solid fa-file-pdf' },
+                                    style: { color: isImage ? '#4caf50' : '#f44336', fontSize: '18px' }
+                                }),
+                                $({
+                                    tag: 'span', text: label,
+                                    style: { color: '#fff', fontSize: '14px', fontWeight: '600' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div', style: { display: 'flex', gap: '8px' },
+                            child: [
+                                $({
+                                    tag: 'a', att: { href: url, download: label },
+                                    style: {
+                                        backgroundColor: 'rgba(0,191,255,0.12)', border: '1px solid rgba(0,191,255,0.4)',
+                                        color: 'deepskyblue', padding: '6px 14px', borderRadius: '20px',
+                                        fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                                        textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px'
+                                    },
+                                    child: [
+                                        $({ tag: 'i', att: { className: 'fa-solid fa-download' } }),
+                                        $({ tag: 'span', text: 'Download' })
+                                    ]
+                                }),
+                                $({
+                                    tag: 'button',
+                                    style: {
+                                        backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid #444',
+                                        color: '#aaa', padding: '6px 14px', borderRadius: '20px',
+                                        fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', gap: '5px'
+                                    },
+                                    child: [
+                                        $({ tag: 'i', att: { className: 'fa-solid fa-xmark' } }),
+                                        $({ tag: 'span', text: 'Close' })
+                                    ],
+                                    event: { type: 'click', method: closeViewer }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // Content area
+                $({
+                    tag: 'div',
+                    style: {
+                        width: '94%', maxWidth: '1400px', flex: '1',
+                        maxHeight: 'calc(90vh - 60px)', overflow: 'hidden',
+                        backgroundColor: '#111', border: '1px solid #333',
+                        borderRadius: '0 0 14px 14px', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center'
+                    },
+                    child: isImage
+                        ? [$({
+                            tag: 'img', att: { src: url, alt: label },
+                            style: {
+                                maxWidth: '100%', maxHeight: '100%',
+                                objectFit: 'contain', display: 'block'
+                            }
+                        })]
+                        : [$({
+                            tag: 'iframe', att: {
+                                src: url, title: label,
+                                frameborder: '0', allowfullscreen: 'true'
+                            },
+                            style: {
+                                width: '100%', height: '100%', border: 'none', display: 'block',
+                                minHeight: 'calc(90vh - 60px)'
+                            }
+                        })]
+                })
+            ]
+        });
+
+        document.body.appendChild(viewer);
+        requestAnimationFrame(() => { viewer.style.opacity = '1'; });
+    };
+
+    // Helper: collect all URL fields from a record and render as clickable buttons
+    const buildDocumentLinks = (item) => {
+        const urlKeys = Object.keys(item).filter(k =>
+            (k.toLowerCase().includes('url') || k === 'patent_image') && item[k]
+        );
+        if (urlKeys.length === 0) {
+            return $({
+                tag: 'div', text: 'No documents attached.',
+                style: { color: '#888', fontSize: '12px', padding: '4px 0', fontStyle: 'italic' }
+            });
+        }
+        const labelMap = {
+            patentFormURL: 'Application Form', patentFormURLUM: 'Application Form (UM)',
+            abstractURL: 'Abstract', abstractURLUM: 'Abstract (UM)',
+            claimsURL: 'Claims', claimsURLUM: 'Claims (UM)',
+            technicalDescriptionURL: 'Technical Description', technicalDescriptionURLUM: 'Technical Description (UM)',
+            technicalDrawingURL: 'Technical Drawing', technicalDrawingURLUM: 'Technical Drawing (UM)',
+            photoTechnologyURL: 'Photo of Technology', photoTechnologyURLUM: 'Photo of Technology (UM)',
+            applicationFormURL: 'Application Form (ID)',
+            copyrightFormsURL: 'Copyright Forms', supplementalDocumentURL: 'Supplemental Doc',
+            deedAssignmentURL: 'Deed of Assignment', affidavitOwnershipURL: 'Affidavit of Ownership',
+            idAuthorURL: 'IDs of Authors', creativeWorksURL: 'Creative Works',
+            photoWorksURL: 'Photo of Works', trademarkFormURL: 'Trademark Application',
+            photoTrademarkURL: 'Photo of Trademark'
+        };
+        return $({
+            tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '5px', padding: '4px 0' },
+            child: urlKeys.map(k => {
+                const label = labelMap[k] || k;
+                const url = item[k];
+                const btn = $({
+                    tag: 'button',
+                    style: {
+                        backgroundColor: 'rgba(0,191,255,0.08)', border: '1px solid rgba(0,191,255,0.25)',
+                        color: 'deepskyblue', padding: '5px 10px', borderRadius: '8px',
+                        fontSize: '12px', fontWeight: '500', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        textAlign: 'left', transition: 'all 0.18s', whiteSpace: 'nowrap'
+                    },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fa-solid fa-eye' }, style: { fontSize: '11px' } }),
+                        $({ tag: 'span', text: label })
+                    ],
+                    event: {
+                        type: 'click', method: () => openFileViewer(url, label),
+                        type2: 'mouseenter', method2: e => { e.currentTarget.style.backgroundColor = 'rgba(0,191,255,0.2)'; e.currentTarget.style.borderColor = 'deepskyblue'; },
+                        type3: 'mouseleave', method3: e => { e.currentTarget.style.backgroundColor = 'rgba(0,191,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(0,191,255,0.25)'; }
+                    }
+                });
+                return btn;
+            })
+        });
+    };
+
+    const createUnderReviewModal = () => {
+        let reviewTableBody;
+        let reviewBadge;
+
+        const reviewColumns = [
+            { field: 'type', header: 'IPR Type', width: '130px' },
+            { field: 'technologyName', header: 'Title / Tech Name', width: '240px' },
+            { field: 'caseNumber', header: 'Case No.', width: '150px' },
+            { field: 'inventors', header: 'Inventors / Authors', width: '200px' },
+            { field: 'campus', header: 'Campus', width: '120px' },
+            { field: 'documents', header: 'Supporting Documents', width: '200px' },
+            { field: 'reviewActions', header: 'Actions', width: '140px' }
+        ];
+
+        const refreshReviewTable = async () => {
+            if (!reviewTableBody) return;
+            reviewTableBody.innerHTML = '';
+            reviewTableBody.appendChild($({
+                tag: 'tr', child: [
+                    $({
+                        tag: 'td', att: { colSpan: reviewColumns.length },
+                        style: { padding: '32px', textAlign: 'center', color: '#888', fontSize: '14px' },
+                        child: [$({ tag: 'i', att: { className: 'fa-solid fa-spinner fa-spin' }, style: { marginRight: '8px' } }),
+                        $({ tag: 'span', text: 'Loading under review records...' })]
+                    })]
+            }));
+            try {
+                const fd = new FormData();
+                fd.append('action', 'getAll');
+                fd.append('submissionStatus', 'under review');
+                const resp = await fetch('/patentresearch', { method: 'POST', body: fd });
+                const result = await resp.json();
+                reviewTableBody.innerHTML = '';
+                if (!result.success || result.data.length === 0) {
+                    reviewTableBody.appendChild($({
+                        tag: 'tr', child: [
+                            $({
+                                tag: 'td', att: { colSpan: reviewColumns.length },
+                                style: { padding: '60px', textAlign: 'center', color: '#888', fontSize: '14px' },
+                                child: [
+                                    $({ tag: 'i', att: { className: 'fa-solid fa-check-circle' }, style: { fontSize: '32px', color: '#4caf50', display: 'block', marginBottom: '12px' } }),
+                                    $({ tag: 'div', text: 'No records under review. All caught up!', style: { color: '#aaa' } })
+                                ]
+                            })]
+                    }));
+                    if (reviewBadge) reviewBadge.textContent = '0';
+                    return;
+                }
+                if (reviewBadge) reviewBadge.textContent = result.data.length;
+                result.data.forEach(item => {
+                    const row = $({
+                        tag: 'tr',
+                        style: { transition: 'background 0.2s', cursor: 'default', verticalAlign: 'top' },
+                        event: {
+                            type: 'mouseenter', method: e => e.currentTarget.style.backgroundColor = 'rgba(0,191,255,0.04)',
+                            type2: 'mouseleave', method2: e => e.currentTarget.style.backgroundColor = 'transparent'
+                        },
+                        child: reviewColumns.map(col => {
+                            const tdStyle = {
+                                padding: '14px 12px', fontSize: '13px', color: '#ddd',
+                                borderBottom: '1px solid #333', verticalAlign: 'top',
+                                maxWidth: col.width, overflow: 'hidden', textOverflow: 'ellipsis'
+                            };
+                            let content;
+                            if (col.field === 'type') {
+                                content = createTypeBadge(item.type);
+                            } else if (col.field === 'technologyName') {
+                                const name = item.technologyName || item.technologyNameUM || item.idTitle || item.title || item.productName || '—';
+                                content = $({ tag: 'span', text: name, style: { fontWeight: '500', color: '#fff', whiteSpace: 'normal', lineHeight: '1.4' } });
+                            } else if (col.field === 'caseNumber') {
+                                content = item.caseNumber || item.caseNumberUM || '—';
+                            } else if (col.field === 'inventors') {
+                                content = item.inventors || item.inventorsUM || item.invertors || item.author || '—';
+                            } else if (col.field === 'campus') {
+                                content = item.campus || item.campusUM || '—';
+                            } else if (col.field === 'documents') {
+                                content = buildDocumentLinks(item);
+                            } else if (col.field === 'reviewActions') {
+                                const verifyBtn = $({
+                                    tag: 'button', text: 'Verify',
+                                    style: {
+                                        backgroundColor: 'rgba(76,175,80,0.15)', border: '1px solid #4caf50',
+                                        color: '#4caf50', padding: '7px 14px', borderRadius: '20px',
+                                        cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+                                        display: 'flex', alignItems: 'center', gap: '5px',
+                                        transition: 'all 0.2s', whiteSpace: 'nowrap'
+                                    },
+                                    child: [$({ tag: 'i', att: { className: 'fa-solid fa-circle-check' }, style: { fontSize: '11px' } }),
+                                    $({ tag: 'span', text: 'Verify' })],
+                                    event: {
+                                        type: 'mouseenter', method: e => { e.currentTarget.style.backgroundColor = '#4caf50'; e.currentTarget.style.color = '#fff'; },
+                                        type2: 'mouseleave', method2: e => { e.currentTarget.style.backgroundColor = 'rgba(76,175,80,0.15)'; e.currentTarget.style.color = '#4caf50'; }
+                                    }
+                                });
+                                const rejectBtn = $({
+                                    tag: 'button', text: 'Reject',
+                                    style: {
+                                        backgroundColor: 'rgba(244,67,54,0.15)', border: '1px solid #f44336',
+                                        color: '#f44336', padding: '7px 14px', borderRadius: '20px',
+                                        cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+                                        display: 'flex', alignItems: 'center', gap: '5px',
+                                        transition: 'all 0.2s', whiteSpace: 'nowrap'
+                                    },
+                                    child: [$({ tag: 'i', att: { className: 'fa-solid fa-circle-xmark' }, style: { fontSize: '11px' } }),
+                                    $({ tag: 'span', text: 'Reject' })],
+                                    event: {
+                                        type: 'mouseenter', method: e => { e.currentTarget.style.backgroundColor = '#f44336'; e.currentTarget.style.color = '#fff'; },
+                                        type2: 'mouseleave', method2: e => { e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.15)'; e.currentTarget.style.color = '#f44336'; }
+                                    }
+                                });
+
+                                const doAction = async (newStatus, btn) => {
+                                    btn.disabled = true;
+                                    verifyBtn.disabled = true;
+                                    rejectBtn.disabled = true;
+                                    const fd2 = new FormData();
+                                    fd2.append('action', 'verify_capsu');
+                                    fd2.append('id', item.id);
+                                    fd2.append('type', item.type);
+                                    fd2.append('status', newStatus);
+                                    const r = await fetch('/patentresearch', { method: 'POST', body: fd2 });
+                                    const res = await r.json();
+                                    if (res.success) {
+                                        // Animate row out then refresh
+                                        row.style.transition = 'opacity 0.4s, transform 0.4s';
+                                        row.style.opacity = '0';
+                                        row.style.transform = 'translateX(30px)';
+                                        setTimeout(() => refreshReviewTable(), 420);
+                                        loadPatents(); // Refresh main table counts
+                                    } else {
+                                        alert('Error: ' + res.message);
+                                        btn.disabled = false;
+                                        verifyBtn.disabled = false;
+                                        rejectBtn.disabled = false;
+                                    }
+                                };
+                                verifyBtn.addEventListener('click', () => doAction('verified', verifyBtn));
+                                rejectBtn.addEventListener('click', () => doAction('rejected', rejectBtn));
+
+                                content = $({
+                                    tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '8px' },
+                                    child: [verifyBtn, rejectBtn]
+                                });
+                            } else {
+                                content = item[col.field] || '—';
+                            }
+                            if (typeof content === 'string') {
+                                return $({ tag: 'td', style: tdStyle, text: content });
+                            }
+                            return $({ tag: 'td', style: tdStyle, child: [content] });
+                        })
+                    });
+                    reviewTableBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error('Under review load error:', err);
+                reviewTableBody.innerHTML = '';
+                reviewTableBody.appendChild($({
+                    tag: 'tr', child: [
+                        $({
+                            tag: 'td', att: { colSpan: reviewColumns.length },
+                            style: { padding: '32px', textAlign: 'center', color: '#f44336' },
+                            text: 'Failed to load records. Please try again.'
+                        })]
+                }));
+            }
+        };
+
+        const overlay = $({
+            tag: 'div',
+            att: { id: 'under-review-modal-overlay' },
+            style: {
+                position: 'fixed', top: '0', left: '0', right: '0', bottom: '0',
+                backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(6px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: '3000', opacity: '0', transition: 'opacity 0.3s ease'
+            },
+            event: { type: 'click', method: e => { if (e.target.id === 'under-review-modal-overlay') closeUnderReviewModal(); } },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#1e1e1e', width: '98vw', maxWidth: '1600px',
+                        maxHeight: '92vh', borderRadius: '22px', border: '1px solid #3a3a3a',
+                        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                        boxShadow: '0 30px 60px -12px rgba(0,0,0,0.6)',
+                        animation: 'fieldFadeIn 0.35s cubic-bezier(0.4,0,0.2,1)'
+                    },
+                    child: [
+                        // Header
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '22px 32px', borderBottom: '1px solid #333',
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                backgroundColor: '#242424', flexShrink: '0'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div', style: { display: 'flex', alignItems: 'center', gap: '14px' },
+                                    child: [
+                                        $({
+                                            tag: 'div', style: {
+                                                width: '42px', height: '42px', borderRadius: '12px',
+                                                backgroundColor: 'rgba(255,152,0,0.15)', display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,152,0,0.3)'
+                                            },
+                                            child: [$({ tag: 'i', att: { className: 'fa-solid fa-hourglass-half' }, style: { color: '#ff9800', fontSize: '20px' } })]
+                                        }),
+                                        $({
+                                            tag: 'div',
+                                            child: [
+                                                $({
+                                                    tag: 'h2', text: 'Under Review IP Submissions',
+                                                    style: { color: '#fff', fontSize: '18px', fontWeight: '700', margin: '0 0 2px', letterSpacing: '-0.3px' }
+                                                }),
+                                                $({
+                                                    tag: 'p', text: 'Review, verify or reject submitted IP records from CAPSU users',
+                                                    style: { color: '#888', fontSize: '12px', margin: '0' }
+                                                })
+                                            ]
+                                        }),
+                                        // Badge count
+                                        $({
+                                            tag: 'span', text: '…',
+                                            elementHandler: el => { reviewBadge = el; },
+                                            style: {
+                                                backgroundColor: 'rgba(255,152,0,0.2)', color: '#ff9800',
+                                                border: '1px solid rgba(255,152,0,0.4)', borderRadius: '20px',
+                                                padding: '4px 12px', fontSize: '12px', fontWeight: '700'
+                                            }
+                                        })
+                                    ]
+                                }),
+                                $({
+                                    tag: 'button', att: { className: 'fa-solid fa-xmark' },
+                                    style: {
+                                        backgroundColor: 'transparent', border: 'none', color: '#666',
+                                        fontSize: '20px', cursor: 'pointer', transition: 'color 0.2s', padding: '8px'
+                                    },
+                                    event: {
+                                        type: 'click', method: closeUnderReviewModal,
+                                        type2: 'mouseenter', method2: e => e.target.style.color = '#fff',
+                                        type3: 'mouseleave', method3: e => e.target.style.color = '#666'
+                                    }
+                                })
+                            ]
+                        }),
+                        // Body
+                        $({
+                            tag: 'div', style: { flex: '1', overflowY: 'auto', overflowX: 'hidden' },
+                            child: [
+                                $({
+                                    tag: 'table',
+                                    style: { width: '100%', borderCollapse: 'separate', borderSpacing: '0', tableLayout: 'fixed' },
+                                    child: [
+                                        // Head
+                                        $({
+                                            tag: 'thead',
+                                            child: [$({
+                                                tag: 'tr',
+                                                child: reviewColumns.map(col => $({
+                                                    tag: 'th',
+                                                    style: {
+                                                        padding: '14px 12px', textAlign: 'left', fontSize: '11px',
+                                                        fontWeight: '700', color: '#888', backgroundColor: '#242424',
+                                                        borderBottom: '2px solid #333', whiteSpace: 'nowrap',
+                                                        width: col.width, position: 'sticky', top: '0', zIndex: '5',
+                                                        textTransform: 'uppercase', letterSpacing: '0.6px'
+                                                    },
+                                                    text: col.header
+                                                }))
+                                            })]
+                                        }),
+                                        // Body
+                                        $({
+                                            tag: 'tbody',
+                                            elementHandler: el => { reviewTableBody = el; refreshReviewTable(); }
+                                        })
+                                    ]
+                                })
+                            ]
+                        }),
+                        // Footer
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '16px 32px', borderTop: '1px solid #333',
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                backgroundColor: '#242424', flexShrink: '0'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span', style: { color: '#888', fontSize: '12px' },
+                                    text: '✓ Verified records move to accepted  •  ✗ Rejected records are marked accordingly in the main table.'
+                                }),
+                                $({
+                                    tag: 'button', text: 'Close',
+                                    style: {
+                                        backgroundColor: 'transparent', border: '1px solid #444',
+                                        color: '#aaa', padding: '9px 28px', borderRadius: '30px',
+                                        cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                                        transition: 'all 0.2s'
+                                    },
+                                    event: {
+                                        type: 'click', method: closeUnderReviewModal,
+                                        type2: 'mouseenter', method2: e => { e.target.style.backgroundColor = '#333'; e.target.style.color = '#fff'; },
+                                        type3: 'mouseleave', method3: e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#aaa'; }
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                })
+            ]
+        });
+        return overlay;
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Search research titles from the database
     const searchResearchTitles = async (searchTerm) => {
         if (!searchTerm || searchTerm.length < 2) return [];
@@ -1683,6 +2193,53 @@ export const PatentUM = () => {
                                 method: openAddPatentModal
                             }
                         })
+
+                        /* Under Review IP button
+                        $({
+                            tag: 'button',
+                            att: { className: 'under-review-btn' },
+                            style: {
+                                backgroundColor: 'rgba(255,152,0,0.12)',
+                                border: '1px solid rgba(255,152,0,0.5)',
+                                borderRadius: '30px',
+                                padding: '10px 20px',
+                                color: '#ff9800',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 2px 8px rgba(255,152,0,0.15)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-hourglass-half' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Under Review IP'
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: openUnderReviewModal,
+                                type2: 'mouseenter',
+                                method2: e => {
+                                    e.currentTarget.style.backgroundColor = '#ff9800';
+                                    e.currentTarget.style.color = '#fff';
+                                    e.currentTarget.style.borderColor = '#ff9800';
+                                },
+                                type3: 'mouseleave',
+                                method3: e => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(255,152,0,0.12)';
+                                    e.currentTarget.style.color = '#ff9800';
+                                    e.currentTarget.style.borderColor = 'rgba(255,152,0,0.5)';
+                                }
+                            }
+                        })*/
                     ]
                 })
             ]

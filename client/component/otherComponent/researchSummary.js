@@ -1,15 +1,15 @@
-import {$} from "../../lib/lib.js";
+import { $ } from "../../lib/lib.js";
 
-export const PrintResearch = ({eventName, data, formData}) => {
+export const PrintResearch = ({ eventName, data, formData }) => {
 
     // A4 at 96dpi: 29.7cm ≈ 1122px, 21cm ≈ 793px
     // Content area = 29.7cm - 4cm top - 4cm bottom = 21.7cm ≈ 820px
     const CM = 37.8; // px per cm at 96dpi
 
-    const PAGE_HEIGHT_PX   = 29.7 * CM; // ~1122px
-    const TOP_PADDING_PX   = 4    * CM; // 4cm top padding (matches CSS)
-    const BOTTOM_PADDING_PX = 4    * CM; // 4cm bottom padding (matches CSS)
-    const CONTENT_AREA_PX  = PAGE_HEIGHT_PX - 140 // 21.7cm ≈ 820px
+    const PAGE_HEIGHT_PX = 29.7 * CM; // ~1122px
+    const TOP_PADDING_PX = 4 * CM; // 4cm top padding (matches CSS)
+    const BOTTOM_PADDING_PX = 4 * CM; // 4cm bottom padding (matches CSS)
+    const CONTENT_AREA_PX = PAGE_HEIGHT_PX - 140 // 21.7cm ≈ 820px
     const USABLE_HEIGHT = CONTENT_AREA_PX * 0.99; // 1% safety margin
 
     // Data is now pre-sorted and pre-formatted from the API
@@ -65,8 +65,6 @@ export const PrintResearch = ({eventName, data, formData}) => {
 
         return 0
     }
-
-    // ─── Render helpers ────────────────────────────────────────────
 
     const renderDocument = (doc, categoryName) => {
         const authorsText = doc.authors?.length > 0
@@ -161,7 +159,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
     // ─── Flat content list ────────────────────────────────────────────────────
     const buildFlatItems = () => {
         const items = []
-    
+
         // Create a combined header+footer element that includes everything
         // up to Stephanie and French only
         const combinedHeaderFooter = $({
@@ -174,14 +172,14 @@ export const PrintResearch = ({eventName, data, formData}) => {
             },
             child: [
                 // Office header
-                $({ 
-                    tag: 'h1', 
+                $({
+                    tag: 'h1',
                     text: 'OFFICE OF THE UNIVERSITY PRESIDENT',
-                    style: { 
-                        fontSize: '18pt', 
-                        fontWeight: 'normal', 
-                        margin: '0 0 5px 0', 
-                        color: '#43A5BE', 
+                    style: {
+                        fontSize: '18pt',
+                        fontWeight: 'normal',
+                        margin: '0 0 5px 0',
+                        color: '#43A5BE',
                         textAlign: 'center',
                         WebkitPrintColorAdjust: 'exact',
                         printColorAdjust: 'exact'
@@ -192,28 +190,36 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 }),
                 // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
-                
+
                 // Date
-                $({ 
-                    tag: 'h2', 
+                $({
+                    tag: 'h2',
                     text: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' } 
+                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
                 }),
                 // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
-    
+
                 // Recipients
-                $({ tag: 'h2', text: 'CAMPUS ADMINISTRATORS',
-                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' } }),
-                $({ tag: 'h2', text: 'SATELLITE COLLEGE DIRECTORS',
-                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' } }),
-                $({ tag: 'h2', text: 'RESEARCH CENTER DIRECTORS',
-                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' } }),
-                $({ tag: 'h2', text: 'This University',
-                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' } }),
+                $({
+                    tag: 'h2', text: 'CAMPUS ADMINISTRATORS',
+                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' }
+                }),
+                $({
+                    tag: 'h2', text: 'SATELLITE COLLEGE DIRECTORS',
+                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' }
+                }),
+                $({
+                    tag: 'h2', text: 'RESEARCH CENTER DIRECTORS',
+                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' }
+                }),
+                $({
+                    tag: 'h2', text: 'This University',
+                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
+                }),
                 // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
-    
+
                 // Attention line
                 $({
                     tag: 'div',
@@ -235,7 +241,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 }),
                 // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
-    
+
                 // Dear line
                 $({
                     tag: 'div',
@@ -247,26 +253,26 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 }),
                 // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
-    
+
                 // Greeting
-                $({ 
-                    tag: 'h4', 
+                $({
+                    tag: 'h4',
                     text: 'Greetings!',
-                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' } 
+                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
                 }),
                 // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
-    
+
                 // Event description
                 $({
                     tag: 'p',
-                    style: { 
-                        fontSize: '12pt', 
-                        fontWeight: 'normal', 
+                    style: {
+                        fontSize: '12pt',
+                        fontWeight: 'normal',
                         margin: '0 0 15px 0',
-                        color: '#333', 
-                        lineHeight: '1.5', 
-                        textAlign: 'justify' 
+                        color: '#333',
+                        lineHeight: '1.5',
+                        textAlign: 'justify'
                     },
                     child: [
                         $({ tag: 'span', text: 'We are pleased to inform you that the following research and extension proposals were accepted for presentation in the ', style: { fontWeight: 'normal' } }),
@@ -278,14 +284,14 @@ export const PrintResearch = ({eventName, data, formData}) => {
                         $({ tag: 'span', text: '.', style: { fontWeight: 'normal' } })
                     ]
                 }),
-    
+
                 // 15px gap after event description
                 $({ tag: 'div', style: { height: '15px' } }),
-    
+
                 // FOOTER CONTENT - Only up to Stephanie and French
                 $({
                     tag: 'div',
-                    style: { 
+                    style: {
                         width: '100%',
                         WebkitPrintColorAdjust: 'exact',
                         printColorAdjust: 'exact'
@@ -296,15 +302,15 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             style: { fontSize: '12pt', lineHeight: '1.5', marginBottom: '20px' },
                             child: [
                                 $({ tag: 'span', text: `Kindly advise the proposal presenters to submit their PowerPoint presentation on or before ${formData?.pptDeadline} via the Google Drive link ` }),
-                                $({ 
-                                    tag: 'a', 
-                                    text: formData?.driveLink, 
-                                    att: { 
-                                        href: formData?.driveLink, 
+                                $({
+                                    tag: 'a',
+                                    text: formData?.driveLink,
+                                    att: {
+                                        href: formData?.driveLink,
                                         target: '_blank',
                                         style: 'color: #87CEEB !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;'
                                     },
-                                    style: { 
+                                    style: {
                                         color: '#87CEEB',
                                         WebkitPrintColorAdjust: 'exact',
                                         printColorAdjust: 'exact'
@@ -315,14 +321,14 @@ export const PrintResearch = ({eventName, data, formData}) => {
                         }),
                         $({ tag: 'p', style: { fontSize: '12pt', lineHeight: '1.5', marginBottom: '20px' }, text: 'Thank you.' }),
                         $({ tag: 'p', style: { fontSize: '12pt', lineHeight: '1.5', marginBottom: '30px' }, text: 'Very truly yours,' }),
-                        
+
                         // Signatures row - Only Stephanie and French
                         $({
                             tag: 'div',
-                            style: { 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                marginBottom: '30px', 
+                            style: {
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                marginBottom: '30px',
                                 width: '100%',
                                 WebkitPrintColorAdjust: 'exact',
                                 printColorAdjust: 'exact'
@@ -331,8 +337,8 @@ export const PrintResearch = ({eventName, data, formData}) => {
                                 // Left signature - Stephanie
                                 $({
                                     tag: 'div',
-                                    style: { 
-                                        textAlign: 'left', 
+                                    style: {
+                                        textAlign: 'left',
                                         width: '45%',
                                         WebkitPrintColorAdjust: 'exact',
                                         printColorAdjust: 'exact'
@@ -342,12 +348,12 @@ export const PrintResearch = ({eventName, data, formData}) => {
                                         $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'University Research Director' })
                                     ]
                                 }),
-                                
+
                                 // Right signature - French
                                 $({
                                     tag: 'div',
-                                    style: { 
-                                        width: '45%', 
+                                    style: {
+                                        width: '45%',
                                         marginLeft: '5px',
                                         WebkitPrintColorAdjust: 'exact',
                                         printColorAdjust: 'exact'
@@ -363,7 +369,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 })
             ]
         });
-        
+
         // Add the combined header+footer as a single item (Page 1)
         items.push({
             type: 'combined-header-footer',
@@ -402,8 +408,8 @@ export const PrintResearch = ({eventName, data, formData}) => {
                     // Jocelyn Legaspi
                     $({
                         tag: 'div',
-                        style: { 
-                            textAlign: 'left', 
+                        style: {
+                            textAlign: 'left',
                             marginBottom: '25px',
                             WebkitPrintColorAdjust: 'exact',
                             printColorAdjust: 'exact'
@@ -413,13 +419,13 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'University Extension Director' })
                         ]
                     }),
-    
+
                     $({ tag: 'p', style: { fontSize: '12pt', marginBottom: '30px', marginTop: '20px' }, text: 'Noted:' }),
-    
+
                     // VP Signature
                     $({
                         tag: 'div',
-                        style: { 
+                        style: {
                             marginBottom: '30px',
                             WebkitPrintColorAdjust: 'exact',
                             printColorAdjust: 'exact'
@@ -429,11 +435,11 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'VP for RDE' })
                         ]
                     }),
-    
+
                     // President Signature
                     $({
                         tag: 'div',
-                        style: { 
+                        style: {
                             marginBottom: '20px',
                             WebkitPrintColorAdjust: 'exact',
                             printColorAdjust: 'exact'
@@ -443,20 +449,20 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'SUC President III' })
                         ]
                     }),
-    
+
                     $({ tag: 'p', style: { fontSize: '11pt', fontStyle: 'italic', marginTop: '20px' }, text: 'Cc: RDE' })
                 ]
             })
         })
-        
-        
+
+
         // Then add all centers AFTER the noted section (will start on Page 3 due to 800px spacing)
         centersWithDocs.forEach(center => {
             const categoriesWithDocs = center.categories.filter(cat => cat.docs?.length > 0)
             if (!categoriesWithDocs.length) return
-    
+
             let centerDocCounter = 1
-    
+
             items.push({
                 type: 'center-header',
                 centerName: center.displayName || center.name,
@@ -475,30 +481,30 @@ export const PrintResearch = ({eventName, data, formData}) => {
                     text: center.displayName || center.name
                 })
             })
-    
+
             categoriesWithDocs.forEach(cat => {
                 cat.docs.forEach((doc, idx) => {
                     const authorsText = doc.authors?.length > 0
                         ? doc.authors.join(', ')
                         : 'No author specified'
-                
+
                     // IMPROVED DYNAMIC CALCULATION
                     const CHARS_PER_LINE = 95; // More realistic character count per line
                     const BASE_LINE_HEIGHT = 22; // Slightly reduced base height
                     const PRESENTER_LINE_PX = 18; // Slightly reduced
                     const MARGIN_PX = 10;
-                    
+
                     // More accurate line count based on word wrapping
                     const titleLineText = `${doc.title} by ${authorsText} - ${cat.category}`;
-                    
+
                     // Split into words for better line break estimation
                     const words = titleLineText.split(' ');
                     let lineCount = 1;
                     let currentLineLength = 0;
-                    
+
                     for (const word of words) {
                         const wordLength = word.length;
-                        
+
                         // Check if adding this word would exceed the line limit
                         if (currentLineLength + wordLength + 1 > CHARS_PER_LINE) {
                             // Start a new line
@@ -508,7 +514,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             // Add to current line (plus 1 for space)
                             currentLineLength += wordLength + 1;
                         }
-                        
+
                         // Handle very long words (like scientific names or long acronyms)
                         if (wordLength > CHARS_PER_LINE * 0.8) {
                             // This word itself might need multiple lines
@@ -516,30 +522,30 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             lineCount += extraLines;
                         }
                     }
-                    
+
                     // Adjust for scientific names and special formatting
                     const hasScientificName = /[A-Z][a-z]+\s+[a-z]+|\([A-Z][a-z]+\.\)|[a-z]+\.?\s+[a-z]+/i.test(doc.title);
                     const hasLongAuthors = authorsText.length > 60;
                     const hasManyAuthors = doc.authors?.length > 5;
-                    
+
                     // Add small buffers for special cases
                     let specialBuffer = 0;
                     if (hasScientificName) specialBuffer += 8;
                     if (hasLongAuthors) specialBuffer += 5;
                     if (hasManyAuthors) specialBuffer += 5;
-                    
+
                     // Calculate height - ensure minimum 2 lines for readability
                     lineCount = Math.max(2, lineCount);
-                    
+
                     // Cap at reasonable maximum (prevents extreme cases)
                     if (lineCount > 5) lineCount = 5;
-                    
+
                     // Final height calculation
                     const docHeight = (lineCount * BASE_LINE_HEIGHT) + PRESENTER_LINE_PX + MARGIN_PX + specialBuffer;
-                    
+
                     // Minimum and maximum constraints
                     const finalHeight = Math.min(Math.max(docHeight, 90), 180);
-                
+
                     items.push({
                         type: 'document',
                         centerName: center.displayName || center.name,
@@ -565,8 +571,8 @@ export const PrintResearch = ({eventName, data, formData}) => {
                                 $({
                                     tag: 'div',
                                     att: { className: 'doc-title-line' },
-                                    style: { 
-                                        fontWeight: 'normal', 
+                                    style: {
+                                        fontWeight: 'normal',
                                         marginBottom: '1px', // Minimal spacing
                                         WebkitPrintColorAdjust: 'exact',
                                         printColorAdjust: 'exact'
@@ -581,9 +587,9 @@ export const PrintResearch = ({eventName, data, formData}) => {
                                     tag: 'div',
                                     att: { className: 'doc-presenter-line' },
                                     style: {
-                                        marginLeft: '20px', 
+                                        marginLeft: '20px',
                                         fontSize: '10pt',
-                                        color: '#555', 
+                                        color: '#555',
                                         fontStyle: 'italic',
                                         marginTop: '0px', // No top margin
                                         WebkitPrintColorAdjust: 'exact',
@@ -598,13 +604,13 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 });
             })
         })
-        
+
         return items
     }
-    
+
     // ─── Pagination ───────────────────────────────────────────────────────────
     const paginateItems = (flatItems) => {
-        const pages = [] 
+        const pages = []
         let current = []
         let usedHeight = 0
         const flush = () => {
@@ -628,34 +634,34 @@ export const PrintResearch = ({eventName, data, formData}) => {
         flush()
         return pages
     }
-    
+
     // ─── Assemble a page DOM from flat items ──────────────────────────────────
     const buildPageChildren = (flatItems) => {
         const children = []
         let i = 0
         while (i < flatItems.length) {
             const item = flatItems[i]
-            
+
             // Handle page breaks - they don't render anything, just control pagination
             if (item.type === 'page-break') {
                 i++
                 continue
             }
-            
+
             // Handle the combined header-footer type
             if (item.type === 'combined-header-footer') {
                 children.push(item.element)
                 i++
                 continue
             }
-            
+
             // Handle the noted section
             if (item.type === 'noted-section') {
                 children.push(item.element)
                 i++
                 continue
             }
-            
+
             if (item.type === 'title' || item.type === 'footer' || item.type === 'spacer') {
                 children.push(item.element)
                 i++
@@ -677,9 +683,9 @@ export const PrintResearch = ({eventName, data, formData}) => {
                     children.push($({
                         tag: 'div',
                         att: { className: 'center-section' },
-                        style: { 
-                            marginBottom: '30px', 
-                            position: 'relative', 
+                        style: {
+                            marginBottom: '30px',
+                            position: 'relative',
                             zIndex: 2,
                             WebkitPrintColorAdjust: 'exact',
                             printColorAdjust: 'exact'
@@ -689,8 +695,8 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             $({
                                 tag: 'div',
                                 att: { className: 'category-section' },
-                                style: { 
-                                    marginLeft: '15px', 
+                                style: {
+                                    marginLeft: '15px',
                                     marginBottom: '20px',
                                     WebkitPrintColorAdjust: 'exact',
                                     printColorAdjust: 'exact'
@@ -701,8 +707,8 @@ export const PrintResearch = ({eventName, data, formData}) => {
                                         className: 'documents-list',
                                         start: String(firstDocNumber)
                                     },
-                                    style: { 
-                                        margin: '5px 0 10px 20px', 
+                                    style: {
+                                        margin: '5px 0 10px 20px',
                                         paddingLeft: '20px',
                                         WebkitPrintColorAdjust: 'exact',
                                         printColorAdjust: 'exact'
@@ -719,7 +725,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 }
                 continue
             }
-    
+
             // Continuation docs
             const docElements = []
             let firstDocNumber = 1
@@ -730,13 +736,13 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 docElements.push(flatItems[i].element)
                 i++
             }
-    
+
             if (docElements.length > 0) {
                 children.push($({
                     tag: 'div',
                     att: { className: 'category-section' },
-                    style: { 
-                        marginLeft: '15px', 
+                    style: {
+                        marginLeft: '15px',
                         marginBottom: '20px',
                         WebkitPrintColorAdjust: 'exact',
                         printColorAdjust: 'exact'
@@ -747,8 +753,8 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             className: 'documents-list',
                             start: String(firstDocNumber)
                         },
-                        style: { 
-                            margin: '5px 0 10px 20px', 
+                        style: {
+                            margin: '5px 0 10px 20px',
                             paddingLeft: '20px',
                             WebkitPrintColorAdjust: 'exact',
                             printColorAdjust: 'exact'
@@ -764,7 +770,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
     // ─── Page container ───────────────────────────────────────────────────
     const createPageContainer = (flatItems, pageNumber, totalPages) => {
         const pageChildren = buildPageChildren(flatItems)
-    
+
         return $({
             tag: 'div',
             att: { className: 'print-page' },
@@ -779,19 +785,19 @@ export const PrintResearch = ({eventName, data, formData}) => {
                 boxSizing: 'border-box'
             },
             child: [
-                
+
                 $({
                     tag: 'div',
                     att: { className: 'page-background' },
                     style: {
-                        position: 'absolute', 
-                        top: 0, 
+                        position: 'absolute',
+                        top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        width: '100%', 
+                        width: '100%',
                         height: '100%',
-                        zIndex: 1, 
+                        zIndex: 1,
                         pointerEvents: 'none',
                         overflow: 'hidden',
                         margin: 0,
@@ -804,11 +810,11 @@ export const PrintResearch = ({eventName, data, formData}) => {
                             className: 'background-img',
                             alt: 'Page background'
                         },
-                        style: { 
-                            width: '100%', 
-                            height: '100%', 
-                            objectFit: 'cover',  
-                            objectPosition: 'center center', 
+                        style: {
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center center',
                             display: 'block',
                             margin: 0,
                             padding: 0
@@ -830,7 +836,7 @@ export const PrintResearch = ({eventName, data, formData}) => {
                     },
                     child: [
                         ...pageChildren,
-                        
+
                         // Page number at the bottom
                         $({
                             tag: 'div',
@@ -853,9 +859,9 @@ export const PrintResearch = ({eventName, data, formData}) => {
     }
 
     // ─── Main 
-    const flatItems   = buildFlatItems();
-    const pages       = paginateItems(flatItems);
-    const totalPages  = pages.length;
+    const flatItems = buildFlatItems();
+    const pages = paginateItems(flatItems);
+    const totalPages = pages.length;
 
     return $({
         tag: 'div',

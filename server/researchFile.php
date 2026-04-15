@@ -544,33 +544,63 @@ function generateFileHash($filePath) {
     return hash_final($hashContext);
 }
 
-function storeFileHash($con, $researchId, $fileType, $fileHash) {
-    $query = "INSERT INTO file_hashes (research_id, file_type, file_hash, created_at) 
+function getEventScopedFileHash($fileHash, $eventId) {
+    if (empty($eventId) || empty($fileHash)) {
+        return $fileHash;
+    }
+
+    return hash('sha256', $eventId . '::' . $fileHash);
+}
+
+function storeFileHash($con, $researchId, $fileType, $fileHash, $eventId = null) {
+    // Store a scoped hash per event so identical files in different events do not conflict.
+    $scopedHash = getEventScopedFileHash($fileHash, $eventId);
+
+    $query = "INSERT IGNORE INTO file_hashes (research_id, file_type, file_hash, created_at) 
               VALUES (?, ?, ?, NOW())";
     
     $stmt = $con->prepare($query);
     if ($stmt) {
-        $stmt->bind_param("iss", $researchId, $fileType, $fileHash);
+        $stmt->bind_param("iss", $researchId, $fileType, $scopedHash);
         $stmt->execute();
         $stmt->close();
     }
 }
 
-function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventType) {
-    $query = "SELECT rf.id as research_id, rf.title, rf.author, rf.event 
-              FROM file_hashes fh 
-              JOIN researchfile rf ON fh.research_id = rf.id 
-              WHERE fh.file_hash = ? 
-              AND fh.file_type = ?
-              AND rf.event = ?
-              LIMIT 1";
-    
-    $stmt = $con->prepare($query);
-    if (!$stmt) {
-        return null;
+function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventId = null, $eventType = null) {
+    if ($eventId !== null) {
+        $scopedHash = getEventScopedFileHash($fileHash, $eventId);
+        $query = "SELECT rf.id as research_id, rf.title, rf.author, rf.event_id, rf.event 
+                  FROM file_hashes fh 
+                  JOIN researchfile rf ON fh.research_id = rf.id 
+                  WHERE fh.file_type = ?
+                  AND rf.event_id = ?
+                  AND (fh.file_hash = ? OR fh.file_hash = ?)
+                  LIMIT 1";
+        
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            return null;
+        }
+        
+        $stmt->bind_param("siss", $fileType, $eventId, $scopedHash, $fileHash);
+    } else {
+        $query = "SELECT rf.id as research_id, rf.title, rf.author, rf.event 
+                  FROM file_hashes fh 
+                  JOIN researchfile rf ON fh.research_id = rf.id 
+                  WHERE fh.file_hash = ? 
+                  AND fh.file_type = ?
+                  AND rf.event = ?
+                  LIMIT 1";
+        
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            return null;
+        }
+        
+        $stmt->bind_param("sss", $fileHash, $fileType, $eventType);
     }
     
-    $stmt->bind_param("sss", $fileHash, $fileType, $eventType);
     $stmt->execute();
     $result = $stmt->get_result();
     $existing = $result->fetch_assoc();
@@ -762,7 +792,7 @@ if (isset($_POST['uploadResearch'])) {
                 $coAuthor = $_POST['coAuthor'] ?? '[]';
                 $presenter = $_POST['presenter'];
                 $date_started = $_POST['date_started'] ?? null;
-                $date_completed = $_POST['date_completed'] ?? null;
+                $date_completed = $_POST['date_completed'] ?? $_POST['date_Completed'] ?? null;
                 
                 // Get event_id
                 $eventId = null;
@@ -776,11 +806,11 @@ if (isset($_POST['uploadResearch'])) {
                 
                 // ===== DUPLICATE VALIDATION - Check within SAME EVENT only =====
                 // Check if the same title and author already exists for this specific event
-                $duplicateCheckQuery = "SELECT COUNT(*) as count, id, title, author, event 
+                $duplicateCheckQuery = "SELECT COUNT(*) as count, id, title, author, event_id, event 
                                        FROM researchfile 
                                        WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
                                        AND TRIM(LOWER(author)) = TRIM(LOWER(?))
-                                       AND event = ?
+                                       AND event_id = ?
                                        LIMIT 1";
                 
                 $dupStmt = $con->prepare($duplicateCheckQuery);
@@ -788,7 +818,7 @@ if (isset($_POST['uploadResearch'])) {
                     throw new Exception("Prepare failed for duplicate check: " . $con->error);
                 }
                 
-                $dupStmt->bind_param("sss", $title, $author, $eventType);
+                $dupStmt->bind_param("ssi", $title, $author, $eventId);
                 $dupStmt->execute();
                 $dupResult = $dupStmt->get_result();
                 $existingRecord = $dupResult->fetch_assoc();
@@ -814,7 +844,7 @@ if (isset($_POST['uploadResearch'])) {
                     $endorsementFileHash = generateFileHash($tempEndorsementPath);
                     
                     if ($endorsementFileHash) {
-                        $existingEndorsement = checkDuplicateByFileHashAndEvent($con, $endorsementFileHash, 'endorsement', $eventType);
+                        $existingEndorsement = checkDuplicateByFileHashAndEvent($con, $endorsementFileHash, 'endorsement', $eventId, $eventType);
                         if ($existingEndorsement) {
                             throw new Exception("DUPLICATE ENDORSEMENT: This endorsement letter file has already been used for the same event '{$eventType}' for research ID {$existingEndorsement['research_id']}: '{$existingEndorsement['title']}' by {$existingEndorsement['author']}");
                         }
@@ -827,7 +857,7 @@ if (isset($_POST['uploadResearch'])) {
                     $researchFileHash = generateFileHash($tempResearchPath);
                     
                     if ($researchFileHash) {
-                        $existingResearch = checkDuplicateByFileHashAndEvent($con, $researchFileHash, 'proposal', $eventType);
+                        $existingResearch = checkDuplicateByFileHashAndEvent($con, $researchFileHash, 'proposal', $eventId, $eventType);
                         if ($existingResearch) {
                             throw new Exception("DUPLICATE RESEARCH: This research/proposal file has already been used for the same event '{$eventType}' for research ID {$existingResearch['research_id']}: '{$existingResearch['title']}' by {$existingResearch['author']}");
                         }
@@ -841,7 +871,7 @@ if (isset($_POST['uploadResearch'])) {
                     $programFileHash = generateFileHash($tempProgramPath);
                     
                     if ($programFileHash) {
-                        $existingProgram = checkDuplicateByFileHashAndEvent($con, $programFileHash, 'program', $eventType);
+                        $existingProgram = checkDuplicateByFileHashAndEvent($con, $programFileHash, 'program', $eventId, $eventType);
                         if ($existingProgram) {
                             throw new Exception("DUPLICATE PROGRAM: This program file has already been used for the same event '{$eventType}' for research ID {$existingProgram['research_id']}: '{$existingProgram['title']}' by {$existingProgram['author']}");
                         }
@@ -1119,15 +1149,15 @@ if (isset($_POST['uploadResearch'])) {
                 // ===== Store File Hashes for Future Duplicate Detection =====
                 if ($researchFileId) {
                     if (isset($researchFileHash) && $researchFileHash) {
-                        storeFileHash($con, $researchFileId, 'proposal', $researchFileHash);
+                        storeFileHash($con, $researchFileId, 'proposal', $researchFileHash, $eventId);
                     }
                     
                     if (isset($programFileHash) && $programFileHash) {
-                        storeFileHash($con, $researchFileId, 'program', $programFileHash);
+                        storeFileHash($con, $researchFileId, 'program', $programFileHash, $eventId);
                     }
                     
                     if (isset($endorsementFileHash) && $endorsementFileHash) {
-                        storeFileHash($con, $researchFileId, 'endorsement', $endorsementFileHash);
+                        storeFileHash($con, $researchFileId, 'endorsement', $endorsementFileHash, $eventId);
                     }
                 }
                 
@@ -3485,36 +3515,6 @@ if (isset($_POST['getRejectedForResubmit'])) {
             $stmt = $con->prepare($query);
             $stmt->bind_param("ss", $userId, $endorsementId);
             
-        } else {
-            // No specific ID - return ALL rejected documents (for listing)
-            $query = "SELECT 
-                rf.id,
-                rf.title,
-                rf.author,
-                rf.coauthor,
-                rf.presenter,
-                rf.category,
-                rf.center,
-                rf.event,
-                rf.drive_view_url,
-                rf.drive_file_id,
-                rf.program_drive_view_url,
-                rf.program_drive_file_id,
-                rf.resubmit_count,
-                rf.resubmitted,
-                e.id as endorsement_id,
-                e.drive_view_url as endorsement_url,
-                e.drive_file_id as endorsement_file_id,
-                rd.reason,
-                rd.date as rejection_date
-            FROM researchfile rf
-            LEFT JOIN endorsement e ON rf.endorsementid = e.id
-            LEFT JOIN rejecteddocs rd ON e.id = rd.docid
-            WHERE rf.senderid = ? AND rf.status = 'rejected'
-            ORDER BY rd.date DESC";
-            
-            $stmt = $con->prepare($query);
-            $stmt->bind_param("s", $userId);
         }
         
         $stmt->execute();
@@ -3576,6 +3576,7 @@ if (isset($_POST['getRejectedForResubmit'])) {
     echo json_encode($response);
     exit();
 }
+
 if (isset($_POST['resubmitDocument'])) {
     error_log("=== START resubmitDocument ===");
     error_log("POST data: " . print_r($_POST, true));

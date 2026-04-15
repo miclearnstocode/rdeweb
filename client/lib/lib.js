@@ -382,7 +382,16 @@ export class Request {
     }
 
     Json() {
-        this.res = (res) => res.json()
+        this.res = async (res) => {
+            const text = await res.text();
+            if (!text) return {};
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Failed to parse JSON response:', e, 'Raw text:', text);
+                return {};
+            }
+        }
     }
 
     async Send() {
