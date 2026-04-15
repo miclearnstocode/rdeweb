@@ -1,5 +1,4 @@
 import { $ } from "../../../lib/lib.js";
-
 export const CompletedResearch = () => {
     let mainTableContainer;
     let tableBody;
@@ -235,7 +234,7 @@ export const CompletedResearch = () => {
 
             const isWrappingField = ['title', 'publishedTitle', 'journalTitle', 'programTitle', 'supportDocs1', 'supportDocs2', 'campus', 'forumTitle', 'venue'].includes(col.field);
             const isUrlField = ['supportDocs1', 'supportDocs2'].includes(col.field);
-            
+
             if (isUrlField && rawValue && rawValue !== '—') {
                 let items = [];
                 try {
@@ -256,7 +255,7 @@ export const CompletedResearch = () => {
                     child: items.map(item => $({
                         tag: 'a',
                         att: { href: item.url, target: '_blank', title: `View ${item.name}` },
-                        style: { 
+                        style: {
                             display: 'flex', alignItems: 'center', gap: '6px',
                             color: 'deepskyblue', textDecoration: 'none', transition: 'all 0.2s ease',
                             fontSize: '12px'
