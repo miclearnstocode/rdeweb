@@ -9,7 +9,9 @@ import { Settings } from "./userComponent/script/settings.js";
 import { Create } from "./userComponent/script/create.js";
 import { Files } from "./userComponent/script/Files.js";
 import { ReqButton } from "./userComponent/script/Request.js";
-
+import { Publication } from "./userComponent/script/publicationUser.js";
+import { PatentUM } from "./userComponent/script/patentUMuser.js";
+import { Utilization } from './userComponent/script/utilizationUser.js';
 // Map of tab IDs to their components and configurations
 const tabs = {
     'research-tab': {
@@ -28,7 +30,7 @@ const tabs = {
         label: 'Activity Proposal',
         icon: 'fa fa-file-text',
         page: Create,
-        disabled: true,  // This tab is disabled
+        disabled: false,
         index: 1
     },
 
@@ -38,10 +40,36 @@ const tabs = {
         label: 'Communication',
         icon: 'fa fa-paper-plane-o',
         page: Files,
-        disabled: true,  // This tab is disabled
+        disabled: false,
         index: 2
     },
-
+    'publication-tab': {
+        url: '/user/publication',
+        urlPattern: '/user/publication',
+        label: 'Publication',
+        icon: 'fa fa-book',
+        page: Publication,
+        disabled: false,
+        index: 3
+    },
+    'patent-tab': {
+        url: '/user/patent',
+        urlPattern: '/user/patent',
+        label: 'Patent',
+        icon: 'fa fa-trademark',
+        page: PatentUM,
+        disabled: false,
+        index: 4
+    },
+    'utilization-tab': {
+        url: '/user/utilization',
+        urlPattern: '/user/utilization',
+        label: 'Utilization',
+        icon: 'fa fa-handshake-o',
+        page: Utilization,
+        disabled: false,
+        index: 5
+    },
     'settings-tab': {
         url: '/user/settings/userInfo',
         urlPattern: '/user/settings/',
@@ -49,12 +77,12 @@ const tabs = {
         icon: 'fa fa-sliders',
         page: Settings,
         disabled: false,
-        index: 3
+        index: 6
     }
 }
 
 // Order of tabs for display (using IDs)
-const tabOrder = ['research-tab', 'proposal-tab', 'communication-tab', 'settings-tab'];
+const tabOrder = ['research-tab', 'proposal-tab', 'communication-tab', 'publication-tab', 'patent-tab', 'utilization-tab', 'settings-tab'];
 
 //Logo of RDE
 export const UserPanel = () => {
@@ -70,6 +98,11 @@ export const UserPanel = () => {
             needsRedirect = true;
         }
     });
+
+    // Also redirect from base /user path to research tab
+    if (currentPath === '/user' || currentPath === '/user/') {
+        needsRedirect = true;
+    }
 
 
     if (needsRedirect) {

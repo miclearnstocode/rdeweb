@@ -111,7 +111,7 @@ if(isset($_POST['auth'])){
                         $statement->bind_result($id,$userName,$passWord,$fullName,$center,$emailAdd,$userType,$signUrl,$signScale);
                         $statement->fetch();
                         if(password_verify($password,$passWord)){
-                            $response->message='/user/create/share';
+                            $response->message='/user/research/submittedDocs/submittedFiles';
                             $signature= new stdClass();
                             $signature->url=$signUrl;
                             $signature->scale=$signScale;
