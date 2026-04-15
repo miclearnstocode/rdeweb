@@ -43,7 +43,7 @@ const tabs = {
         disabled: false,
         index: 2
     },
-    'publication-tab': {
+    /*'publication-tab': {
         url: '/user/publication',
         urlPattern: '/user/publication',
         label: 'Publication',
@@ -69,7 +69,7 @@ const tabs = {
         page: Utilization,
         disabled: false,
         index: 5
-    },
+    },*/
     'settings-tab': {
         url: '/user/settings/userInfo',
         urlPattern: '/user/settings/',
@@ -82,7 +82,7 @@ const tabs = {
 }
 
 // Order of tabs for display (using IDs)
-const tabOrder = ['research-tab', 'proposal-tab', 'communication-tab', 'publication-tab', 'patent-tab', 'utilization-tab', 'settings-tab'];
+const tabOrder = ['research-tab', 'proposal-tab', 'communication-tab',/* 'publication-tab', 'patent-tab', 'utilization-tab',*/ 'settings-tab'];
 
 //Logo of RDE
 export const UserPanel = () => {
