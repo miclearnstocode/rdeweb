@@ -225,9 +225,78 @@ export const CompletedResearch = () => {
         });
     };
 
+    const openFileViewer = (url, label) => {
+        const isImage = /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(url) || (url.includes('googleusercontent') && !url.endsWith('.pdf'));
+        const overlay = $({
+            tag: 'div',
+            att: { className: 'completed-research-file-viewer' },
+            style: {
+                position: 'fixed', inset: '0', backgroundColor: 'rgba(0,0,0,0.88)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: '9999', padding: '20px'
+            },
+            event: {
+                type: 'click',
+                method: (e) => {
+                    if (e.target === overlay) document.body.removeChild(overlay);
+                }
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        width: '90vw', maxWidth: '1040px', minWidth: '720px', maxHeight: '80vh', minHeight: '660px', height: 'auto', backgroundColor: '#111',
+                        border: '1px solid #333', borderRadius: '16px', overflow: 'hidden', display: 'flex',
+                        flexDirection: 'column', boxSizing: 'border-box'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '14px 18px', backgroundColor: '#171717', borderBottom: '1px solid #333'
+                            },
+                            child: [
+                                $({ tag: 'div', text: label, style: { color: '#fff', fontSize: '14px', fontWeight: '600' } }),
+                                $({
+                                    tag: 'button',
+                                    text: 'Close',
+                                    style: {
+                                        backgroundColor: 'transparent', border: '1px solid #444',
+                                        borderRadius: '12px', color: '#ddd', padding: '8px 14px', cursor: 'pointer'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => document.body.removeChild(overlay)
+                                    }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { flex: '1 1 auto', minHeight: '520px', height: 'calc(80vh - 72px)', overflow: 'hidden', backgroundColor: '#000' },
+                            child: isImage ? [
+                                $({
+                                    tag: 'img',
+                                    att: { src: url, alt: label },
+                                    style: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' }
+                                })
+                            ] : [
+                                $({
+                                    tag: 'iframe',
+                                    att: { src: url, title: label, frameborder: '0', allowfullscreen: 'true' },
+                                    style: { width: '100%', height: '100%', border: 'none' }
+                                })
+                            ]
+                        })
+                    ]
+                })]
+        });
+        document.body.appendChild(overlay);
+    };
+
     const renderResearchRow = (data) => {
         const cells = columns.map(col => {
-            const multiLineFields = ['authors', 'facultyResearcher', 'academicRank', 'nonAcademicRank', 'jobOrder'];
+            const multiLineFields = ['authors', 'facultyResearcher', 'academicRank', 'nonAcademicRank', 'jobOrder', 'benefitingIndustry'];
             let content;
 
             const rawValue = data[col.field];
@@ -238,34 +307,49 @@ export const CompletedResearch = () => {
             if (isUrlField && rawValue && rawValue !== '—') {
                 let items = [];
                 try {
-                    // Try to parse if it's JSON from backend
-                    if (rawValue.startsWith('[') || rawValue.startsWith('{')) {
+                    if (Array.isArray(rawValue)) {
+                        items = rawValue;
+                    } else if (typeof rawValue === 'object' && rawValue !== null) {
+                        items = rawValue;
+                    } else if (typeof rawValue === 'string' && (rawValue.trim().startsWith('[') || rawValue.trim().startsWith('{'))) {
                         items = JSON.parse(rawValue);
-                    } else {
-                        // Otherwise it's a comma-separated string of plain URLs
+                    } else if (typeof rawValue === 'string') {
                         items = rawValue.split(', ').map(url => ({ name: url, url: url }));
                     }
                 } catch (e) {
-                    items = rawValue.split(', ').map(url => ({ name: url, url: url }));
+                    if (typeof rawValue === 'string') {
+                        items = rawValue.split(', ').map(url => ({ name: url, url: url }));
+                    }
                 }
 
                 content = $({
                     tag: 'div',
-                    style: { display: 'flex', flexDirection: 'column', gap: '8px', padding: '4px 0' },
+                    style: { display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '4px 0' },
                     child: items.map(item => $({
-                        tag: 'a',
-                        att: { href: item.url, target: '_blank', title: `View ${item.name}` },
+                        tag: 'button',
+                        att: { type: 'button', title: item.name },
                         style: {
-                            display: 'flex', alignItems: 'center', gap: '6px',
-                            color: 'deepskyblue', textDecoration: 'none', transition: 'all 0.2s ease',
-                            fontSize: '12px'
+                            width: '36px', height: '36px', display: 'inline-flex', alignItems: 'center',
+                            justifyContent: 'center', color: '#00bcd4', backgroundColor: 'rgba(0,188,212,0.08)',
+                            border: '1px solid rgba(0,188,212,0.2)', borderRadius: '50%', cursor: 'pointer',
+                            padding: '0', transition: 'transform 0.15s ease'
                         },
-                        child: [
-                            $({ tag: 'span', att: { className: 'fa-solid fa-file-pdf' }, style: { color: '#ff4d4d', fontSize: '14px' } }),
-                            $({ tag: 'span', text: item.name, style: { wordBreak: 'break-all' } })
-                        ],
-                        event: { type: 'mouseenter', method: (e) => e.target.style.textDecoration = 'underline' },
-                        event2: { type: 'mouseleave', method: (e) => e.target.style.textDecoration = 'none' }
+                        child: [$({ tag: 'span', att: { className: 'fa-solid fa-file-lines' }, style: { color: '#00bcd4', fontSize: '16px' } })],
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                e.preventDefault();
+                                openFileViewer(item.url, item.name);
+                            }
+                        },
+                        event2: {
+                            type: 'mouseenter',
+                            method: (e) => e.currentTarget.style.transform = 'scale(1.05)'
+                        },
+                        event3: {
+                            type: 'mouseleave',
+                            method: (e) => e.currentTarget.style.transform = 'scale(1)'
+                        }
                     }))
                 });
             } else if (col.field === 'index') {

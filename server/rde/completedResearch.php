@@ -177,7 +177,26 @@ class CompletedResearchAPI {
                         -- Patent Product info (from patent, utility_model, industrial_design)
                         COALESCE(p.technologyName, um.technologyNameUM, idesign.idTitle) as productNameVal,
                         COALESCE(p.registrationNumber, um.registrationNumber, idesign.registrationNumber) as registrationNumberVal,
-                        COALESCE(p.applicationNumber, um.applicationNumberUM, idesign.applicationNumber) as applicationNumberVal
+                        COALESCE(p.applicationNumber, um.applicationNumberUM, idesign.applicationNumber) as applicationNumberVal,
+                        COALESCE(p.benefitingIndustry, um.benefitingIndustryUM) as benefitingIndustryVal,
+                        p.patentFormURL as patentFormURL,
+                        p.abstractURL as patentAbstractURL,
+                        p.claimsURL as patentClaimsURL,
+                        p.technicalDescriptionURL as patentTechnicalDescriptionURL,
+                        p.technicalDrawingURL as patentTechnicalDrawingURL,
+                        p.photoTechnologyURL as patentPhotoTechnologyURL,
+                        um.patentFormURLUM as patentFormURLUM,
+                        um.abstractURLUM as patentAbstractURLUM,
+                        um.claimsURLUM as patentClaimsURLUM,
+                        um.technicalDescriptionURLUM as patentTechnicalDescriptionURLUM,
+                        um.technicalDrawingURLUM as patentTechnicalDrawingURLUM,
+                        um.photoTechnologyURLUM as patentPhotoTechnologyURLUM,
+                        idesign.applicationFormURL as idFormURL,
+                        idesign.abstractURL as idAbstractURL,
+                        idesign.claimsURL as idClaimsURL,
+                        idesign.technicalDescriptionURL as idTechnicalDescriptionURL,
+                        idesign.technicalDrawingURL as idTechnicalDrawingURL,
+                        idesign.photoTechnologyURL as idPhotoTechnologyURL
                         
                     FROM endorsement e
                     INNER JOIN researchfile rf ON e.id = rf.endorsementid
@@ -271,6 +290,37 @@ class CompletedResearchAPI {
                         }
                     }
 
+                    $supportDocs = [];
+                    $docFields = [
+                        'patentFormURL' => 'Application Form',
+                        'patentAbstractURL' => 'Abstract',
+                        'patentClaimsURL' => 'Claims',
+                        'patentTechnicalDescriptionURL' => 'Technical Description',
+                        'patentTechnicalDrawingURL' => 'Technical Drawing',
+                        'patentPhotoTechnologyURL' => 'Photo of Technology',
+                        'patentFormURLUM' => 'Application Form (UM)',
+                        'patentAbstractURLUM' => 'Abstract (UM)',
+                        'patentClaimsURLUM' => 'Claims (UM)',
+                        'patentTechnicalDescriptionURLUM' => 'Technical Description (UM)',
+                        'patentTechnicalDrawingURLUM' => 'Technical Drawing (UM)',
+                        'patentPhotoTechnologyURLUM' => 'Photo of Technology (UM)',
+                        'idFormURL' => 'Application Form (ID)',
+                        'idAbstractURL' => 'Abstract (ID)',
+                        'idClaimsURL' => 'Claims (ID)',
+                        'idTechnicalDescriptionURL' => 'Technical Description (ID)',
+                        'idTechnicalDrawingURL' => 'Technical Drawing (ID)',
+                        'idPhotoTechnologyURL' => 'Photo of Technology (ID)'
+                    ];
+
+                    foreach ($docFields as $field => $label) {
+                        if (!empty($row[$field]) && $row[$field] !== 'NULL') {
+                            $supportDocs[] = [
+                                'name' => $label,
+                                'url' => $row[$field]
+                            ];
+                        }
+                    }
+
                     $researchEntry = [
                         'paperTrailNo' => $this->generatePaperTrailNo($paperIndex, $year),
                         'campus' => $row['campus'] ?? '',
@@ -298,8 +348,8 @@ class CompletedResearchAPI {
                             $app = $row['applicationNumberVal'] ?? '';
                             return ($app && $app !== 'NULL') ? $app : '—';
                         })($row),
-                        'benefitingIndustry' => '—', // Undetermined column
-                        'supportDocs1' => '—',
+                        'benefitingIndustry' => $row['benefitingIndustryVal'] ?? '—',
+                        'supportDocs1' => !empty($supportDocs) ? json_encode($supportDocs) : '—',
                         'programTitle' => $row['programTitleVal'] ?? '—',
                         'dateConducted' => $formatDate($row['dateConductedVal']),
                         'traineesCount' => $row['traineesCountVal'] ?? '—',

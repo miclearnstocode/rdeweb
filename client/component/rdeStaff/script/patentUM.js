@@ -1070,18 +1070,26 @@ export const PatentUM = () => {
                 })
             });
 
+            const selectedCampus = data?.campus || data?.campusUM || '';
             const campusSelect = $({
                 tag: 'select',
                 att: { name: 'campus' + sfx, required: true },
                 style: { ...inputBaseStyle, appearance: 'none' },
-                child: campusOptions.map(camp => $({
-                    tag: 'option',
-                    att: {
-                        value: camp,
-                        selected: (data?.campus || data?.campusUM) === camp
-                    },
-                    text: camp
-                }))
+                child: [
+                    $({
+                        tag: 'option',
+                        att: { value: '', disabled: true, selected: selectedCampus === '' },
+                        text: 'Select Campus'
+                    }),
+                    ...campusOptions.map(camp => $({
+                        tag: 'option',
+                        att: {
+                            value: camp,
+                            selected: selectedCampus === camp
+                        },
+                        text: camp
+                    }))
+                ]
             });
 
             const regNoField = $({
