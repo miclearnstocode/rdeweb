@@ -107,7 +107,7 @@ class ProposedResearchAPI {
     
     private function getEvents() {
         $events = [];
-        $query = "SELECT id, name, date FROM event_list WHERE status = 0 ORDER BY date DESC";
+        $query = "SELECT id, name, date FROM event_list ORDER BY date DESC";
         $result = $this->con->query($query);
         
         if ($result) {
@@ -169,6 +169,7 @@ class ProposedResearchAPI {
                         rf.campus,
                         rf.center,
                         rf.file,
+                        rf.paper_trail_no,
                         e.id as endorsement_id,
                         e.status as endorsement_status,
                         e.date as endorsement_date,
@@ -216,8 +217,17 @@ class ProposedResearchAPI {
                     continue;
                 }
                 
-                $eventInfo = $events[$eventId];
-                $eventType = $this->getEventType($eventInfo['name']);
+                if (isset($events[$eventId])) {
+                    $eventInfo = $events[$eventId];
+                    $eventType = $this->getEventType($eventInfo['name']);
+                } else {
+                    $eventInfo = [
+                        'name' => '',
+                        'date' => $row['endorsement_date'] ?? '',
+                        'year' => $year
+                    ];
+                    $eventType = 'other';
+                }
                 
                 // Use endorsement year from the query
                 $year = $row['endorsement_year'];
@@ -313,7 +323,7 @@ class ProposedResearchAPI {
                         'id' => $row['id'],
                         'endorsement_id' => $row['endorsement_id'],
                         'year' => $year,
-                        'paperTrailNo' => $this->generatePaperTrailNo($paperIndex, $year),
+                        'paperTrailNo' => !empty($row['paper_trail_no']) ? $row['paper_trail_no'] : $this->generatePaperTrailNo($paperIndex, $year),
                         'campus' => $row['campus'] ?? '',
                         'category' => $row['category'] ?? '',
                         'title' => $row['title'] ?? '',
