@@ -1137,7 +1137,7 @@ export const renderCertificateHTML = (data, controlNo) => {
     const itemHTML = (r, globalIdx) => `
         <div class="research-item" data-idx="${globalIdx}">
             <div class="research-title">
-                ${globalIdx + 1}. ${r.title}
+                ${globalIdx + 1}. ${r.title}${r.dateCompleted ? ' - ' + r.dateCompleted : ''}
             </div>
             <div class="research-authors">
                 <span class="research-authors-label">Author/s:</span>

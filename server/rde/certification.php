@@ -79,7 +79,7 @@ switch ($action) {
             exit;
         }
 
-        $sql = "SELECT rf.id, rf.title, rf.author, rf.coauthor, rf.presenter, rf.campus, rf.center
+        $sql = "SELECT rf.id, rf.title, rf.author, rf.coauthor, rf.presenter, rf.campus, rf.center, rf.date_completed
                 FROM researchfile rf
                 INNER JOIN endorsement e ON rf.endorsementid = e.id
                 WHERE e.status = 'accepted'";
@@ -105,9 +105,12 @@ switch ($action) {
                 if ($isPart) {
                     // Combine all contributors into a single unique list
                     $allAuthors = array_unique(array_map('trim', array_merge($a, $ca, $p)));
+                    // Format the date_completed (year only)
+                    $dateFormat = $row['date_completed'] ? date('Y', strtotime($row['date_completed'])) : '';
                     $found[] = [
                         'id' => $row['id'],
                         'title' => $row['title'],
+                        'dateCompleted' => $dateFormat,
                         'authors' => implode(', ', $allAuthors),
                         'campus' => $row['campus'] ?: $row['center'] ?: '—'
                     ];
