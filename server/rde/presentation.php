@@ -169,7 +169,8 @@ class PresentationAPI {
                         rf.campus,
                         rf.center,
                         rf.event as event_title,
-                        rf.event_id
+                        rf.event_id,
+                        rf.date_completed
                     FROM endorsement e
                     INNER JOIN researchfile rf ON rf.endorsementid = e.id
                     WHERE e.status = 'accepted'
@@ -427,6 +428,9 @@ class PresentationAPI {
                 $presentationDates = array_values(array_unique(array_filter($presentationDates)));
                 $completionDates = array_values(array_unique(array_filter($completionDates)));
                 
+                // Use researchfile.date_completed for the date completed field
+                $dateCompleted = !empty($row['date_completed']) ? date('M j, Y', strtotime($row['date_completed'])) : '—';
+                
                 // Set flags for checkmarks (always show what exists in the database)
                 $university = '✓';
                 $international = $hasInternational ? '✓' : '—';
@@ -445,7 +449,7 @@ class PresentationAPI {
                     'category' => $row['category'] ?? '—',
                     'all_researchers' => $allResearchers,
                     'presentor' => $presentors,
-                    'date_completed' => $completionDates,
+                    'date_completed' => $dateCompleted,
                     'forum_title' => $forumTitles,
                     'venue' => $venues,
                     'presentation_date' => $presentationDates,
@@ -520,12 +524,6 @@ class PresentationAPI {
                         AND (LOWER(rf.event) LIKE '%university%' 
                             OR LOWER(rf.event) LIKE '%in-house%' 
                             OR LOWER(rf.event) LIKE '%symposium%'
-                            OR LOWER(rf.event) LIKE '%colloquium%'
-                            OR LOWER(rf.event) LIKE '%conference%'
-                            OR LOWER(rf.event) LIKE '%forum%'
-                            OR LOWER(rf.event) LIKE '%seminar%'
-                            OR LOWER(rf.event) LIKE '%workshop%'
-                            OR LOWER(rf.event) LIKE '%review%'
                             OR LOWER(rf.event) NOT LIKE '%international%'
                             AND LOWER(rf.event) NOT LIKE '%national%'
                             AND LOWER(rf.event) NOT LIKE '%regional%')";
@@ -739,7 +737,8 @@ class PresentationAPI {
                         rf.campus,
                         rf.center,
                         rf.event as event_title,
-                        rf.event_id
+                        rf.event_id,
+                        rf.date_completed
                     FROM endorsement e
                     INNER JOIN researchfile rf ON rf.endorsementid = e.id
                     WHERE e.status = 'accepted'
@@ -962,6 +961,9 @@ class PresentationAPI {
                 $allPresentationDates = array_values(array_unique(array_filter($allPresentationDates)));
                 $allCompletionDates = array_values(array_unique(array_filter($allCompletionDates)));
                 
+                // Use researchfile.date_completed for the date completed field
+                $dateCompleted = !empty($row['date_completed']) ? date('M j, Y', strtotime($row['date_completed'])) : '—';
+                
                 // Set flags
                 $university = '✓';
                 $international = $hasInternational ? '✓' : '—';
@@ -990,7 +992,7 @@ class PresentationAPI {
                     'category' => $row['category'] ?? '—',
                     'all_researchers' => $allResearchers,
                     'presentor' => $allPresentors,
-                    'date_completed' => $allCompletionDates,
+                    'date_completed' => $dateCompleted,
                     'forum_title' => $allForumTitles,
                     'venue' => $allVenues,
                     'presentation_date' => $allPresentationDates,
