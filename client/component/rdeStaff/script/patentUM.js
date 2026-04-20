@@ -1105,11 +1105,35 @@ export const PatentUM = () => {
                 const isUM = type === 'utility_model';
                 const sfx = isUM ? 'UM' : '';
 
-                grid.appendChild(createFormGroup('Case Number (CAPSU IPMO Year-000)', $({
+                // For new records, fetch the next case number automatically
+                let caseNumberValue = data?.['caseNumber' + sfx] || data?.caseNumber || '';
+                
+                const caseNumberInput = $({
                     tag: 'input',
-                    att: { type: 'text', name: 'caseNumber' + sfx, placeholder: 'CAPSU IPMO 2026-001', value: data?.['caseNumber' + sfx] || data?.caseNumber || '', required: true },
-                    style: inputBaseStyle
-                })));
+                    att: { type: 'text', name: 'caseNumber' + sfx, placeholder: 'CAPSU IPMO 2026-001', value: caseNumberValue, required: true },
+                    style: inputBaseStyle,
+                    elementHandler: async (el) => {
+                        // Auto-fetch next case number for new records
+                        if (!data && !caseNumberValue) {
+                            try {
+                                const formData = new FormData();
+                                formData.append('action', 'get_next_case_number');
+                                formData.append('type', type);
+                                
+                                const response = await fetch('/server/rde/patent.php', { method: 'POST', body: formData });
+                                const result = await response.json();
+                                
+                                if (result.success && result.next_case) {
+                                    el.value = result.next_case;
+                                }
+                            } catch (error) {
+                                console.error('Failed to fetch next case number:', error);
+                            }
+                        }
+                    }
+                });
+
+                grid.appendChild(createFormGroup('Case Number (CAPSU IPMO Year-000)', caseNumberInput));
 
                 grid.appendChild(createFormGroup('Research Title Search', createTitleSearchField(inputBaseStyle), 1,
                     'Linking your IP record to a research title in the database automatically fetches the research title. Type at least 2 characters to see suggestions.',
@@ -1161,6 +1185,15 @@ export const PatentUM = () => {
                     att: { type: 'date', name: pubDateField, required: true, value: data?.[pubDateField] || data?.publicationDate || '' },
                     style: inputBaseStyle
                 })));
+
+                const benefitingIndustryField = isID ? null : ('benefitingIndustry' + sfx);
+                if (benefitingIndustryField) {
+                    grid.appendChild(createFormGroup('Benefiting Industry', $({
+                        tag: 'input',
+                        att: { type: 'text', name: benefitingIndustryField, value: data?.[benefitingIndustryField] || '' },
+                        style: inputBaseStyle
+                    })));
+                }
 
                 grid.appendChild(createFormGroup('Status', statusField));
 

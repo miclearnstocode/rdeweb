@@ -9,14 +9,14 @@ $table_map = [
     'patent' => [
         'research_id', 'endorsement_id', 'caseNumber', 'technologyName', 'inventors', 
         'campus', 'agent', 'applicationDate', 'applicationNumber', 'publicationDate', 
-        'status', 'patentFormURL', 'abstractURL', 'claimsURL', 
+        'benefitingIndustry', 'status', 'patentFormURL', 'abstractURL', 'claimsURL', 
         'technicalDescriptionURL', 'technicalDrawingURL', 'photoTechnologyURL',
         'registrationNumber', 'registrationDate', 'senderId', 'submissionStatus'
     ],
     'utility_model' => [
         'research_id', 'endorsement_id', 'caseNumberUM', 'technologyNameUM', 'inventorsUM', 
         'campusUM', 'agentUM', 'applicationDateUM', 'applicationNumberUM', 'publicationDateUM', 
-        'statusUM', 'patentFormURLUM', 'abstractURLUM', 'claimsURLUM', 
+        'benefitingIndustryUM', 'statusUM', 'patentFormURLUM', 'abstractURLUM', 'claimsURLUM', 
         'technicalDescriptionURLUM', 'technicalDrawingURLUM', 'photoTechnologyURLUM',
         'registrationNumber', 'registrationDate', 'senderId', 'submissionStatus'
     ],
