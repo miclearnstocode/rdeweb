@@ -60,6 +60,8 @@ post('/presentedresearch', 'server/rde/presentation.php');
 post('/proposedresearch', 'server/rde/proposed.php');
 post('/publish', 'server/rde/publication.php');
 post('/utilization', 'server/rde/utilization.php');
+post('/certification', 'server/rde/certification.php');
+get('/certification', 'server/rde/certification.php');
 
 // ROOT route
 get('/','server/auth.php');  // This handles redirects based on login status

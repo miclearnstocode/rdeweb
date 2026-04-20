@@ -35,7 +35,7 @@ export const CertificationResearch = () => {
     // Function to load statistics
     const loadStats = async () => {
         try {
-            const res = await fetch('/server/rde/certification.php?action=getStats');
+            const res = await fetch('/certification?action=getStats');
             const stats = await res.json();
             
             if (stats.success) {
@@ -167,7 +167,7 @@ export const CertificationResearch = () => {
 
     const loadReports = async () => {
         try {
-            const res = await fetch('/server/rde/certification.php?action=getReports');
+            const res = await fetch('/certification?action=getReports');
             const logs = await res.json();
             
             if (tableBody) {
@@ -205,7 +205,7 @@ export const CertificationResearch = () => {
             onGenerate: async (data) => {
                 // Save to server
                 try {
-                    const res = await fetch('/server/rde/certification.php?action=saveCertificate', {
+                    const res = await fetch('/certification?action=saveCertificate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)

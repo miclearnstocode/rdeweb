@@ -114,6 +114,18 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
     let modalElement;
     let researchFields = [];
 
+    const fetchNextControlNo = async (el) => {
+        try {
+            const res = await fetch('/certification?action=getLatestControlNo');
+            const data = await res.json();
+            if (data.success && data.next) {
+                if (el) el.value = data.next;
+            }
+        } catch (err) {
+            console.error('Error fetching control number:', err);
+        }
+    };
+
     const getModal = (el) => {
         modalElement = el;
     };
@@ -339,8 +351,9 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                         type: 'text',
                                         placeholder: '027-26',
                                         id: 'control-number',
-                                        value: '027-26'
+                                        value: ''
                                     },
+                                    elementHandler: fetchNextControlNo,
                                     style: {
                                         flex: '1',
                                         padding: '10px 12px',
@@ -412,7 +425,7 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                             }
 
                                             try {
-                                                const res = await fetch(`/server/rde/certification.php?action=searchFaculty&query=${encodeURIComponent(val)}`);
+                                                const res = await fetch(`/certification?action=searchFaculty&query=${encodeURIComponent(val)}`);
                                                 const names = await res.json();
 
                                                 resultsContainer.innerHTML = '';
@@ -453,7 +466,7 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
 
                                                             // Fetch research for this faculty
                                                             try {
-                                                                const researchRes = await fetch(`/server/rde/certification.php?action=getFacultyResearch&name=${encodeURIComponent(name)}`);
+                                                                const researchRes = await fetch(`/certification?action=getFacultyResearch&name=${encodeURIComponent(name)}`);
                                                                 const researches = await researchRes.json();
 
                                                                 if (researchContainer) {
