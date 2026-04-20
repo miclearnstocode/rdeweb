@@ -608,9 +608,9 @@ class PresentationAPI {
             $presentation_date = $_POST['presentation_date'] ?? '';
             $id = $_POST['id'] ?? 0; // For updates
             
-            // Validate required fields
-            if (!$research_id || !$presentor || !$date_completed || !$forum_title || !$venue || !$forum_type || !$presentation_date) {
-                $this->response->message = 'All fields are required';
+            // Validate required fields - only research_id is strictly required
+            if (!$research_id) {
+                $this->response->message = 'Research ID is required';
                 echo json_encode($this->response);
                 return;
             }
@@ -635,39 +635,71 @@ class PresentationAPI {
             }
             
             if ($id) {
-                // Update existing record - INCLUDING presentor field
-                $query = "UPDATE presentation_research 
-                        SET research_id = ?, 
-                            user_id = ?,
-                            presentor = ?,
-                            date_completed = ?,
-                            forum_title = ?,
-                            venue = ?,
-                            forum_type = ?,
-                            presentation_date = ?
-                        WHERE id = ?";
-                
+                // Update existing record - only update the fields provided
+                $setParts = [];
+                $params = [];
+                $types = '';
+
+                if ($research_id) {
+                    $setParts[] = 'research_id = ?';
+                    $params[] = $research_id;
+                    $types .= 'i';
+                }
+
+                if (!empty($presentor)) {
+                    $setParts[] = 'presentor = ?';
+                    $params[] = $presentor;
+                    $types .= 's';
+                }
+
+                if (!empty($date_completed)) {
+                    $setParts[] = 'date_completed = ?';
+                    $params[] = $date_completed;
+                    $types .= 's';
+                }
+
+                if (!empty($forum_title)) {
+                    $setParts[] = 'forum_title = ?';
+                    $params[] = $forum_title;
+                    $types .= 's';
+                }
+
+                if (!empty($venue)) {
+                    $setParts[] = 'venue = ?';
+                    $params[] = $venue;
+                    $types .= 's';
+                }
+
+                if (!empty($forum_type)) {
+                    $setParts[] = 'forum_type = ?';
+                    $params[] = $forum_type;
+                    $types .= 's';
+                }
+
+                if (!empty($presentation_date)) {
+                    $setParts[] = 'presentation_date = ?';
+                    $params[] = $presentation_date;
+                    $types .= 's';
+                }
+
+                if (empty($setParts)) {
+                    $this->response->message = 'No fields to update';
+                    echo json_encode($this->response);
+                    return;
+                }
+
+                $query = "UPDATE presentation_research SET " . implode(', ', $setParts) . " WHERE id = ?";
+                $params[] = $id;
+                $types .= 'i';
+
                 $stmt = $this->con->prepare($query);
                 if (!$stmt) {
                     throw new Exception("Prepare failed: " . $this->con->error);
                 }
-                
-                // Bind parameters: i=integer, s=string
-                // 8 parameters + 1 for WHERE clause = 9 total
-                $stmt->bind_param(
-                    "iissssssi",  // research_id(i), user_id(i), presentor(s), date_completed(s), forum_title(s), venue(s), forum_type(s), presentation_date(s), id(i)
-                    $research_id,
-                    $user_id,
-                    $presentor,
-                    $date_completed,
-                    $forum_title,
-                    $venue,
-                    $forum_type,
-                    $presentation_date,
-                    $id
-                );
+
+                $stmt->bind_param($types, ...$params);
             } else {
-                // Insert new record - INCLUDING presentor field
+                // Insert new record - all fields are required
                 $query = "INSERT INTO presentation_research 
                         (research_id, user_id, presentor, date_completed, forum_title, venue, forum_type, presentation_date)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -692,6 +724,17 @@ class PresentationAPI {
             }
             
             if ($stmt->execute()) {
+                // Also update the date_completed in the researchfile table
+                if (!empty($date_completed)) {
+                    $updateRfQuery = "UPDATE researchfile SET date_completed = ? WHERE id = ?";
+                    $rfStmt = $this->con->prepare($updateRfQuery);
+                    if ($rfStmt) {
+                        $rfStmt->bind_param("si", $date_completed, $research_id);
+                        $rfStmt->execute();
+                        $rfStmt->close();
+                    }
+                }
+
                 $this->response->status = true;
                 $this->response->message = $id ? 'Presentation updated successfully' : 'Presentation added successfully';
                 $this->response->data = [
