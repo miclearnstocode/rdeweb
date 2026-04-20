@@ -145,6 +145,31 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => $conn->error]);
         }
         break;
+
+    case 'getLatestControlNo':
+        $sql = "SELECT control_no FROM certification_log WHERE control_no LIKE 'RES%-%' ORDER BY id DESC LIMIT 1";
+        $result = $conn->query($sql);
+        $next = "001-" . date('y');
+        
+        if ($result && $result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            $latest = $row['control_no'];
+            
+            if (preg_match('/RES(\d+)-(\d+)/', $latest, $matches)) {
+                $num = intval($matches[1]);
+                $lastYear = $matches[2];
+                $currentYear = date('y');
+                
+                if ($lastYear == $currentYear) {
+                    $nextNum = $num + 1;
+                } else {
+                    $nextNum = 1;
+                }
+                $next = str_pad($nextNum, 3, '0', STR_PAD_LEFT) . '-' . $currentYear;
+            }
+        }
+        echo json_encode(['success' => true, 'next' => $next]);
+        break;
         
         case 'getStats':
             // Get total certificates from certification_log
