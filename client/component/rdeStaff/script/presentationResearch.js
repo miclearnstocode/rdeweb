@@ -857,7 +857,7 @@ export const PresentationResearch = () => {
                                     child: [
                                         $({
                                             tag: 'label',
-                                            text: 'Presentor *',
+                                            text: 'Presentor',
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
@@ -941,7 +941,7 @@ export const PresentationResearch = () => {
                                     child: [
                                         $({
                                             tag: 'label',
-                                            text: 'Date of Completion *',
+                                            text: 'Date of Completion',
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
@@ -954,8 +954,7 @@ export const PresentationResearch = () => {
                                             tag: 'input',
                                             att: {
                                                 type: 'date',
-                                                name: 'date_completed',
-                                                required: true
+                                                name: 'date_completed'
                                             },
                                             style: {
                                                 width: '100%',
@@ -978,7 +977,7 @@ export const PresentationResearch = () => {
                                     child: [
                                         $({
                                             tag: 'label',
-                                            text: 'Title of Forum *',
+                                            text: 'Title of Forum',
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
@@ -1021,8 +1020,7 @@ export const PresentationResearch = () => {
                                             att: {
                                                 type: 'text',
                                                 name: 'forum_title',
-                                                placeholder: 'Enter new forum title',
-                                                required: true
+                                                placeholder: 'Enter new forum title'
                                             },
                                             style: {
                                                 width: '100%',
@@ -1045,7 +1043,7 @@ export const PresentationResearch = () => {
                                     child: [
                                         $({
                                             tag: 'label',
-                                            text: 'Venue *',
+                                            text: 'Venue',
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
@@ -1059,8 +1057,7 @@ export const PresentationResearch = () => {
                                             att: {
                                                 type: 'text',
                                                 name: 'venue',
-                                                placeholder: 'Forum venue',
-                                                required: true
+                                                placeholder: 'Forum venue'
                                             },
                                             style: {
                                                 width: '100%',
@@ -1083,7 +1080,7 @@ export const PresentationResearch = () => {
                                     child: [
                                         $({
                                             tag: 'label',
-                                            text: 'Forum Type *',
+                                            text: 'Forum Type',
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
@@ -1095,8 +1092,7 @@ export const PresentationResearch = () => {
                                         $({
                                             tag: 'select',
                                             att: {
-                                                name: 'forum_type',
-                                                required: true
+                                                name: 'forum_type'
                                             },
                                             style: {
                                                 width: '100%',
@@ -1129,7 +1125,7 @@ export const PresentationResearch = () => {
                                     child: [
                                         $({
                                             tag: 'label',
-                                            text: 'Date of Presentation *',
+                                            text: 'Date of Presentation',
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
@@ -1142,8 +1138,7 @@ export const PresentationResearch = () => {
                                             tag: 'input',
                                             att: {
                                                 type: 'date',
-                                                name: 'presentation_date',
-                                                required: true
+                                                name: 'presentation_date'
                                             },
                                             style: {
                                                 width: '100%',
@@ -1435,23 +1430,21 @@ export const PresentationResearch = () => {
             presentor = customInput.value
         }
         
-        if (!presentor) {
-            alert('Please select or enter a presentor')
-            return
-        }
-        
         // Get other form values
-        const dateCompleted = document.querySelector('input[name="date_completed"]').value
-        const forumTitle = document.querySelector('input[name="forum_title"]').value
-        const venue = document.querySelector('input[name="venue"]').value
-        const forumType = document.querySelector('select[name="forum_type"]').value
-        const presentationDate = document.querySelector('input[name="presentation_date"]').value
+        let dateCompleted = document.querySelector('input[name="date_completed"]').value.trim()
+        let forumTitle = document.querySelector('input[name="forum_title"]').value.trim()
+        let venue = document.querySelector('input[name="venue"]').value.trim()
+        let forumType = document.querySelector('select[name="forum_type"]').value
+        let presentationDate = document.querySelector('input[name="presentation_date"]').value.trim()
         
-        if (!dateCompleted || !forumTitle || !venue || !forumType || !presentationDate) {
-            alert('Please fill in all required fields')
-            return
+        const isEditMode = Boolean(presentationId)
+        const getExistingValue = (value) => {
+            if (Array.isArray(value) && value.length > 0) return value[0]
+            if (typeof value === 'string' && value !== '—') return value
+            return ''
         }
         
+
         const saveData = new FormData()
         saveData.append('action', 'save')
         saveData.append('research_id', researchId)

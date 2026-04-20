@@ -315,7 +315,7 @@ export const Utilization = () => {
 
             const updateFileListUI = () => {
                 fileListContainer.innerHTML = '';
-                
+
                 // Show kept existing files
                 keptFiles.forEach((fileMeta, idx) => {
                     const row = $({
@@ -1078,38 +1078,6 @@ export const Utilization = () => {
                                 type: 'click',
                                 method: openAddProgramModal
                             }
-                        }),
-                        $({
-                            tag: 'button',
-                            att: { className: 'export-btn' },
-                            style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '30px',
-                                padding: '10px 20px',
-                                color: '#fff',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                transition: 'all 0.3s ease'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-download' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Export'
-                                })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                }
-                            }
                         })
                     ]
                 })
@@ -1454,12 +1422,12 @@ export const Utilization = () => {
                                 "Delete Program",
                                 `Are you sure you want to delete the program "${item.programTitle}"?`
                             );
-                            
+
                             if (confirmed) {
                                 const body = new FormData();
                                 body.append('action', 'delete');
                                 body.append('id', item.id);
-                                
+
                                 try {
                                     const res = await fetch('/utilization', {
                                         method: 'POST',
@@ -1490,8 +1458,8 @@ export const Utilization = () => {
 
                 return $({
                     tag: 'td',
-                    style: { 
-                        ...cellStyle, 
+                    style: {
+                        ...cellStyle,
                         textAlign: 'center',
                         verticalAlign: 'middle',
                         borderBottom: '1px solid #444'

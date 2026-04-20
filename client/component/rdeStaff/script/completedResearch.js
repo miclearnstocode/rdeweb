@@ -166,14 +166,7 @@ export const CompletedResearch = () => {
                     tag: 'div',
                     style: { display: 'flex', gap: '12px' },
                     child: [
-                        searchInput,
-                        $({
-                            tag: 'button',
-                            att: { className: 'export-btn' },
-                            style: { backgroundColor: 'transparent', border: '1px solid #444', borderRadius: '20px', padding: '8px 16px', color: '#fff', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' },
-                            child: [$({ tag: 'span', att: { className: 'fa-solid fa-download' } }), $({ tag: 'span', text: 'Export' })],
-                            event: { type: 'click', method: () => console.log('Export clicked') }
-                        })
+                        searchInput
                     ]
                 })
             ]
