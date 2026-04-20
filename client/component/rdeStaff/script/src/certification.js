@@ -233,12 +233,42 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                 fontSize: '14px',
                                 outline: 'none',
                                 transition: 'all 0.2s ease'
+                            }
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'div',
+                    style: { marginBottom: '12px' },
+                    child: [
+                        $({
+                            tag: 'label',
+                            text: 'Year of Completion (Optional)',
+                            style: {
+                                display: 'block',
+                                color: '#aaa',
+                                fontSize: '13px',
+                                marginBottom: '6px',
+                                fontWeight: '500'
+                            }
+                        }),
+                        $({
+                            tag: 'input',
+                            att: {
+                                type: 'text',
+                                placeholder: 'e.g., 2026',
+                                className: 'year-input'
                             },
-                            event: {
-                                type: 'input',
-                                method: (e) => {
-                                    // Store value
-                                }
+                            style: {
+                                width: '100%',
+                                padding: '10px 12px',
+                                backgroundColor: '#2a2a2a',
+                                border: '1px solid #444',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                fontSize: '14px',
+                                outline: 'none',
+                                transition: 'all 0.2s ease'
                             }
                         })
                     ]
@@ -486,8 +516,11 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                                                             const latestGroup = researchFields[researchFields.length - 1];
                                                                             const titleInp = latestGroup.querySelector('.research-title-input');
                                                                             const authorsInp = latestGroup.querySelector('.authors-input');
+                                                                            const yearInp = latestGroup.querySelector('.year-input');
+                                                                            
                                                                             if (titleInp) titleInp.value = r.title;
                                                                             if (authorsInp) authorsInp.value = r.authors;
+                                                                            if (yearInp && r.dateCompleted) yearInp.value = r.dateCompleted;
                                                                         });
                                                                     } else {
                                                                         addResearchField(researchContainer);
@@ -856,11 +889,13 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                         researchGroups.forEach((group, index) => {
                                             const titleInput = group.querySelector('.research-title-input');
                                             const authorsInput = group.querySelector('.authors-input');
+                                            const yearInput = group.querySelector('.year-input');
 
                                             if (titleInput && authorsInput && titleInput.value) {
                                                 researches.push({
                                                     title: titleInput.value,
-                                                    authors: authorsInput.value
+                                                    authors: authorsInput.value,
+                                                    dateCompleted: yearInput ? yearInput.value.trim() : ''
                                                 });
                                             }
                                         });
@@ -1267,7 +1302,7 @@ export const renderCertificateHTML = (data, controlNo) => {
         return measure(\`
             <div class="research-item">
                 <div class="research-title">
-                    \${i + 1}. \${r.title}
+                    \${i + 1}. \${r.title}\${r.dateCompleted ? ' - ' + r.dateCompleted : ''}
                 </div>
                 <div class="research-authors">
                     <span class="research-authors-label">Author/s:</span>
@@ -1324,7 +1359,7 @@ export const renderCertificateHTML = (data, controlNo) => {
             const r = researches[idx];
             return \`<div class="research-item">
                 <div class="research-title">
-                    \${idx + 1}. \${r.title}
+                    \${idx + 1}. \${r.title}\${r.dateCompleted ? ' - ' + r.dateCompleted : ''}
                 </div>
                 <div class="research-authors">
                     <span class="research-authors-label">Author/s:</span>

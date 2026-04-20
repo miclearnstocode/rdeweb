@@ -1,7 +1,7 @@
-import { $, ConfirmationAlert, Request, TimeConvert, Waiting } from '../../../lib/lib.js'
-import { Error as ErrorComponent } from "../../../error.js";
-import { Print } from "../../otherComponent/comment.js";
-import { handleResubmit } from './resubmit.js';
+import { $, ConfirmationAlert, Request, TimeConvert, Waiting } from '../../../../lib/lib.js'
+import { Error as ErrorComponent } from "../../../../error.js";
+import { Print } from "../../../otherComponent/comment.js";
+import { handleResubmit } from '../resubmit.js';
 
 const isGoogleDriveUrl = (url) => {
     if (!url) return false
