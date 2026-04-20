@@ -147,6 +147,7 @@ class CompletedResearchAPI {
                         rf.center,
                         rf.date_started,
                         rf.date_completed,
+                        rf.paper_trail_no,
                         e.id as endorsement_id,
                         e.status as endorsement_status,
                         e.date as endorsement_date,
@@ -213,7 +214,10 @@ class CompletedResearchAPI {
                     AND rf.event_id != 0
                     
                     GROUP BY rf.id
-                    ORDER BY e.date DESC, rf.id ASC";
+                    ORDER BY
+                        CAST(SUBSTRING_INDEX(rf.paper_trail_no, '-', 1) AS UNSIGNED) ASC,
+                        CAST(SUBSTRING_INDEX(rf.paper_trail_no, '-', -1) AS UNSIGNED) ASC,
+                        rf.paper_trail_no ASC";
             
             $result = $this->con->query($query);
             if (!$result) throw new Exception("Query failed: " . $this->con->error);
@@ -322,7 +326,7 @@ class CompletedResearchAPI {
                     }
 
                     $researchEntry = [
-                        'paperTrailNo' => $this->generatePaperTrailNo($paperIndex, $year),
+                        'paperTrailNo' => $row['paper_trail_no'] ?? $this->generatePaperTrailNo($paperIndex, $year),
                         'campus' => $row['campus'] ?? '',
                         'category' => $row['category'] ?? '',
                         'title' => $row['title'] ?? '',
