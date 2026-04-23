@@ -1,14 +1,8 @@
 import { $, ConfirmationAlert, Waiting, DeleteConfirmModal } from '../../../lib/lib.js'
-import { Error as ErrorComponent } from "../../../error.js";
 import { Print } from "../../otherComponent/comment.js";
 import { handleResubmit } from './resubmit.js';
 
-// Helper function for Google Drive URL detection
-const isGoogleDriveUrl = (url) => {
-    if (!url) return false
-    return url.includes('drive.google.com') ||
-        url.includes('drive.google.com/file/d/')
-}
+
 // View Researches Modal
 const openViewResearchesModal = () => {
     const modal = $({

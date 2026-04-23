@@ -61,7 +61,7 @@ post('/proposedresearch', 'server/rde/proposed.php');
 post('/publish', 'server/rde/publication.php');
 post('/utilization', 'server/rde/utilization.php');
 post('/certification', 'server/rde/certification.php');
-get('/certification', 'server/rde/certification.php');
+post('/monitor', 'server/rde/monitoring.php');
 
 // ROOT route
 get('/','server/auth.php');  // This handles redirects based on login status
@@ -96,6 +96,7 @@ get('/rdeOffice/patentUM','/index.html');
 get('/rdeOffice/utilization','/index.html');
 get('/rdeOffice/$page','/index.html');
 get('/rdeOffice/certification','/index.html');
+get('/rdeOffice/monitoring','/index.html');
 
 // External routes
 get('/external/users/a/b/c/b/c/d/e/v1','external/index.php');

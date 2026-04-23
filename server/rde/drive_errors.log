@@ -1,0 +1,68 @@
+[23-Apr-2026 11:34:46 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'rm.fund_source' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php:187
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php(187): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/monitor', 'server/rde/moni...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(57): post('/monitor', 'server/rde/moni...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 187
+[23-Apr-2026 11:34:52 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'rm.fund_source' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php:187
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php(187): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/monitor', 'server/rde/moni...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(57): post('/monitor', 'server/rde/moni...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 187
+[23-Apr-2026 11:38:14 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'rm.proposal_link' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php:186
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php(186): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/monitor', 'server/rde/moni...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(57): post('/monitor', 'server/rde/moni...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 186
+[23-Apr-2026 11:38:49 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'rm.fund_source' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php:187
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php(187): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/monitor', 'server/rde/moni...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(57): post('/monitor', 'server/rde/moni...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 187
+[23-Apr-2026 11:41:14 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'rm.fund_source' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php:187
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php(187): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/monitor', 'server/rde/moni...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(57): post('/monitor', 'server/rde/moni...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 187
+[23-Apr-2026 11:42:56 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:42:56 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[23-Apr-2026 11:43:01 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216

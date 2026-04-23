@@ -1774,7 +1774,7 @@ if (isset($_POST['researchReviewed'])) {
     $response->list = [];
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $userId = $_SESSION['userId'];
+        $userId = $_SESSION['userId'] ?? 0;
         
         $queryEndorsement = "SELECT * FROM `endorsement` WHERE `senderid`='$userId'";
         
@@ -2119,7 +2119,7 @@ if (isset($_POST['researchFileAdmin'])) {
             $data->category = $val['category'];
             $data->campus = $val['campus'];
             $data->proponent = $val['proponent'];
-            $data->date = $val['date'];
+            $data->date = $val['date'] ?? null;
             $data->status = $val['status'];
             $data->event = $val['event'];
             
@@ -2148,7 +2148,7 @@ if (isset($_POST['getResearch'])) {
     $lastId = isset($_POST['lastId']) ? intval($_POST['lastId']) : 0;
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $serderId = $_SESSION['userId'];
+        $serderId = $_SESSION['userId'] ?? 0;
         
         // Check user access
         $accessQuery = "SELECT `researchaccess` FROM `account` WHERE `id`='$serderId'";
@@ -3414,7 +3414,7 @@ if (isset($_POST['rejectIndorse'])) {
                 $to->name = $senderRow['fullName'];
                 $to->email = $senderRow['email'];
                 $eventName = $senderRow['event'];
-                $campus = $senderRow['campus'];
+                $campus = $senderRow['campus'] ?? 'Main';
                 
                 // Get research titles
                 $titlesQuery = "SELECT title, author FROM researchfile WHERE endorsementid=?";
@@ -4132,7 +4132,8 @@ if (isset($_POST['deleteEndorsement'])) {
                     $details .= " Failed to trash: " . implode(', ', $failedFiles);
                 }
                 
-                $logStmt->bind_param("sss", $_SESSION['userId'], $docId, $details);
+                $sessionUserId = $_SESSION['userId'] ?? 0;
+                $logStmt->bind_param("sss", $sessionUserId, $docId, $details);
                 $logStmt->execute();
                 
                 $con->commit();
@@ -4318,7 +4319,8 @@ if(isset($_POST['resetComments'])){
         $query="DELETE FROM comments
         WHERE comments.resid=? AND comments.evalid=?";
         $statement=$con->prepare($query);
-        $statement->bind_param("ss",$_POST['docId'],$_SESSION['userId']);
+        $sessionUserId = $_SESSION['userId'] ?? 0;
+        $statement->bind_param("ss",$_POST['docId'],$sessionUserId);
         $status=$statement->execute();
         if($status){
             $response->status=true;

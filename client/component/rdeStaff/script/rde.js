@@ -1,4 +1,5 @@
-import { $ } from '../../../lib/lib.js'
+
+import { $ } from "../../../lib/lib.js";
 import { Header } from "../../otherComponent/header.js";
 import { Communication } from "./communication.js";
 import { ResearchMain } from "./mainResearch.js";
@@ -9,6 +10,8 @@ import { Publication } from "./publication.js";
 import { PatentUM } from "./patentUM.js";
 import { Utilization } from "./utilization.js";
 import { CertificationResearch } from "./certificationResearch.js";
+import { MonitoringComponent } from "./monitoring.js";
+import { Summary } from "./researchSummary.js";
 
 const button = ({ label, event, url }) => {
     const getB = (b) => {
@@ -71,18 +74,23 @@ const Body = () => {
         button: button,
         page: ResearchMain
     })
-
-    botArray.push({
-        url: '/rdeOffice/completedResearch',
-        label: 'Completed Research',
-        button: button,
-        page: CompletedResearch
-    })
     botArray.push({
         url: '/rdeOffice/proposedResearch',
         label: 'Proposed Research',
         button: button,
         page: ProposedResearch
+    })
+    botArray.push({
+        url: '/rdeOffice/researchMonitoring',
+        label: 'Research Monitoring',
+        button: button,
+        page: MonitoringComponent
+    })
+    botArray.push({
+        url: '/rdeOffice/completedResearch',
+        label: 'Completed Research',
+        button: button,
+        page: CompletedResearch
     })
     botArray.push({
         url: '/rdeOffice/presentationResearch',
@@ -113,6 +121,12 @@ const Body = () => {
         label: 'Certifications',
         button: button,
         page: CertificationResearch
+    })
+    botArray.push({
+        url: '/rdeOffice/summary',
+        label: 'Summary',
+        button: button,
+        page: Summary
     })
     const Tabs = () => {
         const label = $({
