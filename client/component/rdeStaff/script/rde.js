@@ -106,7 +106,7 @@ const Body = () => {
     })
     botArray.push({
         url: '/rdeOffice/patentUM',
-        label: 'Patents & UM',
+        label: 'IP Assets',
         button: button,
         page: PatentUM
     })
@@ -117,16 +117,16 @@ const Body = () => {
         page: Utilization
     })
     botArray.push({
-        url: '/rdeOffice/certification',
-        label: 'Certifications',
-        button: button,
-        page: CertificationResearch
-    })
-    botArray.push({
         url: '/rdeOffice/summary',
         label: 'Summary',
         button: button,
         page: Summary
+    })
+    botArray.push({
+        url: '/rdeOffice/certification',
+        label: 'Certifications',
+        button: button,
+        page: CertificationResearch
     })
     const Tabs = () => {
         const label = $({

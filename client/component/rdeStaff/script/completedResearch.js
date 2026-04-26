@@ -1,4 +1,13 @@
 import { $ } from "../../../lib/lib.js";
+
+const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+};
+
 export const CompletedResearch = () => {
     let mainTableContainer;
     let tableBody;
@@ -6,11 +15,39 @@ export const CompletedResearch = () => {
     let filteredData = [];
     let isLoading = false;
 
+    // Filter state
+    let filters = {
+        event_id: 'All',
+        center: 'All',
+        campus: 'All',
+        category: 'All',
+        search: ''
+    };
+
+    let filterOptions = {
+        events: [],
+        centers: [],
+        campuses: [],
+        categories: []
+    };
+
     // Index types with their colors (matched with publication module)
     const indexTypes = [
         { value: 'refereed', label: 'Refereed', color: '#ffffff', bgColor: '#2a2a2a' },
         { value: 'scopus', label: 'Scopus', color: '#000000', bgColor: '#ffd700' },
         { value: 'wos', label: 'WOS', color: '#ffffff', bgColor: '#4caf50' }
+    ];
+
+    const campusOptions = [
+        'Roxas City Main',
+        'Pilar',
+        'Pontevedra',
+        'Sigma',
+        'Mambusao',
+        'Burias',
+        'Tapaz',
+        'Dayao',
+        'Dumarao'
     ];
 
     // Header columns based on structure provided by user
@@ -62,6 +99,13 @@ export const CompletedResearch = () => {
         try {
             const formData = new FormData();
             formData.append('action', 'fetch');
+
+            if (filters.event_id !== 'All') formData.append('event_id', filters.event_id);
+            if (filters.center !== 'All') formData.append('center', filters.center);
+            if (filters.campus !== 'All') formData.append('campus', filters.campus);
+            if (filters.category !== 'All') formData.append('category', filters.category);
+            if (filters.search) formData.append('search', filters.search);
+
             const response = await fetch('/completeresearch', {
                 method: 'POST',
                 body: formData
@@ -71,6 +115,12 @@ export const CompletedResearch = () => {
             if (result.status) {
                 researchData = result.data || [];
                 filteredData = [...researchData];
+
+                if (result.filters) {
+                    filterOptions = result.filters;
+                    updateFilterDropdowns();
+                }
+
                 renderTable();
 
                 const countEl = document.querySelector('.research-count');
@@ -80,6 +130,42 @@ export const CompletedResearch = () => {
             console.error('Fetch error:', error);
         } finally {
             isLoading = false;
+        }
+    };
+
+    const updateFilterDropdowns = () => {
+        if (!mainTableContainer) return;
+
+        const eventSelect = mainTableContainer.querySelector('.event-filter-select');
+        const centerSelect = mainTableContainer.querySelector('.center-filter-select');
+        const campusSelect = mainTableContainer.querySelector('.campus-filter-select');
+        const categorySelect = mainTableContainer.querySelector('.category-filter-select');
+
+        if (eventSelect && filterOptions.events.length > 0 && eventSelect.options.length <= 1) {
+            filterOptions.events.forEach(ev => {
+                const opt = document.createElement('option');
+                opt.value = ev.id || ev.name;
+                opt.text = ev.name;
+                eventSelect.appendChild(opt);
+            });
+        }
+
+        if (centerSelect && filterOptions.centers.length > 0 && centerSelect.options.length <= 1) {
+            filterOptions.centers.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.text = c;
+                centerSelect.appendChild(opt);
+            });
+        }
+
+        if (categorySelect && filterOptions.categories.length > 0 && categorySelect.options.length <= 1) {
+            filterOptions.categories.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.text = c;
+                categorySelect.appendChild(opt);
+            });
         }
     };
 
@@ -126,7 +212,7 @@ export const CompletedResearch = () => {
     const SearchBar = () => {
         const searchInput = $({
             tag: 'input',
-            att: { type: 'text', placeholder: 'Search research...', className: 'research-search-input' },
+            att: { type: 'text', placeholder: 'Search for research title', className: 'research-search-input' },
             style: {
                 backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid #444',
                 borderRadius: '20px', padding: '8px 16px', color: '#fff',
@@ -134,14 +220,79 @@ export const CompletedResearch = () => {
             },
             event: {
                 type: 'input',
+                method: debounce((e) => {
+                    filters.search = e.target.value;
+                    fetchData();
+                }, 400)
+            }
+        });
+
+        const filterSelectStyle = {
+            backgroundColor: '#333',
+            border: '1px solid #444',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            color: '#ddd',
+            fontSize: '13px',
+            outline: 'none',
+            cursor: 'pointer'
+        };
+
+        const eventFilter = $({
+            tag: 'select',
+            att: { className: 'event-filter-select' },
+            style: filterSelectStyle,
+            child: [$({ tag: 'option', att: { value: 'All' }, text: 'All Events' })],
+            event: {
+                type: 'change',
                 method: (e) => {
-                    const term = e.target.value.toLowerCase();
-                    filteredData = researchData.filter(item =>
-                        item.title?.toLowerCase().includes(term) ||
-                        item.authors?.toLowerCase().includes(term) ||
-                        item.paperTrailNo?.toLowerCase().includes(term)
-                    );
-                    renderTable();
+                    filters.event_id = e.target.value;
+                    fetchData();
+                }
+            }
+        });
+
+        const centerFilter = $({
+            tag: 'select',
+            att: { className: 'center-filter-select' },
+            style: { ...filterSelectStyle, maxWidth: '180px' },
+            child: [$({ tag: 'option', att: { value: 'All' }, text: 'All Centers' })],
+            event: {
+                type: 'change',
+                method: (e) => {
+                    filters.center = e.target.value;
+                    fetchData();
+                }
+            }
+        });
+
+        const campusFilter = $({
+            tag: 'select',
+            att: { className: 'campus-filter-select' },
+            style: filterSelectStyle,
+            child: [
+                $({ tag: 'option', att: { value: 'All' }, text: 'All Campuses' }),
+                ...campusOptions.map(c => $({ tag: 'option', att: { value: c }, text: c }))
+            ],
+            event: {
+                type: 'change',
+                method: (e) => {
+                    filters.campus = e.target.value;
+                    fetchData();
+                }
+            }
+        });
+
+        const categoryFilter = $({
+            tag: 'select',
+            att: { className: 'category-filter-select' },
+            style: filterSelectStyle,
+            child: [$({ tag: 'option', att: { value: 'All' }, text: 'All Categories' })],
+            event: {
+                type: 'change',
+                method: (e) => {
+                    filters.category = e.target.value;
+                    fetchData();
                 }
             }
         });
@@ -164,8 +315,12 @@ export const CompletedResearch = () => {
                 }),
                 $({
                     tag: 'div',
-                    style: { display: 'flex', gap: '12px' },
+                    style: { display: 'flex', gap: '10px', alignItems: 'center' },
                     child: [
+                        eventFilter,
+                        centerFilter,
+                        campusFilter,
+                        categoryFilter,
                         searchInput
                     ]
                 })

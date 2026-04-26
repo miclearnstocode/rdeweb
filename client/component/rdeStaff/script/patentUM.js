@@ -220,7 +220,7 @@ export const PatentUM = () => {
 
     // Campus options
     const campusOptions = [
-        'Main (Roxas)',
+        'Roxas City Main',
         'Pilar',
         'Pontevedra',
         'Sigma',
@@ -1115,7 +1115,7 @@ export const PatentUM = () => {
 
                 // For new records, fetch the next case number automatically
                 let caseNumberValue = data?.['caseNumber' + sfx] || data?.caseNumber || '';
-                
+
                 const caseNumberInput = $({
                     tag: 'input',
                     att: { type: 'text', name: 'caseNumber' + sfx, placeholder: 'CAPSU IPMO 2026-001', value: caseNumberValue, required: true },
@@ -1127,10 +1127,10 @@ export const PatentUM = () => {
                                 const formData = new FormData();
                                 formData.append('action', 'get_next_case_number');
                                 formData.append('type', type);
-                                
+
                                 const response = await fetch('/server/rde/patent.php', { method: 'POST', body: formData });
                                 const result = await response.json();
-                                
+
                                 if (result.success && result.next_case) {
                                     el.value = result.next_case;
                                 }

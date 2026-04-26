@@ -213,7 +213,6 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
             'center' => $row['center'],
             'campus' => $row['campus'],
             'location' => $row['location'] ?? '—',
-            'proposalLink' => $row['proposal_link'],
             'readyForSymposium' => !empty($row['official_completion_date']),
             'quarters' => [
                 'q1' => [
@@ -325,7 +324,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
                                     $remarksCol = ?, 
                                     $measuresCol = ? 
                                   WHERE research_id = ?");
-        $update->bind_param("sssisssi", $startDate, $location, $completion, $status, $remarks, $measures, $researchId);
+        $update->bind_param("ssisssi", $startDate, $location, $completion, $status, $remarks, $measures, $researchId);
         $res = $update->execute();
     } else {
         // Get metadata from researchfile
@@ -354,8 +353,8 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
 
         $insert = $conn->prepare("INSERT INTO research_monitoring 
                                     (research_id, project_title, researchers, start_date, location, $completionCol, $statusCol, $remarksCol, $measuresCol) 
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $insert->bind_param("isssssisss", $researchId, $projectTitle, $researchers, $finalStartDate, $finalLocation, $completion, $status, $remarks, $measures);
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $insert->bind_param("issssisss", $researchId, $projectTitle, $researchers, $finalStartDate, $finalLocation, $completion, $status, $remarks, $measures);
         $res = $insert->execute();
     }
 
