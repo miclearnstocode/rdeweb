@@ -54,6 +54,7 @@ post('/overridedocs','server/override.php');
 post('/filesUmd','server/umd_file.php');
 post('/completeresearch', 'server/rde/completedResearch.php');
 post('/summary', 'server/rde/summary.php');
+post('/dashboard', 'server/rde/dashboard.php');
 post('/internalfunded', 'server/rde/internallyFunded.php');
 post('/monitor', 'server/rde/monitoring.php');
 post('/patentresearch', 'server/rde/patent.php');
@@ -89,6 +90,7 @@ get('/evaluator/$page','/index.html');  // For evaluator sub-pages
 
 // RDE Office routes
 get('/rdeOffice/communication','/index.html');
+get('/rdeOffice/dashboard','/index.html');
 get('/rdeOffice/completedResearch','/index.html'); 
 get('/rdeOffice/proposedResearch','/index.html');
 get('/rdeOffice/presentationResearch','/index.html');

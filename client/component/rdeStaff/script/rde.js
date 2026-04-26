@@ -12,6 +12,7 @@ import { Utilization } from "./utilization.js";
 import { CertificationResearch } from "./certificationResearch.js";
 import { MonitoringComponent } from "./monitoring.js";
 import { Summary } from "./researchSummary.js";
+import { RdeDashboard } from "./rdeDashboard.js";
 
 const button = ({ label, event, url }) => {
     const getB = (b) => {
@@ -129,34 +130,18 @@ const Body = () => {
         page: CertificationResearch
     })
     const Tabs = () => {
-        const label = $({
-            tag: 'div',
-            style: {
-                fontFamily: 'arial black,sans-serif',
-                fontSize: '1.5vw',
-                color: 'deepskyblue',
-                height: '10vh',
-                margin: 'auto',
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                backgroundColor: '#666', // Match the sidebar background
-                borderBottom: '1px solid #777', // Add a subtle separator
-                position: 'sticky',
-                top: '0',
-                zIndex: '100'
+        const label = $({ tag: 'div', style: {
+                fontFamily: 'arial black,sans-serif', fontSize: '1.5vw', color: 'deepskyblue',
+                height: '10vh', margin: 'auto', width: '100%', display: 'flex',
+                justifyContent: 'center', backgroundColor: '#666',
+                borderBottom: '1px solid #777', position: 'sticky', top: '0', zIndex: '100',
+                cursor: 'pointer'
             },
-            child: [
-                $({
-                    tag: 'div',
-                    text: 'RDE OFFICE',
-                    style: {
-                        margin: 'auto',
-                        height: 'fit-content',
-                        width: 'fit-content'
-                    }
-                })
-            ]
+            event: { type: 'click', method: () => window.location.assign('/rdeOffice/dashboard') },
+            child: [$({
+                tag: 'div', text: 'RDE OFFICE',
+                style: { margin: 'auto', height: 'fit-content', width: 'fit-content' }
+            })]
         })
 
         return ($({
@@ -220,9 +205,11 @@ const Body = () => {
         let current = window.location.href.replace(window.location.origin, '')
         let me = current.split('/')[2];
 
+        let matched = false;
         botArray.forEach(val => {
             let url = val.url.replace(window.location.origin, '')
             if (me === url.split('/')[2]) {
+                matched = true;
                 const component = val.page();
                 if (component instanceof Node) {
                     el.appendChild(component);
@@ -235,6 +222,12 @@ const Body = () => {
                 }
             }
         })
+
+        // If no route matched, default to Dashboard
+        if (!matched) {
+            const dashboard = RdeDashboard();
+            if (dashboard instanceof Node) el.appendChild(dashboard);
+        }
     }
 
     const getBotHolder = (botHolder) => {
