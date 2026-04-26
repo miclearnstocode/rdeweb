@@ -72,11 +72,11 @@ class UtilizationAPI {
     public function addProgram() {
         $research_id = $_POST['research_id'] ?? null;
         $endorsement_id = $_POST['endorsement_id'] ?? null;
-        $programTitle = $_POST['programTitle'] ?? '';
+        $utilizationType = $_POST['utilizationType'] ?? '';
         $dateConducted = $_POST['dateConducted'] ?? '';
         $traineesCount = $_POST['traineesCount'] ?? '';
 
-        if (empty($programTitle) || empty($dateConducted) || empty($traineesCount)) {
+        if (empty($utilizationType) || empty($dateConducted) || empty($traineesCount)) {
             echo json_encode(['success' => false, 'message' => 'Missing required fields']);
             return;
         }
@@ -94,7 +94,7 @@ class UtilizationAPI {
 
                 if (empty($targetFolderId)) {
                     // No linked research or no folder found — create a utilization-specific folder
-                    $cleanTitle = cleanNameForDrive($programTitle);
+                    $cleanTitle = cleanNameForDrive($utilizationType);
                     $utilizationRootId = $drive->findOrCreateFolder('Utilization Programs', $drive->getRootFolderId());
                     $targetFolderId = $drive->findOrCreateFolder($cleanTitle, $utilizationRootId);
                 }
@@ -155,14 +155,14 @@ class UtilizationAPI {
         $supportDocs = implode(', ', $allUrls);
         $supportDocsMetaJson = !empty($supportDocsMetadata) ? json_encode($supportDocsMetadata) : null;
 
-        $query = "INSERT INTO utilization_programs (research_id, endorsement_id, programTitle, dateConducted, traineesCount, supportDocs, supportDocsMetadata) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO utilization_programs (research_id, endorsement_id, utilizationType, dateConducted, traineesCount, supportDocs, supportDocsMetadata) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->con->prepare($query);
         if (!$stmt) {
             echo json_encode(['success' => false, 'message' => 'Statement preparation failed: ' . $this->con->error]);
             return;
         }
         
-        $stmt->bind_param('iississ', $research_id, $endorsement_id, $programTitle, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson);
+        $stmt->bind_param('iississ', $research_id, $endorsement_id, $utilizationType, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Program added successfully', 'id' => $this->con->insert_id]);
@@ -179,7 +179,7 @@ class UtilizationAPI {
                   LEFT JOIN researchfile r ON u.research_id = r.id";
         
         if (!empty($searchTerm)) {
-            $query .= " WHERE u.programTitle LIKE ? 
+            $query .= " WHERE u.utilizationType LIKE ? 
                         OR u.supportDocs LIKE ? 
                         OR r.title LIKE ? 
                         OR r.author LIKE ?";
@@ -260,12 +260,12 @@ class UtilizationAPI {
 
         $research_id = $_POST['research_id'] ?? null;
         $endorsement_id = $_POST['endorsement_id'] ?? null;
-        $programTitle = $_POST['programTitle'] ?? '';
+        $utilizationType = $_POST['utilizationType'] ?? '';
         $dateConducted = $_POST['dateConducted'] ?? '';
         $traineesCount = $_POST['traineesCount'] ?? '';
         $supportLinks = $_POST['supportLinks'] ?? '';
 
-        if (empty($programTitle) || empty($dateConducted) || empty($traineesCount)) {
+        if (empty($utilizationType) || empty($dateConducted) || empty($traineesCount)) {
             echo json_encode(['success' => false, 'message' => 'Missing required fields']);
             return;
         }
@@ -316,7 +316,7 @@ class UtilizationAPI {
                 // Re-find target folder
                 $targetFolderId = $this->getResearchFolderId($research_id);
                 if (empty($targetFolderId)) {
-                    $cleanTitle = cleanNameForDrive($programTitle);
+                    $cleanTitle = cleanNameForDrive($utilizationType);
                     $utilizationRootId = $drive->findOrCreateFolder('Utilization Programs', $drive->getRootFolderId());
                     $targetFolderId = $drive->findOrCreateFolder($cleanTitle, $utilizationRootId);
                 }
@@ -379,7 +379,7 @@ class UtilizationAPI {
         $query = "UPDATE utilization_programs SET 
                     research_id = ?, 
                     endorsement_id = ?, 
-                    programTitle = ?, 
+                    utilizationType = ?, 
                     dateConducted = ?, 
                     traineesCount = ?, 
                     supportDocs = ?, 
@@ -387,7 +387,7 @@ class UtilizationAPI {
                   WHERE id = ?";
         
         $stmt = $this->con->prepare($query);
-        $stmt->bind_param('iississi', $research_id, $endorsement_id, $programTitle, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson, $id);
+        $stmt->bind_param('iississi', $research_id, $endorsement_id, $utilizationType, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson, $id);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Program updated successfully']);

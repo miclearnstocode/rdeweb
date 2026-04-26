@@ -7,7 +7,14 @@ export const Utilization = () => {
     // Columns for utilization and extension programs
     const columns = [
         { field: 'researchTitle', header: 'Research Title', width: '250px', type: 'search', required: false },
-        { field: 'programTitle', header: 'Program Title', width: '300px', type: 'text', required: true },
+        { 
+            field: 'utilizationType', 
+            header: 'Utilization Type', 
+            width: '200px', 
+            type: 'select', 
+            options: ['Patent', 'UM', 'Copyright', 'Extension Services'],
+            required: true 
+        },
         { field: 'dateConducted', header: 'Date Conducted', width: '150px', type: 'date', required: true },
         { field: 'traineesCount', header: 'No. of Trainees/Beneficiaries', width: '180px', type: 'number', required: true },
         { field: 'supportLinks', header: 'Link to Support Documents', width: '160px', type: 'url', required: false },
@@ -121,7 +128,7 @@ export const Utilization = () => {
                 att: {
                     type: 'text',
                     id: fieldId,
-                    placeholder: 'Search for accepted research title...',
+                    placeholder: 'Search for research title',
                     autoComplete: 'off',
                     value: initialValue || selectedResearchTitle
                 },
@@ -465,6 +472,30 @@ export const Utilization = () => {
             });
         }
 
+        if (column.type === 'select') {
+            const select = $({
+                tag: 'select',
+                att: { id: fieldId, required: !!column.required },
+                style: { ...inputBaseStyle, appearance: 'none', backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' },
+                child: [
+                    $({ tag: 'option', att: { value: '' }, text: `Select ${column.header}...`, disabled: true, selected: !initialValue }),
+                    ...(column.options || []).map(opt => $({
+                        tag: 'option',
+                        att: { value: opt, selected: initialValue === opt },
+                        text: opt
+                    }))
+                ]
+            });
+
+            select.addEventListener('focus', () => { select.style.borderColor = 'deepskyblue'; });
+            select.addEventListener('blur', () => { select.style.borderColor = '#444'; });
+
+            return $({
+                tag: 'div',
+                style: { display: 'flex', flexDirection: 'column' },
+                child: [label, select]
+            });
+        }
 
         const input = $({
             tag: 'input',
