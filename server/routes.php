@@ -53,6 +53,7 @@ post('/abstain','server/abstain.php');
 post('/overridedocs','server/override.php');
 post('/filesUmd','server/umd_file.php');
 post('/completeresearch', 'server/rde/completedResearch.php');
+post('/summary', 'server/rde/summary.php');
 post('/internalfunded', 'server/rde/internallyFunded.php');
 post('/monitor', 'server/rde/monitoring.php');
 post('/patentresearch', 'server/rde/patent.php');

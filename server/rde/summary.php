@@ -88,17 +88,12 @@ class CompletedResearchAPI {
     
     private function getEvents() {
         $events = [];
-        $query = "SELECT id, name, date FROM event_list 
-                  WHERE name LIKE '%Symposium%' 
-                  AND name NOT LIKE '%In-House%' 
-                  AND name NOT LIKE '%In House%'
-                  ORDER BY date DESC";
+        $query = "SELECT id, name, date FROM event_list WHERE status = 0 ORDER BY date DESC";
         $result = $this->con->query($query);
         
         if ($result) {
             while ($row = $result->fetch_assoc()) {
                 $events[$row['id']] = [
-                    'id' => $row['id'],
                     'name' => $row['name'],
                     'date' => $row['date'],
                     'year' => $this->getEventYear($row['date'])
@@ -135,68 +130,39 @@ class CompletedResearchAPI {
     
     public function fetchCompletedResearch() {
         try {
-            $events = $this->getEvents();
-            $symposiumIds = array_keys($events);
-            
-            // For "Completed", we fetch all accepted research.
-            // We join other tables to get their specific milestones.
-            // Since one research can have multiple entries in those tables, we use subqueries or take the latest.
             $filters = [
-                'event_id' => $_POST['event_id'] ?? null,
-                'center' => $_POST['center'] ?? null,
-                'campus' => $_POST['campus'] ?? null,
-                'category' => $_POST['category'] ?? null,
-                'search' => $_POST['search'] ?? null
+                'utilization_type' => $_POST['utilization_type'] ?? 'All',
+                'search' => $_POST['search'] ?? ''
             ];
 
             $whereClauses = ["e.status = 'accepted'"];
-            
-            // Use dynamic symposium IDs for initial filtering
-            if (!empty($symposiumIds)) {
-                $idsList = implode(',', array_map('intval', $symposiumIds));
-                $whereClauses[] = "(rf.event_id IN ($idsList) OR LOWER(rf.event) LIKE '%symposium%')";
-            } else {
-                $whereClauses[] = "LOWER(rf.event) LIKE '%symposium%'";
-            }
             $params = [];
             $types = "";
 
-            if ($filters['event_id'] && $filters['event_id'] !== 'All') {
-                $whereClauses[] = "rf.event_id = ?";
-                $params[] = $filters['event_id'];
-                $types .= "i";
+            if ($filters['utilization_type'] !== 'All') {
+                $type = $filters['utilization_type'];
+                // Normalize 'UM' to 'Utility Models' if that's what's in DB
+                if ($type === 'UM') {
+                    $whereClauses[] = "(util.utilizationType = 'UM' OR util.utilizationType = 'Utility Models' OR util.utilizationType = 'Utility Model')";
+                } else {
+                    $whereClauses[] = "util.utilizationType = ?";
+                    $params[] = $type;
+                    $types .= "s";
+                }
             }
 
-            if ($filters['center'] && $filters['center'] !== 'All') {
-                $whereClauses[] = "rf.center = ?";
-                $params[] = $filters['center'];
-                $types .= "s";
-            }
-
-            if ($filters['campus'] && $filters['campus'] !== 'All') {
-                $whereClauses[] = "rf.campus = ?";
-                $params[] = $filters['campus'];
-                $types .= "s";
-            }
-
-            if ($filters['category'] && $filters['category'] !== 'All') {
-                $whereClauses[] = "rf.category = ?";
-                $params[] = $filters['category'];
-                $types .= "s";
-            }
-
-            if ($filters['search']) {
+            if (!empty($filters['search'])) {
                 $searchTerm = "%" . $filters['search'] . "%";
-                $whereClauses[] = "(rf.title LIKE ? OR rf.author LIKE ? OR rf.coauthor LIKE ? OR rf.paper_trail_no LIKE ?)";
+                $whereClauses[] = "(rf.title LIKE ? OR rf.author LIKE ? OR rf.paper_trail_no LIKE ?)";
                 $params[] = $searchTerm;
                 $params[] = $searchTerm;
                 $params[] = $searchTerm;
-                $params[] = $searchTerm;
-                $types .= "ssss";
+                $types .= "sss";
             }
 
             $whereSql = implode(" AND ", $whereClauses);
 
+            // For "Completed", we fetch all accepted research.
             $query = "SELECT 
                         rf.id,
                         rf.senderid,
@@ -272,29 +238,72 @@ class CompletedResearchAPI {
                     
                     WHERE $whereSql
                     
-                    GROUP BY rf.id
+                    GROUP BY rf.title
                     ORDER BY
                         CAST(SUBSTRING_INDEX(rf.paper_trail_no, '-', 1) AS UNSIGNED) ASC,
                         CAST(SUBSTRING_INDEX(rf.paper_trail_no, '-', -1) AS UNSIGNED) ASC,
                         rf.paper_trail_no ASC";
             
             $stmt = $this->con->prepare($query);
-            if ($types) {
+            if (!empty($params)) {
                 $stmt->bind_param($types, ...$params);
             }
             $stmt->execute();
             $result = $stmt->get_result();
-
             if (!$result) throw new Exception("Query failed: " . $this->con->error);
             
             $researchData = [];
-            $stats = ['total' => 0, 'thisYear' => 0];
+            $stats = [
+                'total' => 0, 
+                'thisYear' => 0,
+                'patents' => 0,
+                'utilityModels' => 0,
+                'copyrights' => 0,
+                'extensionServices' => 0
+            ];
+
+            $researchData = [];
+            $stats = [
+                'total' => 0, 
+                'thisYear' => 0,
+                'patents' => 0,
+                'utilityModels' => 0,
+                'copyrights' => 0,
+                'extensionServices' => 0
+            ];
+
+            // Use the actual number of unique titles found by the main query
+            $stats['total'] = $result->num_rows;
+
+            // 2. Get specific utilization stats (Accepted only, counting unique project titles per category)
+            $utilStatsQuery = "SELECT util.utilizationType, COUNT(DISTINCT rf.title) as count 
+                               FROM utilization_programs util
+                               JOIN endorsement e ON util.endorsement_id = e.id
+                               LEFT JOIN researchfile rf ON util.research_id = rf.id
+                               WHERE e.status = 'accepted'
+                               GROUP BY util.utilizationType";
+            
+            $utilStatsRes = $this->con->query($utilStatsQuery);
+            if ($utilStatsRes) {
+                while ($uRow = $utilStatsRes->fetch_assoc()) {
+                    $uType = $uRow['utilizationType'];
+                    $uCount = (int)$uRow['count'];
+                    
+                    if ($uType === 'Patent') $stats['patents'] += $uCount;
+                    else if (in_array($uType, ['UM', 'Utility Models', 'Utility Model'])) $stats['utilityModels'] += $uCount;
+                    else if ($uType === 'Copyright') $stats['copyrights'] += $uCount;
+                    else if ($uType === 'Extension Services') $stats['extensionServices'] += $uCount;
+                }
+            }
+
             $researchIds = [];
             $rows = [];
             
             while ($row = $result->fetch_assoc()) {
                 $rows[] = $row;
                 $researchIds[] = $row['id'];
+                
+                if ($row['endorsement_year'] == date('Y')) $stats['thisYear']++;
             }
             
             $academicPositions = $this->getAcademicPositions($researchIds);
@@ -430,32 +439,10 @@ class CompletedResearchAPI {
                 }
             }
             
-            // Fetch list of centers and campuses for filters
-            $centersQuery = "SELECT DISTINCT center FROM researchfile WHERE center IS NOT NULL AND center != '' ORDER BY center ASC";
-            $centersResult = $this->con->query($centersQuery);
-            $centers = [];
-            while ($c = $centersResult->fetch_assoc()) $centers[] = $c['center'];
-
-            $campusesQuery = "SELECT DISTINCT campus FROM researchfile WHERE campus IS NOT NULL AND campus != '' ORDER BY campus ASC";
-            $campusesResult = $this->con->query($campusesQuery);
-            $campuses = [];
-            while ($c = $campusesResult->fetch_assoc()) $campuses[] = $c['campus'];
-
-            $categoriesQuery = "SELECT DISTINCT category FROM researchfile WHERE category IS NOT NULL AND category != '' ORDER BY category ASC";
-            $categoriesResult = $this->con->query($categoriesQuery);
-            $categories = [];
-            while ($c = $categoriesResult->fetch_assoc()) $categories[] = $c['category'];
-
             $this->response->status = true;
             $this->response->message = 'Completed research data fetched';
             $this->response->data = $researchData;
             $this->response->stats = $stats;
-            $this->response->filters = [
-                'events' => array_values($events),
-                'centers' => $centers,
-                'campuses' => $campuses,
-                'categories' => $categories
-            ];
             
         } catch (Exception $e) {
             $this->response->message = 'Error: ' . $e->getMessage();

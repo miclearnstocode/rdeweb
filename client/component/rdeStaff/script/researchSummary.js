@@ -6,6 +6,19 @@ export const Summary = () => {
     let researchData = [];
     let filteredData = [];
     let isLoading = false;
+    let stats = {
+        total: 0,
+        patents: 0,
+        utilityModels: 0,
+        copyrights: 0,
+        extensionServices: 0
+    };
+
+    // Filter state
+    let filters = {
+        utilizationType: 'All',
+        search: ''
+    };
 
     // Index types with their colors (matched with publication module)
     const indexTypes = [
@@ -63,7 +76,15 @@ export const Summary = () => {
         try {
             const formData = new FormData();
             formData.append('action', 'fetch');
-            const response = await fetch('/completeresearch', {
+
+            if (filters.utilizationType !== 'All') {
+                formData.append('utilization_type', filters.utilizationType);
+            }
+            if (filters.search) {
+                formData.append('search', filters.search);
+            }
+
+            const response = await fetch('/summary', {
                 method: 'POST',
                 body: formData
             });
@@ -72,6 +93,10 @@ export const Summary = () => {
             if (result.status) {
                 researchData = result.data || [];
                 filteredData = [...researchData];
+                if (result.stats) {
+                    stats = result.stats;
+                    updateStatsUI();
+                }
                 renderTable();
 
                 const countEl = document.querySelector('.research-count');
@@ -96,6 +121,61 @@ export const Summary = () => {
         filteredData.forEach(item => {
             const row = renderResearchRow(item);
             if (row) tableBody.appendChild(row);
+        });
+    };
+
+    const updateStatsUI = () => {
+        if (!mainTableContainer) return;
+        const statsContainer = mainTableContainer.querySelector('.stats-row-container');
+        if (statsContainer) {
+            const newStatsRow = StatsRow();
+            statsContainer.replaceWith(newStatsRow);
+        }
+    };
+
+    const StatsRow = () => {
+        const createStatCard = (title, value, icon, color) => {
+            return $({
+                tag: 'div',
+                style: {
+                    flex: '1', minWidth: '200px', backgroundColor: '#333',
+                    borderRadius: '16px', padding: '20px', display: 'flex',
+                    flexDirection: 'column', gap: '12px', border: '1px solid #444',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)', transition: 'transform 0.2s ease'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+                        child: [
+                            $({ tag: 'span', text: title, style: { color: '#aaa', fontSize: '13px', fontWeight: '500' } }),
+                            $({ tag: 'span', att: { className: `fa-solid ${icon}` }, style: { color: color, fontSize: '18px' } })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        text: value.toString(),
+                        style: { color: '#fff', fontSize: '28px', fontWeight: '700', fontFamily: 'Segoe UI, sans-serif' }
+                    })
+                ]
+            });
+        };
+
+        return $({
+            tag: 'div',
+            att: { className: 'stats-row-container' },
+            style: {
+                display: 'flex', gap: '20px', padding: '24px',
+                backgroundColor: '#2a2a2a', overflowX: 'auto',
+                borderBottom: '1px solid #444'
+            },
+            child: [
+                createStatCard('Total Research', researchData.length, 'fa-book', '#00bcd4'),
+                createStatCard('Patents', stats.patents, 'fa-file-invoice', '#ff9800'),
+                createStatCard('Utility Models', stats.utilityModels, 'fa-cogs', '#e91e63'),
+                createStatCard('Copyrights', stats.copyrights, 'fa-copyright', '#9c27b0'),
+                createStatCard('Extension Services', stats.extensionServices, 'fa-hand-holding-heart', '#4caf50')
+            ]
         });
     };
 
@@ -147,6 +227,35 @@ export const Summary = () => {
             }
         });
 
+        const filterSelectStyle = {
+            backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid #444',
+            borderRadius: '20px', padding: '8px 16px', color: '#afafafff',
+            fontSize: '13px', outline: 'none', cursor: 'pointer',
+            transition: 'all 0.3s ease', appearance: 'none',
+            backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+            backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px',
+            paddingRight: '36px'
+        };
+
+        const utilizationFilter = $({
+            tag: 'select',
+            style: filterSelectStyle,
+            child: [
+                $({ tag: 'option', att: { value: 'All' }, text: 'All Utilization Types' }),
+                $({ tag: 'option', att: { value: 'Patent' }, text: 'Patent' }),
+                $({ tag: 'option', att: { value: 'Copyright' }, text: 'Copyright' }),
+                $({ tag: 'option', att: { value: 'UM' }, text: 'Utility Models (UM)' }),
+                $({ tag: 'option', att: { value: 'Extension Services' }, text: 'Extension Services' })
+            ],
+            event: {
+                type: 'change',
+                method: (e) => {
+                    filters.utilizationType = e.target.value;
+                    fetchData();
+                }
+            }
+        });
+
         return $({
             tag: 'div',
             style: {
@@ -158,15 +267,16 @@ export const Summary = () => {
                     tag: 'div',
                     style: { display: 'flex', alignItems: 'center', gap: '12px' },
                     child: [
-                        $({ tag: 'span', att: { className: 'fa-solid fa-table' }, style: { color: 'deepskyblue', fontSize: '20px' } }),
-                        $({ tag: 'h2', text: 'Completed Research', style: { color: '#fff', fontSize: '20px', fontWeight: '500', margin: '0' } }),
+                        $({ tag: 'span', att: { className: 'fa-solid fa-chart-line' }, style: { color: '#4caf50', fontSize: '20px' } }),
+                        $({ tag: 'h2', text: 'Overall Research Summary', style: { color: '#fff', fontSize: '20px', fontWeight: '500', margin: '0' } }),
                         $({ tag: 'span', att: { className: 'research-count' }, style: { backgroundColor: '#444', color: '#ddd', padding: '2px 8px', borderRadius: '12px', fontSize: '12px' }, text: '0 records' })
                     ]
                 }),
                 $({
                     tag: 'div',
-                    style: { display: 'flex', gap: '12px' },
+                    style: { display: 'flex', gap: '12px', alignItems: 'center' },
                     child: [
+                        utilizationFilter,
                         searchInput
                     ]
                 })
@@ -414,6 +524,6 @@ export const Summary = () => {
         tag: 'div',
         style: { width: '100%', height: '100%', backgroundColor: '#2a2a2a', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
         elementHandler: getMainContainer,
-        child: [SearchBar(), DataTable()]
+        child: [SearchBar(), StatsRow(), DataTable()]
     });
 };
