@@ -667,26 +667,6 @@ export const MonitoringComponent = () => {
                             openEditModal(item)
                         }
                     }
-                }),
-                $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-flag-checkered' },
-                    style: {
-                        color: item.readyForSymposium ? '#4caf50' : '#aaa',
-                        cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        transition: 'all 0.2s ease'
-                    },
-                    title: item.readyForSymposium ? 'Ready for Symposium' : 'Mark for Symposium',
-                    event: {
-                        type: 'click',
-                        method: (e) => {
-                            e.stopPropagation()
-                            markReadyForSymposium(item)
-                        }
-                    }
                 })
             ]
         })

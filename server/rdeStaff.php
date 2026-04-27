@@ -67,7 +67,7 @@ if (isset($_POST['auth'])) {
                 $statement->bind_result($id,$email, $pass);
                 $statement->fetch();
                 if (password_verify($password, $pass)) {
-                    $response->message = '/rdeOffice/communication';
+                    $response->message = '/rdeOffice/dashboard';
                     $_SESSION['isLog'] = serialize(new Auth(true, $_POST['userType'], $username, 'RDE ', $id, $username,$email,'',''));
                     $_SESSION['login']=true;
                     $_SESSION['userId']=$id;

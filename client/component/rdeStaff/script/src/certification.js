@@ -73,9 +73,42 @@ function highlightName(text, name) {
     if (validClusters.length === 0) return text;
 
     const highlightTarget = new Array(tokens.length).fill(false);
+    const titles = ['dr', 'prof', 'engr', 'arch', 'atty', 'hon', 'mr', 'ms', 'mrs'];
+    const suffixes = ['phd', 'edd', 'msc', 'ma', 'md'];
+
     for (const c of validClusters) {
-        const startIndex = c[0].index;
-        const endIndex = c[c.length - 1].index;
+        let startIndex = c[0].index;
+        let endIndex = c[c.length - 1].index;
+
+        // Look back for titles (e.g., Dr.)
+        let tempStart = startIndex;
+        for (let j = startIndex - 1; j >= 0; j--) {
+            const t = tokens[j].trim().toLowerCase().replace(/[^a-z]/g, '');
+            if (t && titles.includes(t)) {
+                tempStart = j;
+                // Keep looking back if there are multiple titles
+            } else if (tokens[j].trim() === '' || tokens[j] === '.') {
+                continue;
+            } else {
+                break;
+            }
+        }
+        startIndex = tempStart;
+
+        // Look forward for suffixes (e.g., PhD)
+        let tempEnd = endIndex;
+        for (let j = endIndex + 1; j < tokens.length; j++) {
+            const t = tokens[j].trim().toLowerCase().replace(/[^a-z]/g, '');
+            if (t && suffixes.includes(t)) {
+                tempEnd = j;
+            } else if (tokens[j].trim() === '' || tokens[j] === '.' || tokens[j] === ',') {
+                continue;
+            } else {
+                break;
+            }
+        }
+        endIndex = tempEnd;
+
         for (let j = startIndex; j <= endIndex; j++) {
             highlightTarget[j] = true;
         }
@@ -517,7 +550,7 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                                                             const titleInp = latestGroup.querySelector('.research-title-input');
                                                                             const authorsInp = latestGroup.querySelector('.authors-input');
                                                                             const yearInp = latestGroup.querySelector('.year-input');
-                                                                            
+
                                                                             if (titleInp) titleInp.value = r.title;
                                                                             if (authorsInp) authorsInp.value = r.authors;
                                                                             if (yearInp && r.dateCompleted) yearInp.value = r.dateCompleted;
@@ -604,7 +637,7 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                             },
                             child: [
                                 $({ tag: 'option', att: { value: '' }, text: 'Select Campus/Center' }),
-                                $({ tag: 'option', att: { value: 'Capiz State University - Roxas City Main Campus', selected: true }, text: 'Capiz State University - Roxas City Main Campus' }),
+                                $({ tag: 'option', att: { value: 'Capiz State University - Roxas City Main Campus' }, text: 'Capiz State University - Roxas City Main Campus' }),
                                 $({ tag: 'option', att: { value: 'Capiz State University - Pilar Campus' }, text: 'Capiz State University - Pilar Campus' }),
                                 $({ tag: 'option', att: { value: 'Capiz State University - Pontevedra Campus' }, text: 'Capiz State University - Pontevedra Campus' }),
                                 $({ tag: 'option', att: { value: 'Capiz State University - Mambusao Satellite College' }, text: 'Capiz State University - Mambusao Satellite College' }),
@@ -847,7 +880,6 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                             }),
                             $({
                                 tag: 'button',
-                                text: 'Generate Certificate',
                                 style: {
                                     backgroundColor: 'deepskyblue',
                                     border: 'none',
@@ -869,18 +901,48 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                     }),
                                     $({
                                         tag: 'span',
-                                        text: 'Generate'
+                                        text: 'Generate Certificate'
                                     })
                                 ],
                                 event: {
                                     type: 'click',
-                                    method: () => {
+                                    method: async (e) => {
+                                        const btn = e.currentTarget;
+                                        const originalHtml = btn.innerHTML;
+
                                         // Collect form data
                                         const controlNo = document.getElementById('control-number')?.value || '';
                                         const fullNameInput = document.getElementById('full-name')?.value || '';
-                                        const fullName = fullNameInput.replace(/\w+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+                                        // Helper to format names to Title Case
+                                        const toTitleCase = (str) => {
+                                            if (!str) return '';
+                                            return str.split(/([,.\s&]+)/).map(part => {
+                                                if (/^[a-z]+$/i.test(part)) {
+                                                    const lower = part.toLowerCase();
+                                                    if (['et', 'al', 'of', 'the', 'and'].includes(lower)) return lower;
+                                                    if (lower === 'phd') return 'PhD';
+                                                    if (lower === 'edd') return 'EdD';
+                                                    if (lower === 'msc') return 'MSc';
+                                                    return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+                                                }
+                                                return part;
+                                            }).join('');
+                                        };
+
+                                        const fullName = toTitleCase(fullNameInput);
                                         const campus = document.getElementById('campus')?.value || '';
                                         const issueDate = document.getElementById('issue-date')?.value || '';
+
+                                        if (!campus) {
+                                            alert('Please select a Campus/Center before generating the certificate.');
+                                            const campusSelect = document.getElementById('campus');
+                                            if (campusSelect) {
+                                                campusSelect.style.borderColor = '#f44336';
+                                                campusSelect.focus();
+                                            }
+                                            return;
+                                        }
 
                                         // Collect research data
                                         const researchGroups = document.querySelectorAll('.research-group');
@@ -894,7 +956,7 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                             if (titleInput && authorsInput && titleInput.value) {
                                                 researches.push({
                                                     title: titleInput.value,
-                                                    authors: authorsInput.value,
+                                                    authors: toTitleCase(authorsInput.value),
                                                     dateCompleted: yearInput ? yearInput.value.trim() : ''
                                                 });
                                             }
@@ -908,7 +970,24 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
                                             issueDate: issueDate
                                         };
 
-                                        onGenerate(certificateData);
+                                        try {
+                                            btn.style.opacity = '0.7';
+                                            btn.style.pointerEvents = 'none';
+                                            btn.innerHTML = '<span class="fa-solid fa-spinner fa-spin"></span><span> Generating PDF...</span>';
+
+                                            // Generate the PDF blob in the background
+                                            const pdfBlob = await generateCertificatePDFBlob(certificateData, certificateData.controlNo);
+
+                                            // Pass both data and blob to the parent handler
+                                            await onGenerate(certificateData, pdfBlob);
+                                        } catch (err) {
+                                            console.error('Failed to generate PDF:', err);
+                                            alert('Failed to generate PDF: ' + err.message);
+                                        } finally {
+                                            btn.style.opacity = '1';
+                                            btn.style.pointerEvents = 'auto';
+                                            btn.innerHTML = originalHtml;
+                                        }
                                     }
                                 }
                             })
@@ -921,7 +1000,8 @@ export const CertificateModal = ({ onGenerate, onCancel }) => {
 };
 
 // Certificate HTML Renderer
-export const renderCertificateHTML = (data, controlNo) => {
+// noPrint: set true to skip the auto window.print() call (used for PDF capture)
+export const renderCertificateHTML = (data, controlNo, noPrint = false) => {
 
     const formattedDate = data.issueDate ? (() => {
         const d = new Date(data.issueDate + 'T00:00:00');
@@ -941,25 +1021,33 @@ export const renderCertificateHTML = (data, controlNo) => {
  
         * { box-sizing: border-box; }
  
+        html, body {
+            margin: 0;
+            padding: ${noPrint ? '0' : '20px'};
+        }
         body {
             font-family: 'Times New Roman', serif;
-            margin: 0;
-            padding: 20px;
-            background: #525659;
+            background: ${noPrint ? '#fff' : '#525659'};
             color: #000;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
+        #pages-root {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
  
         .certificate-container {
-            width: 210mm;
-            min-height: 297mm;
-            height: 297mm;
-            margin: 0 auto 30px auto;
+            width: ${noPrint ? '794px' : '210mm'};
+            min-height: ${noPrint ? '1122px' : '297mm'};
+            height: ${noPrint ? '1122px' : '297mm'};
+            margin: ${noPrint ? '0' : '0 auto 30px auto'};
             position: relative;
             background-color: white;
             overflow: hidden;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            ${noPrint ? '' : 'box-shadow: 0 0 10px rgba(0,0,0,0.5);'}
         }
  
         .print-bg {
@@ -1386,37 +1474,45 @@ export const renderCertificateHTML = (data, controlNo) => {
         if (page.hasSig) {
             contentHTML += sigHTML;
         }
- 
-        const pageBreak = isLastPage ? '' : 'page-break-after:always; break-after:page;';
- 
+        const pageBreak = (isLastPage || ${noPrint}) ? '' : 'page-break-after:always; break-after:page;';
+
         ROOT.insertAdjacentHTML('beforeend', \`
             <div class="certificate-container" style="\${pageBreak}">
                 <div class="print-bg"></div>
                 <div class="certificate-content">
                     \${contentHTML}
+                    
                 </div>
             </div>
         \`);
     });
+
+    // Add footers to ALL pages EXCEPT the last one
     const allPages = ROOT.querySelectorAll('.certificate-container');
     const totalPages = allPages.length;
 
+    // After all pages are inserted, add page breaks ONLY to non-last pages
     allPages.forEach(function(pageEl, idx) {
-            const pageNum = idx + 1;
-            const footer = document.createElement('div');
-            footer.style.cssText = 'position:absolute; bottom:10mm; right:2.54cm; margin-bottom: 85px; font-family:Times New Roman; font-size:16px; color:#555; z-index:3; text-align:right;';
-            footer.innerHTML = 'Page ' + pageNum + ' of ' + totalPages + '<br><span style="font-size:9pt; margin-bottom: 80px; color:blue; font-family: Times New Roman;">${(data.controlNo).slice(0, 3)} ${(data.controlNo).slice(3)}</span>';
-            pageEl.appendChild(footer);
-        });
+        const isLast = (idx === totalPages - 1);
+        const pageNum = idx + 1;
+        
+        // Add footer
+        const footer = document.createElement('div');
+        footer.style.cssText = 'position:absolute; bottom:10mm; right:2.54cm; margin-bottom: 85px; font-family:Times New Roman; font-size:16px; color:#555; z-index:3; text-align:right;';
+        footer.innerHTML = 'Page ' + pageNum + ' of ' + totalPages + '<br><span style="font-size:9pt; margin-bottom: 80px; color:blue; font-family: Times New Roman;">${(data.controlNo).slice(0, 3)} ${(data.controlNo).slice(3)}</span>';
+        pageEl.appendChild(footer);
+    });
  
-    if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(function () {
-            setTimeout(function () { window.print(); }, 400);
-        });
-    } else {
-        window.onload = function () {
-            setTimeout(function () { window.print(); }, 600);
-        };
+    if (!${noPrint}) {
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(function () {
+                setTimeout(function () { window.print(); }, 400);
+            });
+        } else {
+            window.onload = function () {
+                setTimeout(function () { window.print(); }, 600);
+            };
+        }
     }
 })();
 </script>
@@ -1424,14 +1520,240 @@ export const renderCertificateHTML = (data, controlNo) => {
 </html>`;
 };
 
+export const generateCertificatePDFBlob = (data, controlNo) => new Promise((resolve, reject) => {
+    const captureIframe = document.createElement('iframe');
+
+    captureIframe.style.cssText = [
+        'position:fixed',
+        'left:-9999px',
+        'top:0',
+        'width:794px',
+        'visibility:hidden',
+        'pointer-events:none'
+    ].join(';');
+    document.body.appendChild(captureIframe);
+
+    const timeout = setTimeout(() => {
+        document.body.removeChild(captureIframe);
+        reject(new Error('PDF capture timed out.'));
+    }, 60000);
+
+    captureIframe.addEventListener('load', async () => {
+        try {
+            const iframeWin = captureIframe.contentWindow;
+            const iframeDoc = captureIframe.contentDocument;
+
+            // Wait for the certificate layout script to finish building pages
+            await new Promise(r => setTimeout(r, 1500));
+
+            const pagesRoot = iframeDoc.getElementById('pages-root');
+            if (!pagesRoot || pagesRoot.children.length === 0) {
+                throw new Error('Certificate pages-root is empty after render.');
+            }
+
+            // Inject html2pdf into the iframe
+            if (!iframeWin.html2pdf) {
+                const script = iframeDoc.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                iframeDoc.head.appendChild(script);
+                await new Promise((res, rej) => {
+                    script.onload = res;
+                    script.onerror = () => rej(new Error('Failed to load html2pdf in iframe'));
+                });
+            }
+
+            // Run html2pdf WITHOUT pagebreak mode and WITHOUT onclone modifications
+            const blob = await iframeWin.html2pdf()
+                .set({
+                    margin: 0,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false,
+                        letterRendering: true,
+                        windowWidth: 794
+                    },
+                    jsPDF: {
+                        unit: 'mm',
+                        format: 'a4',
+                        orientation: 'portrait',
+                        compress: true,
+                        precision: 16
+                    }
+                })
+                .from(pagesRoot)
+                .outputPdf('blob');
+
+            clearTimeout(timeout);
+            document.body.removeChild(captureIframe);
+            resolve(blob);
+        } catch (err) {
+            clearTimeout(timeout);
+            document.body.removeChild(captureIframe);
+            reject(err);
+        }
+    }, { once: true });
+
+    captureIframe.srcdoc = renderCertificateHTML(data, controlNo, true);
+});
+
+// Certificate Preview Modal Component
+export const CertificatePreviewModal = (data, controlNo) => {
+    let modalElement;
+    const html = renderCertificateHTML(data, controlNo);
+    const iframeId = 'cert-iframe-' + Date.now();
+
+    return $({
+        tag: 'div',
+        style: {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: '20000',
+            backdropFilter: 'blur(10px)',
+            fontFamily: 'Segoe UI, sans-serif'
+        },
+        elementHandler: (el) => modalElement = el,
+        child: [
+            $({
+                tag: 'div',
+                style: {
+                    width: '950px',
+                    maxWidth: '95%',
+                    height: '92vh',
+                    backgroundColor: '#1e1e1e',
+                    borderRadius: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    animation: 'slideIn 0.3s ease'
+                },
+                child: [
+                    // Header
+                    $({
+                        tag: 'div',
+                        style: {
+                            padding: '16px 32px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                style: { display: 'flex', alignItems: 'center', gap: '12px' },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-file-invoice' },
+                                        style: { color: 'deepskyblue', fontSize: '20px' }
+                                    }),
+                                    $({
+                                        tag: 'h3',
+                                        text: 'Certificate Preview',
+                                        style: { color: '#fff', margin: 0, fontSize: '18px', fontWeight: '500' }
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: { display: 'flex', gap: '12px' },
+                                child: [
+                                    $({
+                                        tag: 'button',
+                                        style: {
+                                            backgroundColor: 'deepskyblue',
+                                            border: 'none',
+                                            borderRadius: '12px',
+                                            padding: '10px 24px',
+                                            color: '#fff',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        child: [
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-print' } }),
+                                            $({ tag: 'span', text: 'Print / Save PDF' })
+                                        ],
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                const iframe = document.getElementById('cert-iframe');
+                                                if (iframe) {
+                                                    iframe.contentWindow.print();
+                                                }
+                                            }
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'button',
+                                        style: {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                            border: 'none',
+                                            borderRadius: '12px',
+                                            padding: '10px 16px',
+                                            color: '#fff',
+                                            cursor: 'pointer',
+                                            fontSize: '18px'
+                                        },
+                                        child: [$({ tag: 'span', att: { className: 'fa-solid fa-times' } })],
+                                        event: {
+                                            type: 'click',
+                                            method: () => modalElement.remove()
+                                        }
+                                    })
+                                ]
+                            })
+                        ]
+                    }),
+                    // Content (Iframe)
+                    $({
+                        tag: 'div',
+                        style: { flex: 1, backgroundColor: '#525659', position: 'relative' },
+                        child: [
+                            $({
+                                tag: 'iframe',
+                                att: {
+                                    id: iframeId,
+                                    srcdoc: html
+                                },
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    border: 'none'
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+        ]
+    });
+};
+
 // Export utility function to generate certificate
 export const generateCertificate = (data) => {
     const controlNo = data.controlNo || `RES${new Date().getFullYear().toString().slice(-2)}-${String(Math.floor(Math.random() * 100)).padStart(2, '0')}`;
 
-    // Open in new window
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(renderCertificateHTML(data, controlNo));
-    printWindow.document.close();
+    // Show in modal instead of new window
+    const preview = CertificatePreviewModal(data, controlNo);
+    document.body.appendChild(preview);
 
     return controlNo;
 };

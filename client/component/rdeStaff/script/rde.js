@@ -63,12 +63,12 @@ const Body = () => {
     let mainBody
     const botArray = []
 
-    botArray.push({
+    /*botArray.push({
         url: '/rdeOffice/communication',
         label: 'Communication',
         button: button,
         page: Communication
-    })
+    })*/
 
     botArray.push({
         url: '/rdeOffice/research',
@@ -120,7 +120,7 @@ const Body = () => {
     })
     botArray.push({
         url: '/rdeOffice/utilization',
-        label: 'Utilization',
+        label: 'Research Utilization',
         button: button,
         page: Utilization
     })

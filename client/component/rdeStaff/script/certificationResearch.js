@@ -1,5 +1,5 @@
 import { $ } from "../../../lib/lib.js";
-import { CertificateModal, renderCertificateHTML, generateCertificate } from "./src/certification.js";
+import { CertificateModal, renderCertificateHTML, generateCertificate, CertificatePreviewModal } from "./src/certification.js";
 
 export const CertificationResearch = () => {
     let mainContainer;
@@ -28,6 +28,7 @@ export const CertificationResearch = () => {
         loadReports();
     };
 
+
     const getTableBody = (el) => {
         tableBody = el;
     };
@@ -37,7 +38,7 @@ export const CertificationResearch = () => {
         try {
             const res = await fetch('/certification?action=getStats');
             const stats = await res.json();
-            
+
             if (stats.success) {
                 statsData = {
                     total: stats.total,
@@ -45,7 +46,7 @@ export const CertificationResearch = () => {
                     thisYear: stats.thisYear,
                     uniqueFaculty: stats.uniqueFaculty
                 };
-                
+
                 // Update the stats cards if they're already rendered
                 updateStatsCards();
             }
@@ -58,7 +59,7 @@ export const CertificationResearch = () => {
     const updateStatsCards = () => {
         const statValues = document.querySelectorAll('.stat-value');
         const statSubtitles = document.querySelectorAll('.stat-subtitle');
-        
+
         if (statValues.length >= 4) {
             statValues[0].textContent = statsData.total;
             statValues[1].textContent = statsData.thisMonth;
@@ -77,8 +78,8 @@ export const CertificationResearch = () => {
             },
             child: [
                 $({ tag: 'td', text: record.date, style: { padding: '16px 12px', color: '#ccc', fontSize: '13px' } }),
-                $({ 
-                    tag: 'td', 
+                $({
+                    tag: 'td',
                     style: { padding: '16px 12px' },
                     child: [
                         $({
@@ -104,7 +105,7 @@ export const CertificationResearch = () => {
                     child: [
                         $({
                             tag: 'button',
-                            att: { 
+                            att: {
                                 title: 'Print Certificate',
                                 className: 'print-btn'
                             },
@@ -122,14 +123,14 @@ export const CertificationResearch = () => {
                                 width: '32px',
                                 height: '32px'
                             },
-                            child: [$({ 
+                            child: [$({
                                 tag: 'img',
-                                att: { 
+                                att: {
                                     src: '/client/images/icon/certificatePrint/printer.png',
                                     alt: 'Print'
                                 },
-                                style: { 
-                                    width: '18px', 
+                                style: {
+                                    width: '18px',
                                     height: '18px',
                                     objectFit: 'contain'
                                 }
@@ -137,20 +138,41 @@ export const CertificationResearch = () => {
                             event: {
                                 type: 'click',
                                 method: () => showCertificatePreview(record.certificateData, record.controlNo)
-                            },
-                            event2: {
-                                type: 'mouseenter',
-                                method: (e) => {
-                                    e.currentTarget.style.backgroundColor = '#3a3a3a';
-                                }
-                            },
-                            event3: {
-                                type: 'mouseleave',
-                                method: (e) => {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                }
                             }
-                        })
+                        }),
+                        record.fileUrl ? $({
+                            tag: 'button',
+                            att: {
+                                title: 'View in Google Drive',
+                                className: 'drive-btn'
+                            },
+                            style: {
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                color: '#aaa',
+                                cursor: 'pointer',
+                                padding: '8px',
+                                transition: 'all 0.2s ease',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '32px',
+                                height: '32px'
+                            },
+                            child: [$({
+                                tag: 'span',
+                                att: { className: 'fa-brands fa-google-drive' },
+                                style: {
+                                    fontSize: '18px',
+                                    color: '#4caf50'
+                                }
+                            })],
+                            event: {
+                                type: 'click',
+                                method: () => window.open(record.fileUrl, '_blank')
+                            }
+                        }) : null
                     ]
                 })
             ],
@@ -169,7 +191,7 @@ export const CertificationResearch = () => {
         try {
             const res = await fetch('/certification?action=getReports');
             const logs = await res.json();
-            
+
             if (tableBody) {
                 tableBody.innerHTML = '';
                 if (logs && logs.length > 0) {
@@ -184,7 +206,7 @@ export const CertificationResearch = () => {
                     </td></tr>`;
                 }
             }
-            
+
             // Update the record count in filter bar
             const recordCountSpan = document.querySelector('.record-count');
             if (recordCountSpan && logs) {
@@ -202,7 +224,7 @@ export const CertificationResearch = () => {
         }
 
         const modal = CertificateModal({
-            onGenerate: async (data) => {
+            onGenerate: async (data, pdfBlob) => {
                 // Save to server
                 try {
                     const res = await fetch('/certification?action=saveCertificate', {
@@ -211,12 +233,36 @@ export const CertificationResearch = () => {
                         body: JSON.stringify(data)
                     });
                     const result = await res.json();
-                    
+
                     if (result.success) {
-                        // Success! Trigger visual print and add to table
+                        // --- GDrive Upload (Synchronous) ---
+                        if (pdfBlob) {
+                            try {
+                                const formData = new FormData();
+                                formData.append('control_no', data.controlNo);
+                                formData.append('faculty', data.fullName);
+                                formData.append('date', data.issueDate);
+                                formData.append('pdf', pdfBlob, 'certificate.pdf');
+
+                                const driveRes = await fetch('/saveCertificationDrive', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                const driveResult = await driveRes.json();
+
+                                if (driveResult.success) {
+                                    console.log('Certificate saved to Google Drive:', driveResult.url);
+                                }
+                            } catch (uploadErr) {
+                                console.error('GDrive upload error:', uploadErr);
+                            }
+                        }
+
+                        // Show preview
                         generateCertificate(data);
-                        await loadReports(); // Refresh the table
-                        await loadStats(); // Refresh the statistics
+
+                        await loadReports();
+                        await loadStats();
                         modalContainer.remove();
                     } else {
                         alert('Error saving certificate: ' + result.message);
@@ -237,10 +283,8 @@ export const CertificationResearch = () => {
 
     // Function to show certificate preview
     const showCertificatePreview = (data, controlNo) => {
-        console.log('Preview certificate:', data, controlNo);
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(renderCertificateHTML(data, controlNo));
-        printWindow.document.close();
+        const preview = CertificatePreviewModal(data, controlNo);
+        document.body.appendChild(preview);
     };
 
     // Search and filter bar

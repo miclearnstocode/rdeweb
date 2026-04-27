@@ -1948,6 +1948,67 @@ export const QuarterlyMonitoringComponent = () => {
                             ]
                         })
                     ]
+                }),
+                // Research Activity Conducted
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(0, 150, 136, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(0, 150, 136, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-handshake' },
+                                    style: { color: '#009688', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', flexDirection: 'column' },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Collaborations',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
                 })
             ]
         })

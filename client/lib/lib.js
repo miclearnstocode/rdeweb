@@ -57,7 +57,7 @@ export const $ = ({ tag, att, text, html, child, elementHandler, style, external
     }
     if (child) {
         child.forEach(val => {
-            Tag.appendChild(val)
+            if (val) Tag.appendChild(val);
         })
     }
     return Tag;
@@ -67,7 +67,7 @@ export const Fragment = ({ child }) => {
     const fragment = document.createDocumentFragment()
     if (child) {
         child.forEach(val => {
-            fragment.appendChild(val)
+            if (val) fragment.appendChild(val);
         })
     }
     return fragment
@@ -347,6 +347,45 @@ export function dataURLtoFile(dataurl, filename) {
 
 export const MONTHS = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
+
+export const formatDateLong = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr.includes(' ') ? dateStr.replace(' ', 'T') : dateStr);
+    const month = MONTHS[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    return `${month} ${day}, ${year}`;
+}
+
+/**
+ * Generates a PDF from an HTML element
+ * @param {HTMLElement} element The element to convert
+ * @param {Object} options Options for html2pdf
+ * @returns {Promise<Blob>} The PDF blob
+ */
+export const GeneratePDF = async (element, options = {}) => {
+    if (!window.html2pdf) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        document.head.appendChild(script);
+        await new Promise(resolve => script.onload = resolve);
+    }
+    
+    const defaultOptions = {
+        margin: 0,
+        filename: options.filename || 'certificate.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            logging: false,
+            letterRendering: true
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    return html2pdf().set({ ...defaultOptions, ...options }).from(element).outputPdf('blob');
+};
 
 export const SpecialChar = (userInput) => {
     userInput.addEventListener('keypress', (event) => {

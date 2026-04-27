@@ -16,6 +16,45 @@ function decodeAuthors($raw) {
     return [$raw];
 }
 
+
+function cleanName($name) {
+    if (!$name) return '';
+    // Standardize to uppercase
+    $name = strtoupper($name);
+    // Remove punctuation
+    $name = str_replace(['.', ',', '-', '(', ')', '/', ';', ':'], ' ', $name);
+    // Common honorifics and suffixes to strip
+    $titles = [
+        'DR', 'PROF', 'ENGR', 'ARCH', 'ATTY', 'HON', 'MR', 'MS', 'MRS',
+        'PHD', 'EDD', 'MSC', 'MA', 'BSC', 'BS', 'MD', 'PA', 'LPT', 'RN', 'RT',
+        'PH D', 'ED D'
+    ];
+    // Use word boundaries to avoid stripping letters from names
+    foreach ($titles as $t) {
+        $name = preg_replace('/\b' . $t . '\b/', ' ', $name);
+    }
+    // Collapse whitespace
+    return trim(preg_replace('/\s+/', ' ', $name));
+}
+
+
+function isSameName($n1, $n2, $cleanedQuery = null) {
+    $c1 = cleanName($n1);
+    $c2 = $cleanedQuery ?: cleanName($n2);
+    
+    if (!$c1 || !$c2) return false;
+    if ($c1 === $c2) return true;
+    
+    // If they aren't exactly the same, check similarity
+    // Minimum length check to avoid matching short names incorrectly
+    if (strlen($c1) > 5 && strlen($c2) > 5) {
+        similar_text($c1, $c2, $percent);
+        if ($percent >= 90) return true;
+    }
+    
+    return false;
+}
+
 switch ($action) {
     case 'searchFaculty':
         $query = $_GET['query'] ?? '';
@@ -58,6 +97,9 @@ switch ($action) {
         if ($result && $result->num_rows > 0) {
             while($row = $result->fetch_assoc()) {
                 $certData = json_decode($row['certificate_data'], true);
+                if (!is_array($certData)) {
+                    $certData = [];
+                }
                 $certData['issueDate'] = $row['date']; // override with the actual log date
                 $logs[] = [
                     'date' => date('M d, Y', strtotime($row['date'])),
@@ -65,7 +107,8 @@ switch ($action) {
                     'requestingFaculty' => $row['requesting_faculty'],
                     'campus' => $row['campus'],
                     'dateTimeRelease' => $row['dateTimeRelease'] ? date('M d, Y h:i A', strtotime($row['dateTimeRelease'])) : '—',
-                    'certificateData' => $certData
+                    'certificateData' => $certData,
+                    'fileUrl' => $row['file_url'] ?? ''
                 ];
             }
         }
@@ -86,6 +129,7 @@ switch ($action) {
         
         $result = $conn->query($sql);
         $found = [];
+        $cleanedQuery = cleanName($name);
         
         if ($result) {
             while ($row = $result->fetch_assoc()) {
@@ -96,7 +140,7 @@ switch ($action) {
                 $members = array_merge($a, $ca, $p);
                 $isPart = false;
                 foreach ($members as $m) {
-                    if (trim(strtolower($m)) === trim(strtolower($name))) {
+                    if (isSameName($m, $name, $cleanedQuery)) {
                         $isPart = true;
                         break;
                     }
@@ -175,19 +219,19 @@ switch ($action) {
             // Get total certificates from certification_log
             $totalCertSql = "SELECT COUNT(*) as total FROM certification_log";
             $totalResult = $conn->query($totalCertSql);
-            $totalCertificates = $totalResult->fetch_assoc()['total'];
+            $totalCertificates = ($totalResult && $row = $totalResult->fetch_assoc()) ? $row['total'] : 0;
             
             // Get this month's certificates
             $currentMonth = date('Y-m');
             $thisMonthSql = "SELECT COUNT(*) as total FROM certification_log WHERE DATE_FORMAT(date, '%Y-%m') = '$currentMonth'";
             $thisMonthResult = $conn->query($thisMonthSql);
-            $thisMonth = $thisMonthResult->fetch_assoc()['total'];
+            $thisMonth = ($thisMonthResult && $row = $thisMonthResult->fetch_assoc()) ? $row['total'] : 0;
             
             // Get this year's certificates
             $currentYear = date('Y');
             $thisYearSql = "SELECT COUNT(*) as total FROM certification_log WHERE YEAR(date) = '$currentYear'";
             $thisYearResult = $conn->query($thisYearSql);
-            $thisYear = $thisYearResult->fetch_assoc()['total'];
+            $thisYear = ($thisYearResult && $row = $thisYearResult->fetch_assoc()) ? $row['total'] : 0;
             
             // Get unique faculty from researchfile (author, coauthor, presenter)
             // Only from accepted endorsements
@@ -204,9 +248,9 @@ switch ($action) {
                     $presenters = decodeAuthors($row['presenter']);
                     
                     foreach (array_merge($authors, $coauthors, $presenters) as $name) {
-                        $name = trim($name);
-                        if ($name) {
-                            $uniqueFacultyNames[$name] = true;
+                        $c = cleanName($name);
+                        if ($c) {
+                            $uniqueFacultyNames[$c] = true;
                         }
                     }
                 }

@@ -62,7 +62,8 @@ post('/presentedresearch', 'server/rde/presentation.php');
 post('/proposedresearch', 'server/rde/proposed.php');
 post('/publish', 'server/rde/publication.php');
 post('/utilization', 'server/rde/utilization.php');
-post('/certification', 'server/rde/certification.php');
+any('/certification', 'server/rde/certification.php');
+post('/saveCertificationDrive', 'server/rde/certification_drive.php');
 post('/monitor', 'server/rde/monitoring.php');
 
 // ROOT route
