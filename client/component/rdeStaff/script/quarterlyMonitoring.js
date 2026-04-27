@@ -1,7 +1,6 @@
-// monitoring.js
 import { $, Waiting } from "../../../lib/lib.js"
 
-export const MonitoringComponent = () => {
+export const QuarterlyMonitoringComponent = () => {
     let mainContainer
     let tableBody
     let scrollContainer
@@ -1706,7 +1705,7 @@ export const MonitoringComponent = () => {
                 borderBottom: '1px solid #444'
             },
             child: [
-                // Total On-Going Projects
+                // Publications
                 $({
                     tag: 'div',
                     style: {
@@ -1725,17 +1724,17 @@ export const MonitoringComponent = () => {
                                 width: '54px',
                                 height: '54px',
                                 borderRadius: '16px',
-                                backgroundColor: 'rgba(0, 191, 255, 0.15)',
+                                backgroundColor: 'rgba(255, 152, 0, 0.15)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(0, 191, 255, 0.3)'
+                                border: '1px solid rgba(255, 152, 0, 0.3)'
                             },
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'fa-solid fa-diagram-project' },
-                                    style: { color: 'deepskyblue', fontSize: '26px' }
+                                    att: { className: 'fa-solid fa-book-open' },
+                                    style: { color: '#ff9800', fontSize: '26px' }
                                 })
                             ]
                         }),
@@ -1756,7 +1755,7 @@ export const MonitoringComponent = () => {
                                 }),
                                 $({
                                     tag: 'span',
-                                    text: 'On-Going',
+                                    text: 'Publications',
                                     style: {
                                         fontSize: '13px',
                                         color: '#aaa',
@@ -1767,7 +1766,7 @@ export const MonitoringComponent = () => {
                         })
                     ]
                 }),
-                // Completed Research
+                // Presentations
                 $({
                     tag: 'div',
                     style: {
@@ -1786,17 +1785,17 @@ export const MonitoringComponent = () => {
                                 width: '54px',
                                 height: '54px',
                                 borderRadius: '16px',
-                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                                backgroundColor: 'rgba(233, 30, 99, 0.15)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(76, 175, 80, 0.3)'
+                                border: '1px solid rgba(233, 30, 99, 0.3)'
                             },
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'fa-solid fa-check-circle' },
-                                    style: { color: '#4caf50', fontSize: '26px' }
+                                    att: { className: 'fa-solid fa-chalkboard-user' },
+                                    style: { color: '#e91e63', fontSize: '26px' }
                                 })
                             ]
                         }),
@@ -1817,7 +1816,129 @@ export const MonitoringComponent = () => {
                                 }),
                                 $({
                                     tag: 'span',
-                                    text: 'Completed',
+                                    text: 'Presentations',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // Awards
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(156, 39, 176, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-trophy' },
+                                    style: { color: '#9c27b0', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', flexDirection: 'column' },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Awards',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // Collaborations
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(0, 150, 136, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(0, 150, 136, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-handshake' },
+                                    style: { color: '#009688', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', flexDirection: 'column' },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Collaborations',
                                     style: {
                                         fontSize: '13px',
                                         color: '#aaa',
@@ -2008,4 +2129,4 @@ export const MonitoringComponent = () => {
     })
 }
 
-export default MonitoringComponent
+export default QuarterlyMonitoringComponent

@@ -11,6 +11,7 @@ import { PatentUM } from "./patentUM.js";
 import { Utilization } from "./utilization.js";
 import { CertificationResearch } from "./certificationResearch.js";
 import { MonitoringComponent } from "./monitoring.js";
+import { QuarterlyMonitoringComponent } from "./quarterlyMonitoring.js";
 import { Summary } from "./researchSummary.js";
 import { RdeDashboard } from "./rdeDashboard.js";
 
@@ -83,7 +84,7 @@ const Body = () => {
     })
     botArray.push({
         url: '/rdeOffice/researchMonitoring',
-        label: 'Research Monitoring',
+        label: 'Internally Funded Research Monitoring',
         button: button,
         page: MonitoringComponent
     })
@@ -92,6 +93,12 @@ const Body = () => {
         label: 'Completed Research',
         button: button,
         page: CompletedResearch
+    })
+    botArray.push({
+        url: '/rdeOffice/quarterlyMonitoring',
+        label: 'Quarterly Monitoring',
+        button: button,
+        page: QuarterlyMonitoringComponent
     })
     botArray.push({
         url: '/rdeOffice/presentationResearch',
@@ -130,7 +137,8 @@ const Body = () => {
         page: CertificationResearch
     })
     const Tabs = () => {
-        const label = $({ tag: 'div', style: {
+        const label = $({
+            tag: 'div', style: {
                 fontFamily: 'arial black,sans-serif', fontSize: '1.5vw', color: 'deepskyblue',
                 height: '10vh', margin: 'auto', width: '100%', display: 'flex',
                 justifyContent: 'center', backgroundColor: '#666',
