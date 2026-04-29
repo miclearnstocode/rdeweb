@@ -117,12 +117,12 @@ class UtilizationAPI {
                 $fileCount = count($_FILES['supportDocs']['name']);
                 for ($i = 0; $i < $fileCount; $i++) {
                     if ($_FILES['supportDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
-                    $uploadResult = $drive->uploadFile($_FILES['supportDocs']['tmp_name'][$i], "Utilization_Support_{$_FILES['supportDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
+                    $uploadResult = $drive->uploadFile($_FILES['supportDocs']['tmp_name'][$i], "Utilization Support {$_FILES['supportDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
                     if ($uploadResult['success']) {
                         $drive->makeFilePublic($uploadResult['id']);
                         $supportDocsMetadata[] = [
                             'file_id' => $uploadResult['id'],
-                            'file_name' => "Utilization_Support_{$_FILES['supportDocs']['name'][$i]}",
+                            'file_name' => "Utilization Support {$_FILES['supportDocs']['name'][$i]}",
                             'view_url' => "https://drive.google.com/file/d/{$uploadResult['id']}/preview",
                             'size' => $_FILES['supportDocs']['size'][$i]
                         ];
@@ -135,12 +135,12 @@ class UtilizationAPI {
                 $fileCount = count($_FILES['moaDocs']['name']);
                 for ($i = 0; $i < $fileCount; $i++) {
                     if ($_FILES['moaDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
-                    $uploadResult = $drive->uploadFile($_FILES['moaDocs']['tmp_name'][$i], "Utilization_MOA_{$_FILES['moaDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
+                    $uploadResult = $drive->uploadFile($_FILES['moaDocs']['tmp_name'][$i], "Utilization MOA {$_FILES['moaDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
                     if ($uploadResult['success']) {
                         $drive->makeFilePublic($uploadResult['id']);
                         $moaDocsMetadata[] = [
                             'file_id' => $uploadResult['id'],
-                            'file_name' => "Utilization_MOA_{$_FILES['moaDocs']['name'][$i]}",
+                            'file_name' => "Utilization MOA {$_FILES['moaDocs']['name'][$i]}",
                             'view_url' => "https://drive.google.com/file/d/{$uploadResult['id']}/preview",
                             'size' => $_FILES['moaDocs']['size'][$i]
                         ];
@@ -325,10 +325,10 @@ class UtilizationAPI {
             if (isset($_FILES['supportDocs']) && !empty($_FILES['supportDocs']['name'][0])) {
                 for ($i = 0; $i < count($_FILES['supportDocs']['name']); $i++) {
                     if ($_FILES['supportDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
-                    $up = $drive->uploadFile($_FILES['supportDocs']['tmp_name'][$i], "Utilization_Support_{$_FILES['supportDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
+                    $up = $drive->uploadFile($_FILES['supportDocs']['tmp_name'][$i], "Utilization Support {$_FILES['supportDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
                     if ($up['success']) {
                         $drive->makeFilePublic($up['id']);
-                        $newSupportMeta[] = ['file_id' => $up['id'], 'file_name' => "Utilization_Support_{$_FILES['supportDocs']['name'][$i]}", 'view_url' => "https://drive.google.com/file/d/{$up['id']}/preview", 'size' => $_FILES['supportDocs']['size'][$i]];
+                        $newSupportMeta[] = ['file_id' => $up['id'], 'file_name' => "Utilization Support {$_FILES['supportDocs']['name'][$i]}", 'view_url' => "https://drive.google.com/file/d/{$up['id']}/preview", 'size' => $_FILES['supportDocs']['size'][$i]];
                     }
                 }
             }
@@ -338,10 +338,10 @@ class UtilizationAPI {
             if (isset($_FILES['moaDocs']) && !empty($_FILES['moaDocs']['name'][0])) {
                 for ($i = 0; $i < count($_FILES['moaDocs']['name']); $i++) {
                     if ($_FILES['moaDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
-                    $up = $drive->uploadFile($_FILES['moaDocs']['tmp_name'][$i], "Utilization_MOA_{$_FILES['moaDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
+                    $up = $drive->uploadFile($_FILES['moaDocs']['tmp_name'][$i], "Utilization MOA {$_FILES['moaDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
                     if ($up['success']) {
                         $drive->makeFilePublic($up['id']);
-                        $newMoaMeta[] = ['file_id' => $up['id'], 'file_name' => "Utilization_MOA_{$_FILES['moaDocs']['name'][$i]}", 'view_url' => "https://drive.google.com/file/d/{$up['id']}/preview", 'size' => $_FILES['moaDocs']['size'][$i]];
+                        $newMoaMeta[] = ['file_id' => $up['id'], 'file_name' => "Utilization MOA {$_FILES['moaDocs']['name'][$i]}", 'view_url' => "https://drive.google.com/file/d/{$up['id']}/preview", 'size' => $_FILES['moaDocs']['size'][$i]];
                     }
                 }
             }
