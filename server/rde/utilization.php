@@ -74,108 +74,106 @@ class UtilizationAPI {
         $endorsement_id = $_POST['endorsement_id'] ?? null;
         $utilizationType = $_POST['utilizationType'] ?? '';
         $dateConducted = $_POST['dateConducted'] ?? '';
-        $traineesCount = $_POST['traineesCount'] ?? '';
+        $traineesCount = $_POST['traineesCount'] ?? 0;
         $programTitle = $_POST['programTitle'] ?? '';
+        $productName = $_POST['productName'] ?? '';
+        $patentNo = $_POST['patentNo'] ?? '';
+        $benefitingIndustry = $_POST['benefitingIndustry'] ?? '';
 
-        if (empty($utilizationType) || empty($dateConducted) || empty($traineesCount)) {
-            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        if (empty($utilizationType)) {
+            echo json_encode(['success' => false, 'message' => 'Utilization type is required']);
             return;
         }
-        // For Extension Services, require additional fields
+        
+        // Context-aware validation
         if ($utilizationType === 'Research Utilization through Extension') {
             if (empty($programTitle) || empty($dateConducted) || empty($traineesCount)) {
                 echo json_encode(['success' => false, 'message' => 'Program title, date conducted, and number of trainees are required for Extension Services']);
                 return;
             }
-        }
-
-        // Handle file uploads to Google Drive
-        $supportDocsUrls = [];
-        $supportDocsMetadata = [];
-
-        if (isset($_FILES['supportDocs']) && !empty($_FILES['supportDocs']['name'][0])) {
-            try {
-                $drive = new GoogleDriveService();
-
-                // Try to find the research's existing entry folder, or create a utilization folder
-                $targetFolderId = $this->getResearchFolderId($research_id);
-
-                if (empty($targetFolderId)) {
-                    // No linked research or no folder found — create a utilization-specific folder
-                    $cleanTitle = cleanNameForDrive($utilizationType);
-                    $utilizationRootId = $drive->findOrCreateFolder('Utilization Programs', $drive->getRootFolderId());
-                    $targetFolderId = $drive->findOrCreateFolder($cleanTitle, $utilizationRootId);
-                }
-
-                $fileCount = count($_FILES['supportDocs']['name']);
-                for ($i = 0; $i < $fileCount; $i++) {
-                    if ($_FILES['supportDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
-
-                    $tmpPath = $_FILES['supportDocs']['tmp_name'][$i];
-                    $originalName = $_FILES['supportDocs']['name'][$i];
-                    $fileSize = $_FILES['supportDocs']['size'][$i];
-
-                    // Rename: Utilization_OriginalFileName.pdf
-                    $pathInfo = pathinfo($originalName);
-                    $cleanFileName = cleanNameForDrive($pathInfo['filename']);
-                    $driveFileName = "Utilization {$cleanFileName}.pdf";
-
-                    $uploadResult = $drive->uploadFile($tmpPath, $driveFileName, $targetFolderId, 'application/pdf');
-
-                    if ($uploadResult['success']) {
-                        $fileId = $uploadResult['id'];
-                        $drive->makeFilePublic($fileId);
-                        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
-                        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
-
-                        $supportDocsUrls[] = $viewUrl;
-                        $supportDocsMetadata[] = [
-                            'file_id' => $fileId,
-                            'file_name' => $driveFileName,
-                            'original_name' => $originalName,
-                            'view_url' => $viewUrl,
-                            'download_url' => $downloadUrl,
-                            'size' => $fileSize,
-                            'folder_id' => $targetFolderId
-                        ];
-                    } else {
-                        error_log("Utilization file upload failed for {$originalName}: " . ($uploadResult['error'] ?? 'Unknown'));
-                    }
-                }
-            } catch (Exception $e) {
-                error_log("Utilization Drive upload error: " . $e->getMessage());
-                echo json_encode(['success' => false, 'message' => 'File upload failed: ' . $e->getMessage()]);
+        } else if (in_array($utilizationType, ['Patent', 'UM', 'Copyright'])) {
+            if (empty($productName) || empty($patentNo) || empty($benefitingIndustry)) {
+                echo json_encode(['success' => false, 'message' => 'Product name, patent number, and benefiting industry are required']);
                 return;
             }
         }
-        // Merge user-provided HTTP links with any Drive upload URLs
-        $supportLinks = $_POST['supportLinks'] ?? '';
-        $allUrls = [];
 
-        // First, add user-submitted HTTP links
-        if (!empty($supportLinks)) {
-            $linkParts = array_map('trim', explode(',', $supportLinks));
-            $allUrls = array_merge($allUrls, array_filter($linkParts));
+        // Handle file uploads to Google Drive
+        $supportDocsMetadata = [];
+        $moaDocsMetadata = [];
+
+        try {
+            $drive = new GoogleDriveService();
+            $targetFolderId = $this->getResearchFolderId($research_id);
+
+            if (empty($targetFolderId)) {
+                $cleanTitle = cleanNameForDrive($utilizationType);
+                $utilizationRootId = $drive->findOrCreateFolder('Utilization Programs', $drive->getRootFolderId());
+                $targetFolderId = $drive->findOrCreateFolder($cleanTitle, $utilizationRootId);
+            }
+
+            // Upload Support Docs
+            if (isset($_FILES['supportDocs']) && !empty($_FILES['supportDocs']['name'][0])) {
+                $fileCount = count($_FILES['supportDocs']['name']);
+                for ($i = 0; $i < $fileCount; $i++) {
+                    if ($_FILES['supportDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
+                    $uploadResult = $drive->uploadFile($_FILES['supportDocs']['tmp_name'][$i], "Utilization_Support_{$_FILES['supportDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
+                    if ($uploadResult['success']) {
+                        $drive->makeFilePublic($uploadResult['id']);
+                        $supportDocsMetadata[] = [
+                            'file_id' => $uploadResult['id'],
+                            'file_name' => "Utilization_Support_{$_FILES['supportDocs']['name'][$i]}",
+                            'view_url' => "https://drive.google.com/file/d/{$uploadResult['id']}/preview",
+                            'size' => $_FILES['supportDocs']['size'][$i]
+                        ];
+                    }
+                }
+            }
+
+            // Upload MOA Docs
+            if (isset($_FILES['moaDocs']) && !empty($_FILES['moaDocs']['name'][0])) {
+                $fileCount = count($_FILES['moaDocs']['name']);
+                for ($i = 0; $i < $fileCount; $i++) {
+                    if ($_FILES['moaDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
+                    $uploadResult = $drive->uploadFile($_FILES['moaDocs']['tmp_name'][$i], "Utilization_MOA_{$_FILES['moaDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
+                    if ($uploadResult['success']) {
+                        $drive->makeFilePublic($uploadResult['id']);
+                        $moaDocsMetadata[] = [
+                            'file_id' => $uploadResult['id'],
+                            'file_name' => "Utilization_MOA_{$_FILES['moaDocs']['name'][$i]}",
+                            'view_url' => "https://drive.google.com/file/d/{$uploadResult['id']}/preview",
+                            'size' => $_FILES['moaDocs']['size'][$i]
+                        ];
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Utilization Drive upload error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'File upload failed: ' . $e->getMessage()]);
+            return;
         }
-        // Then, add Drive upload URLs
-        $allUrls = array_merge($allUrls, $supportDocsUrls);
 
+        $supportLinks = $_POST['supportLinks'] ?? '';
+        $driveUrls = array_map(function($f) { return $f['view_url']; }, $supportDocsMetadata);
+        $allUrls = array_merge(array_filter(array_map('trim', explode(',', $supportLinks))), $driveUrls);
         $supportDocs = implode(', ', $allUrls);
-        $supportDocsMetaJson = !empty($supportDocsMetadata) ? json_encode($supportDocsMetadata) : null;
+        $supportDocsMetaJson = json_encode($supportDocsMetadata);
+        $moaDocsMetaJson = json_encode($moaDocsMetadata);
 
-        $query = "INSERT INTO utilization_programs (research_id, endorsement_id, utilizationType, programTitle, dateConducted, traineesCount, supportDocs, supportDocsMetadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO utilization_programs (research_id, endorsement_id, utilizationType, programTitle, productName, patentNo, benefitingIndustry, dateConducted, traineesCount, supportDocs, supportDocsMetadata, moaDocs, moaDocsMetadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->con->prepare($query);
         if (!$stmt) {
-            echo json_encode(['success' => false, 'message' => 'Statement preparation failed: ' . $this->con->error]);
+            echo json_encode(['success' => false, 'message' => 'Preparation failed: ' . $this->con->error]);
             return;
         }
         
-        $stmt->bind_param('iisssiss', $research_id, $endorsement_id, $utilizationType, $programTitle, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson);
+        $moaDocsStr = implode(', ', array_map(function($f) { return $f['view_url']; }, $moaDocsMetadata));
+        $stmt->bind_param('iissssssissss', $research_id, $endorsement_id, $utilizationType, $programTitle, $productName, $patentNo, $benefitingIndustry, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson, $moaDocsStr, $moaDocsMetaJson);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Program added successfully', 'id' => $this->con->insert_id]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to add program: ' . $stmt->error]);
+            echo json_encode(['success' => false, 'message' => 'Insert failed: ' . $stmt->error]);
         }
         $stmt->close();
     }
@@ -270,141 +268,107 @@ class UtilizationAPI {
         $endorsement_id = $_POST['endorsement_id'] ?? null;
         $utilizationType = $_POST['utilizationType'] ?? '';
         $dateConducted = $_POST['dateConducted'] ?? '';
-        $traineesCount = $_POST['traineesCount'] ?? '';
+        $traineesCount = $_POST['traineesCount'] ?? 0;
         $supportLinks = $_POST['supportLinks'] ?? '';
         $programTitle = $_POST['programTitle'] ?? '';
+        $productName = $_POST['productName'] ?? '';
+        $patentNo = $_POST['patentNo'] ?? '';
+        $benefitingIndustry = $_POST['benefitingIndustry'] ?? '';
 
-        if (empty($utilizationType) || empty($research_id)) {
-            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        if (empty($utilizationType)) {
+            echo json_encode(['success' => false, 'message' => 'Utilization type is required']);
             return;
         }
 
-        if ($utilizationType === 'Research Utilization through Extension') {
-            if (empty($programTitle) || empty($dateConducted) || empty($traineesCount)) {
-                echo json_encode(['success' => false, 'message' => 'Program title, date conducted, and number of trainees are required for Extension Services']);
-                return;
-            }
-        }
-
-        // Fetch existing record to check for old metadata
-        $existingFileQuery = "SELECT supportDocs, supportDocsMetadata FROM utilization_programs WHERE id = ?";
-        $stmt = $this->con->prepare($existingFileQuery);
+        // Fetch existing record
+        $existingQuery = "SELECT * FROM utilization_programs WHERE id = ?";
+        $stmt = $this->con->prepare($existingQuery);
         $stmt->bind_param('i', $id);
         $stmt->execute();
-        $existingResult = $stmt->get_result();
-        $existingRow = $existingResult->fetch_assoc();
+        $existingRow = $stmt->get_result()->fetch_assoc();
 
-        $oldSupportDocsMeta = $existingRow['supportDocsMetadata'] ? json_decode($existingRow['supportDocsMetadata'], true) : [];
+        if (!$existingRow) {
+            echo json_encode(['success' => false, 'message' => 'Record not found']);
+            return;
+        }
+
+        $oldSupportMeta = json_decode($existingRow['supportDocsMetadata'] ?? '[]', true);
+        $oldMoaMeta = json_decode($existingRow['moaDocsMetadata'] ?? '[]', true);
         
-        // Files the user wants to keep (sent as JSON from frontend)
-        $keptFilesMetadata = isset($_POST['keptFilesMetadata']) ? json_decode($_POST['keptFilesMetadata'], true) : $oldSupportDocsMeta;
-        
-        // 1. Identify and trash removed files
-        if (!empty($oldSupportDocsMeta)) {
+        $keptSupportMeta = isset($_POST['keptFilesMetadata']) ? json_decode($_POST['keptFilesMetadata'], true) : $oldSupportMeta;
+        $keptMoaMeta = isset($_POST['keptMoaFilesMetadata']) ? json_decode($_POST['keptMoaFilesMetadata'], true) : $oldMoaMeta;
+
+        try {
             $drive = new GoogleDriveService();
-            foreach ($oldSupportDocsMeta as $oldFile) {
-                $stillExists = false;
-                foreach ($keptFilesMetadata as $keptFile) {
-                    if ($oldFile['file_id'] === $keptFile['file_id']) {
-                        $stillExists = true;
-                        break;
-                    }
-                }
-                
-                if (!$stillExists && !empty($oldFile['file_id'])) {
-                    try {
-                        $drive->trashFile($oldFile['file_id']);
-                    } catch (Exception $e) {
-                        error_log("Failed to trash old file {$oldFile['file_id']}: " . $e->getMessage());
-                    }
-                }
+            
+            // Trash removed Support Docs
+            foreach ($oldSupportMeta as $oldFile) {
+                $found = false;
+                foreach ($keptSupportMeta as $kept) if ($kept['file_id'] === $oldFile['file_id']) { $found = true; break; }
+                if (!$found) $drive->trashFile($oldFile['file_id']);
             }
-        }
+            // Trash removed MOA Docs
+            foreach ($oldMoaMeta as $oldFile) {
+                $found = false;
+                foreach ($keptMoaMeta as $kept) if ($kept['file_id'] === $oldFile['file_id']) { $found = true; break; }
+                if (!$found) $drive->trashFile($oldFile['file_id']);
+            }
 
-        // 2. Handle new file uploads
-        $newSupportDocsUrls = [];
-        $newSupportDocsMetadata = [];
+            $targetFolderId = $this->getResearchFolderId($research_id);
+            if (empty($targetFolderId)) {
+                $utilizationRootId = $drive->findOrCreateFolder('Utilization Programs', $drive->getRootFolderId());
+                $targetFolderId = $drive->findOrCreateFolder(cleanNameForDrive($utilizationType), $utilizationRootId);
+            }
 
-        if (isset($_FILES['supportDocs']) && !empty($_FILES['supportDocs']['name'][0])) {
-            try {
-                if (!isset($drive)) $drive = new GoogleDriveService();
-                
-                // Re-find target folder
-                $targetFolderId = $this->getResearchFolderId($research_id);
-                if (empty($targetFolderId)) {
-                    $cleanTitle = cleanNameForDrive($utilizationType);
-                    $utilizationRootId = $drive->findOrCreateFolder('Utilization Programs', $drive->getRootFolderId());
-                    $targetFolderId = $drive->findOrCreateFolder($cleanTitle, $utilizationRootId);
-                }
-
-                $fileCount = count($_FILES['supportDocs']['name']);
-                for ($i = 0; $i < $fileCount; $i++) {
+            // New Support Docs
+            $newSupportMeta = [];
+            if (isset($_FILES['supportDocs']) && !empty($_FILES['supportDocs']['name'][0])) {
+                for ($i = 0; $i < count($_FILES['supportDocs']['name']); $i++) {
                     if ($_FILES['supportDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
-
-                    $tmpPath = $_FILES['supportDocs']['tmp_name'][$i];
-                    $originalName = $_FILES['supportDocs']['name'][$i];
-                    $fileSize = $_FILES['supportDocs']['size'][$i];
-
-                    // Rename: Utilization_OriginalFileName.pdf
-                    $pathInfo = pathinfo($originalName);
-                    $cleanFileName = cleanNameForDrive($pathInfo['filename']);
-                    $driveFileName = "Utilization_{$cleanFileName}.pdf";
-
-                    $uploadResult = $drive->uploadFile($tmpPath, $driveFileName, $targetFolderId, 'application/pdf');
-
-                    if ($uploadResult['success']) {
-                        $fileId = $uploadResult['id'];
-                        $drive->makeFilePublic($fileId);
-                        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
-                        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
-
-                        $newSupportDocsUrls[] = $viewUrl;
-                        $newSupportDocsMetadata[] = [
-                            'file_id' => $fileId,
-                            'file_name' => $driveFileName,
-                            'original_name' => $originalName,
-                            'view_url' => $viewUrl,
-                            'download_url' => $downloadUrl,
-                            'size' => $fileSize,
-                            'folder_id' => $targetFolderId
-                        ];
+                    $up = $drive->uploadFile($_FILES['supportDocs']['tmp_name'][$i], "Utilization_Support_{$_FILES['supportDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
+                    if ($up['success']) {
+                        $drive->makeFilePublic($up['id']);
+                        $newSupportMeta[] = ['file_id' => $up['id'], 'file_name' => "Utilization_Support_{$_FILES['supportDocs']['name'][$i]}", 'view_url' => "https://drive.google.com/file/d/{$up['id']}/preview", 'size' => $_FILES['supportDocs']['size'][$i]];
                     }
                 }
-            } catch (Exception $e) {
-                error_log("Utilization Drive update error: " . $e->getMessage());
-                echo json_encode(['success' => false, 'message' => 'File update failed: ' . $e->getMessage()]);
-                return;
             }
+
+            // New MOA Docs
+            $newMoaMeta = [];
+            if (isset($_FILES['moaDocs']) && !empty($_FILES['moaDocs']['name'][0])) {
+                for ($i = 0; $i < count($_FILES['moaDocs']['name']); $i++) {
+                    if ($_FILES['moaDocs']['error'][$i] !== UPLOAD_ERR_OK) continue;
+                    $up = $drive->uploadFile($_FILES['moaDocs']['tmp_name'][$i], "Utilization_MOA_{$_FILES['moaDocs']['name'][$i]}", $targetFolderId, 'application/pdf');
+                    if ($up['success']) {
+                        $drive->makeFilePublic($up['id']);
+                        $newMoaMeta[] = ['file_id' => $up['id'], 'file_name' => "Utilization_MOA_{$_FILES['moaDocs']['name'][$i]}", 'view_url' => "https://drive.google.com/file/d/{$up['id']}/preview", 'size' => $_FILES['moaDocs']['size'][$i]];
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Update failed: ' . $e->getMessage()]);
+            return;
         }
 
-        // 3. Merge kept and new metadata
-        $finalMetadata = array_merge($keptFilesMetadata, $newSupportDocsMetadata);
-        $supportDocsMetaJson = json_encode($finalMetadata);
+        $finalSupportMeta = array_merge($keptSupportMeta, $newSupportMeta);
+        $finalMoaMeta = array_merge($keptMoaMeta, $newMoaMeta);
         
-        // 4. Update supportDocs (URLs string) merging manual links + all drive URLs
-        $driveUrls = array_map(function($f) { return $f['view_url']; }, $finalMetadata);
-        
-        $allUrls = [];
-        if (!empty($supportLinks)) {
-            $linkParts = array_map('trim', explode(',', $supportLinks));
-            $allUrls = array_merge($allUrls, array_filter($linkParts));
-        }
-        $allUrls = array_merge($allUrls, $driveUrls);
+        $driveUrls = array_map(function($f) { return $f['view_url']; }, $finalSupportMeta);
+        $allUrls = array_merge(array_filter(array_map('trim', explode(',', $supportLinks))), $driveUrls);
         $supportDocs = implode(', ', $allUrls);
+        $moaDocs = implode(', ', array_map(function($f) { return $f['view_url']; }, $finalMoaMeta));
 
         $query = "UPDATE utilization_programs SET 
-                    research_id = ?, 
-                    endorsement_id = ?, 
-                    utilizationType = ?, 
-                    programTitle = ?,
-                    dateConducted = ?, 
-                    traineesCount = ?, 
-                    supportDocs = ?, 
-                    supportDocsMetadata = ? 
+                    research_id = ?, endorsement_id = ?, utilizationType = ?, 
+                    programTitle = ?, productName = ?, patentNo = ?, benefitingIndustry = ?,
+                    dateConducted = ?, traineesCount = ?, supportDocs = ?, 
+                    supportDocsMetadata = ?, moaDocs = ?, moaDocsMetadata = ? 
                 WHERE id = ?";
         
         $stmt = $this->con->prepare($query);
-        $stmt->bind_param('iisssissi', $research_id, $endorsement_id, $utilizationType, $programTitle, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson, $id);
+        $sm = json_encode($finalSupportMeta);
+        $mm = json_encode($finalMoaMeta);
+        $stmt->bind_param('iissssssissssi', $research_id, $endorsement_id, $utilizationType, $programTitle, $productName, $patentNo, $benefitingIndustry, $dateConducted, $traineesCount, $supportDocs, $sm, $moaDocs, $mm, $id);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Program updated successfully']);

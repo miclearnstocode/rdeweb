@@ -8,17 +8,19 @@ export const Utilization = () => {
         {
             field: 'utilizationType',
             header: 'Utilization Type',
-            width: '200px',
+            width: '180px',
             type: 'select',
             options: ['Patent', 'UM', 'Copyright', 'Research Utilization through Extension'],
             required: true
         },
-        { field: 'researchTitle', header: 'Research Title', width: '250px', type: 'search', required: true },
-        { field: 'programTitle', header: 'Program Title', width: '250px', type: 'text', required: true },
-        { field: 'dateConducted', header: 'Date Conducted', width: '150px', type: 'date', required: true },
-        { field: 'traineesCount', header: 'No. of Trainees/Beneficiaries', width: '180px', type: 'number', required: true },
-        { field: 'supportLinks', header: 'Link to Support Documents', width: '160px', type: 'url', required: false },
-        { field: 'supportDocs', header: 'Upload Support Documents', width: '160px', type: 'file', required: false },
+        { field: 'researchTitle', header: 'Research Title', width: '220px', type: 'search', required: true },
+        { field: 'programTitle', header: 'Program / Product', width: '220px', type: 'text', required: true },
+        { field: 'patentNo', header: 'Patent No / Desc', width: '150px', type: 'text', required: false },
+        { field: 'benefitingIndustry', header: 'Beneficiary / Industry', width: '180px', type: 'text', required: false },
+        { field: 'dateConducted', header: 'Date', width: '120px', type: 'date', required: true },
+        { field: 'traineesCount', header: 'Count', width: '100px', type: 'number', required: true },
+        { field: 'moaDocs', header: 'MOA/MOU/TOR', width: '150px', type: 'file', required: false },
+        { field: 'supportDocs', header: 'Docs', width: '150px', type: 'file', required: false },
         { field: 'actions', header: 'Actions', width: '80px', type: 'actions', required: false }
     ]
 
@@ -46,6 +48,27 @@ export const Utilization = () => {
             showFor: ['Research Utilization through Extension']
         },
         {
+            field: 'productName',
+            header: 'Product Name / Methods / Process / Technology',
+            type: 'text',
+            required: true,
+            showFor: ['Patent', 'UM', 'Copyright']
+        },
+        {
+            field: 'patentNo',
+            header: 'Patent Number / Product Description',
+            type: 'text',
+            required: true,
+            showFor: ['Patent', 'UM', 'Copyright']
+        },
+        {
+            field: 'benefitingIndustry',
+            header: 'Benefiting Industry / Community',
+            type: 'text',
+            required: true,
+            showFor: ['Patent', 'UM', 'Copyright']
+        },
+        {
             field: 'dateConducted',
             header: 'Date Conducted',
             type: 'date',
@@ -61,10 +84,17 @@ export const Utilization = () => {
         },
         {
             field: 'supportLinks',
-            header: 'Link to Support Documents',
+            header: 'Add Support Documents',
             type: 'url',
             required: false,
             showFor: ['Patent', 'UM', 'Copyright', 'Research Utilization through Extension']
+        },
+        {
+            field: 'moaDocs',
+            header: 'Add docs of MOA/MOU/TOR',
+            type: 'file',
+            required: false,
+            showFor: ['Patent', 'UM', 'Copyright']
         },
         {
             field: 'supportDocs',
@@ -185,10 +215,11 @@ export const Utilization = () => {
                     borderRadius: '8px',
                     maxHeight: '200px',
                     overflowY: 'auto',
-                    zIndex: '1000',
+                    zIndex: '10002', // Higher than everything else in the modal
                     display: 'none',
                     marginTop: '4px',
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.4)'
+                    boxShadow: '0 12px 24px rgba(0,0,0,0.6)',
+                    padding: '4px 0'
                 }
             });
 
@@ -232,7 +263,8 @@ export const Utilization = () => {
                                             borderBottom: '1px solid #3a3a3a',
                                             fontSize: '13px',
                                             color: '#ddd',
-                                            transition: 'background 0.2s'
+                                            transition: 'background 0.2s',
+                                            zIndex: '9999'
                                         },
                                         child: [
                                             $({ tag: 'div', text: res.title, style: { fontWeight: '600', marginBottom: '4px' } }),
@@ -262,7 +294,7 @@ export const Utilization = () => {
 
             const searchContainer = $({
                 tag: 'div',
-                style: { position: 'relative', display: 'flex', flexDirection: 'column' },
+                style: { position: 'relative', zIndex: '2000', display: 'flex', flexDirection: 'column' },
                 child: [searchInput, resultsDropdown]
             });
 
@@ -273,7 +305,7 @@ export const Utilization = () => {
 
             return $({
                 tag: 'div',
-                style: { display: 'flex', flexDirection: 'column', gap: '4px' },
+                style: { display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative', zIndex: '2000' },
                 child: [label, searchContainer]
             });
         }
@@ -341,7 +373,7 @@ export const Utilization = () => {
                 },
                 child: [
                     $({ tag: 'span', att: { className: 'fa-solid fa-plus-circle' } }),
-                    $({ tag: 'span', text: 'Add another link' })
+                    $({ tag: 'span', text: 'Add another support docs' })
                 ]
             });
             addLinkBtn.addEventListener('click', () => { linksContainer.appendChild(createLinkInputRow()); });
@@ -375,7 +407,170 @@ export const Utilization = () => {
                 child: [label, linksContainer, addLinkBtn]
             });
         }
+        // Special handling for MOA/MOU/TOR document file uploads
+        if (column.field === 'moaDocs') {
+            const fileList = [];
+            let existingFiles = initialValue ? JSON.parse(initialValue) : [];
+            let keptFiles = [...existingFiles];
+            let deletedFileIds = [];
 
+            const fileListContainer = $({
+                tag: 'div',
+                att: { id: 'moa-docs-file-list' },
+                style: { display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }
+            });
+
+            const updateFileListUI = () => {
+                fileListContainer.innerHTML = '';
+
+                // Show kept existing files
+                keptFiles.forEach((fileMeta, idx) => {
+                    const row = $({
+                        tag: 'div',
+                        att: { className: 'file-list-row existing-file' },
+                        style: {
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '10px 14px', backgroundColor: 'rgba(76, 175, 80, 0.05)',
+                            borderRadius: '8px', border: '1px solid rgba(76, 175, 80, 0.2)'
+                        },
+                        child: [
+                            $({ tag: 'span', att: { className: 'fa-solid fa-file-contract' }, style: { color: '#ff9800', fontSize: '16px' } }),
+                            $({
+                                tag: 'div', style: { flex: '1', overflow: 'hidden' },
+                                child: [
+                                    $({ tag: 'div', text: fileMeta.original_name || fileMeta.file_name, style: { color: '#ddd', fontSize: '13px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' } }),
+                                    $({ tag: 'div', text: 'Existing Document (Stored in Cloud)', style: { color: '#666', fontSize: '10px', marginTop: '2px' } })
+                                ]
+                            })
+                        ]
+                    });
+
+                    const removeBtn = $({
+                        tag: 'button',
+                        style: {
+                            backgroundColor: 'transparent', border: 'none',
+                            color: '#666', cursor: 'pointer', padding: '6px', fontSize: '13px',
+                            transition: 'color 0.2s'
+                        },
+                        child: [$({ tag: 'span', att: { className: 'fa-solid fa-trash-can' } })]
+                    });
+                    removeBtn.addEventListener('click', () => {
+                        deletedFileIds.push(fileMeta.file_id);
+                        keptFiles.splice(idx, 1);
+                        updateFileListUI();
+                    });
+                    removeBtn.addEventListener('mouseenter', () => { removeBtn.style.color = '#ff4d4d'; });
+                    removeBtn.addEventListener('mouseleave', () => { removeBtn.style.color = '#666'; });
+                    row.appendChild(removeBtn);
+
+                    fileListContainer.appendChild(row);
+                });
+
+                // Show newly added files
+                fileList.forEach((file, idx) => {
+                    const row = $({
+                        tag: 'div',
+                        att: { className: 'file-list-row new-file' },
+                        style: {
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '10px 14px', backgroundColor: 'rgba(255, 152, 0, 0.05)',
+                            borderRadius: '8px', border: '1px solid rgba(255, 152, 0, 0.2)'
+                        },
+                        child: [
+                            $({ tag: 'span', att: { className: 'fa-solid fa-file-contract' }, style: { color: '#ff9800', fontSize: '16px' } }),
+                            $({
+                                tag: 'div', style: { flex: '1', overflow: 'hidden' },
+                                child: [
+                                    $({ tag: 'div', text: file.name, style: { color: '#ddd', fontSize: '13px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' } }),
+                                    $({ tag: 'div', text: `${(file.size / 1024).toFixed(1)} KB - New Upload`, style: { color: '#888', fontSize: '11px', marginTop: '2px' } })
+                                ]
+                            })
+                        ]
+                    });
+
+                    const removeBtn = $({
+                        tag: 'button',
+                        style: {
+                            backgroundColor: 'transparent', border: 'none',
+                            color: '#666', cursor: 'pointer', padding: '6px', fontSize: '13px'
+                        },
+                        child: [$({ tag: 'span', att: { className: 'fa-solid fa-xmark' } })]
+                    });
+                    removeBtn.addEventListener('click', () => {
+                        fileList.splice(idx, 1);
+                        updateFileListUI();
+                    });
+                    removeBtn.addEventListener('mouseenter', () => { removeBtn.style.color = '#ff4d4d'; });
+                    removeBtn.addEventListener('mouseleave', () => { removeBtn.style.color = '#666'; });
+                    row.appendChild(removeBtn);
+
+                    fileListContainer.appendChild(row);
+                });
+            };
+
+            const hiddenInput = $({
+                tag: 'input',
+                att: { type: 'file', id: fieldId, accept: '.pdf', multiple: true },
+                style: { display: 'none' }
+            });
+            hiddenInput.addEventListener('change', (e) => {
+                Array.from(e.target.files).forEach(f => {
+                    if (f.type === 'application/pdf') fileList.push(f);
+                });
+                updateFileListUI();
+                hiddenInput.value = '';
+            });
+
+            const dropZone = $({
+                tag: 'div',
+                att: { id: 'moa-docs-drop-zone' },
+                style: {
+                    border: '2px dashed #444', borderRadius: '12px',
+                    padding: '30px 20px', textAlign: 'center',
+                    cursor: 'pointer', transition: 'all 0.3s ease',
+                    backgroundColor: '#2d2d2d', position: 'relative', zIndex: '1'
+                },
+                child: [
+                    $({ tag: 'span', att: { className: 'fa-solid fa-file-contract' }, style: { fontSize: '32px', color: '#ff9800', marginBottom: '10px', display: 'block' } }),
+                    $({ tag: 'div', text: initialValue ? 'Click or drag PDF files to add/replace MOA/MOU/TOR documents' : 'Click or drag PDF files here', style: { color: '#888', fontSize: '14px', marginBottom: '4px' } }),
+                    $({ tag: 'div', text: 'Upload MOA, MOU, TOR documents', style: { color: '#555', fontSize: '12px' } })
+                ]
+            });
+
+            dropZone.addEventListener('click', () => hiddenInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#ff9800';
+                dropZone.style.backgroundColor = 'rgba(255, 152, 0, 0.05)';
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.borderColor = '#444';
+                dropZone.style.backgroundColor = '#2d2d2d';
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#444';
+                dropZone.style.backgroundColor = '#2d2d2d';
+                Array.from(e.dataTransfer.files).forEach(f => {
+                    if (f.type === 'application/pdf') fileList.push(f);
+                });
+                updateFileListUI();
+            });
+
+            dropZone._getFiles = () => fileList;
+            dropZone._getKeptMetadata = () => JSON.stringify(keptFiles);
+
+            // Initial UI update if there are existing files
+            if (existingFiles.length > 0) {
+                setTimeout(updateFileListUI, 10);
+            }
+
+            return $({
+                tag: 'div',
+                style: { display: 'flex', flexDirection: 'column', gap: '4px' },
+                child: [label, hiddenInput, dropZone, fileListContainer]
+            });
+        }
         // Special handling for support document file uploads
         if (column.field === 'supportDocs') {
             const fileList = [];
@@ -497,7 +692,7 @@ export const Utilization = () => {
                     border: '2px dashed #444', borderRadius: '12px',
                     padding: '30px 20px', textAlign: 'center',
                     cursor: 'pointer', transition: 'all 0.3s ease',
-                    backgroundColor: '#2d2d2d'
+                    backgroundColor: '#2d2d2d', position: 'relative', zIndex: '1'
                 },
                 child: [
                     $({ tag: 'span', att: { className: 'fa-solid fa-cloud-arrow-up' }, style: { fontSize: '32px', color: '#555', marginBottom: '10px', display: 'block' } }),
@@ -639,6 +834,15 @@ export const Utilization = () => {
                             case 'programTitle':
                                 initialValue = programData.programTitle || '';
                                 break;
+                            case 'productName':
+                                initialValue = programData.productName || '';
+                                break;
+                            case 'patentNo':
+                                initialValue = programData.patentNo || '';
+                                break;
+                            case 'benefitingIndustry':
+                                initialValue = programData.benefitingIndustry || '';
+                                break;
                             case 'dateConducted':
                                 initialValue = programData.dateConducted || '';
                                 break;
@@ -647,6 +851,9 @@ export const Utilization = () => {
                                 break;
                             case 'supportLinks':
                                 initialValue = programData.supportDocs || '';
+                                break;
+                            case 'moaDocs':
+                                initialValue = programData.moaDocsMetadata || null;
                                 break;
                             case 'supportDocs':
                                 initialValue = programData.supportDocsMetadata || null;
@@ -771,8 +978,8 @@ export const Utilization = () => {
                         // Skip fields that shouldn't be shown for current type
                         if (!shouldShowField(field, currentUtilType)) return;
 
-                        if (field.field === 'supportDocs') {
-                            // Handled separately with FormData
+                        // Skip file upload fields - handled separately
+                        if (field.field === 'supportDocs' || field.field === 'moaDocs') {
                             return;
                         }
 
@@ -831,7 +1038,7 @@ export const Utilization = () => {
                                 color: '#fff',
                                 padding: '12px 24px',
                                 borderRadius: '8px',
-                                zIndex: '10001',
+                                zIndex: '9999',
                                 fontSize: '14px',
                                 boxShadow: '0 4px 12px rgba(255, 77, 77, 0.3)',
                                 animation: 'slideInRight 0.3s ease'
@@ -867,10 +1074,31 @@ export const Utilization = () => {
                         fetchBody.append('traineesCount', formData['traineesCount'] || '');
                     }
 
+                    // Add Patent/UM/Copyright specific fields
+                    if (['Patent', 'UM', 'Copyright'].includes(currentUtilType)) {
+                        fetchBody.append('productName', formData['productName'] || '');
+                        fetchBody.append('patentNo', formData['patentNo'] || '');
+                        fetchBody.append('benefitingIndustry', formData['benefitingIndustry'] || '');
+                    }
+
                     // Add other form data
                     fetchBody.append('research_id', formData['research_id'] || '');
                     fetchBody.append('endorsement_id', formData['endorsement_id'] || '');
                     fetchBody.append('supportLinks', formData['supportLinks'] || '');
+
+                    // Append MOA/MOU/TOR document files
+                    const moaDropZoneEl = document.getElementById('moa-docs-drop-zone');
+                    if (moaDropZoneEl) {
+                        if (moaDropZoneEl._getFiles) {
+                            const moaFiles = moaDropZoneEl._getFiles();
+                            moaFiles.forEach(file => {
+                                fetchBody.append('moaDocs[]', file);
+                            });
+                        }
+                        if (isEdit && moaDropZoneEl._getKeptMetadata) {
+                            fetchBody.append('keptMoaFilesMetadata', moaDropZoneEl._getKeptMetadata());
+                        }
+                    }
 
                     // Append support document files
                     const dropZoneEl = document.getElementById('support-docs-drop-zone');
@@ -908,7 +1136,7 @@ export const Utilization = () => {
                                         color: '#fff',
                                         padding: '12px 24px',
                                         borderRadius: '8px',
-                                        zIndex: '10001',
+                                        zIndex: '9999',
                                         fontSize: '14px',
                                         boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
                                         animation: 'slideInRight 0.3s ease'
@@ -972,7 +1200,9 @@ export const Utilization = () => {
                 flexDirection: 'column',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
                 overflow: 'hidden',
-                border: '1px solid #3a3a3a'
+                border: '1px solid #3a3a3a',
+                position: 'relative',
+                zIndex: '1'
             },
             child: [
                 modalHeader,
@@ -983,7 +1213,9 @@ export const Utilization = () => {
                         maxHeight: '60vh',
                         overflowY: 'auto',
                         scrollbarWidth: 'thin',
-                        scrollbarColor: '#444 #2a2a2a'
+                        scrollbarColor: '#444 #2a2a2a',
+                        position: 'relative',
+                        zIndex: '1'
                     },
                     child: [fieldsContainer]
                 }),
@@ -1654,10 +1886,63 @@ export const Utilization = () => {
                     child: [docsContainer]
                 });
             }
+            if (col.field === 'moaDocs') {
+                const docsContainer = $({
+                    tag: 'div',
+                    style: { display: 'flex', flexDirection: 'column', gap: '4px' }
+                });
 
+                let metadata = [];
+                try {
+                    if (item.moaDocsMetadata) {
+                        metadata = JSON.parse(item.moaDocsMetadata);
+                    }
+                } catch (e) { /* ignore parse errors */ }
+
+                if (metadata.length > 0) {
+                    metadata.forEach((fileMeta, idx) => {
+                        const link = $({
+                            tag: 'a',
+                            att: { href: fileMeta.view_url, target: '_blank' },
+                            style: {
+                                color: '#ff9800', textDecoration: 'none',
+                                fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '4px 0', transition: 'color 0.2s'
+                            },
+                            child: [
+                                $({ tag: 'span', att: { className: 'fa-solid fa-file-contract' }, style: { color: '#ff9800', fontSize: '12px' } }),
+                                $({ tag: 'span', text: fileMeta.file_name || `Document ${idx + 1}` })
+                            ]
+                        });
+                        link.addEventListener('mouseenter', () => { link.style.color = '#fff'; });
+                        link.addEventListener('mouseleave', () => { link.style.color = '#ff9800'; });
+                        docsContainer.appendChild(link);
+                    });
+                } else {
+                    docsContainer.appendChild($({ tag: 'span', text: '—', style: { color: '#666' } }));
+                }
+
+                return $({
+                    tag: 'td',
+                    style: { ...cellStyle, whiteSpace: 'normal', display: 'table-cell', verticalAlign: 'middle' },
+                    child: [docsContainer]
+                });
+            }
             if (col.field === 'programTitle') {
-                cellContent = item['programTitle'] || '—';
+                cellContent = item['programTitle'] || item['productName'] || '—';
                 cellStyle.color = cellContent === '—' ? '#666' : '#ddd';
+            }
+
+            if (col.field === 'patentNo') {
+                cellContent = item['patentNo'] || '—';
+                cellStyle.color = cellContent === '—' ? '#666' : '#ddd';
+                cellStyle.fontSize = '12px';
+            }
+
+            if (col.field === 'benefitingIndustry') {
+                cellContent = item['benefitingIndustry'] || '—';
+                cellStyle.color = cellContent === '—' ? '#666' : '#ddd';
+                cellStyle.fontSize = '12px';
             }
 
             if (col.field === 'researchTitle') {
@@ -1667,11 +1952,22 @@ export const Utilization = () => {
             }
 
             if (col.field === 'dateConducted') {
-                cellContent = formatUtilizationDate(item[col.field]);
+                if (!item[col.field] || item[col.field] === '0000-00-00') {
+                    cellContent = '—';
+                    cellStyle.color = '#666';
+                } else {
+                    cellContent = formatUtilizationDate(item[col.field]);
+                }
             }
 
             if (col.field === 'traineesCount') {
-                cellContent = `${item[col.field]} participants`;
+                const count = parseInt(item[col.field]);
+                if (!item[col.field] || count === 0 || isNaN(count)) {
+                    cellContent = '—';
+                    cellStyle.color = '#666';
+                } else {
+                    cellContent = `${count} participant${count !== 1 ? 's' : ''}`;
+                }
             }
 
             if (col.field === 'actions') {
