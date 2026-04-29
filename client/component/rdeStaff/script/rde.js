@@ -51,7 +51,7 @@ const button = ({ label, event, url }) => {
                     height: 'fit-content',
                     margin: 'auto',
                     fontFamily: 'arial black,sans-serif',
-                    fontSize: '15px'
+                    fontSize: label.length > 20 ? '10px' : '15px'
                 },
                 text: label
             })

@@ -181,33 +181,76 @@
 
 /* Empty state animations */
 @keyframes floatHand {
-    0% { transform: translateY(0px) rotate(-5deg); }
-    50% { transform: translateY(-15px) rotate(0deg); }
-    100% { transform: translateY(0px) rotate(-5deg); }
+    0% {
+        transform: translateY(0px) rotate(-5deg);
+    }
+
+    50% {
+        transform: translateY(-15px) rotate(0deg);
+    }
+
+    100% {
+        transform: translateY(0px) rotate(-5deg);
+    }
 }
 
 @keyframes floatPeople {
-    0% { transform: translateY(0px) rotate(10deg); }
-    50% { transform: translateY(-12px) rotate(5deg); }
-    100% { transform: translateY(0px) rotate(10deg); }
+    0% {
+        transform: translateY(0px) rotate(10deg);
+    }
+
+    50% {
+        transform: translateY(-12px) rotate(5deg);
+    }
+
+    100% {
+        transform: translateY(0px) rotate(10deg);
+    }
 }
 
 @keyframes floatSeed {
-    0% { transform: translateY(0px) rotate(-15deg); }
-    50% { transform: translateY(-10px) rotate(-10deg); }
-    100% { transform: translateY(0px) rotate(-15deg); }
+    0% {
+        transform: translateY(0px) rotate(-15deg);
+    }
+
+    50% {
+        transform: translateY(-10px) rotate(-10deg);
+    }
+
+    100% {
+        transform: translateY(0px) rotate(-15deg);
+    }
 }
 
 @keyframes floatBuilding {
-    0% { transform: translateY(0px) rotate(20deg); }
-    50% { transform: translateY(-8px) rotate(15deg); }
-    100% { transform: translateY(0px) rotate(20deg); }
+    0% {
+        transform: translateY(0px) rotate(20deg);
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(15deg);
+    }
+
+    100% {
+        transform: translateY(0px) rotate(20deg);
+    }
 }
 
 @keyframes pulse {
-    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.8;
+    }
 }
 
 .utilization-container .empty-state .fa-hand-holding-heart {
@@ -280,7 +323,7 @@
     .utilization-container .stats-cards {
         grid-template-columns: repeat(2, 1fr) !important;
     }
-    
+
     .utilization-container .utilization-search-input {
         width: 220px !important;
     }
@@ -291,12 +334,12 @@
         flex-direction: column;
         align-items: flex-start !important;
     }
-    
+
     .utilization-container [style*="gap: 20px"] {
         width: 100%;
         justify-content: space-between;
     }
-    
+
     .utilization-container .beneficiary-filter,
     .utilization-container .sector-filter {
         min-width: 140px !important;
@@ -307,11 +350,11 @@
     .utilization-container .stats-cards {
         grid-template-columns: 1fr !important;
     }
-    
+
     .utilization-container [style*="gap: 8px"] {
         flex-wrap: wrap;
     }
-    
+
     .utilization-container .beneficiary-filter,
     .utilization-container .sector-filter {
         min-width: 100% !important;
@@ -320,6 +363,7 @@
 
 /* Print styles */
 @media print {
+
     .utilization-container .stats-cards,
     .utilization-container .filter-bar,
     .utilization-container button,
@@ -328,17 +372,17 @@
     .utilization-container .doc-link {
         display: none !important;
     }
-    
+
     .utilization-container table {
         border: 1px solid #000;
     }
-    
+
     .utilization-container th {
         background-color: #f0f0f0 !important;
         color: #000 !important;
         border-bottom: 2px solid #000 !important;
     }
-    
+
     .utilization-container td {
         color: #000 !important;
         border-bottom: 1px solid #ccc !important;
@@ -364,7 +408,7 @@
     border-radius: 6px;
     white-space: nowrap;
     border: 1px solid #444;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
@@ -390,10 +434,75 @@
 
 /* Beneficiary count animation */
 @keyframes countUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .stat-card .beneficiary-count {
     animation: countUp 0.5s ease-out;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Smooth scrollbar */
+.utilization-container ::-webkit-scrollbar {
+    width: 8px;
+}
+
+.utilization-container ::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+.utilization-container ::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+.utilization-container ::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }

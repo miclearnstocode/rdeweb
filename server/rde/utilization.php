@@ -75,10 +75,18 @@ class UtilizationAPI {
         $utilizationType = $_POST['utilizationType'] ?? '';
         $dateConducted = $_POST['dateConducted'] ?? '';
         $traineesCount = $_POST['traineesCount'] ?? '';
+        $programTitle = $_POST['programTitle'] ?? '';
 
         if (empty($utilizationType) || empty($dateConducted) || empty($traineesCount)) {
             echo json_encode(['success' => false, 'message' => 'Missing required fields']);
             return;
+        }
+        // For Extension Services, require additional fields
+        if ($utilizationType === 'Research Utilization through Extension') {
+            if (empty($programTitle) || empty($dateConducted) || empty($traineesCount)) {
+                echo json_encode(['success' => false, 'message' => 'Program title, date conducted, and number of trainees are required for Extension Services']);
+                return;
+            }
         }
 
         // Handle file uploads to Google Drive
@@ -155,14 +163,14 @@ class UtilizationAPI {
         $supportDocs = implode(', ', $allUrls);
         $supportDocsMetaJson = !empty($supportDocsMetadata) ? json_encode($supportDocsMetadata) : null;
 
-        $query = "INSERT INTO utilization_programs (research_id, endorsement_id, utilizationType, dateConducted, traineesCount, supportDocs, supportDocsMetadata) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO utilization_programs (research_id, endorsement_id, utilizationType, programTitle, dateConducted, traineesCount, supportDocs, supportDocsMetadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->con->prepare($query);
         if (!$stmt) {
             echo json_encode(['success' => false, 'message' => 'Statement preparation failed: ' . $this->con->error]);
             return;
         }
         
-        $stmt->bind_param('iississ', $research_id, $endorsement_id, $utilizationType, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson);
+        $stmt->bind_param('iisssiss', $research_id, $endorsement_id, $utilizationType, $programTitle, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Program added successfully', 'id' => $this->con->insert_id]);
@@ -264,10 +272,18 @@ class UtilizationAPI {
         $dateConducted = $_POST['dateConducted'] ?? '';
         $traineesCount = $_POST['traineesCount'] ?? '';
         $supportLinks = $_POST['supportLinks'] ?? '';
+        $programTitle = $_POST['programTitle'] ?? '';
 
-        if (empty($utilizationType) || empty($dateConducted) || empty($traineesCount)) {
+        if (empty($utilizationType) || empty($research_id)) {
             echo json_encode(['success' => false, 'message' => 'Missing required fields']);
             return;
+        }
+
+        if ($utilizationType === 'Research Utilization through Extension') {
+            if (empty($programTitle) || empty($dateConducted) || empty($traineesCount)) {
+                echo json_encode(['success' => false, 'message' => 'Program title, date conducted, and number of trainees are required for Extension Services']);
+                return;
+            }
         }
 
         // Fetch existing record to check for old metadata
@@ -380,14 +396,15 @@ class UtilizationAPI {
                     research_id = ?, 
                     endorsement_id = ?, 
                     utilizationType = ?, 
+                    programTitle = ?,
                     dateConducted = ?, 
                     traineesCount = ?, 
                     supportDocs = ?, 
                     supportDocsMetadata = ? 
-                  WHERE id = ?";
+                WHERE id = ?";
         
         $stmt = $this->con->prepare($query);
-        $stmt->bind_param('iississi', $research_id, $endorsement_id, $utilizationType, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson, $id);
+        $stmt->bind_param('iisssissi', $research_id, $endorsement_id, $utilizationType, $programTitle, $dateConducted, $traineesCount, $supportDocs, $supportDocsMetaJson, $id);
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Program updated successfully']);

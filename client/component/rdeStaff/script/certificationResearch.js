@@ -248,11 +248,6 @@ export const CertificationResearch = () => {
                                     method: 'POST',
                                     body: formData
                                 });
-                                const driveResult = await driveRes.json();
-
-                                if (driveResult.success) {
-                                    console.log('Certificate saved to Google Drive:', driveResult.url);
-                                }
                             } catch (uploadErr) {
                                 console.error('GDrive upload error:', uploadErr);
                             }

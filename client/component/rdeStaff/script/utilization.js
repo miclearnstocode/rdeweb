@@ -4,23 +4,76 @@ export const Utilization = () => {
     let mainTableContainer;
     let tableBody;
 
-    // Columns for utilization and extension programs
     const columns = [
-        { field: 'researchTitle', header: 'Research Title', width: '250px', type: 'search', required: false },
-        { 
-            field: 'utilizationType', 
-            header: 'Utilization Type', 
-            width: '200px', 
-            type: 'select', 
-            options: ['Patent', 'UM', 'Copyright', 'Extension Services'],
-            required: true 
+        {
+            field: 'utilizationType',
+            header: 'Utilization Type',
+            width: '200px',
+            type: 'select',
+            options: ['Patent', 'UM', 'Copyright', 'Research Utilization through Extension'],
+            required: true
         },
+        { field: 'researchTitle', header: 'Research Title', width: '250px', type: 'search', required: true },
+        { field: 'programTitle', header: 'Program Title', width: '250px', type: 'text', required: true },
         { field: 'dateConducted', header: 'Date Conducted', width: '150px', type: 'date', required: true },
         { field: 'traineesCount', header: 'No. of Trainees/Beneficiaries', width: '180px', type: 'number', required: true },
         { field: 'supportLinks', header: 'Link to Support Documents', width: '160px', type: 'url', required: false },
         { field: 'supportDocs', header: 'Upload Support Documents', width: '160px', type: 'file', required: false },
         { field: 'actions', header: 'Actions', width: '80px', type: 'actions', required: false }
-    ];
+    ]
+
+    const programFormFields = [
+        {
+            field: 'utilizationType',
+            header: 'Utilization Type',
+            type: 'select',
+            options: ['Patent', 'UM', 'Copyright', 'Research Utilization through Extension'],
+            required: true,
+            alwaysShow: true // Always visible regardless of type
+        },
+        {
+            field: 'researchTitle',
+            header: 'Research Title',
+            type: 'search',
+            required: true,
+            alwaysShow: true
+        },
+        {
+            field: 'programTitle',
+            header: 'Program Title',
+            type: 'text',
+            required: true,
+            showFor: ['Research Utilization through Extension']
+        },
+        {
+            field: 'dateConducted',
+            header: 'Date Conducted',
+            type: 'date',
+            required: true,
+            showFor: ['Research Utilization through Extension']
+        },
+        {
+            field: 'traineesCount',
+            header: 'No. of Trainees/Beneficiaries',
+            type: 'number',
+            required: true,
+            showFor: ['Research Utilization through Extension']
+        },
+        {
+            field: 'supportLinks',
+            header: 'Link to Support Documents',
+            type: 'url',
+            required: false,
+            showFor: ['Patent', 'UM', 'Copyright', 'Research Utilization through Extension']
+        },
+        {
+            field: 'supportDocs',
+            header: 'Upload Support Documents',
+            type: 'file',
+            required: false,
+            showFor: ['Patent', 'UM', 'Copyright', 'Research Utilization through Extension']
+        }
+    ]
 
     let selectedResearchId = null;
     let selectedEndorsementId = null;
@@ -30,8 +83,15 @@ export const Utilization = () => {
     let searchTimeout;
     const getMainContainer = (el) => {
         mainTableContainer = el;
-    };
-
+    }
+    const shouldShowField = (field, utilizationType) => {
+        // Fields with alwaysShow flag should always be displayed
+        if (field.alwaysShow) return true;
+        // Fields without showFor should be displayed by default
+        if (!field.showFor) return true;
+        // Check if current utilization type is in the showFor array
+        return field.showFor.includes(utilizationType);
+    }
     // Modal Helpers
     const closeModal = () => {
         if (modalOverlay) {
@@ -65,7 +125,16 @@ export const Utilization = () => {
 
     const openEditProgramModal = (data) => openProgramModal(data);
 
-    const createFormField = (column, initialValue = null) => {
+    const createFormField = (column, initialValue = null, utilizationType = null) => {
+        // Add this check at the beginning of the function
+        if (!shouldShowField(column, utilizationType)) {
+            return $({
+                tag: 'div',
+                style: { display: 'none' },
+                att: { 'data-field': column.field, 'data-hidden': 'true' }
+            });
+        }
+
         const fieldId = `field-${column.field}`;
         const labelStyle = {
             display: 'block',
@@ -191,15 +260,15 @@ export const Utilization = () => {
                 }, 400);
             });
 
-            // Close dropdown on click outside
-            document.addEventListener('click', (e) => {
-                if (!searchContainer.contains(e.target)) resultsDropdown.style.display = 'none';
-            });
-
             const searchContainer = $({
                 tag: 'div',
                 style: { position: 'relative', display: 'flex', flexDirection: 'column' },
                 child: [searchInput, resultsDropdown]
+            });
+
+            // Close dropdown on click outside
+            document.addEventListener('click', (e) => {
+                if (!searchContainer.contains(e.target)) resultsDropdown.style.display = 'none';
             });
 
             return $({
@@ -521,31 +590,92 @@ export const Utilization = () => {
     };
 
 
+
     const createProgramModal = (programData = null) => {
         const isEdit = !!programData;
+        let currentUtilizationType = programData ? programData.utilizationType : '';
+
         const fieldsContainer = $({
             tag: 'div',
+            att: { id: 'program-fields-container' },
             style: { display: 'flex', flexDirection: 'column', gap: '20px' }
         });
 
-        columns.forEach(col => {
-            if (col.type !== 'actions') {
-                let initialValue = programData ? programData[col.field] : null;
-                // Field mapping for researchTitle/research_title
-                if (col.field === 'researchTitle' && programData) {
-                    initialValue = programData.research_title || '';
-                }
-                // For supportDocs, we provide metadata for pre-filling
-                if (col.field === 'supportDocs' && programData) {
-                    initialValue = programData.supportDocsMetadata || null;
-                }
-                // For supportLinks, we might have merged URLs (manual + drive) in programData.supportDocs
-                if (col.field === 'supportLinks' && programData) {
-                    initialValue = programData['supportDocs'] || '';
-                }
-                fieldsContainer.appendChild(createFormField(col, initialValue));
+        const renderFields = (utilizationType) => {
+            // Clear the container completely
+            fieldsContainer.innerHTML = '';
+
+            // Reset research selection when type changes
+            if (utilizationType !== currentUtilizationType && currentUtilizationType) {
+                selectedResearchId = null;
+                selectedEndorsementId = null;
+                selectedResearchTitle = '';
             }
-        });
+
+            currentUtilizationType = utilizationType || '';
+
+            // Use programFormFields instead of columns
+            programFormFields.forEach(field => {
+                // Check if field should be shown
+                if (!shouldShowField(field, currentUtilizationType)) {
+                    return; // Skip fields that shouldn't be shown
+                }
+
+                let initialValue = null;
+
+                if (programData && field.field !== 'utilizationType') {
+                    // Only restore values for the current type to prevent mixing data
+                    if (shouldShowField(field, programData.utilizationType) &&
+                        programData.utilizationType === currentUtilizationType) {
+                        switch (field.field) {
+                            case 'researchTitle':
+                                initialValue = programData.research_title || '';
+                                if (programData.research_title) {
+                                    selectedResearchId = programData.research_id;
+                                    selectedEndorsementId = programData.endorsement_id;
+                                    selectedResearchTitle = programData.research_title;
+                                }
+                                break;
+                            case 'programTitle':
+                                initialValue = programData.programTitle || '';
+                                break;
+                            case 'dateConducted':
+                                initialValue = programData.dateConducted || '';
+                                break;
+                            case 'traineesCount':
+                                initialValue = programData.traineesCount || '';
+                                break;
+                            case 'supportLinks':
+                                initialValue = programData.supportDocs || '';
+                                break;
+                            case 'supportDocs':
+                                initialValue = programData.supportDocsMetadata || null;
+                                break;
+                        }
+                    }
+                } else if (field.field === 'utilizationType') {
+                    initialValue = currentUtilizationType || (programData ? programData.utilizationType : '');
+                }
+
+                fieldsContainer.appendChild(createFormField(field, initialValue, currentUtilizationType));
+            });
+
+            // Add a subtle animation to show fields updating
+            const fields = fieldsContainer.children;
+            Array.from(fields).forEach((field, index) => {
+                field.style.opacity = '0';
+                field.style.transform = 'translateY(10px)';
+
+                setTimeout(() => {
+                    field.style.transition = 'all 0.3s ease';
+                    field.style.opacity = '1';
+                    field.style.transform = 'translateY(0)';
+                }, index * 50); // Stagger the animations
+            });
+        };
+
+        // Initial render with the current type
+        renderFields(currentUtilizationType);
 
         const modalHeader = $({
             tag: 'div',
@@ -621,32 +751,104 @@ export const Utilization = () => {
                     const formData = {};
                     let hasError = false;
 
-                    columns.forEach(col => {
-                        if (col.field === 'supportDocs') {
-                            // Files are handled separately via FormData below
-                        } else if (col.field === 'supportLinks') {
+                    // Get current utilization type
+                    const utilizationTypeSelect = document.getElementById('field-utilizationType');
+                    const currentUtilType = utilizationTypeSelect ? utilizationTypeSelect.value : currentUtilizationType;
+
+                    if (!currentUtilType) {
+                        hasError = true;
+                        if (utilizationTypeSelect) {
+                            utilizationTypeSelect.style.borderColor = '#ff4d4d';
+                            utilizationTypeSelect.style.animation = 'shake 0.5s';
+                            setTimeout(() => {
+                                utilizationTypeSelect.style.animation = '';
+                            }, 500);
+                        }
+                    }
+
+                    // Process each form field based on programFormFields
+                    programFormFields.forEach(field => {
+                        // Skip fields that shouldn't be shown for current type
+                        if (!shouldShowField(field, currentUtilType)) return;
+
+                        if (field.field === 'supportDocs') {
+                            // Handled separately with FormData
+                            return;
+                        }
+
+                        if (field.field === 'supportLinks') {
                             const linkInputs = document.querySelectorAll('.support-doc-link-input');
                             const links = Array.from(linkInputs)
                                 .map(input => input.value.trim())
                                 .filter(val => val !== '');
                             formData['supportLinks'] = links.join(', ');
-                        } else if (col.field === 'researchTitle') {
+                            return;
+                        }
+
+                        if (field.field === 'researchTitle') {
                             formData['research_id'] = selectedResearchId;
                             formData['endorsement_id'] = selectedEndorsementId;
-                        } else {
-                            const input = document.getElementById(`field-${col.field}`);
-                            if (input) {
-                                formData[col.field] = input.value;
-                                if (col.required && !input.value.trim()) {
-                                    input.style.borderColor = '#ff4d4d';
+
+                            if (!selectedResearchId) {
+                                const researchInput = document.getElementById('field-researchTitle');
+                                if (researchInput) {
+                                    researchInput.style.borderColor = '#ff4d4d';
+                                    researchInput.style.animation = 'shake 0.5s';
+                                    setTimeout(() => {
+                                        researchInput.style.animation = '';
+                                    }, 500);
                                     hasError = true;
                                 }
+                            }
+                            return;
+                        }
+
+                        // Handle other fields
+                        const input = document.getElementById(`field-${field.field}`);
+                        if (input) {
+                            formData[field.field] = input.value;
+
+                            if (field.required && !input.value.trim()) {
+                                input.style.borderColor = '#ff4d4d';
+                                input.style.animation = 'shake 0.5s';
+                                setTimeout(() => {
+                                    input.style.animation = '';
+                                }, 500);
+                                hasError = true;
                             }
                         }
                     });
 
                     if (hasError) {
-                        console.warn('Please fill in all required fields');
+                        // Show error toast notification
+                        const errorToast = $({
+                            tag: 'div',
+                            style: {
+                                position: 'fixed',
+                                top: '20px',
+                                right: '20px',
+                                backgroundColor: '#ff4d4d',
+                                color: '#fff',
+                                padding: '12px 24px',
+                                borderRadius: '8px',
+                                zIndex: '10001',
+                                fontSize: '14px',
+                                boxShadow: '0 4px 12px rgba(255, 77, 77, 0.3)',
+                                animation: 'slideInRight 0.3s ease'
+                            },
+                            text: 'Please fill in all required fields'
+                        });
+
+                        document.body.appendChild(errorToast);
+                        setTimeout(() => {
+                            errorToast.style.animation = 'slideOutRight 0.3s ease';
+                            setTimeout(() => {
+                                if (errorToast.parentNode) {
+                                    errorToast.parentNode.removeChild(errorToast);
+                                }
+                            }, 300);
+                        }, 3000);
+
                         return;
                     }
 
@@ -654,9 +856,21 @@ export const Utilization = () => {
                     const fetchBody = new FormData();
                     fetchBody.append('action', isEdit ? 'update' : 'add');
                     if (isEdit) fetchBody.append('id', programData.id);
-                    Object.keys(formData).forEach(key => {
-                        fetchBody.append(key, formData[key]);
-                    });
+
+                    // Add utilization type
+                    fetchBody.append('utilizationType', currentUtilType);
+
+                    // Add extension-specific fields if applicable
+                    if (currentUtilType === 'Research Utilization through Extension') {
+                        fetchBody.append('programTitle', formData['programTitle'] || '');
+                        fetchBody.append('dateConducted', formData['dateConducted'] || '');
+                        fetchBody.append('traineesCount', formData['traineesCount'] || '');
+                    }
+
+                    // Add other form data
+                    fetchBody.append('research_id', formData['research_id'] || '');
+                    fetchBody.append('endorsement_id', formData['endorsement_id'] || '');
+                    fetchBody.append('supportLinks', formData['supportLinks'] || '');
 
                     // Append support document files
                     const dropZoneEl = document.getElementById('support-docs-drop-zone');
@@ -673,7 +887,8 @@ export const Utilization = () => {
                     }
 
                     saveBtn.disabled = true;
-                    saveBtn.innerText = isEdit ? 'Updating...' : 'Saving...';
+                    saveBtn.style.opacity = '0.7';
+                    saveBtn.innerHTML = `<span class="fa-solid fa-spinner fa-spin"></span> ${isEdit ? 'Updating...' : 'Saving...'}`;
 
                     fetch('/utilization', {
                         method: 'POST',
@@ -682,19 +897,53 @@ export const Utilization = () => {
                         .then(res => res.json())
                         .then(data => {
                             if (data.success) {
+                                // Show success message
+                                const successToast = $({
+                                    tag: 'div',
+                                    style: {
+                                        position: 'fixed',
+                                        top: '20px',
+                                        right: '20px',
+                                        backgroundColor: '#4caf50',
+                                        color: '#fff',
+                                        padding: '12px 24px',
+                                        borderRadius: '8px',
+                                        zIndex: '10001',
+                                        fontSize: '14px',
+                                        boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)',
+                                        animation: 'slideInRight 0.3s ease'
+                                    },
+                                    text: `Program ${isEdit ? 'updated' : 'created'} successfully!`
+                                });
+
+                                document.body.appendChild(successToast);
+
                                 closeModal();
                                 fetchPrograms();
+
+                                setTimeout(() => {
+                                    successToast.style.animation = 'slideOutRight 0.3s ease';
+                                    setTimeout(() => {
+                                        if (successToast.parentNode) {
+                                            successToast.parentNode.removeChild(successToast);
+                                        }
+                                    }, 300);
+                                }, 2000);
                             } else {
                                 alert('Error: ' + data.message);
-                                saveBtn.disabled = false;
-                                saveBtn.innerText = isEdit ? 'Update Program' : 'Save Program';
+                                resetSaveButton();
                             }
                         })
                         .catch(err => {
                             alert('Failed to save program');
-                            saveBtn.disabled = false;
-                            saveBtn.innerText = isEdit ? 'Update Program' : 'Save Program';
+                            resetSaveButton();
                         });
+
+                    function resetSaveButton() {
+                        saveBtn.disabled = false;
+                        saveBtn.style.opacity = '1';
+                        saveBtn.innerHTML = isEdit ? 'Update Program' : 'Save Program';
+                    }
                 }
             }
         });
@@ -729,7 +978,13 @@ export const Utilization = () => {
                 modalHeader,
                 $({
                     tag: 'div',
-                    style: { padding: '24px', maxHeight: '70vh', overflowY: 'auto' },
+                    style: {
+                        padding: '24px',
+                        maxHeight: '60vh',
+                        overflowY: 'auto',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#444 #2a2a2a'
+                    },
                     child: [fieldsContainer]
                 }),
                 modalFooter
@@ -753,7 +1008,26 @@ export const Utilization = () => {
                 transition: 'opacity 0.3s ease',
                 backdropFilter: 'blur(8px)'
             },
-            child: [modalContent]
+            child: [modalContent],
+            event: {
+                type: 'click',
+                method: (e) => {
+                    // Close modal when clicking overlay (not the modal content)
+                    if (e.target === modalOverlay) {
+                        closeModal();
+                    }
+                }
+            }
+        });
+
+        // Use a more reliable method to attach the change event
+        // We'll use event delegation on the fields container
+        fieldsContainer.addEventListener('change', (e) => {
+            if (e.target && e.target.id === 'field-utilizationType') {
+                const newType = e.target.value;
+                console.log('Utilization type changed to:', newType); // Debug log
+                renderFields(newType);
+            }
         });
 
         return modalOverlay;
@@ -1381,6 +1655,10 @@ export const Utilization = () => {
                 });
             }
 
+            if (col.field === 'programTitle') {
+                cellContent = item['programTitle'] || '—';
+                cellStyle.color = cellContent === '—' ? '#666' : '#ddd';
+            }
 
             if (col.field === 'researchTitle') {
                 cellContent = item['research_title'] || '—';
