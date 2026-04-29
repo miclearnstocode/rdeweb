@@ -233,7 +233,8 @@ export const PresentationResearch = () => {
 
     // Update statistics
     const updateStats = () => {
-        const statValues = document.querySelectorAll('.stat-value')
+        if (!mainTableContainer) return
+        const statValues = mainTableContainer.querySelectorAll('.stat-value')
         if (statValues.length >= 5) {
             statValues[0].textContent = currentStats.total || 0
             statValues[1].textContent = currentStats.university || 0
@@ -245,7 +246,8 @@ export const PresentationResearch = () => {
 
     // Update record count
     const updateRecordCount = () => {
-        const recordCount = document.querySelector('.record-count')
+        if (!mainTableContainer) return
+        const recordCount = mainTableContainer.querySelector('.record-count')
         if (recordCount) {
             recordCount.textContent = `${filteredData.length} of ${totalCount} records`
         }
@@ -1507,7 +1509,8 @@ export const PresentationResearch = () => {
 
     // Update filter button styles - ONLY update styles, don't trigger any data fetching
     const updateFilterButtons = (active) => {
-        const filterButtons = document.querySelectorAll('.filter-btn')
+        if (!mainTableContainer) return
+        const filterButtons = mainTableContainer.querySelectorAll('.filter-btn')
         
         filterButtons.forEach(button => {
             const buttonText = button.textContent.trim()

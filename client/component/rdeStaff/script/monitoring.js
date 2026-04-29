@@ -28,10 +28,6 @@ export const MonitoringComponent = () => {
     let currentStats = {
         totalOngoing: 0,
         completed: 0,
-        publications: 0,
-        presentations: 0,
-        awards: 0,
-        collaborations: 0
     }
 
     // Quarter options
@@ -43,7 +39,7 @@ export const MonitoringComponent = () => {
     ]
 
     // Year options
-    let years = ['2023', '2024', '2025', '2026']
+    let years = []
 
     // Fetch available years from database
     const fetchAvailableYears = async () => {
@@ -243,7 +239,7 @@ export const MonitoringComponent = () => {
                     // Update stats
                     if (result.summary) {
                         currentStats = result.summary
-                        totalCount = result.summary.totalOngoing || 0
+                        totalCount = result.summary.totalOngoing
                         updateStats()
                     }
                 } else {
@@ -311,13 +307,9 @@ export const MonitoringComponent = () => {
     // Update statistics
     const updateStats = () => {
         const statValues = document.querySelectorAll('.stat-value')
-        if (statValues.length >= 6) {
-            statValues[0].textContent = currentStats.totalOngoing || 0
-            statValues[1].textContent = currentStats.completed || 0
-            statValues[2].textContent = currentStats.publications || 0
-            statValues[3].textContent = currentStats.presentations || 0
-            statValues[4].textContent = currentStats.awards || 0
-            statValues[5].textContent = currentStats.collaborations || 0
+        if (statValues.length >= 2) {
+            statValues[0].textContent = currentStats.totalOngoing
+            statValues[1].textContent = currentStats.completed
         }
     }
 

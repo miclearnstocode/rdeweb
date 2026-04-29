@@ -330,7 +330,6 @@ export const PatentUM = () => {
                 alignItems: 'center', justifyContent: 'center',
                 zIndex: '9999', opacity: '0', transition: 'opacity 0.28s ease'
             },
-            event: { type: 'click', method: e => { if (e.target.id === 'ip-file-viewer-overlay') closeViewer(); } },
             child: [
                 // Toolbar
                 $({
@@ -656,7 +655,6 @@ export const PatentUM = () => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 zIndex: '3000', opacity: '0', transition: 'opacity 0.3s ease'
             },
-            event: { type: 'click', method: e => { if (e.target.id === 'under-review-modal-overlay') closeUnderReviewModal(); } },
             child: [
                 $({
                     tag: 'div',
@@ -1560,12 +1558,6 @@ export const PatentUM = () => {
                 zIndex: '2000',
                 opacity: '0',
                 transition: 'opacity 0.3s ease'
-            },
-            event: {
-                type: 'click',
-                method: (e) => {
-                    if (e.target.id === 'patent-modal-overlay') closeModal();
-                }
             },
             child: [
                 $({

@@ -64,7 +64,7 @@ post('/publish', 'server/rde/publication.php');
 post('/utilization', 'server/rde/utilization.php');
 any('/certification', 'server/rde/certification.php');
 post('/saveCertificationDrive', 'server/rde/certification_drive.php');
-post('/monitor', 'server/rde/monitoring.php');
+post('/quarterlyMonitoring', 'server/rde/quarterlyMonitoring.php');
 
 // ROOT route
 get('/','server/auth.php');  // This handles redirects based on login status

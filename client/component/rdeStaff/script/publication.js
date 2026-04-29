@@ -520,8 +520,10 @@ export const Publication = () => {
             statsContainer.appendChild(card)
         })
 
-        const recCount = document.querySelector('.record-count')
-        if (recCount) recCount.textContent = `${publications.length} publication${publications.length !== 1 ? 's' : ''}`
+        if (mainTableContainer) {
+            const recCount = mainTableContainer.querySelector('.record-count')
+            if (recCount) recCount.textContent = `${publications.length} publication${publications.length !== 1 ? 's' : ''}`
+        }
     }
 
     // Helper to format index labels nicely

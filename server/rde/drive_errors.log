@@ -263,3 +263,66 @@ Stack trace:
 [23-Apr-2026 12:12:35 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
 [23-Apr-2026 12:12:35 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
 [23-Apr-2026 12:12:35 Europe/Berlin] PHP Warning:  Undefined array key "proposal_link" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 216
+[29-Apr-2026 08:34:10 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'el.name' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:270
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(270): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 270
+[29-Apr-2026 08:35:20 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'el.name' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:270
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(270): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 270
+[29-Apr-2026 08:45:44 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'el.name' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:279
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(279): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 279
+[29-Apr-2026 08:46:31 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'el.name' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:277
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(277): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 277
+[29-Apr-2026 08:47:20 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'e.status' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:277
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(277): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 277
+[29-Apr-2026 08:48:31 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'el.name' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:279
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(279): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 279
+[29-Apr-2026 08:57:16 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'el.name' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:280
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(280): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 280

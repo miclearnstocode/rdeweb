@@ -1,12 +1,32 @@
 <?php
-ob_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 0); 
+ini_set('log_errors', 1);
+
+header('Content-Type: application/json; charset=utf-8');
+
+// Start output buffering with callback to catch errors
+ob_start(function($buffer) {
+    if (strpos($buffer, '<b>Warning</b>') !== false || 
+        strpos($buffer, '<b>Notice</b>') !== false ||
+        strpos($buffer, '<b>Fatal error</b>') !== false) {
+        
+        error_log("HTML error in presentation.php output buffer: " . substr($buffer, 0, 500));
+        
+        return json_encode([
+            'status' => false,
+            'message' => 'Server error occurred in presentation API',
+            'error_type' => 'html_error_in_response'
+        ]);
+    }
+    return $buffer;
+});
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 require_once(__DIR__ . '/../db.php');
-
-header('Content-Type: application/json; charset=utf-8');
 
 class PresentationAPI {
     private $con;
@@ -503,90 +523,83 @@ class PresentationAPI {
 
     private function getStatsFromResearch() {
         try {
-            // Get total count of ALL presentations (including duplicates)
-            $totalQuery = "SELECT COUNT(*) as total 
+            // Get total count of ALL unique research files with accepted endorsements
+            // Remove event_id check to be more inclusive like quarterlyMonitoring.php
+            $totalQuery = "SELECT COUNT(DISTINCT rf.id) as total 
                         FROM researchfile rf
                         INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        LEFT JOIN presentation_research pr ON rf.id = pr.research_id
-                        WHERE e.status = 'accepted'
-                        AND rf.event_id IS NOT NULL";
+                        WHERE e.status = 'accepted'";
             
             $totalResult = $this->con->query($totalQuery);
-            $totalRow = $totalResult->fetch_assoc();
-            $total = (int)($totalRow['total'] ?? 0);
+            if (!$totalResult) {
+                 error_log("Total stats query failed: " . $this->con->error);
+                 $total = 0;
+            } else {
+                 $totalRow = $totalResult->fetch_assoc();
+                 $total = (int)($totalRow['total'] ?? 0);
+            }
             
-            // Get university count (from researchfile.event)
-            $univQuery = "SELECT COUNT(*) as count 
+            // Get university count: rf.event contains "Symposium" or "In-House Review"
+            $univQuery = "SELECT COUNT(DISTINCT rf.id) as count 
                         FROM researchfile rf
                         INNER JOIN endorsement e ON rf.endorsementid = e.id
                         WHERE e.status = 'accepted'
-                        AND rf.event_id IS NOT NULL
-                        AND (LOWER(rf.event) LIKE '%university%' 
-                            OR LOWER(rf.event) LIKE '%in-house%' 
-                            OR LOWER(rf.event) LIKE '%symposium%'
-                            OR LOWER(rf.event) NOT LIKE '%international%'
-                            AND LOWER(rf.event) NOT LIKE '%national%'
-                            AND LOWER(rf.event) NOT LIKE '%regional%')";
+                        AND (LOWER(rf.event) LIKE '%symposium%' 
+                             OR LOWER(rf.event) LIKE '%in-house review%'
+                             OR LOWER(rf.event) LIKE '%in house review%')";
             
             $univResult = $this->con->query($univQuery);
-            $univRow = $univResult->fetch_assoc();
-            $university = (int)($univRow['count'] ?? 0);
+            if (!$univResult) {
+                error_log("University stats query failed: " . $this->con->error);
+                $university = 0;
+            } else {
+                $univRow = $univResult->fetch_assoc();
+                $university = (int)($univRow['count'] ?? 0);
+            }
             
-            // Get international count (from presentation_research.forum_type)
-            $intQuery = "SELECT COUNT(*) as count 
-                        FROM researchfile rf
-                        INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        INNER JOIN presentation_research pr ON rf.id = pr.research_id
-                        WHERE e.status = 'accepted'
-                        AND rf.event_id IS NOT NULL
-                        AND LOWER(pr.forum_type) = 'international'";
+            // Get international count
+            $intQuery = "SELECT COUNT(DISTINCT research_id) as count 
+                        FROM presentation_research 
+                        WHERE LOWER(forum_type) = 'international'";
             
             $intResult = $this->con->query($intQuery);
-            $intRow = $intResult->fetch_assoc();
-            $international = (int)($intRow['count'] ?? 0);
+            $international = ($intResult) ? (int)($intResult->fetch_assoc()['count'] ?? 0) : 0;
             
-            // Get national count (from presentation_research.forum_type)
-            $natQuery = "SELECT COUNT(*) as count 
-                        FROM researchfile rf
-                        INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        INNER JOIN presentation_research pr ON rf.id = pr.research_id
-                        WHERE e.status = 'accepted'
-                        AND rf.event_id IS NOT NULL
-                        AND LOWER(pr.forum_type) = 'national'";
+            // Get national count
+            $natQuery = "SELECT COUNT(DISTINCT research_id) as count 
+                        FROM presentation_research 
+                        WHERE LOWER(forum_type) = 'national'";
             
             $natResult = $this->con->query($natQuery);
-            $natRow = $natResult->fetch_assoc();
-            $national = (int)($natRow['count'] ?? 0);
+            $national = ($natResult) ? (int)($natResult->fetch_assoc()['count'] ?? 0) : 0;
             
-            // Get regional count (from presentation_research.forum_type)
-            $regQuery = "SELECT COUNT(*) as count 
-                        FROM researchfile rf
-                        INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        INNER JOIN presentation_research pr ON rf.id = pr.research_id
-                        WHERE e.status = 'accepted'
-                        AND rf.event_id IS NOT NULL
-                        AND LOWER(pr.forum_type) = 'regional'";
+            // Get regional count
+            $regQuery = "SELECT COUNT(DISTINCT research_id) as count 
+                        FROM presentation_research 
+                        WHERE LOWER(forum_type) = 'regional'";
             
             $regResult = $this->con->query($regQuery);
-            $regRow = $regResult->fetch_assoc();
-            $regional = (int)($regRow['count'] ?? 0);
+            $regional = ($regResult) ? (int)($regResult->fetch_assoc()['count'] ?? 0) : 0;
             
-            // Calculate total from all categories
-            $calculatedTotal = $university + $international + $national + $regional;
+            // Calculate total from categories (this represents research that has BEEN presented)
+            $presentedTotal = $university + $international + $national + $regional;
             
-            // Use the larger of the two totals to ensure we don't miss any
-            $finalTotal = max($total, $calculatedTotal);
+            // Final total should be the count of all potentially presentable research
+            // But if we want the "Presented Research" total, it might be different.
+            // Let's use the maximum to be safe, or just the presentedTotal.
             
             $stats = [
-                'total' => $finalTotal,
+                'total' => max($total, $presentedTotal),
                 'university' => $university,
                 'international' => $international,
                 'national' => $national,
                 'regional' => $regional
             ];
+            
             return $stats;
             
         } catch (Exception $e) {
+            error_log("Error in getStatsFromResearch: " . $e->getMessage());
             return [
                 'total' => 0,
                 'university' => 0,
@@ -596,6 +609,7 @@ class PresentationAPI {
             ];
         }
     }
+    
     public function savePresentation() {
         try {
             // Get form data

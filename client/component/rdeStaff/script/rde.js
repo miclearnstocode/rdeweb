@@ -5,9 +5,6 @@ import { Communication } from "./communication.js";
 import { ResearchMain } from "./mainResearch.js";
 import { CompletedResearch } from "./completedResearch.js";
 import { ProposedResearch } from "./proposedResearch.js";
-import { PresentationResearch } from "./presentationResearch.js";
-import { Publication } from "./publication.js";
-import { PatentUM } from "./patentUM.js";
 import { Utilization } from "./utilization.js";
 import { CertificationResearch } from "./certificationResearch.js";
 import { MonitoringComponent } from "./monitoring.js";
@@ -51,7 +48,8 @@ const button = ({ label, event, url }) => {
                     height: 'fit-content',
                     margin: 'auto',
                     fontFamily: 'arial black,sans-serif',
-                    fontSize: label.length > 20 ? '10px' : '15px'
+                    fontSize: '15px'
+                    //fontSize: label.length > 20 ? '13px' : '15px'
                 },
                 text: label
             })
@@ -84,7 +82,7 @@ const Body = () => {
     })
     botArray.push({
         url: '/rdeOffice/researchMonitoring',
-        label: 'Internally Funded Research Monitoring',
+        label: 'Internally Funded Research',
         button: button,
         page: MonitoringComponent
     })
@@ -96,27 +94,9 @@ const Body = () => {
     })
     botArray.push({
         url: '/rdeOffice/quarterlyMonitoring',
-        label: 'Quarterly Monitoring',
+        label: 'Monitoring',
         button: button,
         page: QuarterlyMonitoringComponent
-    })
-    botArray.push({
-        url: '/rdeOffice/presentationResearch',
-        label: 'Presented Research',
-        button: button,
-        page: PresentationResearch
-    })
-    botArray.push({
-        url: '/rdeOffice/publication',
-        label: 'Publications',
-        button: button,
-        page: Publication
-    })
-    botArray.push({
-        url: '/rdeOffice/patentUM',
-        label: 'IP Assets',
-        button: button,
-        page: PatentUM
     })
     botArray.push({
         url: '/rdeOffice/utilization',
@@ -162,7 +142,7 @@ const Body = () => {
                 backgroundColor: '#666',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden' // Hide overflow on the container
+                overflow: 'hidden'
             },
             child: [
                 label,
@@ -170,17 +150,15 @@ const Body = () => {
                     tag: 'div',
                     style: {
                         width: '100%',
-                        height: 'calc(100% - 10vh)', // Subtract label height
-                        overflowY: 'auto', // Add vertical scroll
-                        overflowX: 'hidden', // Hide horizontal scroll
+                        height: 'calc(100% - 10vh)',
+                        overflowY: 'auto',
+                        overflowX: 'hidden',
                         paddingTop: '1vh',
                         paddingBottom: '1vh',
-                        // Custom scrollbar styling
                         scrollbarWidth: 'thin',
                         scrollbarColor: '#888 #444',
                     },
                     elementHandler: (el) => {
-                        // Add custom scrollbar styles for webkit browsers
                         const style = document.createElement('style');
                         style.textContent = `
                             .tabs-scroll-container::-webkit-scrollbar {

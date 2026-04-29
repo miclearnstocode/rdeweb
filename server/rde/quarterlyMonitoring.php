@@ -255,22 +255,97 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
 
     $nextCursor = !empty($data) ? $data[count($data) - 1]['id'] : null;
 
-    // Fetch Summary Stats using the same filters
-    $statsQuery = "SELECT 
-                    COUNT(*) as totalOngoing,
-                    SUM(CASE WHEN rm.official_completion_date IS NOT NULL THEN 1 ELSE 0 END) as completed
-                  FROM researchfile rf
-                  INNER JOIN event_list el ON rf.event_id = el.id
-                  LEFT JOIN research_monitoring rm ON rf.id = rm.research_id
-                  WHERE $baseWhereSql";
+    // Fetch counts for other stats with same filters
+    // Activity Conducted
+    $actQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id LEFT JOIN research_monitoring rm ON rf.id = rm.research_id WHERE $baseWhereSql";
+    $actStmt = $conn->prepare($actQuery);
+    if ($baseTypes) $actStmt->bind_param($baseTypes, ...$baseParams);
+    $actStmt->execute();
+    $activityCount = (int)($actStmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+    // Publications - simple count
+    $pubQuery = "SELECT COUNT(id) as totalPublication FROM publications";
+    $pubStmt = $conn->prepare($pubQuery);
+    $pubStmt->execute();
+    $publicationsCount = (int)($pubStmt->get_result()->fetch_assoc()['totalPublication'] ?? 0);
     
-    $statsStmt = $conn->prepare($statsQuery);
-    if ($baseTypes) {
-        $statsStmt->bind_param($baseTypes, ...$baseParams);
+    // Presentations
+    // 1. University Level (Symposium + Accepted)
+    $presUnivQuery = "SELECT COUNT(DISTINCT rf.id) as totalUni
+                    FROM researchfile rf 
+                    INNER JOIN endorsement e ON rf.endorsementid = e.id 
+                    WHERE e.status = 'accepted' 
+                    AND (rf.event LIKE '%Symposium%' OR rf.event LIKE '%symposium%')";
+    $presUnivStmt = $conn->prepare($presUnivQuery);
+    $presUnivStmt->execute();
+    $univCount = (int)($presUnivStmt->get_result()->fetch_assoc()['totalUni'] ?? 0);
+
+    // 2. External Levels (International, National, Regional)
+    $presExtQuery = "SELECT COUNT(id) as totalExt FROM presentation_research";
+    $presExtStmt = $conn->prepare($presExtQuery);
+    $presExtStmt->execute();
+    $extCount = (int)($presExtStmt->get_result()->fetch_assoc()['totalExt'] ?? 0);
+    
+    $presentationsCount = $univCount + $extCount;
+
+    // IP Assets (Aggregate from all IP tables)
+    $ipAssetsCount = 0;
+    $ipTables = [
+        ['name' => 'patent', 'campus' => 'campus', 'date' => 'applicationDate', 'research' => 'research_id'],
+        ['name' => 'utility_model', 'campus' => 'campusUM', 'date' => 'applicationDateUM', 'research' => 'research_id'],
+        ['name' => 'industrial_design', 'campus' => 'campus', 'date' => 'applicationDate', 'research' => 'research_id'],
+        ['name' => 'copyright', 'campus' => 'campus', 'date' => 'applicationDate', 'research' => null],
+        ['name' => 'trademark', 'campus' => null, 'date' => 'applicationDate', 'research' => null]
+    ];
+
+    foreach ($ipTables as $ip) {
+        $where = ["(submissionStatus = 'verified' OR submissionStatus IS NULL)"];
+        $p = [];
+        $t = "";
+
+        // Apply filters manually since IP tables don't always join cleanly with rf/el
+        if ($year && $year !== 'All') {
+            $where[] = "YEAR({$ip['date']}) = ?";
+            $p[] = $year;
+            $t .= "i";
+        }
+        if ($campus && $campus !== 'All' && $campus !== 'All Campuses' && $ip['campus']) {
+            $where[] = "{$ip['campus']} = ?";
+            $p[] = $campus;
+            $t .= "s";
+        }
+
+        // If it has research_id, we can also filter by category/center
+        $join = "";
+        if ($ip['research'] && (($category && $category !== 'All') || ($center && $center !== 'All'))) {
+            $join = "INNER JOIN researchfile rf ON ip.{$ip['research']} = rf.id";
+            if ($category && $category !== 'All') {
+                $categoryList = explode(',', $category);
+                $placeholders = implode(',', array_fill(0, count($categoryList), '?'));
+                $where[] = "rf.category IN ($placeholders)";
+                foreach ($categoryList as $cat) { $p[] = trim($cat); $t .= "s"; }
+            }
+            if ($center && $center !== 'All') {
+                $where[] = "rf.center = ?";
+                $p[] = $center;
+                $t .= "s";
+            }
+        }
+
+        $whereSqlIp = implode(" AND ", $where);
+        $sql = "SELECT COUNT(*) as total FROM {$ip['name']} ip $join WHERE $whereSqlIp";
+        $stmt = $conn->prepare($sql);
+        if ($t) $stmt->bind_param($t, ...$p);
+        $stmt->execute();
+        $ipAssetsCount += (int)($stmt->get_result()->fetch_assoc()['total'] ?? 0);
     }
-    $statsStmt->execute();
-    $statsResult = $statsStmt->get_result();
-    $stats = $statsResult->fetch_assoc();
+
+    // Calculate total count of research records matching filters for "X of Y records" display
+    $totalQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id WHERE $baseWhereSql";
+    $totalStmt = $conn->prepare($totalQuery);
+    if ($baseTypes) $totalStmt->bind_param($baseTypes, ...$baseParams);
+    $totalStmt->execute();
+    $totalOngoing = (int)($totalStmt->get_result()->fetch_assoc()['total'] ?? 0);
 
     echo json_encode([
         'success' => true,
@@ -280,8 +355,12 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
             'next_cursor' => $nextCursor
         ],
         'summary' => [
-            'totalOngoing' => (int)$stats['totalOngoing'],
-            'completed' => (int)$stats['completed'],
+            'totalOngoing' => $totalOngoing,
+            'publications' => $publicationsCount,
+            'presentations' => $presentationsCount,
+            'assets' => $ipAssetsCount,
+            'collaborations' => 0,
+            'activityConducted' => $activityCount
         ]
     ]);
 } elseif ($action === 'save') {
