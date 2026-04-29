@@ -29,7 +29,7 @@ export const PresentationResearch = () => {
         national: 0,
         regional: 0
     }
-    
+
     // Columns for presentation research
     const columns = [
         { field: 'date_completed', header: 'Date of Completion', width: '150px' },
@@ -75,14 +75,14 @@ export const PresentationResearch = () => {
         try {
             const formData = new FormData()
             formData.append('action', 'get_research_papers')
-            
+
             const response = await fetch('/presentedresearch', {
                 method: 'POST',
                 body: formData
             })
-            
+
             const result = await response.json()
-            
+
             if (result.status) {
                 researchOptions = result.data || []
             }
@@ -94,9 +94,9 @@ export const PresentationResearch = () => {
     // Update fetchPresentations to accept level parameter
     const fetchPresentations = async (cursor = null, direction = 'next', search = null, level = null) => {
         if (isLoading) return
-        
+
         isLoading = true
-        
+
         if (!cursor) {
             showLoading()
             // Reset on first load
@@ -107,10 +107,10 @@ export const PresentationResearch = () => {
                 nextCursor = null
             }
         }
-        
+
         try {
             const formData = new FormData()
-            
+
             // Determine which action to use
             if (searchMode || search) {
                 formData.append('action', 'search_presentations')
@@ -122,27 +122,27 @@ export const PresentationResearch = () => {
             } else {
                 formData.append('action', 'fetch')
             }
-            
+
             if (cursor) {
                 formData.append('cursor', cursor)
                 formData.append('direction', direction)
             }
-            
+
             // Add level filter if provided
             if (level) {
                 formData.append('level', level)
             }
-            
+
             const response = await fetch('/presentedresearch', {
                 method: 'POST',
                 body: formData
             })
-            
+
             const result = await response.json()
-            
+
             if (result.status) {
                 const newData = result.data || []
-                
+
                 if (!cursor) {
                     // First page - replace data
                     if (searchMode) {
@@ -156,7 +156,7 @@ export const PresentationResearch = () => {
                         nextCursor = result.pagination?.next_cursor || null
                         hasMore = result.pagination?.has_more || false
                     }
-                    
+
                     // Update stats
                     if (result.stats) {
                         currentStats = result.stats
@@ -173,7 +173,7 @@ export const PresentationResearch = () => {
                         researchData = [...newData, ...researchData]
                         filteredData = [...newData, ...filteredData]
                     }
-                    
+
                     // Update pagination info based on mode
                     if (searchMode) {
                         searchCursor = result.pagination?.next_cursor || null
@@ -183,10 +183,10 @@ export const PresentationResearch = () => {
                         hasMore = result.pagination?.has_more || false
                     }
                 }
-                
+
                 updateTableWithData()
                 updateRecordCount()
-                
+
                 // Maintain scroll position when loading previous
                 if (direction === 'prev' && cursor && tableBody?.firstChild) {
                     setTimeout(() => {
@@ -213,9 +213,9 @@ export const PresentationResearch = () => {
     // Handle scroll for infinite loading
     const handleScroll = () => {
         if (!scrollContainer || isLoading) return
-        
+
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-        
+
         // Load more when scrolling down (near bottom) - with 300px threshold
         if (scrollHeight - scrollTop - clientHeight < 300) {
             if (searchMode && searchHasMore && !isLoading) {
@@ -256,14 +256,14 @@ export const PresentationResearch = () => {
     // Update table with data
     const updateTableWithData = () => {
         if (!tableBody) return
-        
+
         tableBody.innerHTML = ''
-        
+
         if (filteredData.length === 0) {
             showEmptyState()
             return
         }
-        
+
         filteredData.forEach(item => {
             tableBody.appendChild(createDataRow(item))
         })
@@ -272,9 +272,9 @@ export const PresentationResearch = () => {
     // Show empty state
     const showEmptyState = () => {
         if (!tableBody) return
-        
+
         tableBody.innerHTML = ''
-        
+
         const emptyState = $({
             tag: 'div',
             att: { className: 'empty-state' },
@@ -301,8 +301,8 @@ export const PresentationResearch = () => {
                         $({
                             tag: 'span',
                             att: { className: 'fa-solid fa-chalkboard-user' },
-                            style: { 
-                                fontSize: '80px', 
+                            style: {
+                                fontSize: '80px',
                                 color: 'deepskyblue',
                                 opacity: 0.3,
                                 position: 'absolute',
@@ -313,8 +313,8 @@ export const PresentationResearch = () => {
                         $({
                             tag: 'span',
                             att: { className: 'fa-solid fa-earth-asia' },
-                            style: { 
-                                fontSize: '50px', 
+                            style: {
+                                fontSize: '50px',
                                 color: '#4caf50',
                                 opacity: 0.4,
                                 position: 'absolute',
@@ -325,8 +325,8 @@ export const PresentationResearch = () => {
                         $({
                             tag: 'span',
                             att: { className: 'fa-solid fa-location-dot' },
-                            style: { 
-                                fontSize: '40px', 
+                            style: {
+                                fontSize: '40px',
                                 color: '#ff9800',
                                 opacity: 0.4,
                                 position: 'absolute',
@@ -339,8 +339,8 @@ export const PresentationResearch = () => {
                 $({
                     tag: 'div',
                     text: 'No Presented Research Found',
-                    style: { 
-                        fontSize: '24px', 
+                    style: {
+                        fontSize: '24px',
                         marginBottom: '12px',
                         fontWeight: '600',
                         color: '#fff',
@@ -350,8 +350,8 @@ export const PresentationResearch = () => {
                 $({
                     tag: 'div',
                     text: 'Click the Actions to edit presentation of research',
-                    style: { 
-                        fontSize: '14px', 
+                    style: {
+                        fontSize: '14px',
                         opacity: 0.7,
                         marginBottom: '30px',
                         textAlign: 'center'
@@ -359,7 +359,7 @@ export const PresentationResearch = () => {
                 })
             ]
         })
-        
+
         tableBody.appendChild(emptyState)
     }
 
@@ -383,17 +383,17 @@ export const PresentationResearch = () => {
                 boxSizing: 'border-box',
                 overflow: 'hidden'
             }
-            
+
             // Special handling for forum_title column
             if (col.field === 'forum_title') {
                 let forumTitles = []
-                
+
                 if (Array.isArray(item.forum_title)) {
                     forumTitles = item.forum_title.filter(title => title && title !== '—' && title !== 'NULL')
                 } else if (item.forum_title && item.forum_title !== '—' && item.forum_title !== 'NULL') {
                     forumTitles = [item.forum_title]
                 }
-                
+
                 if (forumTitles.length === 0) {
                     return $({
                         tag: 'td',
@@ -401,10 +401,10 @@ export const PresentationResearch = () => {
                         text: '—'
                     })
                 } else {
-                    const bulletListHtml = '<ul style="margin:0; padding-left:20px; list-style-type:disc; color:#ddd;">' + 
-                        forumTitles.map(title => `<li style="margin-bottom:4px; font-size:12px;">${escapeHtml(title)}</li>`).join('') + 
+                    const bulletListHtml = '<ul style="margin:0; padding-left:20px; list-style-type:disc; color:#ddd;">' +
+                        forumTitles.map(title => `<li style="margin-bottom:4px; font-size:12px;">${escapeHtml(title)}</li>`).join('') +
                         '</ul>'
-                    
+
                     return $({
                         tag: 'td',
                         style: { ...cellStyle, verticalAlign: 'top' },
@@ -412,7 +412,7 @@ export const PresentationResearch = () => {
                     })
                 }
             }
-            
+
             // Special styling for forum type columns
             if (['university', 'international', 'national', 'regional'].includes(col.field)) {
                 if (col.field === 'university') {
@@ -460,7 +460,7 @@ export const PresentationResearch = () => {
                         cellStyle.textAlign = 'center'
                     }
                 }
-                
+
                 return $({
                     tag: 'td',
                     style: cellStyle,
@@ -475,11 +475,11 @@ export const PresentationResearch = () => {
                     child: [createActionButtons(item)]
                 })
             }
-            
+
             // Special handling for date_completed
             if (col.field === 'date_completed') {
                 let completionDates = []
-                
+
                 if (Array.isArray(item.date_completed)) {
                     completionDates = item.date_completed
                         .filter(date => date && date !== '—')
@@ -487,7 +487,7 @@ export const PresentationResearch = () => {
                 } else if (item.date_completed && item.date_completed !== '—') {
                     completionDates = [formatDate(item.date_completed)]
                 }
-                
+
                 if (completionDates.length === 0) {
                     return $({
                         tag: 'td',
@@ -510,7 +510,7 @@ export const PresentationResearch = () => {
                             listStyleType: 'disc',
                             color: '#ddd'
                         },
-                        child: completionDates.map(date => 
+                        child: completionDates.map(date =>
                             $({
                                 tag: 'li',
                                 text: date,
@@ -521,7 +521,7 @@ export const PresentationResearch = () => {
                             })
                         )
                     })
-                    
+
                     return $({
                         tag: 'td',
                         style: { ...cellStyle, verticalAlign: 'top' },
@@ -533,7 +533,7 @@ export const PresentationResearch = () => {
             // Special handling for presentation_date
             if (col.field === 'presentation_date') {
                 let presentationDates = []
-                
+
                 if (Array.isArray(item.presentation_date)) {
                     presentationDates = item.presentation_date
                         .filter(date => date && date !== '—')
@@ -541,7 +541,7 @@ export const PresentationResearch = () => {
                 } else if (item.presentation_date && item.presentation_date !== '—') {
                     presentationDates = [formatDate(item.presentation_date)]
                 }
-                
+
                 if (presentationDates.length === 0) {
                     return $({
                         tag: 'td',
@@ -564,7 +564,7 @@ export const PresentationResearch = () => {
                             listStyleType: 'disc',
                             color: '#ddd'
                         },
-                        child: presentationDates.map(date => 
+                        child: presentationDates.map(date =>
                             $({
                                 tag: 'li',
                                 text: date,
@@ -575,7 +575,7 @@ export const PresentationResearch = () => {
                             })
                         )
                     })
-                    
+
                     return $({
                         tag: 'td',
                         style: { ...cellStyle, verticalAlign: 'top' },
@@ -583,7 +583,7 @@ export const PresentationResearch = () => {
                     })
                 }
             }
-            
+
             if (col.field === 'presentor') {
                 let presentors = []
 
@@ -599,23 +599,23 @@ export const PresentationResearch = () => {
                 } else {
                     presentors = ['—']
                 }
-                
+
                 presentors = [...new Set(presentors)]
-                
-                const bulletListHtml = '<ul style="margin:0; padding-left:20px; list-style-type:disc; color:#ddd;">' + 
+
+                const bulletListHtml = '<ul style="margin:0; padding-left:20px; list-style-type:disc; color:#ddd;">' +
                     presentors.map(name => {
                         const safeName = escapeHtml(name)
                         return `<li style="margin-bottom:4px; font-size:12px;">${safeName}</li>`
-                    }).join('') + 
+                    }).join('') +
                     '</ul>'
-                
+
                 return $({
                     tag: 'td',
                     style: { ...cellStyle, verticalAlign: 'top' },
                     html: bulletListHtml
                 })
             }
-            
+
             // For regular text fields
             return $({
                 tag: 'td',
@@ -686,10 +686,10 @@ export const PresentationResearch = () => {
         try {
             const date = new Date(dateString)
             if (isNaN(date.getTime())) return '—'
-            return date.toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: '2-digit', 
-                year: 'numeric' 
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric'
             }).replace(/,/g, '')
         } catch (e) {
             return '—'
@@ -715,9 +715,9 @@ export const PresentationResearch = () => {
         if (modalElement) {
             modalElement.remove()
         }
-        
+
         const isEditMode = mode === 'edit'
-        
+
         modalElement = $({
             tag: 'div',
             style: {
@@ -851,7 +851,7 @@ export const PresentationResearch = () => {
                                         })
                                     ]
                                 }),
-                                
+
                                 // Presentor Selection
                                 $({
                                     tag: 'div',
@@ -889,11 +889,11 @@ export const PresentationResearch = () => {
                                             },
                                             child: [
                                                 $({ tag: 'option', att: { value: '' }, text: '-- Select Presentor --' }),
-                                                ...(selectedResearch?.all_researchers?.map(name => 
-                                                    $({ 
-                                                        tag: 'option', 
+                                                ...(selectedResearch?.all_researchers?.map(name =>
+                                                    $({
+                                                        tag: 'option',
                                                         att: { value: name },
-                                                        text: name 
+                                                        text: name
                                                     })
                                                 ) || []),
                                                 $({ tag: 'option', att: { value: 'others' }, text: '-- Others (Enter manually) --' })
@@ -903,7 +903,7 @@ export const PresentationResearch = () => {
                                                 method: (e) => {
                                                     const select = e.target
                                                     const customInput = document.getElementById('presentor-custom')
-                                                    
+
                                                     if (select.value === 'others') {
                                                         select.style.display = 'none'
                                                         customInput.style.display = 'block'
@@ -935,7 +935,7 @@ export const PresentationResearch = () => {
                                         })
                                     ]
                                 }),
-                                
+
                                 // Date Completed
                                 $({
                                     tag: 'div',
@@ -971,7 +971,7 @@ export const PresentationResearch = () => {
                                         })
                                     ]
                                 }),
-                                
+
                                 // Forum Title
                                 $({
                                     tag: 'div',
@@ -1037,7 +1037,7 @@ export const PresentationResearch = () => {
                                         })
                                     ]
                                 }),
-                                
+
                                 // Venue
                                 $({
                                     tag: 'div',
@@ -1074,7 +1074,7 @@ export const PresentationResearch = () => {
                                         })
                                     ]
                                 }),
-                                
+
                                 // Forum Type
                                 $({
                                     tag: 'div',
@@ -1108,18 +1108,18 @@ export const PresentationResearch = () => {
                                             },
                                             child: [
                                                 $({ tag: 'option', att: { value: '' }, text: '-- Select Forum Type --' }),
-                                                ...forumTypes.map(type => 
-                                                    $({ 
-                                                        tag: 'option', 
+                                                ...forumTypes.map(type =>
+                                                    $({
+                                                        tag: 'option',
                                                         att: { value: type },
-                                                        text: type 
+                                                        text: type
                                                     })
                                                 )
                                             ]
                                         })
                                     ]
                                 }),
-                                
+
                                 // Presentation Date
                                 $({
                                     tag: 'div',
@@ -1155,7 +1155,7 @@ export const PresentationResearch = () => {
                                         })
                                     ]
                                 }),
-                                
+
                                 // Campus
                                 $({
                                     tag: 'div',
@@ -1193,7 +1193,7 @@ export const PresentationResearch = () => {
                                         })
                                     ]
                                 }),
-                                
+
                                 // Category
                                 $({
                                     tag: 'div',
@@ -1231,7 +1231,7 @@ export const PresentationResearch = () => {
                                         })
                                     ]
                                 }),
-                                
+
                                 // Modal footer
                                 $({
                                     tag: 'div',
@@ -1288,20 +1288,20 @@ export const PresentationResearch = () => {
                 })
             ]
         })
-        
+
         document.body.appendChild(modalElement)
-        
+
         // Populate form with selectedResearch data
         if (selectedResearch) {
             const presentorSelect = document.getElementById('presentor-select')
             const customInput = document.getElementById('presentor-custom')
-            
+
             if (presentorSelect) {
                 // Clear existing options except the first placeholder
                 while (presentorSelect.options.length > 1) {
                     presentorSelect.remove(1)
                 }
-                
+
                 // Add researchers if available
                 if (selectedResearch.all_researchers && Array.isArray(selectedResearch.all_researchers)) {
                     selectedResearch.all_researchers.forEach(name => {
@@ -1313,13 +1313,13 @@ export const PresentationResearch = () => {
                         }
                     })
                 }
-                
+
                 // Add "Others" option
                 const othersOption = document.createElement('option')
                 othersOption.value = 'others'
                 othersOption.textContent = '-- Others (Enter manually) --'
                 presentorSelect.appendChild(othersOption)
-                
+
                 // Handle presentor selection
                 let currentPresentor = ''
                 if (Array.isArray(selectedResearch.presentor) && selectedResearch.presentor.length > 0) {
@@ -1327,11 +1327,11 @@ export const PresentationResearch = () => {
                 } else if (typeof selectedResearch.presentor === 'string') {
                     currentPresentor = selectedResearch.presentor
                 }
-                
+
                 if (currentPresentor && currentPresentor !== '—' && currentPresentor !== 'NULL') {
                     const researchers = selectedResearch.all_researchers || []
                     const isInList = researchers.some(name => name === currentPresentor)
-                    
+
                     if (isInList) {
                         presentorSelect.value = currentPresentor
                         presentorSelect.style.display = 'block'
@@ -1350,7 +1350,7 @@ export const PresentationResearch = () => {
                     customInput.value = ''
                 }
             }
-            
+
             // Set date fields
             setTimeout(() => {
                 // Date Completed
@@ -1360,14 +1360,14 @@ export const PresentationResearch = () => {
                 } else if (typeof selectedResearch.date_completed === 'string') {
                     dateCompleted = selectedResearch.date_completed
                 }
-                
+
                 if (dateCompleted && dateCompleted !== '—') {
                     const dateCompletedInput = document.querySelector('input[name="date_completed"]')
                     if (dateCompletedInput) {
                         dateCompletedInput.value = dateCompleted
                     }
                 }
-                
+
                 // Presentation Date
                 let presentationDate = ''
                 if (Array.isArray(selectedResearch.presentation_date) && selectedResearch.presentation_date.length > 0) {
@@ -1375,14 +1375,14 @@ export const PresentationResearch = () => {
                 } else if (typeof selectedResearch.presentation_date === 'string') {
                     presentationDate = selectedResearch.presentation_date
                 }
-                
+
                 if (presentationDate && presentationDate !== '—') {
                     const presentationDateInput = document.querySelector('input[name="presentation_date"]')
                     if (presentationDateInput) {
                         presentationDateInput.value = presentationDate
                     }
                 }
-                
+
                 // Venue
                 let venue = ''
                 if (Array.isArray(selectedResearch.venue) && selectedResearch.venue.length > 0) {
@@ -1390,14 +1390,14 @@ export const PresentationResearch = () => {
                 } else if (typeof selectedResearch.venue === 'string') {
                     venue = selectedResearch.venue
                 }
-                
+
                 if (venue && venue !== '—') {
                     const venueInput = document.querySelector('input[name="venue"]')
                     if (venueInput) {
                         venueInput.value = venue
                     }
                 }
-                
+
                 // Forum Type
                 if (selectedResearch.presentation_type) {
                     const forumTypeSelect = document.querySelector('select[name="forum_type"]')
@@ -1415,37 +1415,37 @@ export const PresentationResearch = () => {
         const formData = new FormData(form)
         const researchId = selectedResearch?.research_id || selectedResearch?.id
         const presentationId = selectedResearch?.pr_id || selectedResearch?.presentation_id || null
-        
+
         if (!researchId) {
             alert('Please select a research paper')
             return
         }
-        
+
         // Get presentor value
         const presentorSelect = document.getElementById('presentor-select')
         const customInput = document.getElementById('presentor-custom')
         let presentor = ''
-        
+
         if (presentorSelect.style.display !== 'none' && presentorSelect.value) {
             presentor = presentorSelect.value
         } else if (customInput.style.display !== 'none' && customInput.value) {
             presentor = customInput.value
         }
-        
+
         // Get other form values
         let dateCompleted = document.querySelector('input[name="date_completed"]').value.trim()
         let forumTitle = document.querySelector('input[name="forum_title"]').value.trim()
         let venue = document.querySelector('input[name="venue"]').value.trim()
         let forumType = document.querySelector('select[name="forum_type"]').value
         let presentationDate = document.querySelector('input[name="presentation_date"]').value.trim()
-        
+
         const isEditMode = Boolean(presentationId)
         const getExistingValue = (value) => {
             if (Array.isArray(value) && value.length > 0) return value[0]
             if (typeof value === 'string' && value !== '—') return value
             return ''
         }
-        
+
 
         const saveData = new FormData()
         saveData.append('action', 'save')
@@ -1456,20 +1456,20 @@ export const PresentationResearch = () => {
         saveData.append('venue', venue)
         saveData.append('forum_type', forumType)
         saveData.append('presentation_date', presentationDate)
-        
+
         if (presentationId) {
             saveData.append('id', presentationId)
         }
-        
+
         showLoading()
         try {
             const response = await fetch('/presentedresearch', {
                 method: 'POST',
                 body: saveData
             })
-            
+
             const result = await response.json()
-            
+
             if (result.status) {
                 closeModal()
                 // Reset and reload data
@@ -1511,10 +1511,10 @@ export const PresentationResearch = () => {
     const updateFilterButtons = (active) => {
         if (!mainTableContainer) return
         const filterButtons = mainTableContainer.querySelectorAll('.filter-btn')
-        
+
         filterButtons.forEach(button => {
             const buttonText = button.textContent.trim()
-            
+
             if (buttonText === active) {
                 button.style.backgroundColor = 'deepskyblue'
                 button.style.color = '#fff'
@@ -1592,7 +1592,6 @@ export const PresentationResearch = () => {
                                 })
                             ]
                         }),
-                        // Filter buttons container - MOVED OUTSIDE THE SEARCH INPUT
                         $({
                             tag: 'div',
                             att: { className: 'filter-buttons-container' },
@@ -1820,14 +1819,14 @@ export const PresentationResearch = () => {
                                         type: 'input',
                                         method: debounce(async (e) => {
                                             const term = e.target.value.trim()
-                                            
+
                                             if (term === '') {
                                                 // Clear search mode and reload normal data with current filter
                                                 searchMode = false
                                                 searchTerm = ''
                                                 searchCursor = null
                                                 searchHasMore = true
-                                                
+
                                                 // Reload with current filter
                                                 const level = currentFilter === 'All' ? null : currentFilter.toLowerCase().replace('/local', '')
                                                 await fetchPresentations(null, 'next', null, level)
@@ -1837,12 +1836,12 @@ export const PresentationResearch = () => {
                                                 searchTerm = term
                                                 searchCursor = null
                                                 searchHasMore = true
-                                                
+
                                                 // Clear current data and show loading
                                                 researchData = []
                                                 filteredData = []
                                                 updateTableWithData()
-                                                
+
                                                 // Fetch search results (without level filter)
                                                 await fetchPresentations(null, 'next', term, null)
                                             }
@@ -1906,8 +1905,8 @@ export const PresentationResearch = () => {
                         }),
                         $({
                             tag: 'div',
-                            style: { 
-                                display: 'flex', 
+                            style: {
+                                display: 'flex',
                                 flexDirection: 'column'
                             },
                             child: [
@@ -1970,8 +1969,8 @@ export const PresentationResearch = () => {
                         }),
                         $({
                             tag: 'div',
-                            style: { 
-                                display: 'flex', 
+                            style: {
+                                display: 'flex',
                                 flexDirection: 'column'
                             },
                             child: [
@@ -2034,8 +2033,8 @@ export const PresentationResearch = () => {
                         }),
                         $({
                             tag: 'div',
-                            style: { 
-                                display: 'flex', 
+                            style: {
+                                display: 'flex',
                                 flexDirection: 'column'
                             },
                             child: [
@@ -2098,8 +2097,8 @@ export const PresentationResearch = () => {
                         }),
                         $({
                             tag: 'div',
-                            style: { 
-                                display: 'flex', 
+                            style: {
+                                display: 'flex',
                                 flexDirection: 'column'
                             },
                             child: [
@@ -2162,8 +2161,8 @@ export const PresentationResearch = () => {
                         }),
                         $({
                             tag: 'div',
-                            style: { 
-                                display: 'flex', 
+                            style: {
+                                display: 'flex',
                                 flexDirection: 'column'
                             },
                             child: [
@@ -2223,9 +2222,9 @@ export const PresentationResearch = () => {
                 child: [
                     $({
                         tag: 'div',
-                        style: { 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: '8px'
                         },
                         child: [
@@ -2305,17 +2304,17 @@ export const PresentationResearch = () => {
         ]
     })
 }
-    function debounce(func, wait) {
-        let timeout
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout)
-                func(...args)
-            }
+function debounce(func, wait) {
+    let timeout
+    return function executedFunction(...args) {
+        const later = () => {
             clearTimeout(timeout)
-            timeout = setTimeout(later, wait)
+            func(...args)
         }
+        clearTimeout(timeout)
+        timeout = setTimeout(later, wait)
     }
+}
 function escapeHtml(unsafe) {
     if (!unsafe) return ''
     return String(unsafe)

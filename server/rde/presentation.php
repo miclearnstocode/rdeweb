@@ -173,7 +173,7 @@ class PresentationAPI {
             $limit = 15;
             
             // Get accurate stats from the dedicated method
-            $stats = $this->getStatsFromResearch();
+            $stats = $this->getStatsFromResearch($search, $level);
             
             // Base query
             $query = "SELECT 
@@ -193,25 +193,30 @@ class PresentationAPI {
                         rf.date_completed
                     FROM endorsement e
                     INNER JOIN researchfile rf ON rf.endorsementid = e.id
-                    WHERE e.status = 'accepted'
-                    AND rf.event_id IS NOT NULL";
+                    WHERE e.status = 'accepted'";
 
-            // Add level filter based on presentation_research
-            if (!empty($level)) {
-                if ($level === 'university') {
-                    // University: No external presentations
-                    $query .= " AND NOT EXISTS (
-                        SELECT 1 FROM presentation_research pr 
-                        WHERE pr.research_id = rf.id
-                    )";
-                } else {
-                    // International/National/Regional: Must have matching presentation
-                    $query .= " AND EXISTS (
-                        SELECT 1 FROM presentation_research pr 
-                        WHERE pr.research_id = rf.id 
-                        AND LOWER(pr.forum_type) = '" . $this->con->real_escape_string(strtolower($level)) . "'
-                    )";
-                }
+            // Add level filter
+            if ($level === 'university') {
+                // University: Accepted + Symposium + No external
+                $query .= " AND rf.event_id IS NOT NULL 
+                            AND (rf.event LIKE '%Symposium%' OR rf.event LIKE '%symposium%')
+                            AND NOT EXISTS (
+                                SELECT 1 FROM presentation_research pr 
+                                WHERE pr.research_id = rf.id
+                            )";
+            } else if (!empty($level)) {
+                // International/National/Regional: Must have matching presentation in presentation_research
+                $query .= " AND EXISTS (
+                    SELECT 1 FROM presentation_research pr 
+                    WHERE pr.research_id = rf.id 
+                    AND LOWER(pr.forum_type) = '" . $this->con->real_escape_string(strtolower($level)) . "'
+                )";
+            } else {
+                // "All" View: Show either University symposiums OR anything with an external presentation
+                $query .= " AND (
+                    (rf.event_id IS NOT NULL AND (rf.event LIKE '%Symposium%' OR rf.event LIKE '%symposium%'))
+                    OR EXISTS (SELECT 1 FROM presentation_research pr WHERE pr.research_id = rf.id)
+                )";
             }
 
             // Add search
@@ -479,7 +484,7 @@ class PresentationAPI {
                     'regional' => $regional,
                     'presentation_type' => $primaryLevel,
                     'level' => $primaryLevel,
-                    'event_type' => (strpos(strtolower($row['event_title'] ?? ''), 'symposium') !== false) ? 'Symposium' : 'In-House Review'
+                    'event_type' => (stripos($row['event_title'] ?? '', 'symposium') !== false) ? 'Symposium' : 'Symposium'
                 ];
                 
                 // Add to results
@@ -521,91 +526,93 @@ class PresentationAPI {
         echo json_encode($this->response);
     }
 
-    private function getStatsFromResearch() {
+    public function getStatsFromResearch($search = '', $level = '') {
         try {
-            // Get total count of ALL unique research files with accepted endorsements
-            // Remove event_id check to be more inclusive like quarterlyMonitoring.php
-            $totalQuery = "SELECT COUNT(DISTINCT rf.id) as total 
-                        FROM researchfile rf
-                        INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        WHERE e.status = 'accepted'";
-            
-            $totalResult = $this->con->query($totalQuery);
-            if (!$totalResult) {
-                 error_log("Total stats query failed: " . $this->con->error);
-                 $total = 0;
-            } else {
-                 $totalRow = $totalResult->fetch_assoc();
-                 $total = (int)($totalRow['total'] ?? 0);
+            $searchSql = "";
+            if (!empty($search)) {
+                $search = $this->con->real_escape_string($search);
+                $searchSql = " AND (
+                    rf.title LIKE '%$search%' 
+                    OR rf.event LIKE '%$search%'
+                    OR rf.author LIKE '%$search%'
+                    OR rf.presenter LIKE '%$search%'
+                    OR EXISTS (
+                        SELECT 1 FROM presentation_research pr 
+                        WHERE pr.research_id = rf.id 
+                        AND (
+                            pr.forum_title LIKE '%$search%'
+                            OR pr.venue LIKE '%$search%'
+                            OR pr.presentor LIKE '%$search%'
+                            OR pr.forum_type LIKE '%$search%'
+                        )
+                    )
+                )";
             }
-            
-            // Get university count: rf.event contains "Symposium" or "In-House Review"
-            $univQuery = "SELECT COUNT(DISTINCT rf.id) as count 
+
+            // 1. University Count (Accepted + Symposium + No external)
+            $univQuery = "SELECT COUNT(DISTINCT rf.id) as count
                         FROM researchfile rf
                         INNER JOIN endorsement e ON rf.endorsementid = e.id
                         WHERE e.status = 'accepted'
-                        AND (LOWER(rf.event) LIKE '%symposium%' 
-                             OR LOWER(rf.event) LIKE '%in-house review%'
-                             OR LOWER(rf.event) LIKE '%in house review%')";
+                        AND (rf.event LIKE '%Symposium%' OR rf.event LIKE '%symposium%')
+                        AND NOT EXISTS (
+                            SELECT 1 FROM presentation_research pr 
+                            WHERE pr.research_id = rf.id
+                        )
+                        $searchSql";
+            
+            // If level is specific, we might want to return 0 for others
+            // But usually, the dashboard stats cards show categories within the current filter
             
             $univResult = $this->con->query($univQuery);
-            if (!$univResult) {
-                error_log("University stats query failed: " . $this->con->error);
-                $university = 0;
-            } else {
-                $univRow = $univResult->fetch_assoc();
-                $university = (int)($univRow['count'] ?? 0);
+            $university = (int)($univResult->fetch_assoc()['count'] ?? 0);
+
+            // 2. External Counts (International, National, Regional)
+            $extCounts = ['international' => 0, 'national' => 0, 'regional' => 0];
+            foreach ($extCounts as $type => $val) {
+                $q = "SELECT COUNT(DISTINCT rf.id) as count
+                      FROM researchfile rf
+                      INNER JOIN endorsement e ON rf.endorsementid = e.id
+                      INNER JOIN presentation_research pr ON rf.id = pr.research_id
+                      WHERE e.status = 'accepted'
+                      AND LOWER(pr.forum_type) = '$type'
+                      $searchSql";
+                $res = $this->con->query($q);
+                $extCounts[$type] = (int)($res->fetch_assoc()['count'] ?? 0);
             }
+
+            $total = $university + array_sum($extCounts);
+
+            // If a specific level is selected, we should probably only show stats for that level?
+            // Actually, if we want the cards to update, we just return these values.
+            // If level is 'international', university will naturally be 0 (due to NOT EXISTS) or we force it?
             
-            // Get international count
-            $intQuery = "SELECT COUNT(DISTINCT research_id) as count 
-                        FROM presentation_research 
-                        WHERE LOWER(forum_type) = 'international'";
-            
-            $intResult = $this->con->query($intQuery);
-            $international = ($intResult) ? (int)($intResult->fetch_assoc()['count'] ?? 0) : 0;
-            
-            // Get national count
-            $natQuery = "SELECT COUNT(DISTINCT research_id) as count 
-                        FROM presentation_research 
-                        WHERE LOWER(forum_type) = 'national'";
-            
-            $natResult = $this->con->query($natQuery);
-            $national = ($natResult) ? (int)($natResult->fetch_assoc()['count'] ?? 0) : 0;
-            
-            // Get regional count
-            $regQuery = "SELECT COUNT(DISTINCT research_id) as count 
-                        FROM presentation_research 
-                        WHERE LOWER(forum_type) = 'regional'";
-            
-            $regResult = $this->con->query($regQuery);
-            $regional = ($regResult) ? (int)($regResult->fetch_assoc()['count'] ?? 0) : 0;
-            
-            // Calculate total from categories (this represents research that has BEEN presented)
-            $presentedTotal = $university + $international + $national + $regional;
-            
-            // Final total should be the count of all potentially presentable research
-            // But if we want the "Presented Research" total, it might be different.
-            // Let's use the maximum to be safe, or just the presentedTotal.
-            
-            $stats = [
-                'total' => max($total, $presentedTotal),
+            if ($level) {
+                if ($level === 'university') {
+                    $extCounts = ['international' => 0, 'national' => 0, 'regional' => 0];
+                } else {
+                    $university = 0;
+                    foreach ($extCounts as $type => $val) {
+                        if ($type !== strtolower($level)) {
+                            $extCounts[$type] = 0;
+                        }
+                    }
+                }
+                $total = $university + array_sum($extCounts);
+            }
+
+            return [
+                'total' => $total,
                 'university' => $university,
-                'international' => $international,
-                'national' => $national,
-                'regional' => $regional
+                'international' => $extCounts['international'],
+                'national' => $extCounts['national'],
+                'regional' => $extCounts['regional'],
+                'external' => array_sum($extCounts)
             ];
-            
-            return $stats;
-            
         } catch (Exception $e) {
             error_log("Error in getStatsFromResearch: " . $e->getMessage());
             return [
-                'total' => 0,
-                'university' => 0,
-                'international' => 0,
-                'national' => 0,
-                'regional' => 0
+                'total' => 0, 'university' => 0, 'international' => 0, 'national' => 0, 'regional' => 0, 'external' => 0
             ];
         }
     }
