@@ -462,6 +462,22 @@ export const QuarterlyMonitoringComponent = () => {
         return quartersMap[quarter.toLowerCase()] || {}
     }
 
+    // Format date to words (e.g., April 30, 2026)
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === '—' || dateString === '0000-00-00') return '—'
+        try {
+            const date = new Date(dateString)
+            if (isNaN(date.getTime())) return dateString
+            return date.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            })
+        } catch (e) {
+            return dateString
+        }
+    }
+
     // Create data row - SIMPLE VERSION
     const createDataRow = (item, rowNumber) => {
         const cells = []
@@ -471,7 +487,7 @@ export const QuarterlyMonitoringComponent = () => {
             rowNumber.toString(),
             item.title || '—',
             item.researchers || '—',
-            item.startDate || '—',
+            formatDate(item.startDate),
             item.fundSource || '—',
             item.location || '—'
         ]
@@ -528,7 +544,7 @@ export const QuarterlyMonitoringComponent = () => {
                 if (field.key === 'completion') {
                     value = quarterData.completion ? `${quarterData.completion}%` : '—'
                     if (quarterData.completion) {
-                        const completion = parseInt(quarterData.completion)
+                        const completion = parseFloat(quarterData.completion)
                         if (completion >= 80) {
                             cellStyle.backgroundColor = 'rgba(76, 175, 80, 0.15)'
                             cellStyle.color = '#4caf50'
@@ -669,26 +685,6 @@ export const QuarterlyMonitoringComponent = () => {
                             openEditModal(item)
                         }
                     }
-                }),
-                $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-flag-checkered' },
-                    style: {
-                        color: item.readyForSymposium ? '#4caf50' : '#aaa',
-                        cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        transition: 'all 0.2s ease'
-                    },
-                    title: item.readyForSymposium ? 'Ready for Symposium' : 'Mark for Symposium',
-                    event: {
-                        type: 'click',
-                        method: (e) => {
-                            e.stopPropagation()
-                            markReadyForSymposium(item)
-                        }
-                    }
                 })
             ]
         })
@@ -815,6 +811,18 @@ export const QuarterlyMonitoringComponent = () => {
                                     event: {
                                         type: 'click',
                                         method: closeModal
+                                    },
+                                    // Hover effect for close button
+                                    externalStyle: null,
+                                    elementHandler: (el) => {
+                                        el.addEventListener('mouseenter', () => {
+                                            el.style.color = '#fff';
+                                            el.style.backgroundColor = '#3a3a3a';
+                                        });
+                                        el.addEventListener('mouseleave', () => {
+                                            el.style.color = '#888';
+                                            el.style.backgroundColor = 'transparent';
+                                        });
                                     }
                                 })
                             ]
@@ -958,7 +966,16 @@ export const QuarterlyMonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
                                             }
                                         })
                                     ]
@@ -974,21 +991,153 @@ export const QuarterlyMonitoringComponent = () => {
                                             text: 'Fund Source',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
+                                                marginBottom: '10px',
                                                 color: '#aaa',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
                                         }),
                                         $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                gap: '20px',
+                                                marginBottom: '12px',
+                                                flexWrap: 'wrap'
+                                            },
+                                            child: ['Campus', 'University', 'Others'].map(type => {
+                                                const isOthers = type === 'Others'
+                                                const currentValue = item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
+                                                const isChecked = isOthers
+                                                    ? (currentValue && currentValue !== 'Campus' && currentValue !== 'University')
+                                                    : (currentValue === type)
+
+                                                return $({
+                                                    tag: 'label',
+                                                    style: {
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        color: '#fff',
+                                                        fontSize: '14px',
+                                                        cursor: 'pointer',
+                                                        padding: '8px 12px',
+                                                        borderRadius: '6px',
+                                                        transition: 'all 0.2s ease',
+                                                        backgroundColor: isChecked ? 'rgba(0, 191, 255, 0.2)' : 'transparent'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                width: '18px',
+                                                                height: '18px',
+                                                                borderRadius: '50%',
+                                                                border: `2px solid ${isChecked ? 'deepskyblue' : '#666'}`,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s ease'
+                                                            },
+                                                            child: isChecked ? [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        width: '10px',
+                                                                        height: '10px',
+                                                                        borderRadius: '50%',
+                                                                        backgroundColor: 'deepskyblue'
+                                                                    }
+                                                                })
+                                                            ] : []
+                                                        }),
+                                                        $({ tag: 'span', text: type }),
+                                                        $({
+                                                            tag: 'input',
+                                                            att: {
+                                                                type: 'radio',
+                                                                name: 'fundSourceType',
+                                                                value: type,
+                                                                checked: isChecked,
+                                                                style: 'display: none'
+                                                            },
+                                                            event: {
+                                                                type: 'change',
+                                                                method: (e) => {
+                                                                    const othersInput = document.getElementById('fund-source-others')
+                                                                    const hiddenInput = document.getElementById('fund-source-hidden')
+                                                                    // Update radio button visual styling
+                                                                    const allLabels = document.querySelectorAll('#monitoring-form label[style*="cursor: pointer"]')
+                                                                    allLabels.forEach(label => {
+                                                                        label.style.backgroundColor = 'transparent'
+                                                                        const radioDiv = label.querySelector('div:first-child')
+                                                                        if (radioDiv) {
+                                                                            radioDiv.style.borderColor = '#666'
+                                                                            const innerDot = radioDiv.querySelector('div')
+                                                                            if (innerDot) innerDot.remove()
+                                                                        }
+                                                                    })
+                                                                    // Style the selected radio
+                                                                    const parentLabel = e.target.closest('label')
+                                                                    if (parentLabel) {
+                                                                        parentLabel.style.backgroundColor = 'rgba(0, 191, 255, 0.2)'
+                                                                        const radioDiv = parentLabel.querySelector('div:first-child')
+                                                                        if (radioDiv) {
+                                                                            radioDiv.style.borderColor = 'deepskyblue'
+                                                                            if (!radioDiv.querySelector('div')) {
+                                                                                const dot = document.createElement('div')
+                                                                                dot.style.cssText = 'width: 10px; height: 10px; border-radius: 50%; background-color: deepskyblue;'
+                                                                                radioDiv.appendChild(dot)
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    if (e.target.value === 'Others') {
+                                                                        othersInput.style.display = 'block'
+                                                                        hiddenInput.value = othersInput.value
+                                                                    } else {
+                                                                        othersInput.style.display = 'none'
+                                                                        hiddenInput.value = e.target.value
+                                                                    }
+                                                                }
+                                                            }
+                                                        })
+                                                    ],
+                                                    elementHandler: (el) => {
+                                                        el.addEventListener('mouseenter', () => {
+                                                            if (!el.querySelector('input').checked) {
+                                                                el.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                                                            }
+                                                        });
+                                                        el.addEventListener('mouseleave', () => {
+                                                            if (!el.querySelector('input').checked) {
+                                                                el.style.backgroundColor = 'transparent';
+                                                            }
+                                                        });
+                                                    }
+                                                })
+                                            })
+                                        }),
+                                        // Hidden input to hold the actual value sent to server
+                                        $({
                                             tag: 'input',
                                             att: {
-                                                type: 'text',
+                                                type: 'hidden',
+                                                id: 'fund-source-hidden',
                                                 name: 'fundSource',
-                                                placeholder: 'Enter funding source...',
                                                 value: item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
+                                            }
+                                        }),
+                                        // Conditional text input for "Others"
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                id: 'fund-source-others',
+                                                type: 'text',
+                                                placeholder: 'Please specify...',
+                                                value: (item.fundSource && item.fundSource !== '—' && item.fundSource !== 'Campus' && item.fundSource !== 'University') ? item.fundSource : ''
                                             },
                                             style: {
+                                                display: (item.fundSource && item.fundSource !== '—' && item.fundSource !== 'Campus' && item.fundSource !== 'University') ? 'block' : 'none',
                                                 width: '100%',
                                                 padding: '10px',
                                                 backgroundColor: '#333',
@@ -996,7 +1145,23 @@ export const QuarterlyMonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                marginTop: '5px',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            event: {
+                                                type: 'input',
+                                                method: (e) => {
+                                                    document.getElementById('fund-source-hidden').value = e.target.value
+                                                }
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
                                             }
                                         })
                                     ]
@@ -1034,7 +1199,16 @@ export const QuarterlyMonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
                                             }
                                         })
                                     ]
@@ -1061,7 +1235,10 @@ export const QuarterlyMonitoringComponent = () => {
                                             att: {
                                                 type: 'number',
                                                 name: 'completion',
-                                                placeholder: 'Enter percentage (0-100)',
+                                                step: '0.01',
+                                                min: '0',
+                                                max: '100',
+                                                placeholder: '0.00',
                                                 value: currentQData.completion || ''
                                             },
                                             style: {
@@ -1072,7 +1249,16 @@ export const QuarterlyMonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
                                             }
                                         })
                                     ]
@@ -1107,7 +1293,9 @@ export const QuarterlyMonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
                                             },
                                             child: [
                                                 $({ tag: 'option', att: { value: '' }, text: '-- Select Status --' }),
@@ -1116,7 +1304,15 @@ export const QuarterlyMonitoringComponent = () => {
                                                 $({ tag: 'option', att: { value: 'Delayed' }, text: 'Delayed' }),
                                                 $({ tag: 'option', att: { value: 'On Hold' }, text: 'On Hold' }),
                                                 $({ tag: 'option', att: { value: 'Completed' }, text: 'Completed' })
-                                            ]
+                                            ],
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
+                                            }
                                         })
                                     ]
                                 }),
@@ -1154,9 +1350,18 @@ export const QuarterlyMonitoringComponent = () => {
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
-                                                fontFamily: 'inherit'
+                                                fontFamily: 'inherit',
+                                                transition: 'all 0.2s ease'
                                             },
-                                            text: currentQData.remarks || ''
+                                            text: currentQData.remarks || '',
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
+                                            }
                                         })
                                     ]
                                 }),
@@ -1194,9 +1399,18 @@ export const QuarterlyMonitoringComponent = () => {
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
-                                                fontFamily: 'inherit'
+                                                fontFamily: 'inherit',
+                                                transition: 'all 0.2s ease'
                                             },
-                                            text: currentQData.measures || ''
+                                            text: currentQData.measures || '',
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
+                                            }
                                         })
                                     ]
                                 }),
@@ -1224,11 +1438,24 @@ export const QuarterlyMonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#aaa',
                                                 fontSize: '14px',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
                                             },
                                             event: {
                                                 type: 'click',
                                                 method: closeModal
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                    el.style.color = 'deepskyblue';
+                                                    el.style.backgroundColor = 'rgba(0, 191, 255, 0.05)';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                    el.style.color = '#aaa';
+                                                    el.style.backgroundColor = 'transparent';
+                                                });
                                             }
                                         }),
                                         $({
@@ -1242,11 +1469,24 @@ export const QuarterlyMonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
                                             },
                                             event: {
                                                 type: 'click',
                                                 method: saveMonitoringData
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.backgroundColor = '#00bfff';
+                                                    el.style.transform = 'translateY(-1px)';
+                                                    el.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.backgroundColor = 'deepskyblue';
+                                                    el.style.transform = 'translateY(0)';
+                                                    el.style.boxShadow = 'none';
+                                                });
                                             }
                                         })
                                     ]

@@ -326,3 +326,66 @@ Stack trace:
 #4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
 #5 {main}
   thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 280
+[29-Apr-2026 10:44:56 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'location' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:406
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(406): mysqli->prepare('SELECT title, a...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 406
+[29-Apr-2026 10:54:08 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Column 'start_date' cannot be null in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:433
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(433): mysqli_stmt->execute()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 433
+[29-Apr-2026 12:03:43 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: No data supplied for parameters in prepared statement in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:296
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(296): mysqli_stmt->execute()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 296
+[29-Apr-2026 12:03:52 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: No data supplied for parameters in prepared statement in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:296
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(296): mysqli_stmt->execute()
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 296
+[29-Apr-2026 12:04:31 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'el.name' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:283
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(283): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 283
+[29-Apr-2026 12:04:40 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'el.name' in 'where clause' in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:283
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(283): mysqli->prepare('SELECT COUNT(DI...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 283
+[29-Apr-2026 12:06:27 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php:283
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php(283): mysqli_stmt->bind_param('i', '2026')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/quarterlyMonit...', 'server/rde/quar...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(67): post('/quarterlyMonit...', 'server/rde/quar...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 283
