@@ -165,12 +165,13 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
                 rf.title,
                 rf.author,
                 rf.coauthor,
+                rf.date_started,
                 rf.category,
                 rf.center,
                 rf.campus,
-                rm.fund_source,
-                rm.start_date,
                 rm.location,
+                rm.start_date as monitor_start_date,
+                rm.fund_source,
                 rm.q1_completion, rm.q1_status, rm.q1_remarks, rm.q1_measures,
                 rm.q2_completion, rm.q2_status, rm.q2_remarks, rm.q2_measures,
                 rm.q3_completion, rm.q3_status, rm.q3_remarks, rm.q3_measures,
@@ -209,12 +210,12 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
             'id' => $row['id'],
             'title' => $row['title'],
             'researchers' => $researchersDisplay,
-            'startDate' => $row['start_date'],
-            'fundSource' => $row['fund_source'],
+            'startDate' => $row['monitor_start_date'] ?: $row['date_started'],
             'category' => $row['category'],
             'center' => $row['center'],
             'campus' => $row['campus'],
             'location' => $row['location'] ?? '—',
+            'fundSource' => $row['fund_source'] ?? '—',
             'readyForSymposium' => !empty($row['official_completion_date']),
             'quarters' => [
                 'q1' => [
@@ -257,22 +258,99 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
 
     $nextCursor = !empty($data) ? $data[count($data) - 1]['id'] : null;
 
-    // Fetch Summary Stats using the same filters
-    $statsQuery = "SELECT 
-                    COUNT(*) as totalOngoing,
-                    SUM(CASE WHEN rm.official_completion_date IS NOT NULL THEN 1 ELSE 0 END) as completed
-                  FROM researchfile rf
-                  INNER JOIN event_list el ON rf.event_id = el.id
-                  LEFT JOIN research_monitoring rm ON rf.id = rm.research_id
-                  WHERE $baseWhereSql";
+    // Fetch counts for other stats with same filters
+    // Activity Conducted
+    $actQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id LEFT JOIN research_monitoring rm ON rf.id = rm.research_id WHERE $baseWhereSql";
+    $actStmt = $conn->prepare($actQuery);
+    if ($baseTypes) $actStmt->bind_param($baseTypes, ...$baseParams);
+    $actStmt->execute();
+    $activityCount = (int)($actStmt->get_result()->fetch_assoc()['total'] ?? 0);
+
+    // Publications - simple count
+    $pubQuery = "SELECT COUNT(id) as totalPublication FROM publications";
+    $pubStmt = $conn->prepare($pubQuery);
+    $pubStmt->execute();
+    $publicationsCount = (int)($pubStmt->get_result()->fetch_assoc()['totalPublication'] ?? 0);
     
-    $statsStmt = $conn->prepare($statsQuery);
-    if ($baseTypes) {
-        $statsStmt->bind_param($baseTypes, ...$baseParams);
+    // Presentations
+    // 1. University Level (Symposium + Accepted)
+    $presUnivQuery = "SELECT COUNT(DISTINCT rf.id) as totalUni
+                    FROM researchfile rf 
+                    INNER JOIN endorsement e ON rf.endorsementid = e.id 
+                    WHERE e.status = 'accepted' 
+                    AND (rf.event LIKE '%Symposium%' OR rf.event LIKE '%symposium%')";
+    $presUnivStmt = $conn->prepare($presUnivQuery);
+    $presUnivStmt->execute();
+    $univCount = (int)($presUnivStmt->get_result()->fetch_assoc()['totalUni'] ?? 0);
+
+    // 2. External Levels (International, National, Regional)
+    $presExtQuery = "SELECT COUNT(DISTINCT pr.id) as totalExt 
+                     FROM presentation_research pr
+                     INNER JOIN researchfile rf ON pr.research_id = rf.id";
+    $presExtStmt = $conn->prepare($presExtQuery);
+    $presExtStmt->execute();
+    $extCount = (int)($presExtStmt->get_result()->fetch_assoc()['totalExt'] ?? 0);
+    
+    $presentationsCount = $univCount + $extCount;
+
+    // IP Assets (Aggregate from all IP tables)
+    $ipAssetsCount = 0;
+    $ipTables = [
+        ['name' => 'patent', 'campus' => 'campus', 'date' => 'applicationDate', 'research' => 'research_id'],
+        ['name' => 'utility_model', 'campus' => 'campusUM', 'date' => 'applicationDateUM', 'research' => 'research_id'],
+        ['name' => 'industrial_design', 'campus' => 'campus', 'date' => 'applicationDate', 'research' => 'research_id'],
+        ['name' => 'copyright', 'campus' => 'campus', 'date' => 'applicationDate', 'research' => null],
+        ['name' => 'trademark', 'campus' => null, 'date' => 'applicationDate', 'research' => null]
+    ];
+
+    foreach ($ipTables as $ip) {
+        $where = ["(submissionStatus = 'verified' OR submissionStatus IS NULL)"];
+        $p = [];
+        $t = "";
+
+        // Apply filters manually since IP tables don't always join cleanly with rf/el
+        if ($year && $year !== 'All') {
+            $where[] = "YEAR({$ip['date']}) = ?";
+            $p[] = $year;
+            $t .= "i";
+        }
+        if ($campus && $campus !== 'All' && $campus !== 'All Campuses' && $ip['campus']) {
+            $where[] = "{$ip['campus']} = ?";
+            $p[] = $campus;
+            $t .= "s";
+        }
+
+        // If it has research_id, we can also filter by category/center
+        $join = "";
+        if ($ip['research'] && (($category && $category !== 'All') || ($center && $center !== 'All'))) {
+            $join = "INNER JOIN researchfile rf ON ip.{$ip['research']} = rf.id";
+            if ($category && $category !== 'All') {
+                $categoryList = explode(',', $category);
+                $placeholders = implode(',', array_fill(0, count($categoryList), '?'));
+                $where[] = "rf.category IN ($placeholders)";
+                foreach ($categoryList as $cat) { $p[] = trim($cat); $t .= "s"; }
+            }
+            if ($center && $center !== 'All') {
+                $where[] = "rf.center = ?";
+                $p[] = $center;
+                $t .= "s";
+            }
+        }
+
+        $whereSqlIp = implode(" AND ", $where);
+        $sql = "SELECT COUNT(*) as total FROM {$ip['name']} ip $join WHERE $whereSqlIp";
+        $stmt = $conn->prepare($sql);
+        if ($t) $stmt->bind_param($t, ...$p);
+        $stmt->execute();
+        $ipAssetsCount += (int)($stmt->get_result()->fetch_assoc()['total'] ?? 0);
     }
-    $statsStmt->execute();
-    $statsResult = $statsStmt->get_result();
-    $stats = $statsResult->fetch_assoc();
+
+    // Calculate total count of research records matching filters for "X of Y records" display
+    $totalQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id WHERE $baseWhereSql";
+    $totalStmt = $conn->prepare($totalQuery);
+    if ($baseTypes) $totalStmt->bind_param($baseTypes, ...$baseParams);
+    $totalStmt->execute();
+    $totalOngoing = (int)($totalStmt->get_result()->fetch_assoc()['total'] ?? 0);
 
     echo json_encode([
         'success' => true,
@@ -282,15 +360,20 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
             'next_cursor' => $nextCursor
         ],
         'summary' => [
-            'totalOngoing' => (int)$stats['totalOngoing'],
-            'completed' => (int)$stats['completed'],
+            'totalOngoing' => $totalOngoing,
+            'publications' => $publicationsCount,
+            'presentations' => $presentationsCount,
+            'assets' => $ipAssetsCount,
+            'collaborations' => 0,
+            'activityConducted' => $activityCount
         ]
     ]);
 } elseif ($action === 'save') {
-    $researchId = $_POST['projectId'] ?? '';
+    $researchId = $_POST['project_id'] ?? $_POST['projectId'] ?? '';
     $startDate = $_POST['startDate'] ?? null;
     $location = $_POST['location'] ?? '';
-    $completion = $_POST['completion'] ?? null;
+    $fundSource = $_POST['fundSource'] ?? '';
+    $completion = (isset($_POST['completion']) && $_POST['completion'] !== '') ? (float)$_POST['completion'] : null;
     $status = $_POST['status'] ?? '';
     $remarks = $_POST['remarks'] ?? '';
     $measures = $_POST['measures'] ?? '';
@@ -308,62 +391,67 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     $measuresCol = $qPrefix . "_measures";
 
     // Check if record exists
-    $check = $conn->prepare("SELECT id FROM research_monitoring WHERE research_id = ?");
+    $check = $conn->prepare("SELECT id, start_date, location FROM research_monitoring WHERE research_id = ?");
     $check->bind_param("i", $researchId);
     $check->execute();
-    $exists = $check->get_result()->fetch_assoc();
+    $existing = $check->get_result()->fetch_assoc();
 
-    if ($exists) {
+    if ($existing) {
+        $finalStartDate = $startDate ?: $existing['start_date'];
+        $finalLocation = $location ?: $existing['location'];
+        $finalFundSource = $fundSource ?: ($existing['fund_source'] ?? '');
+        
         $update = $conn->prepare("UPDATE research_monitoring SET 
                                     start_date = ?,
                                     location = ?, 
+                                    fund_source = ?,
                                     $completionCol = ?, 
                                     $statusCol = ?, 
                                     $remarksCol = ?, 
                                     $measuresCol = ? 
                                   WHERE research_id = ?");
-        $update->bind_param("ssisssi", $startDate, $location, $completion, $status, $remarks, $measures, $researchId);
+        $update->bind_param("sssdsssi", $finalStartDate, $finalLocation, $finalFundSource, $completion, $status, $remarks, $measures, $researchId);
         $res = $update->execute();
     } else {
         // Get metadata from researchfile
-        $meta = $conn->prepare("SELECT title, author, coauthor FROM researchfile WHERE id = ?");
+        $meta = $conn->prepare("SELECT title, author, coauthor, date_started FROM researchfile WHERE id = ?");
         $meta->bind_param("i", $researchId);
         $meta->execute();
         $metaData = $meta->get_result()->fetch_assoc();
         
-        $projectTitle = $metaData['title'];
+        $projectTitle = $metaData['title'] ?? 'Untitled Project';
         
-        $researcherList = [ucwords(strtolower(trim($metaData['author'])))];
-        $coauthorData = json_decode($metaData['coauthor'], true);
+        $researcherList = [ucwords(strtolower(trim($metaData['author'] ?? '')))];
+        $coauthorData = json_decode($metaData['coauthor'] ?? '[]', true);
         if (is_array($coauthorData)) {
             foreach ($coauthorData as $ca) {
                 if (!empty(trim($ca))) {
                     $researcherList[] = ucwords(strtolower(trim($ca)));
                 }
             }
-        } elseif (!empty(trim($metaData['coauthor'])) && $metaData['coauthor'] !== '[]') {
-             $researcherList[] = ucwords(strtolower(trim($metaData['coauthor'])));
         }
         $researchers = implode(', ', array_filter($researcherList));
         
-        $finalStartDate = $startDate ?: $metaData['date_started'];
-        $finalLocation = $location ?: ($metaData['location'] ?? '');
+        $finalStartDate = $startDate ?: ($metaData['date_started'] ?? date('Y-m-d'));
+        $finalLocation = $location ?: '';
+        $finalFundSource = $fundSource ?: '';
 
         $insert = $conn->prepare("INSERT INTO research_monitoring 
-                                    (research_id, project_title, researchers, fund_source, start_date, location, $completionCol, $statusCol, $remarksCol, $measuresCol) 
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $insert->bind_param("isssssss", $researchId, $projectTitle, $researchers, $fundSource, $finalStartDate, $finalLocation, $completion, $status, $remarks, $measures);
+                                    (research_id, project_title, researchers, start_date, location, fund_source, $completionCol, $statusCol, $remarksCol, $measuresCol) 
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $insert->bind_param("issssdssss", $researchId, $projectTitle, $researchers, $finalStartDate, $finalLocation, $finalFundSource, $completion, $status, $remarks, $measures);
         $res = $insert->execute();
     }
 
     echo json_encode(['success' => $res]);
 } elseif ($action === 'markReadyForSymposium') {
-    $researchId = $_POST['projectId'] ?? '';
+    $researchId = $_POST['project_id'] ?? $_POST['projectId'] ?? '';
     $isReady = $_POST['isReady'] === 'true';
     $completionDate = $isReady ? date('Y-m-d') : null;
+    $remarks = $isReady ? 'Ready for Official Completion' : null;
 
-    $update = $conn->prepare("UPDATE research_monitoring SET official_completion_date = ? WHERE research_id = ?");
-    $update->bind_param("si", $completionDate, $researchId);
+    $update = $conn->prepare("UPDATE research_monitoring SET official_completion_date = ?, final_completion_remarks = ? WHERE research_id = ?");
+    $update->bind_param("ssi", $completionDate, $remarks, $researchId);
     $res = $update->execute();
 
     echo json_encode(['success' => $res]);

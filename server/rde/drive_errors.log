@@ -389,3 +389,14 @@ Stack trace:
 #4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
 #5 {main}
   thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\quarterlyMonitoring.php on line 283
+[30-Apr-2026 01:55:22 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'rm.date_started' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php:185
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php(185): mysqli->prepare('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/monitor', 'server/rde/moni...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(59): post('/monitor', 'server/rde/moni...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 185
+[30-Apr-2026 01:55:56 Europe/Berlin] PHP Warning:  Undefined array key "date_started" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 211
+[30-Apr-2026 01:55:56 Europe/Berlin] PHP Warning:  Undefined array key "date_started" in C:\Users\Cogito\Documents\rdeweb\server\rde\monitoring.php on line 211

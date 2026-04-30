@@ -1,7 +1,9 @@
-// monitoring.js
 import { $, Waiting } from "../../../lib/lib.js"
+import { Publication } from "./publication.js";
+import { PresentationResearch } from "./presentationResearch.js";
+import { PatentUM } from "./patentUM.js";
 
-export const MonitoringComponent = () => {
+export const QuarterlyMonitoringComponent = () => {
     let mainContainer
     let tableBody
     let scrollContainer
@@ -26,8 +28,11 @@ export const MonitoringComponent = () => {
 
     // Stats state
     let currentStats = {
-        totalOngoing: 0,
-        completed: 0,
+        publications: 0,
+        presentations: 0,
+        assets: 0,
+        collaborations: 0,
+        activityConducted: 0
     }
 
     // Quarter options
@@ -39,14 +44,14 @@ export const MonitoringComponent = () => {
     ]
 
     // Year options
-    let years = []
+    let years = ['2023', '2024', '2025', '2026']
 
     // Fetch available years from database
     const fetchAvailableYears = async () => {
         try {
             const formData = new FormData()
             formData.append('action', 'fetch_years')
-            const response = await fetch('/monitor', {
+            const response = await fetch('/quarterlyMonitoring', {
                 method: 'POST',
                 body: formData
             })
@@ -190,7 +195,7 @@ export const MonitoringComponent = () => {
             if (effectiveCenter) formData.append('center', effectiveCenter)
             if (effectiveCampus) formData.append('campus', effectiveCampus)
 
-            const response = await fetch('/monitor', {
+            const response = await fetch('/quarterlyMonitoring', {
                 method: 'POST',
                 body: formData
             })
@@ -239,7 +244,7 @@ export const MonitoringComponent = () => {
                     // Update stats
                     if (result.summary) {
                         currentStats = result.summary
-                        totalCount = result.summary.totalOngoing
+                        totalCount = result.summary.totalOngoing || 0
                         updateStats()
                     }
                 } else {
@@ -306,16 +311,21 @@ export const MonitoringComponent = () => {
 
     // Update statistics
     const updateStats = () => {
-        const statValues = document.querySelectorAll('.stat-value')
-        if (statValues.length >= 2) {
-            statValues[0].textContent = currentStats.totalOngoing
-            statValues[1].textContent = currentStats.completed
+        if (!mainContainer) return
+        const statValues = mainContainer.querySelectorAll('.stat-value')
+        if (statValues.length >= 5) {
+            statValues[0].textContent = currentStats.publications || 0
+            statValues[1].textContent = currentStats.presentations || 0
+            statValues[2].textContent = currentStats.assets || 0
+            statValues[3].textContent = currentStats.collaborations || 0
+            statValues[4].textContent = currentStats.activityConducted || 0
         }
     }
 
     // Update record count
     const updateRecordCount = () => {
-        const recordCount = document.querySelector('.record-count')
+        if (!mainContainer) return
+        const recordCount = mainContainer.querySelector('.record-count')
         if (recordCount) {
             recordCount.textContent = `${filteredData.length} of ${totalCount} records`
         }
@@ -534,7 +544,7 @@ export const MonitoringComponent = () => {
                 if (field.key === 'completion') {
                     value = quarterData.completion ? `${quarterData.completion}%` : '—'
                     if (quarterData.completion) {
-                        const completion = parseInt(quarterData.completion)
+                        const completion = parseFloat(quarterData.completion)
                         if (completion >= 80) {
                             cellStyle.backgroundColor = 'rgba(76, 175, 80, 0.15)'
                             cellStyle.color = '#4caf50'
@@ -689,7 +699,7 @@ export const MonitoringComponent = () => {
             formData.append('projectId', item.id)
             formData.append('isReady', !item.readyForSymposium)
 
-            const response = await fetch('/monitor', {
+            const response = await fetch('/quarterlyMonitoring', {
                 method: 'POST',
                 body: formData
             })
@@ -801,6 +811,18 @@ export const MonitoringComponent = () => {
                                     event: {
                                         type: 'click',
                                         method: closeModal
+                                    },
+                                    // Hover effect for close button
+                                    externalStyle: null,
+                                    elementHandler: (el) => {
+                                        el.addEventListener('mouseenter', () => {
+                                            el.style.color = '#fff';
+                                            el.style.backgroundColor = '#3a3a3a';
+                                        });
+                                        el.addEventListener('mouseleave', () => {
+                                            el.style.color = '#888';
+                                            el.style.backgroundColor = 'transparent';
+                                        });
                                     }
                                 })
                             ]
@@ -944,7 +966,16 @@ export const MonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
                                             }
                                         })
                                     ]
@@ -960,21 +991,153 @@ export const MonitoringComponent = () => {
                                             text: 'Fund Source',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
+                                                marginBottom: '10px',
                                                 color: '#aaa',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
                                         }),
                                         $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                gap: '20px',
+                                                marginBottom: '12px',
+                                                flexWrap: 'wrap'
+                                            },
+                                            child: ['Campus', 'University', 'Others'].map(type => {
+                                                const isOthers = type === 'Others'
+                                                const currentValue = item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
+                                                const isChecked = isOthers
+                                                    ? (currentValue && currentValue !== 'Campus' && currentValue !== 'University')
+                                                    : (currentValue === type)
+
+                                                return $({
+                                                    tag: 'label',
+                                                    style: {
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        color: '#fff',
+                                                        fontSize: '14px',
+                                                        cursor: 'pointer',
+                                                        padding: '8px 12px',
+                                                        borderRadius: '6px',
+                                                        transition: 'all 0.2s ease',
+                                                        backgroundColor: isChecked ? 'rgba(0, 191, 255, 0.2)' : 'transparent'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                width: '18px',
+                                                                height: '18px',
+                                                                borderRadius: '50%',
+                                                                border: `2px solid ${isChecked ? 'deepskyblue' : '#666'}`,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s ease'
+                                                            },
+                                                            child: isChecked ? [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        width: '10px',
+                                                                        height: '10px',
+                                                                        borderRadius: '50%',
+                                                                        backgroundColor: 'deepskyblue'
+                                                                    }
+                                                                })
+                                                            ] : []
+                                                        }),
+                                                        $({ tag: 'span', text: type }),
+                                                        $({
+                                                            tag: 'input',
+                                                            att: {
+                                                                type: 'radio',
+                                                                name: 'fundSourceType',
+                                                                value: type,
+                                                                checked: isChecked,
+                                                                style: 'display: none'
+                                                            },
+                                                            event: {
+                                                                type: 'change',
+                                                                method: (e) => {
+                                                                    const othersInput = document.getElementById('fund-source-others')
+                                                                    const hiddenInput = document.getElementById('fund-source-hidden')
+                                                                    // Update radio button visual styling
+                                                                    const allLabels = document.querySelectorAll('#monitoring-form label[style*="cursor: pointer"]')
+                                                                    allLabels.forEach(label => {
+                                                                        label.style.backgroundColor = 'transparent'
+                                                                        const radioDiv = label.querySelector('div:first-child')
+                                                                        if (radioDiv) {
+                                                                            radioDiv.style.borderColor = '#666'
+                                                                            const innerDot = radioDiv.querySelector('div')
+                                                                            if (innerDot) innerDot.remove()
+                                                                        }
+                                                                    })
+                                                                    // Style the selected radio
+                                                                    const parentLabel = e.target.closest('label')
+                                                                    if (parentLabel) {
+                                                                        parentLabel.style.backgroundColor = 'rgba(0, 191, 255, 0.2)'
+                                                                        const radioDiv = parentLabel.querySelector('div:first-child')
+                                                                        if (radioDiv) {
+                                                                            radioDiv.style.borderColor = 'deepskyblue'
+                                                                            if (!radioDiv.querySelector('div')) {
+                                                                                const dot = document.createElement('div')
+                                                                                dot.style.cssText = 'width: 10px; height: 10px; border-radius: 50%; background-color: deepskyblue;'
+                                                                                radioDiv.appendChild(dot)
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    if (e.target.value === 'Others') {
+                                                                        othersInput.style.display = 'block'
+                                                                        hiddenInput.value = othersInput.value
+                                                                    } else {
+                                                                        othersInput.style.display = 'none'
+                                                                        hiddenInput.value = e.target.value
+                                                                    }
+                                                                }
+                                                            }
+                                                        })
+                                                    ],
+                                                    elementHandler: (el) => {
+                                                        el.addEventListener('mouseenter', () => {
+                                                            if (!el.querySelector('input').checked) {
+                                                                el.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                                                            }
+                                                        });
+                                                        el.addEventListener('mouseleave', () => {
+                                                            if (!el.querySelector('input').checked) {
+                                                                el.style.backgroundColor = 'transparent';
+                                                            }
+                                                        });
+                                                    }
+                                                })
+                                            })
+                                        }),
+                                        // Hidden input to hold the actual value sent to server
+                                        $({
                                             tag: 'input',
                                             att: {
-                                                type: 'text',
+                                                type: 'hidden',
+                                                id: 'fund-source-hidden',
                                                 name: 'fundSource',
-                                                placeholder: 'Enter funding source...',
                                                 value: item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
+                                            }
+                                        }),
+                                        // Conditional text input for "Others"
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                id: 'fund-source-others',
+                                                type: 'text',
+                                                placeholder: 'Please specify...',
+                                                value: (item.fundSource && item.fundSource !== '—' && item.fundSource !== 'Campus' && item.fundSource !== 'University') ? item.fundSource : ''
                                             },
                                             style: {
+                                                display: (item.fundSource && item.fundSource !== '—' && item.fundSource !== 'Campus' && item.fundSource !== 'University') ? 'block' : 'none',
                                                 width: '100%',
                                                 padding: '10px',
                                                 backgroundColor: '#333',
@@ -982,7 +1145,23 @@ export const MonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                marginTop: '5px',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            event: {
+                                                type: 'input',
+                                                method: (e) => {
+                                                    document.getElementById('fund-source-hidden').value = e.target.value
+                                                }
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
                                             }
                                         })
                                     ]
@@ -1020,7 +1199,16 @@ export const MonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
                                             }
                                         })
                                     ]
@@ -1047,7 +1235,10 @@ export const MonitoringComponent = () => {
                                             att: {
                                                 type: 'number',
                                                 name: 'completion',
-                                                placeholder: 'Enter percentage (0-100)',
+                                                step: '0.01',
+                                                min: '0',
+                                                max: '100',
+                                                placeholder: '0.00',
                                                 value: currentQData.completion || ''
                                             },
                                             style: {
@@ -1058,7 +1249,16 @@ export const MonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
                                             }
                                         })
                                     ]
@@ -1093,7 +1293,9 @@ export const MonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
                                             },
                                             child: [
                                                 $({ tag: 'option', att: { value: '' }, text: '-- Select Status --' }),
@@ -1102,7 +1304,15 @@ export const MonitoringComponent = () => {
                                                 $({ tag: 'option', att: { value: 'Delayed' }, text: 'Delayed' }),
                                                 $({ tag: 'option', att: { value: 'On Hold' }, text: 'On Hold' }),
                                                 $({ tag: 'option', att: { value: 'Completed' }, text: 'Completed' })
-                                            ]
+                                            ],
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
+                                            }
                                         })
                                     ]
                                 }),
@@ -1140,9 +1350,18 @@ export const MonitoringComponent = () => {
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
-                                                fontFamily: 'inherit'
+                                                fontFamily: 'inherit',
+                                                transition: 'all 0.2s ease'
                                             },
-                                            text: currentQData.remarks || ''
+                                            text: currentQData.remarks || '',
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
+                                            }
                                         })
                                     ]
                                 }),
@@ -1180,9 +1399,18 @@ export const MonitoringComponent = () => {
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
-                                                fontFamily: 'inherit'
+                                                fontFamily: 'inherit',
+                                                transition: 'all 0.2s ease'
                                             },
-                                            text: currentQData.measures || ''
+                                            text: currentQData.measures || '',
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                });
+                                            }
                                         })
                                     ]
                                 }),
@@ -1210,11 +1438,24 @@ export const MonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#aaa',
                                                 fontSize: '14px',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
                                             },
                                             event: {
                                                 type: 'click',
                                                 method: closeModal
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.borderColor = 'deepskyblue';
+                                                    el.style.color = 'deepskyblue';
+                                                    el.style.backgroundColor = 'rgba(0, 191, 255, 0.05)';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.borderColor = '#444';
+                                                    el.style.color = '#aaa';
+                                                    el.style.backgroundColor = 'transparent';
+                                                });
                                             }
                                         }),
                                         $({
@@ -1228,11 +1469,24 @@ export const MonitoringComponent = () => {
                                                 borderRadius: '6px',
                                                 color: '#fff',
                                                 fontSize: '14px',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
                                             },
                                             event: {
                                                 type: 'click',
                                                 method: saveMonitoringData
+                                            },
+                                            elementHandler: (el) => {
+                                                el.addEventListener('mouseenter', () => {
+                                                    el.style.backgroundColor = '#00bfff';
+                                                    el.style.transform = 'translateY(-1px)';
+                                                    el.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+                                                });
+                                                el.addEventListener('mouseleave', () => {
+                                                    el.style.backgroundColor = 'deepskyblue';
+                                                    el.style.transform = 'translateY(0)';
+                                                    el.style.boxShadow = 'none';
+                                                });
                                             }
                                         })
                                     ]
@@ -1263,7 +1517,7 @@ export const MonitoringComponent = () => {
 
         showLoading()
         try {
-            const response = await fetch('/monitor', {
+            const response = await fetch('/quarterlyMonitoring', {
                 method: 'POST',
                 body: formData
             })
@@ -1373,7 +1627,7 @@ export const MonitoringComponent = () => {
                                 }),
                                 $({
                                     tag: 'h2',
-                                    text: 'Internally Funded Research Monitoring - On-going',
+                                    text: 'Quarterly Monitoring',
                                     style: {
                                         color: '#fff',
                                         fontFamily: 'Segoe UI, sans-serif',
@@ -1682,143 +1936,323 @@ export const MonitoringComponent = () => {
 
     // Statistics cards
     const StatsCards = () => {
+        // Helper function to convert hex color to RGB
+        const hexToRgb = (hex) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '255, 255, 255';
+        };
+
+        // Helper function to open a component in a modal
+        const openComponentModal = (title, ComponentFn) => {
+            const modal = $({
+                tag: 'div',
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: '5000',
+                    fontFamily: 'Segoe UI, sans-serif',
+                    backdropFilter: 'blur(8px)'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#1a1a1a',
+                            borderRadius: '20px',
+                            width: '95vw',
+                            height: '92vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+                            border: '1px solid #333'
+                        },
+                        child: [
+                            // Header
+                            $({
+                                tag: 'div',
+                                style: {
+                                    padding: '18px 28px',
+                                    borderBottom: '1px solid #333',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    backgroundColor: '#222'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'h2',
+                                        text: title,
+                                        style: {
+                                            margin: '0',
+                                            fontSize: '22px',
+                                            fontWeight: '600',
+                                            color: '#fff',
+                                            letterSpacing: '-0.5px'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'button',
+                                        style: {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                            border: 'none',
+                                            color: '#aaa',
+                                            width: '36px',
+                                            height: '36px',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        },
+                                        child: [$({ tag: 'i', att: { className: 'fa-solid fa-xmark' }, style: { fontSize: '20px' } })],
+                                        event: {
+                                            type: 'click',
+                                            method: () => modal.remove()
+                                        },
+                                        event2: {
+                                            type: 'mouseenter',
+                                            method: (e) => {
+                                                e.currentTarget.style.backgroundColor = 'rgba(244, 67, 54, 0.2)'
+                                                e.currentTarget.style.color = '#f44336'
+                                            }
+                                        },
+                                        event3: {
+                                            type: 'mouseleave',
+                                            method: (e) => {
+                                                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'
+                                                e.currentTarget.style.color = '#aaa'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    flex: '1',
+                                    overflow: 'hidden',
+                                    backgroundColor: '#2a2a2a'
+                                },
+                                child: [ComponentFn()]
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modal)
+        }
+
+        // Helper function to create a stat card with hover effects
+        const createStatCard = (iconClass, iconColor, label, onClick = null, value = '0') => {
+            // Convert color to RGB values for rgba manipulation
+            const rgbValues = hexToRgb(iconColor);
+
+            const card = $({
+                tag: 'div',
+                att: { className: 'stat-card' },
+                style: {
+                    backgroundColor: '#2d2d2d',
+                    borderRadius: '16px',
+                    padding: '18px 22px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    border: '1px solid #444',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    overflow: 'hidden'
+                },
+                child: [
+                    // Background glow effect
+                    $({
+                        tag: 'div',
+                        att: { className: 'card-glow' },
+                        style: {
+                            position: 'absolute',
+                            top: '0',
+                            left: '0',
+                            width: '100%',
+                            height: '100%',
+                            background: `radial-gradient(circle at 70% 30%, rgba(${rgbValues}, 0.08) 0%, transparent 70%)`,
+                            opacity: '0',
+                            transition: 'opacity 0.3s ease',
+                            pointerEvents: 'none'
+                        }
+                    }),
+                    // Icon container
+                    $({
+                        tag: 'div',
+                        att: { className: 'stat-icon-container' },
+                        style: {
+                            width: '54px',
+                            height: '54px',
+                            borderRadius: '16px',
+                            backgroundColor: `rgba(${rgbValues}, 0.15)`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: `1px solid rgba(${rgbValues}, 0.3)`,
+                            transition: 'all 0.3s ease',
+                            flexShrink: '0'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: iconClass },
+                                style: {
+                                    color: iconColor,
+                                    fontSize: '26px',
+                                    transition: 'all 0.3s ease'
+                                }
+                            })
+                        ]
+                    }),
+                    // Text content
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            flex: '1',
+                            minWidth: '0'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'stat-value' },
+                                text: value,
+                                style: {
+                                    fontSize: '32px',
+                                    fontWeight: '700',
+                                    color: '#fff',
+                                    lineHeight: '1.2',
+                                    transition: 'color 0.3s ease'
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                att: { className: 'stat-label' },
+                                text: label,
+                                style: {
+                                    fontSize: '13px',
+                                    color: '#aaa',
+                                    fontWeight: '500',
+                                    transition: 'color 0.3s ease',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }
+                            })
+                        ]
+                    })
+                ]
+            });
+
+            // Use direct addEventListener for reliable hover behavior
+            card.addEventListener('mouseenter', function (e) {
+                card.style.transform = 'translateY(-4px)';
+                card.style.borderColor = iconColor;
+                card.style.boxShadow = `0 8px 24px rgba(${rgbValues}, 0.15)`;
+                card.style.backgroundColor = '#363636';
+
+                const glow = card.querySelector('.card-glow');
+                if (glow) glow.style.opacity = '1';
+
+                const iconContainer = card.querySelector('.stat-icon-container');
+                if (iconContainer) {
+                    iconContainer.style.transform = 'scale(1.1)';
+                    iconContainer.style.backgroundColor = `rgba(${rgbValues}, 0.25)`;
+                    iconContainer.style.borderColor = `rgba(${rgbValues}, 0.5)`;
+
+                    const icon = iconContainer.querySelector('span');
+                    if (icon) {
+                        icon.style.transform = 'scale(1.15) rotate(5deg)';
+                    }
+                }
+
+                const statValue = card.querySelector('.stat-value');
+                if (statValue) statValue.style.color = iconColor;
+
+                const statLabel = card.querySelector('.stat-label');
+                if (statLabel) statLabel.style.color = '#ccc';
+            });
+
+            card.addEventListener('mouseleave', function (e) {
+                card.style.transform = 'translateY(0)';
+                card.style.borderColor = '#444';
+                card.style.boxShadow = 'none';
+                card.style.backgroundColor = '#2d2d2d';
+
+                const glow = card.querySelector('.card-glow');
+                if (glow) glow.style.opacity = '0';
+
+                const iconContainer = card.querySelector('.stat-icon-container');
+                if (iconContainer) {
+                    iconContainer.style.transform = 'scale(1)';
+                    iconContainer.style.backgroundColor = `rgba(${rgbValues}, 0.15)`;
+                    iconContainer.style.borderColor = `rgba(${rgbValues}, 0.3)`;
+
+                    const icon = iconContainer.querySelector('span');
+                    if (icon) {
+                        icon.style.transform = 'scale(1) rotate(0deg)';
+                    }
+                }
+
+                const statValue = card.querySelector('.stat-value');
+                if (statValue) statValue.style.color = '#fff';
+
+                const statLabel = card.querySelector('.stat-label');
+                if (statLabel) statLabel.style.color = '#aaa';
+            });
+
+            if (onClick) {
+                card.addEventListener('click', onClick);
+            }
+
+            return card;
+        };
+
         return $({
             tag: 'div',
             att: { className: 'stats-cards' },
             style: {
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
                 backgroundColor: '#2a2a2a',
                 borderBottom: '1px solid #444'
             },
             child: [
-                // Total On-Going Projects
-                $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '16px',
-                        padding: '18px 22px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
-                        border: '1px solid #444'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                width: '54px',
-                                height: '54px',
-                                borderRadius: '16px',
-                                backgroundColor: 'rgba(0, 191, 255, 0.15)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                border: '1px solid rgba(0, 191, 255, 0.3)'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-diagram-project' },
-                                    style: { color: 'deepskyblue', fontSize: '26px' }
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: { display: 'flex', flexDirection: 'column' },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'stat-value' },
-                                    text: '0',
-                                    style: {
-                                        fontSize: '32px',
-                                        fontWeight: '700',
-                                        color: '#fff',
-                                        lineHeight: '1.2'
-                                    }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'On-Going',
-                                    style: {
-                                        fontSize: '13px',
-                                        color: '#aaa',
-                                        fontWeight: '500'
-                                    }
-                                })
-                            ]
-                        })
-                    ]
-                }),
-                // Completed Research
-                $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '16px',
-                        padding: '18px 22px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
-                        border: '1px solid #444'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                width: '54px',
-                                height: '54px',
-                                borderRadius: '16px',
-                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                border: '1px solid rgba(76, 175, 80, 0.3)'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-check-circle' },
-                                    style: { color: '#4caf50', fontSize: '26px' }
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: { display: 'flex', flexDirection: 'column' },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'stat-value' },
-                                    text: '0',
-                                    style: {
-                                        fontSize: '32px',
-                                        fontWeight: '700',
-                                        color: '#fff',
-                                        lineHeight: '1.2'
-                                    }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Completed',
-                                    style: {
-                                        fontSize: '13px',
-                                        color: '#aaa',
-                                        fontWeight: '500'
-                                    }
-                                })
-                            ]
-                        })
-                    ]
-                })
+                // Publications
+                createStatCard('fa-solid fa-book-open', '#ff9800', 'Publications', () => openComponentModal('Publications', Publication)),
+
+                // Presentations
+                createStatCard('fa-solid fa-chalkboard-user', '#e91e63', 'Presentations', () => openComponentModal('Presentations', PresentationResearch)),
+
+                // IP Assets
+                createStatCard('fa-solid fa-trophy', '#9c27b0', 'IP Assets', () => openComponentModal('IP Assets', PatentUM)),
+
+                // Collaborations
+                createStatCard('fa-solid fa-handshake', '#009688', 'Collaborations'),
+
+                // Research Activity Conducted
+                createStatCard('fa-solid fa-flask', '#3f51b5', 'Research Activity Conducted')
             ]
-        })
-    }
+        });
+    };
 
     // Main table component
     const DataTable = () => {
@@ -1996,4 +2430,4 @@ export const MonitoringComponent = () => {
     })
 }
 
-export default MonitoringComponent
+export default QuarterlyMonitoringComponent
