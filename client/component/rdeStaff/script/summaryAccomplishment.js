@@ -3,7 +3,12 @@ import { onGoingResearch } from "./accomplishmentReport/onGoingRes.js";
 import { completedResearch } from "./accomplishmentReport/completedRes.js"
 import { conductedResearch } from "./accomplishmentReport/conductedRes.js"
 import { trainingsAttended } from "./accomplishmentReport/trainingAttendedRes.js"
-
+import { igpResearch } from "./accomplishmentReport/igpRes.js"
+import { participationResearch } from "./accomplishmentReport/participationRes.js"
+import { facilitiesImprovement } from "./accomplishmentReport/facilitiesImprovement.js"
+import { facultyPresentation } from "./accomplishmentReport/presentationsRes.js"
+import { publicationResearch } from "./accomplishmentReport/publicationRes.js"
+import { citationsResearch } from "./accomplishmentReport/citationsRes.js"
 
 export const SummaryAccomplishment = () => {
     let mainContainer
@@ -43,13 +48,6 @@ export const SummaryAccomplishment = () => {
             gradient: 'linear-gradient(135deg, #ff9800 0%, #e65100 100%)'
         },
         {
-            key: 'facultyPresentation',
-            label: 'Faculty Presentations',
-            icon: 'fa-video',
-            color: '#9c27b0',
-            gradient: 'linear-gradient(135deg, #9c27b0 0%, #6a1b9a 100%)'
-        },
-        {
             key: 'trainingsAttended',
             label: 'Faculty Research Training Attended',
             icon: 'fa-user-graduate',
@@ -57,35 +55,42 @@ export const SummaryAccomplishment = () => {
             gradient: 'linear-gradient(135deg, #00bcd4 0%, #00838f 100%)'
         },
         {
-            key: 'igpProjects',
+            key: 'igpResearch',
             label: 'IGP Research Projects',
             icon: 'fa-project-diagram',
             color: '#ff5722',
             gradient: 'linear-gradient(135deg, #ff5722 0%, #bf360c 100%)'
         },
         {
-            key: 'exhibits',
+            key: 'participationResearch',
             label: 'Participation to Exhibits',
             icon: 'fa-flag',
             color: '#795548',
             gradient: 'linear-gradient(135deg, #795548 0%, #4e342e 100%)'
         },
         {
-            key: 'facilities',
+            key: 'facilitiesImprovement',
             label: 'Facilities Improvement',
             icon: 'fa-building',
             color: '#607d8b',
             gradient: 'linear-gradient(135deg, #607d8b 0%, #37474f 100%)'
         },
         {
-            key: 'publications',
+            key: 'facultyPresentation',
+            label: 'Faculty Presentations',
+            icon: 'fa-video',
+            color: '#9c27b0',
+            gradient: 'linear-gradient(135deg, #9c27b0 0%, #6a1b9a 100%)'
+        },
+        {
+            key: 'publicationResearch',
             label: 'Publications',
             icon: 'fa-book',
             color: '#e91e63',
             gradient: 'linear-gradient(135deg, #e91e63 0%, #880e4f 100%)'
         },
         {
-            key: 'citations',
+            key: 'citationsResearch',
             label: 'Research Citations',
             icon: 'fa-quote-right',
             color: '#3f51b5',
@@ -528,9 +533,8 @@ export const SummaryAccomplishment = () => {
 
             return
         }
-
         if (stat.key === 'completedResearch') {
-            // Create modal container similar to ongoingResearch but with completedResearch component
+            //completedResearch component
             modalElement = $({
                 tag: 'div',
                 att: { className: 'summary-detail-modal-overlay' },
@@ -652,7 +656,7 @@ export const SummaryAccomplishment = () => {
             return
         }
         if (stat.key === 'conductedResearch') {
-            // Create modal container similar to ongoingResearch but with conductedResearch component
+            //conductedResearch component
             modalElement = $({
                 tag: 'div',
                 att: { className: 'summary-detail-modal-overlay' },
@@ -774,7 +778,7 @@ export const SummaryAccomplishment = () => {
             return
         }
         if (stat.key === 'trainingsAttended') {
-            // Create modal container similar to ongoingResearch but with trainingsAttended component
+            //trainingsAttended component
             modalElement = $({
                 tag: 'div',
                 att: { className: 'summary-detail-modal-overlay' },
@@ -872,6 +876,738 @@ export const SummaryAccomplishment = () => {
                                     const trainingAttendedComponent = trainingsAttended()
                                     if (trainingAttendedComponent) {
                                         el.appendChild(trainingAttendedComponent)
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modalElement)
+
+            // Trigger animation
+            setTimeout(() => {
+                if (modalElement) {
+                    modalElement.style.opacity = '1'
+                    const modalBox = modalElement.querySelector('div[style*="border-radius: 20px"]')
+                    if (modalBox && modalBox.style) {
+                        modalBox.style.transform = 'scale(1) translateY(0)'
+                    }
+                }
+            }, 10)
+
+            return
+        }
+        if (stat.key === 'igpResearch') {
+            //igpResearch component
+            modalElement = $({
+                tag: 'div',
+                att: { className: 'summary-detail-modal-overlay' },
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: '1000',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        if (e.target.className === 'summary-detail-modal-overlay') {
+                            closeModal()
+                        }
+                    }
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#1e1e1e',
+                            width: '95%',
+                            maxWidth: '95%',
+                            height: '90vh',
+                            maxHeight: '90vh',
+                            borderRadius: '20px',
+                            border: '1px solid #333',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            transform: 'scale(0.9) translateY(20px)',
+                            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            position: 'relative'
+                        },
+                        child: [
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    zIndex: '1001'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-times' },
+                                        style: {
+                                            color: '#888',
+                                            cursor: 'pointer',
+                                            fontSize: '20px',
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            backgroundColor: 'rgba(0,0,0,0.5)',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            type2: 'mouseenter',
+                                            method2: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'
+                                                e.target.style.color = '#fff'
+                                            },
+                                            type3: 'mouseleave',
+                                            method3: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.5)'
+                                                e.target.style.color = '#888'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Completed Research content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto'
+                                },
+                                elementHandler: (el) => {
+                                    const igpResearchComponent = igpResearch()
+                                    if (igpResearchComponent) {
+                                        el.appendChild(igpResearchComponent)
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modalElement)
+
+            // Trigger animation
+            setTimeout(() => {
+                if (modalElement) {
+                    modalElement.style.opacity = '1'
+                    const modalBox = modalElement.querySelector('div[style*="border-radius: 20px"]')
+                    if (modalBox && modalBox.style) {
+                        modalBox.style.transform = 'scale(1) translateY(0)'
+                    }
+                }
+            }, 10)
+
+            return
+        }
+        if (stat.key === 'participationResearch') {
+            //participation research component
+            modalElement = $({
+                tag: 'div',
+                att: { className: 'summary-detail-modal-overlay' },
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: '1000',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        if (e.target.className === 'summary-detail-modal-overlay') {
+                            closeModal()
+                        }
+                    }
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#1e1e1e',
+                            width: '95%',
+                            maxWidth: '95%',
+                            height: '90vh',
+                            maxHeight: '90vh',
+                            borderRadius: '20px',
+                            border: '1px solid #333',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            transform: 'scale(0.9) translateY(20px)',
+                            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            position: 'relative'
+                        },
+                        child: [
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    zIndex: '1001'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-times' },
+                                        style: {
+                                            color: '#888',
+                                            cursor: 'pointer',
+                                            fontSize: '20px',
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            backgroundColor: 'rgba(0,0,0,0.5)',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            type2: 'mouseenter',
+                                            method2: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'
+                                                e.target.style.color = '#fff'
+                                            },
+                                            type3: 'mouseleave',
+                                            method3: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.5)'
+                                                e.target.style.color = '#888'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Completed Research content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto'
+                                },
+                                elementHandler: (el) => {
+                                    const participationResComponent = participationResearch()
+                                    if (participationResComponent) {
+                                        el.appendChild(participationResComponent)
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modalElement)
+
+            // Trigger animation
+            setTimeout(() => {
+                if (modalElement) {
+                    modalElement.style.opacity = '1'
+                    const modalBox = modalElement.querySelector('div[style*="border-radius: 20px"]')
+                    if (modalBox && modalBox.style) {
+                        modalBox.style.transform = 'scale(1) translateY(0)'
+                    }
+                }
+            }, 10)
+
+            return
+        }
+        if (stat.key === 'facilitiesImprovement') {
+            //facilities improvement component
+            modalElement = $({
+                tag: 'div',
+                att: { className: 'summary-detail-modal-overlay' },
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: '1000',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        if (e.target.className === 'summary-detail-modal-overlay') {
+                            closeModal()
+                        }
+                    }
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#1e1e1e',
+                            width: '95%',
+                            maxWidth: '95%',
+                            height: '90vh',
+                            maxHeight: '90vh',
+                            borderRadius: '20px',
+                            border: '1px solid #333',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            transform: 'scale(0.9) translateY(20px)',
+                            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            position: 'relative'
+                        },
+                        child: [
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    zIndex: '1001'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-times' },
+                                        style: {
+                                            color: '#888',
+                                            cursor: 'pointer',
+                                            fontSize: '20px',
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            backgroundColor: 'rgba(0,0,0,0.5)',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            type2: 'mouseenter',
+                                            method2: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'
+                                                e.target.style.color = '#fff'
+                                            },
+                                            type3: 'mouseleave',
+                                            method3: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.5)'
+                                                e.target.style.color = '#888'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Completed Research content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto'
+                                },
+                                elementHandler: (el) => {
+                                    const facilitiesImprovementComponent = facilitiesImprovement()
+                                    if (facilitiesImprovementComponent) {
+                                        el.appendChild(facilitiesImprovementComponent)
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modalElement)
+
+            // Trigger animation
+            setTimeout(() => {
+                if (modalElement) {
+                    modalElement.style.opacity = '1'
+                    const modalBox = modalElement.querySelector('div[style*="border-radius: 20px"]')
+                    if (modalBox && modalBox.style) {
+                        modalBox.style.transform = 'scale(1) translateY(0)'
+                    }
+                }
+            }, 10)
+
+            return
+        }
+        if (stat.key === 'facultyPresentation') {
+            //faculty presentation component
+            modalElement = $({
+                tag: 'div',
+                att: { className: 'summary-detail-modal-overlay' },
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: '1000',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        if (e.target.className === 'summary-detail-modal-overlay') {
+                            closeModal()
+                        }
+                    }
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#1e1e1e',
+                            width: '95%',
+                            maxWidth: '95%',
+                            height: '90vh',
+                            maxHeight: '90vh',
+                            borderRadius: '20px',
+                            border: '1px solid #333',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            transform: 'scale(0.9) translateY(20px)',
+                            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            position: 'relative'
+                        },
+                        child: [
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    zIndex: '1001'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-times' },
+                                        style: {
+                                            color: '#888',
+                                            cursor: 'pointer',
+                                            fontSize: '20px',
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            backgroundColor: 'rgba(0,0,0,0.5)',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            type2: 'mouseenter',
+                                            method2: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'
+                                                e.target.style.color = '#fff'
+                                            },
+                                            type3: 'mouseleave',
+                                            method3: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.5)'
+                                                e.target.style.color = '#888'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Completed Research content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto'
+                                },
+                                elementHandler: (el) => {
+                                    const facultyPresentationComponent = facultyPresentation()
+                                    if (facultyPresentationComponent) {
+                                        el.appendChild(facultyPresentationComponent)
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modalElement)
+
+            // Trigger animation
+            setTimeout(() => {
+                if (modalElement) {
+                    modalElement.style.opacity = '1'
+                    const modalBox = modalElement.querySelector('div[style*="border-radius: 20px"]')
+                    if (modalBox && modalBox.style) {
+                        modalBox.style.transform = 'scale(1) translateY(0)'
+                    }
+                }
+            }, 10)
+
+            return
+        }
+        if (stat.key === 'publicationResearch') {
+            //faculty presentation component
+            modalElement = $({
+                tag: 'div',
+                att: { className: 'summary-detail-modal-overlay' },
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: '1000',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        if (e.target.className === 'summary-detail-modal-overlay') {
+                            closeModal()
+                        }
+                    }
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#1e1e1e',
+                            width: '95%',
+                            maxWidth: '95%',
+                            height: '90vh',
+                            maxHeight: '90vh',
+                            borderRadius: '20px',
+                            border: '1px solid #333',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            transform: 'scale(0.9) translateY(20px)',
+                            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            position: 'relative'
+                        },
+                        child: [
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    zIndex: '1001'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-times' },
+                                        style: {
+                                            color: '#888',
+                                            cursor: 'pointer',
+                                            fontSize: '20px',
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            backgroundColor: 'rgba(0,0,0,0.5)',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            type2: 'mouseenter',
+                                            method2: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'
+                                                e.target.style.color = '#fff'
+                                            },
+                                            type3: 'mouseleave',
+                                            method3: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.5)'
+                                                e.target.style.color = '#888'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Completed Research content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto'
+                                },
+                                elementHandler: (el) => {
+                                    const publicationResearchComponent = publicationResearch()
+                                    if (publicationResearchComponent) {
+                                        el.appendChild(publicationResearchComponent)
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modalElement)
+
+            // Trigger animation
+            setTimeout(() => {
+                if (modalElement) {
+                    modalElement.style.opacity = '1'
+                    const modalBox = modalElement.querySelector('div[style*="border-radius: 20px"]')
+                    if (modalBox && modalBox.style) {
+                        modalBox.style.transform = 'scale(1) translateY(0)'
+                    }
+                }
+            }, 10)
+
+            return
+        }
+        if (stat.key === 'citationsResearch') {
+            //faculty presentation component
+            modalElement = $({
+                tag: 'div',
+                att: { className: 'summary-detail-modal-overlay' },
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: '1000',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        if (e.target.className === 'summary-detail-modal-overlay') {
+                            closeModal()
+                        }
+                    }
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#1e1e1e',
+                            width: '95%',
+                            maxWidth: '95%',
+                            height: '90vh',
+                            maxHeight: '90vh',
+                            borderRadius: '20px',
+                            border: '1px solid #333',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            transform: 'scale(0.9) translateY(20px)',
+                            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            position: 'relative'
+                        },
+                        child: [
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    zIndex: '1001'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-times' },
+                                        style: {
+                                            color: '#888',
+                                            cursor: 'pointer',
+                                            fontSize: '20px',
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            backgroundColor: 'rgba(0,0,0,0.5)',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            type2: 'mouseenter',
+                                            method2: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'
+                                                e.target.style.color = '#fff'
+                                            },
+                                            type3: 'mouseleave',
+                                            method3: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.5)'
+                                                e.target.style.color = '#888'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Completed Research content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto'
+                                },
+                                elementHandler: (el) => {
+                                    const citationsResearchComponent = citationsResearch()
+                                    if (citationsResearchComponent) {
+                                        el.appendChild(citationsResearchComponent)
                                     }
                                 }
                             })
@@ -1245,12 +1981,6 @@ export const SummaryAccomplishment = () => {
         applyFilters()
     }
 
-    // Filter by category
-    const filterByCategory = (category) => {
-        activeFilters.category = category
-        applyFilters()
-    }
-
     // Update table with data
     const updateTableWithData = () => {
         if (!tableBody) return
@@ -1265,10 +1995,6 @@ export const SummaryAccomplishment = () => {
     // Reference getters
     const getMainContainer = (el) => {
         mainContainer = el
-    }
-
-    const getScrollContainer = (el) => {
-        scrollContainer = el
     }
 
     // Create filter section
@@ -1614,11 +2340,11 @@ export const getSummaryStats = (data) => {
         conductedResearch: data.filter(item => item.type === 'training').length,
         facultyPresentation: data.filter(item => item.type === 'presentation').length,
         trainingsAttended: data.filter(item => item.type === 'faculty_training').length,
-        igpProjects: data.filter(item => item.type === 'igp').length,
-        exhibits: data.filter(item => item.type === 'exhibit').length,
-        facilities: data.filter(item => item.type === 'facility').length,
-        publications: data.filter(item => item.type === 'publication').length,
-        citations: data.filter(item => item.type === 'citation').length
+        igpResearch: data.filter(item => item.type === 'igp').length,
+        participationResearch: data.filter(item => item.type === 'exhibit').length,
+        facilitiesImprovement: data.filter(item => item.type === 'facility').length,
+        publicationResearch: data.filter(item => item.type === 'publication').length,
+        citationsResearch: data.filter(item => item.type === 'citation').length
     }
 }
 
