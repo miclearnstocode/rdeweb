@@ -2,6 +2,7 @@ import { $, Waiting } from "../../../lib/lib.js";
 import { onGoingResearch } from "./accomplishmentReport/onGoingRes.js";
 import { completedResearch } from "./accomplishmentReport/completedRes.js"
 import { conductedResearch } from "./accomplishmentReport/conductedRes.js"
+import { trainingsAttended } from "./accomplishmentReport/trainingAttendedRes.js"
 
 
 export const SummaryAccomplishment = () => {
@@ -49,7 +50,7 @@ export const SummaryAccomplishment = () => {
             gradient: 'linear-gradient(135deg, #9c27b0 0%, #6a1b9a 100%)'
         },
         {
-            key: 'facultyTraining',
+            key: 'trainingsAttended',
             label: 'Faculty Research Training Attended',
             icon: 'fa-user-graduate',
             color: '#00bcd4',
@@ -772,7 +773,128 @@ export const SummaryAccomplishment = () => {
 
             return
         }
+        if (stat.key === 'trainingsAttended') {
+            // Create modal container similar to ongoingResearch but with trainingsAttended component
+            modalElement = $({
+                tag: 'div',
+                att: { className: 'summary-detail-modal-overlay' },
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: '1000',
+                    opacity: '0',
+                    transition: 'opacity 0.3s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        if (e.target.className === 'summary-detail-modal-overlay') {
+                            closeModal()
+                        }
+                    }
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#1e1e1e',
+                            width: '95%',
+                            maxWidth: '95%',
+                            height: '90vh',
+                            maxHeight: '90vh',
+                            borderRadius: '20px',
+                            border: '1px solid #333',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden',
+                            transform: 'scale(0.9) translateY(20px)',
+                            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            position: 'relative'
+                        },
+                        child: [
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    zIndex: '1001'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-times' },
+                                        style: {
+                                            color: '#888',
+                                            cursor: 'pointer',
+                                            fontSize: '20px',
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            backgroundColor: 'rgba(0,0,0,0.5)',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            type2: 'mouseenter',
+                                            method2: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'
+                                                e.target.style.color = '#fff'
+                                            },
+                                            type3: 'mouseleave',
+                                            method3: (e) => {
+                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.5)'
+                                                e.target.style.color = '#888'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Completed Research content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    overflow: 'auto'
+                                },
+                                elementHandler: (el) => {
+                                    const trainingAttendedComponent = trainingsAttended()
+                                    if (trainingAttendedComponent) {
+                                        el.appendChild(trainingAttendedComponent)
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
 
+            document.body.appendChild(modalElement)
+
+            // Trigger animation
+            setTimeout(() => {
+                if (modalElement) {
+                    modalElement.style.opacity = '1'
+                    const modalBox = modalElement.querySelector('div[style*="border-radius: 20px"]')
+                    if (modalBox && modalBox.style) {
+                        modalBox.style.transform = 'scale(1) translateY(0)'
+                    }
+                }
+            }, 10)
+
+            return
+        }
         // Placeholder for modal content - you can implement the actual modal later
         const modalContent = getModalContent(stat)
 
@@ -1491,7 +1613,7 @@ export const getSummaryStats = (data) => {
         completedResearch: data.filter(item => item.status === 'completed').length,
         conductedResearch: data.filter(item => item.type === 'training').length,
         facultyPresentation: data.filter(item => item.type === 'presentation').length,
-        facultyTraining: data.filter(item => item.type === 'faculty_training').length,
+        trainingsAttended: data.filter(item => item.type === 'faculty_training').length,
         igpProjects: data.filter(item => item.type === 'igp').length,
         exhibits: data.filter(item => item.type === 'exhibit').length,
         facilities: data.filter(item => item.type === 'facility').length,

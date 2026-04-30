@@ -248,6 +248,7 @@ export const conductedResearch = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: '350px',
+                marginLeft: '90%',
                 width: '100%',
                 color: '#888',
                 fontFamily: 'Segoe UI, sans-serif',
@@ -2008,7 +2009,7 @@ export const conductedResearch = () => {
                                 }),
                                 $({
                                     tag: 'h2',
-                                    text: 'Research Trainings/Activity Conducted',
+                                    text: 'Summary List of Research Related -Trainings/Activity Conducted/Facilitated',
                                     style: {
                                         color: '#fff',
                                         fontFamily: 'Segoe UI, sans-serif',
@@ -2318,7 +2319,7 @@ export const conductedResearch = () => {
                 style: {
                     padding: '14px 8px',
                     textAlign: isCenter ? 'center' : 'left',
-                    fontSize: '11px',
+                    fontSize: '12px',
                     fontWeight: '600',
                     color: '#fff',
                     backgroundColor: '#2d2d2d',
@@ -2326,7 +2327,6 @@ export const conductedResearch = () => {
                     whiteSpace: 'pre-line',
                     wordBreak: 'break-word',
                     verticalAlign: 'middle',
-                    textTransform: 'uppercase',
                     letterSpacing: '0.5px'
                 }
             })
@@ -2391,7 +2391,7 @@ export const conductedResearch = () => {
                 backgroundColor: type === 'error' ? '#e91e63' : '#4caf50',
                 color: '#fff',
                 fontSize: '14px',
-                zIndex: '1001',
+                zIndex: '1040',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                 animation: 'slideIn 0.3s ease'
             }
