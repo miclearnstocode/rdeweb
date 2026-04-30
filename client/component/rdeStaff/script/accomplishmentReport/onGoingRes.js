@@ -1,7 +1,6 @@
-// monitoring.js
-import { $, Waiting } from "../../../lib/lib.js"
+import { $, Waiting } from "../../../../lib/lib.js"
 
-export const MonitoringComponent = () => {
+export const onGoingResearch = () => {
     let mainContainer
     let tableBody
     let scrollContainer
@@ -1996,4 +1995,4 @@ export const MonitoringComponent = () => {
     })
 }
 
-export default MonitoringComponent
+export default onGoingResearch

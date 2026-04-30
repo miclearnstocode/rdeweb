@@ -1,0 +1,137 @@
+/* summaryAccomplishment.css */
+
+.summary-accomplishment-container {
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+}
+
+/* Stats card animations */
+.summary-stat-card:hover .fa-solid {
+    transform: scale(1.1);
+}
+
+.summary-stat-card:hover .stat-value {
+    color: #fff;
+}
+
+.summary-stat-card:hover .fa-arrow-right {
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+}
+
+/* Modal animations */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modalFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+    }
+}
+
+/* Custom scrollbar for stats grid */
+.summary-stats-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.summary-stats-container::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+.summary-stats-container::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}
+
+.summary-stats-container::-webkit-scrollbar-thumb:hover {
+    background: #444;
+}
+
+/* Filter select styling */
+select:focus-visible {
+    outline: 2px solid deepskyblue;
+    outline-offset: 2px;
+}
+
+/* Stat card hover pulse effect */
+@keyframes cardPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 191, 255, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 191, 255, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 191, 255, 0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .summary-stats-container {
+        grid-template-columns: 1fr !important;
+    }
+
+    .summary-stat-card {
+        min-height: 100px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .summary-stats-container {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+    }
+}
+
+/* Filter badge animation */
+.active-filters-container span {
+    animation: badgeSlideIn 0.3s ease;
+}
+
+@keyframes badgeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal scrollbar */
+.summary-modal-box::-webkit-scrollbar {
+    width: 8px;
+}
+
+.summary-modal-box::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    border-radius: 4px;
+}
+
+.summary-modal-box::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+.summary-modal-box::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

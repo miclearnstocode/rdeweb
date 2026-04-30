@@ -7,7 +7,8 @@ import { CompletedResearch } from "./completedResearch.js";
 import { ProposedResearch } from "./proposedResearch.js";
 import { Utilization } from "./utilization.js";
 import { CertificationResearch } from "./certificationResearch.js";
-import { MonitoringComponent } from "./monitoring.js";
+import { onGoingResearch } from "./accomplishmentReport/onGoingRes.js";
+import { SummaryAccomplishment } from "./summaryAccomplishment.js";
 import { QuarterlyMonitoringComponent } from "./quarterlyMonitoring.js";
 import { Summary } from "./researchSummary.js";
 import { RdeDashboard } from "./rdeDashboard.js";
@@ -84,7 +85,7 @@ const Body = () => {
         url: '/rdeOffice/researchMonitoring',
         label: 'Internally Funded Research',
         button: button,
-        page: MonitoringComponent
+        page: onGoingResearch
     })
     botArray.push({
         url: '/rdeOffice/completedResearch',
@@ -97,6 +98,12 @@ const Body = () => {
         label: 'Monitoring',
         button: button,
         page: QuarterlyMonitoringComponent
+    })
+    botArray.push({
+        url: '/rdeOffice/accomplishmentReport',
+        label: 'Accomplishment Report',
+        button: button,
+        page: SummaryAccomplishment
     })
     botArray.push({
         url: '/rdeOffice/utilization',
