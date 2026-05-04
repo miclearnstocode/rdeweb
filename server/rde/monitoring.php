@@ -287,10 +287,11 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
         ]
     ]);
 } elseif ($action === 'save') {
-    $researchId = $_POST['projectId'] ?? '';
+    $researchId = $_POST['project_id'] ?? $_POST['projectId'] ?? '';
     $startDate = $_POST['startDate'] ?? null;
     $location = $_POST['location'] ?? '';
-    $completion = $_POST['completion'] ?? null;
+    $fundSource = $_POST['fundSource'] ?? '';
+    $completion = (isset($_POST['completion']) && $_POST['completion'] !== '') ? (float)$_POST['completion'] : null;
     $status = $_POST['status'] ?? '';
     $remarks = $_POST['remarks'] ?? '';
     $measures = $_POST['measures'] ?? '';
@@ -308,51 +309,55 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     $measuresCol = $qPrefix . "_measures";
 
     // Check if record exists
-    $check = $conn->prepare("SELECT id FROM research_monitoring WHERE research_id = ?");
+    $check = $conn->prepare("SELECT id, start_date, location, fund_source FROM research_monitoring WHERE research_id = ?");
     $check->bind_param("i", $researchId);
     $check->execute();
-    $exists = $check->get_result()->fetch_assoc();
+    $existing = $check->get_result()->fetch_assoc();
 
-    if ($exists) {
+    if ($existing) {
+        $finalStartDate = $startDate ?: $existing['start_date'];
+        $finalLocation = $location ?: $existing['location'];
+        $finalFundSource = $fundSource ?: $existing['fund_source'];
+        
         $update = $conn->prepare("UPDATE research_monitoring SET 
                                     start_date = ?,
                                     location = ?, 
+                                    fund_source = ?,
                                     $completionCol = ?, 
                                     $statusCol = ?, 
                                     $remarksCol = ?, 
                                     $measuresCol = ? 
                                   WHERE research_id = ?");
-        $update->bind_param("ssisssi", $startDate, $location, $completion, $status, $remarks, $measures, $researchId);
+        $update->bind_param("sssdsssi", $finalStartDate, $finalLocation, $finalFundSource, $completion, $status, $remarks, $measures, $researchId);
         $res = $update->execute();
     } else {
         // Get metadata from researchfile
-        $meta = $conn->prepare("SELECT title, author, coauthor FROM researchfile WHERE id = ?");
+        $meta = $conn->prepare("SELECT title, author, coauthor, date_started FROM researchfile WHERE id = ?");
         $meta->bind_param("i", $researchId);
         $meta->execute();
         $metaData = $meta->get_result()->fetch_assoc();
         
-        $projectTitle = $metaData['title'];
+        $projectTitle = $metaData['title'] ?? 'Untitled Project';
         
-        $researcherList = [ucwords(strtolower(trim($metaData['author'])))];
-        $coauthorData = json_decode($metaData['coauthor'], true);
+        $researcherList = [ucwords(strtolower(trim($metaData['author'] ?? '')))];
+        $coauthorData = json_decode($metaData['coauthor'] ?? '[]', true);
         if (is_array($coauthorData)) {
             foreach ($coauthorData as $ca) {
                 if (!empty(trim($ca))) {
                     $researcherList[] = ucwords(strtolower(trim($ca)));
                 }
             }
-        } elseif (!empty(trim($metaData['coauthor'])) && $metaData['coauthor'] !== '[]') {
-             $researcherList[] = ucwords(strtolower(trim($metaData['coauthor'])));
         }
         $researchers = implode(', ', array_filter($researcherList));
         
-        $finalStartDate = $startDate ?: $metaData['date_started'];
-        $finalLocation = $location ?: ($metaData['location'] ?? '');
+        $finalStartDate = $startDate ?: ($metaData['date_started'] ?? date('Y-m-d'));
+        $finalLocation = $location ?: '';
+        $finalFundSource = $fundSource ?: '';
 
         $insert = $conn->prepare("INSERT INTO research_monitoring 
                                     (research_id, project_title, researchers, fund_source, start_date, location, $completionCol, $statusCol, $remarksCol, $measuresCol) 
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $insert->bind_param("isssssss", $researchId, $projectTitle, $researchers, $fundSource, $finalStartDate, $finalLocation, $completion, $status, $remarks, $measures);
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $insert->bind_param("issssdssss", $researchId, $projectTitle, $researchers, $finalFundSource, $finalStartDate, $finalLocation, $completion, $status, $remarks, $measures);
         $res = $insert->execute();
     }
 
