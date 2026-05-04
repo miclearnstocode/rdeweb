@@ -2301,7 +2301,7 @@ export const SummaryAccomplishment = () => {
                                 }),
                                 $({
                                     tag: 'p',
-                                    text: 'Research and Development Accomplishment Overview',
+                                    text: 'Research, Development and Extension Accomplishment Overview',
                                     style: {
                                         color: '#888',
                                         fontSize: '13px',

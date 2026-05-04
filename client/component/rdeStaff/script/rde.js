@@ -101,7 +101,7 @@ const Body = () => {
     })
     botArray.push({
         url: '/rdeOffice/accomplishmentReport',
-        label: 'Accomplishment Report',
+        label: 'Accomplishment',
         button: button,
         page: SummaryAccomplishment
     })

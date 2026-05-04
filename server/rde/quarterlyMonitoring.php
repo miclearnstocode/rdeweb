@@ -175,8 +175,8 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
                 rm.q1_completion, rm.q1_status, rm.q1_remarks, rm.q1_measures,
                 rm.q2_completion, rm.q2_status, rm.q2_remarks, rm.q2_measures,
                 rm.q3_completion, rm.q3_status, rm.q3_remarks, rm.q3_measures,
-                rm.q4_completion, rm.q4_status, rm.q4_remarks, rm.q4_measures,
-                rm.official_completion_date
+                rm.q4_completion, rm.q4_status, rm.q4_remarks, rm.q4_measures
+
               FROM researchfile rf
               INNER JOIN event_list el ON rf.event_id = el.id
               LEFT JOIN research_monitoring rm ON rf.id = rm.research_id
@@ -216,7 +216,6 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
             'campus' => $row['campus'],
             'location' => $row['location'] ?? '—',
             'fundSource' => $row['fund_source'] ?? '—',
-            'readyForSymposium' => !empty($row['official_completion_date']),
             'quarters' => [
                 'q1' => [
                     'completion' => $row['q1_completion'],
@@ -442,17 +441,6 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
         $insert->bind_param("issssdssss", $researchId, $projectTitle, $researchers, $finalStartDate, $finalLocation, $finalFundSource, $completion, $status, $remarks, $measures);
         $res = $insert->execute();
     }
-
-    echo json_encode(['success' => $res]);
-} elseif ($action === 'markReadyForSymposium') {
-    $researchId = $_POST['project_id'] ?? $_POST['projectId'] ?? '';
-    $isReady = $_POST['isReady'] === 'true';
-    $completionDate = $isReady ? date('Y-m-d') : null;
-    $remarks = $isReady ? 'Ready for Official Completion' : null;
-
-    $update = $conn->prepare("UPDATE research_monitoring SET official_completion_date = ?, final_completion_remarks = ? WHERE research_id = ?");
-    $update->bind_param("ssi", $completionDate, $remarks, $researchId);
-    $res = $update->execute();
 
     echo json_encode(['success' => $res]);
 } elseif ($action === 'fetch_years') {

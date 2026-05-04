@@ -583,56 +583,7 @@ export const QuarterlyMonitoringComponent = () => {
             })
         })
 
-        // Actions cell
-        cells.push(
-            $({
-                tag: 'td',
-                style: {
-                    padding: '12px 8px',
-                    textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'middle'
-                },
-                child: [createActionButtons(item)]
-            })
-        )
 
-        // Remarks / Official Completion button cell
-        cells.push(
-            $({
-                tag: 'td',
-                style: {
-                    padding: '12px 8px',
-                    textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'middle'
-                },
-                child: [
-                    $({
-                        tag: 'button',
-                        text: item.readyForSymposium ? 'Ready for Official Completion' : 'Mark as Ready',
-                        style: {
-                            padding: '6px 12px',
-                            backgroundColor: item.readyForSymposium ? '#4caf50' : 'transparent',
-                            border: item.readyForSymposium ? 'none' : '1px solid #4caf50',
-                            borderRadius: '4px',
-                            color: item.readyForSymposium ? '#fff' : '#4caf50',
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        },
-                        event: {
-                            type: 'click',
-                            method: (e) => {
-                                e.stopPropagation()
-                                markReadyForSymposium(item)
-                            }
-                        }
-                    })
-                ]
-            })
-        )
 
         return $({
             tag: 'tr',
@@ -654,71 +605,6 @@ export const QuarterlyMonitoringComponent = () => {
                 }
             }
         })
-    }
-
-    // Create action buttons
-    const createActionButtons = (item) => {
-        return $({
-            tag: 'div',
-            style: {
-                display: 'flex',
-                gap: '8px',
-                justifyContent: 'center'
-            },
-            child: [
-                $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-pen' },
-                    style: {
-                        color: '#ffb347',
-                        cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        transition: 'all 0.2s ease'
-                    },
-                    title: 'Edit',
-                    event: {
-                        type: 'click',
-                        method: (e) => {
-                            e.stopPropagation()
-                            openEditModal(item)
-                        }
-                    }
-                })
-            ]
-        })
-    }
-
-    // Mark ready for symposium
-    const markReadyForSymposium = async (item) => {
-        try {
-            showLoading()
-            const formData = new FormData()
-            formData.append('action', 'markReadyForSymposium')
-            formData.append('projectId', item.id)
-            formData.append('isReady', !item.readyForSymposium)
-
-            const response = await fetch('/quarterlyMonitoring', {
-                method: 'POST',
-                body: formData
-            })
-
-            const result = await response.json()
-
-            if (result.success) {
-                // Refresh data
-                await refreshData()
-                showNotification('Symposium status updated', 'success')
-            } else {
-                showNotification('Failed to update symposium status', 'error')
-            }
-        } catch (error) {
-            console.error('Error updating symposium status:', error)
-            showNotification('Error connecting to server', 'error')
-        } finally {
-            hideLoading()
-        }
     }
 
     // Open edit modal
@@ -2271,12 +2157,6 @@ export const QuarterlyMonitoringComponent = () => {
             colgroup.appendChild($({ tag: 'col', style: { width: w } }))
         })
 
-        // 1 actions column
-        colgroup.appendChild($({ tag: 'col', style: { width: '80px' } }))
-
-        // 1 remarks/completion column
-        colgroup.appendChild($({ tag: 'col', style: { width: '180px' } }))
-
         return $({
             tag: 'div',
             style: {
@@ -2331,13 +2211,11 @@ export const QuarterlyMonitoringComponent = () => {
             '% of Completion',
             'Status of the program/project/study',
             'Remarks (Problems Encountered)',
-            'Preventive/Corrective Measures to address problems',
-            'ACTIONS',
-            'REMARKS / OFFICIAL COMPLETION'
+            'Preventive/Corrective Measures to address problems'
         ]
 
         fixedHeaders.forEach(header => {
-            const isCenter = ['NO.', '% of Completion', 'Status of the program/project/study', 'ACTIONS', 'REMARKS / OFFICIAL COMPLETION'].includes(header)
+            const isCenter = ['NO.', '% of Completion', 'Status of the program/project/study'].includes(header)
 
             const th = $({
                 tag: 'th',
