@@ -1,4 +1,5 @@
 <?php
+
 require_once(__DIR__ . '/../db.php');
 
 // Set header for JSON response
@@ -647,7 +648,119 @@ class ProposedResearchAPI {
         
         echo json_encode($this->response);
     }
-    
+    public function rejectRevisedDocument() {
+        try {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!$input) {
+                $input = $_POST;
+            }
+            
+            $researchId = $input['doc_id'] ?? 0;
+            $reason = $input['reason'] ?? '';
+            $type = $input['type'] ?? '';
+            $url = $input['url'] ?? '';
+            $rejectedById = $_SESSION['userId'] ?? $_SESSION['user_id'] ?? '';
+            
+            if (!$researchId) {
+                throw new Exception("Research ID or Endorsement ID is required");
+            }
+
+            // Get endorsementid and event info from researchfile
+            // Try to find by rf.id first, then by rf.endorsementid if not found
+            $infoQuery = "SELECT rf.id as research_id, rf.endorsementid, rf.event, rf.title FROM researchfile rf WHERE rf.id = ? OR rf.endorsementid = ?";
+            $infoStmt = $this->con->prepare($infoQuery);
+            $infoStmt->bind_param("ii", $researchId, $researchId);
+            $infoStmt->execute();
+            $infoResult = $infoStmt->get_result();
+            $infoRow = $infoResult->fetch_assoc();
+            
+            if (!$infoRow) {
+                throw new Exception("Research record not found for ID: " . $researchId);
+            }
+            
+            $researchId = $infoRow['research_id']; // Ensure we use the correct researchfile ID
+            $endorsementId = $infoRow['endorsementid'];
+            if (empty($type)) {
+                $type = 'Rejected Revised Submission: ' . ($infoRow['event'] ?? 'Unknown Event');
+            }
+            $infoStmt->close();
+            
+            // Get user email or name for rejectedby
+            $rejectedByName = 'Unknown';
+            if (!empty($rejectedById)) {
+                // Try rdestaff first
+                $userQuery = "SELECT username, email FROM rdestaff WHERE id = ?";
+                $userStmt = $this->con->prepare($userQuery);
+                $userStmt->bind_param("s", $rejectedById);
+                $userStmt->execute();
+                $userResult = $userStmt->get_result();
+                if ($userRow = $userResult->fetch_assoc()) {
+                    $rejectedByName = $userRow['email'] ?: $userRow['username'];
+                } else {
+                    // Try account_detail if not in rdestaff
+                    $userQuery2 = "SELECT fullName, email FROM account_detail WHERE id = ?";
+                    $userStmt2 = $this->con->prepare($userQuery2);
+                    $userStmt2->bind_param("s", $rejectedById);
+                    $userStmt2->execute();
+                    $userResult2 = $userStmt2->get_result();
+                    if ($userRow2 = $userResult2->fetch_assoc()) {
+                        $rejectedByName = $userRow2['email'] ?: $userRow2['fullName'];
+                    }
+                    $userStmt2->close();
+                }
+                $userStmt->close();
+            }
+            
+            // Start transaction
+            $this->con->begin_transaction();
+
+            // 1. Update researchfile status
+            $updateQuery = "UPDATE researchfile SET revision_status = 'revision_rejected', last_revision_date = NOW() WHERE id = ?";
+            $updateStmt = $this->con->prepare($updateQuery);
+            $updateStmt->bind_param("i", $researchId);
+            if (!$updateStmt->execute()) {
+                throw new Exception("Failed to update research status: " . $updateStmt->error);
+            }
+            $updateStmt->close();
+
+            // 2. Insert into rejecteddocs table
+            $rejectedId = round(microtime(true) * 1000) . '';
+            $insertQuery = "INSERT INTO rejecteddocs (id, docid, url, type, rejectedby, reason, date) VALUES (?, ?, ?, ?, ?, ?, NOW())";
+            $insertStmt = $this->con->prepare($insertQuery);
+            $insertStmt->bind_param("sissss", $rejectedId, $endorsementId, $url, $type, $rejectedByName, $reason);
+            
+            if (!$insertStmt->execute()) {
+                throw new Exception("Failed to record rejection: " . $insertStmt->error);
+            }
+            $insertStmt->close();
+
+            // Commit transaction
+            $this->con->commit();
+
+            $this->response->status = true;
+            $this->response->message = 'Document rejected successfully';
+            $this->response->data = [
+                'research_id' => $researchId,
+                'rejected_by' => $rejectedByName,
+                'reason' => $reason,
+                'type' => $type
+            ];
+            
+        } catch (Exception $e) {
+            // Rollback if there's an error (con->rollback() is safe even if no transaction)
+            @$this->con->rollback();
+            
+            $this->response->status = false;
+            $this->response->message = 'Error: ' . $e->getMessage();
+            error_log("Reject document error: " . $e->getMessage());
+        }
+        
+        echo json_encode($this->response);
+    }
     public function saveAcademicPositions() {
         try {
             $input = json_decode(file_get_contents('php://input'), true);
@@ -864,7 +977,9 @@ switch ($action) {
     case 'update_revision_status':
         $api->updateRevisionStatus();
         break;
-        
+    case 'reject_revised':
+        $api->rejectRevisedDocument();
+        break;
     case 'save_positions':
         $api->saveAcademicPositions();
         break;

@@ -370,20 +370,20 @@ export const GeneratePDF = async (element, options = {}) => {
         document.head.appendChild(script);
         await new Promise(resolve => script.onload = resolve);
     }
-    
+
     const defaultOptions = {
         margin: 0,
         filename: options.filename || 'certificate.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
             logging: false,
             letterRendering: true
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-    
+
     return html2pdf().set({ ...defaultOptions, ...options }).from(element).outputPdf('blob');
 };
 
@@ -799,14 +799,14 @@ export const ValidatePDF = (file, maxSizeMB = 10) => {
 export const DeleteConfirmModal = (title = "Delete Record", message = "Are you sure you want to delete this?") => {
     return new Promise((resolve) => {
         const modalId = 'modern-delete-modal-' + Date.now();
-        
+
         const closeModal = (result) => {
             const overlay = document.getElementById(modalId);
             if (overlay) {
                 overlay.style.opacity = '0';
                 const content = overlay.querySelector('.modal-content');
                 if (content) content.style.transform = 'scale(0.9) translateY(20px)';
-                
+
                 setTimeout(() => {
                     if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
                     resolve(result);
@@ -968,12 +968,334 @@ export const DeleteConfirmModal = (title = "Delete Record", message = "Are you s
         });
 
         document.body.appendChild(modalOverlay);
-        
+
         // Trigger animations
         setTimeout(() => {
             modalOverlay.style.opacity = '1';
             const content = modalOverlay.querySelector('.modal-content');
             if (content) content.style.transform = 'scale(1) translateY(0)';
         }, 10);
+    });
+};
+export const RejectCommentModal = (title = "Reject Document") => {
+    return new Promise((resolve) => {
+        const modalId = 'reject-comment-modal-' + Date.now();
+
+        const closeModal = (result) => {
+            const overlay = document.getElementById(modalId);
+            if (overlay) {
+                overlay.style.opacity = '0';
+                const content = overlay.querySelector('.modal-content');
+                if (content) content.style.transform = 'scale(0.9) translateY(20px)';
+
+                setTimeout(() => {
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                    resolve(result);
+                }, 300);
+            }
+        };
+
+        let reasonTextarea;
+
+        const handleSubmit = () => {
+            const reason = reasonTextarea ? reasonTextarea.value.trim() : '';
+            if (!reason) {
+                // Highlight textarea if empty
+                if (reasonTextarea) {
+                    reasonTextarea.style.borderColor = '#f44336';
+                    reasonTextarea.style.boxShadow = '0 0 0 3px rgba(244, 67, 54, 0.2)';
+                    reasonTextarea.placeholder = 'Please enter a reason for rejection...';
+                    setTimeout(() => {
+                        reasonTextarea.style.borderColor = '#444';
+                        reasonTextarea.style.boxShadow = 'none';
+                        reasonTextarea.placeholder = 'Enter detailed reason for rejection...';
+                    }, 2000);
+                }
+                return;
+            }
+            closeModal({ confirmed: true, reason: reason });
+        };
+
+        // Handle Enter key to submit (Ctrl+Enter for new line)
+        const handleKeydown = (e) => {
+            if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit();
+            }
+        };
+
+        const modalOverlay = $({
+            tag: 'div',
+            att: { id: modalId },
+            style: {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                backdropFilter: 'blur(5px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: '99999',
+                opacity: '0',
+                transition: 'opacity 0.3s ease',
+                fontFamily: "'Inter', 'Segoe UI', sans-serif"
+            },
+            event: {
+                type: 'click',
+                method: (e) => {
+                    if (e.target.id === modalId) closeModal({ confirmed: false, reason: '' });
+                }
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    att: { className: 'modal-content' },
+                    style: {
+                        backgroundColor: '#1e1e1e',
+                        width: '90%',
+                        maxWidth: '500px',
+                        borderRadius: '24px',
+                        padding: '32px',
+                        border: '1px solid #333',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        transform: 'scale(0.9) translateY(20px)',
+                        transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    },
+                    child: [
+                        // Header with icon
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '16px',
+                                marginBottom: '24px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        width: '48px',
+                                        height: '48px',
+                                        borderRadius: '16px',
+                                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#f44336',
+                                        fontSize: '24px',
+                                        flexShrink: '0'
+                                    },
+                                    child: [
+                                        $({ tag: 'span', att: { className: 'fa-solid fa-xmark' }, style: { margin: 'auto' } })
+                                    ]
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: { flex: '1' },
+                                    child: [
+                                        $({
+                                            tag: 'h3',
+                                            text: title,
+                                            style: {
+                                                color: '#fff',
+                                                fontSize: '18px',
+                                                fontWeight: '700',
+                                                margin: '0 0 4px 0'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'p',
+                                            text: 'Please provide a reason for rejection',
+                                            style: {
+                                                color: '#888',
+                                                fontSize: '13px',
+                                                margin: '0'
+                                            }
+                                        })
+                                    ]
+                                })
+                            ]
+                        }),
+
+                        // Textarea
+                        $({
+                            tag: 'textarea',
+                            style: {
+                                width: '100%',
+                                minHeight: '120px',
+                                backgroundColor: '#2a2a2a',
+                                border: '1px solid #444',
+                                borderRadius: '12px',
+                                color: '#fff',
+                                padding: '16px',
+                                fontSize: '14px',
+                                lineHeight: '1.6',
+                                resize: 'vertical',
+                                outline: 'none',
+                                transition: 'all 0.2s ease',
+                                fontFamily: "'Inter', 'Segoe UI', sans-serif",
+                                marginBottom: '8px',
+                                boxSizing: 'border-box'
+                            },
+                            att: {
+                                placeholder: 'Enter detailed reason for rejection...',
+                                autofocus: true
+                            },
+                            elementHandler: (el) => {
+                                reasonTextarea = el;
+                                el.addEventListener('keydown', handleKeydown);
+                                el.addEventListener('focus', () => {
+                                    el.style.borderColor = '#f44336';
+                                    el.style.boxShadow = '0 0 0 3px rgba(244, 67, 54, 0.1)';
+                                });
+                                el.addEventListener('blur', () => {
+                                    el.style.borderColor = '#444';
+                                    el.style.boxShadow = 'none';
+                                });
+                            }
+                        }),
+
+                        // Character count
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '24px',
+                                padding: '0 4px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: 'Press Enter to submit, Ctrl+Enter for new line',
+                                    style: {
+                                        color: '#666',
+                                        fontSize: '11px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    att: { id: 'char-count' },
+                                    text: '0 / 1000',
+                                    style: {
+                                        color: '#666',
+                                        fontSize: '11px'
+                                    }
+                                })
+                            ]
+                        }),
+
+                        // Buttons
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                gap: '12px'
+                            },
+                            child: [
+                                // Cancel Button
+                                $({
+                                    tag: 'button',
+                                    text: 'Cancel',
+                                    style: {
+                                        flex: '1',
+                                        backgroundColor: '#333',
+                                        border: 'none',
+                                        color: '#fff',
+                                        padding: '14px 0',
+                                        borderRadius: '12px',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: () => closeModal({ confirmed: false, reason: '' }),
+                                        type2: 'mouseenter',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#444';
+                                            e.target.style.transform = 'translateY(-1px)';
+                                        },
+                                        type3: 'mouseleave',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = '#333';
+                                            e.target.style.transform = 'translateY(0)';
+                                        }
+                                    }
+                                }),
+                                // Reject Button
+                                $({
+                                    tag: 'button',
+                                    text: 'Reject Document',
+                                    style: {
+                                        flex: '1',
+                                        backgroundColor: '#f44336',
+                                        border: 'none',
+                                        color: '#fff',
+                                        padding: '14px 0',
+                                        borderRadius: '12px',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 4px 12px rgba(244, 67, 54, 0.3)'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: handleSubmit,
+                                        type2: 'mouseenter',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#d32f2f';
+                                            e.target.style.transform = 'translateY(-1px)';
+                                            e.target.style.boxShadow = '0 6px 16px rgba(244, 67, 54, 0.4)';
+                                        },
+                                        type3: 'mouseleave',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = '#f44336';
+                                            e.target.style.transform = 'translateY(0)';
+                                            e.target.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
+                                        }
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                })
+            ]
+        });
+
+        document.body.appendChild(modalOverlay);
+
+        // Trigger animations
+        setTimeout(() => {
+            modalOverlay.style.opacity = '1';
+            const content = modalOverlay.querySelector('.modal-content');
+            if (content) content.style.transform = 'scale(1) translateY(0)';
+
+            // Focus textarea
+            if (reasonTextarea) {
+                reasonTextarea.focus();
+            }
+        }, 10);
+
+        // Character count update
+        if (reasonTextarea) {
+            reasonTextarea.addEventListener('input', () => {
+                const count = document.getElementById('char-count');
+                if (count) {
+                    const length = reasonTextarea.value.length;
+                    count.textContent = `${length} / 1000`;
+                    count.style.color = length > 900 ? '#f44336' : length > 750 ? '#ff9800' : '#666';
+                }
+            });
+        }
     });
 };

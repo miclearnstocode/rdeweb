@@ -939,7 +939,7 @@ export const Research = () => {
             }
         })
 
-        // View Comments button (replacing View button)
+        // View Comments button (always show)
         const viewCommentsBtn = $({
             tag: 'button',
             att: { className: 'action-btn view-comments-btn', title: 'View Comments' },
@@ -960,7 +960,10 @@ export const Research = () => {
             }
         })
 
-        // Edit button
+        // Edit button (show for most statuses except rejected, revision_accepted, revision_rejected)
+        const currentStatus = (rowData.status || '').toLowerCase();
+        const showEdit = !['rejected', 'revision_accepted', 'revision_rejected'].includes(currentStatus);
+
         const editBtn = $({
             tag: 'button',
             att: { className: 'action-btn edit-btn', title: 'Edit Document' },
@@ -981,7 +984,7 @@ export const Research = () => {
             }
         })
 
-        // Delete button
+        // Delete button (show for most statuses)
         const deleteBtn = $({
             tag: 'button',
             att: { className: 'action-btn delete-btn', title: 'Delete Document' },
@@ -1003,9 +1006,7 @@ export const Research = () => {
         })
 
         // Resubmit button (show only if rejected)
-        const normalizedStatus = rowData.status ? rowData.status.toLowerCase() : ''
-
-        if (normalizedStatus === 'rejected') {
+        if (currentStatus === 'rejected') {
             const resubmitBtn = $({
                 tag: 'button',
                 att: { className: 'action-btn resubmit-btn', title: 'Resubmit Document' },
@@ -1038,12 +1039,11 @@ export const Research = () => {
         container.appendChild(viewCommentsBtn)
 
         if (!hideEditDelete) {
-            if (normalizedStatus !== 'rejected') {
+            if (showEdit) {
                 container.appendChild(editBtn)
             }
             container.appendChild(deleteBtn)
         }
-
 
         return container
     }
@@ -1453,10 +1453,26 @@ export const Research = () => {
     const createTableRow = (doc) => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
 
-        // Determine status: prioritize revision_status over main status
-        let status = doc.revision_status || doc.status
-        if (!status || status === 'NULL' || status === 'null') {
-            status = 'pending'
+        // Get document data
+        let originalStatus = doc.status || 'pending';
+        const presentationDate = doc.date_of_presentation ? new Date(doc.date_of_presentation) : null;
+        const currentDate = new Date();
+
+        // Dynamic status logic
+        let status;
+        if (originalStatus === 'rejected') {
+            status = 'rejected';
+        } else if (presentationDate && presentationDate < currentDate) {
+            // Presentation has passed - show revision status
+            status = doc.revision_status || 'revision_pending';
+        } else {
+            // No presentation date or future date - show original status
+            status = originalStatus;
+        }
+
+        // Clean up NULL values
+        if (status === 'NULL' || status === 'null') {
+            status = 'pending';
         }
 
         // Handle file display with proper icons for Google Drive files
@@ -1553,11 +1569,12 @@ export const Research = () => {
         return row
     }
 
-    // Create Revise Button for Actions column
     const createReviseButton = (doc) => {
-        // Only show if revision_status is pending or rejected
-        const revisionStatus = doc.revision_status || ''
-        const isEligible = revisionStatus === 'revision_pending' || revisionStatus === 'revision_rejected'
+        // Get the current display status
+        const currentStatus = (doc.status || '').toLowerCase();
+
+        // Only show if status is revision_pending or revision_rejected
+        const isEligible = currentStatus === 'revision_pending' || currentStatus === 'revision_rejected';
 
         if (!isEligible) return null
 
@@ -1587,6 +1604,7 @@ export const Research = () => {
 
         return reviseBtn
     }
+
     // Open Revision Modal
     const openRevisionModal = async (doc) => {
         const modal = $({
@@ -2164,8 +2182,7 @@ export const Research = () => {
 
                         // Show success message
                         document.body.appendChild(ConfirmationAlert(result.message, () => {
-                            // Optional: refresh the list
-                            // loadDocuments()
+                            loadDocuments()
                         }))
                     } else {
                         alert('Failed to delete: ' + result.message)
@@ -3316,7 +3333,7 @@ export const Research = () => {
                                         presenter: researchDoc.presenter || '—',
                                         author: researchDoc.author || '—',
                                         coAuthors: coAuthors,
-                                        status: endorsement.status || 'pending',
+                                        status: researchDoc.status || 'pending',
                                         revision_status: endorsement.revision_status || researchDoc.revision_status || null,
                                         revision_count: endorsement.revision_count || researchDoc.revision_count || 0,
                                         revised_title: endorsement.revised_title || researchDoc.revised_title || null,

@@ -314,3 +314,110 @@ Stack trace:
 [06-May-2026 13:59:29 Asia/Manila] New file uploaded: ID = 1T5v4kWWGHXWJYEO2sxKpW23Vv1_tx4GF, URL = https://drive.google.com/file/d/1T5v4kWWGHXWJYEO2sxKpW23Vv1_tx4GF/preview
 [06-May-2026 13:59:29 Asia/Manila] Endorsement status reset to NULL for ID: 543
 [06-May-2026 13:59:29 Asia/Manila] Revision submitted successfully for research ID: 536, revision count: 2
+[06-May-2026 15:19:59 Asia/Manila] === START submitRevision ===
+[06-May-2026 15:19:59 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 15:25:31 Asia/Manila] === START submitRevision ===
+[06-May-2026 15:25:31 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 15:25:31 Asia/Manila] GDrive: Uploading Revised Proposal v2 - research_paper.pdf to folder 1frKCtlnsG_jgDVSGchjU7RpgukIaGFjc
+[06-May-2026 15:25:35 Asia/Manila] File 19rWdgbM3pLev1yT2XDTYklioKL9VPD8- is already public
+[06-May-2026 15:25:35 Asia/Manila] New file uploaded: ID = 19rWdgbM3pLev1yT2XDTYklioKL9VPD8-, URL = https://drive.google.com/file/d/19rWdgbM3pLev1yT2XDTYklioKL9VPD8-/preview
+[06-May-2026 15:25:35 Asia/Manila] Endorsement status reset to NULL for ID: 544
+[06-May-2026 15:25:35 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 2
+[06-May-2026 16:30:29 Asia/Manila] === START submitRevision ===
+[06-May-2026 16:30:29 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 16:30:29 Asia/Manila] GDrive: Uploading Revised Proposal v3 - transactionDetails (2-8-2026).pdf to folder 1frKCtlnsG_jgDVSGchjU7RpgukIaGFjc
+[06-May-2026 16:30:33 Asia/Manila] File 1BI1klB-9biL6e9bjqR7wC7juzFaqn5vL is already public
+[06-May-2026 16:30:33 Asia/Manila] New file uploaded: ID = 1BI1klB-9biL6e9bjqR7wC7juzFaqn5vL, URL = https://drive.google.com/file/d/1BI1klB-9biL6e9bjqR7wC7juzFaqn5vL/preview
+[06-May-2026 16:30:33 Asia/Manila] Endorsement status reset to NULL for ID: 544
+[06-May-2026 16:30:33 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 3
+[06-May-2026 16:35:07 Asia/Manila] === START submitRevision ===
+[06-May-2026 16:35:07 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 16:35:07 Asia/Manila] GDrive: Uploading Revised Proposal v4 - Profile.pdf to folder 1frKCtlnsG_jgDVSGchjU7RpgukIaGFjc
+[06-May-2026 16:35:12 Asia/Manila] File 1GvmOv_UmlvoJHtmQVTyuJY_Payj4ixGr is already public
+[06-May-2026 16:35:12 Asia/Manila] New file uploaded: ID = 1GvmOv_UmlvoJHtmQVTyuJY_Payj4ixGr, URL = https://drive.google.com/file/d/1GvmOv_UmlvoJHtmQVTyuJY_Payj4ixGr/preview
+[06-May-2026 16:35:12 Asia/Manila] Endorsement status reset to NULL for ID: 544
+[06-May-2026 16:35:12 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 4
+[06-May-2026 16:38:12 Asia/Manila] === START submitRevision ===
+[06-May-2026 16:38:12 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 16:38:12 Asia/Manila] GDrive: Uploading Revised Proposal v5 - Print tab.pdf to folder 1frKCtlnsG_jgDVSGchjU7RpgukIaGFjc
+[06-May-2026 16:38:16 Asia/Manila] File 1jlbd29hHW2qP6VZoprtf166NxrfBL-B6 is already public
+[06-May-2026 16:38:16 Asia/Manila] New file uploaded: ID = 1jlbd29hHW2qP6VZoprtf166NxrfBL-B6, URL = https://drive.google.com/file/d/1jlbd29hHW2qP6VZoprtf166NxrfBL-B6/preview
+[06-May-2026 16:38:16 Asia/Manila] Endorsement status reset to NULL for ID: 544
+[06-May-2026 16:38:16 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 5
+[06-May-2026 16:39:41 Asia/Manila] === START submitRevision ===
+[06-May-2026 16:39:41 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 16:39:41 Asia/Manila] GDrive: Uploading Revised Proposal v6 - Fisheries Department - Pes to Pes (1).pdf to folder 1frKCtlnsG_jgDVSGchjU7RpgukIaGFjc
+[06-May-2026 16:39:47 Asia/Manila] File 1D34FQABZ5srKRRjmPYAQ4cBSNs2Zrq5X is already public
+[06-May-2026 16:39:47 Asia/Manila] New file uploaded: ID = 1D34FQABZ5srKRRjmPYAQ4cBSNs2Zrq5X, URL = https://drive.google.com/file/d/1D34FQABZ5srKRRjmPYAQ4cBSNs2Zrq5X/preview
+[06-May-2026 16:39:47 Asia/Manila] Endorsement status reset to NULL for ID: 544
+[06-May-2026 16:39:47 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 6
+[06-May-2026 16:42:19 Asia/Manila] === START submitRevision ===
+[06-May-2026 16:42:19 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 16:42:19 Asia/Manila] GDrive: Uploading Revised Proposal v7 - Updateedddd.pdf to folder 1frKCtlnsG_jgDVSGchjU7RpgukIaGFjc
+[06-May-2026 16:42:28 Asia/Manila] File 1xsAFkXjqmXBDLnlmCBPzzXzgGVs_cN_6 is already public
+[06-May-2026 16:42:28 Asia/Manila] New file uploaded: ID = 1xsAFkXjqmXBDLnlmCBPzzXzgGVs_cN_6, URL = https://drive.google.com/file/d/1xsAFkXjqmXBDLnlmCBPzzXzgGVs_cN_6/preview
+[06-May-2026 16:42:28 Asia/Manila] Endorsement status reset to NULL for ID: 544
+[06-May-2026 16:42:28 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 7
+[06-May-2026 16:42:30 Asia/Manila] === START submitRevision ===
+[06-May-2026 16:42:30 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 16:48:39 Asia/Manila] === START submitRevision ===
+[06-May-2026 16:48:39 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 16:48:39 Asia/Manila] GDrive: Uploading Revised Proposal v8 - good day.pdf to folder 1frKCtlnsG_jgDVSGchjU7RpgukIaGFjc
+[06-May-2026 16:48:44 Asia/Manila] File 1Cdr623gnliCyucMMKcSV2g4W94yaHpbW is already public
+[06-May-2026 16:48:44 Asia/Manila] New file uploaded: ID = 1Cdr623gnliCyucMMKcSV2g4W94yaHpbW, URL = https://drive.google.com/file/d/1Cdr623gnliCyucMMKcSV2g4W94yaHpbW/preview
+[06-May-2026 16:48:44 Asia/Manila] Endorsement status reset to NULL for ID: 544
+[06-May-2026 16:48:44 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 8

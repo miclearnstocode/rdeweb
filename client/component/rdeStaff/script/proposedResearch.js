@@ -1,4 +1,4 @@
-import { $, Waiting } from "../../../lib/lib.js"
+import { $, Waiting, RejectCommentModal } from "../../../lib/lib.js"
 
 export const ProposedResearch = () => {
     let mainTableContainer
@@ -305,6 +305,9 @@ export const ProposedResearch = () => {
     const handleRejectRevision = async () => {
         if (!currentRevisionItem) return
 
+        const modalResult = await RejectCommentModal('Reject Revised Submission');
+        if (!modalResult.confirmed) return;
+
         showLoading()
 
         try {
@@ -314,16 +317,17 @@ export const ProposedResearch = () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    action: 'update_revision_status',
-                    research_id: currentRevisionItem.id,
-                    status: 'revision_rejected'
+                    action: 'reject_revised',
+                    doc_id: currentRevisionItem.endorsement_id,
+                    reason: modalResult.reason,
+                    type: `Rejected Revised Submission: ${currentRevisionItem.eventName || ''}`,
+                    url: currentRevisionItem.revised_drive_view_url || ''
                 })
             })
 
-            const result = await response.json()
+            const apiResult = await response.json()
 
-            if (result.status) {
-                // Refresh data
+            if (apiResult.status) {
                 researchData = []
                 filteredData = []
                 hasMore = true
@@ -331,10 +335,10 @@ export const ProposedResearch = () => {
                 await fetchProposedResearch()
                 closeRevisionModal()
             } else {
-                alert('Error updating status: ' + result.message)
+                alert('Error: ' + apiResult.message)
             }
         } catch (error) {
-            console.error('Error rejecting revision:', error)
+            console.error('Error:', error)
             alert('Error: ' + error.message)
         } finally {
             hideLoading()

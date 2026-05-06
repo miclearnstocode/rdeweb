@@ -744,33 +744,7 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
     
     return $paperTrailNo;
 }
-// REVISION WORKFLOW HELPER FUNCTIONS
-function checkAndUpdateRevisionStatus($con, $researchfileId, $eventId) {
-    // Check if event presentation date has passed
-    $eventQuery = "SELECT date_of_presentation FROM event_list WHERE id = ? LIMIT 1";
-    $eventStmt = $con->prepare($eventQuery);
-    $eventStmt->bind_param("i", $eventId);
-    $eventStmt->execute();
-    $eventResult = $eventStmt->get_result();
-    $eventRow = $eventResult->fetch_assoc();
-    
-    if ($eventRow && !empty($eventRow['date_of_presentation'])) {
-        $presentationDate = new DateTime($eventRow['date_of_presentation']);
-        $now = new DateTime();
-        
-        if ($presentationDate < $now) {
-            // Update revision status to pending if not already set
-            $updateQuery = "UPDATE researchfile 
-                           SET revision_status = 'revision_pending' 
-                           WHERE id = ? AND (revision_status IS NULL OR revision_status = 'revision_rejected')";
-            $updateStmt = $con->prepare($updateQuery);
-            $updateStmt->bind_param("i", $researchfileId);
-            $updateStmt->execute();
-            return true;
-        }
-    }
-    return false;
-}
+
 
 function getResearchFilesForRevision($con, $userId) {
     $query = "SELECT 
@@ -1872,12 +1846,13 @@ if (isset($_POST['researchReviewed'])) {
         $userId = $_SESSION['userId'] ?? 0;
         
         // Automated Revision Check: Mark records as pending revision if presentation date has passed
+        // ONLY if the status is currently NULL (not yet processed/notified)
         $updateRevisionQuery = "UPDATE researchfile rf
                                JOIN event_list el ON rf.event_id = el.id
                                SET rf.revision_status = 'revision_pending'
                                WHERE rf.senderid = ? 
                                AND (el.date_of_presentation < NOW() OR (DATE(el.date_of_presentation) <= CURDATE() AND el.date_of_presentation IS NOT NULL))
-                               AND (rf.revision_status IS NULL OR rf.revision_status = 'revision_rejected')";
+                               AND rf.revision_status IS NULL";
         $stmtUp = $con->prepare($updateRevisionQuery);
         if ($stmtUp) {
             $stmtUp->bind_param("i", $userId);
@@ -1899,27 +1874,31 @@ if (isset($_POST['researchReviewed'])) {
             $endorsement->ResearchDocs = [];
             $enID = $val['id'];
             
-            // UPDATED QUERY to include program_drive_view_url
+            // UPDATED QUERY to include program_drive_view_url and status/date_of_presentation
             $queryResearch = "SELECT 
-                researchfile.author,
-                researchfile.coauthor,
-                researchfile.presenter,
-                researchfile.title,
-                researchfile.id as docId,
-                researchfile.category,
-                researchfile.drive_view_url as file,
-                researchfile.drive_file_id,
-                researchfile.drive_download_url,
-                researchfile.drive_folder_id,
-                researchfile.drive_event_folder_id,
-                researchfile.drive_center_folder_id,
-                researchfile.program_drive_view_url,
-                researchfile.program_drive_file_id,
-                researchfile.revision_status,
-                researchfile.revision_count,
-                researchfile.title_changed,
-                researchfile.event_id
-            FROM `researchfile` WHERE `senderid`='$userId' AND `endorsementid`='$enID'";
+                rf.author,
+                rf.coauthor,
+                rf.presenter,
+                rf.title,
+                rf.id as docId,
+                rf.category,
+                rf.drive_view_url as file,
+                rf.drive_file_id,
+                rf.drive_download_url,
+                rf.drive_folder_id,
+                rf.drive_event_folder_id,
+                rf.drive_center_folder_id,
+                rf.program_drive_view_url,
+                rf.program_drive_file_id,
+                rf.revision_status,
+                rf.revision_count,
+                rf.title_changed,
+                rf.event_id,
+                rf.status,
+                el.date_of_presentation
+            FROM `researchfile` rf
+            LEFT JOIN `event_list` el ON rf.event_id = el.id
+            WHERE rf.senderid='$userId' AND rf.endorsementid='$enID'";
             
             foreach ($con->query($queryResearch) as $res) {
                 $researchDocs = new stdClass();
@@ -1941,7 +1920,24 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->revision_count = $res['revision_count'];
                 $researchDocs->title_changed = $res['title_changed'];
                 $researchDocs->event_id = $res['event_id'];
+                $researchDocs->date_of_presentation = $res['date_of_presentation'];
                 
+                // Get current date for comparison
+                $currentDate = date('Y-m-d H:i:s');
+                $presentationDate = $res['date_of_presentation'] ?? null;
+
+                // Dynamic status logic
+                if ($res['status'] === 'rejected') {
+                    $displayStatus = 'rejected';
+                } else if (!empty($presentationDate) && $presentationDate < $currentDate) {
+                    // Presentation has passed - show revision status
+                    $displayStatus = !empty($res['revision_status']) ? $res['revision_status'] : 'revision_pending';
+                } else {
+                    // No presentation date or future date - show original status
+                    $displayStatus = $res['status'] ?? 'pending';
+                }
+
+                $researchDocs->status = $displayStatus;
                 $endorsement->ResearchDocs[] = $researchDocs;
             }
             $response->list[] = $endorsement;
@@ -2273,34 +2269,36 @@ if (isset($_POST['getResearch'])) {
         $accessRow = $accessResult->fetch_assoc();
         
         // Automated Revision Check: Mark records as pending revision if presentation date has passed
-        // For regular users, only check their own records. For admins, check all.
+        // ONLY if the status is currently NULL
         $statusUpdateFilter = ($accessRow && $accessRow['researchaccess'] !== null) ? "" : " AND rf.senderid = '$serderId'";
         $updateRevisionQuery = "UPDATE researchfile rf
                                JOIN event_list el ON rf.event_id = el.id
                                SET rf.revision_status = 'revision_pending'
                                WHERE (el.date_of_presentation < NOW() OR (DATE(el.date_of_presentation) <= CURDATE() AND el.date_of_presentation IS NOT NULL))
-                               AND (rf.revision_status IS NULL OR rf.revision_status = 'revision_rejected')
+                               AND rf.revision_status IS NULL
                                $statusUpdateFilter";
         $con->query($updateRevisionQuery);
-        
+
         if ($accessRow && $accessRow['researchaccess'] !== null) {
             // Query for users with research access - keyset pagination
             $query = "SELECT 
-                researchfile.id,
-                researchfile.author,
-                researchfile.drive_view_url as file_url,
-                researchfile.title,
-                researchfile.category,
-                researchfile.campus,
-                researchfile.coauthor,
-                researchfile.presenter,
-                researchfile.status,
-                researchfile.revision_status,
-                researchfile.revision_count,
-                researchfile.title_changed
-            FROM `researchfile`
-            WHERE id > $lastId
-            ORDER BY id ASC
+                rf.id,
+                rf.author,
+                rf.drive_view_url as file_url,
+                rf.title,
+                rf.category,
+                rf.campus,
+                rf.coauthor,
+                rf.presenter,
+                rf.status,
+                rf.revision_status,
+                rf.revision_count,
+                rf.title_changed,
+                el.date_of_presentation
+            FROM `researchfile` rf
+            LEFT JOIN `event_list` el ON rf.event_id = el.id
+            WHERE rf.id > $lastId
+            ORDER BY rf.id ASC
             LIMIT $limit";
             
             $result = $con->query($query);
@@ -2315,12 +2313,18 @@ if (isset($_POST['getResearch'])) {
                 $data->campus = $row['campus'];
                 $data->coauthor = $row['coauthor'];
                 $data->presenter = $row['presenter'];
-                $data->status = $row['status'];
+                
+                // Dynamic Status Logic
+                $displayStatus = $row['status'];
+                if (!empty($row['date_of_presentation'])) {
+                    $displayStatus = $row['revision_status'] ?: 'revision_pending';
+                }
+                $data->status = $displayStatus;
+                
                 $data->revision_status = $row['revision_status'];
                 $data->revision_count = $row['revision_count'];
                 $data->title_changed = $row['title_changed'];
                 $data->file_type = 'drive';
-                
                 $response->list[] = $data;
                 $response->lastId = $row['id'];
             }
@@ -2334,24 +2338,26 @@ if (isset($_POST['getResearch'])) {
         } else {
             // Query for regular users - keyset pagination
             $query = "SELECT 
-                researchfile.id,
-                researchfile.author,
-                researchfile.drive_view_url as file_url,
-                researchfile.title,
-                researchfile.category,
-                researchfile.campus,
-                researchfile.coauthor,
-                researchfile.presenter,
-                researchfile.status,
-                researchfile.year,
-                researchfile.month,
-                researchfile.date,
-                researchfile.revision_status,
-                researchfile.revision_count,
-                researchfile.title_changed
-            FROM `researchfile` 
-            WHERE `senderid`='$serderId' AND id > $lastId
-            ORDER BY id ASC
+                rf.id,
+                rf.author,
+                rf.drive_view_url as file_url,
+                rf.title,
+                rf.category,
+                rf.campus,
+                rf.coauthor,
+                rf.presenter,
+                rf.status,
+                rf.year,
+                rf.month,
+                rf.date,
+                rf.revision_status,
+                rf.revision_count,
+                rf.title_changed,
+                el.date_of_presentation
+            FROM `researchfile` rf
+            LEFT JOIN `event_list` el ON rf.event_id = el.id
+            WHERE rf.senderid='$serderId' AND rf.id > $lastId
+            ORDER BY rf.id ASC
             LIMIT $limit";
             
             $result = $con->query($query);
@@ -2366,7 +2372,22 @@ if (isset($_POST['getResearch'])) {
                 $data->campus = $row['campus'];
                 $data->coauthor = $row['coauthor'];
                 $data->presenter = $row['presenter'];
-                $data->status = $row['status'];
+                
+                // Get current date for comparison
+                $currentDate = date('Y-m-d H:i:s');
+                $presentationDate = $row['date_of_presentation'] ?? null;
+
+                // Dynamic status logic
+                if ($row['status'] === 'rejected') {
+                    $displayStatus = 'rejected';
+                } else if (!empty($presentationDate) && $presentationDate < $currentDate) {
+                    // Presentation has passed - show revision status
+                    $displayStatus = !empty($row['revision_status']) ? $row['revision_status'] : 'revision_pending';
+                } else {
+                    // No presentation date or future date - show original status
+                    $displayStatus = $row['status'] ?? 'pending';
+                }
+                $data->status = $displayStatus;
                 $data->revision_status = $row['revision_status'];
                 $data->revision_count = $row['revision_count'];
                 $data->title_changed = $row['title_changed'];
@@ -4127,38 +4148,7 @@ if (isset($_POST['resubmitDocument'])) {
     exit();
 }
 
-if (isset($_POST['getResearchForRevision'])) {
-    $response = new stdClass();
-    $response->status = false;
-    $response->message = '';
-    $response->list = [];
-    
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $userId = $_SESSION['userId'] ?? 0;
-        
-        // Automated Revision Check first to ensure list is fresh
-        $updateRevisionQuery = "UPDATE researchfile rf
-                               JOIN event_list el ON rf.event_id = el.id
-                               SET rf.revision_status = 'revision_pending'
-                               WHERE rf.senderid = ? 
-                               AND el.date_of_presentation < NOW()
-                               AND rf.status = 'accepted'
-                               AND (rf.revision_status IS NULL 
-                                    OR rf.revision_status = 'revision_rejected'
-                                    OR rf.revision_status = 'revision_pending')";
-        $stmtUp = $con->prepare($updateRevisionQuery);
-        if ($stmtUp) {
-            $stmtUp->bind_param("i", $userId);
-            $stmtUp->execute();
-            $stmtUp->close();
-        }
-        
-        $response->list = getResearchFilesForRevision($con, $userId);
-        $response->status = true;
-    }
-    echo json_encode($response);
-    exit();
-}
+
 
 if (isset($_POST['submitRevision'])) {
     error_log("=== START submitRevision ===");
