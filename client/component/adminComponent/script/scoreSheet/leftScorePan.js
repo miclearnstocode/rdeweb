@@ -1,172 +1,169 @@
-import {$, Base, Current, Path, Request} from '../../../../lib/lib.js'
+import { $, Base, Current, Path, Request } from '../../../../lib/lib.js'
+
+
+export const LeftScore = (eventId, scId) => {
 
 
 
+    let listBodyDom, Total = 0, totalP = 0
 
+    const dataList = []
 
-export const LeftScore=(eventId,scId)=>{
-
-
-
-    let listBodyDom,Total=0,totalP=0
-
-    const dataList=[]
-
-    const Enqueue=(val)=>{
+    const Enqueue = (val) => {
 
         dataList.push(val)
 
     }
 
-    const Update=()=>{
+    const Update = () => {
 
-        listBodyDom.innerHTML=''
+        listBodyDom.innerHTML = ''
 
-        Total=0
+        Total = 0
 
-        dataList.forEach(val=>{
+        dataList.forEach(val => {
 
             listBodyDom.appendChild(Criteria({
 
-                name:val.name,
+                name: val.name,
 
-                description:val.description,
+                description: val.description,
 
-                percentage:val.percentage
+                percentage: val.percentage
 
             }))
 
-            Total+=(val.percentage*1)
+            Total += (val.percentage * 1)
 
         })
 
-        totalP.innerText=Total+' %'
+        totalP.innerText = Total + ' %'
 
     }
 
-    const Criteria=({name,description,percentage})=>{
+    const Criteria = ({ name, description, percentage }) => {
 
-        return($({
+        return ($({
 
-            tag:'div',
+            tag: 'div',
 
-            style:{
+            style: {
 
-                height:'fit-content',
+                height: 'fit-content',
 
-                width:'98%',
+                width: '98%',
 
-                border:'solid thin #555',
+                border: 'solid thin #555',
 
-                borderRadius:'.3rem',
+                borderRadius: '.3rem',
 
-                textAlign:'left',
+                textAlign: 'left',
 
-                margin:'1vh auto',
+                margin: '1vh auto',
 
-                backgroundColor:'#111',
+                backgroundColor: '#111',
 
-                display:'flex',
+                display: 'flex',
 
             },
 
-            child:[
+            child: [
 
                 $({
 
-                    tag:'div',
+                    tag: 'div',
 
-                    style:{
+                    style: {
 
-                        width:'90%'
+                        width: '90%'
 
                     },
 
-                    child:[
+                    child: [
 
                         $({
 
-                            tag:'div',
+                            tag: 'div',
 
-                            style:{
+                            style: {
 
-                                height:'fit-contetn',
+                                height: 'fit-contetn',
 
-                                width:'100%',
+                                width: '100%',
 
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                                fontSize:'1vw',
+                                fontSize: '1vw',
 
-                                color:'deepskyblue',
+                                color: 'deepskyblue',
 
-                                textIndent:'1vw',
+                                textIndent: '1vw',
 
-                                borderBottom:'solid thin #555'
+                                borderBottom: 'solid thin #555'
 
                             },
 
-                            text:name
+                            text: name
 
                         }),
 
                         $({
 
-                            tag:'div',
+                            tag: 'div',
 
-                            style:{
+                            style: {
 
-                                height:'fit-contetn',
+                                height: 'fit-contetn',
 
-                                width:'100%',
+                                width: '100%',
 
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                                fontSize:'1vw',
+                                fontSize: '1vw',
 
-                                color:'#999',
+                                color: '#999',
 
-                                textIndent:'1vw'
+                                textIndent: '1vw'
 
                             },
 
-                            text:`"${description}"`
+                            text: `"${description}"`
 
                         }),
 
                         $({
 
-                            tag:'div',
+                            tag: 'div',
 
-                            style:{
+                            style: {
 
-                                height:'fit-contetn',
+                                height: 'fit-contetn',
 
-                                width:'100%',
+                                width: '100%',
 
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                                fontSize:'1vw',
+                                fontSize: '1vw',
 
-                                color:'#999',
+                                color: '#999',
 
-                                textIndent:'1vw',
+                                textIndent: '1vw',
 
-                                borderTop:'solid thin #555'
+                                borderTop: 'solid thin #555'
 
                             },
 
-                            child:[
+                            child: [
 
                                 $({
 
-                                    tag:'span',
+                                    tag: 'span',
 
-                                    text:'Percentage : ',
+                                    text: 'Percentage : ',
 
-                                    style:{
+                                    style: {
 
-                                        color:'deepskyblue'
+                                        color: 'deepskyblue'
 
                                     }
 
@@ -174,13 +171,13 @@ export const LeftScore=(eventId,scId)=>{
 
                                 $({
 
-                                    tag:'span',
+                                    tag: 'span',
 
-                                    text:percentage,
+                                    text: percentage,
 
-                                    style:{
+                                    style: {
 
-                                        color:'#bbb'
+                                        color: '#bbb'
 
                                     }
 
@@ -196,51 +193,51 @@ export const LeftScore=(eventId,scId)=>{
 
                 $({
 
-                    tag:'div',
+                    tag: 'div',
 
-                    style:{
+                    style: {
 
-                        width:'10%',
+                        width: '10%',
 
-                        display:'flex'
+                        display: 'flex'
 
                     },
 
-                    child:[
+                    child: [
 
                         $({
 
-                            tag:'div',
+                            tag: 'div',
 
-                            att:{
+                            att: {
 
-                                className:'fa-solid fa-trash-can'
-
-                            },
-
-                            style:{
-
-                                margin:'auto',
-
-                                fontSize:'1.5vw',
-
-                                color:'deepskyblue',
-
-                                cursor:'pointer'
+                                className: 'fa-solid fa-trash-can'
 
                             },
 
-                            event:{
+                            style: {
 
-                                type:'click',
+                                margin: 'auto',
 
-                                method:()=>{
+                                fontSize: '1.5vw',
 
-                                    dataList.forEach((val,i)=>{
+                                color: 'deepskyblue',
 
-                                        if (name===val.name){
+                                cursor: 'pointer'
 
-                                            dataList.splice(i,1)
+                            },
+
+                            event: {
+
+                                type: 'click',
+
+                                method: () => {
+
+                                    dataList.forEach((val, i) => {
+
+                                        if (name === val.name) {
+
+                                            dataList.splice(i, 1)
 
                                             Update()
 
@@ -278,33 +275,33 @@ export const LeftScore=(eventId,scId)=>{
 
     let mainPanel
 
-    const AddPop=()=>{
+    const AddPop = () => {
 
         let popMain
 
-        const data={
+        const data = {
 
-            name:'',
+            name: '',
 
-            description:'',
+            description: '',
 
-            percentage:'',
+            percentage: '',
 
         }
 
-        const Submit=(event)=>{
+        const Submit = (event) => {
 
             event.preventDefault()
 
-            let state= true
+            let state = true
 
 
 
             for (let val of Object.keys(data)) {
 
-                if(data[val]===''){
+                if (data[val] === '') {
 
-                    state=false
+                    state = false
 
                     break
 
@@ -312,9 +309,9 @@ export const LeftScore=(eventId,scId)=>{
 
             }
 
-            if(state){
+            if (state) {
 
-                if(Total<=100){
+                if (Total <= 100) {
 
                     Enqueue(data)
 
@@ -322,7 +319,7 @@ export const LeftScore=(eventId,scId)=>{
 
                     popMain.remove()
 
-                }else {
+                } else {
 
                     alert("You reach the maximum percentage.")
 
@@ -336,59 +333,59 @@ export const LeftScore=(eventId,scId)=>{
 
 
 
-        const Close=()=>{
+        const Close = () => {
 
 
 
-            return($({
+            return ($({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    width:'98%',
+                    width: '98%',
 
-                    height:'fit-content',
+                    height: 'fit-content',
 
-                    textAlign:'right',
+                    textAlign: 'right',
 
-                    marginBottom:'1vh'
+                    marginBottom: '1vh'
 
                 },
 
-                child:[
+                child: [
 
                     $({
 
-                        tag:'button',
+                        tag: 'button',
 
-                        text:'Close',
+                        text: 'Close',
 
-                        att:{
+                        att: {
 
-                            className:'botCrtv2'
-
-                        },
-
-                        style:{
-
-                            cursor:'pointer',
-
-                            border:'none',
-
-                            height:'5vh',
-
-                            paddingLeft:'1vw',
-
-                            paddingRight:'1vw'
+                            className: 'botCrtv2'
 
                         },
 
-                        event:{
+                        style: {
 
-                            type:'click',
+                            cursor: 'pointer',
 
-                            method:(eve)=>{
+                            border: 'none',
+
+                            height: '5vh',
+
+                            paddingLeft: '1vw',
+
+                            paddingRight: '1vw'
+
+                        },
+
+                        event: {
+
+                            type: 'click',
+
+                            method: (eve) => {
 
                                 popMain.remove()
 
@@ -404,57 +401,57 @@ export const LeftScore=(eventId,scId)=>{
 
         }
 
-        const Criteria=()=>{
+        const Criteria = () => {
 
-            return($({
+            return ($({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    width:'98%',
+                    width: '98%',
 
                     height: 'fit-content',
 
-                    margin:'auto',
+                    margin: 'auto',
 
-                    marginBottom:'2vh',
+                    marginBottom: '2vh',
 
-                    border:'solid thin #999',
+                    border: 'solid thin #999',
 
-                    backgroundColor:'#111',
+                    backgroundColor: '#111',
 
-                    borderRadius:'.5rem',
+                    borderRadius: '.5rem',
 
-                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                    fontWeight:'bold',
+                    fontWeight: 'bold',
 
                     fontSize: '1vw'
 
                 },
 
-                child:[
+                child: [
 
                     $({
 
-                        tag:'div',
+                        tag: 'div',
 
-                        text:"Criteria",
+                        text: "Criteria",
 
-                        style:{
+                        style: {
 
                             color: 'deepskyblue',
 
-                            borderBottom:'solid thin deepskyblue',
+                            borderBottom: 'solid thin deepskyblue',
 
-                            width:'fit-content',
+                            width: 'fit-content',
 
                             marginBottom: '1vh',
 
-                            marginLeft:'1vw',
+                            marginLeft: '1vw',
 
-                            marginTop:'1vh'
+                            marginTop: '1vh'
 
                         },
 
@@ -462,53 +459,53 @@ export const LeftScore=(eventId,scId)=>{
 
                     $({
 
-                        tag:'input',
+                        tag: 'input',
 
-                        att:{
+                        att: {
 
-                            placeholder:"Enter text here...",
+                            placeholder: "Enter text here...",
 
-                            required:true
+                            required: true
 
                         },
 
-                        style:{
+                        style: {
 
-                            border:'none',
+                            border: 'none',
 
-                            width:'98%',
+                            width: '98%',
 
                             backgroundColor: 'transparent',
 
-                            outline:'none',
+                            outline: 'none',
 
-                            resize:'none',
+                            resize: 'none',
 
-                            color:'#bbb',
+                            color: '#bbb',
 
                             fontSize: '1vw',
 
-                            padding:'1%'
+                            padding: '1%'
 
                         },
 
-                        event:{
+                        event: {
 
-                            type:'change',
+                            type: 'change',
 
-                            method:(eve)=>{
+                            method: (eve) => {
 
-                                data.name=eve.target.value
+                                data.name = eve.target.value
 
                             }
 
                         },
 
-                        elementHandler:(el)=>{
+                        elementHandler: (el) => {
 
-                            el.addEventListener('keypress',(event)=>{
+                            el.addEventListener('keypress', (event) => {
 
-                                if(event.keyCode===13){
+                                if (event.keyCode === 13) {
 
                                     event.preventDefault()
 
@@ -526,57 +523,57 @@ export const LeftScore=(eventId,scId)=>{
 
         }
 
-        const Discrep=()=>{
+        const Discrep = () => {
 
-            return($({
+            return ($({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    width:'98%',
+                    width: '98%',
 
-                    margin:'auto',
+                    margin: 'auto',
 
                     height: 'fit-content',
 
-                    marginBottom:'2vh',
+                    marginBottom: '2vh',
 
-                    border:'solid thin #999',
+                    border: 'solid thin #999',
 
-                    backgroundColor:'#111',
+                    backgroundColor: '#111',
 
-                    borderRadius:'.5rem',
+                    borderRadius: '.5rem',
 
                     fontSize: '1vw'
 
                 },
 
-                child:[
+                child: [
 
                     $({
 
-                        tag:'div',
+                        tag: 'div',
 
-                        text:"Description",
+                        text: "Description",
 
-                        style:{
+                        style: {
 
                             color: 'deepskyblue',
 
-                            borderBottom:'solid thin deepskyblue',
+                            borderBottom: 'solid thin deepskyblue',
 
-                            width:'fit-content',
+                            width: 'fit-content',
 
                             marginBottom: '1vh',
 
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                            fontWeight:'bold',
+                            fontWeight: 'bold',
 
-                            marginLeft:'1vw',
+                            marginLeft: '1vw',
 
-                            marginTop:'1vh'
+                            marginTop: '1vh'
 
                         },
 
@@ -584,49 +581,49 @@ export const LeftScore=(eventId,scId)=>{
 
                     $({
 
-                        tag:'textarea',
+                        tag: 'textarea',
 
-                        att:{
+                        att: {
 
-                            placeholder:"Enter text here...",
+                            placeholder: "Enter text here...",
 
-                            required:true
+                            required: true
 
                         },
 
-                        style:{
+                        style: {
 
-                            border:'none',
+                            border: 'none',
 
-                            width:'98%',
+                            width: '98%',
 
                             backgroundColor: 'transparent',
 
-                            outline:'none',
+                            outline: 'none',
 
-                            resize:'none',
+                            resize: 'none',
 
-                            color:'#bbb',
+                            color: '#bbb',
 
-                            height:'15vh',
+                            height: '15vh',
 
                             fontSize: '1vw',
 
-                            padding:'1%'
+                            padding: '1%'
 
 
 
                         },
 
-                        event:{
+                        event: {
 
-                            type:'change',
+                            type: 'change',
 
-                            method:(eve)=>{
+                            method: (eve) => {
 
 
 
-                                data.description=eve.target.value
+                                data.description = eve.target.value
 
                             }
 
@@ -640,55 +637,55 @@ export const LeftScore=(eventId,scId)=>{
 
         }
 
-        const Percentage=()=>{
+        const Percentage = () => {
 
-            return($({
+            return ($({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    width:'50%',
+                    width: '50%',
 
                     height: 'fit-content',
 
-                    marginBottom:'2vh',
+                    marginBottom: '2vh',
 
-                    border:'solid thin #999',
+                    border: 'solid thin #999',
 
-                    backgroundColor:'#111',
+                    backgroundColor: '#111',
 
-                    borderRadius:'.5rem',
+                    borderRadius: '.5rem',
 
                     fontSize: '1vw'
 
                 },
 
-                child:[
+                child: [
 
                     $({
 
-                        tag:'div',
+                        tag: 'div',
 
-                        text:"Percentage",
+                        text: "Percentage",
 
-                        style:{
+                        style: {
 
                             color: 'deepskyblue',
 
-                            borderBottom:'solid thin deepskyblue',
+                            borderBottom: 'solid thin deepskyblue',
 
-                            width:'fit-content',
+                            width: 'fit-content',
 
                             marginBottom: '1vh',
 
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                            fontWeight:'bold',
+                            fontWeight: 'bold',
 
-                            marginLeft:'1vw',
+                            marginLeft: '1vw',
 
-                            marginTop:'1vh'
+                            marginTop: '1vh'
 
                         },
 
@@ -696,61 +693,61 @@ export const LeftScore=(eventId,scId)=>{
 
                     $({
 
-                        tag:'input',
+                        tag: 'input',
 
-                        att:{
+                        att: {
 
-                            placeholder:"Enter numeric value",
+                            placeholder: "Enter numeric value",
 
-                            type:'number',
+                            type: 'number',
 
-                            min:0,
+                            min: 0,
 
-                            max:100,
+                            max: 100,
 
-                            required:true
+                            required: true
 
                         },
 
-                        style:{
+                        style: {
 
-                            border:'none',
+                            border: 'none',
 
-                            width:'98%',
+                            width: '98%',
 
                             backgroundColor: 'transparent',
 
-                            outline:'none',
+                            outline: 'none',
 
-                            resize:'none',
+                            resize: 'none',
 
-                            color:'#bbb',
+                            color: '#bbb',
 
                             fontSize: '1vw',
 
-                            padding:'1%',
+                            padding: '1%',
 
                             textAlign: 'center'
 
                         },
 
-                        event:{
+                        event: {
 
-                            type:'change',
+                            type: 'change',
 
-                            method:(eve)=>{
+                            method: (eve) => {
 
 
 
-                                if((Total*1)+(eve.target.value*1)<=100){
+                                if ((Total * 1) + (eve.target.value * 1) <= 100) {
 
-                                    data.percentage=eve.target.value
+                                    data.percentage = eve.target.value
 
-                                }else {
+                                } else {
 
                                     alert("Exceeding the maximum percentage")
 
-                                    eve.target.value=0
+                                    eve.target.value = 0
 
 
 
@@ -762,11 +759,11 @@ export const LeftScore=(eventId,scId)=>{
 
                         },
 
-                        elementHandler:(el)=>{
+                        elementHandler: (el) => {
 
-                            el.addEventListener('keypress',(event)=>{
+                            el.addEventListener('keypress', (event) => {
 
-                                if(event.keyCode===13){
+                                if (event.keyCode === 13) {
 
                                     event.preventDefault()
 
@@ -786,51 +783,51 @@ export const LeftScore=(eventId,scId)=>{
 
         }
 
-        const Add=()=>{
+        const Add = () => {
 
-            return($({
+            return ($({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    height:'fit-content',
+                    height: 'fit-content',
 
-                    width:'98%',
+                    width: '98%',
 
-                    margin:'4vh auto',
+                    margin: '4vh auto',
 
-                    textAlign:'center',
+                    textAlign: 'center',
 
                 },
 
-                child:[
+                child: [
 
                     $({
 
-                        tag:'input',
+                        tag: 'input',
 
-                        text:'Add Criteria',
+                        text: 'Add Criteria',
 
-                        att:{
+                        att: {
 
-                            className:'botCrtv2',
+                            className: 'botCrtv2',
 
-                            type:'submit'
+                            type: 'submit'
 
                         },
 
-                        style:{
+                        style: {
 
-                            height:'5vh',
+                            height: '5vh',
 
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                            fontSize:'1.3vw',
+                            fontSize: '1.3vw',
 
-                            border:'none',
+                            border: 'none',
 
-                            borderRadius:'.4rem'
+                            borderRadius: '.4rem'
 
                         },
 
@@ -846,51 +843,51 @@ export const LeftScore=(eventId,scId)=>{
 
 
 
-        return($({
+        return ($({
 
-            tag:'div',
+            tag: 'div',
 
-            style:{
+            style: {
 
-                position:'absolute',
+                position: 'absolute',
 
-                left:'0',
+                left: '0',
 
-                top:'0',
+                top: '0',
 
-                width:'100%',
+                width: '100%',
 
-                height:'100%',
+                height: '100%',
 
-                backgroundColor:'#222',
+                backgroundColor: '#222',
 
                 zIndex: '9999'
 
             },
 
-            elementHandler:(el)=>{
+            elementHandler: (el) => {
 
-                popMain=el
+                popMain = el
 
             },
 
-            child:[
+            child: [
 
                 $({
 
-                    tag:'form',
+                    tag: 'form',
 
-                    child:[
+                    child: [
 
                         $({
 
-                            tag:'div',
+                            tag: 'div',
 
-                            style:{
+                            style: {
 
-                                height:'5vh',
+                                height: '5vh',
 
-                                width:'100%'
+                                width: '100%'
 
                             }
 
@@ -908,11 +905,11 @@ export const LeftScore=(eventId,scId)=>{
 
                     ],
 
-                    event:{
+                    event: {
 
-                        type:'submit',
+                        type: 'submit',
 
-                        method:Submit
+                        method: Submit
 
                     }
 
@@ -926,50 +923,50 @@ export const LeftScore=(eventId,scId)=>{
 
 
 
-    const Panel=(name,catId)=>{
-        const AddNew=()=>{
-            return($({
-                tag:'div',
-                style:{
-                    height:'fit-content',
-                    width:'95%',
-                    marginTop:'.5vw',
-                    textAlign:'left'
+    const Panel = (name, catId) => {
+        const AddNew = () => {
+            return ($({
+                tag: 'div',
+                style: {
+                    height: 'fit-content',
+                    width: '95%',
+                    marginTop: '.5vw',
+                    textAlign: 'left'
                 },
-                child:[
+                child: [
                     $({
-                        tag:'button',
-                        att:{
-                            className:'fa-solid fa-square-plus'
+                        tag: 'button',
+                        att: {
+                            className: 'fa-solid fa-square-plus'
                         },
-                        style:{
-                            backgroundColor:'deepskyblue',
-                            borderRadius:'.3rem',
-                            border:'none',
-                            outline:'none',
-                            height:'4vh',
-                            width:'15vw',
-                            marginLeft:'1vw',
-                            fontSize:'1.3vw',
-                            cursor:'pointer'
+                        style: {
+                            backgroundColor: 'deepskyblue',
+                            borderRadius: '.3rem',
+                            border: 'none',
+                            outline: 'none',
+                            height: '4vh',
+                            width: '15vw',
+                            marginLeft: '1vw',
+                            fontSize: '1.3vw',
+                            cursor: 'pointer'
                         },
-                        child:[
+                        child: [
                             $({
-                                tag:'span',
-                                text:'Add new Criteria',
-                                style:{
-                                    fontSize:'1vw',
-                                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    marginLeft:'1vw'
+                                tag: 'span',
+                                text: 'Add new Criteria',
+                                style: {
+                                    fontSize: '1vw',
+                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                    marginLeft: '1vw'
                                 }
                             })
                         ],
-                        event:{
-                            type:'click',
-                            method:()=>{
-                                if(Total*1<100){
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                if (Total * 1 < 100) {
                                     mainPanel.appendChild(AddPop())
-                                }else {
+                                } else {
                                     alert("Cannot add new Criteria")
                                 }
                             }
@@ -978,86 +975,86 @@ export const LeftScore=(eventId,scId)=>{
                 ]
             }))
         }
-        return($({
-            tag:'div',
-            style:{
-                width:'100%',
+        return ($({
+            tag: 'div',
+            style: {
+                width: '100%',
                 position: 'absolute',
-                height:'100%',
-                top:'0',
-                left:'0',
-                backgroundColor:'#222',
-                zIndex:'999',
-                textAlign:'center',
+                height: '100%',
+                top: '0',
+                left: '0',
+                backgroundColor: '#222',
+                zIndex: '999',
+                textAlign: 'center',
             },
-            child:[
+            child: [
                 $({
-                    tag:'div',
-                    style:{
-                        width:'100%',
-                        height:'fit-content',
-                        textAlign:'right',
-                        marginTop:'1vh',
-                        display:'flex',
-                        borderBottom:'solid thin #333'
+                    tag: 'div',
+                    style: {
+                        width: '100%',
+                        height: 'fit-content',
+                        textAlign: 'right',
+                        marginTop: '1vh',
+                        display: 'flex',
+                        borderBottom: 'solid thin #333'
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'div',
-                            text:name,
-                            style:{
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                fontSize:'1vw',
-                                marginLeft:'1vw',
-                                color:'#bbb'
+                            tag: 'div',
+                            text: name,
+                            style: {
+                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                fontSize: '1vw',
+                                marginLeft: '1vw',
+                                color: '#bbb'
                             }
                         }),
                         $({
-                            tag:'a',
-                            text:'back to centers',
-                            att:{
-                                href: '/admin/events/scoreBoard/'+eventId
+                            tag: 'a',
+                            text: 'back to centers',
+                            att: {
+                                href: '/admin/events/scoreBoard/' + eventId
                             },
-                            style:{
-                                marginRight:'1vw',
-                                marginLeft:'auto',
-                                textDecoration:'none',
-                                color:'deepskyblue',
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                fontSize:'1vw'
+                            style: {
+                                marginRight: '1vw',
+                                marginLeft: 'auto',
+                                textDecoration: 'none',
+                                color: 'deepskyblue',
+                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                fontSize: '1vw'
                             }
                         })
                     ]
                 }),
                 AddNew(),
                 $({
-                    tag:'div',
-                    style:{
-                        width:'95%',
-                        height:'5vh',
-                        backgroundColor:'#333',
-                        margin:'auto',
-                        marginTop:'2vh',
-                        display:'flex'
+                    tag: 'div',
+                    style: {
+                        width: '95%',
+                        height: '5vh',
+                        backgroundColor: '#333',
+                        margin: 'auto',
+                        marginTop: '2vh',
+                        display: 'flex'
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'div',
-                            text:'List of criteria',
+                            tag: 'div',
+                            text: 'List of criteria',
 
-                            style:{
+                            style: {
 
-                                margin:'auto',
+                                margin: 'auto',
 
-                                marginLeft:'1vw',
+                                marginLeft: '1vw',
 
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                                fontSize:'1vw',
+                                fontSize: '1vw',
 
-                                color:'#bbb',
+                                color: '#bbb',
 
-                                fontWeight:'bold'
+                                fontWeight: 'bold'
 
                             }
 
@@ -1069,29 +1066,29 @@ export const LeftScore=(eventId,scId)=>{
 
                 $({
 
-                    tag:'div',
+                    tag: 'div',
 
-                    style:{
+                    style: {
 
-                        width:'95%',
+                        width: '95%',
 
-                        height:'50vh',
+                        height: '50vh',
 
-                        backgroundColor:'#333',
+                        backgroundColor: '#333',
 
-                        margin:'auto',
+                        margin: 'auto',
 
-                        marginTop:'1vh',
+                        marginTop: '1vh',
 
-                        overflowY:'auto',
+                        overflowY: 'auto',
 
                     },
 
 
 
-                    elementHandler:(el)=>{
+                    elementHandler: (el) => {
 
-                        listBodyDom=el
+                        listBodyDom = el
 
                     }
 
@@ -1101,43 +1098,43 @@ export const LeftScore=(eventId,scId)=>{
 
                 $({
 
-                    tag:'div',
+                    tag: 'div',
 
-                    style:{
+                    style: {
 
-                        width:'95%',
+                        width: '95%',
 
-                        margin:'auto',
+                        margin: 'auto',
 
-                        height:'5vh',
+                        height: '5vh',
 
-                        backgroundColor:'#333',
+                        backgroundColor: '#333',
 
-                        marginTop:'2vh',
+                        marginTop: '2vh',
 
-                        display:'flex'
+                        display: 'flex'
 
                     },
 
-                    child:[
+                    child: [
 
                         $({
-                            tag:'div',
-                            text:'Total : ',
-                            style:{
-                                margin:'auto',
-                                marginLeft:'1vw',
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                fontSize:'1vw',
-                                color:'#bbb',
-                                fontWeight:'bold'
+                            tag: 'div',
+                            text: 'Total : ',
+                            style: {
+                                margin: 'auto',
+                                marginLeft: '1vw',
+                                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                fontSize: '1vw',
+                                color: '#bbb',
+                                fontWeight: 'bold'
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'span',
-                                    text:Total+' %',
-                                    elementHandler:(el)=>{
-                                        totalP=el
+                                    tag: 'span',
+                                    text: Total + ' %',
+                                    elementHandler: (el) => {
+                                        totalP = el
                                     }
                                 })
                             ]
@@ -1145,83 +1142,83 @@ export const LeftScore=(eventId,scId)=>{
                     ]
                 }),// total label
                 $({
-                    tag:'button',
-                    style:{
-                        width:'80%',
-                        height:'7vh',
-                        margin:'auto',
-                        marginTop:'2vh',
-                        border:'none',
-                        outline:'none',
-                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                        fontSize:'1.2vw',
-                        color:'deepskyblue',
-                        fontWeight:'bold',
+                    tag: 'button',
+                    style: {
+                        width: '80%',
+                        height: '7vh',
+                        margin: 'auto',
+                        marginTop: '2vh',
+                        border: 'none',
+                        outline: 'none',
+                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                        fontSize: '1.2vw',
+                        color: 'deepskyblue',
+                        fontWeight: 'bold',
                     },
-                    att:{
-                        className:'saveCrit'
+                    att: {
+                        className: 'saveCrit'
                     },
-                    text:'Save Criteria',
+                    text: 'Save Criteria',
 
-                    event:{
+                    event: {
 
-                        type:'click',
+                        type: 'click',
 
-                        method:async ()=>{
-
-
+                        method: async () => {
 
 
 
-                            if(dataList.length>0){
 
-                                let Total=0;
 
-                                dataList.forEach(val=>{
+                            if (dataList.length > 0) {
 
-                                    Total+=val.percentage*1
+                                let Total = 0;
+
+                                dataList.forEach(val => {
+
+                                    Total += val.percentage * 1
 
                                 })
 
-                                if(Total===100){
+                                if (Total === 100) {
 
-                                    const form= new FormData()
+                                    const form = new FormData()
 
-                                    form.append('addCriteriaV2','1')
+                                    form.append('addCriteriaV2', '1')
 
-                                    form.append('eventId',eventId)
+                                    form.append('eventId', eventId)
 
-                                    form.append('scoreId',scId)
+                                    form.append('scoreId', scId)
 
-                                    form.append('centerId',catId) //change to get the center id from categoryId
+                                    form.append('centerId', catId) //change to get the center id from categoryId
 
 
 
-                                    dataList.forEach(val=>{
+                                    dataList.forEach(val => {
 
-                                        form.append('name[]',val.name)
+                                        form.append('name[]', val.name)
 
-                                        form.append('description[]',val.description)
+                                        form.append('description[]', val.description)
 
-                                        form.append('percentage[]',val.percentage)
+                                        form.append('percentage[]', val.percentage)
 
                                     })
 
-                                    await fetch('/scoreSheet',{
+                                    await fetch('/scoreSheet', {
 
-                                        method:'POST',
+                                        method: 'POST',
 
-                                        body:form
+                                        body: form
 
-                                    }).then(res=>res.json())
+                                    }).then(res => res.json())
 
-                                        .then(data=>{
+                                        .then(data => {
 
-                                            if(data.status){
+                                            if (data.status) {
 
-                                                window.location.replace('/admin/events/scoreBoard/'+eventId)
+                                                window.location.replace('/admin/events/scoreBoard/' + eventId)
 
-                                            }else {
+                                            } else {
 
                                                 alert(data.message);
 
@@ -1229,7 +1226,7 @@ export const LeftScore=(eventId,scId)=>{
 
                                         })
 
-                                }else {
+                                } else {
 
                                     alert("Total percentage is below 100%")
 
@@ -1257,57 +1254,57 @@ export const LeftScore=(eventId,scId)=>{
 
 
 
-    const CategoryPanel=({name,url})=>{
+    const CategoryPanel = ({ name, url }) => {
 
-        return($({
+        return ($({
 
-            tag:'div',
+            tag: 'div',
 
-            style:{
+            style: {
 
-                width:'100%',
+                width: '100%',
 
-                height:'fit-content',
+                height: 'fit-content',
 
-                margin:'1vh auto'
+                margin: '1vh auto'
 
             },
 
-            child:[
+            child: [
 
                 $({
 
-                    tag:'a',
+                    tag: 'a',
 
-                    child:[
+                    child: [
 
                         $({
 
-                            tag:'button',
+                            tag: 'button',
 
-                            style:{
+                            style: {
 
-                                height:'10vh',
+                                height: '10vh',
 
-                                width:'100%',
+                                width: '100%',
 
-                                borderRadius:'.5rem',
+                                borderRadius: '.5rem',
 
-                                border:'none',
+                                border: 'none',
 
-                                fontWeight:'bold',
+                                fontWeight: 'bold',
 
                                 cursor: 'pointer'
 
                             },
 
-                            att:{
+                            att: {
 
                                 className: 'catBot'
 
                             },
 
-                            text:name,
+                            text: name,
 
 
 
@@ -1315,9 +1312,9 @@ export const LeftScore=(eventId,scId)=>{
 
                     ],
 
-                    att:{
+                    att: {
 
-                        href:url
+                        href: url
 
                     }
 
@@ -1333,55 +1330,55 @@ export const LeftScore=(eventId,scId)=>{
 
 
 
-    return($({
+    return ($({
 
-        tag:'div',
+        tag: 'div',
 
-        style:{
+        style: {
 
-            width:'50%',
+            width: '50%',
 
-            height:'100%',
+            height: '100%',
 
-            backgroundColor:'rgba(0,0,0,0.1)',
+            backgroundColor: 'rgba(0,0,0,0.1)',
 
-            display:'flex',
+            display: 'flex',
 
-            justifyContent:'center',
+            justifyContent: 'center',
 
-            position:'relative',
+            position: 'relative',
 
         },
 
-        child:[
+        child: [
 
             $({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    width:'90%',
+                    width: '90%',
 
-                    height:'fit-content',
+                    height: 'fit-content',
 
                     margin: 'auto'
 
                 },
 
-                elementHandler:(el)=>{
+                elementHandler: (el) => {
 
 
 
-                    const req= new Request('/requestcat')
+                    const req = new Request('/requestcat')
 
                     req.Post([
 
                         {
 
-                            name:'requestCat',
+                            name: 'requestCat',
 
-                            value:'1'
+                            value: '1'
 
                         }
 
@@ -1389,25 +1386,25 @@ export const LeftScore=(eventId,scId)=>{
 
                     req.Json()
 
-                    req.Send().then(data=>{
+                    req.Send().then(data => {
 
 
 
-                        data.forEach(val=>{
+                        data.forEach(val => {
 
                             el.appendChild(CategoryPanel({
 
-                                name:val.name,
+                                name: val.name,
 
-                                url:Current().replace(Base(),'')+'/'+val.id
+                                url: Current().replace(Base(), '') + '/' + val.id
 
                             }))
 
-                            console.log(val.id+''===Path(5))
+                            console.log(val.id + '' === Path(5))
 
-                            if(val.id===Path(5)*1){
+                            if (val.id === Path(5) * 1) {
 
-                                el.appendChild(Panel(val.name,Path(5)))
+                                el.appendChild(Panel(val.name, Path(5)))
 
                             }
 
@@ -1421,9 +1418,9 @@ export const LeftScore=(eventId,scId)=>{
 
         ],
 
-        elementHandler:(el)=>{
+        elementHandler: (el) => {
 
-            mainPanel=el
+            mainPanel = el
 
         }
 
@@ -1431,61 +1428,61 @@ export const LeftScore=(eventId,scId)=>{
 
 }
 
-export const LeftScorev1=(eventId)=>{
+export const LeftScorev1 = (eventId) => {
 
-    const data={
+    const data = {
 
-        name:'',
+        name: '',
 
-        description:'',
+        description: '',
 
-        percentage:0
+        percentage: 0
 
     }
 
-    const Submit=()=>{
+    const Submit = () => {
 
-        const req= new Request('/scoreSheet')
+        const req = new Request('/scoreSheet')
 
         req.Post([
 
             {
 
-                name:'addCriteria',
+                name: 'addCriteria',
 
-                value:'1'
-
-            },
-
-            {
-
-                name:'eventId',
-
-                value:eventId
+                value: '1'
 
             },
 
             {
 
-                name:'name',
+                name: 'eventId',
 
-                value:data.name
-
-            },
-
-            {
-
-                name:'description',
-
-                value:data.description
+                value: eventId
 
             },
 
             {
 
-                name:'percentage',
+                name: 'name',
 
-                value:data.percentage
+                value: data.name
+
+            },
+
+            {
+
+                name: 'description',
+
+                value: data.description
+
+            },
+
+            {
+
+                name: 'percentage',
+
+                value: data.percentage
 
             }
 
@@ -1495,21 +1492,21 @@ export const LeftScorev1=(eventId)=>{
 
         req.Json()
 
-        req.Send().then(data=>{
+        req.Send().then(data => {
 
-            setTimeout(()=>{
+            setTimeout(() => {
 
-                if(data.status){
+                if (data.status) {
 
                     window.location.reload()
 
-                }else {
+                } else {
 
                     alert(data.message)
 
                 }
 
-            },100)
+            }, 100)
 
         })
 
@@ -1517,57 +1514,57 @@ export const LeftScorev1=(eventId)=>{
 
 
 
-    const Form=()=>{
+    const Form = () => {
 
-        const Criteria=()=>{
+        const Criteria = () => {
 
-            return($({
+            return ($({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    width:'99.8%',
+                    width: '99.8%',
 
                     height: 'fit-content',
 
-                    marginBottom:'2vh',
+                    marginBottom: '2vh',
 
-                    border:'solid thin #999',
+                    border: 'solid thin #999',
 
-                    backgroundColor:'#111',
+                    backgroundColor: '#111',
 
-                    borderRadius:'.5rem',
+                    borderRadius: '.5rem',
 
-                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                    fontWeight:'bold',
+                    fontWeight: 'bold',
 
                     fontSize: '1vw'
 
                 },
 
-                child:[
+                child: [
 
                     $({
 
-                        tag:'div',
+                        tag: 'div',
 
-                        text:"Criteria",
+                        text: "Criteria",
 
-                        style:{
+                        style: {
 
                             color: 'deepskyblue',
 
-                            borderBottom:'solid thin deepskyblue',
+                            borderBottom: 'solid thin deepskyblue',
 
-                            width:'fit-content',
+                            width: 'fit-content',
 
                             marginBottom: '1vh',
 
-                            marginLeft:'1vw',
+                            marginLeft: '1vw',
 
-                            marginTop:'1vh'
+                            marginTop: '1vh'
 
                         },
 
@@ -1575,41 +1572,41 @@ export const LeftScorev1=(eventId)=>{
 
                     $({
 
-                        tag:'input',
+                        tag: 'input',
 
-                        att:{
+                        att: {
 
-                            placeholder:"Enter text here..."
+                            placeholder: "Enter text here..."
 
                         },
 
-                        style:{
+                        style: {
 
-                            border:'none',
+                            border: 'none',
 
-                            width:'98%',
+                            width: '98%',
 
                             backgroundColor: 'transparent',
 
-                            outline:'none',
+                            outline: 'none',
 
-                            resize:'none',
+                            resize: 'none',
 
-                            color:'#bbb',
+                            color: '#bbb',
 
                             fontSize: '1vw',
 
-                            padding:'1%'
+                            padding: '1%'
 
                         },
 
-                        event:{
+                        event: {
 
-                            type:'change',
+                            type: 'change',
 
-                            method:(eve)=>{
+                            method: (eve) => {
 
-                                data.name=eve.target.value
+                                data.name = eve.target.value
 
                             }
 
@@ -1623,55 +1620,55 @@ export const LeftScorev1=(eventId)=>{
 
         }
 
-        const Discrep=()=>{
+        const Discrep = () => {
 
-            return($({
+            return ($({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    width:'99.8%',
+                    width: '99.8%',
 
                     height: 'fit-content',
 
-                    marginBottom:'2vh',
+                    marginBottom: '2vh',
 
-                    border:'solid thin #999',
+                    border: 'solid thin #999',
 
-                    backgroundColor:'#111',
+                    backgroundColor: '#111',
 
-                    borderRadius:'.5rem',
+                    borderRadius: '.5rem',
 
                     fontSize: '1vw'
 
                 },
 
-                child:[
+                child: [
 
                     $({
 
-                        tag:'div',
+                        tag: 'div',
 
-                        text:"Description",
+                        text: "Description",
 
-                        style:{
+                        style: {
 
                             color: 'deepskyblue',
 
-                            borderBottom:'solid thin deepskyblue',
+                            borderBottom: 'solid thin deepskyblue',
 
-                            width:'fit-content',
+                            width: 'fit-content',
 
                             marginBottom: '1vh',
 
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                            fontWeight:'bold',
+                            fontWeight: 'bold',
 
-                            marginLeft:'1vw',
+                            marginLeft: '1vw',
 
-                            marginTop:'1vh'
+                            marginTop: '1vh'
 
                         },
 
@@ -1679,45 +1676,45 @@ export const LeftScorev1=(eventId)=>{
 
                     $({
 
-                        tag:'textarea',
+                        tag: 'textarea',
 
-                        att:{
+                        att: {
 
-                            placeholder:"Enter text here..."
+                            placeholder: "Enter text here..."
 
                         },
 
-                        style:{
+                        style: {
 
-                            border:'none',
+                            border: 'none',
 
-                            width:'98%',
+                            width: '98%',
 
                             backgroundColor: 'transparent',
 
-                            outline:'none',
+                            outline: 'none',
 
-                            resize:'none',
+                            resize: 'none',
 
-                            color:'#bbb',
+                            color: '#bbb',
 
-                            height:'15vh',
+                            height: '15vh',
 
                             fontSize: '1vw',
 
-                            padding:'1%'
+                            padding: '1%'
 
 
 
                         },
 
-                        event:{
+                        event: {
 
-                            type:'change',
+                            type: 'change',
 
-                            method:(eve)=>{
+                            method: (eve) => {
 
-                                data.description=eve.target.value
+                                data.description = eve.target.value
 
                             }
 
@@ -1731,55 +1728,55 @@ export const LeftScorev1=(eventId)=>{
 
         }
 
-        const Percentage=()=>{
+        const Percentage = () => {
 
-            return($({
+            return ($({
 
-                tag:'div',
+                tag: 'div',
 
-                style:{
+                style: {
 
-                    width:'50%',
+                    width: '50%',
 
                     height: 'fit-content',
 
-                    marginBottom:'2vh',
+                    marginBottom: '2vh',
 
-                    border:'solid thin #999',
+                    border: 'solid thin #999',
 
-                    backgroundColor:'#111',
+                    backgroundColor: '#111',
 
-                    borderRadius:'.5rem',
+                    borderRadius: '.5rem',
 
                     fontSize: '1vw'
 
                 },
 
-                child:[
+                child: [
 
                     $({
 
-                        tag:'div',
+                        tag: 'div',
 
-                        text:"Percentage",
+                        text: "Percentage",
 
-                        style:{
+                        style: {
 
                             color: 'deepskyblue',
 
-                            borderBottom:'solid thin deepskyblue',
+                            borderBottom: 'solid thin deepskyblue',
 
-                            width:'fit-content',
+                            width: 'fit-content',
 
                             marginBottom: '1vh',
 
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                            fontWeight:'bold',
+                            fontWeight: 'bold',
 
-                            marginLeft:'1vw',
+                            marginLeft: '1vw',
 
-                            marginTop:'1vh'
+                            marginTop: '1vh'
 
                         },
 
@@ -1787,51 +1784,51 @@ export const LeftScorev1=(eventId)=>{
 
                     $({
 
-                        tag:'input',
+                        tag: 'input',
 
-                        att:{
+                        att: {
 
-                            placeholder:"Enter numeric value",
+                            placeholder: "Enter numeric value",
 
-                            type:'number',
+                            type: 'number',
 
-                            value:0,
+                            value: 0,
 
-                            min:0,
+                            min: 0,
 
-                            max:100
+                            max: 100
 
                         },
 
-                        style:{
+                        style: {
 
-                            border:'none',
+                            border: 'none',
 
-                            width:'98%',
+                            width: '98%',
 
                             backgroundColor: 'transparent',
 
-                            outline:'none',
+                            outline: 'none',
 
-                            resize:'none',
+                            resize: 'none',
 
-                            color:'#bbb',
+                            color: '#bbb',
 
                             fontSize: '1vw',
 
-                            padding:'1%',
+                            padding: '1%',
 
                             textAlign: 'center'
 
                         },
 
-                        event:{
+                        event: {
 
-                            type:'change',
+                            type: 'change',
 
-                            method:(eve)=>{
+                            method: (eve) => {
 
-                                data.percentage=eve.target.value
+                                data.percentage = eve.target.value
 
                             }
 
@@ -1847,25 +1844,25 @@ export const LeftScorev1=(eventId)=>{
 
         }
 
-        return($({
+        return ($({
 
-            tag:"form",
+            tag: "form",
 
-            style:{
+            style: {
 
                 width: '90%',
 
-                margin:'auto',
+                margin: 'auto',
 
 
 
             },
 
-            event:{
+            event: {
 
-                type:'submit',
+                type: 'submit',
 
-                method:(eve)=>{
+                method: (eve) => {
 
                     eve.preventDefault()
 
@@ -1875,27 +1872,27 @@ export const LeftScorev1=(eventId)=>{
 
             },
 
-            child:[
+            child: [
 
                 $({
 
-                    tag:'div',
+                    tag: 'div',
 
-                    text:'Add new Criteria',
+                    text: 'Add new Criteria',
 
-                    style:{
+                    style: {
 
-                        fontSize:'1.5vw',
+                        fontSize: '1.5vw',
 
-                        width:'100%',
+                        width: '100%',
 
-                        textAlign:'center',
+                        textAlign: 'center',
 
-                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                        marginBottom:'2vh',
+                        marginBottom: '2vh',
 
-                        color:'#bbb'
+                        color: '#bbb'
 
                     }
 
@@ -1909,35 +1906,35 @@ export const LeftScorev1=(eventId)=>{
 
                 $({
 
-                    tag:'input',
+                    tag: 'input',
 
-                    att:{
+                    att: {
 
                         type: 'submit',
 
-                        className:'addCrit'
+                        className: 'addCrit'
 
                     },
 
-                    event:{
+                    event: {
 
-                        type:'submit',
+                        type: 'submit',
 
                     },
 
-                    style:{
+                    style: {
 
-                        width:'100%',
+                        width: '100%',
 
-                        height:'8vh',
+                        height: '8vh',
 
-                        fontSize:'2vw',
+                        fontSize: '2vw',
 
-                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
 
-                        cursor:'pointer',
+                        cursor: 'pointer',
 
-                        borderRadius:'.5rem',
+                        borderRadius: '.5rem',
 
                     }
 
@@ -1951,25 +1948,25 @@ export const LeftScorev1=(eventId)=>{
 
 
 
-    return($({
+    return ($({
 
-        tag:'div',
+        tag: 'div',
 
-        style:{
+        style: {
 
-            width:'50%',
+            width: '50%',
 
-            height:'100%',
+            height: '100%',
 
-            backgroundColor:'rgba(0,0,0,0.1)',
+            backgroundColor: 'rgba(0,0,0,0.1)',
 
-            display:'flex',
+            display: 'flex',
 
-            justifyContent:'center'
+            justifyContent: 'center'
 
         },
 
-        child:[
+        child: [
 
             Form()
 

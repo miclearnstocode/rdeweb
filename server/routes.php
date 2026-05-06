@@ -65,7 +65,14 @@ post('/utilization', 'server/rde/utilization.php');
 any('/certification', 'server/rde/certification.php');
 post('/saveCertificationDrive', 'server/rde/certification_drive.php');
 post('/quarterlyMonitoring', 'server/rde/quarterlyMonitoring.php');
-
+post('/completedRes', 'server/rde/accomplishment/completedRes.php');
+post('/attendedResearch', 'server/rde/accomplishment/attendedRes.php');
+post('/citationResearch', 'server/rde/accomplishment/citationRes.php');
+post('/facilitiesImprovement', 'server/rde/accomplishment/facilResImprov.php');
+post('/IGPResearchProjects', 'server/rde/accomplishment/igpResProj.php');
+post('/participationResearch', 'server/rde/accomplishment/participationExh.php');
+post('/presentationResearch', 'server/rde/accomplishment/presentationRes.php');
+post('trainingActivitiesResearch', 'server/rde/accomplishment/traiActRes.php');
 // ROOT route
 get('/','server/auth.php');  // This handles redirects based on login status
 

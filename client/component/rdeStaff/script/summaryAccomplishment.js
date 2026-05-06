@@ -158,60 +158,40 @@ export const SummaryAccomplishment = () => {
         showLoading()
 
         try {
-            // Prepare for API implementation
             const formData = new FormData()
-            formData.append('action', 'fetch_summary')
+            formData.append('action', 'fetch')
 
-            // Add active filters
-            if (activeFilters.campus !== 'all') {
-                formData.append('campus', activeFilters.campus)
-            }
-            if (activeFilters.center !== 'all') {
-                formData.append('center', activeFilters.center)
-            }
-            if (activeFilters.category !== 'all') {
-                formData.append('category', activeFilters.category)
-            }
-
-            // TODO: Replace with actual API endpoint when ready
-            const response = await fetch('/api/summary/accomplishment', {
+            const response = await fetch('/monitor', {
                 method: 'POST',
                 body: formData
             })
 
             const result = await response.json()
 
-            if (result.status) {
-                accomplishmentData = result.data || []
-
-                // Update stats cards with server data
-                if (result.stats) {
-                    updateStatsCards(result.stats)
-                }
-
-                // Update table with accomplishments
-                updateTableWithData()
+            if (result.success && result.summary) {
+                const stats = {}
+                // Set default 0 for all stat keys
+                statsCards.forEach(card => { stats[card.key] = 0 })
+                // Map the backend summary values to the card keys
+                stats.ongoingResearch = result.summary.totalOngoing ?? 0
+                stats.completedResearch = result.summary.completed ?? 0
+                updateStatsCards(stats)
             } else {
-                console.error('Failed to fetch summary data:', result.message)
-                showEmptyState()
+                // On failure, render cards with zeros
+                const zeroStats = {}
+                statsCards.forEach(card => { zeroStats[card.key] = 0 })
+                updateStatsCards(zeroStats)
             }
         } catch (error) {
             console.error('Error fetching summary data:', error)
-            // For development, use placeholder data
-            usePlaceholderData()
+            // On error, render cards with zeros
+            const zeroStats = {}
+            statsCards.forEach(card => { zeroStats[card.key] = 0 })
+            updateStatsCards(zeroStats)
         } finally {
             isLoading = false
             hideLoading()
         }
-    }
-
-    // Placeholder data for development
-    const usePlaceholderData = () => {
-        const placeholderStats = {}
-        statsCards.forEach(card => {
-            placeholderStats[card.key] = Math.floor(Math.random() * 50)
-        })
-        updateStatsCards(placeholderStats)
     }
 
     // Update statistics cards with data

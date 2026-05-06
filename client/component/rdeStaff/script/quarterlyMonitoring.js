@@ -26,8 +26,10 @@ export const QuarterlyMonitoringComponent = () => {
     let searchCursor = null
     let searchHasMore = true
 
-    // Stats state
+    // Stats state - Updated to match onGoingResearch structure
     let currentStats = {
+        totalOngoing: 0,
+        completed: 0,
         publications: 0,
         presentations: 0,
         assets: 0,
@@ -241,9 +243,18 @@ export const QuarterlyMonitoringComponent = () => {
                         hasMore = result.pagination?.has_more || false
                     }
 
-                    // Update stats
+                    // Update stats - include both summary and ongoing/completed
                     if (result.summary) {
-                        currentStats = result.summary
+                        currentStats = {
+                            ...currentStats,
+                            publications: result.summary.publications || 0,
+                            presentations: result.summary.presentations || 0,
+                            assets: result.summary.assets || 0,
+                            collaborations: result.summary.collaborations || 0,
+                            activityConducted: result.summary.activityConducted || 0,
+                            totalOngoing: result.summary.totalOngoing || 0,
+                            completed: result.summary.completed || 0
+                        }
                         totalCount = result.summary.totalOngoing || 0
                         updateStats()
                     }
@@ -309,9 +320,11 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Update statistics
+    // Update statistics - Updated to handle both stat cards
     const updateStats = () => {
         if (!mainContainer) return
+
+        // Update the 5 main stat cards (publications, presentations, assets, collaborations, activityConducted)
         const statValues = mainContainer.querySelectorAll('.stat-value')
         if (statValues.length >= 5) {
             statValues[0].textContent = currentStats.publications || 0
@@ -320,6 +333,12 @@ export const QuarterlyMonitoringComponent = () => {
             statValues[3].textContent = currentStats.collaborations || 0
             statValues[4].textContent = currentStats.activityConducted || 0
         }
+
+        // Update the ongoing and completed stat cards (using IDs)
+        const ongoingEl = document.getElementById('ongoing-stat-value')
+        const completedEl = document.getElementById('completed-stat-value')
+        if (ongoingEl) ongoingEl.textContent = currentStats.totalOngoing ?? 0
+        if (completedEl) completedEl.textContent = currentStats.completed ?? 0
     }
 
     // Update record count
@@ -583,7 +602,56 @@ export const QuarterlyMonitoringComponent = () => {
             })
         })
 
+        // Actions cell
+        cells.push(
+            $({
+                tag: 'td',
+                style: {
+                    padding: '12px 8px',
+                    textAlign: 'center',
+                    border: '1px solid #444',
+                    verticalAlign: 'middle'
+                },
+                child: [createActionButtons(item)]
+            })
+        )
 
+        // Remarks / Official Completion button cell
+        cells.push(
+            $({
+                tag: 'td',
+                style: {
+                    padding: '12px 8px',
+                    textAlign: 'center',
+                    border: '1px solid #444',
+                    verticalAlign: 'middle'
+                },
+                child: [
+                    $({
+                        tag: 'button',
+                        text: item.readyForSymposium ? 'Ready for Official Completion' : 'Mark as Ready',
+                        style: {
+                            padding: '6px 12px',
+                            backgroundColor: item.readyForSymposium ? '#4caf50' : 'transparent',
+                            border: item.readyForSymposium ? 'none' : '1px solid #4caf50',
+                            borderRadius: '4px',
+                            color: item.readyForSymposium ? '#fff' : '#4caf50',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                        },
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                e.stopPropagation()
+                                markReadyForSymposium(item)
+                            }
+                        }
+                    })
+                ]
+            })
+        )
 
         return $({
             tag: 'tr',
@@ -605,6 +673,71 @@ export const QuarterlyMonitoringComponent = () => {
                 }
             }
         })
+    }
+
+    // Create action buttons
+    const createActionButtons = (item) => {
+        return $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                gap: '8px',
+                justifyContent: 'center'
+            },
+            child: [
+                $({
+                    tag: 'span',
+                    att: { className: 'fa-solid fa-pen' },
+                    style: {
+                        color: '#ffb347',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease'
+                    },
+                    title: 'Edit',
+                    event: {
+                        type: 'click',
+                        method: (e) => {
+                            e.stopPropagation()
+                            openEditModal(item)
+                        }
+                    }
+                })
+            ]
+        })
+    }
+
+    // Mark ready for symposium
+    const markReadyForSymposium = async (item) => {
+        try {
+            showLoading()
+            const formData = new FormData()
+            formData.append('action', 'markReadyForSymposium')
+            formData.append('projectId', item.id)
+            formData.append('isReady', !item.readyForSymposium)
+
+            const response = await fetch('/quarterlyMonitoring', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                // Refresh data
+                await refreshData()
+                showNotification('Symposium status updated', 'success')
+            } else {
+                showNotification('Failed to update symposium status', 'error')
+            }
+        } catch (error) {
+            console.error('Error updating symposium status:', error)
+            showNotification('Error connecting to server', 'error')
+        } finally {
+            hideLoading()
+        }
     }
 
     // Open edit modal
@@ -1820,7 +1953,7 @@ export const QuarterlyMonitoringComponent = () => {
         })
     }
 
-    // Statistics cards
+    // Statistics cards - Combined: 5 main stats + Ongoing & Completed
     const StatsCards = () => {
         // Helper function to convert hex color to RGB
         const hexToRgb = (hex) => {
@@ -1940,7 +2073,7 @@ export const QuarterlyMonitoringComponent = () => {
         }
 
         // Helper function to create a stat card with hover effects
-        const createStatCard = (iconClass, iconColor, label, onClick = null, value = '0') => {
+        const createStatCard = (iconClass, iconColor, label, onClick = null, value = '0', id = null) => {
             // Convert color to RGB values for rgba manipulation
             const rgbValues = hexToRgb(iconColor);
 
@@ -1955,7 +2088,7 @@ export const QuarterlyMonitoringComponent = () => {
                     alignItems: 'center',
                     gap: '16px',
                     border: '1px solid #444',
-                    cursor: 'pointer',
+                    cursor: onClick ? 'pointer' : 'default',
                     transition: 'all 0.3s ease',
                     position: 'relative',
                     overflow: 'hidden'
@@ -2017,7 +2150,7 @@ export const QuarterlyMonitoringComponent = () => {
                         child: [
                             $({
                                 tag: 'span',
-                                att: { className: 'stat-value' },
+                                att: { className: 'stat-value', id: id },
                                 text: value,
                                 style: {
                                     fontSize: '32px',
@@ -2046,7 +2179,11 @@ export const QuarterlyMonitoringComponent = () => {
                 ]
             });
 
-            // Use direct addEventListener for reliable hover behavior
+            if (onClick) {
+                card.addEventListener('click', onClick);
+            }
+
+            // Add hover effects only if clickable or always for visual feedback
             card.addEventListener('mouseenter', function (e) {
                 card.style.transform = 'translateY(-4px)';
                 card.style.borderColor = iconColor;
@@ -2103,10 +2240,6 @@ export const QuarterlyMonitoringComponent = () => {
                 if (statLabel) statLabel.style.color = '#aaa';
             });
 
-            if (onClick) {
-                card.addEventListener('click', onClick);
-            }
-
             return card;
         };
 
@@ -2115,27 +2248,149 @@ export const QuarterlyMonitoringComponent = () => {
             att: { className: 'stats-cards' },
             style: {
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
                 backgroundColor: '#2a2a2a',
                 borderBottom: '1px solid #444'
             },
             child: [
+                // Total On-Going Projects
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(0, 191, 255, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(0, 191, 255, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-diagram-project' },
+                                    style: { color: 'deepskyblue', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', flexDirection: 'column' },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value', id: 'ongoing-stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'On-Going',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // Completed Research
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '16px',
+                        padding: '18px 22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        border: '1px solid #444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '54px',
+                                height: '54px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(76, 175, 80, 0.3)'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-check-circle' },
+                                    style: { color: '#4caf50', fontSize: '26px' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', flexDirection: 'column' },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'stat-value', id: 'completed-stat-value' },
+                                    text: '0',
+                                    style: {
+                                        fontSize: '32px',
+                                        fontWeight: '700',
+                                        color: '#fff',
+                                        lineHeight: '1.2'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Completed',
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#aaa',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
                 // Publications
-                createStatCard('fa-solid fa-book-open', '#ff9800', 'Publications', () => openComponentModal('Publications', Publication)),
+                createStatCard('fa-solid fa-book-open', '#ff9800', 'Publications', () => openComponentModal('Publications', Publication), currentStats.publications || 0),
 
                 // Presentations
-                createStatCard('fa-solid fa-chalkboard-user', '#e91e63', 'Presentations', () => openComponentModal('Presentations', PresentationResearch)),
+                createStatCard('fa-solid fa-chalkboard-user', '#e91e63', 'Presentations', () => openComponentModal('Presentations', PresentationResearch), currentStats.presentations || 0),
 
                 // IP Assets
-                createStatCard('fa-solid fa-trophy', '#9c27b0', 'IP Assets', () => openComponentModal('IP Assets', PatentUM)),
+                createStatCard('fa-solid fa-trophy', '#9c27b0', 'IP Assets', () => openComponentModal('IP Assets', PatentUM), currentStats.assets || 0),
 
                 // Collaborations
-                createStatCard('fa-solid fa-handshake', '#009688', 'Collaborations'),
+                createStatCard('fa-solid fa-handshake', '#009688', 'Collaborations', null, currentStats.collaborations || 0),
 
                 // Research Activity Conducted
-                createStatCard('fa-solid fa-flask', '#3f51b5', 'Research Activity Conducted')
+                createStatCard('fa-solid fa-flask', '#3f51b5', 'Research Activity Conducted', null, currentStats.activityConducted || 0)
             ]
         });
     };
@@ -2156,6 +2411,12 @@ export const QuarterlyMonitoringComponent = () => {
         subWidths.forEach(w => {
             colgroup.appendChild($({ tag: 'col', style: { width: w } }))
         })
+
+        // 1 actions column
+        colgroup.appendChild($({ tag: 'col', style: { width: '80px' } }))
+
+        // 1 remarks/completion column
+        colgroup.appendChild($({ tag: 'col', style: { width: '180px' } }))
 
         return $({
             tag: 'div',
@@ -2211,11 +2472,13 @@ export const QuarterlyMonitoringComponent = () => {
             '% of Completion',
             'Status of the program/project/study',
             'Remarks (Problems Encountered)',
-            'Preventive/Corrective Measures to address problems'
+            'Preventive/Corrective Measures to address problems',
+            'ACTIONS',
+            'REMARKS / OFFICIAL COMPLETION'
         ]
 
         fixedHeaders.forEach(header => {
-            const isCenter = ['NO.', '% of Completion', 'Status of the program/project/study'].includes(header)
+            const isCenter = ['NO.', '% of Completion', 'Status of the program/project/study', 'ACTIONS', 'REMARKS / OFFICIAL COMPLETION'].includes(header)
 
             const th = $({
                 tag: 'th',

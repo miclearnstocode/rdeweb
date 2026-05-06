@@ -175,8 +175,8 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
                 rm.q1_completion, rm.q1_status, rm.q1_remarks, rm.q1_measures,
                 rm.q2_completion, rm.q2_status, rm.q2_remarks, rm.q2_measures,
                 rm.q3_completion, rm.q3_status, rm.q3_remarks, rm.q3_measures,
-                rm.q4_completion, rm.q4_status, rm.q4_remarks, rm.q4_measures
-
+                rm.q4_completion, rm.q4_status, rm.q4_remarks, rm.q4_measures,
+                rm.official_completion_date
               FROM researchfile rf
               INNER JOIN event_list el ON rf.event_id = el.id
               LEFT JOIN research_monitoring rm ON rf.id = rm.research_id
@@ -216,6 +216,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
             'campus' => $row['campus'],
             'location' => $row['location'] ?? '—',
             'fundSource' => $row['fund_source'] ?? '—',
+            'readyForSymposium' => !empty($row['official_completion_date']),
             'quarters' => [
                 'q1' => [
                     'completion' => $row['q1_completion'],
@@ -265,7 +266,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     $actStmt->execute();
     $activityCount = (int)($actStmt->get_result()->fetch_assoc()['total'] ?? 0);
 
-    // Publications - simple count
+    // Publications
     $pubQuery = "SELECT COUNT(id) as totalPublication FROM publications";
     $pubStmt = $conn->prepare($pubQuery);
     $pubStmt->execute();
@@ -351,6 +352,11 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     $totalStmt->execute();
     $totalOngoing = (int)($totalStmt->get_result()->fetch_assoc()['total'] ?? 0);
 
+    $completedQuery = "SELECT COUNT(CASE WHEN final_completion_remarks = 'Ready for Official Completion' THEN 1 ELSE NULL END) as complete FROM research_monitoring";
+    $completedStmt = $conn->prepare($completedQuery);
+    $completedStmt->execute();
+    $completed = (int)($completedStmt->get_result()->fetch_assoc()['complete'] ?? 0);
+
     echo json_encode([
         'success' => true,
         'data' => $data,
@@ -360,6 +366,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
         ],
         'summary' => [
             'totalOngoing' => $totalOngoing,
+            'completed' => $completed,
             'publications' => $publicationsCount,
             'presentations' => $presentationsCount,
             'assets' => $ipAssetsCount,
@@ -441,6 +448,17 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
         $insert->bind_param("issssdssss", $researchId, $projectTitle, $researchers, $finalStartDate, $finalLocation, $finalFundSource, $completion, $status, $remarks, $measures);
         $res = $insert->execute();
     }
+
+    echo json_encode(['success' => $res]);
+} elseif ($action === 'markReadyForSymposium') {
+    $researchId = $_POST['project_id'] ?? $_POST['projectId'] ?? '';
+    $isReady = $_POST['isReady'] === 'true';
+    $completionDate = $isReady ? date('Y-m-d') : null;
+    $remarks = $isReady ? 'Ready for Official Completion' : null;
+
+    $update = $conn->prepare("UPDATE research_monitoring SET official_completion_date = ?, final_completion_remarks = ? WHERE research_id = ?");
+    $update->bind_param("ssi", $completionDate, $remarks, $researchId);
+    $res = $update->execute();
 
     echo json_encode(['success' => $res]);
 } elseif ($action === 'fetch_years') {

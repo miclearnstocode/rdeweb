@@ -1,6 +1,6 @@
 import { $, ConfirmationAlert, Waiting, DeleteConfirmModal } from '../../../lib/lib.js'
-import { Print } from "../../otherComponent/comment.js";
-import { handleResubmit } from './resubmit.js';
+import { Print } from "../../otherComponent/comment.js"
+import { handleResubmit } from './resubmit.js'
 
 
 // View Researches Modal
@@ -815,40 +815,40 @@ const openViewResearchesModal = () => {
 // Modern Document Management Component
 export const Research = () => {
     // Utility to update stats cards
-    const updateStatsFromData = (total, pending, approved, rejected) => {
-        const statsContainer = document.querySelector('.stats-container');
-        if (!statsContainer) return;
+    const updateStatsFromData = (total, pending, accepted, rejected) => {
+        const statsContainer = document.querySelector('.stats-container')
+        if (!statsContainer) return
 
-        const statValues = statsContainer.querySelectorAll('.stat-value');
+        const statValues = statsContainer.querySelectorAll('.stat-value')
         if (statValues.length >= 4) {
-            statValues[0].innerText = total;
-            statValues[1].innerText = pending;
-            statValues[2].innerText = approved;
-            statValues[3].innerText = rejected;
+            statValues[0].innerText = total
+            statValues[1].innerText = pending
+            statValues[2].innerText = accepted
+            statValues[3].innerText = rejected
         }
-    };
+    }
 
     // Recalculate stats from the current table rows
     const refreshStats = () => {
-        if (!documentsTable) return;
-        const rows = documentsTable.querySelectorAll('tbody tr:not(.empty-state-row):not(.loading-row)');
-        let total = rows.length;
-        let pending = 0;
-        let approved = 0;
-        let rejected = 0;
+        if (!documentsTable) return
+        const rows = documentsTable.querySelectorAll('tbody tr:not(.empty-state-row):not(.loading-row)')
+        let total = rows.length
+        let pending = 0
+        let accepted = 0
+        let rejected = 0
 
         rows.forEach(row => {
-            const statusCell = row.cells[1];
+            const statusCell = row.cells[1]
             if (statusCell) {
-                const statusText = statusCell.innerText.toLowerCase();
-                if (statusText.includes('pending')) pending++;
-                else if (statusText.includes('approved') || statusText.includes('accepted')) approved++;
-                else if (statusText.includes('rejected')) rejected++;
+                const statusText = statusCell.innerText.toLowerCase()
+                if (statusText.includes('pending')) pending++
+                else if (statusText.includes('accepted') || statusText.includes('accepted')) accepted++
+                else if (statusText.includes('rejected')) rejected++
             }
-        });
+        })
 
-        updateStatsFromData(total, pending, approved, rejected);
-    };
+        updateStatsFromData(total, pending, accepted, rejected)
+    }
 
     let mainContainer
     let documentsTable
@@ -898,12 +898,15 @@ export const Research = () => {
     const getStatusBadge = (status) => {
         const styles = {
             pending: { bg: '#FF9800', text: 'Pending', icon: 'fa-clock' },
-            approved: { bg: '#4CAF50', text: 'Approved', icon: 'fa-check-circle' },
-            accepted: { bg: '#4CAF50', text: 'Approved', icon: 'fa-check-circle' },
+            accepted: { bg: '#4CAF50', text: 'Accepted', icon: 'fa-check-circle' },
             rejected: { bg: '#f44336', text: 'Rejected', icon: 'fa-times-circle' },
-            review: { bg: '#2196F3', text: 'Under Review', icon: 'fa-eye' }
+            review: { bg: '#2196F3', text: 'Under Review', icon: 'fa-eye' },
+            revision_pending: { bg: '#9C27B0', text: 'Revision Pending', icon: 'fa-exclamation-circle' },
+            revision_submitted: { bg: '#673AB7', text: 'Revision Submitted', icon: 'fa-paper-plane' },
+            revision_accepted: { bg: '#009688', text: 'Revision Accepted', icon: 'fa-check-double' },
+            revision_rejected: { bg: '#E91E63', text: 'Revision Rejected', icon: 'fa-times-circle' }
         }
-        const normalizedStatus = (status || '').toLowerCase();
+        const normalizedStatus = (status || '').toLowerCase()
         const config = styles[normalizedStatus] || styles.pending
 
         return $({
@@ -926,7 +929,7 @@ export const Research = () => {
         })
     }
 
-    const createActionButtons = (rowData) => {
+    const createActionButtons = (rowData, hideEditDelete = false) => {
         const container = $({
             tag: 'div',
             style: {
@@ -950,7 +953,6 @@ export const Research = () => {
             },
             child: [
                 $({ tag: 'i', att: { className: 'fas fa-comment-dots' }, style: { color: 'white', fontSize: '14px' } })
-                //$({ tag: 'span', text: 'Comments', style: { marginLeft: '4px', fontSize: '12px', color: 'white' } })
             ],
             event: {
                 type: 'click',
@@ -1001,7 +1003,7 @@ export const Research = () => {
         })
 
         // Resubmit button (show only if rejected)
-        const normalizedStatus = rowData.status ? rowData.status.toLowerCase() : '';
+        const normalizedStatus = rowData.status ? rowData.status.toLowerCase() : ''
 
         if (normalizedStatus === 'rejected') {
             const resubmitBtn = $({
@@ -1020,32 +1022,36 @@ export const Research = () => {
                 },
                 child: [
                     $({ tag: 'i', att: { className: 'fas fa-redo' }, style: { color: 'white', fontSize: '14px' } })
-                    //$({ tag: 'span', text: 'Resubmit', style: { fontSize: '12px', color: 'white' } })
                 ],
                 event: {
                     type: 'click',
                     method: (e) => {
-                        e.stopPropagation();
-                        handleResubmit(rowData.endorsement_id);
+                        e.stopPropagation()
+                        handleResubmit(rowData.endorsement_id)
                     }
                 }
             })
             container.appendChild(resubmitBtn)
         }
 
-        if (normalizedStatus !== 'rejected') {
-            container.appendChild(viewCommentsBtn)
-            container.appendChild(editBtn)
+        // Add standard buttons
+        container.appendChild(viewCommentsBtn)
+
+        if (!hideEditDelete) {
+            if (normalizedStatus !== 'rejected') {
+                container.appendChild(editBtn)
+            }
+            container.appendChild(deleteBtn)
         }
-        container.appendChild(deleteBtn)
+
 
         return container
     }
 
     // View Comments Modal with Print functionality
     const viewComments = (doc) => {
-        let commentsModal;
-        let commentsBody;
+        let commentsModal
+        let commentsBody
 
         // Create modal
         const modal = $({
@@ -1063,8 +1069,8 @@ export const Research = () => {
                 zIndex: 100,
                 backdropFilter: 'blur(4px)'
             },
-            elementHandler: (el) => { commentsModal = el; }
-        });
+            elementHandler: (el) => { commentsModal = el }
+        })
 
         const modalContent = $({
             tag: 'div',
@@ -1079,7 +1085,7 @@ export const Research = () => {
                 overflow: 'hidden',
                 boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
             }
-        });
+        })
 
         // Header
         const header = $({
@@ -1118,7 +1124,7 @@ export const Research = () => {
                     }
                 })
             ]
-        });
+        })
 
         // Comments Body Container
         const commentsContainer = $({
@@ -1128,8 +1134,8 @@ export const Research = () => {
                 overflow: 'auto',
                 padding: '20px'
             },
-            elementHandler: (el) => { commentsBody = el; }
-        });
+            elementHandler: (el) => { commentsBody = el }
+        })
 
         // Show loading state
         commentsContainer.appendChild($({
@@ -1139,7 +1145,7 @@ export const Research = () => {
                 $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '24px', marginBottom: '12px', display: 'block' } }),
                 $({ tag: 'div', text: 'Loading comments...' })
             ]
-        }));
+        }))
 
         // Footer with Print and Close buttons
         const footer = $({
@@ -1192,35 +1198,35 @@ export const Research = () => {
                     }
                 })
             ]
-        });
+        })
 
-        modalContent.appendChild(header);
-        modalContent.appendChild(commentsContainer);
-        modalContent.appendChild(footer);
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
+        modalContent.appendChild(header)
+        modalContent.appendChild(commentsContainer)
+        modalContent.appendChild(footer)
+        modal.appendChild(modalContent)
+        document.body.appendChild(modal)
 
         // Load comments from API
         const loadComments = async () => {
             try {
-                const form = new FormData();
-                form.append('commentRequest', 'true');
-                form.append('docId', doc.id);
+                const form = new FormData()
+                form.append('commentRequest', 'true')
+                form.append('docId', doc.id)
 
                 const response = await fetch('/uploadResearchFile', {
                     method: 'POST',
                     body: form
-                });
+                })
 
                 if (response.ok) {
-                    const data = await response.json();
-                    displayComments(data, doc);
+                    const data = await response.json()
+                    displayComments(data, doc)
                 } else {
-                    throw new Error('Failed to load comments');
+                    throw new Error('Failed to load comments')
                 }
             } catch (error) {
-                console.error('Error loading comments:', error);
-                commentsBody.innerHTML = '';
+                console.error('Error loading comments:', error)
+                commentsBody.innerHTML = ''
                 commentsBody.appendChild($({
                     tag: 'div',
                     style: { textAlign: 'center', padding: '40px', color: '#f44336' },
@@ -1228,13 +1234,13 @@ export const Research = () => {
                         $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
                         $({ tag: 'div', text: 'Error loading comments: ' + error.message })
                     ]
-                }));
+                }))
             }
-        };
+        }
 
         // Display comments
         const displayComments = (commentsData, docInfo) => {
-            commentsBody.innerHTML = '';
+            commentsBody.innerHTML = ''
 
             if (!commentsData || commentsData.length === 0) {
                 commentsBody.appendChild($({
@@ -1244,16 +1250,16 @@ export const Research = () => {
                         $({ tag: 'i', att: { className: 'fas fa-comments' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
                         $({ tag: 'div', text: 'No comments available for this document' })
                     ]
-                }));
-                return;
+                }))
+                return
             }
 
             // Create comment cards
             commentsData.forEach(comment => {
-                const commentCard = createCommentCard(comment);
-                commentsBody.appendChild(commentCard);
-            });
-        };
+                const commentCard = createCommentCard(comment)
+                commentsBody.appendChild(commentCard)
+            })
+        }
 
         // Create individual comment card
         const createCommentCard = (comment) => {
@@ -1266,7 +1272,7 @@ export const Research = () => {
                     marginBottom: '16px',
                     borderLeft: `4px solid ${comment.evalName ? '#2196F3' : '#FF9800'}`
                 }
-            });
+            })
 
             // Evaluator info
             const evaluatorInfo = $({
@@ -1294,9 +1300,9 @@ export const Research = () => {
                         style: { color: '#888', fontSize: '12px' }
                     }) : null
                 ]
-            });
+            })
 
-            card.appendChild(evaluatorInfo);
+            card.appendChild(evaluatorInfo)
 
             // Comment sections
             const sections = [
@@ -1309,7 +1315,7 @@ export const Research = () => {
                 { title: 'Recommendation and Conclusion', content: comment.recommendation, icon: 'fa-lightbulb' },
                 { title: 'Literature', content: comment.literature, icon: 'fa-book' },
                 { title: 'Other Comments', content: comment.other, icon: 'fa-comment' }
-            ];
+            ]
 
             sections.forEach(section => {
                 if (section.content && section.content.trim() !== '') {
@@ -1331,28 +1337,28 @@ export const Research = () => {
                                 text: section.content
                             })
                         ]
-                    });
-                    card.appendChild(sectionEl);
+                    })
+                    card.appendChild(sectionEl)
                 }
-            });
+            })
 
-            return card;
-        };
+            return card
+        }
 
         // Print comments using the Print component
         const printCommentsWithComponent = async (docInfo) => {
             try {
-                const form = new FormData();
-                form.append('commentRequest', 'true');
-                form.append('docId', docInfo.id);
+                const form = new FormData()
+                form.append('commentRequest', 'true')
+                form.append('docId', docInfo.id)
 
                 const response = await fetch('/uploadResearchFile', {
                     method: 'POST',
                     body: form
-                });
+                })
 
                 if (response.ok) {
-                    const commentsData = await response.json();
+                    const commentsData = await response.json()
 
                     if (commentsData && commentsData.length > 0) {
                         // For each comment, create a Print component
@@ -1368,19 +1374,19 @@ export const Research = () => {
                                     // This will create the print content
                                     // The Print component handles the rendering
                                 }
-                            });
+                            })
 
                             // Create a temporary container for printing
                             const printContainer = $({
                                 tag: 'div',
                                 style: { display: 'none' },
                                 child: [printComponent]
-                            });
-                            document.body.appendChild(printContainer);
+                            })
+                            document.body.appendChild(printContainer)
 
                             // Get the print content
-                            const printContent = printContainer.querySelector('#commentPDF') || printContainer;
-                            const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=yes,scrollbars=yes');
+                            const printContent = printContainer.querySelector('#commentPDF') || printContainer
+                            const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=yes,scrollbars=yes')
                             printWindow.document.write(`
                                 <!DOCTYPE html>
                                 <html>
@@ -1389,20 +1395,20 @@ export const Research = () => {
                                     <link rel="stylesheet" href="/client/component/otherComponent/style/review.css">
                                     <style>
                                         body {
-                                            font-family: 'Segoe UI', Arial, sans-serif;
-                                            margin: 40px;
-                                            background: white;
-                                            color: #333;
+                                            font-family: 'Segoe UI', Arial, sans-serif
+                                            margin: 40px
+                                            background: white
+                                            color: #333
                                         }
                                         .print-header {
-                                            text-align: center;
-                                            margin-bottom: 30px;
-                                            padding-bottom: 20px;
-                                            border-bottom: 2px solid #333;
+                                            text-align: center
+                                            margin-bottom: 30px
+                                            padding-bottom: 20px
+                                            border-bottom: 2px solid #333
                                         }
                                         @media print {
                                             body {
-                                                margin: 20px;
+                                                margin: 20px
                                             }
                                         }
                                     </style>
@@ -1413,49 +1419,49 @@ export const Research = () => {
                                         <p><strong>Document:</strong> ${docInfo.title}</p>
                                         <p><strong>Author:</strong> ${docInfo.author} | <strong>Event:</strong> ${docInfo.eventName}</p>
                                     </div>
-                            `);
-                            printWindow.document.write(printContent.innerHTML);
-                            printWindow.document.write('</body></html>');
-                            printWindow.document.close();
-                            printWindow.print();
-                            printWindow.close();
+                            `)
+                            printWindow.document.write(printContent.innerHTML)
+                            printWindow.document.write('</body></html>')
+                            printWindow.document.close()
+                            printWindow.print()
+                            printWindow.close()
 
                             // Remove temporary container
-                            printContainer.remove();
+                            printContainer.remove()
 
                             // Only print one window (break after first comment)
                             // If you want all comments in one print, you'd need to combine them
-                            return;
-                        });
+                            return
+                        })
                     } else {
-                        alert('No comments available to print');
+                        alert('No comments available to print')
                     }
                 } else {
-                    alert('Failed to load comments for printing');
+                    alert('Failed to load comments for printing')
                 }
             } catch (error) {
-                console.error('Error printing comments:', error);
-                alert('Error printing comments: ' + error.message);
+                console.error('Error printing comments:', error)
+                alert('Error printing comments: ' + error.message)
             }
-        };
+        }
 
         // Load comments
-        loadComments();
-    };
+        loadComments()
+    }
 
     // Create table row
     const createTableRow = (doc) => {
-        const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } });
+        const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
 
-        // Determine status and ensure it's properly formatted
-        let status = doc.status;
+        // Determine status: prioritize revision_status over main status
+        let status = doc.revision_status || doc.status
         if (!status || status === 'NULL' || status === 'null') {
-            status = 'pending';
+            status = 'pending'
         }
 
         // Handle file display with proper icons for Google Drive files
         const getFileIcon = (fileUrl, fileType = 'research') => {
-            if (!fileUrl || fileUrl === '—') return '—';
+            if (!fileUrl || fileUrl === '—') return '—'
             if (fileUrl.includes('drive.google.com')) {
                 return $({
                     tag: 'i',
@@ -1464,11 +1470,11 @@ export const Research = () => {
                     event: {
                         type: 'click',
                         method: (e) => {
-                            e.stopPropagation();
-                            viewFileInModal(fileUrl, fileType);
+                            e.stopPropagation()
+                            viewFileInModal(fileUrl, fileType)
                         }
                     }
-                });
+                })
             }
             return $({
                 tag: 'i',
@@ -1477,17 +1483,39 @@ export const Research = () => {
                 event: {
                     type: 'click',
                     method: (e) => {
-                        e.stopPropagation();
-                        viewFileInModal(fileUrl, fileType);
+                        e.stopPropagation()
+                        viewFileInModal(fileUrl, fileType)
                     }
                 }
-            });
-        };
+            })
+        }
 
-        const researchFileDisplay = doc.researchFile && doc.researchFile !== '—' ? getFileIcon(doc.researchFile) : '—';
-        const programFileDisplay = doc.programFile && doc.programFile !== '—' ? getFileIcon(doc.programFile) : '—';
-        const endorsementFileDisplay = doc.endorsementFile && doc.endorsementFile !== '—' ? getFileIcon(doc.endorsementFile) : '—';
+        const researchFileDisplay = doc.researchFile && doc.researchFile !== '—' ? getFileIcon(doc.researchFile) : '—'
+        const programFileDisplay = doc.programFile && doc.programFile !== '—' ? getFileIcon(doc.programFile) : '—'
+        const endorsementFileDisplay = doc.endorsementFile && doc.endorsementFile !== '—' ? getFileIcon(doc.endorsementFile) : '—'
+        const reviseButton = createReviseButton(doc)
+        const actionButtons = createActionButtons(doc, !!reviseButton)
 
+        const actionsCell = $({
+            tag: 'td',
+            style: { padding: '16px 12px', verticalAlign: 'middle' }
+        })
+
+        // Create container for buttons
+        const buttonContainer = $({
+            tag: 'div',
+            style: { display: 'flex', gap: '8px', flexWrap: 'wrap' }
+        })
+
+        // Put Revise button first if it exists
+        if (reviseButton) {
+            buttonContainer.appendChild(reviseButton)
+        }
+        buttonContainer.appendChild(actionButtons)
+
+        actionsCell.appendChild(buttonContainer)
+
+        // Then in your cells array, use actionsCell as the 11th element
         const cells = [
             doc.eventName || '—',
             getStatusBadge(status),
@@ -1499,8 +1527,8 @@ export const Research = () => {
             researchFileDisplay,
             programFileDisplay,
             endorsementFileDisplay,
-            createActionButtons(doc)
-        ];
+            actionsCell  // ← Use this instead of createActionButtons(doc)
+        ]
 
         cells.forEach((content, index) => {
             const td = $({
@@ -1511,19 +1539,396 @@ export const Research = () => {
                     fontSize: '14px',
                     verticalAlign: 'middle'
                 }
-            });
+            })
 
             if (typeof content === 'object' && content.tagName) {
-                td.appendChild(content);
+                td.appendChild(content)
             } else {
-                td.innerText = content;
+                td.innerText = content
             }
 
-            row.appendChild(td);
-        });
+            row.appendChild(td)
+        })
 
-        return row;
-    };
+        return row
+    }
+
+    // Create Revise Button for Actions column
+    const createReviseButton = (doc) => {
+        // Only show if revision_status is pending or rejected
+        const revisionStatus = doc.revision_status || ''
+        const isEligible = revisionStatus === 'revision_pending' || revisionStatus === 'revision_rejected'
+
+        if (!isEligible) return null
+
+        const reviseBtn = $({
+            tag: 'button',
+            att: { className: 'action-btn revise-btn', title: 'Submit Revised Paper/Proposal' },
+            style: {
+                background: '#9C27B0',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+            },
+            child: [
+                $({ tag: 'i', att: { className: 'fas fa-upload' }, style: { color: 'white', fontSize: '14px' } }),
+                $({ tag: 'span', text: 'Update Revision', style: { marginLeft: '6px', fontSize: '12px', color: 'white', fontWeight: 'bold' } })
+            ],
+            event: {
+                type: 'click',
+                method: (e) => {
+                    e.stopPropagation()
+                    openRevisionModal(doc)
+                }
+            }
+        })
+
+        return reviseBtn
+    }
+    // Open Revision Modal
+    const openRevisionModal = async (doc) => {
+        const modal = $({
+            tag: 'div',
+            style: {
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.85)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 101,
+                backdropFilter: 'blur(5px)'
+            }
+        })
+
+        const modalContent = $({
+            tag: 'div',
+            style: {
+                backgroundColor: '#1a1a1a',
+                borderRadius: '16px',
+                width: '90%',
+                maxWidth: '550px',
+                maxHeight: '85vh',
+                overflow: 'auto',
+                boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+            }
+        })
+
+        // Header
+        const header = $({
+            tag: 'div',
+            style: {
+                padding: '20px 24px',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                position: 'sticky',
+                top: 0,
+                backgroundColor: '#1a1a1a',
+                zIndex: 1
+            },
+            child: [
+                $({
+                    tag: 'h3',
+                    text: 'Submit Revised Paper/Proposal',
+                    style: { color: '#fff', margin: 0, fontSize: '20px' }
+                }),
+                $({
+                    tag: 'i',
+                    att: { className: 'fas fa-times' },
+                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
+                    event: { type: 'click', method: () => modal.remove() }
+                })
+            ]
+        })
+
+        // Form body
+        const formBody = $({ tag: 'div', style: { padding: '24px' } })
+
+        // Document Title (readonly)
+        const titleField = $({ tag: 'div', style: { marginBottom: '24px' } })
+        titleField.appendChild($({
+            tag: 'label',
+            text: 'Document Title',
+            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }
+        }))
+
+        const titleInput = $({
+            tag: 'input',
+            att: { type: 'text', value: doc.title || '', disabled: true },
+            style: {
+                width: '100%',
+                padding: '12px 14px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#aaa',
+                fontSize: '14px',
+                cursor: 'not-allowed'
+            }
+        })
+        titleField.appendChild(titleInput)
+        formBody.appendChild(titleField)
+
+        // File upload section (only Research File)
+        const fileSection = $({
+            tag: 'div',
+            style: {
+                backgroundColor: '#2a2a2a',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '20px'
+            }
+        })
+
+        fileSection.appendChild($({
+            tag: 'div',
+            style: { fontSize: '12px', color: '#9C27B0', marginBottom: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' },
+            text: 'REVISED DOCUMENT'
+        }))
+
+        // File upload area
+        let fileInput, fileNameDisplay, fileError
+
+        const uploadArea = $({
+            tag: 'div',
+            style: {
+                border: '2px dashed #9C27B0',
+                borderRadius: '10px',
+                padding: '30px 20px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                backgroundColor: 'rgba(156, 39, 176, 0.05)'
+            },
+            event: {
+                type: 'click',
+                method: () => fileInput.click()
+            }
+        })
+
+        uploadArea.appendChild($({
+            tag: 'i',
+            att: { className: 'fas fa-cloud-upload-alt' },
+            style: { fontSize: '40px', color: '#9C27B0', marginBottom: '12px', display: 'block' }
+        }))
+
+        uploadArea.appendChild($({
+            tag: 'div',
+            text: 'Click to upload revised document',
+            style: { color: '#9C27B0', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }
+        }))
+
+        uploadArea.appendChild($({
+            tag: 'div',
+            text: 'PDF only (Max 10MB)',
+            style: { color: '#888', fontSize: '12px' }
+        }))
+
+        fileNameDisplay = $({
+            tag: 'div',
+            style: { marginTop: '12px', fontSize: '12px', color: '#4caf50', textAlign: 'center' }
+        })
+
+        fileError = $({
+            tag: 'div',
+            style: { marginTop: '8px', fontSize: '12px', color: '#f44336', textAlign: 'center' }
+        })
+
+        fileInput = $({
+            tag: 'input',
+            att: { type: 'file', accept: '.pdf,application/pdf', style: 'display: none' },
+            event: {
+                type: 'change',
+                method: (e) => {
+                    const file = e.target.files[0]
+                    if (file) {
+                        if (file.type !== 'application/pdf') {
+                            fileError.innerText = 'Please select a valid PDF file'
+                            fileNameDisplay.innerText = ''
+                            fileInput.value = ''
+                        } else if (file.size > 10 * 1024 * 1024) {
+                            fileError.innerText = 'File size exceeds 10MB limit'
+                            fileNameDisplay.innerText = ''
+                            fileInput.value = ''
+                        } else {
+                            fileError.innerText = ''
+                            fileNameDisplay.innerText = `✓ Selected: ${file.name}`
+                        }
+                    }
+                }
+            }
+        })
+
+        fileSection.appendChild(uploadArea)
+        fileSection.appendChild(fileNameDisplay)
+        fileSection.appendChild(fileError)
+        fileSection.appendChild(fileInput)
+
+        formBody.appendChild(fileSection)
+
+        // Info notice
+        const infoNotice = $({
+            tag: 'div',
+            style: {
+                padding: '14px',
+                backgroundColor: 'rgba(156, 39, 176, 0.08)',
+                borderRadius: '10px',
+                borderLeft: '4px solid #9C27B0',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px'
+            },
+            child: [
+                $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { color: '#9C27B0', fontSize: '16px', marginTop: '2px' } }),
+                $({
+                    tag: 'div',
+                    style: { flex: 1 },
+                    child: [
+                        $({
+                            tag: 'div',
+                            text: 'Revision Guidelines:',
+                            style: { color: '#9C27B0', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }
+                        }),
+                        $({
+                            tag: 'div',
+                            text: 'Please upload your revised research document were evaluator comments and suggestion is applied. The original document will remain along with the new version with revised tag.',
+                            style: { color: '#bbb', fontSize: '12px', lineHeight: '1.4' }
+                        })
+                    ]
+                })
+            ]
+        })
+        formBody.appendChild(infoNotice)
+
+        // Form actions
+        const actions = $({
+            tag: 'div',
+            style: {
+                padding: '20px 24px',
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'flex-end',
+                position: 'sticky',
+                bottom: 0,
+                backgroundColor: '#1a1a1a'
+            }
+        })
+
+        const cancelBtn = $({
+            tag: 'button',
+            text: 'Cancel',
+            style: {
+                padding: '10px 24px',
+                backgroundColor: '#444',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+            },
+            event: {
+                type: 'click',
+                method: () => modal.remove()
+            }
+        })
+
+        const submitBtn = $({
+            tag: 'button',
+            text: 'Submit Revision',
+            style: {
+                padding: '10px 28px',
+                backgroundColor: '#9C27B0',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+            },
+            event: {
+                type: 'click',
+                method: async () => {
+                    let researchFile = null
+                    if (fileInput.files.length > 0) {
+                        researchFile = fileInput.files[0]
+                    } else {
+                        document.body.appendChild(ConfirmationAlert('Please select the revised research file (PDF)', () => { }))
+                        return
+                    }
+
+                    if (researchFile.type !== 'application/pdf') {
+                        document.body.appendChild(ConfirmationAlert('Research file must be a valid PDF file', () => { }))
+                        return
+                    }
+
+                    if (researchFile.size > 10 * 1024 * 1024) {
+                        document.body.appendChild(ConfirmationAlert('File size exceeds 10MB limit', () => { }))
+                        return
+                    }
+
+                    // Show loading
+                    let loading = Waiting()
+                    document.body.appendChild(loading)
+
+                    const formData = new FormData()
+                    formData.append('submitRevision', 'true')
+                    formData.append('original_research_id', doc.id)
+                    formData.append('original_title', doc.title)
+                    formData.append('researchDoc', researchFile)
+
+                    try {
+                        const response = await fetch('/uploadResearchFile', {
+                            method: 'POST',
+                            body: formData
+                        })
+
+                        const result = await response.json()
+
+                        if (loading && loading.remove) loading.remove()
+
+                        if (result.status) {
+                            document.body.appendChild(ConfirmationAlert(
+                                result.message || 'Revision submitted successfully!',
+                                () => {
+                                    modal.remove()
+                                    if (window.refreshDocumentsTable) {
+                                        window.refreshDocumentsTable()
+                                    }
+                                }
+                            ))
+                        } else {
+                            document.body.appendChild(ConfirmationAlert('Failed to submit revision: ' + result.message, () => { }))
+                        }
+                    } catch (error) {
+                        if (loading && loading.remove) loading.remove()
+                        console.error('Revision submission error:', error)
+                        document.body.appendChild(ConfirmationAlert('Error submitting revision: ' + error.message, () => { }))
+                    }
+                }
+            }
+        })
+
+        actions.appendChild(cancelBtn)
+        actions.appendChild(submitBtn)
+
+        modalContent.appendChild(header)
+        modalContent.appendChild(formBody)
+        modalContent.appendChild(actions)
+        modal.appendChild(modalContent)
+        document.body.appendChild(modal)
+    }
+
     // View file in modal (for research, program, endorsement files)
     const viewFileInModal = (fileUrl, fileType = 'research') => {
         // Determine file type display name
@@ -1531,18 +1936,18 @@ export const Research = () => {
             research: 'Research Document',
             program: 'Program File',
             endorsement: 'Endorsement Letter'
-        };
-        const displayName = typeNames[fileType] || 'Document';
+        }
+        const displayName = typeNames[fileType] || 'Document'
 
         // Create file viewer based on file type
         const fileViewer = () => {
             if (fileUrl.includes('drive.google.com')) {
                 // Google Drive file - extract file ID for embed
-                let embedUrl = fileUrl;
+                let embedUrl = fileUrl
                 if (fileUrl.includes('/file/d/')) {
-                    const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                    const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
                     if (fileIdMatch && fileIdMatch[1]) {
-                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
                     }
                 }
 
@@ -1558,7 +1963,7 @@ export const Research = () => {
                         border: 'none',
                         borderRadius: '8px'
                     }
-                });
+                })
             } else {
                 // Local file
                 return $({
@@ -1573,9 +1978,9 @@ export const Research = () => {
                         border: 'none',
                         borderRadius: '8px'
                     }
-                });
+                })
             }
-        };
+        }
 
         const modal = $({
             tag: 'div',
@@ -1695,179 +2100,10 @@ export const Research = () => {
                     ]
                 })
             ]
-        });
+        })
 
-        document.body.appendChild(modal);
-    };
-    // View document modal
-    const viewDocument = (doc) => {
-        // Create file viewer based on file type
-        const fileViewer = () => {
-            if (doc.drive_view_url) {
-                // Google Drive file
-                return $({
-                    tag: 'iframe',
-                    att: {
-                        src: doc.drive_view_url,
-                        title: 'Document Viewer'
-                    },
-                    style: {
-                        width: '100%',
-                        height: '500px',
-                        border: 'none',
-                        borderRadius: '8px'
-                    }
-                });
-            } else if (doc.researchFile && doc.researchFile !== '—') {
-                // Local file
-                return $({
-                    tag: 'object',
-                    att: {
-                        data: '/' + doc.researchFile,
-                        type: 'application/pdf'
-                    },
-                    style: {
-                        width: '100%',
-                        height: '500px',
-                        border: 'none',
-                        borderRadius: '8px'
-                    }
-                });
-            } else {
-                return $({
-                    tag: 'div',
-                    text: 'No file available',
-                    style: { textAlign: 'center', padding: '40px', color: '#999' }
-                });
-            }
-        };
-
-        const modal = $({
-            tag: 'div',
-            style: {
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.9)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 100,
-                backdropFilter: 'blur(4px)'
-            },
-            child: [
-                $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#1e1e1e',
-                        borderRadius: '12px',
-                        width: '90%',
-                        maxWidth: '1200px',
-                        maxHeight: '90vh',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-                    },
-                    child: [
-                        // Header
-                        $({
-                            tag: 'div',
-                            style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                backgroundColor: '#1e1e1e'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    child: [
-                                        $({ tag: 'h3', text: doc.title, style: { color: '#fff', margin: 0, fontSize: '18px', marginBottom: '8px' } }),
-                                        $({
-                                            tag: 'div',
-                                            style: { display: 'flex', gap: '16px', fontSize: '12px', color: '#888' },
-                                            child: [
-                                                $({ tag: 'span', text: `Author: ${doc.author}` }),
-                                                $({ tag: 'span', text: `Event: ${doc.eventName}` }),
-                                                $({ tag: 'span', text: `Status: ${doc.status || 'Pending'}` })
-                                            ]
-                                        })
-                                    ]
-                                }),
-                                $({
-                                    tag: 'i',
-                                    att: { className: 'fas fa-times' },
-                                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
-                                    event: {
-                                        type: 'click',
-                                        method: () => modal.remove()
-                                    }
-                                })
-                            ]
-                        }),
-                        // Content
-                        $({
-                            tag: 'div',
-                            style: { padding: '20px', flex: 1, overflow: 'auto' },
-                            child: [fileViewer()]
-                        }),
-                        // Footer
-                        $({
-                            tag: 'div',
-                            style: {
-                                padding: '16px 24px',
-                                borderTop: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '12px'
-                            },
-                            child: [
-                                $({
-                                    tag: 'button',
-                                    text: 'Close',
-                                    style: {
-                                        padding: '8px 24px',
-                                        backgroundColor: '#444',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        color: '#fff',
-                                        cursor: 'pointer'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => modal.remove()
-                                    }
-                                }),
-                                doc.drive_view_url ? $({
-                                    tag: 'button',
-                                    text: 'Open in New Tab',
-                                    style: {
-                                        padding: '8px 24px',
-                                        backgroundColor: '#2196F3',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        color: '#fff',
-                                        cursor: 'pointer'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => window.open(doc.drive_view_url, '_blank')
-                                    }
-                                }) : null
-                            ]
-                        })
-                    ]
-                })
-            ]
-        });
-
-        document.body.appendChild(modal);
-    };
+        document.body.appendChild(modal)
+    }
 
     // Edit document
     const editDocument = (doc) => {
@@ -1894,113 +2130,51 @@ export const Research = () => {
             if (confirmed) {
                 try {
                     // Show loading indicator
-                    let loading = Waiting();
-                    document.body.appendChild(loading);
+                    let loading = Waiting()
+                    document.body.appendChild(loading)
 
-                    const form = new FormData();
-                    form.append('deleteEndorsement', 'true');
-                    form.append('docId', doc.endorsement_id || doc.id);
+                    const form = new FormData()
+                    form.append('deleteEndorsement', 'true')
+                    form.append('docId', doc.endorsement_id || doc.id)
 
                     const response = await fetch('/uploadResearchFile', {
                         method: 'POST',
                         body: form
-                    });
+                    })
 
-                    const result = await response.json();
+                    const result = await response.json()
 
                     // Remove loading indicator
                     if (loading && loading.remove) {
-                        loading.remove();
+                        loading.remove()
                     }
 
                     if (result.status) {
                         // Remove from table
-                        const rows = documentsTable.querySelectorAll('tr');
+                        const rows = documentsTable.querySelectorAll('tr')
                         for (let i = 1; i < rows.length; i++) {
                             if (rows[i].cells[2]?.innerText === doc.title) {
-                                rows[i].remove();
-                                break;
+                                rows[i].remove()
+                                break
                             }
                         }
 
                         // Update stats after deletion
-                        refreshStats();
+                        refreshStats()
 
                         // Show success message
                         document.body.appendChild(ConfirmationAlert(result.message, () => {
                             // Optional: refresh the list
-                            // loadDocuments();
-                        }));
+                            // loadDocuments()
+                        }))
                     } else {
-                        alert('Failed to delete: ' + result.message);
+                        alert('Failed to delete: ' + result.message)
                     }
                 } catch (error) {
-                    console.error('Delete error:', error);
-                    alert('Error deleting document: ' + error.message);
+                    console.error('Delete error:', error)
+                    alert('Error deleting document: ' + error.message)
                 }
             }
-        });
-    };
-
-    // Create modal
-    const createModal = (title, content) => {
-        return $({
-            tag: 'div',
-            style: {
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 100,
-                backdropFilter: 'blur(4px)'
-            },
-            child: [
-                $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#1e1e1e',
-                        borderRadius: '12px',
-                        width: '90%',
-                        maxWidth: '800px',
-                        maxHeight: '90vh',
-                        overflow: 'auto',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                            },
-                            child: [
-                                $({ tag: 'h3', text: title, style: { color: '#fff', margin: 0, fontSize: '20px' } }),
-                                $({
-                                    tag: 'i',
-                                    att: { className: 'fas fa-times' },
-                                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            const modal = document.querySelector('.modal-container')
-                                            if (modal) modal.remove()
-                                        }
-                                    }
-                                })
-                            ]
-                        }),
-                        $({ tag: 'div', att: { className: 'modal-content' }, html: content })
-                    ]
-                })
-            ]
         })
     }
 
@@ -2196,7 +2370,7 @@ export const Research = () => {
                         const isSymposium = selectedEventName.toLowerCase().includes('symposium')
 
                         // Update file grid columns - ADD THIS LINE HERE
-                        fileGrid.style.gridTemplateColumns = isSymposium ? '1fr 1fr' : '1fr 1fr 1fr';
+                        fileGrid.style.gridTemplateColumns = isSymposium ? '1fr 1fr' : '1fr 1fr 1fr'
                         // Show/hide date fields
                         if (dateFieldsContainer) {
                             dateFieldsContainer.style.display = isSymposium ? 'grid' : 'none'
@@ -2210,47 +2384,47 @@ export const Research = () => {
                 }
             },
             elementHandler: async (el) => {
-                if (!el) return;
-                el.innerHTML = '';
+                if (!el) return
+                el.innerHTML = ''
 
                 const defaultOption = $({
                     tag: 'option',
                     text: '-- Select Event Name --',
                     att: { disabled: true, selected: true, value: '' }
-                });
-                el.appendChild(defaultOption);
+                })
+                el.appendChild(defaultOption)
 
-                const form = new FormData();
-                form.append('getEvent', 'true');
+                const form = new FormData()
+                form.append('getEvent', 'true')
 
                 try {
                     const response = await fetch('/eventRequest', {
                         method: 'POST',
                         body: form
-                    });
+                    })
 
                     if (response.ok) {
-                        const data = await response.json();
+                        const data = await response.json()
                         data.forEach(val => {
                             el.appendChild($({
                                 tag: 'option',
                                 text: val.name,
                                 style: { backgroundColor: '#2a2a2a', fontSize: '14px' },
                                 att: { id: val.id, value: val.name }
-                            }));
-                        });
+                            }))
+                        })
                     } else {
-                        console.error('Failed to fetch events:', response.status);
+                        console.error('Failed to fetch events:', response.status)
                     }
                 } catch (error) {
-                    console.error('Error fetching events:', error);
+                    console.error('Error fetching events:', error)
                 }
 
                 if (isEdit && editData?.eventName) {
-                    el.value = editData.eventName;
+                    el.value = editData.eventName
                     // Trigger change event to set initial state
-                    const changeEvent = new Event('change');
-                    el.dispatchEvent(changeEvent);
+                    const changeEvent = new Event('change')
+                    el.dispatchEvent(changeEvent)
                 }
             }
         })
@@ -2498,11 +2672,11 @@ export const Research = () => {
                 paddingTop: '20px',
                 borderTop: '1px solid rgba(255,255,255,0.1)'
             }
-        });
+        })
 
         // Date Started field
-        const dateStartedWrapper = $({ tag: 'div' });
-        dateStartedWrapper.appendChild($({ tag: 'label', text: 'Date Started *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }));
+        const dateStartedWrapper = $({ tag: 'div' })
+        dateStartedWrapper.appendChild($({ tag: 'label', text: 'Date Started *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
         dateStartedField = $({
             tag: 'input',
             att: { type: 'date', value: isEdit ? (editData?.date_started || '') : '' },
@@ -2519,12 +2693,12 @@ export const Research = () => {
                 type: 'change',
                 method: (e) => { formData.date_started = e.target.value }
             }
-        });
-        dateStartedWrapper.appendChild(dateStartedField);
+        })
+        dateStartedWrapper.appendChild(dateStartedField)
 
         // Date Completed field
-        const dateCompletedWrapper = $({ tag: 'div' });
-        dateCompletedWrapper.appendChild($({ tag: 'label', text: 'Date Completed *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }));
+        const dateCompletedWrapper = $({ tag: 'div' })
+        dateCompletedWrapper.appendChild($({ tag: 'label', text: 'Date Completed *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
         dateCompletedField = $({
             tag: 'input',
             att: { type: 'date', value: isEdit ? (editData?.date_completed || '') : '' },
@@ -2541,11 +2715,11 @@ export const Research = () => {
                 type: 'change',
                 method: (e) => { formData.date_completed = e.target.value }
             }
-        });
-        dateCompletedWrapper.appendChild(dateCompletedField);
+        })
+        dateCompletedWrapper.appendChild(dateCompletedField)
 
-        dateFieldsContainer.appendChild(dateStartedWrapper);
-        dateFieldsContainer.appendChild(dateCompletedWrapper);
+        dateFieldsContainer.appendChild(dateStartedWrapper)
+        dateFieldsContainer.appendChild(dateCompletedWrapper)
 
         // Add fields to two-column layout
         twoColumnLayout.appendChild(titleField)
@@ -2554,7 +2728,7 @@ export const Research = () => {
         twoColumnLayout.appendChild(authorField)
         twoColumnLayout.appendChild(presenterField)
         twoColumnLayout.appendChild(coAuthorField)
-        twoColumnLayout.appendChild(dateFieldsContainer);
+        twoColumnLayout.appendChild(dateFieldsContainer)
 
         formBody.appendChild(eventField)
         formBody.appendChild(twoColumnLayout)
@@ -2646,117 +2820,117 @@ export const Research = () => {
             event: {
                 type: 'click',
                 method: async () => {
-                    const isSymposium = formData.eventName.toLowerCase().includes('symposium');
+                    const isSymposium = formData.eventName.toLowerCase().includes('symposium')
 
                     // Validate required fields
                     if (!formData.eventName || !formData.title || !formData.category || !formData.center || !formData.author || !formData.presenter) {
-                        alert('Please fill in all required fields (*)');
-                        return;
+                        alert('Please fill in all required fields (*)')
+                        return
                     }
 
                     // File validations for new uploads
                     if (!isEdit) {
                         if (!formData.researchFile || !formData.endorsementFile) {
-                            alert('Please upload Research File and Endorsement Letter');
-                            return;
+                            alert('Please upload Research File and Endorsement Letter')
+                            return
                         }
 
                         // For non-Symposium events, program file is required
                         if (!isSymposium && !formData.programFile) {
-                            alert('Program file is required for non-Symposium events');
-                            return;
+                            alert('Program file is required for non-Symposium events')
+                            return
                         }
 
                         // Validate PDF files
                         if (formData.researchFile && formData.researchFile.type !== 'application/pdf') {
-                            alert('Research file must be a valid PDF file');
-                            return;
+                            alert('Research file must be a valid PDF file')
+                            return
                         }
                         if (!isSymposium && formData.programFile && formData.programFile.type !== 'application/pdf') {
-                            alert('Program file must be a valid PDF file');
-                            return;
+                            alert('Program file must be a valid PDF file')
+                            return
                         }
                         if (formData.endorsementFile && formData.endorsementFile.type !== 'application/pdf') {
-                            alert('Endorsement letter must be a valid PDF file');
-                            return;
+                            alert('Endorsement letter must be a valid PDF file')
+                            return
                         }
                     }
 
                     // Validate co-authors if any
                     if (formData.coAuthors && formData.coAuthors.length > 0) {
-                        const invalidCoAuthors = formData.coAuthors.filter(coAuth => !coAuth.trim());
+                        const invalidCoAuthors = formData.coAuthors.filter(coAuth => !coAuth.trim())
                         if (invalidCoAuthors.length > 0) {
-                            alert("Some co-authors have empty names. Please fix or remove them.");
-                            return;
+                            alert("Some co-authors have empty names. Please fix or remove them.")
+                            return
                         }
                     }
 
                     // Validate date fields for Symposium
                     if (isSymposium) {
                         if (!formData.date_started || !formData.date_completed) {
-                            alert('Please fill in Date Started and Date Completed for Symposium events');
-                            return;
+                            alert('Please fill in Date Started and Date Completed for Symposium events')
+                            return
                         }
                     }
 
                     // Show loading indicator
-                    let loading = Waiting();
-                    document.body.appendChild(loading);
+                    let loading = Waiting()
+                    document.body.appendChild(loading)
 
                     const removeLoading = () => {
                         if (loading && loading.remove) {
-                            loading.remove();
+                            loading.remove()
                         }
-                    };
+                    }
 
                     try {
-                        const form = new FormData();
+                        const form = new FormData()
 
                         if (isEdit) {
-                            form.append('updateResearch', 'true');
-                            form.append('docId', editData.id);
+                            form.append('updateResearch', 'true')
+                            form.append('docId', editData.id)
                         } else {
-                            form.append('uploadResearch', 'true');
+                            form.append('uploadResearch', 'true')
                         }
 
                         // Append all form data
-                        form.append('eventType', formData.eventName);
-                        form.append('title', formData.title);
-                        form.append('category', formData.category);
-                        form.append('center', formData.center);
-                        form.append('author', formData.author);
-                        form.append('presenter', formData.presenter);
-                        form.append('coAuthor', JSON.stringify(formData.coAuthors || []));
+                        form.append('eventType', formData.eventName)
+                        form.append('title', formData.title)
+                        form.append('category', formData.category)
+                        form.append('center', formData.center)
+                        form.append('author', formData.author)
+                        form.append('presenter', formData.presenter)
+                        form.append('coAuthor', JSON.stringify(formData.coAuthors || []))
 
                         // Append date fields only for Symposium
                         if (isSymposium) {
-                            form.append('date_started', formData.date_started);
-                            form.append('date_completed', formData.date_completed);
+                            form.append('date_started', formData.date_started)
+                            form.append('date_completed', formData.date_completed)
                         }
 
                         // Append files
                         if (formData.endorsementFile) {
-                            form.append('uploadedFileEndorsement', formData.endorsementFile);
+                            form.append('uploadedFileEndorsement', formData.endorsementFile)
                         }
                         if (formData.researchFile) {
-                            form.append('researchDoc', formData.researchFile);
+                            form.append('researchDoc', formData.researchFile)
                         }
                         // Only append program file if not Symposium
                         if (!isSymposium && formData.programFile) {
-                            form.append('programFile', formData.programFile);
+                            form.append('programFile', formData.programFile)
                         }
 
                         const response = await fetch('/getresearch', {
                             method: 'POST',
                             body: form
-                        });
+                        })
 
                         if (!response.ok) {
-                            throw new Error(`HTTP error! Status: ${response.status}`);
+                            throw new Error(`HTTP error! Status: ${response.status}`)
                         }
 
-                        const dat = await response.json();
-                        removeLoading();
+                        const dat = await response.json()
+                        removeLoading()
 
                         if (dat.status) {
                             const newDoc = {
@@ -2775,33 +2949,33 @@ export const Research = () => {
                                 date: new Date().toISOString(),
                                 date_started: formData.date_started,
                                 date_completed: formData.date_completed
-                            };
+                            }
 
                             if (isEdit) {
-                                const rows = documentsTable.querySelectorAll('tr');
+                                const rows = documentsTable.querySelectorAll('tr')
                                 for (let i = 1; i < rows.length; i++) {
                                     if (rows[i].cells[2]?.innerText === editData.title) {
-                                        const newRow = createTableRow(newDoc);
-                                        rows[i].parentNode.replaceChild(newRow, rows[i]);
-                                        break;
+                                        const newRow = createTableRow(newDoc)
+                                        rows[i].parentNode.replaceChild(newRow, rows[i])
+                                        break
                                     }
                                 }
                             } else {
-                                const newRow = createTableRow(newDoc);
-                                const tbody = documentsTable.querySelector('tbody');
-                                const emptyState = tbody.querySelector('.empty-state-row');
-                                if (emptyState) emptyState.remove();
+                                const newRow = createTableRow(newDoc)
+                                const tbody = documentsTable.querySelector('tbody')
+                                const emptyState = tbody.querySelector('.empty-state-row')
+                                if (emptyState) emptyState.remove()
 
                                 if (tbody.firstChild) {
-                                    tbody.insertBefore(newRow, tbody.firstChild);
+                                    tbody.insertBefore(newRow, tbody.firstChild)
                                 } else {
-                                    tbody.appendChild(newRow);
+                                    tbody.appendChild(newRow)
                                 }
-                                refreshStats();
+                                refreshStats()
                             }
 
                             document.body.appendChild(ConfirmationAlert(dat.message || (isEdit ? 'Document updated successfully!' : 'Document uploaded successfully!'), () => {
-                                modal.remove();
+                                modal.remove()
                                 if (!isEdit) {
                                     formData = {
                                         eventName: '',
@@ -2817,20 +2991,20 @@ export const Research = () => {
                                         endorsementFile: null,
                                         date_started: null,
                                         date_completed: null
-                                    };
+                                    }
                                 }
-                            }));
+                            }))
                         } else {
-                            document.body.appendChild(ConfirmationAlert(dat.message || 'Upload failed. Please try again.', () => { }));
+                            document.body.appendChild(ConfirmationAlert(dat.message || 'Upload failed. Please try again.', () => { }))
                         }
                     } catch (err) {
-                        removeLoading();
-                        console.error('Error uploading document:', err);
-                        alert('Error uploading document: ' + (err.message || 'Unknown error. Please try again.'));
+                        removeLoading()
+                        console.error('Error uploading document:', err)
+                        alert('Error uploading document: ' + (err.message || 'Unknown error. Please try again.'))
                     }
                 }
             }
-        });
+        })
 
         actions.appendChild(cancelBtn)
         actions.appendChild(submitBtn)
@@ -2870,7 +3044,7 @@ export const Research = () => {
             tag: 'div',
             child: [
                 $({ tag: 'h1', text: 'Research Documents', style: { color: '#fff', fontSize: '28px', margin: 0, marginBottom: '8px' } }),
-                $({ tag: 'p', text: 'Manage and track all research submissions', style: { color: '#888', fontSize: '14px', margin: 0 } })
+                $({ tag: 'p', text: 'Manage and track all research submissions of this center', style: { color: '#888', fontSize: '14px', margin: 0 } })
             ]
         })
 
@@ -2880,7 +3054,7 @@ export const Research = () => {
                 display: 'flex',
                 gap: '12px'
             }
-        });
+        })
 
         const uploadBtn = $({
             tag: 'button',
@@ -2932,10 +3106,10 @@ export const Research = () => {
                 type: 'click',
                 method: () => openViewResearchesModal()
             }
-        });
+        })
 
-        buttonGroup.appendChild(uploadBtn);
-        buttonGroup.appendChild(viewResearchesBtn);
+        buttonGroup.appendChild(uploadBtn)
+        buttonGroup.appendChild(viewResearchesBtn)
         header.appendChild(titleSection)
         header.appendChild(buttonGroup)
 
@@ -2954,7 +3128,7 @@ export const Research = () => {
         const stats = [
             { label: 'Total Documents', value: '0', icon: 'fa-file-alt', color: '#2196F3' },
             { label: 'Pending Review', value: '0', icon: 'fa-clock', color: '#FF9800' },
-            { label: 'Approved', value: '0', icon: 'fa-check-circle', color: '#4CAF50' },
+            { label: 'Accepted', value: '0', icon: 'fa-check-circle', color: '#4CAF50' },
             { label: 'Rejected', value: '0', icon: 'fa-times-circle', color: '#f44336' }
         ]
 
@@ -3035,16 +3209,16 @@ export const Research = () => {
         table.appendChild(tbody)
 
         // Loading state
-        const loadingRow = $({ tag: 'tr', att: { className: 'loading-row' } });
+        const loadingRow = $({ tag: 'tr', att: { className: 'loading-row' } })
         const loadingCell = $({
             tag: 'td',
             att: { colSpan: columns.length },
             style: { padding: '60px', textAlign: 'center', color: '#666' }
-        });
-        loadingCell.appendChild($({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '16px' } }));
-        loadingCell.appendChild($({ tag: 'div', text: 'Loading documents...', style: { fontSize: '14px' } }));
-        loadingRow.appendChild(loadingCell);
-        tbody.appendChild(loadingRow);
+        })
+        loadingCell.appendChild($({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '16px' } }))
+        loadingCell.appendChild($({ tag: 'div', text: 'Loading documents...', style: { fontSize: '14px' } }))
+        loadingRow.appendChild(loadingCell)
+        tbody.appendChild(loadingRow)
 
         tableContainer.appendChild(table)
 
@@ -3055,80 +3229,80 @@ export const Research = () => {
 
 
         const showEmptyState = () => {
-            const emptyRow = $({ tag: 'tr', att: { className: 'empty-state-row' } });
+            const emptyRow = $({ tag: 'tr', att: { className: 'empty-state-row' } })
             const emptyCell = $({
                 tag: 'td',
                 att: { colSpan: columns.length },
                 style: { padding: '60px', textAlign: 'center', color: '#666' }
-            });
-            emptyCell.appendChild($({ tag: 'i', att: { className: 'fas fa-folder-open' }, style: { fontSize: '48px', display: 'block', marginBottom: '16px' } }));
-            emptyCell.appendChild($({ tag: 'div', text: 'No documents yet', style: { fontSize: '16px', marginBottom: '8px' } }));
-            emptyCell.appendChild($({ tag: 'div', text: 'Click the "Upload Document" button to get started', style: { fontSize: '14px' } }));
-            emptyRow.appendChild(emptyCell);
-            tbody.appendChild(emptyRow);
-        };
+            })
+            emptyCell.appendChild($({ tag: 'i', att: { className: 'fas fa-folder-open' }, style: { fontSize: '48px', display: 'block', marginBottom: '16px' } }))
+            emptyCell.appendChild($({ tag: 'div', text: 'No documents yet', style: { fontSize: '16px', marginBottom: '8px' } }))
+            emptyCell.appendChild($({ tag: 'div', text: 'Click the "Upload Document" button to get started', style: { fontSize: '14px' } }))
+            emptyRow.appendChild(emptyCell)
+            tbody.appendChild(emptyRow)
+        }
 
         const loadDocuments = async () => {
             try {
                 // Show loading state
-                tbody.innerHTML = '';
-                const loadingRow = $({ tag: 'tr', att: { className: 'loading-row' } });
+                tbody.innerHTML = ''
+                const loadingRow = $({ tag: 'tr', att: { className: 'loading-row' } })
                 const loadingCell = $({
                     tag: 'td',
                     att: { colSpan: columns.length },
                     style: { padding: '60px', textAlign: 'center', color: '#666' }
-                });
-                loadingCell.appendChild($({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '16px' } }));
-                loadingCell.appendChild($({ tag: 'div', text: 'Loading documents...', style: { fontSize: '14px' } }));
-                loadingRow.appendChild(loadingCell);
-                tbody.appendChild(loadingRow);
+                })
+                loadingCell.appendChild($({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '16px' } }))
+                loadingCell.appendChild($({ tag: 'div', text: 'Loading documents...', style: { fontSize: '14px' } }))
+                loadingRow.appendChild(loadingCell)
+                tbody.appendChild(loadingRow)
 
                 // Use the endpoint that returns user-specific documents by senderid
-                const form = new FormData();
-                form.append('researchReviewed', 'true');
+                const form = new FormData()
+                form.append('researchReviewed', 'true')
 
                 const response = await fetch('/uploadResearchFile', {
                     method: 'POST',
                     body: form
-                });
+                })
 
                 if (response.ok) {
-                    const data = await response.text().then(text => text ? JSON.parse(text) : {});
+                    const data = await response.text().then(text => text ? JSON.parse(text) : {})
 
                     // Clear loading state
-                    tbody.innerHTML = '';
+                    tbody.innerHTML = ''
 
                     // The researchReviewed endpoint returns an object with a 'list' property
                     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
-                        let totalDocs = 0;
-                        let pendingCount = 0;
-                        let approvedCount = 0;
-                        let rejectedCount = 0;
+                        let totalDocs = 0
+                        let pendingCount = 0
+                        let acceptedCount = 0
+                        let rejectedCount = 0
 
                         // Process each endorsement (each contains ResearchDocs)
                         data.list.forEach(endorsement => {
                             // Process each research document under this endorsement
                             if (endorsement.ResearchDocs && Array.isArray(endorsement.ResearchDocs)) {
                                 endorsement.ResearchDocs.forEach(researchDoc => {
-                                    totalDocs++;
+                                    totalDocs++
 
                                     // Count status from the endorsement level
-                                    const status = (endorsement.status || '').toLowerCase();
+                                    const status = (endorsement.status || '').toLowerCase()
                                     if (status === 'rejected') {
-                                        rejectedCount++;
-                                    } else if (status === 'accepted' || status === 'approved') {
-                                        approvedCount++;
+                                        rejectedCount++
+                                    } else if (status === 'accepted') {
+                                        acceptedCount++
                                     } else {
-                                        pendingCount++;
+                                        pendingCount++
                                     }
 
                                     // Parse coauthors if present
-                                    let coAuthors = [];
+                                    let coAuthors = []
                                     if (researchDoc.coauthor) {
                                         try {
-                                            coAuthors = JSON.parse(researchDoc.coauthor);
+                                            coAuthors = JSON.parse(researchDoc.coauthor)
                                         } catch (e) {
-                                            coAuthors = [];
+                                            coAuthors = []
                                         }
                                     }
 
@@ -3143,6 +3317,10 @@ export const Research = () => {
                                         author: researchDoc.author || '—',
                                         coAuthors: coAuthors,
                                         status: endorsement.status || 'pending',
+                                        revision_status: endorsement.revision_status || researchDoc.revision_status || null,
+                                        revision_count: endorsement.revision_count || researchDoc.revision_count || 0,
+                                        revised_title: endorsement.revised_title || researchDoc.revised_title || null,
+                                        title_changed: endorsement.title_changed || researchDoc.title_changed || 0,
                                         researchFile: researchDoc.drive_view_url || researchDoc.researchFile || '—',
                                         programFile: researchDoc.program_drive_view_url || researchDoc.program_drive_file_id || '—',
                                         endorsementFile: endorsement.drive_view_url || endorsement.endorsementFile || '—',
@@ -3155,49 +3333,49 @@ export const Research = () => {
                                         date_started: researchDoc.date_started || null,
                                         date_completed: researchDoc.date_completed || null,
                                         program_drive_view_url: researchDoc.program_drive_view_url
-                                    };
-                                    const row = createTableRow(documentObj);
-                                    tbody.appendChild(row);
-                                });
+                                    }
+                                    const row = createTableRow(documentObj)
+                                    tbody.appendChild(row)
+                                })
                             }
-                        });
+                        })
 
                         // Update stats
-                        updateStatsFromData(totalDocs, pendingCount, approvedCount, rejectedCount);
+                        updateStatsFromData(totalDocs, pendingCount, acceptedCount, rejectedCount)
 
                         if (totalDocs === 0) {
-                            showEmptyState();
+                            showEmptyState()
                         }
                     } else {
-                        showEmptyState();
+                        showEmptyState()
                     }
                 } else {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    throw new Error(`HTTP error! Status: ${response.status}`)
                 }
             } catch (error) {
-                console.error('Error loading documents:', error);
-                tbody.innerHTML = '';
-                const errorRow = $({ tag: 'tr' });
+                console.error('Error loading documents:', error)
+                tbody.innerHTML = ''
+                const errorRow = $({ tag: 'tr' })
                 const errorCell = $({
                     tag: 'td',
                     att: { colSpan: columns.length },
                     style: { padding: '60px', textAlign: 'center', color: '#f44336' }
-                });
-                errorCell.appendChild($({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '48px', display: 'block', marginBottom: '16px' } }));
-                errorCell.appendChild($({ tag: 'div', text: 'Error loading documents', style: { fontSize: '16px', marginBottom: '8px' } }));
-                errorCell.appendChild($({ tag: 'div', text: error.message, style: { fontSize: '14px' } }));
-                errorRow.appendChild(errorCell);
-                tbody.appendChild(errorRow);
+                })
+                errorCell.appendChild($({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '48px', display: 'block', marginBottom: '16px' } }))
+                errorCell.appendChild($({ tag: 'div', text: 'Error loading documents', style: { fontSize: '16px', marginBottom: '8px' } }))
+                errorCell.appendChild($({ tag: 'div', text: error.message, style: { fontSize: '14px' } }))
+                errorRow.appendChild(errorCell)
+                tbody.appendChild(errorRow)
             }
-        };
+        }
 
         // Load documents when component mounts
         setTimeout(() => {
-            loadDocuments();
-        }, 100);
+            loadDocuments()
+        }, 100)
 
         // Store loadDocuments function globally for refresh capability
-        window.refreshDocumentsTable = loadDocuments;
+        window.refreshDocumentsTable = loadDocuments
 
         return container
     }

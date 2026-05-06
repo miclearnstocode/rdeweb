@@ -52,14 +52,14 @@ export const RdeDashboard = () => {
                     tag: 'div', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }, child: [
                         $({
                             tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '4px' }, child: [
-                                $({ tag: 'span', text: label, style: { color: '#999', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' } }),
+                                $({ tag: 'span', text: label, style: { color: '#999', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.8px' } }),
                                 $({ tag: 'span', text: String(value), style: { color: '#fff', fontSize: '30px', fontWeight: '800', lineHeight: '1', fontFamily: 'Segoe UI,sans-serif' } })
                             ]
                         }),
                         $({ tag: 'span', att: { className: `fa-solid ${icon}` }, style: { fontSize: '26px', color, opacity: '0.9' } })
                     ]
                 }),
-                $({ tag: 'span', text: sub || '', style: { color: '#555', fontSize: '11px' } })
+                $({ tag: 'span', text: sub || '', style: { color: '#555', fontSize: '12px' } })
             ]
         });
     };
@@ -158,7 +158,7 @@ export const RdeDashboard = () => {
         const t2 = document.createElementNS(svgNS, 'text');
         t2.setAttribute('x', cx); t2.setAttribute('y', cy + 13);
         t2.setAttribute('text-anchor', 'middle'); t2.setAttribute('fill', '#777');
-        t2.setAttribute('font-size', '10'); t2.textContent = 'total';
+        t2.setAttribute('font-size', '12'); t2.textContent = 'total';
         svg.appendChild(t2);
 
         // Legend

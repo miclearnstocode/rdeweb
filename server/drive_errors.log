@@ -1,0 +1,303 @@
+[04-May-2026 15:30:18 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-May-2026 15:30:18 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-May-2026 15:30:18 Asia/Manila] Found 0 research files for center: Extension (Extension)
+[04-May-2026 15:31:40 Asia/Manila] Evaluator center (session): Extension (Extension)
+[04-May-2026 15:31:40 Asia/Manila] Looking for researchfiles with center: Extension (Extension)
+[04-May-2026 15:31:40 Asia/Manila] Found 0 research files for center: Extension (Extension)
+[04-May-2026 15:33:16 Asia/Manila] Evaluator center (session): Coconut Research and Development Center (Coco RDC)
+[04-May-2026 15:33:16 Asia/Manila] Looking for researchfiles with center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 15:33:16 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1369
+[04-May-2026 15:33:16 Asia/Manila] Found 1 research files for center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 15:33:20 Asia/Manila] Evaluator center (session): Coconut Research and Development Center (Coco RDC)
+[04-May-2026 15:33:20 Asia/Manila] Looking for researchfiles with center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 15:33:20 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1369
+[04-May-2026 15:33:20 Asia/Manila] Found 1 research files for center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 15:33:50 Asia/Manila] === updateReview called ===
+[04-May-2026 15:33:50 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Change this&nbsp;
+    [intro] => 
+    [abstract] => hay okay
+    [objective] => 
+    [methodology] => 
+    [results] => 
+    [recommendation] => 
+    [literature] => 
+    [other] => 
+    [docId] => 536
+)
+
+[04-May-2026 15:33:50 Asia/Manila] evalId: 227, docsId: 536
+[04-May-2026 15:33:50 Asia/Manila] eventId: 13
+[04-May-2026 15:33:50 Asia/Manila] Comment data - title: 'Change this&nbsp;', intro: '', abstract: 'hay okay'
+[04-May-2026 15:33:50 Asia/Manila] Comments exist: no
+[04-May-2026 15:33:50 Asia/Manila] INSERT Query: INSERT INTO comments (
+                resid,
+                evalid,
+                evID,
+                title,
+                intro,
+                abstract,
+                objective,
+                methodology,
+                results,
+                recommendation,
+                literature,
+                other,
+                isCommented,
+                date ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())
+[04-May-2026 15:33:50 Asia/Manila] Binding values: docsId='536', evalId='227', eventId='13', title='Change this&nbsp;', intro='', abstract='hay okay', objective='', methodology='', results='', recommendation='', literature='', other=''
+[04-May-2026 15:33:50 Asia/Manila] INSERT successful
+[04-May-2026 15:33:55 Asia/Manila] Response: {"status":true,"message":"Comments Saved successfully..!","emailStatus":"Email notification sent to author.","userName":"ivy_bermio"}
+[04-May-2026 15:42:34 Asia/Manila] === updateReview called ===
+[04-May-2026 15:42:34 Asia/Manila] POST data: Array
+(
+    [updateReview] => true
+    [title] => Change this&nbsp;
+    [intro] => 
+    [abstract] => hay okay
+    [objective] => sige
+    [methodology] => 
+    [results] => 
+    [recommendation] => 
+    [literature] => 
+    [other] => 
+    [docId] => 536
+)
+
+[04-May-2026 15:42:34 Asia/Manila] evalId: 227, docsId: 536
+[04-May-2026 15:42:34 Asia/Manila] eventId: 13, eventType: 38th University Faculty In-House Review
+[04-May-2026 15:42:34 Asia/Manila] Comment data - title: 'Change this&nbsp;', intro: '', abstract: 'hay okay'
+[04-May-2026 15:42:34 Asia/Manila] Comments exist: yes
+[04-May-2026 15:42:34 Asia/Manila] UPDATE Query: UPDATE comments SET 
+                comments.title = ?,
+                comments.intro = ?,
+                comments.abstract = ?,
+                comments.objective = ?,
+                comments.methodology = ?,
+                comments.results = ?,
+                comments.recommendation = ?,
+                comments.literature = ?,
+                comments.other = ?,
+                comments.eventType = ?,
+                comments.isCommented = 1,
+                comments.date = NOW()
+                WHERE comments.resid = ? AND comments.evalid = ?
+[04-May-2026 15:42:34 Asia/Manila] Binding values: title='Change this&nbsp;', intro='', abstract='hay okay', objective='sige', methodology='', results='', recommendation='', literature='', other='', docsId='536', evalId='227'
+[04-May-2026 15:42:34 Asia/Manila] UPDATE successful
+[04-May-2026 15:42:39 Asia/Manila] Response: {"status":true,"message":"Comments Updated successfully..!","emailStatus":"Email notification sent to author.","userName":"ivy_bermio"}
+[04-May-2026 15:58:43 Asia/Manila] Evaluator center (session): Coconut Research and Development Center (Coco RDC)
+[04-May-2026 15:58:43 Asia/Manila] Looking for researchfiles with center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 15:58:43 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1369
+[04-May-2026 15:58:43 Asia/Manila] Found 1 research files for center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 16:47:37 Asia/Manila] PHP Fatal error:  Uncaught TypeError: filter_var(): Argument #3 ($options) must be of type array|int, string given in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2761
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2761): filter_var('https://drive.g...', 3, 'UTF-8')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2761
+[04-May-2026 16:47:38 Asia/Manila] PHP Fatal error:  Uncaught TypeError: filter_var(): Argument #3 ($options) must be of type array|int, string given in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:2761
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(2761): filter_var('https://drive.g...', 3, 'UTF-8')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 2761
+[04-May-2026 18:13:43 Asia/Manila] PHP Warning:  Undefined array key "eventId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1282
+[04-May-2026 18:13:43 Asia/Manila] Evaluator center (session): 
+[04-May-2026 18:13:43 Asia/Manila] Looking for researchfiles with center: Crop Science Research & Developement Center
+[04-May-2026 18:13:43 Asia/Manila] Found 0 research files for center: Crop Science Research & Developement Center
+[04-May-2026 18:13:52 Asia/Manila] Evaluator center (session): Coconut Research and Development Center (Coco RDC)
+[04-May-2026 18:13:52 Asia/Manila] Looking for researchfiles with center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 18:13:52 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1369
+[04-May-2026 18:13:52 Asia/Manila] Found 1 research files for center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 18:13:54 Asia/Manila] Evaluator center (session): Coconut Research and Development Center (Coco RDC)
+[04-May-2026 18:13:54 Asia/Manila] Looking for researchfiles with center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 18:13:54 Asia/Manila] PHP Warning:  Undefined array key "campus" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1369
+[04-May-2026 18:13:54 Asia/Manila] Found 1 research files for center: Coconut Research and Development Center (Coco RDC)
+[04-May-2026 18:21:02 Asia/Manila] PHP Warning:  Undefined array key "eventId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1282
+[04-May-2026 18:21:02 Asia/Manila] PHP Warning:  Undefined array key "userName" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1283
+[04-May-2026 18:21:02 Asia/Manila] PHP Warning:  Undefined array key "userId" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1284
+[04-May-2026 18:21:02 Asia/Manila] Evaluator center (session): 
+[04-May-2026 18:21:02 Asia/Manila] Looking for researchfiles with center: Crop Science Research & Developement Center
+[04-May-2026 18:21:02 Asia/Manila] Found 0 research files for center: Crop Science Research & Developement Center
+[05-May-2026 23:57:25 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'researchfile.revised_title' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1911
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1911): mysqli->query('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1911
+[06-May-2026 08:21:28 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'researchfile.revised_title' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1911
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1911): mysqli->query('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1911
+[06-May-2026 08:21:44 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'researchfile.revised_title' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1911
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1911): mysqli->query('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1911
+[06-May-2026 08:22:04 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'researchfile.revised_title' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1910
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1910): mysqli->query('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1910
+[06-May-2026 08:22:46 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'researchfile.revised_title' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1956
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1956): mysqli->query('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1956
+[06-May-2026 08:26:59 Asia/Manila] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'researchfile.revised_title' in 'field list' in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php:1956
+Stack trace:
+#0 C:\Users\Cogito\Documents\rdeweb\server\researchFile.php(1956): mysqli->query('SELECT \r\n      ...')
+#1 C:\Users\Cogito\Documents\rdeweb\server\router.php(94): include_once('C:\\Users\\Cogito...')
+#2 C:\Users\Cogito\Documents\rdeweb\server\router.php(11): route('/uploadResearch...', 'server/research...')
+#3 C:\Users\Cogito\Documents\rdeweb\server\routes.php(17): post('/uploadResearch...', 'server/research...')
+#4 C:\Users\Cogito\Documents\rdeweb\index.php(29): require_once('C:\\Users\\Cogito...')
+#5 {main}
+  thrown in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1956
+[06-May-2026 08:38:49 Asia/Manila] === START submitRevision ===
+[06-May-2026 08:38:49 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 536
+    [original_title] => Sample only
+)
+
+[06-May-2026 08:38:56 Asia/Manila] Successfully moved file to trash: 1k0E5qLAnfmvBn_riI8OLPICIeQ3JvkCM
+[06-May-2026 08:38:56 Asia/Manila] Old file trashed: 1k0E5qLAnfmvBn_riI8OLPICIeQ3JvkCM
+[06-May-2026 08:38:56 Asia/Manila] GDrive: Uploading REVISION v1 research_paper.pdf to folder 1_lE4wBwYmZ202pjj4ShjxnljLVo3XgCV
+[06-May-2026 08:38:59 Asia/Manila] File 1vIcVBfZ5rKN090qCdqaslq5CX_K83MfG is already public
+[06-May-2026 08:38:59 Asia/Manila] New file uploaded: ID = 1vIcVBfZ5rKN090qCdqaslq5CX_K83MfG, URL = https://drive.google.com/file/d/1vIcVBfZ5rKN090qCdqaslq5CX_K83MfG/preview
+[06-May-2026 08:38:59 Asia/Manila] Endorsement status reset to NULL for ID: 543
+[06-May-2026 08:38:59 Asia/Manila] Revision submitted successfully for research ID: 536, revision count: 1
+[06-May-2026 08:53:32 Asia/Manila] === START submitRevision ===
+[06-May-2026 08:53:32 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 537
+    [original_title] => Another Sample
+)
+
+[06-May-2026 08:53:32 Asia/Manila] GDrive: Uploading REVISION v1 research_paper.pdf to folder 1frKCtlnsG_jgDVSGchjU7RpgukIaGFjc
+[06-May-2026 08:53:35 Asia/Manila] File 19AprKVXOS3_6IOI7qOLT-J4qf9_9mraW is already public
+[06-May-2026 08:53:35 Asia/Manila] New file uploaded: ID = 19AprKVXOS3_6IOI7qOLT-J4qf9_9mraW, URL = https://drive.google.com/file/d/19AprKVXOS3_6IOI7qOLT-J4qf9_9mraW/preview
+[06-May-2026 08:53:35 Asia/Manila] Endorsement status reset to NULL for ID: 544
+[06-May-2026 08:53:35 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 1
+[06-May-2026 09:10:36 Asia/Manila] === START submitRevision ===
+[06-May-2026 09:10:36 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 538
+    [original_title] => Sample Only
+)
+
+[06-May-2026 09:10:36 Asia/Manila] Event type: Symposium - Using 'Revised Paper'
+[06-May-2026 09:10:36 Asia/Manila] Original event: 43rd Annual RDE Faculty Symposium
+[06-May-2026 09:10:36 Asia/Manila] Generated filename: Revised Paper v1.pdf
+[06-May-2026 09:10:36 Asia/Manila] GDrive: Uploading Revised Paper v1.pdf to folder 1q2lM6WYrrOFn-acKHPfdelH9NJVOtVx6
+[06-May-2026 09:10:42 Asia/Manila] File 1DPwNKRhOYvsvBvkvw2iutcjJrHR3UyaE is already public
+[06-May-2026 09:10:42 Asia/Manila] New file uploaded: ID = 1DPwNKRhOYvsvBvkvw2iutcjJrHR3UyaE, URL = https://drive.google.com/file/d/1DPwNKRhOYvsvBvkvw2iutcjJrHR3UyaE/preview
+[06-May-2026 09:10:42 Asia/Manila] Revision submission failed: Unknown column 'original_drive_file_id' in 'field list'
+[06-May-2026 09:11:26 Asia/Manila] === START submitRevision ===
+[06-May-2026 09:11:26 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 538
+    [original_title] => Sample Only
+)
+
+[06-May-2026 09:11:26 Asia/Manila] Event type: Symposium - Using 'Revised Paper'
+[06-May-2026 09:11:26 Asia/Manila] Original event: 43rd Annual RDE Faculty Symposium
+[06-May-2026 09:11:26 Asia/Manila] Generated filename: Revised Paper v1.pdf
+[06-May-2026 09:11:26 Asia/Manila] GDrive: Uploading Revised Paper v1.pdf to folder 1q2lM6WYrrOFn-acKHPfdelH9NJVOtVx6
+[06-May-2026 09:11:29 Asia/Manila] File 1h4fjL5IXuOQItzf26swIo4s_GPZZOUIx is already public
+[06-May-2026 09:11:29 Asia/Manila] New file uploaded: ID = 1h4fjL5IXuOQItzf26swIo4s_GPZZOUIx, URL = https://drive.google.com/file/d/1h4fjL5IXuOQItzf26swIo4s_GPZZOUIx/preview
+[06-May-2026 09:11:29 Asia/Manila] Revision submission failed: Unknown column 'original_drive_file_id' in 'field list'
+[06-May-2026 09:17:09 Asia/Manila] === START submitRevision ===
+[06-May-2026 09:17:09 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 538
+    [original_title] => Sample Only
+)
+
+[06-May-2026 09:17:09 Asia/Manila] Event type: Symposium - Using 'Revised Paper'
+[06-May-2026 09:17:09 Asia/Manila] Original event: 43rd Annual RDE Faculty Symposium
+[06-May-2026 09:17:09 Asia/Manila] Generated filename: Revised Paper v1.pdf
+[06-May-2026 09:17:09 Asia/Manila] GDrive: Uploading Revised Paper v1.pdf to folder 1q2lM6WYrrOFn-acKHPfdelH9NJVOtVx6
+[06-May-2026 09:17:12 Asia/Manila] File 1JXxMXmPlRQe7rYMrVDO7ekr0CMW0-ET3 is already public
+[06-May-2026 09:17:12 Asia/Manila] New file uploaded: ID = 1JXxMXmPlRQe7rYMrVDO7ekr0CMW0-ET3, URL = https://drive.google.com/file/d/1JXxMXmPlRQe7rYMrVDO7ekr0CMW0-ET3/preview
+[06-May-2026 09:17:12 Asia/Manila] Endorsement status reset to NULL for ID: 551
+[06-May-2026 09:17:12 Asia/Manila] Revision submitted successfully for research ID: 538, revision count: 1
+[06-May-2026 09:24:43 Asia/Manila] === START submitRevision ===
+[06-May-2026 09:24:43 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 538
+    [original_title] => Sample Only
+)
+
+[06-May-2026 09:24:43 Asia/Manila] Event type: Symposium - Using 'Revised_Paper'
+[06-May-2026 09:24:43 Asia/Manila] Original event: 43rd Annual RDE Faculty Symposium
+[06-May-2026 09:24:43 Asia/Manila] Original title: Sample Only
+[06-May-2026 09:24:43 Asia/Manila] Cleaned title: Sample_Only
+[06-May-2026 09:24:43 Asia/Manila] Generated filename: Revised_Paper_Sample_Only_v2.pdf
+[06-May-2026 09:24:43 Asia/Manila] GDrive: Uploading Revised_Paper_Sample_Only_v2.pdf to folder 1q2lM6WYrrOFn-acKHPfdelH9NJVOtVx6
+[06-May-2026 09:24:46 Asia/Manila] File 1DSLQuTU2TeZse6AZ7kcRdN9kBcgZv2c1 is already public
+[06-May-2026 09:24:46 Asia/Manila] New file uploaded: ID = 1DSLQuTU2TeZse6AZ7kcRdN9kBcgZv2c1, URL = https://drive.google.com/file/d/1DSLQuTU2TeZse6AZ7kcRdN9kBcgZv2c1/preview
+[06-May-2026 09:24:46 Asia/Manila] Revision submission failed: Unknown column 'original_drive_file_id' in 'field list'
+[06-May-2026 09:29:32 Asia/Manila] === START submitRevision ===
+[06-May-2026 09:29:32 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 538
+    [original_title] => Sample Only
+)
+
+[06-May-2026 09:29:32 Asia/Manila] Event type: Symposium - Using 'Revised Paper'
+[06-May-2026 09:29:32 Asia/Manila] Original event: 43rd Annual RDE Faculty Symposium
+[06-May-2026 09:29:32 Asia/Manila] Original title: Sample Only
+[06-May-2026 09:29:32 Asia/Manila] Generated filename: Revised Paper v2 - Sample Only.pdf
+[06-May-2026 09:29:32 Asia/Manila] GDrive: Uploading Revised Paper v2 - Sample Only.pdf to folder 1q2lM6WYrrOFn-acKHPfdelH9NJVOtVx6
+[06-May-2026 09:29:35 Asia/Manila] File 11Xi8929kiD7CptQlv1Aw1E5O_D09ofNW is already public
+[06-May-2026 09:29:35 Asia/Manila] New file uploaded: ID = 11Xi8929kiD7CptQlv1Aw1E5O_D09ofNW, URL = https://drive.google.com/file/d/11Xi8929kiD7CptQlv1Aw1E5O_D09ofNW/preview
+[06-May-2026 09:29:35 Asia/Manila] Revision submission failed: Unknown column 'original_drive_file_id' in 'field list'
+[06-May-2026 09:37:33 Asia/Manila] === START submitRevision ===
+[06-May-2026 09:37:33 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 538
+    [original_title] => Sample Only
+)
+
+[06-May-2026 09:37:33 Asia/Manila] GDrive: Uploading Revised Paper v2 - research_paper.pdf to folder 1q2lM6WYrrOFn-acKHPfdelH9NJVOtVx6
+[06-May-2026 09:37:38 Asia/Manila] File 1oLJFefg9IYp8KruIJceDMj6FfiEfu7e6 is already public
+[06-May-2026 09:37:38 Asia/Manila] New file uploaded: ID = 1oLJFefg9IYp8KruIJceDMj6FfiEfu7e6, URL = https://drive.google.com/file/d/1oLJFefg9IYp8KruIJceDMj6FfiEfu7e6/preview
+[06-May-2026 09:37:38 Asia/Manila] Endorsement status reset to NULL for ID: 551
+[06-May-2026 09:37:38 Asia/Manila] Revision submitted successfully for research ID: 538, revision count: 2

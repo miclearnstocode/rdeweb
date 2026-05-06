@@ -305,11 +305,10 @@ export const onGoingResearch = () => {
 
     // Update statistics
     const updateStats = () => {
-        const statValues = document.querySelectorAll('.stat-value')
-        if (statValues.length >= 2) {
-            statValues[0].textContent = currentStats.totalOngoing
-            statValues[1].textContent = currentStats.completed
-        }
+        const ongoingEl = document.getElementById('ongoing-stat-value')
+        const completedEl = document.getElementById('completed-stat-value')
+        if (ongoingEl) ongoingEl.textContent = currentStats.totalOngoing ?? 0
+        if (completedEl) completedEl.textContent = currentStats.completed ?? 0
     }
 
     // Update record count
@@ -1732,7 +1731,7 @@ export const onGoingResearch = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'stat-value' },
+                                    att: { className: 'stat-value', id: 'ongoing-stat-value' },
                                     text: '0',
                                     style: {
                                         fontSize: '32px',
@@ -1793,7 +1792,7 @@ export const onGoingResearch = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'stat-value' },
+                                    att: { className: 'stat-value', id: 'completed-stat-value' },
                                     text: '0',
                                     style: {
                                         fontSize: '32px',

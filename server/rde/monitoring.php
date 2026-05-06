@@ -175,7 +175,8 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
                 rm.q2_completion, rm.q2_status, rm.q2_remarks, rm.q2_measures,
                 rm.q3_completion, rm.q3_status, rm.q3_remarks, rm.q3_measures,
                 rm.q4_completion, rm.q4_status, rm.q4_remarks, rm.q4_measures,
-                rm.official_completion_date
+                rm.official_completion_date,
+                rm.final_completion_remarks
               FROM researchfile rf
               INNER JOIN event_list el ON rf.event_id = el.id
               LEFT JOIN research_monitoring rm ON rf.id = rm.research_id
@@ -260,7 +261,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     // Fetch Summary Stats using the same filters
     $statsQuery = "SELECT 
                     COUNT(*) as totalOngoing,
-                    SUM(CASE WHEN rm.official_completion_date IS NOT NULL THEN 1 ELSE 0 END) as completed
+                    SUM(CASE WHEN rm.final_completion_remarks = 'Ready for Official Completion' THEN 1 ELSE 0 END) as completed
                   FROM researchfile rf
                   INNER JOIN event_list el ON rf.event_id = el.id
                   LEFT JOIN research_monitoring rm ON rf.id = rm.research_id

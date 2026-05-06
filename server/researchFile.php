@@ -744,6 +744,84 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
     
     return $paperTrailNo;
 }
+// REVISION WORKFLOW HELPER FUNCTIONS
+function checkAndUpdateRevisionStatus($con, $researchfileId, $eventId) {
+    // Check if event presentation date has passed
+    $eventQuery = "SELECT date_of_presentation FROM event_list WHERE id = ? LIMIT 1";
+    $eventStmt = $con->prepare($eventQuery);
+    $eventStmt->bind_param("i", $eventId);
+    $eventStmt->execute();
+    $eventResult = $eventStmt->get_result();
+    $eventRow = $eventResult->fetch_assoc();
+    
+    if ($eventRow && !empty($eventRow['date_of_presentation'])) {
+        $presentationDate = new DateTime($eventRow['date_of_presentation']);
+        $now = new DateTime();
+        
+        if ($presentationDate < $now) {
+            // Update revision status to pending if not already set
+            $updateQuery = "UPDATE researchfile 
+                           SET revision_status = 'revision_pending' 
+                           WHERE id = ? AND (revision_status IS NULL OR revision_status = 'revision_rejected')";
+            $updateStmt = $con->prepare($updateQuery);
+            $updateStmt->bind_param("i", $researchfileId);
+            $updateStmt->execute();
+            return true;
+        }
+    }
+    return false;
+}
+
+function getResearchFilesForRevision($con, $userId) {
+    $query = "SELECT 
+        rf.id,
+        rf.title as original_title,
+        rf.event,
+        rf.event_id,
+        -- Revision information
+        rf.revision_status,
+        rf.revision_count,
+        rf.last_revision_date,
+        rf.revised_file_id,
+        -- Revised file information (if exists)
+        rf.revised_file_id as revised_drive_file_id,
+        -- Get revised file URL if revision exists
+        CASE 
+            WHEN rf.revised_file_id IS NOT NULL 
+            THEN CONCAT('https://drive.google.com/file/d/', rf.revised_file_id, '/preview')
+            ELSE NULL
+        END as revised_drive_view_url,
+        -- Event information
+        el.name as event_name,
+        el.date_of_presentation,
+        -- Get the acceptance status
+        e.status as endorsement_status
+    FROM researchfile rf
+    LEFT JOIN event_list el ON rf.event_id = el.id
+    LEFT JOIN endorsement e ON rf.endorsementid = e.id
+    WHERE rf.senderid = ? 
+    AND rf.revision_status IN ('revision_pending', 'revision_rejected')
+    ORDER BY rf.last_revision_date DESC, rf.id DESC";
+    
+    $stmt = $con->prepare($query);
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    // Process the result to include both original and revised files
+    $processedResults = [];
+    while ($row = $result->fetch_assoc()) {
+        $row['revised_file'] = [
+            'url' => $row['revised_drive_view_url'],
+            'file_id' => $row['revised_drive_file_id'],
+            'exists' => !empty($row['revised_drive_file_id'])
+        ];
+        
+        $processedResults[] = $row;
+    }
+    
+    return $processedResults;
+}
 
 if (isset($_POST['uploadResearch'])) {
     // Temporarily disable the error-catching output buffer
@@ -834,10 +912,22 @@ if (isset($_POST['uploadResearch'])) {
                     echo json_encode($response);
                     exit();
                 }
-                
-                // ===== FILE HASH CHECKS Before Upload (Check within SAME event) =====
-                // Generate hashes for files before upload to check for duplicates
-                
+                // CHECK REVISION STATUS BEFORE ALLOWING UPLOAD
+                if (isset($_POST['is_revision']) && $_POST['is_revision'] === 'true') {
+                    $originalResearchId = $_POST['original_research_id'] ?? 0;
+                    
+                    // Verify the research is eligible for revision
+                    $checkRevisionQuery = "SELECT revision_status, revision_count FROM researchfile WHERE id = ? AND senderid = ?";
+                    $checkStmt = $con->prepare($checkRevisionQuery);
+                    $checkStmt->bind_param("ii", $originalResearchId, $senderId);
+                    $checkStmt->execute();
+                    $checkResult = $checkStmt->get_result();
+                    $revisionData = $checkResult->fetch_assoc();
+                    
+                    if (!$revisionData || !in_array($revisionData['revision_status'], ['revision_pending', 'revision_rejected'])) {
+                            throw new Exception("This document is not eligible for revision submission");
+                        }
+                }
                 // Check endorsement file if exists
                 if (isset($_FILES['uploadedFileEndorsement']) && $_FILES['uploadedFileEndorsement']['error'] === UPLOAD_ERR_OK) {
                     $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
@@ -1459,7 +1549,7 @@ if (isset($_POST['researchSubmit'])) {
     echo json_encode($response);
 }
 
-
+//comments update
 if (isset($_POST['updateReview'])) {
     $response = new stdClass();
     $response->status = false;
@@ -1479,17 +1569,19 @@ if (isset($_POST['updateReview'])) {
         
         error_log("evalId: $evalId, docsId: $docsId");
         
-        // Get the event ID from the research file
+        // Get the event ID and event name from the research file
         $eventId = 0;
+        $eventType = '';
         if ($docsId) {
-            $eventQuery = $con->prepare("SELECT event_id FROM researchfile WHERE id = ?");
+            $eventQuery = $con->prepare("SELECT rf.event_id, el.name as event_name FROM researchfile rf LEFT JOIN event_list el ON el.id = rf.event_id WHERE rf.id = ?");
             $eventQuery->bind_param("s", $docsId);
             $eventQuery->execute();
             $eventResult = $eventQuery->get_result();
             $eventRow = $eventResult->fetch_assoc();
-            $eventId = $eventRow['event_id'] ?? $_SESSION['eventId'] ?? 0;
+            $eventId   = $eventRow['event_id']   ?? $_SESSION['eventId']   ?? 0;
+            $eventType = $eventRow['event_name']  ?? $_SESSION['eventTYpe'] ?? '';
             $eventQuery->close();
-            error_log("eventId: $eventId");
+            error_log("eventId: $eventId, eventType: $eventType");
         }
         
         $title = $_POST['title'] ?? '';
@@ -1555,6 +1647,7 @@ if (isset($_POST['updateReview'])) {
                 comments.recommendation = ?,
                 comments.literature = ?,
                 comments.other = ?,
+                comments.eventType = ?,
                 comments.isCommented = 1,
                 comments.date = NOW()
                 WHERE comments.resid = ? AND comments.evalid = ?";
@@ -1562,9 +1655,10 @@ if (isset($_POST['updateReview'])) {
             error_log("UPDATE Query: " . $comQ);
             
             $statement = $con->prepare($comQ);
-            $statement->bind_param("sssssssssss", 
+            $statement->bind_param("ssssssssssss", 
                 $title, $intro, $abstract, $objective, $methodology, 
-                $results, $recommendation, $literature, $other, 
+                $results, $recommendation, $literature, $other,
+                $eventType,
                 $docsId, $evalId
             );
             
@@ -1604,6 +1698,7 @@ if (isset($_POST['updateReview'])) {
                 resid,
                 evalid,
                 evID,
+                eventType,
                 title,
                 intro,
                 abstract,
@@ -1614,18 +1709,18 @@ if (isset($_POST['updateReview'])) {
                 literature,
                 other,
                 isCommented,
-                date ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
+                date ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
             
             error_log("INSERT Query: " . $comQuery);
             
             $statementQ = $con->prepare($comQuery);
-            $statementQ->bind_param("ssssssssssss", 
-                $docsId, $evalId, $eventId, 
+            $statementQ->bind_param("sssssssssssss", 
+                $docsId, $evalId, $eventId, $eventType,
                 $title, $intro, $abstract, $objective, $methodology, 
                 $results, $recommendation, $literature, $other
             );
             
-            error_log("Binding values: docsId='$docsId', evalId='$evalId', eventId='$eventId', title='$title', intro='$intro', abstract='$abstract', objective='$objective', methodology='$methodology', results='$results', recommendation='$recommendation', literature='$literature', other='$other'");
+            error_log("Binding values: docsId='$docsId', evalId='$evalId', eventId='$eventId', eventType='$eventType', title='$title', intro='$intro', abstract='$abstract', objective='$objective', methodology='$methodology', results='$results', recommendation='$recommendation', literature='$literature', other='$other'");
             
             $statusIn = $statementQ->execute();
             
@@ -1768,13 +1863,27 @@ function cleanCommentHtml($html) {
     
     return $plainText;
 }
-
+//displayed the data in the center table
 if (isset($_POST['researchReviewed'])) {
     $response = new stdClass();
     $response->list = [];
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $userId = $_SESSION['userId'] ?? 0;
+        
+        // Automated Revision Check: Mark records as pending revision if presentation date has passed
+        $updateRevisionQuery = "UPDATE researchfile rf
+                               JOIN event_list el ON rf.event_id = el.id
+                               SET rf.revision_status = 'revision_pending'
+                               WHERE rf.senderid = ? 
+                               AND (el.date_of_presentation < NOW() OR (DATE(el.date_of_presentation) <= CURDATE() AND el.date_of_presentation IS NOT NULL))
+                               AND (rf.revision_status IS NULL OR rf.revision_status = 'revision_rejected')";
+        $stmtUp = $con->prepare($updateRevisionQuery);
+        if ($stmtUp) {
+            $stmtUp->bind_param("i", $userId);
+            $stmtUp->execute();
+            $stmtUp->close();
+        }
         
         $queryEndorsement = "SELECT * FROM `endorsement` WHERE `senderid`='$userId'";
         
@@ -1805,7 +1914,11 @@ if (isset($_POST['researchReviewed'])) {
                 researchfile.drive_event_folder_id,
                 researchfile.drive_center_folder_id,
                 researchfile.program_drive_view_url,
-                researchfile.program_drive_file_id
+                researchfile.program_drive_file_id,
+                researchfile.revision_status,
+                researchfile.revision_count,
+                researchfile.title_changed,
+                researchfile.event_id
             FROM `researchfile` WHERE `senderid`='$userId' AND `endorsementid`='$enID'";
             
             foreach ($con->query($queryResearch) as $res) {
@@ -1824,6 +1937,10 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->drive_center_folder_id = $res['drive_center_folder_id'];
                 $researchDocs->program_drive_view_url = $res['program_drive_view_url'];
                 $researchDocs->program_drive_file_id = $res['program_drive_file_id']; 
+                $researchDocs->revision_status = $res['revision_status'];
+                $researchDocs->revision_count = $res['revision_count'];
+                $researchDocs->title_changed = $res['title_changed'];
+                $researchDocs->event_id = $res['event_id'];
                 
                 $endorsement->ResearchDocs[] = $researchDocs;
             }
@@ -2155,6 +2272,17 @@ if (isset($_POST['getResearch'])) {
         $accessResult = $con->query($accessQuery);
         $accessRow = $accessResult->fetch_assoc();
         
+        // Automated Revision Check: Mark records as pending revision if presentation date has passed
+        // For regular users, only check their own records. For admins, check all.
+        $statusUpdateFilter = ($accessRow && $accessRow['researchaccess'] !== null) ? "" : " AND rf.senderid = '$serderId'";
+        $updateRevisionQuery = "UPDATE researchfile rf
+                               JOIN event_list el ON rf.event_id = el.id
+                               SET rf.revision_status = 'revision_pending'
+                               WHERE (el.date_of_presentation < NOW() OR (DATE(el.date_of_presentation) <= CURDATE() AND el.date_of_presentation IS NOT NULL))
+                               AND (rf.revision_status IS NULL OR rf.revision_status = 'revision_rejected')
+                               $statusUpdateFilter";
+        $con->query($updateRevisionQuery);
+        
         if ($accessRow && $accessRow['researchaccess'] !== null) {
             // Query for users with research access - keyset pagination
             $query = "SELECT 
@@ -2166,7 +2294,10 @@ if (isset($_POST['getResearch'])) {
                 researchfile.campus,
                 researchfile.coauthor,
                 researchfile.presenter,
-                researchfile.status
+                researchfile.status,
+                researchfile.revision_status,
+                researchfile.revision_count,
+                researchfile.title_changed
             FROM `researchfile`
             WHERE id > $lastId
             ORDER BY id ASC
@@ -2185,6 +2316,9 @@ if (isset($_POST['getResearch'])) {
                 $data->coauthor = $row['coauthor'];
                 $data->presenter = $row['presenter'];
                 $data->status = $row['status'];
+                $data->revision_status = $row['revision_status'];
+                $data->revision_count = $row['revision_count'];
+                $data->title_changed = $row['title_changed'];
                 $data->file_type = 'drive';
                 
                 $response->list[] = $data;
@@ -2211,7 +2345,10 @@ if (isset($_POST['getResearch'])) {
                 researchfile.status,
                 researchfile.year,
                 researchfile.month,
-                researchfile.date
+                researchfile.date,
+                researchfile.revision_status,
+                researchfile.revision_count,
+                researchfile.title_changed
             FROM `researchfile` 
             WHERE `senderid`='$serderId' AND id > $lastId
             ORDER BY id ASC
@@ -2230,6 +2367,9 @@ if (isset($_POST['getResearch'])) {
                 $data->coauthor = $row['coauthor'];
                 $data->presenter = $row['presenter'];
                 $data->status = $row['status'];
+                $data->revision_status = $row['revision_status'];
+                $data->revision_count = $row['revision_count'];
+                $data->title_changed = $row['title_changed'];
                 $data->year = $row['year'];
                 $data->month = $row['month'];
                 $data->date = $row['month'] . '/' . $row['date'] . '/' . $row['year'];
@@ -3983,6 +4123,230 @@ if (isset($_POST['resubmitDocument'])) {
         $response->message = "Database connection error";
     }
     
+    echo json_encode($response);
+    exit();
+}
+
+if (isset($_POST['getResearchForRevision'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->list = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $userId = $_SESSION['userId'] ?? 0;
+        
+        // Automated Revision Check first to ensure list is fresh
+        $updateRevisionQuery = "UPDATE researchfile rf
+                               JOIN event_list el ON rf.event_id = el.id
+                               SET rf.revision_status = 'revision_pending'
+                               WHERE rf.senderid = ? 
+                               AND el.date_of_presentation < NOW()
+                               AND rf.status = 'accepted'
+                               AND (rf.revision_status IS NULL 
+                                    OR rf.revision_status = 'revision_rejected'
+                                    OR rf.revision_status = 'revision_pending')";
+        $stmtUp = $con->prepare($updateRevisionQuery);
+        if ($stmtUp) {
+            $stmtUp->bind_param("i", $userId);
+            $stmtUp->execute();
+            $stmtUp->close();
+        }
+        
+        $response->list = getResearchFilesForRevision($con, $userId);
+        $response->status = true;
+    }
+    echo json_encode($response);
+    exit();
+}
+
+if (isset($_POST['submitRevision'])) {
+    error_log("=== START submitRevision ===");
+    error_log("POST data: " . print_r($_POST, true));
+    
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $researchId = $_POST['original_research_id'] ?? 0;
+        $userId = $_SESSION['userId'] ?? 0;
+        
+        // 1. Get original research record
+        $query = "SELECT rf.*, el.date_of_presentation 
+                  FROM researchfile rf
+                  LEFT JOIN event_list el ON rf.event_id = el.id
+                  WHERE rf.id = ? AND rf.senderid = ?";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("ii", $researchId, $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $doc = $result->fetch_assoc();
+        
+        if (!$doc) {
+            $response->message = "Research record not found or access denied.";
+            echo json_encode($response);
+            exit();
+        }
+        
+        // Verify document is eligible for revision
+        $isEligible = in_array($doc['revision_status'], ['revision_pending', 'revision_rejected']);
+        if (!$isEligible) {
+            $response->message = "This document is not eligible for revision. Current status: " . ($doc['revision_status'] ?? 'none');
+            echo json_encode($response);
+            exit();
+        }
+        
+        // 2. Upload new file to Google Drive
+        if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
+            $response->message = "Revised research document is required.";
+            echo json_encode($response);
+            exit();
+        }
+        
+        // Validate file type and size
+        $fileType = $_FILES['researchDoc']['type'];
+        $fileSize = $_FILES['researchDoc']['size'];
+        
+        if ($fileType !== 'application/pdf') {
+            $response->message = "Only PDF files are allowed.";
+            echo json_encode($response);
+            exit();
+        }
+        
+        if ($fileSize > 10 * 1024 * 1024) { // 10MB limit
+            $response->message = "File size must not exceed 10MB.";
+            echo json_encode($response);
+            exit();
+        }
+        
+        try {
+            require_once __DIR__ . '/../config/driver_config.php';
+            $driveService = new GoogleDriveService();
+            
+            // Get folder to upload to (prefer entry folder, fallback to center or event)
+            $targetFolderId = $doc['drive_entry_folder_id'] ?? $doc['drive_folder_id'];
+            
+            if (empty($targetFolderId)) {
+                // If no folder found, use the createCompleteFolderStructure helper
+                $authorParts = explode(' ', trim($doc['author']));
+                $authorLastName = end($authorParts);
+                $titleWords = explode(' ', trim($doc['title']));
+                $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
+                $entryFolderName = $authorLastName . '_' . $titleKeywords;
+                
+                $folders = $driveService->createCompleteFolderStructure(
+                    $doc['event'],
+                    $doc['center'] ?? 'General',
+                    $doc['category'] ?? 'Uncategorized',
+                    $entryFolderName
+                );
+                $targetFolderId = $folders['entry_folder_id'];
+            }
+            
+            // ===== EVENT-BASED FILE NAMING WITH UPLOADED FILE TITLE =====
+            $eventName = $doc['event'];
+            $revisionCount = ($doc['revision_count'] ?? 0) + 1;
+            $extension = '.pdf';
+
+            // Get the uploaded file's original name (file title), NOT rf.title
+            $uploadedFileName = pathinfo($_FILES['researchDoc']['name'], PATHINFO_FILENAME);
+            $cleanTitle = preg_replace('/[<>:"\/\\|?*]/', '', $uploadedFileName);
+            $cleanTitle = trim($cleanTitle);
+
+            // Determine file type based on event name
+            $isSymposium = stripos($eventName, 'Symposium') !== false;
+            $isInHouse = stripos($eventName, 'In-House Review') !== false || 
+                        stripos($eventName, 'In House Review') !== false || 
+                        stripos($eventName, 'In-house Review') !== false;
+
+            $baseFileName = '';
+            if ($isSymposium) {
+                $baseFileName = 'Revised Paper';
+            } elseif ($isInHouse) {
+                $baseFileName = 'Revised Proposal';
+            } else {
+                $baseFileName = 'Revised Document';
+            }
+
+            // Build filename using the uploaded file's title
+            $newFileName = $baseFileName . ' v' . $revisionCount . ' - ' . $cleanTitle . $extension;
+            
+            $driveResult = $driveService->uploadFile($_FILES['researchDoc']['tmp_name'], $newFileName, $targetFolderId);
+            
+            if (!$driveResult['success']) {
+                throw new Exception("Drive upload failed: " . ($driveResult['error'] ?? 'Unknown error'));
+            }
+            
+            $driveService->makeFilePublic($driveResult['id']);
+            $newFileId = $driveResult['id'];
+            $newViewUrl = "https://drive.google.com/file/d/{$newFileId}/preview";
+            $newDownloadUrl = "https://drive.google.com/uc?id={$newFileId}&export=download";
+            
+            error_log("New file uploaded: ID = $newFileId, URL = $newViewUrl");
+            
+            // 3. Update database (just upload the revised file, no original file tracking)
+            $updateQuery = "UPDATE researchfile SET 
+                revision_status = 'revision_submitted',
+                revision_count = ?,
+                last_revision_date = NOW(),
+                revised_file_id = ?,
+                drive_file_id = ?,
+                drive_view_url = ?,
+                drive_download_url = ?,
+                resubmitted = 1,
+                status = NULL
+                WHERE id = ?";
+            
+            $updateStmt = $con->prepare($updateQuery);
+            $updateStmt->bind_param("issssi", 
+                $revisionCount, 
+                $newFileId, 
+                $newFileId, 
+                $newViewUrl,
+                $newDownloadUrl,
+                $researchId
+            );
+            
+            if ($updateStmt->execute()) {
+                $response->status = true;
+                $response->message = "Revision submitted successfully! Your document is now under review.";
+                $response->revision_count = $revisionCount;
+                
+                // Update endorsement status to NULL to reset review process
+                $endorsementId = $doc['endorsementid'];
+                if ($endorsementId) {
+                    $updateEndorseQuery = "UPDATE endorsement SET status = NULL WHERE id = ?";
+                    $endorseStmt = $con->prepare($updateEndorseQuery);
+                    $endorseStmt->bind_param("i", $endorsementId);
+                    $endorseStmt->execute();
+                    $endorseStmt->close();
+                    error_log("Endorsement status reset to NULL for ID: $endorsementId");
+                }
+                
+                // Track update in document log
+                $logQuery = "INSERT INTO document_log (user_id, doc_id, details, date) VALUES (?, ?, ?, NOW())";
+                $logStmt = $con->prepare($logQuery);
+                $details = "User submitted revision #$revisionCount for document: " . $doc['title'] . " | File: " . $newFileName;
+                $logStmt->bind_param("iss", $userId, $researchId, $details);
+                $logStmt->execute();
+                $logStmt->close();
+                
+                error_log("Revision submitted successfully for research ID: $researchId, revision count: $revisionCount");
+                
+            } else {
+                throw new Exception("Database update failed: " . $updateStmt->error);
+            }
+            
+        } catch (Exception $e) {
+            error_log("Revision submission failed: " . $e->getMessage());
+            $response->message = "Error: " . $e->getMessage();
+        }
+    } else {
+        $response->message = "Database connection error.";
+    }
+    
+    header('Content-Type: application/json');
     echo json_encode($response);
     exit();
 }

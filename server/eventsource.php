@@ -2,7 +2,7 @@
 // Disable error display - critical for JSON responses
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
-error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT); // Enable logging but not display
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
 
 // Clear ALL output buffers safely
 while (ob_get_level() > 0) {
@@ -26,16 +26,14 @@ require_once(__DIR__ . '/db.php');
 
 // Error handler to catch any PHP errors/warnings/notices
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    // Log error but don't output
     error_log("PHP Error [$errno]: $errstr in $errfile on line $errline");
-    return true; // Prevent default error handler
+    return true;
 });
 
 // Register shutdown function to catch fatal errors
 register_shutdown_function(function() {
     $error = error_get_last();
     if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        // Clear any output
         ob_clean();
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['error' => 'Internal server error', 'details' => $error['message']]);
@@ -48,59 +46,75 @@ register_shutdown_function(function() {
 /** @var TYPE_NAME $pass */
 /** @var TYPE_NAME $dbName */
 
-if(isset($_POST['getEvent'])){
-    $response=[];
+// Event Registration
+if(isset($_POST['eventReg'])){
+    $response = new stdClass();
+    $response->message = '';
+    $response->status = false;
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query="SELECT * FROM event_list WHERE event_list.dead_line > CURRENT_TIMESTAMP";
+        $eventName = $_POST['eventName'] ?? '';
+        $dateOfPresentation = $_POST['dateOfPresentation'] ?? null;
+        
+        if (!empty($eventName)) {
+            $query = "INSERT INTO event_list (name, status, date) VALUES (?, 1, NOW())";
+            $statement = $con->prepare($query);
+            
+            if ($statement) {
+                $statement->bind_param("s", $eventName);
+                $status = $statement->execute();
+                
+                if($status){
+                    $response->status = true;
+                    $response->message = "Event registered successfully!";
+                } else {
+                    $response->message = "Database error: " . $statement->error;
+                }
+                $statement->close();
+            }
+        } else {
+            $response->message = "Event name is required";
+        }
+        $con->close();
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    exit();
+}
+
+// Get Events for Active Events Listing
+if(isset($_POST['getEvent'])){
+    $response = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "SELECT * FROM event_list WHERE event_list.dead_line > CURRENT_TIMESTAMP";
         $result = $con->query($query);
         if ($result) {
             while ($val = $result->fetch_assoc()) {
-                $response[]=$val;
+                $response[] = $val;
             }
             $result->free();
         }
         $con->close();
     }
     
-    // Clear buffer and output JSON
     ob_clean();
     echo json_encode($response);
     exit();
 }
 
+// Get Event Name by ID
 if(isset($_POST['getEventName'])){
-    $response=[];
+    $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query="SELECT event_list.name FROM event_list WHERE event_list.id=?";
-        $statement=$con->prepare($query);
+        $query = "SELECT event_list.name, event_list.date_of_presentation FROM event_list WHERE event_list.id=?";
+        $statement = $con->prepare($query);
         if ($statement) {
             $statement->bind_param("s", $_POST['eventId']);
             $statement->execute();
-            $result=$statement->get_result();
-            while ($row=$result->fetch_assoc()){
-                $response[]=$row;
-            }
-            $result->free();
-            $statement->close();
-        }
-        $con->close();
-    }
-    ob_clean();
-    echo json_encode($response);
-    exit();
-}
-
-if(isset($_POST['getEventList'])){
-    $response = [];
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Select both id and name so the frontend can use ev.id and ev.name
-        $query = "SELECT event_list.id, event_list.name FROM event_list ORDER BY event_list.name ASC";
-        $statement = $con->prepare($query);
-        if ($statement) {
-            $statement->execute();
             $result = $statement->get_result();
-            while ($row = $result->fetch_assoc()) {
+            while ($row = $result->fetch_assoc()){
                 $response[] = $row;
             }
             $result->free();
@@ -113,45 +127,196 @@ if(isset($_POST['getEventList'])){
     exit();
 }
 
-if(isset($_POST['getEventAdmin'])){
-    $response=[];
+// Get Event List
+if(isset($_POST['getEventList'])){
+    $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query="SELECT 
+        $query = "SELECT event_list.id, event_list.name, event_list.date_of_presentation FROM event_list ORDER BY event_list.name ASC";
+        $statement = $con->prepare($query);
+        if ($statement) {
+            $statement->execute();
+            $result = $statement->get_result();
+            while ($row = $result->fetch_assoc()){
+                $response[] = $row;
+            }
+            $result->free();
+            $statement->close();
+        }
+        $con->close();
+    }
+    ob_clean();
+    echo json_encode($response);
+    exit();
+}
+
+// Get Events for Admin Panel
+if(isset($_POST['getEventAdmin'])){
+    $response = [];
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "SELECT 
             event_list.id, 
             event_list.name, 
             event_list.dead_line, 
             event_list.status, 
             event_list.date,
+            event_list.date_of_presentation,
             score_sheet.id as scID 
             FROM event_list
-            LEFT JOIN score_sheet ON event_list.id=score_sheet.event_id
+            LEFT JOIN score_sheet ON event_list.id = score_sheet.event_id
             ORDER BY event_list.dead_line DESC";
         $result = $con->query($query);
         if ($result) {
-            while ($val = $result->fetch_assoc()) {
-                $response[]=$val;
+            while ($val = $result->fetch_assoc()){
+                $response[] = $val;
             }
             $result->free();
         }
         $con->close();
     }
     
-    // FIX: Check if output buffering is active before cleaning
     ob_clean();
-    
     echo json_encode($response);
     exit();
 }
 
+// Update Deadline Only
+if(isset($_POST['updateDeadline'])){
+    $response = new stdClass();
+    $response->message = '';
+    $response->status = false;
+
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $newDate = $_POST['newDate'] ?? '';
+        $eventId = $_POST['eventId'] ?? '';
+        
+        if (!empty($newDate) && !empty($eventId)) {
+            $query = "UPDATE event_list SET dead_line = ? WHERE id = ?";
+            $statement = $con->prepare($query);
+            if ($statement) {
+                $statement->bind_param("ss", $newDate, $eventId);
+                $status = $statement->execute();
+                
+                if($status){
+                    $response->status = true;
+                    $response->message = "Deadline updated successfully!";
+                } else {
+                    $response->message = $statement->error;
+                }
+                $statement->close();
+            }
+        } else {
+            $response->message = "Missing required fields";
+        }
+        $con->close();
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    exit();
+}
+
+// Update Presentation Date Only
+if(isset($_POST['updatePresentationDate'])){
+    $response = new stdClass();
+    $response->message = '';
+    $response->status = false;
+
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $presentationDate = $_POST['presentationDate'] ?? '';
+        $eventId = $_POST['eventId'] ?? '';
+        
+        if (!empty($presentationDate) && !empty($eventId)) {
+            $query = "UPDATE event_list SET date_of_presentation = ? WHERE id = ?";
+            $statement = $con->prepare($query);
+            if ($statement) {
+                $statement->bind_param("ss", $presentationDate, $eventId);
+                $status = $statement->execute();
+                
+                if($status){
+                    $response->status = true;
+                    $response->message = "Presentation date updated successfully!";
+                } else {
+                    $response->message = $statement->error;
+                }
+                $statement->close();
+            }
+        } else {
+            $response->message = "Missing required fields";
+        }
+        $con->close();
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    exit();
+}
+
+// Check Event Status
+if(isset($_POST['checkDeadLine'])){
+    $response = new stdClass();
+    $response->status = false;
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "SELECT status, dead_line FROM event_list WHERE id = ?";
+        $statement = $con->prepare($query);
+        if ($statement) {
+            $statement->bind_param("s", $_POST['eventId']);
+            $statement->execute();
+            $result = $statement->get_result();
+            $row = $result->fetch_assoc();
+            
+            if($row){
+                $deadline = strtotime($row['dead_line']);
+                $now = time();
+                $response->status = ($deadline > $now && $row['status'] == 1);
+            }
+            $result->free();
+            $statement->close();
+        }
+        $con->close();
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    exit();
+}
+
+// Delete Event
+if(isset($_POST['deleteEvent'])){
+    $response = new stdClass();
+    $response->message = '';
+    $response->status = false;
+
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "DELETE FROM event_list WHERE event_list.id=?";
+        $statement = $con->prepare($query);
+        if ($statement) {
+            $statement->bind_param("s", $_POST['eventId']);
+            $status = $statement->execute();
+
+            if($status){
+                $response->status = true;
+                $response->message = "Event deleted successfully!";
+            } else {
+                $response->message = $statement->error;
+            }
+            $statement->close();
+        }
+        $con->close();
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    exit();
+}
+
+// Request Event RDE Documents
 if (isset($_POST['requestEventRDE'])) {
-    // Ensure clean buffer
     ob_clean();
     
     $eventId = $_POST['eventId'] ?? '0';
     $page  = max(1, (int)($_POST['page'] ?? 1));
     $limit = max(1, min(50, (int)($_POST['limit'] ?? 10)));
-    
-    // Get lastId for keyset pagination
     $lastId = isset($_POST['lastId']) ? max(0, (int)$_POST['lastId']) : 0;
     
     $res = [
@@ -170,13 +335,10 @@ if (isset($_POST['requestEventRDE'])) {
             throw new Exception('Database connection failed: ' . $con->connect_error);
         }
 
-        // Disable mysqli error reporting
         mysqli_report(MYSQLI_REPORT_OFF);
-        
-        // Set charset
         $con->set_charset('utf8mb4');
         
-        /* ---------- COUNT ---------- */
+        // COUNT query
         if ($eventId === '0' || $eventId === '') {
             $countSql = "
                 SELECT COUNT(*) as total
@@ -184,11 +346,6 @@ if (isset($_POST['requestEventRDE'])) {
                 INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
                 WHERE endorsement.status = 'accepted'";
             $countStmt = $con->prepare($countSql);
-            
-            if (!$countStmt) {
-                throw new Exception('Count prepare failed: ' . $con->error);
-            }
-            
             $countStmt->execute();
         } else {
             $countSql = "
@@ -199,21 +356,11 @@ if (isset($_POST['requestEventRDE'])) {
                 WHERE endorsement.status = 'accepted'
                 AND event_list.id = ?";
             $countStmt = $con->prepare($countSql);
-            
-            if (!$countStmt) {
-                throw new Exception('Count prepare failed: ' . $con->error);
-            }
-            
             $countStmt->bind_param('s', $eventId);
             $countStmt->execute();
         }
 
         $countResult = $countStmt->get_result();
-        
-        if (!$countResult) {
-            throw new Exception('Failed to get count result');
-        }
-        
         $countRow = $countResult->fetch_assoc();
         $total = (int)($countRow['total'] ?? 0);
         
@@ -223,9 +370,8 @@ if (isset($_POST['requestEventRDE'])) {
         $res['total'] = $total;
         $res['totalPages'] = $total > 0 ? (int)ceil($total / $limit) : 0;
 
-        // Only fetch data if there are results
         if ($total > 0) {
-            /* ---------- KEYSET PAGINATION ---------- */
+            // Data query with keyset pagination
             if ($eventId === '0' || $eventId === '') {
                 if ($lastId > 0) {
                     $sql = "
@@ -238,9 +384,6 @@ if (isset($_POST['requestEventRDE'])) {
                             researchfile.drive_view_url,
                             researchfile.drive_file_id,
                             researchfile.drive_download_url,
-                            researchfile.drive_folder_id,
-                            researchfile.drive_event_folder_id,
-                            researchfile.drive_center_folder_id,
                             researchfile.status,
                             researchfile.category,
                             researchfile.center,
@@ -268,9 +411,6 @@ if (isset($_POST['requestEventRDE'])) {
                             researchfile.drive_view_url,
                             researchfile.drive_file_id,
                             researchfile.drive_download_url,
-                            researchfile.drive_folder_id,
-                            researchfile.drive_event_folder_id,
-                            researchfile.drive_center_folder_id,
                             researchfile.status,
                             researchfile.category,
                             researchfile.center,
@@ -299,9 +439,6 @@ if (isset($_POST['requestEventRDE'])) {
                             researchfile.drive_view_url,
                             researchfile.drive_file_id,
                             researchfile.drive_download_url,
-                            researchfile.drive_folder_id,
-                            researchfile.drive_event_folder_id,
-                            researchfile.drive_center_folder_id,
                             researchfile.status,
                             researchfile.category,
                             researchfile.center,
@@ -330,9 +467,6 @@ if (isset($_POST['requestEventRDE'])) {
                             researchfile.drive_view_url,
                             researchfile.drive_file_id,
                             researchfile.drive_download_url,
-                            researchfile.drive_folder_id,
-                            researchfile.drive_event_folder_id,
-                            researchfile.drive_center_folder_id,
                             researchfile.status,
                             researchfile.category,
                             researchfile.center,
@@ -352,21 +486,13 @@ if (isset($_POST['requestEventRDE'])) {
                 }
             }
 
-            if (!$stmt->execute()) {
-                throw new Exception('Query execution failed: ' . $stmt->error);
-            }
-
+            $stmt->execute();
             $result = $stmt->get_result();
             
-            if (!$result) {
-                throw new Exception('Failed to get result set');
-            }
-
             $data = [];
             $lastProcessedId = 0;
             
             while ($row = $result->fetch_assoc()) {
-                // Process file URL
                 if (!empty($row['drive_view_url'])) {
                     $row['file'] = $row['drive_view_url'];
                 } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
@@ -379,7 +505,7 @@ if (isset($_POST['requestEventRDE'])) {
             $res['lastId'] = $lastProcessedId;
             $res['data'] = $data;
 
-            // Check if there are more records
+            // Check for more records
             if ($lastProcessedId > 0) {
                 if ($eventId === '0' || $eventId === '') {
                     $hasMoreSql = "
@@ -421,7 +547,6 @@ if (isset($_POST['requestEventRDE'])) {
     } catch (Exception $e) {
         error_log("requestEventRDE Error: " . $e->getMessage());
         
-        // Clear buffer and return error
         ob_clean();
         echo json_encode([
             'error' => true,
@@ -436,49 +561,16 @@ if (isset($_POST['requestEventRDE'])) {
         exit;
     }
 
-    // Clear buffer and output clean JSON
     ob_clean();
     echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
-if(isset($_POST['deleteEvent'])){
-    $response = new stdClass();
-    $response->message = '';
-    $response->status = false;
-
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query = "DELETE FROM event_list WHERE event_list.id=?";
-        $statement = $con->prepare($query);
-        if ($statement) {
-            $statement->bind_param("s", $_POST['eventId']);
-            $status = $statement->execute();
-
-            if($status){
-                $response->status = true;
-                $response->message = "Event deleted..!";
-            } else {
-                $response->message = $statement->error;
-            }
-            $statement->close();
-        } else {
-            $response->message = $con->error;
-        }
-        $con->close();
-    } else {
-        $response->message = $con->error ?? 'Connection failed';
-    }
-    
-    ob_clean();
-    echo json_encode($response);
-    exit();
-}
-// for evaluators number of entries
+// Collect Entries for Evaluators
 if(isset($_POST['collectEntries'])){
     $count = 0;
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Get center name with code format for filtering
         $centerFilter = '';
         $centerId = $_SESSION['centerId'] ?? '';
         
@@ -525,7 +617,6 @@ if(isset($_POST['collectEntries'])){
         $con->close();
     }
 
-    // Clear buffer and output count
     ob_clean();
     echo $count;
     exit();

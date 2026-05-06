@@ -1250,55 +1250,6 @@ export const completedResearch = () => {
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
-                                        }),
-                                        $({
-                                            tag: 'div',
-                                            style: {
-                                                display: 'grid',
-                                                gridTemplateColumns: 'repeat(4, 1fr)',
-                                                gap: '12px'
-                                            },
-                                            child: ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter'].map((label, index) => {
-                                                const quarterKey = `q${index + 1}`
-                                                return $({
-                                                    tag: 'div',
-                                                    child: [
-                                                        $({
-                                                            tag: 'label',
-                                                            text: label,
-                                                            style: {
-                                                                display: 'block',
-                                                                marginBottom: '6px',
-                                                                color: '#888',
-                                                                fontSize: '11px',
-                                                                textAlign: 'center'
-                                                            }
-                                                        }),
-                                                        $({
-                                                            tag: 'input',
-                                                            att: {
-                                                                type: 'number',
-                                                                name: quarterKey,
-                                                                value: isEditing ? (item[quarterKey] || 0) : 0,
-                                                                min: '0',
-                                                                max: '100',
-                                                                placeholder: '0-100%'
-                                                            },
-                                                            style: {
-                                                                width: '100%',
-                                                                padding: '10px',
-                                                                backgroundColor: '#333',
-                                                                border: '1px solid #444',
-                                                                borderRadius: '6px',
-                                                                color: '#fff',
-                                                                fontSize: '14px',
-                                                                outline: 'none',
-                                                                textAlign: 'center'
-                                                            }
-                                                        })
-                                                    ]
-                                                })
-                                            })
                                         })
                                     ]
                                 }),
@@ -1850,17 +1801,13 @@ export const completedResearch = () => {
             'Budget',
             'Fund Source',
             'Link to completed research paper',
-            '1ST QUARTER',
-            '2ND QUARTER',
-            '3RD QUARTER',
-            '4TH QUARTER',
             'ACTIONS'
         ]
 
         const row = $({ tag: 'tr' })
 
         headers.forEach((header, index) => {
-            const isCenter = ['NO.', 'Date Started', 'Date Completed', 'Duration', 'Budget', 'Fund Source', '1ST QUARTER', '2ND QUARTER', '3RD QUARTER', '4TH QUARTER', 'ACTIONS'].includes(header)
+            const isCenter = ['NO.', 'Date Started', 'Date Completed', 'Duration', 'Budget', 'Fund Source', 'ACTIONS'].includes(header)
 
             const th = $({
                 tag: 'th',

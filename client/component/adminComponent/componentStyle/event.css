@@ -1,59 +1,78 @@
-.inputEv{
-    background-color: transparent;
-    background-image: linear-gradient(bottom left, rgba(0,0,0,0.1),rgba(0,0,0,0.3));
-    border-radius: 0 .5vw .5vw 0;
-}
-.inputEv:focus{
-    background-color: rgba(0,0,0,0.3);
-}
-.eventDet{
-    background-color: #444;
-}
-
-.statusEv{
-    color: deepskyblue;
-}
-.statusEv:hover{
-    color: ghostwhite;
-    background-color: black;
-    text-shadow: 0 0 .2rem ghostwhite;
-}
-.delEv{
-    color: deepskyblue;
-}
-.delEv:hover{
-    color: black;
-    text-shadow: 0 0 .2vw ghostwhite;
-}
-.deadDate{
-    color: deepskyblue;
-}
-.deadDate:hover{
-    color: ghostwhite;
-}
-input::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-}
-.sub{
-    color: deepskyblue;
-    cursor: pointer;
-    background-color: #444;
-}
-.sub:hover{
-    color: lightblue;
-    background-color: #222;
-}
-.subEv{
-    color: deepskyblue;
-    width:50%;
-    margin: auto;
-    border-radius:.5vw;
-}
-.subEv:hover{
-    background-color:rgba(0,0,0,0.3);
-    transition:.3s;
-}
-.subEv:active{
-    background-color:rgba(0,0,0,0.5);
-    transition:.3s;
+/* Event Component Styles */
+.eventDet {
+    cursor: default;
+}
+
+.eventDet:hover {
+    background-color: #333 !important;
+    border-color: #555 !important;
+}
+
+/* Input Styles */
+.event-name-input::placeholder {
+    color: #666;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Modal Animation */
+.eventDet .fa-trash-can:hover {
+    animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(10deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .eventDet {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .eventDet>div {
+        width: calc(50% - 4px) !important;
+    }
 }
