@@ -4285,12 +4285,14 @@ if (isset($_POST['submitRevision'])) {
             
             error_log("New file uploaded: ID = $newFileId, URL = $newViewUrl");
             
-            // 3. Update database (just upload the revised file, no original file tracking)
+            // 3. Update database
             $updateQuery = "UPDATE researchfile SET 
                 revision_status = 'revision_submitted',
                 revision_count = ?,
                 last_revision_date = NOW(),
                 revised_file_id = ?,
+                revised_drive_view_url = ?,
+                revised_drive_download_url = ?,
                 drive_file_id = ?,
                 drive_view_url = ?,
                 drive_download_url = ?,
@@ -4299,9 +4301,11 @@ if (isset($_POST['submitRevision'])) {
                 WHERE id = ?";
             
             $updateStmt = $con->prepare($updateQuery);
-            $updateStmt->bind_param("issssi", 
+            $updateStmt->bind_param("issssssi", 
                 $revisionCount, 
                 $newFileId, 
+                $newViewUrl,
+                $newDownloadUrl,
                 $newFileId, 
                 $newViewUrl,
                 $newDownloadUrl,

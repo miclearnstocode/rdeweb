@@ -82,9 +82,9 @@ class ProposedResearchAPI {
         }
         
         return [
-            'authors_list' => implode(', ', $allResearchers), // Original array, all authors included
+            'authors_list' => implode(', ', $allResearchers),
             'faculty_researchers' => $facultyResearchers,
-            'all_researchers' => $allResearchers // Original array, all authors included
+            'all_researchers' => $allResearchers
         ];
     }
     
@@ -98,11 +98,15 @@ class ProposedResearchAPI {
         return 'other';
     }
     
-    private function getUniversityLevelStatus($status) {
-        if ($status === 'accepted') {
-            return 'waiting for revised proposal';
-        }
-        return $status;
+    private function getRevisionStatusDisplay($revisionStatus) {
+        $statusMap = [
+            'revision_pending' => 'Pending Revision',
+            'revision_submitted' => 'Revised Submitted',
+            'revision_accepted' => 'Revision Accepted',
+            'revision_rejected' => 'Revision Rejected'
+        ];
+        
+        return $statusMap[$revisionStatus] ?? $revisionStatus;
     }
     
     private function getEvents() {
@@ -147,16 +151,10 @@ class ProposedResearchAPI {
     
     public function fetchProposedResearch() {
         try {
-            // Get all events first
+            // Get all events first for reference
             $events = $this->getEvents();
             
-            if (empty($events)) {
-                $this->response->message = 'No events found';
-                echo json_encode($this->response);
-                return;
-            }
-            
-            // Get ALL research papers with accepted status, using endorsement date for year
+            // Get ALL research papers with accepted status or active events
             $query = "SELECT 
                         rf.id,
                         rf.senderid,
@@ -170,16 +168,21 @@ class ProposedResearchAPI {
                         rf.center,
                         rf.file,
                         rf.paper_trail_no,
-                        e.id as endorsement_id,
-                        e.status as endorsement_status,
-                        e.date as endorsement_date,
-                        YEAR(e.date) as endorsement_year
-                    FROM endorsement e
-                    INNER JOIN researchfile rf ON e.id = rf.endorsementid
-                    WHERE e.status = 'accepted'
-                    AND rf.event_id IS NOT NULL
-                    AND rf.event_id != 0
-                    ORDER BY e.date DESC, rf.id ASC";
+                        rf.revision_status,
+                        rf.revised_drive_view_url,
+                        rf.revised_drive_download_url,
+                        rf.date_started,
+                        rf.date_completed,
+                        en.id as endorsement_id,
+                        en.status as endorsement_status,
+                        en.date as endorsement_date,
+                        en.event as endorsement_event_name,
+                        YEAR(COALESCE(e.date, en.date)) as endorsement_year
+                    FROM researchfile rf
+                    LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                    LEFT JOIN event_list e ON rf.event_id = e.id
+                    WHERE en.status = 'accepted' OR e.status = 1
+                    ORDER BY COALESCE(e.date, en.date) DESC, rf.id ASC";
             
             $result = $this->con->query($query);
             
@@ -207,34 +210,59 @@ class ProposedResearchAPI {
             // Get academic positions for all research papers
             $academicPositions = $this->getAcademicPositions($researchIds);
             
-            // Group papers by endorsement year
+            // Group papers by endorsement year (from endorsement.date)
             $papersByYear = [];
             
             foreach ($rows as $row) {
-                $eventId = $row['event_id'];
+                // Determine event type from MULTIPLE sources
+                // Priority: 1) researchfile.event, 2) endorsement.event, 3) event_list
+                $eventType = 'other';
+                $eventNameForType = '';
                 
-                if (!isset($events[$eventId])) {
-                    continue;
+                // First check researchfile.event (event_name)
+                if (!empty($row['event_name'])) {
+                    $eventNameForType = $row['event_name'];
+                    $eventType = $this->getEventType($row['event_name']);
                 }
                 
-                if (isset($events[$eventId])) {
-                    $eventInfo = $events[$eventId];
-                    $eventType = $this->getEventType($eventInfo['name']);
-                } else {
-                    $eventInfo = [
-                        'name' => '',
-                        'date' => $row['endorsement_date'] ?? '',
-                        'year' => $year
-                    ];
-                    $eventType = 'other';
+                // If still 'other', check endorsement.event (endorsement_event_name)
+                if ($eventType === 'other' && !empty($row['endorsement_event_name'])) {
+                    $eventNameForType = $row['endorsement_event_name'];
+                    $eventType = $this->getEventType($row['endorsement_event_name']);
                 }
                 
-                // Use endorsement year from the query
+                // If still 'other' and event_id exists in event_list, check event_list
+                if ($eventType === 'other' && $row['event_id'] && isset($events[$row['event_id']])) {
+                    $eventNameForType = $events[$row['event_id']]['name'];
+                    $eventType = $this->getEventType($eventNameForType);
+                }
+                
+                // Get year - endorsement_year from SQL should be reliable
                 $year = $row['endorsement_year'];
                 
-                // Skip if no year
+                // Fallback: if endorsement_year is null, try to parse endorsement_date
+                if (!$year && !empty($row['endorsement_date'])) {
+                    $year = (int)date('Y', strtotime($row['endorsement_date']));
+                    error_log("Fallback year from endorsement_date for ID {$row['id']}: $year");
+                }
+                
+                // Final fallback: use current year
                 if (!$year) {
-                    continue;
+                    $year = (int)date('Y');
+                    error_log("WARNING: No year found for ID {$row['id']}, using current year: $year");
+                }
+                
+                // Build event info
+                $eventInfo = [
+                    'name' => $eventNameForType ?: $row['event_name'] ?: $row['endorsement_event_name'] ?: '',
+                    'date' => $row['endorsement_date'] ?? $row['date_started'] ?? '',
+                    'year' => $year
+                ];
+                
+                // If event_id exists in event_list, use that for additional info
+                if ($row['event_id'] && isset($events[$row['event_id']])) {
+                    $eventInfo['name'] = $eventInfo['name'] ?: $events[$row['event_id']]['name'];
+                    $eventInfo['date'] = $eventInfo['date'] ?: $events[$row['event_id']]['date'];
                 }
                 
                 // Group by year
@@ -259,23 +287,23 @@ class ProposedResearchAPI {
                 }
                 
                 // Check if this year
-                if ($year == date('Y')) {
+                if ($year == (int)date('Y')) {
                     $stats['thisYear']++;
                 }
             }
             
-            // Log years found for debugging
-            error_log("Years with papers (from endorsement date): " . implode(', ', array_keys($papersByYear)));
-            
             // Sort years in descending order
             krsort($papersByYear);
+            
+            error_log("Years found: " . implode(', ', array_keys($papersByYear)));
+            error_log("Papers per year: " . print_r(array_map('count', $papersByYear), true));
             
             // Process each year separately
             foreach ($papersByYear as $year => $yearPapers) {
                 // Sort papers within the year by endorsement date and then by ID
                 usort($yearPapers, function($a, $b) {
-                    $dateA = $a['row']['endorsement_date'] ?? '';
-                    $dateB = $b['row']['endorsement_date'] ?? '';
+                    $dateA = $a['row']['endorsement_date'] ?? $a['row']['date_started'] ?? '';
+                    $dateB = $b['row']['endorsement_date'] ?? $b['row']['date_started'] ?? '';
                     
                     if ($dateA != $dateB) {
                         return strtotime($dateB) - strtotime($dateA);
@@ -314,9 +342,16 @@ class ProposedResearchAPI {
                     }
                     
                     // Use endorsement date for display
-                    $dateStarted = !empty($row['endorsement_date']) ? 
-                        date('M j, Y', strtotime($row['endorsement_date'])) : 
-                        (!empty($row['accepted_date']) ? date('M j, Y', strtotime($row['accepted_date'])) : '');
+                    $dateStarted = '';
+                    if (!empty($row['endorsement_date'])) {
+                        $dateStarted = date('M j, Y', strtotime($row['endorsement_date']));
+                    } elseif (!empty($row['date_started'])) {
+                        $dateStarted = date('M j, Y', strtotime($row['date_started']));
+                    }
+                    
+                    // Get revision status display
+                    $revisionStatus = $row['revision_status'] ?? 'revision_pending';
+                    $revisionStatusDisplay = $this->getRevisionStatusDisplay($revisionStatus);
                     
                     // Build research entry
                     $researchEntry = [
@@ -337,17 +372,39 @@ class ProposedResearchAPI {
                         'symposiumUniversity' => '',
                         'dateStarted' => $dateStarted,
                         'eventType' => $eventType,
-                        'eventName' => $eventInfo['name'],
+                        'eventName' => $eventInfo['name'] ?? '',
                         'endorsement_status' => $row['endorsement_status'],
+                        'revision_status' => $revisionStatus,
+                        'revision_status_display' => $revisionStatusDisplay,
+                        'revised_drive_view_url' => $row['revised_drive_view_url'] ?? '',
+                        'revised_drive_download_url' => $row['revised_drive_download_url'] ?? '',
                         'has_positions' => !empty($paperPositions),
-                        'endorsement_date' => $row['endorsement_date']
+                        'endorsement_date' => $row['endorsement_date'] ?? ''
                     ];
                     
-                    // Set appropriate status based on event type and level
+                    // Set status columns based on event type
+                    // For the 2026 records (38th University Faculty In-House Review = inhouse)
+                    // For the 2024 records (42nd Annual RDE Faculty Symposium = symposium)
                     if ($eventType === 'inhouse') {
-                        $researchEntry['inhouseUniversity'] = $this->getUniversityLevelStatus($row['endorsement_status']);
+                        $researchEntry['inhouseUniversity'] = $revisionStatusDisplay;
+                        $researchEntry['symposiumUniversity'] = '';
                     } elseif ($eventType === 'symposium') {
-                        $researchEntry['symposiumUniversity'] = $this->getUniversityLevelStatus($row['endorsement_status']);
+                        $researchEntry['symposiumUniversity'] = $revisionStatusDisplay;
+                        $researchEntry['inhouseUniversity'] = '';
+                    } else {
+                        // For unknown types, try to determine from event name
+                        $eventNameLower = strtolower($eventInfo['name'] ?? '');
+                        if (strpos($eventNameLower, 'in-house') !== false || strpos($eventNameLower, 'inhouse') !== false) {
+                            $researchEntry['inhouseUniversity'] = $revisionStatusDisplay;
+                            $researchEntry['symposiumUniversity'] = '';
+                        } elseif (strpos($eventNameLower, 'symposium') !== false) {
+                            $researchEntry['symposiumUniversity'] = $revisionStatusDisplay;
+                            $researchEntry['inhouseUniversity'] = '';
+                        } else {
+                            // Default: show in both if we can't determine
+                            $researchEntry['inhouseUniversity'] = $revisionStatusDisplay;
+                            $researchEntry['symposiumUniversity'] = $revisionStatusDisplay;
+                        }
                     }
                     
                     $researchData[] = $researchEntry;
@@ -367,120 +424,243 @@ class ProposedResearchAPI {
         
         echo json_encode($this->response);
     }
-        
-        //Get single research paper details with academic positions
-        public function getResearchPaper($id) {
-            try {
-                $query = "SELECT 
-                            rf.id,
-                            rf.title,
-                            rf.author,
-                            rf.coauthor,
-                            rf.category,
-                            rf.campus,
-                            rf.center,
-                            rf.event_id,
-                            e.id as endorsement_id,
-                            e.status as endorsement_status
-                        FROM researchfile rf
-                        INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        WHERE rf.id = ? AND e.status = 'accepted'
-                        LIMIT 1";
+    
+    // Get single research paper details with academic positions
+    public function getResearchPaper($id) {
+        try {
+            $query = "SELECT 
+                        rf.id,
+                        rf.title,
+                        rf.author,
+                        rf.coauthor,
+                        rf.category,
+                        rf.campus,
+                        rf.center,
+                        rf.event_id,
+                        rf.revision_status,
+                        rf.revised_drive_view_url,
+                        rf.revised_drive_download_url,
+                        en.id as endorsement_id,
+                        en.status as endorsement_status
+                    FROM researchfile rf
+                    LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                    LEFT JOIN event_list e ON rf.event_id = e.id
+                    WHERE rf.id = ? AND (en.status = 'accepted' OR e.status = 1)
+                    LIMIT 1";
+            
+            $stmt = $this->con->prepare($query);
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                // Get event details
+                $eventQuery = "SELECT name, date FROM event_list WHERE id = ?";
+                $eventStmt = $this->con->prepare($eventQuery);
+                $eventStmt->bind_param("i", $row['event_id']);
+                $eventStmt->execute();
+                $eventResult = $eventStmt->get_result();
+                $event = $eventResult->fetch_assoc();
                 
-                $stmt = $this->con->prepare($query);
-                $stmt->bind_param("i", $id);
-                $stmt->execute();
-                $result = $stmt->get_result();
+                $eventYear = $event ? $this->getEventYear($event['date']) : date('Y');
+                $eventType = $event ? $this->getEventType($event['name']) : 'other';
                 
-                if ($row = $result->fetch_assoc()) {
-                    // Get event details
-                    $eventQuery = "SELECT name, date FROM event_list WHERE id = ?";
-                    $eventStmt = $this->con->prepare($eventQuery);
-                    $eventStmt->bind_param("i", $row['event_id']);
-                    $eventStmt->execute();
-                    $eventResult = $eventStmt->get_result();
-                    $event = $eventResult->fetch_assoc();
-                    
-                    $eventYear = $event ? $this->getEventYear($event['date']) : date('Y');
-                    $eventType = $event ? $this->getEventType($event['name']) : 'other';
-                    
-                    // Parse authors and faculty researchers
-                    $parsedAuthors = $this->parseAuthorsAndFaculty($row['author'], $row['coauthor']);
-                    
-                    // Get academic positions for this research paper
-                    $positionsQuery = "SELECT * FROM academic_position WHERE research_id = ?";
-                    $positionsStmt = $this->con->prepare($positionsQuery);
-                    $positionsStmt->bind_param("i", $id);
-                    $positionsStmt->execute();
-                    $positionsResult = $positionsStmt->get_result();
-                    
-                    $academicPositions = [];
-                    while ($position = $positionsResult->fetch_assoc()) {
-                        $academicPositions[] = [
-                            'faculty_name' => $position['faculty_name'],
-                            'academic_rank' => $position['academic_rank'],
-                            'non_academic_rank' => $position['non_academic_rank'],
-                            'job_order' => $position['job_order']
-                        ];
-                    }
-                    
-                    $paperDetails = [
-                        'id' => $row['id'],
-                        'endorsement_id' => $row['endorsement_id'],
-                        'year' => $eventYear,
-                        'event_name' => $event ? $event['name'] : '',
-                        'event_type' => $eventType,
-                        'title' => $row['title'],
-                        'author' => $row['author'],
-                        'coauthor' => json_decode($row['coauthor'], true),
-                        'authors' => $parsedAuthors['authors_list'],
-                        'facultyResearcher' => $parsedAuthors['faculty_researchers'],
-                        'all_researchers' => $parsedAuthors['all_researchers'],
-                        'category' => $row['category'],
-                        'campus' => $row['campus'],
-                        'center' => $row['center'],
-                        'endorsement_status' => $row['endorsement_status'],
-                        'academic_positions' => $academicPositions
+                // Parse authors and faculty researchers
+                $parsedAuthors = $this->parseAuthorsAndFaculty($row['author'], $row['coauthor']);
+                
+                // Get academic positions for this research paper
+                $positionsQuery = "SELECT * FROM academic_position WHERE research_id = ?";
+                $positionsStmt = $this->con->prepare($positionsQuery);
+                $positionsStmt->bind_param("i", $id);
+                $positionsStmt->execute();
+                $positionsResult = $positionsStmt->get_result();
+                
+                $academicPositions = [];
+                while ($position = $positionsResult->fetch_assoc()) {
+                    $academicPositions[] = [
+                        'faculty_name' => $position['faculty_name'],
+                        'academic_rank' => $position['academic_rank'],
+                        'non_academic_rank' => $position['non_academic_rank'],
+                        'job_order' => $position['job_order']
                     ];
-                    
-                    $this->response->status = true;
-                    $this->response->data = $paperDetails;
-                } else {
-                    $this->response->message = 'Research paper not found';
                 }
                 
-            } catch (Exception $e) {
-                $this->response->message = 'Error: ' . $e->getMessage();
+                $paperDetails = [
+                    'id' => $row['id'],
+                    'endorsement_id' => $row['endorsement_id'],
+                    'year' => $eventYear,
+                    'event_name' => $event ? $event['name'] : '',
+                    'event_type' => $eventType,
+                    'title' => $row['title'],
+                    'author' => $row['author'],
+                    'coauthor' => json_decode($row['coauthor'], true),
+                    'authors' => $parsedAuthors['authors_list'],
+                    'facultyResearcher' => $parsedAuthors['faculty_researchers'],
+                    'all_researchers' => $parsedAuthors['all_researchers'],
+                    'category' => $row['category'],
+                    'campus' => $row['campus'],
+                    'center' => $row['center'],
+                    'endorsement_status' => $row['endorsement_status'],
+                    'revision_status' => $row['revision_status'] ?? 'revision_pending',
+                    'revised_drive_view_url' => $row['revised_drive_view_url'] ?? '',
+                    'revised_drive_download_url' => $row['revised_drive_download_url'] ?? '',
+                    'academic_positions' => $academicPositions
+                ];
+                
+                $this->response->status = true;
+                unset($this->response->stats); // Remove stats from single paper response
+                $this->response->data = $paperDetails;
+            } else {
+                $this->response->message = 'Research paper not found';
             }
             
-            echo json_encode($this->response);
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
         }
         
-    public function saveAcademicPositions() {
+        echo json_encode($this->response);
+    }
+    
+    // Get comments for a research paper
+    public function getResearchComments() {
         try {
-            // Get input from php://input (for JSON requests)
+            $researchId = $_POST['research_id'] ?? $_GET['research_id'] ?? 0;
+            $eventType = $_POST['event_type'] ?? $_GET['event_type'] ?? '';
+            
+            if (!$researchId) {
+                $this->response->message = 'Research ID is required';
+                echo json_encode($this->response);
+                return;
+            }
+            
+            $query = "SELECT 
+                        comments.title,
+                        comments.intro,
+                        comments.abstract,
+                        comments.objective,
+                        comments.methodology,
+                        comments.results,
+                        comments.recommendation,
+                        comments.literature,
+                        comments.other,
+                        comments.isCommented,
+                        evaluator.fullname
+                    FROM comments
+                    LEFT JOIN evaluator ON evaluator.id = comments.evalid
+                    WHERE comments.resid = ?";
+            
+            $params = [$researchId];
+            $types = "i";
+            
+            // Use eventName for filtering if provided, but make it optional as resid is the primary key
+            if (!empty($eventType)) {
+                $query .= " AND (comments.eventType = ? OR comments.eventType LIKE ?)";
+                $params[] = $eventType;
+                $params[] = "%$eventType%";
+                $types .= "ss";
+            }
+            
+            $stmt = $this->con->prepare($query);
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $comments = [];
+            while ($row = $result->fetch_assoc()) {
+                $comments[] = [
+                    'title' => $row['title'] ?? '',
+                    'intro' => $row['intro'] ?? '',
+                    'abstract' => $row['abstract'] ?? '',
+                    'objective' => $row['objective'] ?? '',
+                    'methodology' => $row['methodology'] ?? '',
+                    'results' => $row['results'] ?? '',
+                    'recommendation' => $row['recommendation'] ?? '',
+                    'literature' => $row['literature'] ?? '',
+                    'other' => $row['other'] ?? '',
+                    'isCommented' => $row['isCommented'] ?? 0,
+                    'evaluator_name' => $row['fullname'] ?? ''
+                ];
+            }
+            
+            $this->response->status = true;
+            unset($this->response->stats); // Remove stats from comments response
+            $this->response->data = $comments;
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
+        }
+        
+        echo json_encode($this->response);
+    }
+    
+    // Update revision status
+    public function updateRevisionStatus() {
+        try {
             $input = json_decode(file_get_contents('php://input'), true);
             
-            // If no JSON input, try POST
+            if (!$input) {
+                $input = $_POST;
+            }
+            
+            $researchId = $input['research_id'] ?? 0;
+            $status = $input['status'] ?? ''; // 'revision_accepted' or 'revision_rejected'
+            
+            if (!$researchId) {
+                $this->response->message = 'Research ID is required';
+                echo json_encode($this->response);
+                return;
+            }
+            
+            if (!in_array($status, ['revision_accepted', 'revision_rejected'])) {
+                $this->response->message = 'Invalid status. Must be revision_accepted or revision_rejected';
+                echo json_encode($this->response);
+                return;
+            }
+            
+            $updateQuery = "UPDATE researchfile SET revision_status = ?, last_revision_date = NOW() WHERE id = ?";
+            $stmt = $this->con->prepare($updateQuery);
+            $stmt->bind_param("si", $status, $researchId);
+            
+            if ($stmt->execute()) {
+                $this->response->status = true;
+                $this->response->message = 'Revision status updated successfully';
+                $this->response->data = [
+                    'research_id' => $researchId,
+                    'revision_status' => $status,
+                    'display_status' => $status === 'revision_accepted' ? 'Revision Accepted' : 'Revision Rejected'
+                ];
+            } else {
+                throw new Exception("Failed to update revision status: " . $stmt->error);
+            }
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
+            error_log("Update revision status error: " . $e->getMessage());
+        }
+        
+        echo json_encode($this->response);
+    }
+    
+    public function saveAcademicPositions() {
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            
             if (!$input) {
                 $input = $_POST;
             }
             
             $researchId = $input['research_id'] ?? 0;
             $facultyData = $input['faculty_data'] ?? [];
-            $duplicateGroupId = $input['duplicate_group_id'] ?? $researchId; // If provided, use this for mapping
+            $duplicateGroupId = $input['duplicate_group_id'] ?? $researchId;
             
-            // If facultyData is a string (JSON encoded), decode it
             if (is_string($facultyData)) {
                 $facultyData = json_decode($facultyData, true);
             }
             
-            // Ensure facultyData is an array
             if (!is_array($facultyData)) {
                 $facultyData = [];
             }
             
-            // Log received data for debugging
             error_log("Research ID: " . $researchId);
             error_log("Duplicate Group ID: " . $duplicateGroupId);
             error_log("Faculty Data received: " . print_r($facultyData, true));
@@ -491,17 +671,14 @@ class ProposedResearchAPI {
                 return;
             }
             
-            // Filter out entries without faculty_name
             $filteredFacultyData = array_filter($facultyData, function($faculty) {
                 return !empty($faculty['faculty_name']);
             });
             
             error_log("Filtered Faculty Data: " . print_r($filteredFacultyData, true));
             
-            // Start transaction
             $this->con->begin_transaction();
             
-            // Delete existing positions for this research paper
             $deleteQuery = "DELETE FROM academic_position WHERE research_id = ?";
             $deleteStmt = $this->con->prepare($deleteQuery);
             $deleteStmt->bind_param("i", $researchId);
@@ -512,7 +689,6 @@ class ProposedResearchAPI {
             
             $insertedCount = 0;
             
-            // Insert new positions if there's data
             if (!empty($filteredFacultyData)) {
                 $insertQuery = "INSERT INTO academic_position (research_id, faculty_name, academic_rank, non_academic_rank, job_order) VALUES (?, ?, ?, ?, ?)";
                 $insertStmt = $this->con->prepare($insertQuery);
@@ -536,7 +712,6 @@ class ProposedResearchAPI {
                 $insertStmt->close();
             }
             
-            // Commit transaction
             $this->con->commit();
             
             $this->response->status = true;
@@ -551,7 +726,6 @@ class ProposedResearchAPI {
             ];
             
         } catch (Exception $e) {
-            // Rollback on error
             $this->con->rollback();
             $this->response->message = 'Error: ' . $e->getMessage();
             error_log("Save positions error: " . $e->getMessage());
@@ -559,70 +733,77 @@ class ProposedResearchAPI {
         
         echo json_encode($this->response);
     }
-        
-        //Get statistics only
-        public function getStatistics() {
-            try {
-                $stats = [
-                    'total' => 0,
-                    'inHouseReview' => 0,
-                    'symposium' => 0,
-                    'thisYear' => 0
-                ];
-                
-                // Get all events first
-                $events = $this->getEvents();
-                
-                if (empty($events)) {
-                    $this->response->stats = $stats;
-                    echo json_encode($this->response);
-                    return;
-                }
-                
-                $query = "SELECT 
-                            rf.event_id,
-                            COUNT(DISTINCT rf.id) as count
-                        FROM researchfile rf
-                        INNER JOIN endorsement e ON rf.endorsementid = e.id
-                        WHERE e.status = 'accepted' 
-                        AND rf.event_id IS NOT NULL 
-                        AND rf.event_id != 0
-                        GROUP BY rf.event_id";
-                
-                $result = $this->con->query($query);
-                
+    
+    // Get statistics only
+    public function getStatistics() {
+        try {
+            $stats = [
+                'total' => 0,
+                'inHouseReview' => 0,
+                'symposium' => 0,
+                'thisYear' => 0
+            ];
+            
+            $events = $this->getEvents();
+            
+            // Count all accepted research, not just those with event_id
+            $query = "SELECT 
+                        rf.id,
+                        rf.event_id,
+                        rf.event as event_name,
+                        en.date as endorsement_date,
+                        e.date as event_date
+                    FROM researchfile rf
+                    LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                    LEFT JOIN event_list e ON rf.event_id = e.id
+                    WHERE en.status = 'accepted' OR e.status = 1";
+            
+            $result = $this->con->query($query);
+            
+            if ($result) {
                 while ($row = $result->fetch_assoc()) {
-                    $eventId = $row['event_id'];
-                    $count = $row['count'];
+                    $eventType = 'other';
                     
-                    if (isset($events[$eventId])) {
-                        $eventInfo = $events[$eventId];
-                        $eventType = $this->getEventType($eventInfo['name']);
-                        
-                        $stats['total'] += $count;
-                        
-                        if ($eventType === 'inhouse') {
-                            $stats['inHouseReview'] += $count;
-                        } elseif ($eventType === 'symposium') {
-                            $stats['symposium'] += $count;
-                        }
-                        
-                        if ($eventInfo['year'] == date('Y')) {
-                            $stats['thisYear'] += $count;
-                        }
+                    // Determine event type
+                    if ($row['event_id'] && isset($events[$row['event_id']])) {
+                        $eventType = $this->getEventType($events[$row['event_id']]['name']);
+                    } elseif (!empty($row['event_name'])) {
+                        $eventType = $this->getEventType($row['event_name']);
+                    }
+                    
+                    $stats['total']++;
+                    
+                    if ($eventType === 'inhouse') {
+                        $stats['inHouseReview']++;
+                    } elseif ($eventType === 'symposium') {
+                        $stats['symposium']++;
+                    }
+                    
+                    // Check if this year
+                    $year = null;
+                    if (!empty($row['event_date'])) {
+                        $year = date('Y', strtotime($row['event_date']));
+                    } elseif (!empty($row['endorsement_date'])) {
+                        $year = date('Y', strtotime($row['endorsement_date']));
+                    }
+                    
+                    if ($year == date('Y')) {
+                        $stats['thisYear']++;
                     }
                 }
-                
-                $this->response->status = true;
-                $this->response->stats = $stats;
-                
-            } catch (Exception $e) {
-                $this->response->message = 'Error: ' . $e->getMessage();
             }
             
-            echo json_encode($this->response);
+            $this->response->status = true;
+            $this->response->message = 'Statistics fetched successfully';
+            $this->response->stats = $stats;
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
         }
+        
+        echo json_encode($this->response);
     }
+}
 
 // Initialize database connection
 $con = new mysqli($host, $username, $pass, $dbName);
@@ -669,6 +850,14 @@ switch ($action) {
         }
         break;
         
+    case 'get_comments':
+        $api->getResearchComments();
+        break;
+        
+    case 'update_revision_status':
+        $api->updateRevisionStatus();
+        break;
+        
     case 'save_positions':
         $api->saveAcademicPositions();
         break;
@@ -678,7 +867,6 @@ switch ($action) {
         break;
         
     default:
-        // If no action specified, default to fetch
         if (empty($action)) {
             $api->fetchProposedResearch();
         } else {

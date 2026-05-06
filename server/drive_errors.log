@@ -301,3 +301,16 @@ Stack trace:
 [06-May-2026 09:37:38 Asia/Manila] New file uploaded: ID = 1oLJFefg9IYp8KruIJceDMj6FfiEfu7e6, URL = https://drive.google.com/file/d/1oLJFefg9IYp8KruIJceDMj6FfiEfu7e6/preview
 [06-May-2026 09:37:38 Asia/Manila] Endorsement status reset to NULL for ID: 551
 [06-May-2026 09:37:38 Asia/Manila] Revision submitted successfully for research ID: 538, revision count: 2
+[06-May-2026 13:59:22 Asia/Manila] === START submitRevision ===
+[06-May-2026 13:59:22 Asia/Manila] POST data: Array
+(
+    [submitRevision] => true
+    [original_research_id] => 536
+    [original_title] => Sample only
+)
+
+[06-May-2026 13:59:23 Asia/Manila] GDrive: Uploading Revised Proposal v2 - research_paper.pdf to folder 1_lE4wBwYmZ202pjj4ShjxnljLVo3XgCV
+[06-May-2026 13:59:29 Asia/Manila] File 1T5v4kWWGHXWJYEO2sxKpW23Vv1_tx4GF is already public
+[06-May-2026 13:59:29 Asia/Manila] New file uploaded: ID = 1T5v4kWWGHXWJYEO2sxKpW23Vv1_tx4GF, URL = https://drive.google.com/file/d/1T5v4kWWGHXWJYEO2sxKpW23Vv1_tx4GF/preview
+[06-May-2026 13:59:29 Asia/Manila] Endorsement status reset to NULL for ID: 543
+[06-May-2026 13:59:29 Asia/Manila] Revision submitted successfully for research ID: 536, revision count: 2

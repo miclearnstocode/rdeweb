@@ -17,13 +17,16 @@ export const ProposedResearch = () => {
     let nextCursor = null
     let totalCount = 0
     let loadedCount = 0
+    let revisionModalElement = null
+    let currentRevisionItem = null
+    let revisionComments = []
     let stats = {
         total: 0,
         inHouseReview: 0,
         symposium: 0,
         thisYear: 0
     }
-    
+
     // Columns for proposed research
     const columns = [
         { field: 'year', header: 'YEAR', width: '70px' },
@@ -43,7 +46,29 @@ export const ProposedResearch = () => {
         { field: 'dateStarted', header: 'Date Started (MMM-DD-YYYY)', width: '150px' },
         { field: 'actions', header: 'ACTIONS', width: '80px' }
     ]
+    const fetchRevisionComments = async (researchId, eventType) => {
+        try {
+            const formData = new FormData()
+            formData.append('action', 'get_comments')
+            formData.append('research_id', researchId)
+            formData.append('event_type', eventType)
 
+            const response = await fetch('/proposedresearch', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await response.json()
+
+            if (result.status) {
+                return result.data || []
+            }
+            return []
+        } catch (error) {
+            console.error('Error fetching comments:', error)
+            return []
+        }
+    }
     // Show loading
     const showLoading = () => {
         if (!loadingElement) {
@@ -63,18 +88,18 @@ export const ProposedResearch = () => {
     // Show loading indicator at bottom
     const showBottomLoading = () => {
         if (!tableBody) return
-        
+
         const loadingRow = document.createElement('tr')
         loadingRow.id = 'loading-row'
         loadingRow.style.backgroundColor = '#2d2d2d'
-        
+
         const loadingCell = document.createElement('td')
         loadingCell.colSpan = columns.length
         loadingCell.style.padding = '20px'
         loadingCell.style.textAlign = 'center'
         loadingCell.style.color = '#aaa'
         loadingCell.innerHTML = '<span class="fa-solid fa-spinner fa-spin"></span> Loading more...'
-        
+
         loadingRow.appendChild(loadingCell)
         tableBody.appendChild(loadingRow)
     }
@@ -87,35 +112,35 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Fetch data from API with cursor
+    // Fetch data
     const fetchProposedResearch = async (cursor = null) => {
         if (isLoading || (!cursor && !hasMore && researchData.length > 0)) return
-        
+
         isLoading = true
-        
+
         if (!cursor) {
             showLoading()
         } else {
             showBottomLoading()
         }
-        
+
         try {
             const formData = new FormData()
             formData.append('action', 'fetch')
             if (cursor) {
                 formData.append('cursor', cursor)
             }
-            
+
             const response = await fetch('/proposedresearch', {
                 method: 'POST',
                 body: formData
             })
-            
+
             const result = await response.json()
-            
+
             if (result.status) {
                 const newData = result.data || []
-                
+
                 if (!cursor) {
                     // First page - replace data
                     researchData = newData
@@ -125,29 +150,29 @@ export const ProposedResearch = () => {
                         symposium: 0,
                         thisYear: 0
                     }
-                    
+
                     // IMPORTANT: Update totalCount from stats.total
                     totalCount = stats.total || 0
                 } else {
                     // Subsequent pages - append data
                     researchData = [...researchData, ...newData]
                 }
-                
+
                 // Update pagination info
                 if (result.pagination) {
                     nextCursor = result.pagination.next_cursor
                     hasMore = result.pagination.has_more
                     loadedCount = result.pagination.loaded + (cursor ? researchData.length : 0)
                 }
-                
+
                 // Apply current filters
                 applyFilters()
-                
+
                 // Update stats cards only on first load
                 if (!cursor) {
                     updateStatsCards()
                 }
-                
+
                 // Update the count display
                 if (window.updateFilterCount) {
                     window.updateFilterCount()
@@ -174,29 +199,29 @@ export const ProposedResearch = () => {
     const applyFilters = () => {
         // Start with all research data
         let filtered = [...researchData]
-        
+
         // Apply type filter
         if (activeFilter !== 'all') {
             filtered = filtered.filter(item => item.eventType === activeFilter)
         }
-        
+
         // Apply status filter
         if (activeStatusFilter) {
             filtered = filtered.filter(item => {
                 if (activeStatusFilter === 'waiting_for_revised') {
-                    return (item.inhouseUniversity === 'waiting for revised proposal' || 
+                    return (item.inhouseUniversity === 'waiting for revised proposal' ||
                         item.symposiumUniversity === 'waiting for revised proposal')
                 } else if (activeStatusFilter === 'submitted_revised') {
-                    return (item.inhouseUniversity === 'submitted revised proposal' || 
+                    return (item.inhouseUniversity === 'submitted revised proposal' ||
                         item.symposiumUniversity === 'submitted revised proposal')
                 }
                 return true
             })
         }
-        
+
         filteredData = filtered
         updateTableWithData()
-        
+
         // Update the count display after filtering
         if (window.updateFilterCount) {
             window.updateFilterCount()
@@ -206,38 +231,580 @@ export const ProposedResearch = () => {
     // Handle scroll for infinite loading
     const handleScroll = () => {
         if (!scrollContainer || isLoading || !hasMore) return
-        
+
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
         const threshold = 200 // Load more when 200px from bottom
-        
+
         if (scrollHeight - scrollTop - clientHeight < threshold) {
             fetchProposedResearch(nextCursor)
         }
+    }
+    // Open revision modal
+    const openRevisionModal = async (item) => {
+        currentRevisionItem = item
+        showLoading()
+
+        // Fetch comments for this research paper using the full event name to match database
+        revisionComments = await fetchRevisionComments(item.id, item.eventName)
+
+        hideLoading()
+        renderRevisionModal()
+    }
+
+    // Close revision modal
+    const closeRevisionModal = () => {
+        if (revisionModalElement) {
+            revisionModalElement.remove()
+            revisionModalElement = null
+            currentRevisionItem = null
+            revisionComments = []
+        }
+    }
+
+    // Handle accept revision
+    const handleAcceptRevision = async () => {
+        if (!currentRevisionItem) return
+
+        showLoading()
+
+        try {
+            const response = await fetch('/proposedresearch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'update_revision_status',
+                    research_id: currentRevisionItem.id,
+                    status: 'revision_accepted'
+                })
+            })
+
+            const result = await response.json()
+
+            if (result.status) {
+                // Refresh data
+                researchData = []
+                filteredData = []
+                hasMore = true
+                nextCursor = null
+                await fetchProposedResearch()
+                closeRevisionModal()
+            } else {
+                alert('Error updating status: ' + result.message)
+            }
+        } catch (error) {
+            console.error('Error accepting revision:', error)
+            alert('Error: ' + error.message)
+        } finally {
+            hideLoading()
+        }
+    }
+
+    // Handle reject revision
+    const handleRejectRevision = async () => {
+        if (!currentRevisionItem) return
+
+        showLoading()
+
+        try {
+            const response = await fetch('/proposedresearch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'update_revision_status',
+                    research_id: currentRevisionItem.id,
+                    status: 'revision_rejected'
+                })
+            })
+
+            const result = await response.json()
+
+            if (result.status) {
+                // Refresh data
+                researchData = []
+                filteredData = []
+                hasMore = true
+                nextCursor = null
+                await fetchProposedResearch()
+                closeRevisionModal()
+            } else {
+                alert('Error updating status: ' + result.message)
+            }
+        } catch (error) {
+            console.error('Error rejecting revision:', error)
+            alert('Error: ' + error.message)
+        } finally {
+            hideLoading()
+        }
+    }
+
+    // Format comment text for display
+    const formatCommentText = (label, text) => {
+        if (!text || text.trim() === '') return null
+
+        return $({
+            tag: 'div',
+            style: {
+                marginBottom: '12px',
+                padding: '10px',
+                backgroundColor: '#333',
+                borderRadius: '6px',
+                border: '1px solid #444'
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    text: label,
+                    style: {
+                        fontWeight: '600',
+                        color: 'deepskyblue',
+                        marginBottom: '4px',
+                        fontSize: '12px',
+                        textTransform: 'uppercase'
+                    }
+                }),
+                $({
+                    tag: 'div',
+                    text: text,
+                    style: {
+                        color: '#ddd',
+                        fontSize: '13px',
+                        lineHeight: '1.5',
+                        whiteSpace: 'pre-wrap'
+                    }
+                })
+            ]
+        })
+    }
+
+    // Render revision modal with file viewer and comments
+    const renderRevisionModal = () => {
+        if (revisionModalElement) {
+            revisionModalElement.remove()
+        }
+
+        const item = currentRevisionItem
+        if (!item) return
+
+        const hasRevisedFile = item.revised_drive_view_url && item.revised_drive_view_url.trim() !== ''
+        const currentStatus = item.revision_status || 'revision_pending'
+        const canAcceptReject = currentStatus === 'revision_submitted'
+
+        // Build comments sections
+        const commentSections = []
+
+        if (revisionComments.length > 0) {
+            revisionComments.forEach((comment, index) => {
+                const commentDiv = $({
+                    tag: 'div',
+                    style: {
+                        marginBottom: '16px',
+                        paddingBottom: '16px',
+                        borderBottom: index < revisionComments.length - 1 ? '1px solid #444' : 'none'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            text: `Evaluator: ${comment.evaluator_name || 'Unknown'}`,
+                            style: {
+                                fontWeight: '600',
+                                color: '#ffb347',
+                                marginBottom: '8px',
+                                fontSize: '13px'
+                            }
+                        })
+                    ]
+                })
+
+                // Add each comment section
+                const titleSection = formatCommentText('Title', comment.title)
+                if (titleSection) commentDiv.appendChild(titleSection)
+
+                const introSection = formatCommentText('Introduction', comment.intro)
+                if (introSection) commentDiv.appendChild(introSection)
+
+                const abstractSection = formatCommentText('Abstract', comment.abstract)
+                if (abstractSection) commentDiv.appendChild(abstractSection)
+
+                const objectiveSection = formatCommentText('Objective', comment.objective)
+                if (objectiveSection) commentDiv.appendChild(objectiveSection)
+
+                const methodologySection = formatCommentText('Methodology', comment.methodology)
+                if (methodologySection) commentDiv.appendChild(methodologySection)
+
+                const resultsSection = formatCommentText('Results', comment.results)
+                if (resultsSection) commentDiv.appendChild(resultsSection)
+
+                const recommendationSection = formatCommentText('Recommendation', comment.recommendation)
+                if (recommendationSection) commentDiv.appendChild(recommendationSection)
+
+                const literatureSection = formatCommentText('Literature Review', comment.literature)
+                if (literatureSection) commentDiv.appendChild(literatureSection)
+
+                const otherSection = formatCommentText('Other Comments', comment.other)
+                if (otherSection) commentDiv.appendChild(otherSection)
+
+                commentSections.push(commentDiv)
+            })
+        } else {
+            commentSections.push(
+                $({
+                    tag: 'div',
+                    text: 'No evaluator comments available.',
+                    style: {
+                        color: '#888',
+                        fontStyle: 'italic',
+                        padding: '20px',
+                        textAlign: 'center'
+                    }
+                })
+            )
+        }
+
+        revisionModalElement = $({
+            tag: 'div',
+            style: {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: '1000',
+                fontFamily: 'Segoe UI, sans-serif'
+            },
+            event: {
+                type: 'click',
+                method: (e) => {
+                    if (e.target === revisionModalElement) {
+                        closeRevisionModal()
+                    }
+                }
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2d2d2d',
+                        borderRadius: '12px',
+                        width: '95%',
+                        maxWidth: '1400px',
+                        maxHeight: '90%',
+                        overflow: 'auto',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+                        border: '1px solid #444',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    },
+                    child: [
+                        // Modal header
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '20px 24px',
+                                borderBottom: '1px solid #444',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                position: 'sticky',
+                                top: '0',
+                                backgroundColor: '#2d2d2d',
+                                zIndex: '1'
+                            },
+                            child: [
+                                $({
+                                    tag: 'h2',
+                                    text: 'Revision Review',
+                                    style: {
+                                        margin: '0',
+                                        fontSize: '20px',
+                                        fontWeight: '500',
+                                        color: '#fff'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-times' },
+                                    style: {
+                                        fontSize: '20px',
+                                        color: '#888',
+                                        cursor: 'pointer',
+                                        padding: '8px',
+                                        borderRadius: '4px',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeRevisionModal
+                                    }
+                                })
+                            ]
+                        }),
+
+                        // Content area - split into two columns
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                flex: '1',
+                                overflow: 'hidden',
+                                minHeight: '500px'
+                            },
+                            child: [
+                                // Left side - File viewer
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        flex: '1',
+                                        padding: '20px',
+                                        borderRight: '1px solid #444',
+                                        display: 'flex',
+                                        flexDirection: 'column'
+                                    },
+                                    child: [
+                                        // Research info
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                marginBottom: '16px',
+                                                padding: '12px',
+                                                backgroundColor: '#333',
+                                                borderRadius: '8px'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'div',
+                                                    text: item.title || 'No Title',
+                                                    style: {
+                                                        fontWeight: '600',
+                                                        color: '#fff',
+                                                        fontSize: '15px',
+                                                        marginBottom: '8px'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    text: `Event: ${item.eventName || 'N/A'}`,
+                                                    style: { color: '#aaa', fontSize: '12px', marginBottom: '4px' }
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    text: `Status: ${item.revision_status_display || 'Pending'}`,
+                                                    style: {
+                                                        color: item.revision_status === 'revision_accepted' ? '#4caf50' :
+                                                            item.revision_status === 'revision_rejected' ? '#f44336' :
+                                                                item.revision_status === 'revision_submitted' ? '#2196f3' : '#ff9800',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600'
+                                                    }
+                                                })
+                                            ]
+                                        }),
+
+                                        // File viewer or no file message
+                                        hasRevisedFile ?
+                                            $({
+                                                tag: 'iframe',
+                                                att: {
+                                                    src: item.revised_drive_view_url,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    frameborder: '0'
+                                                },
+                                                style: {
+                                                    flex: '1',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #444',
+                                                    minHeight: '400px'
+                                                }
+                                            }) :
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    flex: '1',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#888',
+                                                    fontSize: '16px',
+                                                    backgroundColor: '#333',
+                                                    borderRadius: '8px',
+                                                    minHeight: '400px'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'div',
+                                                        style: { textAlign: 'center' },
+                                                        child: [
+                                                            $({
+                                                                tag: 'span',
+                                                                att: { className: 'fa-solid fa-file-pdf' },
+                                                                style: { fontSize: '48px', marginBottom: '16px', display: 'block', color: '#666' }
+                                                            }),
+                                                            $({
+                                                                tag: 'div',
+                                                                text: 'No revised file available',
+                                                                style: { color: '#aaa' }
+                                                            })
+                                                        ]
+                                                    })
+                                                ]
+                                            })
+                                    ]
+                                }),
+
+                                // Right side - Evaluator comments
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        width: '400px',
+                                        minWidth: '350px',
+                                        padding: '20px',
+                                        overflow: 'auto',
+                                        display: 'flex',
+                                        flexDirection: 'column'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'h3',
+                                            text: 'Evaluator Comments',
+                                            style: {
+                                                margin: '0 0 16px 0',
+                                                color: '#fff',
+                                                fontSize: '16px',
+                                                fontWeight: '500',
+                                                paddingBottom: '12px',
+                                                borderBottom: '1px solid #444'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'div',
+                                            style: { flex: '1', overflow: 'auto' },
+                                            child: commentSections
+                                        })
+                                    ]
+                                })
+                            ]
+                        }),
+
+                        // Footer with action buttons
+                        $({
+                            tag: 'div',
+                            style: {
+                                padding: '16px 24px',
+                                borderTop: '1px solid #444',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '12px',
+                                backgroundColor: '#2d2d2d'
+                            },
+                            child: [
+                                $({
+                                    tag: 'button',
+                                    text: 'Close',
+                                    style: {
+                                        padding: '10px 24px',
+                                        backgroundColor: 'transparent',
+                                        border: '1px solid #444',
+                                        borderRadius: '6px',
+                                        color: '#aaa',
+                                        fontSize: '14px',
+                                        cursor: 'pointer'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeRevisionModal
+                                    }
+                                }),
+                                ...(canAcceptReject ? [
+                                    $({
+                                        tag: 'button',
+                                        text: 'Reject Revision',
+                                        style: {
+                                            padding: '10px 24px',
+                                            backgroundColor: '#dc3545',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            color: '#fff',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            fontWeight: '500'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: handleRejectRevision
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'button',
+                                        text: 'Accept Revision',
+                                        style: {
+                                            padding: '10px 24px',
+                                            backgroundColor: '#28a745',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            color: '#fff',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            fontWeight: '500'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: handleAcceptRevision
+                                        }
+                                    })
+                                ] : [
+                                    // Show current status if not in submitted state
+                                    $({
+                                        tag: 'div',
+                                        text: `Status: ${item.revision_status_display || 'Pending'}`,
+                                        style: {
+                                            padding: '10px 24px',
+                                            color: item.revision_status === 'revision_accepted' ? '#4caf50' : '#ff9800',
+                                            fontSize: '14px',
+                                            fontWeight: '500'
+                                        }
+                                    })
+                                ])
+                            ]
+                        })
+                    ]
+                })
+            ]
+        })
+
+        document.body.appendChild(revisionModalElement)
     }
 
     // Update table with filtered data
     const updateTableWithData = () => {
         if (!tableBody) return
-        
+
         // Clear table body
         tableBody.innerHTML = ''
-        
+
         if (filteredData.length === 0) {
             showEmptyState()
             return
         }
-        
+
         // Remove empty state if it exists
         const emptyState = tableBody.querySelector('.empty-state')
         if (emptyState) {
             emptyState.remove()
         }
-        
+
         // Add data rows
         filteredData.forEach(item => {
             tableBody.appendChild(createDataRow(item))
         })
-        
+
         // Update loaded count display
         updateLoadedCount()
     }
@@ -252,10 +819,10 @@ export const ProposedResearch = () => {
     // Format faculty researcher to display each on new line with proper wrapping
     const formatFacultyResearcher = (facultyResearcher) => {
         if (!facultyResearcher || facultyResearcher === '—') return '—'
-        
+
         // Split by ' & ' and ',' to get individual names
         let names = []
-        
+
         // Handle the case with ' & ' (last name)
         if (facultyResearcher.includes(' & ')) {
             const parts = facultyResearcher.split(' & ')
@@ -273,7 +840,7 @@ export const ProposedResearch = () => {
             // Single name
             names = [facultyResearcher]
         }
-        
+
         // Create a div with each name on a new line, with proper wrapping
         return $({
             tag: 'div',
@@ -284,7 +851,7 @@ export const ProposedResearch = () => {
                 width: '100%',
                 maxWidth: '100%'
             },
-            child: names.map(name => 
+            child: names.map(name =>
                 $({
                     tag: 'span',
                     text: name.trim(),
@@ -306,34 +873,34 @@ export const ProposedResearch = () => {
     const openEditModal = async (item) => {
         currentEditItem = item
         showLoading()
-        
+
         // Fetch latest data including academic positions
         try {
             const formData = new FormData()
             formData.append('action', 'get')
             formData.append('id', item.edit_id || item.id) // Use edit_id from mapping
-            
+
             const response = await fetch('/proposedresearch', {
                 method: 'POST',
                 body: formData
             })
-            
+
             const result = await response.json()
-            
+
             if (result.status) {
                 const academic_positions = result.data.academic_positions || []
                 const all_researchers = result.data.all_researchers || []
-                
+
                 console.log('All researchers:', all_researchers)
                 console.log('Academic positions:', academic_positions)
-                
+
                 if (all_researchers.length > 0) {
                     // Create a map of existing positions by faculty name
                     const positionsMap = {}
                     academic_positions.forEach(pos => {
                         positionsMap[pos.faculty_name] = pos
                     })
-                    
+
                     // Build facultyPositions array with all researchers
                     facultyPositions = all_researchers.map(faculty_name => {
                         const existing = positionsMap[faculty_name]
@@ -347,7 +914,7 @@ export const ProposedResearch = () => {
                 } else {
                     facultyPositions = academic_positions
                 }
-                
+
                 console.log('Faculty positions after mapping:', facultyPositions)
             }
         } catch (error) {
@@ -368,7 +935,7 @@ export const ProposedResearch = () => {
                 } else {
                     all_researchers = [item.facultyResearcher]
                 }
-                
+
                 facultyPositions = all_researchers.map(faculty_name => ({
                     faculty_name: faculty_name,
                     academic_rank: '',
@@ -379,7 +946,7 @@ export const ProposedResearch = () => {
         } finally {
             hideLoading()
         }
-        
+
         renderModal()
     }
 
@@ -396,28 +963,28 @@ export const ProposedResearch = () => {
     // Save changes
     const saveChanges = async () => {
         if (!currentEditItem) return
-        
+
         showLoading()
-        
+
         // Collect data from form
         const facultyData = []
         const facultyRows = document.querySelectorAll('.faculty-row')
-        
+
         console.log('Found faculty rows:', facultyRows.length)
-        
+
         facultyRows.forEach((row, index) => {
             const faculty_name = row.dataset.facultyName
             const academic_rank = row.querySelector('.academic-rank-input')?.value || ''
             const non_academic_rank = row.querySelector('.non-academic-rank-input')?.value || ''
             const job_order = row.querySelector('.job-order-input')?.value || ''
-            
+
             console.log(`Faculty ${index + 1}:`, {
                 faculty_name,
                 academic_rank,
                 non_academic_rank,
                 job_order
             })
-            
+
             // Include all faculty
             facultyData.push({
                 faculty_name: faculty_name,
@@ -426,9 +993,9 @@ export const ProposedResearch = () => {
                 job_order: job_order
             })
         })
-        
+
         console.log('Sending faculty data:', facultyData)
-        
+
         try {
             // Send as JSON
             const response = await fetch('/proposedresearch', {
@@ -442,10 +1009,10 @@ export const ProposedResearch = () => {
                     duplicate_group_id: currentEditItem.duplicate_group_id
                 })
             })
-            
+
             const result = await response.json()
             console.log('Save response:', result)
-            
+
             if (result.status) {
                 // Refresh data
                 researchData = [] // Clear data
@@ -470,7 +1037,7 @@ export const ProposedResearch = () => {
         if (modalElement) {
             modalElement.remove()
         }
-        
+
         modalElement = $({
             tag: 'div',
             style: {
@@ -557,7 +1124,7 @@ export const ProposedResearch = () => {
                                 })
                             ]
                         }),
-                        
+
                         // Research info
                         $({
                             tag: 'div',
@@ -588,7 +1155,7 @@ export const ProposedResearch = () => {
                                 })
                             ]
                         }),
-                        
+
                         // Faculty rows
                         $({
                             tag: 'div',
@@ -622,7 +1189,7 @@ export const ProposedResearch = () => {
                                     const rowDiv = document.createElement('div')
                                     rowDiv.className = 'faculty-row'
                                     rowDiv.setAttribute('data-faculty-name', faculty.faculty_name)
-                                    
+
                                     // Set styles
                                     Object.assign(rowDiv.style, {
                                         display: 'grid',
@@ -631,12 +1198,12 @@ export const ProposedResearch = () => {
                                         marginBottom: '10px',
                                         alignItems: 'center'
                                     })
-                                    
+
                                     // Create and append children
                                     const nameDiv = document.createElement('div')
                                     nameDiv.style.cssText = 'color: #ddd; font-size: 14px; word-break: break-word;'
                                     nameDiv.textContent = faculty.faculty_name
-                                    
+
                                     const academicInput = document.createElement('input')
                                     academicInput.type = 'text'
                                     academicInput.className = 'academic-rank-input'
@@ -661,7 +1228,7 @@ export const ProposedResearch = () => {
                                         e.target.style.borderColor = '#444'
                                         e.target.style.backgroundColor = '#333'
                                     })
-                                    
+
                                     const nonAcademicInput = document.createElement('input')
                                     nonAcademicInput.type = 'text'
                                     nonAcademicInput.className = 'non-academic-rank-input'
@@ -686,7 +1253,7 @@ export const ProposedResearch = () => {
                                         e.target.style.borderColor = '#444'
                                         e.target.style.backgroundColor = '#333'
                                     })
-                                    
+
                                     const jobOrderInput = document.createElement('input')
                                     jobOrderInput.type = 'text'
                                     jobOrderInput.className = 'job-order-input'
@@ -711,17 +1278,17 @@ export const ProposedResearch = () => {
                                         e.target.style.borderColor = '#444'
                                         e.target.style.backgroundColor = '#333'
                                     })
-                                    
+
                                     rowDiv.appendChild(nameDiv)
                                     rowDiv.appendChild(academicInput)
                                     rowDiv.appendChild(nonAcademicInput)
                                     rowDiv.appendChild(jobOrderInput)
-                                    
+
                                     return rowDiv
                                 })
                             ]
                         }),
-                        
+
                         // Modal footer with buttons
                         $({
                             tag: 'div',
@@ -810,7 +1377,7 @@ export const ProposedResearch = () => {
                 })
             ]
         })
-        
+
         document.body.appendChild(modalElement)
     }
 
@@ -880,12 +1447,12 @@ export const ProposedResearch = () => {
 
             // For the status columns, create badges if there's a value
             if (col.field === 'inhouseUniversity' && item.inhouseUniversity) {
-                return createStatusCell(item.inhouseUniversity, 'inhouse', cellStyle)
+                return createStatusCell(item.inhouseUniversity, 'inhouse', item, cellStyle)
             }
             if (col.field === 'symposiumUniversity' && item.symposiumUniversity) {
-                return createStatusCell(item.symposiumUniversity, 'symposium', cellStyle)
+                return createStatusCell(item.symposiumUniversity, 'symposium', item, cellStyle)
             }
-            
+
             // For actions column
             if (col.field === 'actions') {
                 return $({
@@ -894,7 +1461,7 @@ export const ProposedResearch = () => {
                     child: [createActionButtons(item)]
                 })
             }
-            
+
             // For academic rank, non-academic rank, and job order columns
             if (['academicRank', 'nonAcademicRank', 'jobOrder'].includes(col.field)) {
                 return $({
@@ -985,7 +1552,7 @@ export const ProposedResearch = () => {
     // Format authors to display each on new line with proper wrapping
     const formatAuthors = (allResearchers) => {
         if (!allResearchers || allResearchers.length === 0) return '—'
-        
+
         return $({
             tag: 'div',
             style: {
@@ -995,7 +1562,7 @@ export const ProposedResearch = () => {
                 width: '100%',
                 maxWidth: '100%'
             },
-            child: allResearchers.map(name => 
+            child: allResearchers.map(name =>
                 $({
                     tag: 'span',
                     text: name.trim(),
@@ -1013,22 +1580,33 @@ export const ProposedResearch = () => {
         })
     }
 
-    // Create status cell with badge
-    const createStatusCell = (status, type, baseStyle) => {
+    const createStatusCell = (status, type, item, baseStyle) => {
         let color = type === 'inhouse' ? '#ffb347' : '#7ccf7c'
         let bgColor = type === 'inhouse' ? '#3a2d1a' : '#1a3a2d'
-        
-        // Format status text
+
+        // Determine status color based on revision status
+        const revisionStatus = item.revision_status || 'revision_pending'
+        if (revisionStatus === 'revision_accepted') {
+            color = '#4caf50'
+            bgColor = '#1a3a2d'
+        } else if (revisionStatus === 'revision_rejected') {
+            color = '#f44336'
+            bgColor = '#2d1a1a'
+        } else if (revisionStatus === 'revision_submitted') {
+            color = '#2196f3'
+            bgColor = '#1a2a3a'
+        }
+
         let displayText = status || '—'
         if (displayText !== '—') {
             displayText = displayText.split(' ')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ')
         }
-        
+
         return $({
             tag: 'td',
-            style: { ...baseStyle, backgroundColor: bgColor },
+            style: { ...baseStyle, backgroundColor: bgColor, cursor: 'pointer' },
             child: [
                 $({
                     tag: 'span',
@@ -1039,9 +1617,30 @@ export const ProposedResearch = () => {
                         fontSize: '11px',
                         backgroundColor: `${color}20`,
                         color: color,
-                        border: `1px solid ${color}40`
+                        border: `1px solid ${color}40`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
                     },
-                    text: displayText
+                    text: displayText,
+                    event: {
+                        type: 'click',
+                        method: (e) => {
+                            e.stopPropagation()
+                            openRevisionModal(item)
+                        }
+                    },
+                    event2: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.target.style.backgroundColor = `${color}40`
+                        }
+                    },
+                    event3: {
+                        type: 'mouseleave',
+                        method: (e) => {
+                            e.target.style.backgroundColor = `${color}20`
+                        }
+                    }
                 })
             ]
         })
@@ -1051,16 +1650,16 @@ export const ProposedResearch = () => {
     const updateStatsCards = () => {
         const statsContainer = document.querySelector('.stats-cards-container')
         if (!statsContainer) return
-        
+
         statsContainer.innerHTML = ''
-        
+
         const statElements = [
             { label: 'Total Proposed', value: stats.total, icon: 'fa-file-lines', color: 'deepskyblue' },
             { label: 'In-House Review', value: stats.inHouseReview, icon: 'fa-users', color: '#ff9800' },
             { label: 'Symposium', value: stats.symposium, icon: 'fa-microphone', color: '#4caf50' },
             { label: 'This Year', value: stats.thisYear, icon: 'fa-calendar', color: '#00bcd4' }
         ]
-        
+
         statElements.forEach(stat => {
             const statCard = $({
                 tag: 'div',
@@ -1124,7 +1723,7 @@ export const ProposedResearch = () => {
                     })
                 ]
             })
-            
+
             statsContainer.appendChild(statCard)
         })
     }
@@ -1132,9 +1731,9 @@ export const ProposedResearch = () => {
     // Show empty state
     const showEmptyState = () => {
         if (!tableBody) return
-        
+
         tableBody.innerHTML = ''
-        
+
         const emptyState = $({
             tag: 'div',
             att: { className: 'empty-state' },
@@ -1152,9 +1751,9 @@ export const ProposedResearch = () => {
                 $({
                     tag: 'span',
                     att: { className: 'fa-solid fa-flask' },
-                    style: { 
-                        fontSize: '64px', 
-                        marginBottom: '20px', 
+                    style: {
+                        fontSize: '64px',
+                        marginBottom: '20px',
                         opacity: 0.5,
                         color: 'deepskyblue'
                     }
@@ -1162,8 +1761,8 @@ export const ProposedResearch = () => {
                 $({
                     tag: 'div',
                     text: 'No Proposed Research Found',
-                    style: { 
-                        fontSize: '20px', 
+                    style: {
+                        fontSize: '20px',
                         marginBottom: '12px',
                         fontWeight: '500',
                         color: '#fff'
@@ -1172,8 +1771,8 @@ export const ProposedResearch = () => {
                 $({
                     tag: 'div',
                     text: 'Research papers presented in in-house review or symposium will appear here',
-                    style: { 
-                        fontSize: '14px', 
+                    style: {
+                        fontSize: '14px',
                         opacity: 0.7,
                         maxWidth: '500px',
                         textAlign: 'center',
@@ -1182,7 +1781,7 @@ export const ProposedResearch = () => {
                 })
             ]
         })
-        
+
         tableBody.appendChild(emptyState)
     }
 
@@ -1203,7 +1802,7 @@ export const ProposedResearch = () => {
             applyFilters()
         } else {
             const term = searchTerm.toLowerCase()
-            filteredData = researchData.filter(item => 
+            filteredData = researchData.filter(item =>
                 item.title?.toLowerCase().includes(term) ||
                 item.authors?.toLowerCase().includes(term) ||
                 item.facultyResearcher?.toLowerCase().includes(term) ||
@@ -1213,7 +1812,7 @@ export const ProposedResearch = () => {
                 item.center?.toLowerCase().includes(term)
             )
             updateTableWithData()
-            
+
             // Update the count display after search
             if (window.updateFilterCount) {
                 window.updateFilterCount()
@@ -1225,7 +1824,7 @@ export const ProposedResearch = () => {
     const updateFilterButtons = () => {
         const filterContainer = document.querySelector('.filter-buttons-container')
         if (!filterContainer) return
-        
+
         const buttons = filterContainer.children
         for (let button of buttons) {
             const buttonText = button.textContent.toLowerCase()
@@ -1261,16 +1860,16 @@ export const ProposedResearch = () => {
     const FilterBar = () => {
         // Create a reference to the count span
         let countSpan
-        
+
         const updateCount = () => {
             if (countSpan) {
                 countSpan.textContent = `Showing ${filteredData.length} of ${totalCount} records`
             }
         }
-        
+
         // Expose updateCount to parent scope
         window.updateFilterCount = updateCount
-        
+
         return $({
             tag: 'div',
             style: {
@@ -1514,7 +2113,7 @@ export const ProposedResearch = () => {
         const headerCells = columns.map(col => {
             let backgroundColor = '#2d2d2d'
             let textColor = '#bbb'
-            
+
             if (col.field.includes('inhouse')) {
                 backgroundColor = '#3a2d1a'
                 textColor = '#ffb347'
@@ -1545,9 +2144,9 @@ export const ProposedResearch = () => {
                 child: [
                     $({
                         tag: 'div',
-                        style: { 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: '6px',
                             cursor: 'pointer'
                         },
@@ -1559,8 +2158,8 @@ export const ProposedResearch = () => {
                             $({
                                 tag: 'span',
                                 att: { className: 'fa-solid fa-sort' },
-                                style: { 
-                                    fontSize: '10px', 
+                                style: {
+                                    fontSize: '10px',
                                     color: textColor,
                                     opacity: '0.5'
                                 }
@@ -1641,10 +2240,10 @@ export const ProposedResearch = () => {
 export const formatProposedDate = (date) => {
     if (!date) return '—'
     const d = new Date(date)
-    return d.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: '2-digit', 
-        year: 'numeric' 
+    return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric'
     }).replace(/,/g, '')
 }
 
