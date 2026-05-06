@@ -56,6 +56,7 @@ post('/completeresearch', 'server/rde/completedResearch.php');
 post('/summary', 'server/rde/summary.php');
 post('/dashboard', 'server/rde/dashboard.php');
 post('/internalfunded', 'server/rde/internallyFunded.php');
+post('/ongoingresearch', 'server/rde/accomplishment/onGoingRes.php');
 post('/monitor', 'server/rde/monitoring.php');
 post('/patentresearch', 'server/rde/patent.php');
 post('/presentedresearch', 'server/rde/presentation.php');
@@ -108,6 +109,8 @@ get('/rdeOffice/utilization','/index.html');
 get('/rdeOffice/$page','/index.html');
 get('/rdeOffice/certification','/index.html');
 get('/rdeOffice/monitoring','/index.html');
+get('/rdeOffice/internallyfunded','/index.html');
+get('/rdeOffice/ongoingresearch','/index.html');
 
 // External routes
 get('/external/users/a/b/c/b/c/d/e/v1','external/index.php');

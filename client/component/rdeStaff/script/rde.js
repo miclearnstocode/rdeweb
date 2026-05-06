@@ -7,11 +7,11 @@ import { CompletedResearch } from "./completedResearch.js";
 import { ProposedResearch } from "./proposedResearch.js";
 import { Utilization } from "./utilization.js";
 import { CertificationResearch } from "./certificationResearch.js";
-import { onGoingResearch } from "./accomplishmentReport/onGoingRes.js";
 import { SummaryAccomplishment } from "./summaryAccomplishment.js";
 import { QuarterlyMonitoringComponent } from "./quarterlyMonitoring.js";
 import { Summary } from "./researchSummary.js";
 import { RdeDashboard } from "./rdeDashboard.js";
+import { internallyFundedResearch } from "./internallyFunded.js";
 
 const button = ({ label, event, url }) => {
     const getB = (b) => {
@@ -82,10 +82,10 @@ const Body = () => {
         page: ProposedResearch
     })
     botArray.push({
-        url: '/rdeOffice/researchMonitoring',
+        url: '/rdeOffice/internallyfunded',
         label: 'Internally Funded Research',
         button: button,
-        page: onGoingResearch
+        page: internallyFundedResearch
     })
     botArray.push({
         url: '/rdeOffice/completedResearch',

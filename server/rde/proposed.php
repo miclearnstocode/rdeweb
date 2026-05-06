@@ -617,7 +617,13 @@ class ProposedResearchAPI {
                 return;
             }
             
-            $updateQuery = "UPDATE researchfile SET revision_status = ?, last_revision_date = NOW() WHERE id = ?";
+            // If revision is accepted, also mark as internally funded
+            $fundedUpdate = "";
+            if ($status === 'revision_accepted') {
+                $fundedUpdate = ", is_internally_funded = 1";
+            }
+            
+            $updateQuery = "UPDATE researchfile SET revision_status = ?, last_revision_date = NOW() $fundedUpdate WHERE id = ?";
             $stmt = $this->con->prepare($updateQuery);
             $stmt->bind_param("si", $status, $researchId);
             
@@ -627,6 +633,7 @@ class ProposedResearchAPI {
                 $this->response->data = [
                     'research_id' => $researchId,
                     'revision_status' => $status,
+                    'is_internally_funded' => $status === 'revision_accepted' ? 1 : 0,
                     'display_status' => $status === 'revision_accepted' ? 'Revision Accepted' : 'Revision Rejected'
                 ];
             } else {

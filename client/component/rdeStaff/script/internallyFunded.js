@@ -1,6 +1,6 @@
-import { $, Waiting } from "../../../../lib/lib.js"
+import { $, Waiting } from "../../../lib/lib.js"
 
-export const onGoingResearch = () => {
+export const internallyFundedResearch = () => {
     let mainContainer
     let tableBody
     let scrollContainer
@@ -45,7 +45,7 @@ export const onGoingResearch = () => {
         try {
             const formData = new FormData()
             formData.append('action', 'fetch_years')
-            const response = await fetch('/ongoingresearch', {
+            const response = await fetch('/monitor', {
                 method: 'POST',
                 body: formData
             })
@@ -189,7 +189,7 @@ export const onGoingResearch = () => {
             if (effectiveCenter) formData.append('center', effectiveCenter)
             if (effectiveCampus) formData.append('campus', effectiveCampus)
 
-            const response = await fetch('/ongoingresearch', {
+            const response = await fetch('/monitor', {
                 method: 'POST',
                 body: formData
             })
@@ -687,7 +687,7 @@ export const onGoingResearch = () => {
             formData.append('projectId', item.id)
             formData.append('isReady', !item.readyForSymposium)
 
-            const response = await fetch('/ongoingresearch', {
+            const response = await fetch('/monitor', {
                 method: 'POST',
                 body: formData
             })
@@ -1261,7 +1261,7 @@ export const onGoingResearch = () => {
 
         showLoading()
         try {
-            const response = await fetch('/ongoingresearch', {
+            const response = await fetch('/monitor', {
                 method: 'POST',
                 body: formData
             })
@@ -1994,4 +1994,4 @@ export const onGoingResearch = () => {
     })
 }
 
-export default onGoingResearch
+export default internallyFundedResearch
