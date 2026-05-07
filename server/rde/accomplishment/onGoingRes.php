@@ -31,7 +31,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once(__DIR__ . '/../db.php');
+require_once(__DIR__ . '/../../db.php');
 
 /** @var TYPE_NAME $host */
 
@@ -59,7 +59,11 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     $campus = $_POST['campus'] ?? null;
     $limit = 20;
 
-    $whereClauses = ["(el.name LIKE '%In-House Review%' OR el.name LIKE '%In House Review%')"];
+    $whereClauses = [
+        "(el.name LIKE '%In-House Review%' OR el.name LIKE '%In House Review%')",
+        "rf.revision_status = 'revision_accepted'",
+        "rf.is_internally_funded = 1"
+    ];
     $params = [];
     $types = "";
 

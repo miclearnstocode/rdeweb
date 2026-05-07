@@ -571,57 +571,6 @@ export const onGoingResearch = () => {
             })
         })
 
-        // Actions cell
-        cells.push(
-            $({
-                tag: 'td',
-                style: {
-                    padding: '12px 8px',
-                    textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'middle'
-                },
-                child: [createActionButtons(item)]
-            })
-        )
-
-        // Remarks / Official Completion button cell
-        cells.push(
-            $({
-                tag: 'td',
-                style: {
-                    padding: '12px 8px',
-                    textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'middle'
-                },
-                child: [
-                    $({
-                        tag: 'button',
-                        text: item.readyForSymposium ? 'Ready for Official Completion' : 'Mark as Ready',
-                        style: {
-                            padding: '6px 12px',
-                            backgroundColor: item.readyForSymposium ? '#4caf50' : 'transparent',
-                            border: item.readyForSymposium ? 'none' : '1px solid #4caf50',
-                            borderRadius: '4px',
-                            color: item.readyForSymposium ? '#fff' : '#4caf50',
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        },
-                        event: {
-                            type: 'click',
-                            method: (e) => {
-                                e.stopPropagation()
-                                markReadyForSymposium(item)
-                            }
-                        }
-                    })
-                ]
-            })
-        )
-
         return $({
             tag: 'tr',
             style: {
@@ -1835,12 +1784,6 @@ export const onGoingResearch = () => {
             colgroup.appendChild($({ tag: 'col', style: { width: w } }))
         })
 
-        // 1 actions column
-        colgroup.appendChild($({ tag: 'col', style: { width: '80px' } }))
-
-        // 1 remarks/completion column
-        colgroup.appendChild($({ tag: 'col', style: { width: '180px' } }))
-
         return $({
             tag: 'div',
             style: {
@@ -1895,13 +1838,11 @@ export const onGoingResearch = () => {
             '% of Completion',
             'Status of the program/project/study',
             'Remarks (Problems Encountered)',
-            'Preventive/Corrective Measures to address problems',
-            'ACTIONS',
-            'REMARKS / OFFICIAL COMPLETION'
+            'Preventive/Corrective Measures to address problems'
         ]
 
         fixedHeaders.forEach(header => {
-            const isCenter = ['NO.', '% of Completion', 'Status of the program/project/study', 'ACTIONS', 'REMARKS / OFFICIAL COMPLETION'].includes(header)
+            const isCenter = ['NO.', '% of Completion', 'Status of the program/project/study'].includes(header)
 
             const th = $({
                 tag: 'th',
