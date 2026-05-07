@@ -1,6 +1,7 @@
 import { $, ConfirmationAlert, Waiting, DeleteConfirmModal } from '../../../lib/lib.js'
 import { Print } from "../../otherComponent/comment.js"
 import { handleResubmit } from './resubmit.js'
+import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
 
 
 // View Researches Modal
@@ -2285,6 +2286,9 @@ export const Research = () => {
         let dateStartedField, dateCompletedField
         let dateFieldsContainer
         let programFileContainer
+        let isSymposiumMode = false
+        let symposiumModalActive = false
+        let modalContentBody // Store reference to modal content body
 
         const modal = $({
             tag: 'div',
@@ -2299,7 +2303,8 @@ export const Research = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 101,
-                backdropFilter: 'blur(5px)'
+                backdropFilter: 'blur(5px)',
+                transition: 'all 0.3s ease'
             },
             elementHandler: (el) => { uploadModal = el }
         })
@@ -2312,8 +2317,11 @@ export const Research = () => {
                 width: '90%',
                 maxWidth: '900px',
                 maxHeight: '85vh',
-                overflow: 'auto',
-                boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+                transition: 'all 0.3s ease'
             }
         })
 
@@ -2332,7 +2340,12 @@ export const Research = () => {
                 zIndex: 1
             },
             child: [
-                $({ tag: 'h3', text: isEdit ? 'Edit Entry' : 'Submit New Entry', style: { color: '#fff', margin: 0, fontSize: '20px' } }),
+                $({
+                    tag: 'h3',
+                    text: isEdit ? 'Edit Entry' : 'Submit New Entry',
+                    style: { color: '#fff', margin: 0, fontSize: '20px' },
+                    att: { id: 'modalTitle' }
+                }),
                 $({
                     tag: 'i',
                     att: { className: 'fas fa-times' },
@@ -2345,461 +2358,42 @@ export const Research = () => {
             ]
         })
 
-        // Form body
-        const formBody = $({
+        // Main content container that will be dynamically swapped
+        const mainContentContainer = $({
             tag: 'div',
-            style: { padding: '24px' }
-        })
-
-        // Two column layout for form fields
-        const twoColumnLayout = $({
-            tag: 'div',
-            style: {
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '20px',
-                marginBottom: '20px'
-            }
-        })
-
-        // Event selection
-        const eventField = $({ tag: 'div', style: { marginBottom: '20px' } })
-        eventField.appendChild($({ tag: 'label', text: 'Event Name *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        eventSelect = $({
-            tag: 'select',
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'change',
-                method: (e) => {
-                    if (e && e.target) {
-                        const selectedEventName = e.target.value
-                        formData.eventName = selectedEventName
-
-                        // Check if selected event is Symposium
-                        const isSymposium = selectedEventName.toLowerCase().includes('symposium')
-
-                        // Update file grid columns - ADD THIS LINE HERE
-                        fileGrid.style.gridTemplateColumns = isSymposium ? '1fr 1fr' : '1fr 1fr 1fr'
-                        // Show/hide date fields
-                        if (dateFieldsContainer) {
-                            dateFieldsContainer.style.display = isSymposium ? 'grid' : 'none'
-                        }
-
-                        // Show/hide program file upload
-                        if (programFileContainer) {
-                            programFileContainer.style.display = isSymposium ? 'none' : 'block'
-                        }
-                    }
-                }
-            },
-            elementHandler: async (el) => {
-                if (!el) return
-                el.innerHTML = ''
-
-                const defaultOption = $({
-                    tag: 'option',
-                    text: '-- Select Event Name --',
-                    att: { disabled: true, selected: true, value: '' }
-                })
-                el.appendChild(defaultOption)
-
-                const form = new FormData()
-                form.append('getEvent', 'true')
-
-                try {
-                    const response = await fetch('/eventRequest', {
-                        method: 'POST',
-                        body: form
-                    })
-
-                    if (response.ok) {
-                        const data = await response.json()
-                        data.forEach(val => {
-                            el.appendChild($({
-                                tag: 'option',
-                                text: val.name,
-                                style: { backgroundColor: '#2a2a2a', fontSize: '14px' },
-                                att: { id: val.id, value: val.name }
-                            }))
-                        })
-                    } else {
-                        console.error('Failed to fetch events:', response.status)
-                    }
-                } catch (error) {
-                    console.error('Error fetching events:', error)
-                }
-
-                if (isEdit && editData?.eventName) {
-                    el.value = editData.eventName
-                    // Trigger change event to set initial state
-                    const changeEvent = new Event('change')
-                    el.dispatchEvent(changeEvent)
-                }
-            }
-        })
-        eventField.appendChild(eventSelect)
-
-        // Title field
-        const titleField = $({ tag: 'div', style: { marginBottom: '20px' } })
-        titleField.appendChild($({ tag: 'label', text: 'Document Title *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        titleInput = $({
-            tag: 'input',
-            att: { type: 'text', placeholder: 'Enter document title', value: isEdit ? editData?.title || '' : '' },
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'input',
-                method: (e) => { formData.title = e.target.value }
-            }
-        })
-        titleField.appendChild(titleInput)
-
-        // Category field
-        const categoryField = $({ tag: 'div', style: { marginBottom: '20px' } })
-        categoryField.appendChild($({ tag: 'label', text: 'Category *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        categorySelect = $({
-            tag: 'select',
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'change',
-                method: (e) => {
-                    formData.category = e.target.value
-                    if (centerSelect) {
-                        const centers = categoryToCenters[e.target.value] || Object.keys(centerCategoryMapping)
-                        centerSelect.innerHTML = ''
-                        centerSelect.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
-                        centers.forEach(center => {
-                            centerSelect.appendChild($({ tag: 'option', text: center, att: { value: center } }))
-                        })
-                    }
-                }
-            },
-            elementHandler: (el) => {
-                el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
-                categories.forEach(cat => {
-                    el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
-                })
-                if (isEdit && editData?.category) el.value = editData.category
-            }
-        })
-        categoryField.appendChild(categorySelect)
-
-        // Center field
-        const centerField = $({ tag: 'div', style: { marginBottom: '20px' } })
-        centerField.appendChild($({ tag: 'label', text: 'Center *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        centerSelect = $({
-            tag: 'select',
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'change',
-                method: (e) => { formData.center = e.target.value }
-            },
-            elementHandler: (el) => {
-                el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
-                Object.keys(centerCategoryMapping).forEach(center => {
-                    el.appendChild($({ tag: 'option', text: center, att: { value: center } }))
-                })
-                if (isEdit && editData?.center) el.value = editData.center
-            }
-        })
-        centerField.appendChild(centerSelect)
-
-        // Author field
-        const authorField = $({ tag: 'div', style: { marginBottom: '20px' } })
-        authorField.appendChild($({ tag: 'label', text: 'Main Author *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        authorInput = $({
-            tag: 'input',
-            att: { type: 'text', placeholder: 'Enter main author name', value: isEdit ? editData?.author || '' : '' },
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'input',
-                method: (e) => { formData.author = e.target.value }
-            }
-        })
-        authorField.appendChild(authorInput)
-
-        // Presenter field
-        const presenterField = $({ tag: 'div', style: { marginBottom: '20px' } })
-        presenterField.appendChild($({ tag: 'label', text: 'Presenter *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        presenterInput = $({
-            tag: 'input',
-            att: { type: 'text', placeholder: 'Enter presenter name', value: isEdit ? editData?.presenter || '' : '' },
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'input',
-                method: (e) => { formData.presenter = e.target.value }
-            }
-        })
-        presenterField.appendChild(presenterInput)
-
-        // Co-authors field
-        const coAuthorField = $({ tag: 'div', style: { marginBottom: '20px' } })
-        coAuthorField.appendChild($({ tag: 'label', text: 'Co-Authors', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-
-        const coAuthorInputGroup = $({
-            tag: 'div',
-            style: { display: 'flex', gap: '10px', marginBottom: '12px' }
-        })
-
-        coAuthorInput = $({
-            tag: 'input',
-            att: { type: 'text', placeholder: 'Enter co-author name' },
             style: {
                 flex: 1,
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                overflow: 'auto',
+                transition: 'all 0.3s ease'
             }
         })
 
-        const addCoAuthorBtn = $({
-            tag: 'button',
-            text: 'Add',
-            style: {
-                padding: '8px 20px',
-                backgroundColor: '#2196F3',
-                border: 'none',
-                borderRadius: '6px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'click',
-                method: () => {
-                    const name = coAuthorInput.value.trim()
-                    if (name) {
-                        formData.coAuthors.push(name)
-                        updateCoAuthorList()
-                        coAuthorInput.value = ''
-                    }
-                }
-            }
-        })
+        // Normal Form Content
+        const normalFormContent = createNormalFormContent()
 
-        coAuthorInputGroup.appendChild(coAuthorInput)
-        coAuthorInputGroup.appendChild(addCoAuthorBtn)
-
-        coAuthorList = $({
+        // Symposium placeholder (will be replaced when needed)
+        const symposiumPlaceholder = $({
             tag: 'div',
-            style: { display: 'flex', flexWrap: 'wrap', gap: '8px' }
+            style: { display: 'none', padding: '24px' },
+            att: { id: 'symposiumPlaceholder' }
         })
 
-        const updateCoAuthorList = () => {
-            coAuthorList.innerHTML = ''
-            formData.coAuthors.forEach((author, idx) => {
-                const tag = $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#2a2a2a',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '12px'
-                    },
-                    child: [
-                        $({ tag: 'span', text: author, style: { color: '#fff' } }),
-                        $({
-                            tag: 'i',
-                            att: { className: 'fas fa-times' },
-                            style: { color: '#999', fontSize: '10px', cursor: 'pointer' },
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    formData.coAuthors.splice(idx, 1)
-                                    updateCoAuthorList()
-                                }
-                            }
-                        })
-                    ]
-                })
-                coAuthorList.appendChild(tag)
-            })
-        }
+        mainContentContainer.appendChild(normalFormContent)
+        mainContentContainer.appendChild(symposiumPlaceholder)
 
-        if (isEdit && editData?.coAuthors) {
-            formData.coAuthors = [...editData.coAuthors]
-            updateCoAuthorList()
-        }
-
-        coAuthorField.appendChild(coAuthorInputGroup)
-        coAuthorField.appendChild(coAuthorList)
-
-        // Date fields (only shown for Symposium events)
-        dateFieldsContainer = $({
+        // Footer
+        const footer = $({
             tag: 'div',
             style: {
-                display: 'none',  // Hidden by default
-                gridColumn: '1 / -1',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '20px',
-                marginTop: '20px',
-                paddingTop: '20px',
-                borderTop: '1px solid rgba(255,255,255,0.1)'
-            }
-        })
-
-        // Date Started field
-        const dateStartedWrapper = $({ tag: 'div' })
-        dateStartedWrapper.appendChild($({ tag: 'label', text: 'Date Started *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        dateStartedField = $({
-            tag: 'input',
-            att: { type: 'date', value: isEdit ? (editData?.date_started || '') : '' },
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'change',
-                method: (e) => { formData.date_started = e.target.value }
-            }
-        })
-        dateStartedWrapper.appendChild(dateStartedField)
-
-        // Date Completed field
-        const dateCompletedWrapper = $({ tag: 'div' })
-        dateCompletedWrapper.appendChild($({ tag: 'label', text: 'Date Completed *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        dateCompletedField = $({
-            tag: 'input',
-            att: { type: 'date', value: isEdit ? (editData?.date_completed || '') : '' },
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'change',
-                method: (e) => { formData.date_completed = e.target.value }
-            }
-        })
-        dateCompletedWrapper.appendChild(dateCompletedField)
-
-        dateFieldsContainer.appendChild(dateStartedWrapper)
-        dateFieldsContainer.appendChild(dateCompletedWrapper)
-
-        // Add fields to two-column layout
-        twoColumnLayout.appendChild(titleField)
-        twoColumnLayout.appendChild(categoryField)
-        twoColumnLayout.appendChild(centerField)
-        twoColumnLayout.appendChild(authorField)
-        twoColumnLayout.appendChild(presenterField)
-        twoColumnLayout.appendChild(coAuthorField)
-        twoColumnLayout.appendChild(dateFieldsContainer)
-
-        formBody.appendChild(eventField)
-        formBody.appendChild(twoColumnLayout)
-
-        // File upload sections
-        const fileSection = $({
-            tag: 'div',
-            style: {
-                marginTop: '20px',
-                paddingTop: '20px',
-                borderTop: '1px solid rgba(255,255,255,0.1)'
-            }
-        })
-
-        fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#fff', marginBottom: '16px', fontSize: '16px' } }))
-
-        const fileGrid = $({
-            tag: 'div',
-            style: {
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gap: '20px'
-            }
-        })
-
-        // Create program file container that can be hidden
-        programFileContainer = $({
-            tag: 'div',
-            style: {
-                display: 'block'  // Visible by default
-            }
-        })
-        programFileContainer.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }))
-
-        fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }))
-        fileGrid.appendChild(programFileContainer)
-        fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
-
-        fileSection.appendChild(fileGrid)
-        formBody.appendChild(fileSection)
-
-        // Form actions
-        const actions = $({
-            tag: 'div',
-            style: {
-                padding: '20px 24px',
+                padding: '16px 24px',
                 borderTop: '1px solid rgba(255,255,255,0.1)',
                 display: 'flex',
                 gap: '12px',
                 justifyContent: 'flex-end',
-                position: 'sticky',
-                bottom: 0,
+                flexShrink: 0,
                 backgroundColor: '#1a1a1a'
-            }
+            },
+            att: { id: 'modalFooter' }
         })
 
         const cancelBtn = $({
@@ -2832,205 +2426,630 @@ export const Research = () => {
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '14px',
-                fontWeight: '500'
+                fontWeight: '500',
+                display: 'block'
             },
-            event: {
-                type: 'click',
-                method: async () => {
-                    const isSymposium = formData.eventName.toLowerCase().includes('symposium')
+            att: { id: 'submitBtn' }
+        })
 
-                    // Validate required fields
-                    if (!formData.eventName || !formData.title || !formData.category || !formData.center || !formData.author || !formData.presenter) {
-                        alert('Please fill in all required fields (*)')
-                        return
+        footer.appendChild(cancelBtn)
+        footer.appendChild(submitBtn)
+
+        modalContent.appendChild(header)
+        modalContent.appendChild(mainContentContainer)
+        modalContent.appendChild(footer)
+        modal.appendChild(modalContent)
+        document.body.appendChild(modal)
+
+        // Function to create normal form content
+        function createNormalFormContent() {
+            const container = $({ tag: 'div', style: { display: 'block' }, att: { id: 'normalFormContainer' } })
+
+            // Form body
+            const formBody = $({
+                tag: 'div',
+                style: { padding: '24px' }
+            })
+
+            // Two column layout
+            const twoColumnLayout = $({
+                tag: 'div',
+                style: {
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '20px',
+                    marginBottom: '20px'
+                }
+            })
+
+            // Event selection
+            const eventField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            eventField.appendChild($({ tag: 'label', text: 'Event Name *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            eventSelect = $({
+                tag: 'select',
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'change',
+                    method: async (e) => {
+                        if (e && e.target) {
+                            const selectedEventName = e.target.value
+                            const selectedOption = e.target.options[e.target.selectedIndex]
+                            const selectedEventId = selectedOption ? selectedOption.getAttribute('id') : null
+
+                            // Check if selected event is Symposium
+                            const isSymposium = selectedEventName && selectedEventName.toLowerCase().includes('symposium')
+
+                            if (isSymposium && !isEdit && !symposiumModalActive) {
+                                // Animate out normal form
+                                normalFormContent.style.opacity = '0'
+                                normalFormContent.style.transform = 'translateX(-20px)'
+
+                                setTimeout(() => {
+                                    normalFormContent.style.display = 'none'
+
+                                    // Create and show Symposium modal inside the container
+                                    showSymposiumInContainer(selectedEventName, selectedEventId)
+
+                                    symposiumPlaceholder.style.display = 'block'
+                                    symposiumPlaceholder.style.opacity = '0'
+                                    symposiumPlaceholder.style.transform = 'translateX(20px)'
+
+                                    setTimeout(() => {
+                                        symposiumPlaceholder.style.opacity = '1'
+                                        symposiumPlaceholder.style.transform = 'translateX(0)'
+                                    }, 50)
+
+                                    // Update header and footer
+                                    const modalTitle = document.querySelector('#modalTitle')
+                                    if (modalTitle) modalTitle.innerText = 'Symposium Submission (In-House Review Required)'
+
+                                    submitBtn.style.display = 'none'
+                                    isSymposiumMode = true
+                                    symposiumModalActive = true
+                                }, 300)
+                                return
+                            }
+
+                            // For non-Symposium events, continue with normal form
+                            formData.eventName = selectedEventName
+                            formData.eventId = selectedEventId
+
+                            // Update file grid columns
+                            if (fileGrid) {
+                                fileGrid.style.gridTemplateColumns = isSymposium ? '1fr 1fr' : '1fr 1fr 1fr'
+                            }
+                            if (dateFieldsContainer) {
+                                dateFieldsContainer.style.display = isSymposium ? 'grid' : 'none'
+                            }
+                            if (programFileContainer) {
+                                programFileContainer.style.display = isSymposium ? 'none' : 'block'
+                            }
+                        }
                     }
+                },
+                elementHandler: async (el) => {
+                    if (!el) return
+                    el.innerHTML = ''
 
-                    // File validations for new uploads
-                    if (!isEdit) {
-                        if (!formData.researchFile || !formData.endorsementFile) {
-                            alert('Please upload Research File and Endorsement Letter')
-                            return
-                        }
+                    const defaultOption = $({
+                        tag: 'option',
+                        text: '-- Select Event Name --',
+                        att: { disabled: true, selected: true, value: '' }
+                    })
+                    el.appendChild(defaultOption)
 
-                        // For non-Symposium events, program file is required
-                        if (!isSymposium && !formData.programFile) {
-                            alert('Program file is required for non-Symposium events')
-                            return
-                        }
-
-                        // Validate PDF files
-                        if (formData.researchFile && formData.researchFile.type !== 'application/pdf') {
-                            alert('Research file must be a valid PDF file')
-                            return
-                        }
-                        if (!isSymposium && formData.programFile && formData.programFile.type !== 'application/pdf') {
-                            alert('Program file must be a valid PDF file')
-                            return
-                        }
-                        if (formData.endorsementFile && formData.endorsementFile.type !== 'application/pdf') {
-                            alert('Endorsement letter must be a valid PDF file')
-                            return
-                        }
-                    }
-
-                    // Validate co-authors if any
-                    if (formData.coAuthors && formData.coAuthors.length > 0) {
-                        const invalidCoAuthors = formData.coAuthors.filter(coAuth => !coAuth.trim())
-                        if (invalidCoAuthors.length > 0) {
-                            alert("Some co-authors have empty names. Please fix or remove them.")
-                            return
-                        }
-                    }
-
-                    // Validate date fields for Symposium
-                    if (isSymposium) {
-                        if (!formData.date_started || !formData.date_completed) {
-                            alert('Please fill in Date Started and Date Completed for Symposium events')
-                            return
-                        }
-                    }
-
-                    // Show loading indicator
-                    let loading = Waiting()
-                    document.body.appendChild(loading)
-
-                    const removeLoading = () => {
-                        if (loading && loading.remove) {
-                            loading.remove()
-                        }
-                    }
+                    const form = new FormData()
+                    form.append('getEvent', 'true')
 
                     try {
-                        const form = new FormData()
-
-                        if (isEdit) {
-                            form.append('updateResearch', 'true')
-                            form.append('docId', editData.id)
-                        } else {
-                            form.append('uploadResearch', 'true')
-                        }
-
-                        // Append all form data
-                        form.append('eventType', formData.eventName)
-                        form.append('title', formData.title)
-                        form.append('category', formData.category)
-                        form.append('center', formData.center)
-                        form.append('author', formData.author)
-                        form.append('presenter', formData.presenter)
-                        form.append('coAuthor', JSON.stringify(formData.coAuthors || []))
-
-                        // Append date fields only for Symposium
-                        if (isSymposium) {
-                            form.append('date_started', formData.date_started)
-                            form.append('date_completed', formData.date_completed)
-                        }
-
-                        // Append files
-                        if (formData.endorsementFile) {
-                            form.append('uploadedFileEndorsement', formData.endorsementFile)
-                        }
-                        if (formData.researchFile) {
-                            form.append('researchDoc', formData.researchFile)
-                        }
-                        // Only append program file if not Symposium
-                        if (!isSymposium && formData.programFile) {
-                            form.append('programFile', formData.programFile)
-                        }
-
-                        const response = await fetch('/getresearch', {
+                        const response = await fetch('/eventRequest', {
                             method: 'POST',
                             body: form
                         })
 
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! Status: ${response.status}`)
-                        }
-
-                        const dat = await response.json()
-                        removeLoading()
-
-                        if (dat.status) {
-                            const newDoc = {
-                                id: isEdit ? editData.id : (dat.docId || Date.now()),
-                                eventName: formData.eventName,
-                                title: formData.title,
-                                category: formData.category,
-                                center: formData.center,
-                                author: formData.author,
-                                presenter: formData.presenter,
-                                coAuthors: formData.coAuthors,
-                                researchFile: formData.researchFile ? formData.researchFile.name : (editData?.researchFile || '—'),
-                                programFile: formData.programFile ? formData.programFile.name : (editData?.programFile || '—'),
-                                endorsementFile: formData.endorsementFile ? formData.endorsementFile.name : (editData?.endorsementFile || '—'),
-                                status: isEdit ? (editData.status || 'pending') : 'pending',
-                                date: new Date().toISOString(),
-                                date_started: formData.date_started,
-                                date_completed: formData.date_completed
-                            }
-
-                            if (isEdit) {
-                                const rows = documentsTable.querySelectorAll('tr')
-                                for (let i = 1; i < rows.length; i++) {
-                                    if (rows[i].cells[2]?.innerText === editData.title) {
-                                        const newRow = createTableRow(newDoc)
-                                        rows[i].parentNode.replaceChild(newRow, rows[i])
-                                        break
-                                    }
-                                }
-                            } else {
-                                const newRow = createTableRow(newDoc)
-                                const tbody = documentsTable.querySelector('tbody')
-                                const emptyState = tbody.querySelector('.empty-state-row')
-                                if (emptyState) emptyState.remove()
-
-                                if (tbody.firstChild) {
-                                    tbody.insertBefore(newRow, tbody.firstChild)
-                                } else {
-                                    tbody.appendChild(newRow)
-                                }
-                                refreshStats()
-                            }
-
-                            document.body.appendChild(ConfirmationAlert(dat.message || (isEdit ? 'Document updated successfully!' : 'Document uploaded successfully!'), () => {
-                                modal.remove()
-                                if (!isEdit) {
-                                    formData = {
-                                        eventName: '',
-                                        eventId: '',
-                                        title: '',
-                                        category: '',
-                                        center: '',
-                                        presenter: '',
-                                        author: '',
-                                        coAuthors: [],
-                                        researchFile: null,
-                                        programFile: null,
-                                        endorsementFile: null,
-                                        date_started: null,
-                                        date_completed: null
-                                    }
-                                }
-                            }))
+                        if (response.ok) {
+                            const data = await response.json()
+                            data.forEach(val => {
+                                el.appendChild($({
+                                    tag: 'option',
+                                    text: val.name,
+                                    style: { backgroundColor: '#2a2a2a', fontSize: '14px' },
+                                    att: { id: val.id, value: val.name }
+                                }))
+                            })
                         } else {
-                            document.body.appendChild(ConfirmationAlert(dat.message || 'Upload failed. Please try again.', () => { }))
+                            console.error('Failed to fetch events:', response.status)
                         }
-                    } catch (err) {
-                        removeLoading()
-                        console.error('Error uploading document:', err)
-                        alert('Error uploading document: ' + (err.message || 'Unknown error. Please try again.'))
+                    } catch (error) {
+                        console.error('Error fetching events:', error)
+                    }
+
+                    if (isEdit && editData?.eventName) {
+                        el.value = editData.eventName
+                        const changeEvent = new Event('change')
+                        el.dispatchEvent(changeEvent)
                     }
                 }
+            })
+            eventField.appendChild(eventSelect)
+
+            // Title field
+            const titleField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            titleField.appendChild($({ tag: 'label', text: 'Document Title *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            titleInput = $({
+                tag: 'input',
+                att: { type: 'text', placeholder: 'Enter document title', value: isEdit ? editData?.title || '' : '' },
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'input',
+                    method: (e) => { formData.title = e.target.value }
+                }
+            })
+            titleField.appendChild(titleInput)
+
+            // Category field
+            const categoryField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            categoryField.appendChild($({ tag: 'label', text: 'Category *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            categorySelect = $({
+                tag: 'select',
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'change',
+                    method: (e) => {
+                        formData.category = e.target.value
+                        if (centerSelect) {
+                            const centers = categoryToCenters[e.target.value] || Object.keys(centerCategoryMapping)
+                            centerSelect.innerHTML = ''
+                            centerSelect.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
+                            centers.forEach(center => {
+                                centerSelect.appendChild($({ tag: 'option', text: center, att: { value: center } }))
+                            })
+                        }
+                    }
+                },
+                elementHandler: (el) => {
+                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
+                    categories.forEach(cat => {
+                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
+                    })
+                    if (isEdit && editData?.category) el.value = editData.category
+                }
+            })
+            categoryField.appendChild(categorySelect)
+
+            // Center field
+            const centerField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            centerField.appendChild($({ tag: 'label', text: 'Center *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            centerSelect = $({
+                tag: 'select',
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'change',
+                    method: (e) => { formData.center = e.target.value }
+                },
+                elementHandler: (el) => {
+                    el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
+                    Object.keys(centerCategoryMapping).forEach(center => {
+                        el.appendChild($({ tag: 'option', text: center, att: { value: center } }))
+                    })
+                    if (isEdit && editData?.center) el.value = editData.center
+                }
+            })
+            centerField.appendChild(centerSelect)
+
+            // Author field
+            const authorField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            authorField.appendChild($({ tag: 'label', text: 'Main Author *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            authorInput = $({
+                tag: 'input',
+                att: { type: 'text', placeholder: 'Enter main author name', value: isEdit ? editData?.author || '' : '' },
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'input',
+                    method: (e) => { formData.author = e.target.value }
+                }
+            })
+            authorField.appendChild(authorInput)
+
+            // Presenter field
+            const presenterField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            presenterField.appendChild($({ tag: 'label', text: 'Presenter *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            presenterInput = $({
+                tag: 'input',
+                att: { type: 'text', placeholder: 'Enter presenter name', value: isEdit ? editData?.presenter || '' : '' },
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'input',
+                    method: (e) => { formData.presenter = e.target.value }
+                }
+            })
+            presenterField.appendChild(presenterInput)
+
+            // Co-authors field
+            const coAuthorField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            coAuthorField.appendChild($({ tag: 'label', text: 'Co-Authors', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+
+            const coAuthorInputGroup = $({
+                tag: 'div',
+                style: { display: 'flex', gap: '10px', marginBottom: '12px' }
+            })
+
+            coAuthorInput = $({
+                tag: 'input',
+                att: { type: 'text', placeholder: 'Enter co-author name' },
+                style: {
+                    flex: 1,
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                }
+            })
+
+            const addCoAuthorBtn = $({
+                tag: 'button',
+                text: 'Add',
+                style: {
+                    padding: '8px 20px',
+                    backgroundColor: '#2196F3',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'click',
+                    method: () => {
+                        const name = coAuthorInput.value.trim()
+                        if (name) {
+                            formData.coAuthors.push(name)
+                            updateCoAuthorList()
+                            coAuthorInput.value = ''
+                        }
+                    }
+                }
+            })
+
+            coAuthorInputGroup.appendChild(coAuthorInput)
+            coAuthorInputGroup.appendChild(addCoAuthorBtn)
+
+            coAuthorList = $({
+                tag: 'div',
+                style: { display: 'flex', flexWrap: 'wrap', gap: '8px' }
+            })
+
+            const updateCoAuthorList = () => {
+                coAuthorList.innerHTML = ''
+                formData.coAuthors.forEach((author, idx) => {
+                    const tag = $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#2a2a2a',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '12px'
+                        },
+                        child: [
+                            $({ tag: 'span', text: author, style: { color: '#fff' } }),
+                            $({
+                                tag: 'i',
+                                att: { className: 'fas fa-times' },
+                                style: { color: '#999', fontSize: '10px', cursor: 'pointer' },
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        formData.coAuthors.splice(idx, 1)
+                                        updateCoAuthorList()
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                    coAuthorList.appendChild(tag)
+                })
             }
-        })
 
-        actions.appendChild(cancelBtn)
-        actions.appendChild(submitBtn)
+            if (isEdit && editData?.coAuthors) {
+                formData.coAuthors = [...editData.coAuthors]
+                updateCoAuthorList()
+            }
 
-        modalContent.appendChild(header)
-        modalContent.appendChild(formBody)
-        modalContent.appendChild(actions)
-        modal.appendChild(modalContent)
-        document.body.appendChild(modal)
+            coAuthorField.appendChild(coAuthorInputGroup)
+            coAuthorField.appendChild(coAuthorList)
+
+            // Date fields
+            dateFieldsContainer = $({
+                tag: 'div',
+                style: {
+                    display: 'none',
+                    gridColumn: '1 / -1',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '20px',
+                    marginTop: '20px',
+                    paddingTop: '20px',
+                    borderTop: '1px solid rgba(255,255,255,0.1)'
+                }
+            })
+
+            const dateStartedWrapper = $({ tag: 'div' })
+            dateStartedWrapper.appendChild($({ tag: 'label', text: 'Date Started *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            dateStartedField = $({
+                tag: 'input',
+                att: { type: 'date', value: isEdit ? (editData?.date_started || '') : '' },
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'change',
+                    method: (e) => { formData.date_started = e.target.value }
+                }
+            })
+            dateStartedWrapper.appendChild(dateStartedField)
+
+            const dateCompletedWrapper = $({ tag: 'div' })
+            dateCompletedWrapper.appendChild($({ tag: 'label', text: 'Date Completed *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            dateCompletedField = $({
+                tag: 'input',
+                att: { type: 'date', value: isEdit ? (editData?.date_completed || '') : '' },
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'change',
+                    method: (e) => { formData.date_completed = e.target.value }
+                }
+            })
+            dateCompletedWrapper.appendChild(dateCompletedField)
+
+            dateFieldsContainer.appendChild(dateStartedWrapper)
+            dateFieldsContainer.appendChild(dateCompletedWrapper)
+
+            // Add to layout
+            twoColumnLayout.appendChild(titleField)
+            twoColumnLayout.appendChild(categoryField)
+            twoColumnLayout.appendChild(centerField)
+            twoColumnLayout.appendChild(authorField)
+            twoColumnLayout.appendChild(presenterField)
+            twoColumnLayout.appendChild(coAuthorField)
+            twoColumnLayout.appendChild(dateFieldsContainer)
+
+            formBody.appendChild(eventField)
+            formBody.appendChild(twoColumnLayout)
+
+            // File upload sections
+            const fileSection = $({
+                tag: 'div',
+                style: {
+                    marginTop: '20px',
+                    paddingTop: '20px',
+                    borderTop: '1px solid rgba(255,255,255,0.1)'
+                }
+            })
+
+            fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#fff', marginBottom: '16px', fontSize: '16px' } }))
+
+            const fileGrid = $({
+                tag: 'div',
+                style: {
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gap: '20px'
+                }
+            })
+
+            programFileContainer = $({
+                tag: 'div',
+                style: { display: 'block' }
+            })
+            programFileContainer.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }))
+
+            fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }))
+            fileGrid.appendChild(programFileContainer)
+            fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
+
+            fileSection.appendChild(fileGrid)
+            formBody.appendChild(fileSection)
+
+            container.appendChild(formBody)
+
+            return container
+        }
+
+        function showSymposiumInContainer(eventName, eventId) {
+            // Store current modal for cleanup
+            const currentModal = modal;
+
+            // Close the current modal
+            currentModal.remove();
+
+            // Create and show the Symposium modal as a standalone modal
+            const symposiumModal = SymposiumModal({
+                eventName: eventName,
+                eventId: eventId,
+                onClose: () => {
+                    // When Symposium modal closes, reopen the standard form if needed
+                    // This is optional - you might just want to close everything
+                    if (window.refreshDocumentsTable) {
+                        window.refreshDocumentsTable();
+                    }
+                },
+                onSuccess: () => {
+                    if (window.refreshDocumentsTable) {
+                        window.refreshDocumentsTable();
+                    }
+                }
+            });
+
+            document.body.appendChild(symposiumModal);
+        }
+
+        function returnToNormalForm() {
+            // Reset modal size back to original
+            const modalContent = modal.querySelector('.modal-content') || modalContentRef;
+            if (modalContent) {
+                modalContent.style.maxWidth = '900px';
+                modalContent.style.width = '90%';
+            }
+
+            // Animate back
+            symposiumPlaceholder.style.opacity = '0'
+            symposiumPlaceholder.style.transform = 'translateX(20px)'
+
+            setTimeout(() => {
+                symposiumPlaceholder.style.display = 'none'
+
+                normalFormContent.style.display = 'block'
+                normalFormContent.style.opacity = '0'
+                normalFormContent.style.transform = 'translateX(-20px)'
+
+                setTimeout(() => {
+                    normalFormContent.style.opacity = '1'
+                    normalFormContent.style.transform = 'translateX(0)'
+
+                    // Restore footer
+                    footer.innerHTML = ''
+                    footer.appendChild(cancelBtn)
+                    footer.appendChild(submitBtn)
+
+                    // Restore header
+                    const modalTitle = document.querySelector('#modalTitle')
+                    if (modalTitle) modalTitle.innerText = isEdit ? 'Edit Entry' : 'Submit New Entry'
+
+                    isSymposiumMode = false
+                    symposiumModalActive = false
+                }, 50)
+            }, 300)
+        }
+
+        // FileUploadField helper
+        function FileUploadField({ label, fieldName }) {
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
+            container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+
+            const uploadArea = $({
+                tag: 'div',
+                style: {
+                    border: '2px dashed #444',
+                    borderRadius: '8px',
+                    padding: '20px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    backgroundColor: 'rgba(255,255,255,0.05)'
+                },
+                event: {
+                    type: 'click',
+                    method: () => fileInput.click()
+                }
+            })
+
+            uploadArea.appendChild($({
+                tag: 'i',
+                att: { className: 'fas fa-cloud-upload-alt' },
+                style: { fontSize: '32px', color: '#666', marginBottom: '8px', display: 'block' }
+            }))
+            uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#888', fontSize: '14px' } }))
+            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', style: { color: '#666', fontSize: '12px', marginTop: '4px' } }))
+
+            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '8px', fontSize: '12px', color: '#4caf50', textAlign: 'center' } })
+
+            const fileInput = $({
+                tag: 'input',
+                att: { type: 'file', accept: '.pdf,application/pdf', style: 'display: none' },
+                event: {
+                    type: 'change',
+                    method: (e) => {
+                        const file = e.target.files[0]
+                        if (file) {
+                            if (file.type !== 'application/pdf') {
+                                alert('Please select a valid PDF file')
+                                fileInput.value = ''
+                                return
+                            }
+                            if (file.size > 10 * 1024 * 1024) {
+                                alert('File size exceeds 10MB limit')
+                                fileInput.value = ''
+                                return
+                            }
+                            formData[fieldName] = file
+                            fileNameDisplay.innerText = `✓ Selected: ${file.name}`
+                        }
+                    }
+                }
+            })
+
+            container.appendChild(uploadArea)
+            container.appendChild(fileNameDisplay)
+            container.appendChild(fileInput)
+
+            return container
+        }
     }
 
     // Create the main UI

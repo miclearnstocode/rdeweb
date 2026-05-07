@@ -19,7 +19,7 @@ export const Utilization = () => {
         { field: 'benefitingIndustry', header: 'Beneficiary / Industry', width: '180px', type: 'text', required: false },
         { field: 'dateConducted', header: 'Date', width: '120px', type: 'date', required: true },
         { field: 'traineesCount', header: 'Count', width: '100px', type: 'number', required: true },
-        { field: 'moaDocs', header: 'MOA/MOU/TOR', width: '150px', type: 'file', required: false },
+        { field: 'moaDocs', header: 'MOA/MOU/TOR/TLA/TermSheet', width: '150px', type: 'file', required: false },
         { field: 'supportDocs', header: 'Docs', width: '150px', type: 'file', required: false },
         { field: 'actions', header: 'Actions', width: '80px', type: 'actions', required: false }
     ]

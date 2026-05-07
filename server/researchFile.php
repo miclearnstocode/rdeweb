@@ -1248,6 +1248,361 @@ if (isset($_POST['uploadResearch'])) {
     echo json_encode($response);
     exit();
 }
+if (isset($_POST['uploadSymposiumWithInhouse'])) {
+    // Temporarily disable the error-catching output buffer
+    ob_end_clean();
+    ob_start();
+    
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
+    
+    $center = $_POST['center'] ?? '';
+    $senderId = $_SESSION['userId'];
+    $response = new stdClass();
+    $response->message = '';
+    $response->status = false;
+    
+    try {
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            if ($con->connect_error) {
+                throw new Exception("Database connection failed: " . $con->connect_error);
+            }
+            
+            $eventType = $_POST['eventType'];
+            
+            // Check event deadline
+            $checkQuery = "SELECT COUNT(*) FROM event_list WHERE event_list.name=? AND event_list.dead_line > CURRENT_TIMESTAMP";
+            $checkStatement = $con->prepare($checkQuery);
+            if (!$checkStatement) {
+                throw new Exception("Prepare failed: " . $con->error);
+            }
+            $checkStatement->bind_param("s", $eventType);
+            $checkStatement->execute();
+            $resss = $checkStatement->get_result()->fetch_row();
+
+            if ($resss[0] !== 0) {
+                // Get symposium data from POST
+                $title = $_POST['title'];
+                $author = $_POST['author'];
+                $category = $_POST['category'];
+                $center = $_POST['center'];
+                $coAuthor = $_POST['coAuthor'] ?? '[]';
+                $presenter = $_POST['presenter'];
+                $date_started = $_POST['date_started'] ?? null;
+                $date_completed = $_POST['date_completed'] ?? null;
+                $campus = $_POST['campus'] ?? '';
+                
+                // In-house review data
+                $presentationType = $_POST['presentation_type']; // 'local' or 'university'
+                $localTitle = $_POST['local_title'];
+                $titleChanged = isset($_POST['title_changed']) ? (int)$_POST['title_changed'] : 0;
+                $newTitle = $titleChanged ? $_POST['new_title'] : null;
+                
+                // Get event_id
+                $eventId = null;
+                $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
+                $eventStmt = $con->prepare($eventIdQuery);
+                $eventStmt->bind_param("s", $eventType);
+                $eventStmt->execute();
+                $eventResult = $eventStmt->get_result();
+                $eventRow = $eventResult->fetch_assoc();
+                $eventId = $eventRow ? $eventRow['id'] : null;
+                
+                // DUPLICATE CHECK - same title and author for this event
+                $duplicateCheckQuery = "SELECT COUNT(*) as count FROM researchfile 
+                                       WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+                                       AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+                                       AND event_id = ?";
+                $dupStmt = $con->prepare($duplicateCheckQuery);
+                $dupStmt->bind_param("ssi", $title, $author, $eventId);
+                $dupStmt->execute();
+                $dupResult = $dupStmt->get_result();
+                $existingRecord = $dupResult->fetch_assoc();
+                $dupStmt->close();
+                
+                if ($existingRecord && $existingRecord['count'] > 0) {
+                    $response->status = false;
+                    $response->message = "A research with the title '{$title}' and author '{$author}' already exists for the event '{$eventType}'. Please check your existing submissions.";
+                    echo json_encode($response);
+                    exit();
+                }
+                
+                // 1. Upload Endorsement Letter to Google Drive
+                if (!isset($_FILES['uploadedFileEndorsement']) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
+                    throw new Exception('Endorsement letter is required.');
+                }
+                
+                $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
+                $endorsementFileName = $_FILES['uploadedFileEndorsement']['name'];
+                
+                $endorsementDriveResult = uploadResearchToDrive(
+                    $tempEndorsementPath,
+                    $endorsementFileName,
+                    $eventType,
+                    $center,
+                    $category,
+                    $author,
+                    $title,
+                    'endorsement',
+                    false,
+                    true
+                );
+                
+                if (!$endorsementDriveResult['success']) {
+                    throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
+                }
+                
+                // Insert endorsement record
+                $defaultTime = date('Y-m-d H:i:s');
+                $query2 = "INSERT INTO endorsement (
+                    endorsement.senderid, endorsement.center, endorsement.file, 
+                    endorsement.drive_file_id, endorsement.drive_view_url,
+                    endorsement.drive_download_url, endorsement.drive_event_folder_id,
+                    endorsement.drive_center_folder_id, endorsement.drive_category_folder_id,
+                    endorsement.drive_entry_folder_id, endorsement.event, endorsement.status, endorsement.date
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+                $stateM = $con->prepare($query2);
+                $sta = NULL;
+                $endorsementFileJson = json_encode($endorsementDriveResult);
+                $drive_event_folder_id = $endorsementDriveResult['drive_event_folder_id'] ?? null;
+                $drive_center_folder_id = $endorsementDriveResult['drive_center_folder_id'] ?? null;
+                $drive_category_folder_id = $endorsementDriveResult['drive_category_folder_id'] ?? null;
+                $drive_entry_folder_id = $endorsementDriveResult['drive_entry_folder_id'] ?? null;
+                
+                $stateM->bind_param(
+                    'sssssssssssss',
+                    $senderId, $center, $endorsementFileJson,
+                    $endorsementDriveResult['drive_file_id'],
+                    $endorsementDriveResult['drive_view_url'],
+                    $endorsementDriveResult['drive_download_url'],
+                    $drive_event_folder_id, $drive_center_folder_id,
+                    $drive_category_folder_id, $drive_entry_folder_id,
+                    $eventType, $sta, $defaultTime
+                );
+                
+                if (!$stateM->execute()) {
+                    throw new Exception("Failed to save endorsement: " . $stateM->error);
+                }
+                $endorsementId = $con->insert_id;
+                
+                // 2. Upload Research File
+                if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
+                    throw new Exception('Research file is required.');
+                }
+                
+                $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
+                $researchFileName = $_FILES['researchDoc']['name'];
+                
+                $researchDriveResult = uploadResearchToDrive(
+                    $tempResearchPath, $researchFileName, $eventType,
+                    $center, $category, $author, $title, 'research', false, false
+                );
+                
+                if (!$researchDriveResult['success']) {
+                    throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
+                }
+                
+                // 3. Upload In-House Program File
+                $inhouseDriveResult = null;
+                if (isset($_FILES['inhouseProgramFile']) && $_FILES['inhouseProgramFile']['error'] === UPLOAD_ERR_OK) {
+                    $tempProgramPath = $_FILES['inhouseProgramFile']['tmp_name'];
+                    $originalFileName = $_FILES['inhouseProgramFile']['name'];
+                    
+                    // Get the file extension
+                    $pathInfo = pathinfo($originalFileName);
+                    $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
+                    $nameOnly = $pathInfo['filename'] ?? 'program_file';
+                    
+                    // Create new filename: "Local In-House Review Program - {original file name}"
+                    $newFileName = 'Local In-House Review Program - ' . $nameOnly . $extension;
+                    
+                    error_log("Renaming in-house program file from: $originalFileName to: $newFileName");
+                    
+                    // Upload with the new filename
+                    $inhouseDriveResult = uploadResearchToDrive(
+                        $tempProgramPath, 
+                        $newFileName,  // Use the renamed file
+                        $eventType,
+                        $center, 
+                        $category, 
+                        $author, 
+                        $localTitle, 
+                        'program', 
+                        true, 
+                        false
+                    );
+                }
+                
+                // Generate paper trail number
+                $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
+                
+                // Insert into researchfile
+                $querV2 = "INSERT INTO researchfile(
+                    researchfile.paper_trail_no, researchfile.senderid, researchfile.endorsementid,
+                    researchfile.author, researchfile.title, researchfile.center, researchfile.category,
+                    researchfile.drive_file_id, researchfile.drive_view_url, researchfile.drive_download_url,
+                    researchfile.drive_folder_id, researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id, researchfile.drive_category_folder_id,
+                    researchfile.drive_entry_folder_id, researchfile.event, researchfile.event_id,
+                    researchfile.campus, researchfile.coauthor, researchfile.presenter,
+                    researchfile.status, researchfile.date_started, researchfile.date_completed
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+                $stementResNew = $con->prepare($querV2);
+                $rev = NULL;
+                $programFile = null;
+                
+                $drive_folder_id = $researchDriveResult['drive_folder_id'] ?? null;
+                $drive_event_folder_id = $researchDriveResult['drive_event_folder_id'] ?? null;
+                $drive_center_folder_id = $researchDriveResult['drive_center_folder_id'] ?? null;
+                $drive_category_folder_id = $researchDriveResult['drive_category_folder_id'] ?? null;
+                $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
+                
+                $stementResNew->bind_param(
+                    'sssssssssssssssssssssss',
+                    $paperTrailNo, $senderId, $endorsementId,
+                    $author, $title, $center, $category,
+                    $researchDriveResult['drive_file_id'],
+                    $researchDriveResult['drive_view_url'],
+                    $researchDriveResult['drive_download_url'],
+                    $drive_folder_id, $drive_event_folder_id,
+                    $drive_center_folder_id, $drive_category_folder_id,
+                    $drive_entry_folder_id, $eventType, $eventId,
+                    $campus, $coAuthor, $presenter,
+                    $rev, $date_started, $date_completed
+                );
+                
+                if (!$stementResNew->execute()) {
+                    throw new Exception("Failed to save research: " . $stementResNew->error);
+                }
+                
+                $researchFileId = $con->insert_id;
+                
+                // 4. Insert into local_inhouse_review table
+                $inhouseProgramJson = $inhouseDriveResult ? json_encode($inhouseDriveResult) : null;
+                $inhouseDriveFileId = $inhouseDriveResult['drive_file_id'] ?? null;
+                $inhouseDriveViewUrl = $inhouseDriveResult['drive_view_url'] ?? null;
+                $inhouseDriveDownloadUrl = $inhouseDriveResult['drive_download_url'] ?? null;
+                
+                $inhouseQuery = "INSERT INTO local_inhouse_review (
+                    researchid, endorsementid, presentation_type, local_title, new_title,
+                    title_changed, local_program, drive_file_id, drive_file_view_url, drive_file_download_url
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                
+                $inhouseStmt = $con->prepare($inhouseQuery);
+                $inhouseStmt->bind_param(
+                    'iisssissss',
+                    $researchFileId, $endorsementId, $presentationType,
+                    $localTitle, $newTitle, $titleChanged,
+                    $inhouseProgramJson, $inhouseDriveFileId,
+                    $inhouseDriveViewUrl, $inhouseDriveDownloadUrl
+                );
+                
+                if (!$inhouseStmt->execute()) {
+                    throw new Exception("Failed to save in-house review data: " . $inhouseStmt->error);
+                }
+                
+                $response->status = true;
+                $response->message = "Symposium submission with in-house review tracking saved successfully!";
+                $response->paper_trail_no = $paperTrailNo;
+                $response->research_id = $researchFileId;
+                
+            } else {
+                $response->message = "Sorry, the event has closed.";
+            }
+        } else {
+            throw new Exception("Database connection failed");
+        }
+    } catch (Exception $e) {
+        error_log("Symposium upload error: " . $e->getMessage());
+        $response->message = "Error: " . $e->getMessage();
+        $response->status = false;
+    }
+    
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+if (isset($_POST['getAcceptedInhouseReviews'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->data = [];
+    
+    try {
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            $userId = $_SESSION['userId'] ?? 0;
+            
+            //rf.senderid = ? this keep the return data per center or per campus
+            $query = "SELECT 
+                        rf.id,
+                        rf.title,
+                        rf.author,
+                        rf.coauthor,
+                        rf.category,
+                        rf.center,
+                        rf.event,
+                        rf.event_id,
+                        e.status,
+                        el.name as event_name,
+                        el.date as event_date
+                      FROM researchfile rf
+                      LEFT JOIN endorsement e ON rf.endorsementid = e.id
+                      LEFT JOIN event_list el ON rf.event_id = el.id
+                      WHERE (rf.event LIKE '%In-House Review%' 
+                             OR rf.event LIKE '%in house review%'
+                             OR rf.event LIKE '%In House Review%')
+                      AND rf.senderid = ? 
+                      AND e.status = 'accepted' 
+                      ORDER BY el.date DESC, rf.id DESC";
+            
+            $stmt = $con->prepare($query);
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            while ($row = $result->fetch_assoc()) {
+                $data = new stdClass();
+                $data->id = $row['id'];
+                $data->title = $row['title'];
+                $data->author = $row['author'];
+                $data->category = $row['category'] ?? '';
+                $data->center = $row['center'] ?? '';
+                $data->event_name = $row['event_name'] ?? $row['event'];
+                $data->event_date = $row['event_date'] ?? '';
+                $data->status = $row['status'];
+                
+                // Parse coauthors
+                if (!empty($row['coauthor'])) {
+                    $coauthors = json_decode($row['coauthor'], true);
+                    $data->coauthors = is_array($coauthors) ? $coauthors : [];
+                } else {
+                    $data->coauthors = [];
+                }
+                
+                $response->data[] = $data;
+            }
+            
+            $response->status = true;
+            $response->message = count($response->data) . ' accepted in-house review(s) found';
+            
+            $stmt->close();
+            $con->close();
+        } else {
+            throw new Exception("Database connection failed");
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching accepted in-house reviews: " . $e->getMessage());
+        $response->message = "Error: " . $e->getMessage();
+        $response->status = false;
+    }
+    
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
 
 if (isset($_POST['acceptRequest'])) {
     $response = new stdClass();

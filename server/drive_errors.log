@@ -421,3 +421,26 @@ Stack trace:
 [06-May-2026 16:48:44 Asia/Manila] New file uploaded: ID = 1Cdr623gnliCyucMMKcSV2g4W94yaHpbW, URL = https://drive.google.com/file/d/1Cdr623gnliCyucMMKcSV2g4W94yaHpbW/preview
 [06-May-2026 16:48:44 Asia/Manila] Endorsement status reset to NULL for ID: 544
 [06-May-2026 16:48:44 Asia/Manila] Revision submitted successfully for research ID: 537, revision count: 8
+[07-May-2026 15:44:42 Asia/Manila] PHP Warning:  Undefined array key "local_title" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1297
+[07-May-2026 15:44:42 Asia/Manila] Symposium upload error: A research with this title and author already exists for this event.
+[07-May-2026 15:46:41 Asia/Manila] PHP Warning:  Undefined array key "local_title" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1297
+[07-May-2026 15:46:41 Asia/Manila] Symposium upload error: A research with this title and author already exists for this event.
+[07-May-2026 15:46:41 Asia/Manila] PHP Warning:  Undefined array key "local_title" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1297
+[07-May-2026 15:46:41 Asia/Manila] Symposium upload error: A research with this title and author already exists for this event.
+[07-May-2026 16:04:43 Asia/Manila] PHP Warning:  Undefined array key "research_status" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1554
+[07-May-2026 16:04:43 Asia/Manila] PHP Warning:  Undefined array key "research_status" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1554
+[07-May-2026 16:04:43 Asia/Manila] PHP Warning:  Undefined array key "research_status" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1554
+[07-May-2026 16:04:43 Asia/Manila] PHP Warning:  Undefined array key "research_status" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1554
+[07-May-2026 16:21:08 Asia/Manila] PHP Warning:  Undefined array key "local_title" in C:\Users\Cogito\Documents\rdeweb\server\researchFile.php on line 1297
+[07-May-2026 16:21:09 Asia/Manila] Creating folder structure for: 43rd Annual RDE Faculty Symposium -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Choice_Another_Sample
+[07-May-2026 16:21:15 Asia/Manila] Uploading endorsement file: 43rd Annual RDE Faculty Symposium_endorsement.pdf to folder: 1aBbxQllYJydFzfUnn9qTMPsqn6XD3wtU
+[07-May-2026 16:21:15 Asia/Manila] GDrive: Uploading 43rd Annual RDE Faculty Symposium_endorsement.pdf to folder 1aBbxQllYJydFzfUnn9qTMPsqn6XD3wtU
+[07-May-2026 16:21:17 Asia/Manila] Making file public: 10gGCDjcCi9YRkhi6E_afImSeZjTu_Bvr
+[07-May-2026 16:21:18 Asia/Manila] File 10gGCDjcCi9YRkhi6E_afImSeZjTu_Bvr is already public
+[07-May-2026 16:21:18 Asia/Manila] endorsement file upload successful: endorsement.pdf
+[07-May-2026 16:21:18 Asia/Manila] Creating folder structure for: 43rd Annual RDE Faculty Symposium -> Coconut Research and Development Center (Coco RDC) -> Natural / Biological -> Choice_Another_Sample
+[07-May-2026 16:21:20 Asia/Manila] Uploading research file: 43rd Annual RDE Faculty Symposium_research_paper.pdf to folder: 1aBbxQllYJydFzfUnn9qTMPsqn6XD3wtU
+[07-May-2026 16:21:20 Asia/Manila] GDrive: Uploading 43rd Annual RDE Faculty Symposium_research_paper.pdf to folder 1aBbxQllYJydFzfUnn9qTMPsqn6XD3wtU
+[07-May-2026 16:21:23 Asia/Manila] Making file public: 1gvL8PEJVpP08VZDNMKLnkJbO4jU2WgH4
+[07-May-2026 16:21:23 Asia/Manila] File 1gvL8PEJVpP08VZDNMKLnkJbO4jU2WgH4 is already public
+[07-May-2026 16:21:23 Asia/Manila] research file upload successful: research_paper.pdf
