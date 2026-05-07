@@ -1543,7 +1543,7 @@ export const Research = () => {
             researchFileDisplay,
             programFileDisplay,
             endorsementFileDisplay,
-            actionsCell  // ← Use this instead of createActionButtons(doc)
+            actionsCell
         ]
 
         cells.forEach((content, index) => {

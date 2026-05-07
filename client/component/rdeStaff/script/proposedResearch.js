@@ -208,14 +208,25 @@ export const ProposedResearch = () => {
         // Apply status filter
         if (activeStatusFilter) {
             filtered = filtered.filter(item => {
-                if (activeStatusFilter === 'waiting_for_revised') {
-                    return (item.inhouseUniversity === 'waiting for revised proposal' ||
-                        item.symposiumUniversity === 'waiting for revised proposal')
-                } else if (activeStatusFilter === 'submitted_revised') {
-                    return (item.inhouseUniversity === 'submitted revised proposal' ||
-                        item.symposiumUniversity === 'submitted revised proposal')
+                // Check both inhouseUniversity and symposiumUniversity for the status
+                const inhouseStatus = item.inhouseUniversity?.toLowerCase() || ''
+                const symposiumStatus = item.symposiumUniversity?.toLowerCase() || ''
+                const filterValue = activeStatusFilter.toLowerCase()
+
+                // Map filter values to their corresponding display strings
+                const statusMap = {
+                    'revision_pending': ['pending revision'],
+                    'revision_submitted': ['revised submitted'],
+                    'revision_accepted': ['revision accepted'],
+                    'revision_rejected': ['revision rejected']
                 }
-                return true
+
+                const matchingStatuses = statusMap[filterValue] || []
+                const isMatch = matchingStatuses.some(status =>
+                    inhouseStatus.includes(status) || symposiumStatus.includes(status)
+                )
+
+                return isMatch
             })
         }
 
@@ -2080,8 +2091,10 @@ export const ProposedResearch = () => {
                             },
                             child: [
                                 $({ tag: 'option', att: { value: '' }, text: 'All Status' }),
-                                $({ tag: 'option', att: { value: 'waiting_for_revised' }, text: 'Waiting for Revised Proposal' }),
-                                $({ tag: 'option', att: { value: 'submitted_revised' }, text: 'Submitted Revised Proposal' })
+                                $({ tag: 'option', att: { value: 'revision_pending' }, text: 'Revision Pending' }),
+                                $({ tag: 'option', att: { value: 'revision_submitted' }, text: 'Revision Submitted' }),
+                                $({ tag: 'option', att: { value: 'revision_accepted' }, text: 'Revision Accepted' }),
+                                $({ tag: 'option', att: { value: 'revision_rejected' }, text: 'Revision Rejected' })
                             ],
                             event: {
                                 type: 'change',
