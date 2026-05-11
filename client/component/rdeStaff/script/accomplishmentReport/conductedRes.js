@@ -49,18 +49,6 @@ export const conductedResearch = () => {
         'Extension'
     ]
 
-    // Fund source options
-    const fundSources = [
-        'GAA',
-        'STF',
-        'TF',
-        'GAA/STF',
-        'GAA/TF',
-        'STF/TF',
-        'GAA/STF/TF',
-        'Others'
-    ]
-
     // Show loading
     const showLoading = () => {
         if (!loadingElement) {
@@ -305,69 +293,134 @@ export const conductedResearch = () => {
         }
     }
 
-    // Render links as clickable element
+    // Render links as clickable elements (updated for file structure)
     const renderLinks = (links) => {
-        if (!links || links === '—' || (Array.isArray(links) && links.length === 0)) {
+        if (!links || links === '—') {
             return '—'
         }
 
-        let linkArray = []
+        let fileData = {}
         try {
             if (typeof links === 'string') {
-                linkArray = JSON.parse(links)
-            } else if (Array.isArray(links)) {
-                linkArray = links
+                fileData = JSON.parse(links)
+            } else if (typeof links === 'object') {
+                fileData = links
+            } else {
+                return '—'
             }
         } catch (e) {
-            return links
+            return '—'
         }
 
-        if (linkArray.length === 0) return '—'
+        // Create sections for different file types
+        const sections = []
+        
+        // Helper to create file links
+        const createFileLink = (url, label, icon) => {
+            if (!url) return null
+            return $({
+                tag: 'a',
+                att: {
+                    href: url,
+                    target: '_blank',
+                    rel: 'noopener noreferrer'
+                },
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#ff9800',
+                    textDecoration: 'none',
+                    fontSize: '12px',
+                    padding: '6px 10px',
+                    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255, 152, 0, 0.2)',
+                    marginBottom: '6px',
+                    transition: 'all 0.2s ease'
+                },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: icon },
+                        style: { fontSize: '12px' }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: label
+                    })
+                ],
+                event: {
+                    type: 'mouseenter',
+                    method: (e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 152, 0, 0.2)'
+                        e.currentTarget.style.textDecoration = 'underline'
+                    },
+                    type2: 'mouseleave',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 152, 0, 0.1)'
+                        e.currentTarget.style.textDecoration = 'none'
+                    }
+                }
+            })
+        }
+
+        // Activity Proposal
+        if (fileData.activityProposal) {
+            const link = createFileLink(fileData.activityProposal, 'Activity Proposal', 'fa-solid fa-file-pdf')
+            if (link) sections.push(link)
+        }
+
+        // Attendance Sheet
+        if (fileData.attendanceSheet) {
+            const link = createFileLink(fileData.attendanceSheet, 'Attendance Sheet', 'fa-solid fa-file-pdf')
+            if (link) sections.push(link)
+        }
+
+        // Activity Report
+        if (fileData.activityReport) {
+            const link = createFileLink(fileData.activityReport, 'Activity Report', 'fa-solid fa-file-pdf')
+            if (link) sections.push(link)
+        }
+
+        // Program
+        if (fileData.program) {
+            const link = createFileLink(fileData.program, 'Program', 'fa-solid fa-file-pdf')
+            if (link) sections.push(link)
+        }
+
+        // Photos
+        if (fileData.photos && fileData.photos.length > 0) {
+            sections.push(
+                $({
+                    tag: 'div',
+                    style: {
+                        marginTop: '8px',
+                        marginBottom: '4px',
+                        fontSize: '11px',
+                        color: '#aaa',
+                        fontWeight: '500'
+                    },
+                    text: '📸 Photos:'
+                })
+            )
+            
+            fileData.photos.forEach((photo, idx) => {
+                const link = createFileLink(photo, `Photo ${idx + 1}`, 'fa-solid fa-image')
+                if (link) sections.push(link)
+            })
+        }
+
+        if (sections.length === 0) return '—'
 
         return $({
             tag: 'div',
             style: {
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '6px'
+                gap: '4px'
             },
-            child: linkArray.map((link, idx) => {
-                const url = typeof link === 'string' ? link : link.url || link
-                const label = typeof link === 'string' ? `Paper Trail ${idx + 1}` : (link.label || `Paper Trail ${idx + 1}`)
-
-                return $({
-                    tag: 'a',
-                    att: {
-                        href: url,
-                        target: '_blank',
-                        rel: 'noopener noreferrer'
-                    },
-                    text: label,
-                    style: {
-                        color: '#ff9800',
-                        textDecoration: 'none',
-                        fontSize: '12px',
-                        wordBreak: 'break-all',
-                        padding: '4px 8px',
-                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                        borderRadius: '4px',
-                        display: 'inline-block',
-                        border: '1px solid rgba(255, 152, 0, 0.2)'
-                    },
-                    event: {
-                        type: 'mouseenter',
-                        method: (e) => {
-                            e.target.style.textDecoration = 'underline'
-                            e.target.style.backgroundColor = 'rgba(255, 152, 0, 0.2)'
-                        },
-                        type2: 'mouseleave',
-                        method2: (e) => {
-                            e.target.style.textDecoration = 'none'
-                            e.target.style.backgroundColor = 'rgba(255, 152, 0, 0.1)'
-                        }
-                    }
-                })
-            })
+            child: sections
         })
     }
 
@@ -740,14 +793,36 @@ export const conductedResearch = () => {
 
         const isEditing = item !== null
 
-        // Paper trail links state
-        let paperTrailLinks = []
+        // Paper trail files state (separate categories)
+        let paperTrailFiles = {
+            activityProposal: null,
+            attendanceSheet: null,
+            activityReport: null,
+            program: null,
+            photos: []  // Array for multiple photos
+        }
+        
+        // Store existing files info for editing
+        let existingFiles = {
+            activityProposal: null,
+            attendanceSheet: null,
+            activityReport: null,
+            program: null,
+            photos: []
+        }
+        
         if (isEditing && item.paperTrailLinks) {
             try {
-                paperTrailLinks = typeof item.paperTrailLinks === 'string' ? JSON.parse(item.paperTrailLinks) : item.paperTrailLinks
-                if (!Array.isArray(paperTrailLinks)) paperTrailLinks = []
+                const parsed = typeof item.paperTrailLinks === 'string' ? JSON.parse(item.paperTrailLinks) : item.paperTrailLinks
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.activityProposal) existingFiles.activityProposal = parsed.activityProposal
+                    if (parsed.attendanceSheet) existingFiles.attendanceSheet = parsed.attendanceSheet
+                    if (parsed.activityReport) existingFiles.activityReport = parsed.activityReport
+                    if (parsed.program) existingFiles.program = parsed.program
+                    if (parsed.photos && Array.isArray(parsed.photos)) existingFiles.photos = parsed.photos
+                }
             } catch (e) {
-                paperTrailLinks = []
+                console.error('Error parsing paper trail files:', e)
             }
         }
 
@@ -774,105 +849,127 @@ export const conductedResearch = () => {
         }
 
         // Containers for dynamic fields
-        let linksContainer
+        let photosContainer
         let resourcePersonsContainer
         let participantsContainer
 
-        // Function to add a new paper trail link
-        const addLinkField = (url = '', label = '') => {
-            const linkIndex = paperTrailLinks.length
-            paperTrailLinks.push({ url, label })
-
-            const linkRow = $({
+        // Function to add a photo preview element
+        const addPhotoPreview = (file, previewContainer, isExisting = false, existingUrl = null) => {
+            const photoId = Date.now() + Math.random()
+            const photoDiv = $({
                 tag: 'div',
-                att: { className: 'link-row', 'data-link-index': linkIndex },
+                att: { className: 'photo-preview-item', 'data-photo-id': photoId },
                 style: {
-                    display: 'flex',
-                    gap: '8px',
-                    marginBottom: '8px',
-                    alignItems: 'center'
+                    position: 'relative',
+                    display: 'inline-block',
+                    width: '100%',
+                    paddingBottom: '100%', // Makes it square
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    border: '1px solid #444',
+                    backgroundColor: '#333',
+                    cursor: 'pointer'
                 },
-                child: [
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'text',
-                            placeholder: 'Document type (e.g., Proposal, Attendance, Report)',
-                            value: label,
-                            className: 'link-label-input'
-                        },
-                        style: {
-                            flex: '1',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
-                        },
-                        event: {
-                            type: 'input',
-                            method: (e) => {
-                                if (paperTrailLinks[linkIndex]) {
-                                    paperTrailLinks[linkIndex].label = e.target.value
-                                }
-                            }
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        // Open full-size image in new tab on click
+                        const img = photoDiv.querySelector('img')
+                        if (img && img.src) {
+                            window.open(img.src, '_blank')
                         }
-                    }),
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'url',
-                            placeholder: 'https://...',
-                            value: url,
-                            className: 'link-url-input'
-                        },
-                        style: {
-                            flex: '2',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
-                        },
-                        event: {
-                            type: 'input',
-                            method: (e) => {
-                                if (paperTrailLinks[linkIndex]) {
-                                    paperTrailLinks[linkIndex].url = e.target.value
-                                }
-                            }
-                        }
-                    }),
-                    $({
-                        tag: 'button',
-                        att: { type: 'button' },
-                        text: '×',
-                        style: {
-                            padding: '8px 12px',
-                            backgroundColor: '#f44336',
-                            border: 'none',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '16px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold'
-                        },
-                        event: {
-                            type: 'click',
-                            method: () => {
-                                paperTrailLinks.splice(linkIndex, 1)
-                                linkRow.remove()
-                            }
-                        }
-                    })
-                ]
+                    }
+                }
             })
 
-            return linkRow
+            const imgWrapper = $({
+                tag: 'div',
+                style: {
+                    position: 'absolute',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%'
+                }
+            })
+
+            const img = $({
+                tag: 'img',
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                }
+            })
+
+            const removeBtn = $({
+                tag: 'button',
+                att: { type: 'button' },
+                text: '×',
+                style: {
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(244, 67, 54, 0.9)',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: '2',
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: (e) => {
+                        e.stopPropagation()
+                        photoDiv.remove()
+                        // Remove from files array
+                        if (isExisting) {
+                            const index = existingFiles.photos.findIndex(p => p === existingUrl)
+                            if (index !== -1) existingFiles.photos.splice(index, 1)
+                        } else {
+                            const fileIndex = paperTrailFiles.photos.findIndex(f => f === file)
+                            if (fileIndex !== -1) paperTrailFiles.photos.splice(fileIndex, 1)
+                        }
+                        // Update count
+                        const photoCount = document.getElementById('photo-count')
+                        if (photoCount) {
+                            photoCount.textContent = `${paperTrailFiles.photos.length + existingFiles.photos.length}`
+                        }
+                    },
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.target.style.transform = 'scale(1.1)'
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.target.style.transform = 'scale(1)'
+                    }
+                }
+            })
+
+            imgWrapper.appendChild(img)
+            photoDiv.appendChild(imgWrapper)
+            photoDiv.appendChild(removeBtn)
+
+            if (isExisting && existingUrl) {
+                img.src = existingUrl
+            } else if (file) {
+                const reader = new FileReader()
+                reader.onload = (e) => {
+                    img.src = e.target.result
+                }
+                reader.readAsDataURL(file)
+            }
+
+            previewContainer.appendChild(photoDiv)
+            return photoDiv
         }
 
         // Function to add a resource person field
@@ -1073,6 +1170,125 @@ export const conductedResearch = () => {
             })
 
             return participantRow
+        }
+
+        // Create file upload section for a specific type
+        const createFileUploadSection = (label, fileKey, acceptedTypes = '.pdf', required = false, multiple = false) => {
+            const container = $({
+                tag: 'div',
+                style: {
+                    marginBottom: '16px',
+                    padding: '12px',
+                    backgroundColor: '#2a2a2a',
+                    borderRadius: '8px',
+                    border: '1px solid #444'
+                }
+            })
+
+            const labelElement = $({
+                tag: 'label',
+                text: label + (required ? ' *' : ''),
+                style: {
+                    display: 'block',
+                    marginBottom: '8px',
+                    color: '#aaa',
+                    fontSize: '13px',
+                    fontWeight: '500'
+                }
+            })
+
+            const fileInput = $({
+                tag: 'input',
+                att: {
+                    type: 'file',
+                    accept: acceptedTypes,
+                    multiple: multiple
+                },
+                style: {
+                    width: '100%',
+                    padding: '8px',
+                    backgroundColor: '#333',
+                    border: '1px solid #444',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                },
+                event: {
+                    type: 'change',
+                    method: (e) => {
+                        if (multiple) {
+                            const files = Array.from(e.target.files)
+                            files.forEach(file => {
+                                if (file.type.startsWith('image/')) {
+                                    paperTrailFiles.photos.push(file)
+                                    const previewContainer = container.querySelector('.photo-previews-container')
+                                    if (previewContainer) {
+                                        addPhotoPreview(file, previewContainer)
+                                    }
+                                }
+                            })
+                        } else {
+                            const file = e.target.files[0]
+                            if (file) {
+                                if (acceptedTypes === '.pdf' && file.type !== 'application/pdf') {
+                                    showNotification('Please select a PDF file', 'error')
+                                    e.target.value = ''
+                                    return
+                                }
+                                paperTrailFiles[fileKey] = file
+                                // Show file name
+                                const fileNameSpan = container.querySelector('.file-name')
+                                if (fileNameSpan) {
+                                    fileNameSpan.textContent = `Selected: ${file.name}`
+                                    fileNameSpan.style.color = '#4caf50'
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+
+            container.appendChild(labelElement)
+            container.appendChild(fileInput)
+
+            // Add file name display for single file uploads
+            if (!multiple) {
+                const fileNameSpan = $({
+                    tag: 'span',
+                    att: { className: 'file-name' },
+                    style: {
+                        display: 'block',
+                        marginTop: '8px',
+                        fontSize: '12px',
+                        color: '#888'
+                    },
+                    text: existingFiles[fileKey] ? `Current: ${existingFiles[fileKey].split('/').pop() || existingFiles[fileKey]}` : 'No file selected'
+                })
+                container.appendChild(fileNameSpan)
+            } else {
+                // Add photo previews container
+                const previewContainer = $({
+                    tag: 'div',
+                    att: { className: 'photo-previews-container' },
+                    style: {
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        marginTop: '12px',
+                        gap: '8px'
+                    }
+                })
+                container.appendChild(previewContainer)
+
+                // Add existing photos
+                if (isEditing && existingFiles.photos.length > 0) {
+                    existingFiles.photos.forEach(photoUrl => {
+                        addPhotoPreview(null, previewContainer, true, photoUrl)
+                    })
+                }
+            }
+
+            return container
         }
 
         modalElement = $({
@@ -1408,8 +1624,8 @@ export const conductedResearch = () => {
                                                     }
                                                 }),
                                                 $({
-                                                    tag: 'select',
-                                                    att: { name: 'fundSource' },
+                                                    tag: 'input',
+                                                    att: { name: 'fundSource', placeholder: 'Fund Source (e.g., GAA, STF,TF, etc' },
                                                     style: {
                                                         padding: '10px',
                                                         backgroundColor: '#333',
@@ -1419,17 +1635,7 @@ export const conductedResearch = () => {
                                                         fontSize: '14px',
                                                         outline: 'none',
                                                         cursor: 'pointer'
-                                                    },
-                                                    child: [
-                                                        $({ tag: 'option', att: { value: '' }, text: '-- Select Fund Source --' }),
-                                                        ...fundSources.map(fs =>
-                                                            $({
-                                                                tag: 'option',
-                                                                att: { value: fs, selected: isEditing && item.fundSource === fs },
-                                                                text: fs
-                                                            })
-                                                        )
-                                                    ]
+                                                    }
                                                 })
                                             ]
                                         })
@@ -1677,80 +1883,910 @@ export const conductedResearch = () => {
                                     ]
                                 }),
 
-                                // Paper Trail Links section
+                                // Paper Trail Files section
                                 $({
                                     tag: 'div',
-                                    style: { marginBottom: '20px' },
+                                    style: {
+                                        marginBottom: '20px',
+                                        border: '1px solid #444',
+                                        borderRadius: '12px',
+                                        padding: '20px',
+                                        backgroundColor: '#252525',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                                    },
                                     child: [
                                         $({
-                                            tag: 'div',
+                                            tag: 'h3',
                                             style: {
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: '8px'
+                                                margin: '0 0 20px 0',
+                                                fontSize: '18px',
+                                                color: '#ff9800',
+                                                borderLeft: '3px solid #ff9800',
+                                                paddingLeft: '12px',
+                                                fontWeight: '600'
                                             },
                                             child: [
                                                 $({
-                                                    tag: 'label',
-                                                    text: 'Link to the Paper Trail (Activity proposal, attendance sheet, photo, activity report, program)',
-                                                    style: {
-                                                        color: '#aaa',
-                                                        fontSize: '13px',
-                                                        fontWeight: '500'
-                                                    }
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-folder-open' },
+                                                    style: { marginRight: '10px', fontSize: '16px' }
                                                 }),
                                                 $({
-                                                    tag: 'button',
-                                                    att: { type: 'button' },
-                                                    text: '+ Add Paper Trail',
-                                                    style: {
-                                                        padding: '6px 14px',
-                                                        backgroundColor: '#ff9800',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
-                                                        fontSize: '12px',
-                                                        cursor: 'pointer',
-                                                        fontWeight: '500',
-                                                        transition: 'all 0.2s ease'
-                                                    },
-                                                    event: {
-                                                        type: 'click',
-                                                        method: () => {
-                                                            const newRow = addLinkField()
-                                                            linksContainer.appendChild(newRow)
-                                                        },
-                                                        type2: 'mouseenter',
-                                                        method2: (e) => {
-                                                            e.target.style.backgroundColor = '#e68900'
-                                                        },
-                                                        type3: 'mouseleave',
-                                                        method3: (e) => {
-                                                            e.target.style.backgroundColor = '#ff9800'
-                                                        }
-                                                    }
+                                                    tag: 'span',
+                                                    text: 'Paper Trail Documents'
                                                 })
                                             ]
                                         }),
+                                        
+                                        // Two column grid layout
                                         $({
                                             tag: 'div',
-                                            att: { id: 'links-container' },
                                             style: {
-                                                backgroundColor: '#2a2a2a',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #444',
-                                                minHeight: '50px'
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(2, 1fr)',
+                                                gap: '20px',
+                                                alignItems: 'start'
                                             },
-                                            elementHandler: (el) => {
-                                                linksContainer = el
-                                                if (isEditing && paperTrailLinks.length > 0) {
-                                                    paperTrailLinks.forEach(link => {
-                                                        linksContainer.appendChild(addLinkField(link.url, link.label))
-                                                    })
-                                                }
-                                            }
+                                            child: [
+                                                // Left Column - PDF Documents
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '16px'
+                                                    },
+                                                    child: [
+                                                        // Activity Proposal Card
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                backgroundColor: '#2a2a2a',
+                                                                borderRadius: '10px',
+                                                                padding: '16px',
+                                                                border: '1px solid #3a3a3a',
+                                                                transition: 'all 0.2s ease'
+                                                            },
+                                                            event: {
+                                                                type: 'mouseenter',
+                                                                method: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#ff9800'
+                                                                    e.currentTarget.style.transform = 'translateY(-2px)'
+                                                                },
+                                                                type2: 'mouseleave',
+                                                                method2: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#3a3a3a'
+                                                                    e.currentTarget.style.transform = 'translateY(0)'
+                                                                }
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '12px',
+                                                                        marginBottom: '12px'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                width: '36px',
+                                                                                height: '36px',
+                                                                                borderRadius: '8px',
+                                                                                backgroundColor: 'rgba(255, 152, 0, 0.15)',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center'
+                                                                            },
+                                                                            child: [
+                                                                                $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'fa-solid fa-file-pdf' },
+                                                                                    style: { color: '#f44336', fontSize: '18px' }
+                                                                                })
+                                                                            ]
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'label',
+                                                                            text: 'Activity Proposal',
+                                                                            style: {
+                                                                                flex: 1,
+                                                                                color: '#ddd',
+                                                                                fontSize: '14px',
+                                                                                fontWeight: '500',
+                                                                                margin: 0
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-cloud-upload-alt' },
+                                                                            style: { color: '#666', fontSize: '14px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        position: 'relative'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'input',
+                                                                            att: {
+                                                                                type: 'file',
+                                                                                accept: '.pdf',
+                                                                                id: 'activity-proposal-input'
+                                                                            },
+                                                                            style: {
+                                                                                position: 'absolute',
+                                                                                opacity: 0,
+                                                                                width: '100%',
+                                                                                height: '100%',
+                                                                                cursor: 'pointer',
+                                                                                zIndex: 1
+                                                                            },
+                                                                            event: {
+                                                                                type: 'change',
+                                                                                method: (e) => {
+                                                                                    const file = e.target.files[0]
+                                                                                    if (file) {
+                                                                                        if (file.type !== 'application/pdf') {
+                                                                                            showNotification('Please select a PDF file', 'error')
+                                                                                            e.target.value = ''
+                                                                                            return
+                                                                                        }
+                                                                                        paperTrailFiles.activityProposal = file
+                                                                                        const fileNameSpan = e.target.parentElement.parentElement.querySelector('.file-name-display')
+                                                                                        if (fileNameSpan) {
+                                                                                            fileNameSpan.textContent = file.name
+                                                                                            fileNameSpan.style.color = '#4caf50'
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                backgroundColor: '#333',
+                                                                                border: '1px dashed #555',
+                                                                                borderRadius: '8px',
+                                                                                padding: '10px 12px',
+                                                                                textAlign: 'center',
+                                                                                cursor: 'pointer',
+                                                                                transition: 'all 0.2s ease'
+                                                                            },
+                                                                            event: {
+                                                                                type: 'click',
+                                                                                method: (e) => {
+                                                                                    const fileInput = e.currentTarget.parentElement.querySelector('input[type="file"]')
+                                                                                    if (fileInput) fileInput.click()
+                                                                                },
+                                                                                type2: 'mouseenter',
+                                                                                method2: (e) => {
+                                                                                    e.currentTarget.style.borderColor = '#ff9800'
+                                                                                    e.currentTarget.style.backgroundColor = '#3a3a3a'
+                                                                                },
+                                                                                type3: 'mouseleave',
+                                                                                method3: (e) => {
+                                                                                    e.currentTarget.style.borderColor = '#555'
+                                                                                    e.currentTarget.style.backgroundColor = '#333'
+                                                                                }
+                                                                            },
+                                                                            child: [
+                                                                                $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'file-name-display' },
+                                                                                    style: {
+                                                                                        fontSize: '12px',
+                                                                                        color: '#888',
+                                                                                        display: 'block',
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
+                                                                                        whiteSpace: 'nowrap'
+                                                                                    },
+                                                                                    text: existingFiles.activityProposal ? 
+                                                                                        `📄 ${existingFiles.activityProposal.split('/').pop() || 'Current file'}` : 
+                                                                                        'Click or drag to upload PDF'
+                                                                                })
+                                                                            ]
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        }),
+                                                        
+                                                        // Attendance Sheet Card
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                backgroundColor: '#2a2a2a',
+                                                                borderRadius: '10px',
+                                                                padding: '16px',
+                                                                border: '1px solid #3a3a3a',
+                                                                transition: 'all 0.2s ease'
+                                                            },
+                                                            event: {
+                                                                type: 'mouseenter',
+                                                                method: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#ff9800'
+                                                                    e.currentTarget.style.transform = 'translateY(-2px)'
+                                                                },
+                                                                type2: 'mouseleave',
+                                                                method2: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#3a3a3a'
+                                                                    e.currentTarget.style.transform = 'translateY(0)'
+                                                                }
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '12px',
+                                                                        marginBottom: '12px'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                width: '36px',
+                                                                                height: '36px',
+                                                                                borderRadius: '8px',
+                                                                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center'
+                                                                            },
+                                                                            child: [
+                                                                                $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'fa-solid fa-users' },
+                                                                                    style: { color: '#4caf50', fontSize: '18px' }
+                                                                                })
+                                                                            ]
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'label',
+                                                                            text: 'Attendance Sheet',
+                                                                            style: {
+                                                                                flex: 1,
+                                                                                color: '#ddd',
+                                                                                fontSize: '14px',
+                                                                                fontWeight: '500',
+                                                                                margin: 0
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-cloud-upload-alt' },
+                                                                            style: { color: '#666', fontSize: '14px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: { position: 'relative' },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'input',
+                                                                            att: {
+                                                                                type: 'file',
+                                                                                accept: '.pdf',
+                                                                                id: 'attendance-sheet-input'
+                                                                            },
+                                                                            style: {
+                                                                                position: 'absolute',
+                                                                                opacity: 0,
+                                                                                width: '100%',
+                                                                                height: '100%',
+                                                                                cursor: 'pointer',
+                                                                                zIndex: 1
+                                                                            },
+                                                                            event: {
+                                                                                type: 'change',
+                                                                                method: (e) => {
+                                                                                    const file = e.target.files[0]
+                                                                                    if (file) {
+                                                                                        if (file.type !== 'application/pdf') {
+                                                                                            showNotification('Please select a PDF file', 'error')
+                                                                                            e.target.value = ''
+                                                                                            return
+                                                                                        }
+                                                                                        paperTrailFiles.attendanceSheet = file
+                                                                                        const fileNameSpan = e.target.parentElement.parentElement.querySelector('.file-name-display')
+                                                                                        if (fileNameSpan) {
+                                                                                            fileNameSpan.textContent = file.name
+                                                                                            fileNameSpan.style.color = '#4caf50'
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                backgroundColor: '#333',
+                                                                                border: '1px dashed #555',
+                                                                                borderRadius: '8px',
+                                                                                padding: '10px 12px',
+                                                                                textAlign: 'center',
+                                                                                cursor: 'pointer',
+                                                                                transition: 'all 0.2s ease'
+                                                                            },
+                                                                            event: {
+                                                                                type: 'click',
+                                                                                method: (e) => {
+                                                                                    const fileInput = e.currentTarget.parentElement.querySelector('input[type="file"]')
+                                                                                    if (fileInput) fileInput.click()
+                                                                                },
+                                                                                type2: 'mouseenter',
+                                                                                method2: (e) => {
+                                                                                    e.currentTarget.style.borderColor = '#ff9800'
+                                                                                    e.currentTarget.style.backgroundColor = '#3a3a3a'
+                                                                                },
+                                                                                type3: 'mouseleave',
+                                                                                method3: (e) => {
+                                                                                    e.currentTarget.style.borderColor = '#555'
+                                                                                    e.currentTarget.style.backgroundColor = '#333'
+                                                                                }
+                                                                            },
+                                                                            child: [
+                                                                                $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'file-name-display' },
+                                                                                    style: {
+                                                                                        fontSize: '12px',
+                                                                                        color: '#888',
+                                                                                        display: 'block',
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
+                                                                                        whiteSpace: 'nowrap'
+                                                                                    },
+                                                                                    text: existingFiles.attendanceSheet ? 
+                                                                                        `📄 ${existingFiles.attendanceSheet.split('/').pop() || 'Current file'}` : 
+                                                                                        'Click or drag to upload PDF'
+                                                                                })
+                                                                            ]
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        }),
+                                                        
+                                                        // Activity Report Card
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                backgroundColor: '#2a2a2a',
+                                                                borderRadius: '10px',
+                                                                padding: '16px',
+                                                                border: '1px solid #3a3a3a',
+                                                                transition: 'all 0.2s ease'
+                                                            },
+                                                            event: {
+                                                                type: 'mouseenter',
+                                                                method: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#ff9800'
+                                                                    e.currentTarget.style.transform = 'translateY(-2px)'
+                                                                },
+                                                                type2: 'mouseleave',
+                                                                method2: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#3a3a3a'
+                                                                    e.currentTarget.style.transform = 'translateY(0)'
+                                                                }
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '12px',
+                                                                        marginBottom: '12px'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                width: '36px',
+                                                                                height: '36px',
+                                                                                borderRadius: '8px',
+                                                                                backgroundColor: 'rgba(33, 150, 243, 0.15)',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center'
+                                                                            },
+                                                                            child: [
+                                                                                $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'fa-solid fa-chart-line' },
+                                                                                    style: { color: '#2196f3', fontSize: '18px' }
+                                                                                })
+                                                                            ]
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'label',
+                                                                            text: 'Activity Report',
+                                                                            style: {
+                                                                                flex: 1,
+                                                                                color: '#ddd',
+                                                                                fontSize: '14px',
+                                                                                fontWeight: '500',
+                                                                                margin: 0
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-cloud-upload-alt' },
+                                                                            style: { color: '#666', fontSize: '14px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: { position: 'relative' },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'input',
+                                                                            att: {
+                                                                                type: 'file',
+                                                                                accept: '.pdf',
+                                                                                id: 'activity-report-input'
+                                                                            },
+                                                                            style: {
+                                                                                position: 'absolute',
+                                                                                opacity: 0,
+                                                                                width: '100%',
+                                                                                height: '100%',
+                                                                                cursor: 'pointer',
+                                                                                zIndex: 1
+                                                                            },
+                                                                            event: {
+                                                                                type: 'change',
+                                                                                method: (e) => {
+                                                                                    const file = e.target.files[0]
+                                                                                    if (file) {
+                                                                                        if (file.type !== 'application/pdf') {
+                                                                                            showNotification('Please select a PDF file', 'error')
+                                                                                            e.target.value = ''
+                                                                                            return
+                                                                                        }
+                                                                                        paperTrailFiles.activityReport = file
+                                                                                        const fileNameSpan = e.target.parentElement.parentElement.querySelector('.file-name-display')
+                                                                                        if (fileNameSpan) {
+                                                                                            fileNameSpan.textContent = file.name
+                                                                                            fileNameSpan.style.color = '#4caf50'
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                backgroundColor: '#333',
+                                                                                border: '1px dashed #555',
+                                                                                borderRadius: '8px',
+                                                                                padding: '10px 12px',
+                                                                                textAlign: 'center',
+                                                                                cursor: 'pointer',
+                                                                                transition: 'all 0.2s ease'
+                                                                            },
+                                                                            event: {
+                                                                                type: 'click',
+                                                                                method: (e) => {
+                                                                                    const fileInput = e.currentTarget.parentElement.querySelector('input[type="file"]')
+                                                                                    if (fileInput) fileInput.click()
+                                                                                },
+                                                                                type2: 'mouseenter',
+                                                                                method2: (e) => {
+                                                                                    e.currentTarget.style.borderColor = '#ff9800'
+                                                                                    e.currentTarget.style.backgroundColor = '#3a3a3a'
+                                                                                },
+                                                                                type3: 'mouseleave',
+                                                                                method3: (e) => {
+                                                                                    e.currentTarget.style.borderColor = '#555'
+                                                                                    e.currentTarget.style.backgroundColor = '#333'
+                                                                                }
+                                                                            },
+                                                                            child: [
+                                                                                $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'file-name-display' },
+                                                                                    style: {
+                                                                                        fontSize: '12px',
+                                                                                        color: '#888',
+                                                                                        display: 'block',
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
+                                                                                        whiteSpace: 'nowrap'
+                                                                                    },
+                                                                                    text: existingFiles.activityReport ? 
+                                                                                        `📄 ${existingFiles.activityReport.split('/').pop() || 'Current file'}` : 
+                                                                                        'Click or drag to upload PDF'
+                                                                                })
+                                                                            ]
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        }),
+                                                        
+                                                        // Program Card
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                backgroundColor: '#2a2a2a',
+                                                                borderRadius: '10px',
+                                                                padding: '16px',
+                                                                border: '1px solid #3a3a3a',
+                                                                transition: 'all 0.2s ease'
+                                                            },
+                                                            event: {
+                                                                type: 'mouseenter',
+                                                                method: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#ff9800'
+                                                                    e.currentTarget.style.transform = 'translateY(-2px)'
+                                                                },
+                                                                type2: 'mouseleave',
+                                                                method2: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#3a3a3a'
+                                                                    e.currentTarget.style.transform = 'translateY(0)'
+                                                                }
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '12px',
+                                                                        marginBottom: '12px'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                width: '36px',
+                                                                                height: '36px',
+                                                                                borderRadius: '8px',
+                                                                                backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center'
+                                                                            },
+                                                                            child: [
+                                                                                $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'fa-solid fa-calendar-alt' },
+                                                                                    style: { color: '#9c27b0', fontSize: '18px' }
+                                                                                })
+                                                                            ]
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'label',
+                                                                            text: 'Program',
+                                                                            style: {
+                                                                                flex: 1,
+                                                                                color: '#ddd',
+                                                                                fontSize: '14px',
+                                                                                fontWeight: '500',
+                                                                                margin: 0
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-cloud-upload-alt' },
+                                                                            style: { color: '#666', fontSize: '14px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: { position: 'relative' },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'input',
+                                                                            att: {
+                                                                                type: 'file',
+                                                                                accept: '.pdf',
+                                                                                id: 'program-input'
+                                                                            },
+                                                                            style: {
+                                                                                position: 'absolute',
+                                                                                opacity: 0,
+                                                                                width: '100%',
+                                                                                height: '100%',
+                                                                                cursor: 'pointer',
+                                                                                zIndex: 1
+                                                                            },
+                                                                            event: {
+                                                                                type: 'change',
+                                                                                method: (e) => {
+                                                                                    const file = e.target.files[0]
+                                                                                    if (file) {
+                                                                                        if (file.type !== 'application/pdf') {
+                                                                                            showNotification('Please select a PDF file', 'error')
+                                                                                            e.target.value = ''
+                                                                                            return
+                                                                                        }
+                                                                                        paperTrailFiles.program = file
+                                                                                        const fileNameSpan = e.target.parentElement.parentElement.querySelector('.file-name-display')
+                                                                                        if (fileNameSpan) {
+                                                                                            fileNameSpan.textContent = file.name
+                                                                                            fileNameSpan.style.color = '#4caf50'
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                backgroundColor: '#333',
+                                                                                border: '1px dashed #555',
+                                                                                borderRadius: '8px',
+                                                                                padding: '10px 12px',
+                                                                                textAlign: 'center',
+                                                                                cursor: 'pointer',
+                                                                                transition: 'all 0.2s ease'
+                                                                            },
+                                                                            event: {
+                                                                                type: 'click',
+                                                                                method: (e) => {
+                                                                                    const fileInput = e.currentTarget.parentElement.querySelector('input[type="file"]')
+                                                                                    if (fileInput) fileInput.click()
+                                                                                },
+                                                                                type2: 'mouseenter',
+                                                                                method2: (e) => {
+                                                                                    e.currentTarget.style.borderColor = '#ff9800'
+                                                                                    e.currentTarget.style.backgroundColor = '#3a3a3a'
+                                                                                },
+                                                                                type3: 'mouseleave',
+                                                                                method3: (e) => {
+                                                                                    e.currentTarget.style.borderColor = '#555'
+                                                                                    e.currentTarget.style.backgroundColor = '#333'
+                                                                                }
+                                                                            },
+                                                                            child: [
+                                                                                $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'file-name-display' },
+                                                                                    style: {
+                                                                                        fontSize: '12px',
+                                                                                        color: '#888',
+                                                                                        display: 'block',
+                                                                                        overflow: 'hidden',
+                                                                                        textOverflow: 'ellipsis',
+                                                                                        whiteSpace: 'nowrap'
+                                                                                    },
+                                                                                    text: existingFiles.program ? 
+                                                                                        `📄 ${existingFiles.program.split('/').pop() || 'Current file'}` : 
+                                                                                        'Click or drag to upload PDF'
+                                                                                })
+                                                                            ]
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        })
+                                                    ]
+                                                }),
+                                                
+                                                // Right Column - Photos section
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        backgroundColor: '#2a2a2a',
+                                                        borderRadius: '10px',
+                                                        padding: '16px',
+                                                        border: '1px solid #3a3a3a',
+                                                        height: 'fit-content'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '12px',
+                                                                marginBottom: '16px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        width: '36px',
+                                                                        height: '36px',
+                                                                        borderRadius: '8px',
+                                                                        backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-images' },
+                                                                            style: { color: '#4caf50', fontSize: '18px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'label',
+                                                                    text: 'Event Photos',
+                                                                    style: {
+                                                                        flex: 1,
+                                                                        color: '#ddd',
+                                                                        fontSize: '14px',
+                                                                        fontWeight: '500',
+                                                                        margin: 0
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'span',
+                                                                    text: 'Multiple files allowed',
+                                                                    style: {
+                                                                        fontSize: '11px',
+                                                                        color: '#666',
+                                                                        backgroundColor: '#333',
+                                                                        padding: '4px 8px',
+                                                                        borderRadius: '12px'
+                                                                    }
+                                                                })
+                                                            ]
+                                                        }),
+                                                        
+                                                        // Photo upload area
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                marginBottom: '16px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'input',
+                                                                    att: {
+                                                                        type: 'file',
+                                                                        accept: 'image/jpeg,image/png,image/jpg',
+                                                                        multiple: true,
+                                                                        id: 'photos-input'
+                                                                    },
+                                                                    style: {
+                                                                        display: 'none'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'change',
+                                                                        method: (e) => {
+                                                                            const files = Array.from(e.target.files)
+                                                                            files.forEach(file => {
+                                                                                if (file.type.startsWith('image/')) {
+                                                                                    paperTrailFiles.photos.push(file)
+                                                                                    const previewContainer = document.getElementById('photos-preview-container')
+                                                                                    if (previewContainer) {
+                                                                                        addPhotoPreview(file, previewContainer)
+                                                                                    }
+                                                                                }
+                                                                            })
+                                                                            // Update count
+                                                                            const photoCount = document.getElementById('photo-count')
+                                                                            if (photoCount) {
+                                                                                photoCount.textContent = `${paperTrailFiles.photos.length + existingFiles.photos.length}`
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        backgroundColor: '#333',
+                                                                        border: '2px dashed #555',
+                                                                        borderRadius: '10px',
+                                                                        padding: '20px',
+                                                                        textAlign: 'center',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s ease',
+                                                                        marginBottom: '16px'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'click',
+                                                                        method: (e) => {
+                                                                            const fileInput = document.getElementById('photos-input')
+                                                                            if (fileInput) fileInput.click()
+                                                                        },
+                                                                        type2: 'mouseenter',
+                                                                        method2: (e) => {
+                                                                            e.currentTarget.style.borderColor = '#ff9800'
+                                                                            e.currentTarget.style.backgroundColor = '#3a3a3a'
+                                                                        },
+                                                                        type3: 'mouseleave',
+                                                                        method3: (e) => {
+                                                                            e.currentTarget.style.borderColor = '#555'
+                                                                            e.currentTarget.style.backgroundColor = '#333'
+                                                                        }
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-camera' },
+                                                                            style: { fontSize: '32px', color: '#ff9800', display: 'block', marginBottom: '12px' }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            text: 'Click to upload photos',
+                                                                            style: { fontSize: '13px', color: '#aaa', marginBottom: '8px' }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            text: 'JPG, PNG supported',
+                                                                            style: { fontSize: '11px', color: '#666' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        display: 'flex',
+                                                                        justifyContent: 'space-between',
+                                                                        alignItems: 'center',
+                                                                        marginBottom: '12px',
+                                                                        padding: '0 4px'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            text: 'Uploaded Photos:',
+                                                                            style: { fontSize: '12px', color: '#aaa' }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { id: 'photo-count' },
+                                                                            text: `${existingFiles.photos.length}`,
+                                                                            style: {
+                                                                                fontSize: '12px',
+                                                                                color: '#ff9800',
+                                                                                fontWeight: '600',
+                                                                                backgroundColor: 'rgba(255,152,0,0.2)',
+                                                                                padding: '2px 8px',
+                                                                                borderRadius: '12px'
+                                                                            }
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        }),
+                                                        
+                                                        // Photos preview grid
+                                                        $({
+                                                            tag: 'div',
+                                                            att: { id: 'photos-preview-container' },
+                                                            style: {
+                                                                display: 'grid',
+                                                                gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                                                                gap: '10px',
+                                                                maxHeight: '300px',
+                                                                overflowY: 'auto',
+                                                                padding: '4px',
+                                                                borderRadius: '8px',
+                                                                backgroundColor: '#222',
+                                                                minHeight: '100px'
+                                                            },
+                                                            elementHandler: (el) => {
+                                                                // Add existing photos
+                                                                if (isEditing && existingFiles.photos.length > 0) {
+                                                                    existingFiles.photos.forEach(photoUrl => {
+                                                                        addPhotoPreview(null, el, true, photoUrl)
+                                                                    })
+                                                                }
+                                                            }
+                                                        })
+                                                    ]
+                                                })
+                                            ]
                                         })
                                     ]
                                 }),
@@ -1827,7 +2863,7 @@ export const conductedResearch = () => {
                                 type: 'submit',
                                 method: async (e) => {
                                     e.preventDefault()
-                                    await saveTrainingData(isEditing)
+                                    await saveTrainingData(isEditing, paperTrailFiles, existingFiles)
                                 }
                             }
                         })
@@ -1924,15 +2960,53 @@ export const conductedResearch = () => {
     }
 
     // Save training data
-    const saveTrainingData = async (isEditing) => {
+    const saveTrainingData = async (isEditing, paperTrailFiles, existingFiles) => {
         const form = document.getElementById('conducted-research-form')
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_conducted' : 'add_conducted')
 
         // Add dynamic arrays as JSON
-        formData.append('paperTrailLinks', JSON.stringify(paperTrailLinks))
         formData.append('resourcePersons', JSON.stringify(resourcePersons))
         formData.append('participants', JSON.stringify(participants))
+
+        // Handle file uploads
+        // Activity Proposal
+        if (paperTrailFiles.activityProposal) {
+            formData.append('activity_proposal', paperTrailFiles.activityProposal)
+        } else if (existingFiles.activityProposal) {
+            formData.append('existing_activity_proposal', existingFiles.activityProposal)
+        }
+
+        // Attendance Sheet
+        if (paperTrailFiles.attendanceSheet) {
+            formData.append('attendance_sheet', paperTrailFiles.attendanceSheet)
+        } else if (existingFiles.attendanceSheet) {
+            formData.append('existing_attendance_sheet', existingFiles.attendanceSheet)
+        }
+
+        // Activity Report
+        if (paperTrailFiles.activityReport) {
+            formData.append('activity_report', paperTrailFiles.activityReport)
+        } else if (existingFiles.activityReport) {
+            formData.append('existing_activity_report', existingFiles.activityReport)
+        }
+
+        // Program
+        if (paperTrailFiles.program) {
+            formData.append('program', paperTrailFiles.program)
+        } else if (existingFiles.program) {
+            formData.append('existing_program', existingFiles.program)
+        }
+
+        // Photos (multiple)
+        if (paperTrailFiles.photos && paperTrailFiles.photos.length > 0) {
+            paperTrailFiles.photos.forEach((photo, index) => {
+                formData.append(`photos[]`, photo)
+            })
+        }
+        if (existingFiles.photos && existingFiles.photos.length > 0) {
+            formData.append('existing_photos', JSON.stringify(existingFiles.photos))
+        }
 
         showLoading()
         try {
