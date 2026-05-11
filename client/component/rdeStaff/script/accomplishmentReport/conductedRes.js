@@ -1,4 +1,4 @@
-import { $, Waiting } from "../../../../lib/lib.js"
+import { $, Waiting, FileViewerModal } from "../../../../lib/lib.js"
 
 export const conductedResearch = () => {
     let mainContainer
@@ -15,7 +15,8 @@ export const conductedResearch = () => {
     let nextCursor = null
     let totalCount = 0
     let initialLoadDone = false
-
+    let resourcePersons = []
+    let participants = []
     // Stats state
     let currentStats = {
         totalTrainings: 0,
@@ -93,13 +94,15 @@ export const conductedResearch = () => {
 
             // Add filters
             if (currentCampus !== 'All Campuses') {
-                formData.append('campus', currentCampus)
+                formData.append('filter_type', 'campus')
+                formData.append('filter_location', currentCampus)
             }
             if (currentCenter !== 'All Centers') {
-                formData.append('center', currentCenter)
+                formData.append('filter_type', 'center')
+                formData.append('filter_location', currentCenter)
             }
 
-            const response = await fetch('/api/conducted-research', {
+            const response = await fetch('/trainingActivitiesResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -135,11 +138,15 @@ export const conductedResearch = () => {
                     nextCursor = result.pagination?.next_cursor || null
                     hasMore = result.pagination?.has_more || false
 
-                    // Update stats
+                    // Update stats from summary
                     if (result.summary) {
-                        currentStats = result.summary
-                        totalCount = result.summary.totalTrainings
+                        currentStats = {
+                            totalTrainings: result.summary.totalTrainings || 0,
+                            totalAttendees: result.summary.totalAttendees || 0
+                        }
+                        totalCount = result.summary.totalTrainings || 0
                         updateStats()
+                        console.log('Stats updated:', currentStats) // Debug log
                     }
                 } else {
                     conductedData = [...conductedData, ...newData]
@@ -179,12 +186,23 @@ export const conductedResearch = () => {
         }
     }
 
-    // Update statistics
     const updateStats = () => {
-        const statValues = document.querySelectorAll('.stat-value')
-        if (statValues.length >= 2) {
-            statValues[0].textContent = currentStats.totalTrainings
-            statValues[1].textContent = currentStats.totalAttendees2
+        // Directly get elements by ID (more reliable)
+        const totalTrainingsSpan = document.getElementById('stat-total-trainings-value')
+        const totalAttendeesSpan = document.getElementById('stat-total-attendees-value')
+
+        if (totalTrainingsSpan) {
+            totalTrainingsSpan.textContent = currentStats.totalTrainings || '0'
+            console.log('Total Trainings updated to:', currentStats.totalTrainings)
+        } else {
+            console.warn('Total trainings span not found')
+        }
+
+        if (totalAttendeesSpan) {
+            totalAttendeesSpan.textContent = currentStats.totalAttendees || '0'
+            console.log('Total Attendees updated to:', currentStats.totalAttendees)
+        } else {
+            console.warn('Total attendees span not found')
         }
     }
 
@@ -197,12 +215,20 @@ export const conductedResearch = () => {
         })
     }
 
-    // Update record count
+    // Update record count and verify stats
     const updateRecordCount = () => {
         const recordCount = document.querySelector('.record-count')
         if (recordCount) {
             recordCount.textContent = `${filteredData.length} of ${totalCount} records`
         }
+
+        // Also log stats for debugging
+        console.log('Current stats:', {
+            totalTrainings: currentStats.totalTrainings,
+            totalAttendees: currentStats.totalAttendees,
+            totalCount: totalCount,
+            filteredCount: filteredData.length
+        })
     }
 
     // Update table with data
@@ -293,7 +319,7 @@ export const conductedResearch = () => {
         }
     }
 
-    // Render links as clickable elements (updated for file structure)
+    // Render links as clickable elements using FileViewerModal
     const renderLinks = (links) => {
         if (!links || links === '—') {
             return '—'
@@ -312,116 +338,161 @@ export const conductedResearch = () => {
             return '—'
         }
 
-        // Create sections for different file types
-        const sections = []
-        
-        // Helper to create file links
-        const createFileLink = (url, label, icon) => {
+        // Define file sections in order
+        const fileSections = [
+            { key: 'activityProposal', label: 'Activity Proposal', icon: 'fa-solid fa-file-pdf', color: '#f44336' },
+            { key: 'attendanceSheet', label: 'Attendance Sheet', icon: 'fa-solid fa-users', color: '#4caf50' },
+            { key: 'activityReport', label: 'Activity Report', icon: 'fa-solid fa-chart-line', color: '#2196f3' },
+            { key: 'program', label: 'Program', icon: 'fa-solid fa-calendar-alt', color: '#9c27b0' }
+        ]
+
+        // Check if there are any files
+        const hasAnyFile = fileSections.some(section => fileData[section.key]) ||
+            (fileData.photos && fileData.photos.length > 0)
+
+        if (!hasAnyFile) {
+            return '—'
+        }
+
+        // Create a grid layout for files
+        const container = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+            }
+        })
+
+        // Helper to create a file link
+        const createFileLink = (url, label, icon, color) => {
             if (!url) return null
+
             return $({
                 tag: 'a',
                 att: {
-                    href: url,
-                    target: '_blank',
-                    rel: 'noopener noreferrer'
+                    href: '#',
+                    title: `View ${label}`
                 },
                 style: {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    color: '#ff9800',
+                    color: color,
                     textDecoration: 'none',
-                    fontSize: '12px',
-                    padding: '6px 10px',
-                    backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 152, 0, 0.2)',
-                    marginBottom: '6px',
-                    transition: 'all 0.2s ease'
+                    fontSize: '11px',
+                    padding: '6px 8px',
+                    backgroundColor: `rgba(0, 0, 0, 0.2)`,
+                    borderRadius: '4px',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer'
                 },
                 child: [
                     $({
                         tag: 'span',
                         att: { className: icon },
-                        style: { fontSize: '12px' }
+                        style: { fontSize: '12px', width: '16px' }
                     }),
                     $({
                         tag: 'span',
-                        text: label
+                        text: label,
+                        style: {
+                            flex: 1,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                        }
                     })
                 ],
                 event: {
-                    type: 'mouseenter',
+                    type: 'click',
                     method: (e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 152, 0, 0.2)'
-                        e.currentTarget.style.textDecoration = 'underline'
+                        e.preventDefault()
+                        e.stopPropagation()
+                        FileViewerModal(url, label, color)
                     },
-                    type2: 'mouseleave',
+                    type2: 'mouseenter',
                     method2: (e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 152, 0, 0.1)'
-                        e.currentTarget.style.textDecoration = 'none'
+                        e.currentTarget.style.backgroundColor = `rgba(0, 0, 0, 0.4)`
+                        e.currentTarget.style.paddingLeft = '12px'
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.backgroundColor = `rgba(0, 0, 0, 0.2)`
+                        e.currentTarget.style.paddingLeft = '8px'
                     }
                 }
             })
         }
 
-        // Activity Proposal
-        if (fileData.activityProposal) {
-            const link = createFileLink(fileData.activityProposal, 'Activity Proposal', 'fa-solid fa-file-pdf')
-            if (link) sections.push(link)
-        }
-
-        // Attendance Sheet
-        if (fileData.attendanceSheet) {
-            const link = createFileLink(fileData.attendanceSheet, 'Attendance Sheet', 'fa-solid fa-file-pdf')
-            if (link) sections.push(link)
-        }
-
-        // Activity Report
-        if (fileData.activityReport) {
-            const link = createFileLink(fileData.activityReport, 'Activity Report', 'fa-solid fa-file-pdf')
-            if (link) sections.push(link)
-        }
-
-        // Program
-        if (fileData.program) {
-            const link = createFileLink(fileData.program, 'Program', 'fa-solid fa-file-pdf')
-            if (link) sections.push(link)
-        }
-
-        // Photos
-        if (fileData.photos && fileData.photos.length > 0) {
-            sections.push(
-                $({
-                    tag: 'div',
-                    style: {
-                        marginTop: '8px',
-                        marginBottom: '4px',
-                        fontSize: '11px',
-                        color: '#aaa',
-                        fontWeight: '500'
-                    },
-                    text: '📸 Photos:'
-                })
-            )
-            
-            fileData.photos.forEach((photo, idx) => {
-                const link = createFileLink(photo, `Photo ${idx + 1}`, 'fa-solid fa-image')
-                if (link) sections.push(link)
-            })
-        }
-
-        if (sections.length === 0) return '—'
-
-        return $({
+        // Add PDF documents in a grid (2 columns)
+        const pdfContainer = $({
             tag: 'div',
             style: {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
-            },
-            child: sections
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '6px'
+            }
         })
+
+        fileSections.forEach(section => {
+            const url = fileData[section.key]
+            if (url) {
+                const link = createFileLink(url, section.label, section.icon, section.color)
+                if (link) pdfContainer.appendChild(link)
+            }
+        })
+
+        if (pdfContainer.children.length > 0) {
+            container.appendChild(pdfContainer)
+        }
+
+        // Add Photos section (if any)
+        if (fileData.photos && fileData.photos.length > 0) {
+            const photosLabel = $({
+                tag: 'div',
+                style: {
+                    fontSize: '10px',
+                    color: '#aaa',
+                    marginTop: '4px',
+                    marginBottom: '4px',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-solid fa-images' },
+                        style: { fontSize: '10px' }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: `Photos (${fileData.photos.length})`
+                    })
+                ]
+            })
+            container.appendChild(photosLabel)
+
+            const photosContainer = $({
+                tag: 'div',
+                style: {
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '6px'
+                }
+            })
+
+            fileData.photos.forEach((photo, idx) => {
+                const photoLink = createFileLink(photo, `Photo ${idx + 1}`, 'fa-solid fa-image', '#4caf50')
+                if (photoLink) photosContainer.appendChild(photoLink)
+            })
+
+            container.appendChild(photosContainer)
+        }
+
+        return container
     }
 
     // Render resource persons
@@ -563,7 +634,6 @@ export const conductedResearch = () => {
             rowNumber.toString(),
             item.title || '—',
             formatDate(item.date),
-            item.venue || '—',
             item.budgetFundSource || '—',
             item.topicsDiscussed || '—'
         ]
@@ -590,6 +660,11 @@ export const conductedResearch = () => {
             )
         })
 
+        // Helper to ensure render functions return a DOM node
+        const safeRender = (renderedValue) => {
+            return typeof renderedValue === 'string' ? $({ tag: 'span', text: renderedValue }) : renderedValue
+        }
+
         // Resource Persons
         cells.push(
             $({
@@ -600,7 +675,7 @@ export const conductedResearch = () => {
                     verticalAlign: 'top',
                     minWidth: '200px'
                 },
-                child: [renderResourcePersons(item.resourcePersons)]
+                child: [safeRender(renderResourcePersons(item.resourcePersons))]
             })
         )
 
@@ -614,7 +689,7 @@ export const conductedResearch = () => {
                     verticalAlign: 'top',
                     minWidth: '200px'
                 },
-                child: [renderParticipants(item.participants)]
+                child: [safeRender(renderParticipants(item.participants))]
             })
         )
 
@@ -644,7 +719,7 @@ export const conductedResearch = () => {
                     verticalAlign: 'top',
                     maxWidth: '200px'
                 },
-                child: [renderLinks(item.paperTrailLinks)]
+                child: [safeRender(renderLinks(item.paperTrailLinks))]
             })
         )
 
@@ -764,7 +839,7 @@ export const conductedResearch = () => {
             formData.append('action', 'delete_conducted')
             formData.append('id', item.id)
 
-            const response = await fetch('/api/conducted-research', {
+            const response = await fetch('/trainingActivitiesResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -801,7 +876,7 @@ export const conductedResearch = () => {
             program: null,
             photos: []  // Array for multiple photos
         }
-        
+
         // Store existing files info for editing
         let existingFiles = {
             activityProposal: null,
@@ -810,7 +885,7 @@ export const conductedResearch = () => {
             program: null,
             photos: []
         }
-        
+
         if (isEditing && item.paperTrailLinks) {
             try {
                 const parsed = typeof item.paperTrailLinks === 'string' ? JSON.parse(item.paperTrailLinks) : item.paperTrailLinks
@@ -819,7 +894,32 @@ export const conductedResearch = () => {
                     if (parsed.attendanceSheet) existingFiles.attendanceSheet = parsed.attendanceSheet
                     if (parsed.activityReport) existingFiles.activityReport = parsed.activityReport
                     if (parsed.program) existingFiles.program = parsed.program
-                    if (parsed.photos && Array.isArray(parsed.photos)) existingFiles.photos = parsed.photos
+
+                    // FIX: Handle photos that come as { urls: [], file_ids: [] }
+                    if (parsed.photos) {
+                        if (Array.isArray(parsed.photos)) {
+                            // If it's already an array of URLs
+                            existingFiles.photos = parsed.photos
+                        } else if (parsed.photos.urls && Array.isArray(parsed.photos.urls)) {
+                            // Extract just the URLs from the object
+                            existingFiles.photos = parsed.photos.urls
+                        } else if (typeof parsed.photos === 'string') {
+                            // Try to parse JSON string
+                            try {
+                                const photoObj = JSON.parse(parsed.photos)
+                                if (photoObj.urls && Array.isArray(photoObj.urls)) {
+                                    existingFiles.photos = photoObj.urls
+                                } else {
+                                    existingFiles.photos = []
+                                }
+                            } catch (e) {
+                                existingFiles.photos = []
+                            }
+                        } else {
+                            existingFiles.photos = []
+                        }
+                        console.log('Loaded photos URLs:', existingFiles.photos) // Debug log
+                    }
                 }
             } catch (e) {
                 console.error('Error parsing paper trail files:', e)
@@ -849,13 +949,46 @@ export const conductedResearch = () => {
         }
 
         // Containers for dynamic fields
-        let photosContainer
         let resourcePersonsContainer
         let participantsContainer
 
-        // Function to add a photo preview element
         const addPhotoPreview = (file, previewContainer, isExisting = false, existingUrl = null) => {
             const photoId = Date.now() + Math.random()
+
+            // Extract Google Drive file ID from various URL formats
+            const extractGoogleDriveFileId = (url) => {
+                if (!url) return null
+
+                // Pattern 1: /file/d/{fileId}/preview
+                let match = url.match(/\/file\/d\/([^\/]+)/)
+                if (match && match[1]) return match[1]
+
+                // Pattern 2: id={fileId}
+                match = url.match(/[?&]id=([^&]+)/)
+                if (match && match[1]) return match[1]
+
+                // Pattern 3: /uc?id={fileId}
+                match = url.match(/\/uc\?id=([^&]+)/)
+                if (match && match[1]) return match[1]
+
+                return null
+            }
+
+            // Get the image thumbnail URL for Google Drive files
+            let imageUrl = null
+            let fileId = null
+
+            if (isExisting && existingUrl) {
+                fileId = extractGoogleDriveFileId(existingUrl)
+                if (fileId) {
+                    // Use Google Drive's thumbnail API
+                    // sz=200 means 200px thumbnail (max 512px)
+                    imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=200`
+                } else {
+                    imageUrl = existingUrl
+                }
+            }
+
             const photoDiv = $({
                 tag: 'div',
                 att: { className: 'photo-preview-item', 'data-photo-id': photoId },
@@ -863,23 +996,24 @@ export const conductedResearch = () => {
                     position: 'relative',
                     display: 'inline-block',
                     width: '100%',
-                    paddingBottom: '100%', // Makes it square
+                    paddingBottom: '100%',
                     borderRadius: '8px',
                     overflow: 'hidden',
                     border: '1px solid #444',
-                    backgroundColor: '#333',
-                    cursor: 'pointer'
-                },
-                event: {
-                    type: 'click',
-                    method: (e) => {
-                        // Open full-size image in new tab on click
-                        const img = photoDiv.querySelector('img')
-                        if (img && img.src) {
-                            window.open(img.src, '_blank')
-                        }
-                    }
+                    backgroundColor: '#1a1a1a',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease, border-color 0.2s ease'
                 }
+            })
+
+            // Add hover effect
+            photoDiv.addEventListener('mouseenter', () => {
+                photoDiv.style.transform = 'scale(1.02)'
+                photoDiv.style.borderColor = '#ff9800'
+            })
+            photoDiv.addEventListener('mouseleave', () => {
+                photoDiv.style.transform = 'scale(1)'
+                photoDiv.style.borderColor = '#444'
             })
 
             const imgWrapper = $({
@@ -889,7 +1023,11 @@ export const conductedResearch = () => {
                     top: '0',
                     left: '0',
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#1a1a1a'
                 }
             })
 
@@ -899,13 +1037,68 @@ export const conductedResearch = () => {
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover'
+                },
+                att: {
+                    loading: 'lazy',
+                    alt: 'Event photo'
                 }
             })
 
+            // Loading indicator
+            const loadingIndicator = $({
+                tag: 'div',
+                style: {
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '24px',
+                    height: '24px',
+                    border: '2px solid #ff9800',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                    display: 'none'
+                }
+            })
+
+            // Error placeholder
+            const errorPlaceholder = $({
+                tag: 'div',
+                style: {
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    textAlign: 'center',
+                    color: '#666',
+                    display: 'none'
+                },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-solid fa-image' },
+                        style: { fontSize: '24px', display: 'block', marginBottom: '4px' }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: 'Failed to load',
+                        style: { fontSize: '10px' }
+                    })
+                ]
+            })
+
+            // Remove button
             const removeBtn = $({
                 tag: 'button',
                 att: { type: 'button' },
-                text: '×',
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-solid fa-times' },
+                        style: { fontSize: '11px' }
+                    })
+                ],
                 style: {
                     position: 'absolute',
                     top: '4px',
@@ -916,7 +1109,7 @@ export const conductedResearch = () => {
                     backgroundColor: 'rgba(244, 67, 54, 0.9)',
                     border: 'none',
                     color: '#fff',
-                    fontSize: '14px',
+                    fontSize: '11px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -945,21 +1138,97 @@ export const conductedResearch = () => {
                     },
                     type2: 'mouseenter',
                     method2: (e) => {
-                        e.target.style.transform = 'scale(1.1)'
+                        e.currentTarget.style.transform = 'scale(1.1)'
+                        e.currentTarget.style.backgroundColor = 'rgba(244, 67, 54, 1)'
                     },
                     type3: 'mouseleave',
                     method3: (e) => {
-                        e.target.style.transform = 'scale(1)'
+                        e.currentTarget.style.transform = 'scale(1)'
+                        e.currentTarget.style.backgroundColor = 'rgba(244, 67, 54, 0.9)'
                     }
                 }
             })
 
+            // View hint
+            const viewHint = $({
+                tag: 'div',
+                style: {
+                    position: 'absolute',
+                    bottom: '0',
+                    left: '0',
+                    right: '0',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    color: '#fff',
+                    fontSize: '10px',
+                    textAlign: 'center',
+                    padding: '4px',
+                    opacity: '0',
+                    transition: 'opacity 0.2s ease',
+                    pointerEvents: 'none'
+                },
+                text: '🔍 Click to view'
+            })
+
             imgWrapper.appendChild(img)
+            imgWrapper.appendChild(loadingIndicator)
+            imgWrapper.appendChild(errorPlaceholder)
             photoDiv.appendChild(imgWrapper)
             photoDiv.appendChild(removeBtn)
+            photoDiv.appendChild(viewHint)
 
-            if (isExisting && existingUrl) {
-                img.src = existingUrl
+            // Show hint on hover
+            photoDiv.addEventListener('mouseenter', () => {
+                viewHint.style.opacity = '1'
+            })
+            photoDiv.addEventListener('mouseleave', () => {
+                viewHint.style.opacity = '0'
+            })
+
+            // Set click handler to open modal
+            photoDiv.addEventListener('click', (e) => {
+                // Don't trigger if clicking the remove button
+                if (e.target === removeBtn || removeBtn.contains(e.target)) {
+                    return
+                }
+
+                // Open FileViewerModal
+                let viewUrl = null
+                if (isExisting && existingUrl) {
+                    viewUrl = existingUrl
+                } else if (file) {
+                    viewUrl = URL.createObjectURL(file)
+                }
+
+                if (viewUrl) {
+                    FileViewerModal(viewUrl, 'Event Photo', '#4caf50')
+                }
+            })
+
+            // Load image
+            if (isExisting && imageUrl) {
+                loadingIndicator.style.display = 'block'
+
+                img.onload = () => {
+                    loadingIndicator.style.display = 'none'
+                }
+
+                img.onerror = () => {
+                    loadingIndicator.style.display = 'none'
+                    errorPlaceholder.style.display = 'block'
+                    // Try alternative URL format as fallback
+                    if (fileId) {
+                        img.src = `https://drive.google.com/uc?id=${fileId}&export=view`
+                        img.onload = () => {
+                            errorPlaceholder.style.display = 'none'
+                        }
+                        img.onerror = () => {
+                            // Final fallback - show broken image icon
+                            img.style.display = 'none'
+                        }
+                    }
+                }
+
+                img.src = imageUrl
             } else if (file) {
                 const reader = new FileReader()
                 reader.onload = (e) => {
@@ -1015,33 +1284,6 @@ export const conductedResearch = () => {
                         }
                     }),
                     $({
-                        tag: 'input',
-                        att: {
-                            type: 'text',
-                            placeholder: 'Topic discussed',
-                            value: topic,
-                            className: 'resource-person-topic-input'
-                        },
-                        style: {
-                            flex: '2',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
-                        },
-                        event: {
-                            type: 'input',
-                            method: (e) => {
-                                if (resourcePersons[personIndex]) {
-                                    resourcePersons[personIndex].topic = e.target.value
-                                }
-                            }
-                        }
-                    }),
-                    $({
                         tag: 'button',
                         att: { type: 'button' },
                         text: '×',
@@ -1084,33 +1326,6 @@ export const conductedResearch = () => {
                     alignItems: 'center'
                 },
                 child: [
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'text',
-                            placeholder: 'Participant name',
-                            value: name,
-                            className: 'participant-name-input'
-                        },
-                        style: {
-                            flex: '1',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
-                        },
-                        event: {
-                            type: 'input',
-                            method: (e) => {
-                                if (participants[participantIndex]) {
-                                    participants[participantIndex].name = e.target.value
-                                }
-                            }
-                        }
-                    }),
                     $({
                         tag: 'select',
                         att: { className: 'participant-role-select' },
@@ -1267,7 +1482,7 @@ export const conductedResearch = () => {
                 })
                 container.appendChild(fileNameSpan)
             } else {
-                // Add photo previews container
+
                 const previewContainer = $({
                     tag: 'div',
                     att: { className: 'photo-previews-container' },
@@ -1345,7 +1560,7 @@ export const conductedResearch = () => {
                             child: [
                                 $({
                                     tag: 'h2',
-                                    text: isEditing ? 'Edit Training/Activity' : 'Add Training/Activity',
+                                    text: isEditing ? 'Edit Trainings/Activity Conducted/Facilitated' : 'Add Trainings/Activity Conducted/Facilitated',
                                     style: {
                                         margin: '0',
                                         fontSize: '20px',
@@ -1384,9 +1599,10 @@ export const conductedResearch = () => {
                         // Modal body
                         $({
                             tag: 'form',
-                            att: { id: 'conducted-research-form' },
+                            att: { id: 'trainingActivitiesResearch-form' },
                             style: {
-                                padding: '24px'
+                                padding: '24px',
+                                overflowY: 'auto'
                             },
                             child: [
                                 // Hidden ID field for editing
@@ -1401,116 +1617,24 @@ export const conductedResearch = () => {
                                     })
                                 ] : []),
 
-                                // Type selection (Campus or Center)
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Type *',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'select',
-                                            att: {
-                                                name: 'type',
-                                                id: 'training-type-select'
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                cursor: 'pointer'
-                                            },
-                                            child: [
-                                                $({ tag: 'option', att: { value: '' }, text: '-- Select Type --' }),
-                                                $({ tag: 'option', att: { value: 'campus' }, text: 'Campus' }),
-                                                $({ tag: 'option', att: { value: 'center' }, text: 'Center' })
-                                            ],
-                                            event: {
-                                                type: 'change',
-                                                method: (e) => {
-                                                    toggleLocationSelect(e.target.value)
-                                                }
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Campus/Center selection (dynamic)
-                                $({
-                                    tag: 'div',
-                                    att: { id: 'location-select-container' },
-                                    style: { marginBottom: '20px' }
-                                }),
-
-                                // Training/Activity Title
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Training/Activity Title *',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'text',
-                                                name: 'title',
-                                                value: isEditing ? (item.title || '') : '',
-                                                placeholder: 'Enter training/activity title...',
-                                                required: true
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Date and Venue row
+                                // ── 2-Column grid for all basic fields ──
                                 $({
                                     tag: 'div',
                                     style: {
                                         display: 'grid',
                                         gridTemplateColumns: '1fr 1fr',
-                                        gap: '16px',
+                                        gap: '20px',
                                         marginBottom: '20px'
                                     },
                                     child: [
+
                                         $({
                                             tag: 'div',
+                                            style: { marginBottom: '20px' },
                                             child: [
                                                 $({
                                                     tag: 'label',
-                                                    text: 'Date *',
+                                                    text: 'Type *',
                                                     style: {
                                                         display: 'block',
                                                         marginBottom: '8px',
@@ -1520,12 +1644,10 @@ export const conductedResearch = () => {
                                                     }
                                                 }),
                                                 $({
-                                                    tag: 'input',
+                                                    tag: 'select',
                                                     att: {
-                                                        type: 'date',
-                                                        name: 'date',
-                                                        value: isEditing ? (item.date || '') : '',
-                                                        required: true
+                                                        name: 'type',
+                                                        id: 'training-type-select'
                                                     },
                                                     style: {
                                                         width: '100%',
@@ -1535,17 +1657,39 @@ export const conductedResearch = () => {
                                                         borderRadius: '6px',
                                                         color: '#fff',
                                                         fontSize: '14px',
-                                                        outline: 'none'
+                                                        outline: 'none',
+                                                        cursor: 'pointer'
+                                                    },
+                                                    child: [
+                                                        $({ tag: 'option', att: { value: '' }, text: '-- Select Type --' }),
+                                                        $({ tag: 'option', att: { value: 'campus' }, text: 'Campus' }),
+                                                        $({ tag: 'option', att: { value: 'center' }, text: 'Center' })
+                                                    ],
+                                                    event: {
+                                                        type: 'change',
+                                                        method: (e) => {
+                                                            toggleLocationSelect(e.target.value)
+                                                        }
                                                     }
                                                 })
                                             ]
                                         }),
+
+                                        // Campus/Center selection (dynamic)
                                         $({
                                             tag: 'div',
+                                            att: { id: 'location-select-container' },
+                                            style: { marginBottom: '20px' }
+                                        }),
+
+                                        // Training/Activity Title
+                                        $({
+                                            tag: 'div',
+                                            style: { marginBottom: '20px' },
                                             child: [
                                                 $({
                                                     tag: 'label',
-                                                    text: 'Venue *',
+                                                    text: 'Training/Activity Title *',
                                                     style: {
                                                         display: 'block',
                                                         marginBottom: '8px',
@@ -1558,9 +1702,9 @@ export const conductedResearch = () => {
                                                     tag: 'input',
                                                     att: {
                                                         type: 'text',
-                                                        name: 'venue',
-                                                        value: isEditing ? (item.venue || '') : '',
-                                                        placeholder: 'Enter venue...',
+                                                        name: 'title',
+                                                        value: isEditing ? (item.title || '') : '',
+                                                        placeholder: 'Enter training/activity title...',
                                                         required: true
                                                     },
                                                     style: {
@@ -1575,58 +1719,143 @@ export const conductedResearch = () => {
                                                     }
                                                 })
                                             ]
-                                        })
-                                    ]
-                                }),
-
-                                // Budget & Fund Source
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Budget & Fund Source (GAA/STF/TF/etc)',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
                                         }),
+
+                                        // Date
                                         $({
                                             tag: 'div',
                                             style: {
-                                                display: 'grid',
-                                                gridTemplateColumns: '1fr 1fr',
-                                                gap: '12px'
+                                                display: 'absolute',
+                                                marginBottom: '20px'
                                             },
                                             child: [
                                                 $({
-                                                    tag: 'input',
-                                                    att: {
-                                                        type: 'number',
-                                                        name: 'budget',
-                                                        value: isEditing ? (item.budget || '') : '',
-                                                        placeholder: 'Budget amount (₱)',
-                                                        step: '0.01',
-                                                        min: '0'
-                                                    },
+                                                    tag: 'div',
+                                                    child: [
+                                                        $({
+                                                            tag: 'label',
+                                                            text: 'Date *',
+                                                            style: {
+                                                                display: 'block',
+                                                                marginBottom: '8px',
+                                                                color: '#aaa',
+                                                                fontSize: '13px',
+                                                                fontWeight: '500'
+                                                            }
+                                                        }),
+                                                        $({
+                                                            tag: 'input',
+                                                            att: {
+                                                                type: 'date',
+                                                                name: 'date',
+                                                                value: isEditing ? (item.date || '') : '',
+                                                                required: true
+                                                            },
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '10px',
+                                                                backgroundColor: '#333',
+                                                                border: '1px solid #444',
+                                                                borderRadius: '6px',
+                                                                color: '#fff',
+                                                                fontSize: '14px',
+                                                                outline: 'none'
+                                                            }
+                                                        })
+                                                    ]
+                                                })
+                                            ]
+                                        }),
+
+                                        // Budget & Fund Source
+                                        $({
+                                            tag: 'div',
+                                            style: { marginBottom: '20px' },
+                                            child: [
+                                                $({
+                                                    tag: 'label',
+                                                    text: 'Budget & Fund Source (GAA/STF/TF/etc)',
                                                     style: {
-                                                        padding: '10px',
-                                                        backgroundColor: '#333',
-                                                        border: '1px solid #444',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
-                                                        fontSize: '14px',
-                                                        outline: 'none'
+                                                        display: 'block',
+                                                        marginBottom: '8px',
+                                                        color: '#aaa',
+                                                        fontSize: '13px',
+                                                        fontWeight: '500'
                                                     }
                                                 }),
                                                 $({
-                                                    tag: 'input',
-                                                    att: { name: 'fundSource', placeholder: 'Fund Source (e.g., GAA, STF,TF, etc' },
+                                                    tag: 'div',
                                                     style: {
+                                                        display: 'grid',
+                                                        gridTemplateColumns: '1fr 1fr',
+                                                        gap: '12px'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'input',
+                                                            att: {
+                                                                type: 'number',
+                                                                name: 'budget',
+                                                                value: isEditing ? (item.budget || '') : '',
+                                                                placeholder: 'Budget amount (₱)',
+                                                                step: '0.01',
+                                                                min: '0'
+                                                            },
+                                                            style: {
+                                                                padding: '10px',
+                                                                backgroundColor: '#333',
+                                                                border: '1px solid #444',
+                                                                borderRadius: '6px',
+                                                                color: '#fff',
+                                                                fontSize: '14px',
+                                                                outline: 'none'
+                                                            }
+                                                        }),
+                                                        $({
+                                                            tag: 'input',
+                                                            att: { name: 'fundSource', placeholder: 'Fund Source (e.g., GAA, STF, TF, etc)', value: isEditing ? (item.fund_source || '') : '' },
+                                                            style: {
+                                                                padding: '10px',
+                                                                backgroundColor: '#333',
+                                                                border: '1px solid #444',
+                                                                borderRadius: '6px',
+                                                                color: '#fff',
+                                                                fontSize: '14px',
+                                                                outline: 'none',
+                                                                cursor: 'pointer'
+                                                            }
+                                                        })
+                                                    ]
+                                                })
+                                            ]
+                                        }),
+
+                                        // Topics Discussed
+                                        $({
+                                            tag: 'div',
+                                            style: { marginBottom: '20px' },
+                                            child: [
+                                                $({
+                                                    tag: 'label',
+                                                    text: 'Topics Discussed *',
+                                                    style: {
+                                                        display: 'block',
+                                                        marginBottom: '8px',
+                                                        color: '#aaa',
+                                                        fontSize: '13px',
+                                                        fontWeight: '500'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'textarea',
+                                                    att: {
+                                                        name: 'topicsDiscussed',
+                                                        placeholder: 'Enter topics discussed...',
+                                                        rows: '3',
+                                                        required: true
+                                                    },
+                                                    style: {
+                                                        width: '100%',
                                                         padding: '10px',
                                                         backgroundColor: '#333',
                                                         border: '1px solid #444',
@@ -1634,211 +1863,257 @@ export const conductedResearch = () => {
                                                         color: '#fff',
                                                         fontSize: '14px',
                                                         outline: 'none',
-                                                        cursor: 'pointer'
-                                                    }
+                                                        resize: 'vertical',
+                                                        fontFamily: 'inherit'
+                                                    },
+                                                    text: isEditing ? (item.topicsDiscussed || '') : ''
                                                 })
                                             ]
                                         })
-                                    ]
-                                }),
 
-                                // Topics Discussed
+                                    ] // end of 2-column grid children
+                                }),  // end of 2-column grid
+
+                                // Resource Persons and Participants section - Two Column Layout
                                 $({
                                     tag: 'div',
-                                    style: { marginBottom: '20px' },
+                                    style: {
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 1fr',
+                                        gap: '20px',
+                                        marginBottom: '20px'
+                                    },
                                     child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Topics Discussed *',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'textarea',
-                                            att: {
-                                                name: 'topicsDiscussed',
-                                                placeholder: 'Enter topics discussed...',
-                                                rows: '3',
-                                                required: true
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                resize: 'vertical',
-                                                fontFamily: 'inherit'
-                                            },
-                                            text: isEditing ? (item.topicsDiscussed || '') : ''
-                                        })
-                                    ]
-                                }),
-
-                                // Resource Persons section
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
+                                        // Resource Persons Column
                                         $({
                                             tag: 'div',
                                             style: {
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: '8px'
+                                                backgroundColor: '#2a2a2a',
+                                                borderRadius: '10px',
+                                                padding: '16px',
+                                                border: '1px solid #444'
                                             },
                                             child: [
                                                 $({
-                                                    tag: 'label',
-                                                    text: 'Resource Person per Topic',
+                                                    tag: 'div',
                                                     style: {
-                                                        color: '#aaa',
-                                                        fontSize: '13px',
-                                                        fontWeight: '500'
-                                                    }
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        marginBottom: '16px'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '10px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        width: '32px',
+                                                                        height: '32px',
+                                                                        borderRadius: '8px',
+                                                                        backgroundColor: 'rgba(33, 150, 243, 0.15)',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-user-tie' },
+                                                                            style: { color: '#2196f3', fontSize: '16px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'label',
+                                                                    text: 'Resource Person',
+                                                                    style: {
+                                                                        color: '#ddd',
+                                                                        fontSize: '14px',
+                                                                        fontWeight: '600',
+                                                                        margin: 0
+                                                                    }
+                                                                })
+                                                            ]
+                                                        }),
+                                                        $({
+                                                            tag: 'button',
+                                                            att: { type: 'button' },
+                                                            text: '+ Add',
+                                                            style: {
+                                                                padding: '6px 14px',
+                                                                backgroundColor: '#2196f3',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                color: '#fff',
+                                                                fontSize: '12px',
+                                                                cursor: 'pointer',
+                                                                fontWeight: '500',
+                                                                transition: 'all 0.2s ease'
+                                                            },
+                                                            event: {
+                                                                type: 'click',
+                                                                method: () => {
+                                                                    const newRow = addResourcePersonField()
+                                                                    resourcePersonsContainer.appendChild(newRow)
+                                                                },
+                                                                type2: 'mouseenter',
+                                                                method2: (e) => {
+                                                                    e.target.style.backgroundColor = '#1976d2'
+                                                                },
+                                                                type3: 'mouseleave',
+                                                                method3: (e) => {
+                                                                    e.target.style.backgroundColor = '#2196f3'
+                                                                }
+                                                            }
+                                                        })
+                                                    ]
                                                 }),
                                                 $({
-                                                    tag: 'button',
-                                                    att: { type: 'button' },
-                                                    text: '+ Add Resource Person',
+                                                    tag: 'div',
+                                                    att: { id: 'resource-persons-container' },
                                                     style: {
-                                                        padding: '6px 14px',
-                                                        backgroundColor: '#2196f3',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
-                                                        fontSize: '12px',
-                                                        cursor: 'pointer',
-                                                        fontWeight: '500',
-                                                        transition: 'all 0.2s ease'
+                                                        minHeight: '100px',
+                                                        maxHeight: '300px',
+                                                        overflowY: 'auto',
+                                                        padding: '8px',
+                                                        backgroundColor: '#1e1e1e',
+                                                        borderRadius: '8px'
                                                     },
-                                                    event: {
-                                                        type: 'click',
-                                                        method: () => {
-                                                            const newRow = addResourcePersonField()
-                                                            resourcePersonsContainer.appendChild(newRow)
-                                                        },
-                                                        type2: 'mouseenter',
-                                                        method2: (e) => {
-                                                            e.target.style.backgroundColor = '#1976d2'
-                                                        },
-                                                        type3: 'mouseleave',
-                                                        method3: (e) => {
-                                                            e.target.style.backgroundColor = '#2196f3'
+                                                    elementHandler: (el) => {
+                                                        resourcePersonsContainer = el
+                                                        if (isEditing && resourcePersons.length > 0) {
+                                                            resourcePersons.forEach(person => {
+                                                                resourcePersonsContainer.appendChild(
+                                                                    addResourcePersonField(person.name, person.topic)
+                                                                )
+                                                            })
                                                         }
                                                     }
                                                 })
                                             ]
                                         }),
+
+                                        // Participants Column
                                         $({
                                             tag: 'div',
-                                            att: { id: 'resource-persons-container' },
                                             style: {
                                                 backgroundColor: '#2a2a2a',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #444',
-                                                minHeight: '50px'
-                                            },
-                                            elementHandler: (el) => {
-                                                resourcePersonsContainer = el
-                                                if (isEditing && resourcePersons.length > 0) {
-                                                    resourcePersons.forEach(person => {
-                                                        resourcePersonsContainer.appendChild(
-                                                            addResourcePersonField(person.name, person.topic)
-                                                        )
-                                                    })
-                                                }
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Participants section
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'div',
-                                            style: {
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: '8px'
+                                                borderRadius: '10px',
+                                                padding: '16px',
+                                                border: '1px solid #444'
                                             },
                                             child: [
                                                 $({
-                                                    tag: 'label',
-                                                    text: 'Participants (Research Chair or Coordinator/Faculty/Students/etc)',
+                                                    tag: 'div',
                                                     style: {
-                                                        color: '#aaa',
-                                                        fontSize: '13px',
-                                                        fontWeight: '500'
-                                                    }
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        marginBottom: '16px'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '10px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        width: '32px',
+                                                                        height: '32px',
+                                                                        borderRadius: '8px',
+                                                                        backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-users' },
+                                                                            style: { color: '#9c27b0', fontSize: '16px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'label',
+                                                                    text: 'Participants',
+                                                                    style: {
+                                                                        color: '#ddd',
+                                                                        fontSize: '14px',
+                                                                        fontWeight: '600',
+                                                                        margin: 0
+                                                                    }
+                                                                })
+                                                            ]
+                                                        }),
+                                                        $({
+                                                            tag: 'button',
+                                                            att: { type: 'button' },
+                                                            text: '+ Add',
+                                                            style: {
+                                                                padding: '6px 14px',
+                                                                backgroundColor: '#9c27b0',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                color: '#fff',
+                                                                fontSize: '12px',
+                                                                cursor: 'pointer',
+                                                                fontWeight: '500',
+                                                                transition: 'all 0.2s ease'
+                                                            },
+                                                            event: {
+                                                                type: 'click',
+                                                                method: () => {
+                                                                    const newRow = addParticipantField()
+                                                                    participantsContainer.appendChild(newRow)
+                                                                },
+                                                                type2: 'mouseenter',
+                                                                method2: (e) => {
+                                                                    e.target.style.backgroundColor = '#7b1fa2'
+                                                                },
+                                                                type3: 'mouseleave',
+                                                                method3: (e) => {
+                                                                    e.target.style.backgroundColor = '#9c27b0'
+                                                                }
+                                                            }
+                                                        })
+                                                    ]
                                                 }),
                                                 $({
-                                                    tag: 'button',
-                                                    att: { type: 'button' },
-                                                    text: '+ Add Participant',
+                                                    tag: 'div',
+                                                    att: { id: 'participants-container' },
                                                     style: {
-                                                        padding: '6px 14px',
-                                                        backgroundColor: '#9c27b0',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
-                                                        fontSize: '12px',
-                                                        cursor: 'pointer',
-                                                        fontWeight: '500',
-                                                        transition: 'all 0.2s ease'
+                                                        minHeight: '100px',
+                                                        maxHeight: '300px',
+                                                        overflowY: 'auto',
+                                                        padding: '8px',
+                                                        backgroundColor: '#1e1e1e',
+                                                        borderRadius: '8px'
                                                     },
-                                                    event: {
-                                                        type: 'click',
-                                                        method: () => {
-                                                            const newRow = addParticipantField()
-                                                            participantsContainer.appendChild(newRow)
-                                                        },
-                                                        type2: 'mouseenter',
-                                                        method2: (e) => {
-                                                            e.target.style.backgroundColor = '#7b1fa2'
-                                                        },
-                                                        type3: 'mouseleave',
-                                                        method3: (e) => {
-                                                            e.target.style.backgroundColor = '#9c27b0'
+                                                    elementHandler: (el) => {
+                                                        participantsContainer = el
+                                                        if (isEditing && participants.length > 0) {
+                                                            participants.forEach(participant => {
+                                                                participantsContainer.appendChild(
+                                                                    addParticipantField(participant.name, participant.role)
+                                                                )
+                                                            })
                                                         }
                                                     }
                                                 })
                                             ]
-                                        }),
-                                        $({
-                                            tag: 'div',
-                                            att: { id: 'participants-container' },
-                                            style: {
-                                                backgroundColor: '#2a2a2a',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #444',
-                                                minHeight: '50px'
-                                            },
-                                            elementHandler: (el) => {
-                                                participantsContainer = el
-                                                if (isEditing && participants.length > 0) {
-                                                    participants.forEach(participant => {
-                                                        participantsContainer.appendChild(
-                                                            addParticipantField(participant.name, participant.role)
-                                                        )
-                                                    })
-                                                }
-                                            }
                                         })
                                     ]
                                 }),
@@ -1917,7 +2192,7 @@ export const conductedResearch = () => {
                                                 })
                                             ]
                                         }),
-                                        
+
                                         // Two column grid layout
                                         $({
                                             tag: 'div',
@@ -1960,13 +2235,14 @@ export const conductedResearch = () => {
                                                                 }
                                                             },
                                                             child: [
+                                                                // Header
                                                                 $({
                                                                     tag: 'div',
                                                                     style: {
                                                                         display: 'flex',
                                                                         alignItems: 'center',
                                                                         gap: '12px',
-                                                                        marginBottom: '12px'
+                                                                        marginBottom: '16px'
                                                                     },
                                                                     child: [
                                                                         $({
@@ -2006,98 +2282,140 @@ export const conductedResearch = () => {
                                                                         })
                                                                     ]
                                                                 }),
+
+                                                                // Hidden file input
                                                                 $({
-                                                                    tag: 'div',
+                                                                    tag: 'input',
+                                                                    att: {
+                                                                        type: 'file',
+                                                                        accept: '.pdf',
+                                                                        id: 'activity-proposal-input'
+                                                                    },
                                                                     style: {
-                                                                        position: 'relative'
+                                                                        display: 'none'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'change',
+                                                                        method: (e) => {
+                                                                            const file = e.target.files[0]
+                                                                            if (file) {
+                                                                                if (file.type !== 'application/pdf') {
+                                                                                    showNotification('Please select a PDF file', 'error')
+                                                                                    e.target.value = ''
+                                                                                    return
+                                                                                }
+                                                                                paperTrailFiles.activityProposal = file
+                                                                                const fileNameSpan = document.getElementById('activity-proposal-filename')
+                                                                                if (fileNameSpan) {
+                                                                                    fileNameSpan.textContent = file.name
+                                                                                    fileNameSpan.style.color = '#4caf50'
+                                                                                }
+                                                                                showNotification('New file selected. Click "Update Training/Activity" to save changes.', 'info')
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }),
+
+                                                                // Upload button
+                                                                $({
+                                                                    tag: 'button',
+                                                                    att: { type: 'button' },
+                                                                    style: {
+                                                                        width: '100%',
+                                                                        padding: '10px 12px',
+                                                                        backgroundColor: '#2196f3',
+                                                                        border: 'none',
+                                                                        borderRadius: '8px',
+                                                                        color: '#fff',
+                                                                        fontSize: '13px',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: '500',
+                                                                        transition: 'all 0.2s ease',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        gap: '8px'
                                                                     },
                                                                     child: [
                                                                         $({
-                                                                            tag: 'input',
-                                                                            att: {
-                                                                                type: 'file',
-                                                                                accept: '.pdf',
-                                                                                id: 'activity-proposal-input'
-                                                                            },
-                                                                            style: {
-                                                                                position: 'absolute',
-                                                                                opacity: 0,
-                                                                                width: '100%',
-                                                                                height: '100%',
-                                                                                cursor: 'pointer',
-                                                                                zIndex: 1
-                                                                            },
-                                                                            event: {
-                                                                                type: 'change',
-                                                                                method: (e) => {
-                                                                                    const file = e.target.files[0]
-                                                                                    if (file) {
-                                                                                        if (file.type !== 'application/pdf') {
-                                                                                            showNotification('Please select a PDF file', 'error')
-                                                                                            e.target.value = ''
-                                                                                            return
-                                                                                        }
-                                                                                        paperTrailFiles.activityProposal = file
-                                                                                        const fileNameSpan = e.target.parentElement.parentElement.querySelector('.file-name-display')
-                                                                                        if (fileNameSpan) {
-                                                                                            fileNameSpan.textContent = file.name
-                                                                                            fileNameSpan.style.color = '#4caf50'
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-upload' },
+                                                                            style: { fontSize: '14px' }
                                                                         }),
                                                                         $({
-                                                                            tag: 'div',
-                                                                            style: {
-                                                                                backgroundColor: '#333',
-                                                                                border: '1px dashed #555',
-                                                                                borderRadius: '8px',
-                                                                                padding: '10px 12px',
-                                                                                textAlign: 'center',
-                                                                                cursor: 'pointer',
-                                                                                transition: 'all 0.2s ease'
-                                                                            },
-                                                                            event: {
-                                                                                type: 'click',
-                                                                                method: (e) => {
-                                                                                    const fileInput = e.currentTarget.parentElement.querySelector('input[type="file"]')
-                                                                                    if (fileInput) fileInput.click()
-                                                                                },
-                                                                                type2: 'mouseenter',
-                                                                                method2: (e) => {
-                                                                                    e.currentTarget.style.borderColor = '#ff9800'
-                                                                                    e.currentTarget.style.backgroundColor = '#3a3a3a'
-                                                                                },
-                                                                                type3: 'mouseleave',
-                                                                                method3: (e) => {
-                                                                                    e.currentTarget.style.borderColor = '#555'
-                                                                                    e.currentTarget.style.backgroundColor = '#333'
-                                                                                }
-                                                                            },
-                                                                            child: [
-                                                                                $({
-                                                                                    tag: 'span',
-                                                                                    att: { className: 'file-name-display' },
-                                                                                    style: {
-                                                                                        fontSize: '12px',
-                                                                                        color: '#888',
-                                                                                        display: 'block',
-                                                                                        overflow: 'hidden',
-                                                                                        textOverflow: 'ellipsis',
-                                                                                        whiteSpace: 'nowrap'
-                                                                                    },
-                                                                                    text: existingFiles.activityProposal ? 
-                                                                                        `📄 ${existingFiles.activityProposal.split('/').pop() || 'Current file'}` : 
-                                                                                        'Click or drag to upload PDF'
-                                                                                })
-                                                                            ]
+                                                                            tag: 'span',
+                                                                            text: 'Upload New Document'
                                                                         })
-                                                                    ]
-                                                                })
+                                                                    ],
+                                                                    event: {
+                                                                        type: 'click',
+                                                                        method: (e) => {
+                                                                            const fileInput = document.getElementById('activity-proposal-input')
+                                                                            if (fileInput) fileInput.click()
+                                                                        },
+                                                                        type2: 'mouseenter',
+                                                                        method2: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#1976d2'
+                                                                        },
+                                                                        type3: 'mouseleave',
+                                                                        method3: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#2196f3'
+                                                                        }
+                                                                    }
+                                                                }),
+
+                                                                // View Document button (only if file exists)
+                                                                ...(existingFiles.activityProposal ? [
+                                                                    $({
+                                                                        tag: 'button',
+                                                                        att: { type: 'button' },
+                                                                        style: {
+                                                                            marginTop: '12px',
+                                                                            width: '100%',
+                                                                            padding: '8px',
+                                                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                                                            border: '1px solid rgba(33, 150, 243, 0.3)',
+                                                                            borderRadius: '6px',
+                                                                            color: '#2196f3',
+                                                                            fontSize: '12px',
+                                                                            cursor: 'pointer',
+                                                                            fontWeight: '500',
+                                                                            transition: 'all 0.2s ease',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            gap: '8px'
+                                                                        },
+                                                                        child: [
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                att: { className: 'fa-solid fa-eye' },
+                                                                                style: { fontSize: '12px' }
+                                                                            }),
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                text: 'View Document'
+                                                                            })
+                                                                        ],
+                                                                        event: {
+                                                                            type: 'click',
+                                                                            method: () => {
+                                                                                FileViewerModal(existingFiles.activityProposal, 'Activity Proposal', '#ff9800')
+                                                                            },
+                                                                            type2: 'mouseenter',
+                                                                            method2: (e) => {
+                                                                                e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.2)'
+                                                                            },
+                                                                            type3: 'mouseleave',
+                                                                            method3: (e) => {
+                                                                                e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'
+                                                                            }
+                                                                        }
+                                                                    })
+                                                                ] : [])
                                                             ]
                                                         }),
-                                                        
+
                                                         // Attendance Sheet Card
                                                         $({
                                                             tag: 'div',
@@ -2121,13 +2439,14 @@ export const conductedResearch = () => {
                                                                 }
                                                             },
                                                             child: [
+                                                                // Header
                                                                 $({
                                                                     tag: 'div',
                                                                     style: {
                                                                         display: 'flex',
                                                                         alignItems: 'center',
                                                                         gap: '12px',
-                                                                        marginBottom: '12px'
+                                                                        marginBottom: '16px'
                                                                     },
                                                                     child: [
                                                                         $({
@@ -2167,96 +2486,140 @@ export const conductedResearch = () => {
                                                                         })
                                                                     ]
                                                                 }),
+
+                                                                // Hidden file input
                                                                 $({
-                                                                    tag: 'div',
-                                                                    style: { position: 'relative' },
+                                                                    tag: 'input',
+                                                                    att: {
+                                                                        type: 'file',
+                                                                        accept: '.pdf',
+                                                                        id: 'attendance-sheet-input'
+                                                                    },
+                                                                    style: {
+                                                                        display: 'none'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'change',
+                                                                        method: (e) => {
+                                                                            const file = e.target.files[0]
+                                                                            if (file) {
+                                                                                if (file.type !== 'application/pdf') {
+                                                                                    showNotification('Please select a PDF file', 'error')
+                                                                                    e.target.value = ''
+                                                                                    return
+                                                                                }
+                                                                                paperTrailFiles.attendanceSheet = file
+                                                                                const fileNameSpan = document.getElementById('attendance-sheet-filename')
+                                                                                if (fileNameSpan) {
+                                                                                    fileNameSpan.textContent = file.name
+                                                                                    fileNameSpan.style.color = '#4caf50'
+                                                                                }
+                                                                                showNotification('New file selected. Click "Update Training/Activity" to save changes.', 'info')
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }),
+
+                                                                // Upload button
+                                                                $({
+                                                                    tag: 'button',
+                                                                    att: { type: 'button' },
+                                                                    style: {
+                                                                        width: '100%',
+                                                                        padding: '10px 12px',
+                                                                        backgroundColor: '#2196f3',
+                                                                        border: 'none',
+                                                                        borderRadius: '8px',
+                                                                        color: '#fff',
+                                                                        fontSize: '13px',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: '500',
+                                                                        transition: 'all 0.2s ease',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        gap: '8px'
+                                                                    },
                                                                     child: [
                                                                         $({
-                                                                            tag: 'input',
-                                                                            att: {
-                                                                                type: 'file',
-                                                                                accept: '.pdf',
-                                                                                id: 'attendance-sheet-input'
-                                                                            },
-                                                                            style: {
-                                                                                position: 'absolute',
-                                                                                opacity: 0,
-                                                                                width: '100%',
-                                                                                height: '100%',
-                                                                                cursor: 'pointer',
-                                                                                zIndex: 1
-                                                                            },
-                                                                            event: {
-                                                                                type: 'change',
-                                                                                method: (e) => {
-                                                                                    const file = e.target.files[0]
-                                                                                    if (file) {
-                                                                                        if (file.type !== 'application/pdf') {
-                                                                                            showNotification('Please select a PDF file', 'error')
-                                                                                            e.target.value = ''
-                                                                                            return
-                                                                                        }
-                                                                                        paperTrailFiles.attendanceSheet = file
-                                                                                        const fileNameSpan = e.target.parentElement.parentElement.querySelector('.file-name-display')
-                                                                                        if (fileNameSpan) {
-                                                                                            fileNameSpan.textContent = file.name
-                                                                                            fileNameSpan.style.color = '#4caf50'
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-upload' },
+                                                                            style: { fontSize: '14px' }
                                                                         }),
                                                                         $({
-                                                                            tag: 'div',
-                                                                            style: {
-                                                                                backgroundColor: '#333',
-                                                                                border: '1px dashed #555',
-                                                                                borderRadius: '8px',
-                                                                                padding: '10px 12px',
-                                                                                textAlign: 'center',
-                                                                                cursor: 'pointer',
-                                                                                transition: 'all 0.2s ease'
-                                                                            },
-                                                                            event: {
-                                                                                type: 'click',
-                                                                                method: (e) => {
-                                                                                    const fileInput = e.currentTarget.parentElement.querySelector('input[type="file"]')
-                                                                                    if (fileInput) fileInput.click()
-                                                                                },
-                                                                                type2: 'mouseenter',
-                                                                                method2: (e) => {
-                                                                                    e.currentTarget.style.borderColor = '#ff9800'
-                                                                                    e.currentTarget.style.backgroundColor = '#3a3a3a'
-                                                                                },
-                                                                                type3: 'mouseleave',
-                                                                                method3: (e) => {
-                                                                                    e.currentTarget.style.borderColor = '#555'
-                                                                                    e.currentTarget.style.backgroundColor = '#333'
-                                                                                }
-                                                                            },
-                                                                            child: [
-                                                                                $({
-                                                                                    tag: 'span',
-                                                                                    att: { className: 'file-name-display' },
-                                                                                    style: {
-                                                                                        fontSize: '12px',
-                                                                                        color: '#888',
-                                                                                        display: 'block',
-                                                                                        overflow: 'hidden',
-                                                                                        textOverflow: 'ellipsis',
-                                                                                        whiteSpace: 'nowrap'
-                                                                                    },
-                                                                                    text: existingFiles.attendanceSheet ? 
-                                                                                        `📄 ${existingFiles.attendanceSheet.split('/').pop() || 'Current file'}` : 
-                                                                                        'Click or drag to upload PDF'
-                                                                                })
-                                                                            ]
+                                                                            tag: 'span',
+                                                                            text: 'Upload New Document'
                                                                         })
-                                                                    ]
-                                                                })
+                                                                    ],
+                                                                    event: {
+                                                                        type: 'click',
+                                                                        method: (e) => {
+                                                                            const fileInput = document.getElementById('attendance-sheet-input')
+                                                                            if (fileInput) fileInput.click()
+                                                                        },
+                                                                        type2: 'mouseenter',
+                                                                        method2: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#1976d2'
+                                                                        },
+                                                                        type3: 'mouseleave',
+                                                                        method3: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#2196f3'
+                                                                        }
+                                                                    }
+                                                                }),
+
+                                                                // View Document button (only if file exists)
+                                                                ...(existingFiles.attendanceSheet ? [
+                                                                    $({
+                                                                        tag: 'button',
+                                                                        att: { type: 'button' },
+                                                                        style: {
+                                                                            marginTop: '12px',
+                                                                            width: '100%',
+                                                                            padding: '8px',
+                                                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                                                            border: '1px solid rgba(33, 150, 243, 0.3)',
+                                                                            borderRadius: '6px',
+                                                                            color: '#2196f3',
+                                                                            fontSize: '12px',
+                                                                            cursor: 'pointer',
+                                                                            fontWeight: '500',
+                                                                            transition: 'all 0.2s ease',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            gap: '8px'
+                                                                        },
+                                                                        child: [
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                att: { className: 'fa-solid fa-eye' },
+                                                                                style: { fontSize: '12px' }
+                                                                            }),
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                text: 'View Document'
+                                                                            })
+                                                                        ],
+                                                                        event: {
+                                                                            type: 'click',
+                                                                            method: () => {
+                                                                                FileViewerModal(existingFiles.attendanceSheet, 'Attendance Sheet', '#ff9800')
+                                                                            },
+                                                                            type2: 'mouseenter',
+                                                                            method2: (e) => {
+                                                                                e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.2)'
+                                                                            },
+                                                                            type3: 'mouseleave',
+                                                                            method3: (e) => {
+                                                                                e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'
+                                                                            }
+                                                                        }
+                                                                    })
+                                                                ] : [])
                                                             ]
                                                         }),
-                                                        
+
                                                         // Activity Report Card
                                                         $({
                                                             tag: 'div',
@@ -2280,13 +2643,14 @@ export const conductedResearch = () => {
                                                                 }
                                                             },
                                                             child: [
+                                                                // Header
                                                                 $({
                                                                     tag: 'div',
                                                                     style: {
                                                                         display: 'flex',
                                                                         alignItems: 'center',
                                                                         gap: '12px',
-                                                                        marginBottom: '12px'
+                                                                        marginBottom: '16px'
                                                                     },
                                                                     child: [
                                                                         $({
@@ -2326,96 +2690,140 @@ export const conductedResearch = () => {
                                                                         })
                                                                     ]
                                                                 }),
+
+                                                                // Hidden file input
                                                                 $({
-                                                                    tag: 'div',
-                                                                    style: { position: 'relative' },
+                                                                    tag: 'input',
+                                                                    att: {
+                                                                        type: 'file',
+                                                                        accept: '.pdf',
+                                                                        id: 'activity-report-input'
+                                                                    },
+                                                                    style: {
+                                                                        display: 'none'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'change',
+                                                                        method: (e) => {
+                                                                            const file = e.target.files[0]
+                                                                            if (file) {
+                                                                                if (file.type !== 'application/pdf') {
+                                                                                    showNotification('Please select a PDF file', 'error')
+                                                                                    e.target.value = ''
+                                                                                    return
+                                                                                }
+                                                                                paperTrailFiles.activityReport = file
+                                                                                const fileNameSpan = document.getElementById('activity-report-filename')
+                                                                                if (fileNameSpan) {
+                                                                                    fileNameSpan.textContent = file.name
+                                                                                    fileNameSpan.style.color = '#4caf50'
+                                                                                }
+                                                                                showNotification('New file selected. Click "Update Training/Activity" to save changes.', 'info')
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }),
+
+                                                                // Upload button
+                                                                $({
+                                                                    tag: 'button',
+                                                                    att: { type: 'button' },
+                                                                    style: {
+                                                                        width: '100%',
+                                                                        padding: '10px 12px',
+                                                                        backgroundColor: '#2196f3',
+                                                                        border: 'none',
+                                                                        borderRadius: '8px',
+                                                                        color: '#fff',
+                                                                        fontSize: '13px',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: '500',
+                                                                        transition: 'all 0.2s ease',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        gap: '8px'
+                                                                    },
                                                                     child: [
                                                                         $({
-                                                                            tag: 'input',
-                                                                            att: {
-                                                                                type: 'file',
-                                                                                accept: '.pdf',
-                                                                                id: 'activity-report-input'
-                                                                            },
-                                                                            style: {
-                                                                                position: 'absolute',
-                                                                                opacity: 0,
-                                                                                width: '100%',
-                                                                                height: '100%',
-                                                                                cursor: 'pointer',
-                                                                                zIndex: 1
-                                                                            },
-                                                                            event: {
-                                                                                type: 'change',
-                                                                                method: (e) => {
-                                                                                    const file = e.target.files[0]
-                                                                                    if (file) {
-                                                                                        if (file.type !== 'application/pdf') {
-                                                                                            showNotification('Please select a PDF file', 'error')
-                                                                                            e.target.value = ''
-                                                                                            return
-                                                                                        }
-                                                                                        paperTrailFiles.activityReport = file
-                                                                                        const fileNameSpan = e.target.parentElement.parentElement.querySelector('.file-name-display')
-                                                                                        if (fileNameSpan) {
-                                                                                            fileNameSpan.textContent = file.name
-                                                                                            fileNameSpan.style.color = '#4caf50'
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-upload' },
+                                                                            style: { fontSize: '14px' }
                                                                         }),
                                                                         $({
-                                                                            tag: 'div',
-                                                                            style: {
-                                                                                backgroundColor: '#333',
-                                                                                border: '1px dashed #555',
-                                                                                borderRadius: '8px',
-                                                                                padding: '10px 12px',
-                                                                                textAlign: 'center',
-                                                                                cursor: 'pointer',
-                                                                                transition: 'all 0.2s ease'
-                                                                            },
-                                                                            event: {
-                                                                                type: 'click',
-                                                                                method: (e) => {
-                                                                                    const fileInput = e.currentTarget.parentElement.querySelector('input[type="file"]')
-                                                                                    if (fileInput) fileInput.click()
-                                                                                },
-                                                                                type2: 'mouseenter',
-                                                                                method2: (e) => {
-                                                                                    e.currentTarget.style.borderColor = '#ff9800'
-                                                                                    e.currentTarget.style.backgroundColor = '#3a3a3a'
-                                                                                },
-                                                                                type3: 'mouseleave',
-                                                                                method3: (e) => {
-                                                                                    e.currentTarget.style.borderColor = '#555'
-                                                                                    e.currentTarget.style.backgroundColor = '#333'
-                                                                                }
-                                                                            },
-                                                                            child: [
-                                                                                $({
-                                                                                    tag: 'span',
-                                                                                    att: { className: 'file-name-display' },
-                                                                                    style: {
-                                                                                        fontSize: '12px',
-                                                                                        color: '#888',
-                                                                                        display: 'block',
-                                                                                        overflow: 'hidden',
-                                                                                        textOverflow: 'ellipsis',
-                                                                                        whiteSpace: 'nowrap'
-                                                                                    },
-                                                                                    text: existingFiles.activityReport ? 
-                                                                                        `📄 ${existingFiles.activityReport.split('/').pop() || 'Current file'}` : 
-                                                                                        'Click or drag to upload PDF'
-                                                                                })
-                                                                            ]
+                                                                            tag: 'span',
+                                                                            text: 'Upload New Document'
                                                                         })
-                                                                    ]
-                                                                })
+                                                                    ],
+                                                                    event: {
+                                                                        type: 'click',
+                                                                        method: (e) => {
+                                                                            const fileInput = document.getElementById('activity-report-input')
+                                                                            if (fileInput) fileInput.click()
+                                                                        },
+                                                                        type2: 'mouseenter',
+                                                                        method2: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#1976d2'
+                                                                        },
+                                                                        type3: 'mouseleave',
+                                                                        method3: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#2196f3'
+                                                                        }
+                                                                    }
+                                                                }),
+
+                                                                // View Document button (only if file exists)
+                                                                ...(existingFiles.activityReport ? [
+                                                                    $({
+                                                                        tag: 'button',
+                                                                        att: { type: 'button' },
+                                                                        style: {
+                                                                            marginTop: '12px',
+                                                                            width: '100%',
+                                                                            padding: '8px',
+                                                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                                                            border: '1px solid rgba(33, 150, 243, 0.3)',
+                                                                            borderRadius: '6px',
+                                                                            color: '#2196f3',
+                                                                            fontSize: '12px',
+                                                                            cursor: 'pointer',
+                                                                            fontWeight: '500',
+                                                                            transition: 'all 0.2s ease',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            gap: '8px'
+                                                                        },
+                                                                        child: [
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                att: { className: 'fa-solid fa-eye' },
+                                                                                style: { fontSize: '12px' }
+                                                                            }),
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                text: 'View Document'
+                                                                            })
+                                                                        ],
+                                                                        event: {
+                                                                            type: 'click',
+                                                                            method: () => {
+                                                                                FileViewerModal(existingFiles.activityReport, 'Activity Report', '#ff9800')
+                                                                            },
+                                                                            type2: 'mouseenter',
+                                                                            method2: (e) => {
+                                                                                e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.2)'
+                                                                            },
+                                                                            type3: 'mouseleave',
+                                                                            method3: (e) => {
+                                                                                e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'
+                                                                            }
+                                                                        }
+                                                                    })
+                                                                ] : [])
                                                             ]
                                                         }),
-                                                        
+
                                                         // Program Card
                                                         $({
                                                             tag: 'div',
@@ -2439,13 +2847,14 @@ export const conductedResearch = () => {
                                                                 }
                                                             },
                                                             child: [
+                                                                // Header
                                                                 $({
                                                                     tag: 'div',
                                                                     style: {
                                                                         display: 'flex',
                                                                         alignItems: 'center',
                                                                         gap: '12px',
-                                                                        marginBottom: '12px'
+                                                                        marginBottom: '16px'
                                                                     },
                                                                     child: [
                                                                         $({
@@ -2485,98 +2894,142 @@ export const conductedResearch = () => {
                                                                         })
                                                                     ]
                                                                 }),
+
+                                                                // Hidden file input
                                                                 $({
-                                                                    tag: 'div',
-                                                                    style: { position: 'relative' },
+                                                                    tag: 'input',
+                                                                    att: {
+                                                                        type: 'file',
+                                                                        accept: '.pdf',
+                                                                        id: 'program-input'
+                                                                    },
+                                                                    style: {
+                                                                        display: 'none'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'change',
+                                                                        method: (e) => {
+                                                                            const file = e.target.files[0]
+                                                                            if (file) {
+                                                                                if (file.type !== 'application/pdf') {
+                                                                                    showNotification('Please select a PDF file', 'error')
+                                                                                    e.target.value = ''
+                                                                                    return
+                                                                                }
+                                                                                paperTrailFiles.program = file
+                                                                                const fileNameSpan = document.getElementById('program-filename')
+                                                                                if (fileNameSpan) {
+                                                                                    fileNameSpan.textContent = file.name
+                                                                                    fileNameSpan.style.color = '#4caf50'
+                                                                                }
+                                                                                showNotification('New file selected. Click "Update Training/Activity" to save changes.', 'info')
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }),
+
+                                                                // Upload button
+                                                                $({
+                                                                    tag: 'button',
+                                                                    att: { type: 'button' },
+                                                                    style: {
+                                                                        width: '100%',
+                                                                        padding: '10px 12px',
+                                                                        backgroundColor: '#2196f3',
+                                                                        border: 'none',
+                                                                        borderRadius: '8px',
+                                                                        color: '#fff',
+                                                                        fontSize: '13px',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: '500',
+                                                                        transition: 'all 0.2s ease',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        gap: '8px'
+                                                                    },
                                                                     child: [
                                                                         $({
-                                                                            tag: 'input',
-                                                                            att: {
-                                                                                type: 'file',
-                                                                                accept: '.pdf',
-                                                                                id: 'program-input'
-                                                                            },
-                                                                            style: {
-                                                                                position: 'absolute',
-                                                                                opacity: 0,
-                                                                                width: '100%',
-                                                                                height: '100%',
-                                                                                cursor: 'pointer',
-                                                                                zIndex: 1
-                                                                            },
-                                                                            event: {
-                                                                                type: 'change',
-                                                                                method: (e) => {
-                                                                                    const file = e.target.files[0]
-                                                                                    if (file) {
-                                                                                        if (file.type !== 'application/pdf') {
-                                                                                            showNotification('Please select a PDF file', 'error')
-                                                                                            e.target.value = ''
-                                                                                            return
-                                                                                        }
-                                                                                        paperTrailFiles.program = file
-                                                                                        const fileNameSpan = e.target.parentElement.parentElement.querySelector('.file-name-display')
-                                                                                        if (fileNameSpan) {
-                                                                                            fileNameSpan.textContent = file.name
-                                                                                            fileNameSpan.style.color = '#4caf50'
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-upload' },
+                                                                            style: { fontSize: '14px' }
                                                                         }),
                                                                         $({
-                                                                            tag: 'div',
-                                                                            style: {
-                                                                                backgroundColor: '#333',
-                                                                                border: '1px dashed #555',
-                                                                                borderRadius: '8px',
-                                                                                padding: '10px 12px',
-                                                                                textAlign: 'center',
-                                                                                cursor: 'pointer',
-                                                                                transition: 'all 0.2s ease'
-                                                                            },
-                                                                            event: {
-                                                                                type: 'click',
-                                                                                method: (e) => {
-                                                                                    const fileInput = e.currentTarget.parentElement.querySelector('input[type="file"]')
-                                                                                    if (fileInput) fileInput.click()
-                                                                                },
-                                                                                type2: 'mouseenter',
-                                                                                method2: (e) => {
-                                                                                    e.currentTarget.style.borderColor = '#ff9800'
-                                                                                    e.currentTarget.style.backgroundColor = '#3a3a3a'
-                                                                                },
-                                                                                type3: 'mouseleave',
-                                                                                method3: (e) => {
-                                                                                    e.currentTarget.style.borderColor = '#555'
-                                                                                    e.currentTarget.style.backgroundColor = '#333'
-                                                                                }
-                                                                            },
-                                                                            child: [
-                                                                                $({
-                                                                                    tag: 'span',
-                                                                                    att: { className: 'file-name-display' },
-                                                                                    style: {
-                                                                                        fontSize: '12px',
-                                                                                        color: '#888',
-                                                                                        display: 'block',
-                                                                                        overflow: 'hidden',
-                                                                                        textOverflow: 'ellipsis',
-                                                                                        whiteSpace: 'nowrap'
-                                                                                    },
-                                                                                    text: existingFiles.program ? 
-                                                                                        `📄 ${existingFiles.program.split('/').pop() || 'Current file'}` : 
-                                                                                        'Click or drag to upload PDF'
-                                                                                })
-                                                                            ]
+                                                                            tag: 'span',
+                                                                            text: 'Upload New Document'
                                                                         })
-                                                                    ]
-                                                                })
+                                                                    ],
+                                                                    event: {
+                                                                        type: 'click',
+                                                                        method: (e) => {
+                                                                            const fileInput = document.getElementById('program-input')
+                                                                            if (fileInput) fileInput.click()
+                                                                        },
+                                                                        type2: 'mouseenter',
+                                                                        method2: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#1976d2'
+                                                                        },
+                                                                        type3: 'mouseleave',
+                                                                        method3: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#2196f3'
+                                                                        }
+                                                                    }
+                                                                }),
+
+                                                                // View Document button (only if file exists)
+                                                                ...(existingFiles.program ? [
+                                                                    $({
+                                                                        tag: 'button',
+                                                                        att: { type: 'button' },
+                                                                        style: {
+                                                                            marginTop: '12px',
+                                                                            width: '100%',
+                                                                            padding: '8px',
+                                                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                                                            border: '1px solid rgba(33, 150, 243, 0.3)',
+                                                                            borderRadius: '6px',
+                                                                            color: '#2196f3',
+                                                                            fontSize: '12px',
+                                                                            cursor: 'pointer',
+                                                                            fontWeight: '500',
+                                                                            transition: 'all 0.2s ease',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            gap: '8px'
+                                                                        },
+                                                                        child: [
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                att: { className: 'fa-solid fa-eye' },
+                                                                                style: { fontSize: '12px' }
+                                                                            }),
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                text: 'View Document'
+                                                                            })
+                                                                        ],
+                                                                        event: {
+                                                                            type: 'click',
+                                                                            method: () => {
+                                                                                FileViewerModal(existingFiles.program, 'Program', '#ff9800')
+                                                                            },
+                                                                            type2: 'mouseenter',
+                                                                            method2: (e) => {
+                                                                                e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.2)'
+                                                                            },
+                                                                            type3: 'mouseleave',
+                                                                            method3: (e) => {
+                                                                                e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'
+                                                                            }
+                                                                        }
+                                                                    })
+                                                                ] : [])
                                                             ]
                                                         })
                                                     ]
                                                 }),
-                                                
+
                                                 // Right Column - Photos section
                                                 $({
                                                     tag: 'div',
@@ -2640,7 +3093,7 @@ export const conductedResearch = () => {
                                                                 })
                                                             ]
                                                         }),
-                                                        
+
                                                         // Photo upload area
                                                         $({
                                                             tag: 'div',
@@ -2652,7 +3105,7 @@ export const conductedResearch = () => {
                                                                     tag: 'input',
                                                                     att: {
                                                                         type: 'file',
-                                                                        accept: 'image/jpeg,image/png,image/jpg',
+                                                                        accept: 'image/jpeg,image/png,image/jpg,image/gif,image/webp',
                                                                         multiple: true,
                                                                         id: 'photos-input'
                                                                     },
@@ -2668,7 +3121,7 @@ export const conductedResearch = () => {
                                                                                     paperTrailFiles.photos.push(file)
                                                                                     const previewContainer = document.getElementById('photos-preview-container')
                                                                                     if (previewContainer) {
-                                                                                        addPhotoPreview(file, previewContainer)
+                                                                                        addPhotoPreview(file, previewContainer, false, null)
                                                                                     }
                                                                                 }
                                                                             })
@@ -2677,6 +3130,9 @@ export const conductedResearch = () => {
                                                                             if (photoCount) {
                                                                                 photoCount.textContent = `${paperTrailFiles.photos.length + existingFiles.photos.length}`
                                                                             }
+                                                                            showNotification(`${files.length} photo(s) selected. Click "Update Training/Activity" to save changes.`, 'info')
+                                                                            // Clear the input to allow re-uploading same files
+                                                                            e.target.value = ''
                                                                         }
                                                                     }
                                                                 }),
@@ -2722,7 +3178,7 @@ export const conductedResearch = () => {
                                                                         }),
                                                                         $({
                                                                             tag: 'div',
-                                                                            text: 'JPG, PNG supported',
+                                                                            text: 'JPG, PNG, GIF, WEBP supported',
                                                                             style: { fontSize: '11px', color: '#666' }
                                                                         })
                                                                     ]
@@ -2759,28 +3215,45 @@ export const conductedResearch = () => {
                                                                 })
                                                             ]
                                                         }),
-                                                        
+
                                                         // Photos preview grid
                                                         $({
                                                             tag: 'div',
                                                             att: { id: 'photos-preview-container' },
                                                             style: {
                                                                 display: 'grid',
-                                                                gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-                                                                gap: '10px',
-                                                                maxHeight: '300px',
+                                                                gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                                                                gap: '12px',
+                                                                maxHeight: '400px',
                                                                 overflowY: 'auto',
-                                                                padding: '4px',
+                                                                padding: '8px',
                                                                 borderRadius: '8px',
-                                                                backgroundColor: '#222',
-                                                                minHeight: '100px'
+                                                                backgroundColor: '#1e1e1e',
+                                                                minHeight: '120px'
                                                             },
                                                             elementHandler: (el) => {
-                                                                // Add existing photos
-                                                                if (isEditing && existingFiles.photos.length > 0) {
-                                                                    existingFiles.photos.forEach(photoUrl => {
-                                                                        addPhotoPreview(null, el, true, photoUrl)
+                                                                // Clear any existing content first
+                                                                el.innerHTML = ''
+                                                                // Add existing photos when editing
+                                                                if (isEditing && existingFiles.photos && existingFiles.photos.length > 0) {
+                                                                    existingFiles.photos.forEach((photoUrl, index) => {
+                                                                        addPhotoPreview(null, el, true, photoUrl, index)
                                                                     })
+                                                                }
+                                                                // If no photos and not editing, show empty message
+                                                                if ((!isEditing || !existingFiles.photos || existingFiles.photos.length === 0) && paperTrailFiles.photos.length === 0) {
+                                                                    const emptyMessage = $({
+                                                                        tag: 'div',
+                                                                        text: 'No photos uploaded yet',
+                                                                        style: {
+                                                                            gridColumn: '1 / -1',
+                                                                            textAlign: 'center',
+                                                                            padding: '40px',
+                                                                            color: '#666',
+                                                                            fontSize: '13px'
+                                                                        }
+                                                                    })
+                                                                    el.appendChild(emptyMessage)
                                                                 }
                                                             }
                                                         })
@@ -2863,7 +3336,19 @@ export const conductedResearch = () => {
                                 type: 'submit',
                                 method: async (e) => {
                                     e.preventDefault()
+                                    const submitBtn = e.target.querySelector('button[type="submit"]')
+                                    if (submitBtn) {
+                                        if (submitBtn.disabled) return
+                                        submitBtn.disabled = true
+                                        submitBtn.style.opacity = '0.7'
+                                        submitBtn.style.cursor = 'wait'
+                                    }
                                     await saveTrainingData(isEditing, paperTrailFiles, existingFiles)
+                                    if (submitBtn) {
+                                        submitBtn.disabled = false
+                                        submitBtn.style.opacity = '1'
+                                        submitBtn.style.cursor = 'pointer'
+                                    }
                                 }
                             }
                         })
@@ -2961,7 +3446,7 @@ export const conductedResearch = () => {
 
     // Save training data
     const saveTrainingData = async (isEditing, paperTrailFiles, existingFiles) => {
-        const form = document.getElementById('conducted-research-form')
+        const form = document.getElementById('trainingActivitiesResearch-form')
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_conducted' : 'add_conducted')
 
@@ -3010,7 +3495,7 @@ export const conductedResearch = () => {
 
         showLoading()
         try {
-            const response = await fetch('/api/conducted-research', {
+            const response = await fetch('/trainingActivitiesResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -3037,10 +3522,25 @@ export const conductedResearch = () => {
 
     // Refresh data
     const refreshData = async () => {
+        // Reset all data
         conductedData = []
         filteredData = []
         hasMore = true
         nextCursor = null
+        initialLoadDone = false
+        currentStats = {
+            totalTrainings: 0,
+            totalAttendees: 0
+        }
+
+        // Reset stats display immediately
+        const statValues = document.querySelectorAll('.stat-value')
+        if (statValues.length >= 2) {
+            statValues[0].textContent = '0'
+            statValues[1].textContent = '0'
+        }
+
+        // Fetch fresh data
         await fetchConductedData()
     }
 
@@ -3228,7 +3728,7 @@ export const conductedResearch = () => {
 
     // Statistics cards
     const StatsCards = () => {
-        return $({
+        const container = $({
             tag: 'div',
             att: { className: 'stats-cards' },
             style: {
@@ -3250,7 +3750,8 @@ export const conductedResearch = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #444',
+                        id: 'stat-total-trainings'
                     },
                     child: [
                         $({
@@ -3279,7 +3780,7 @@ export const conductedResearch = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'stat-value' },
+                                    att: { className: 'stat-value', id: 'stat-total-trainings-value' },
                                     text: '0',
                                     style: {
                                         fontSize: '32px',
@@ -3311,7 +3812,8 @@ export const conductedResearch = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #444',
+                        id: 'stat-total-attendees'
                     },
                     child: [
                         $({
@@ -3340,7 +3842,7 @@ export const conductedResearch = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'stat-value' },
+                                    att: { className: 'stat-value', id: 'stat-total-attendees-value' },
                                     text: '0',
                                     style: {
                                         fontSize: '32px',
@@ -3364,6 +3866,12 @@ export const conductedResearch = () => {
                 })
             ]
         })
+
+        // Store references for direct updates
+        container.totalTrainingsSpan = container.querySelector('#stat-total-trainings-value')
+        container.totalAttendeesSpan = container.querySelector('#stat-total-attendees-value')
+
+        return container
     }
 
     // Table header
@@ -3372,7 +3880,6 @@ export const conductedResearch = () => {
             'NO.',
             'Training/Activity Title',
             'Date',
-            'Venue',
             'Budget & Fund Source\n(GAA/STF/TF/etc)',
             'Topic Discussed',
             'Resource Person\nper Topic',
@@ -3483,7 +3990,7 @@ export const conductedResearch = () => {
     // Return main container
     return $({
         tag: 'div',
-        att: { className: 'conducted-research-container' },
+        att: { className: 'trainingActivitiesResearch-container' },
         style: {
             width: '100%',
             height: '100%',

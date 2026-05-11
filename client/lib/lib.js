@@ -1299,3 +1299,200 @@ export const RejectCommentModal = (title = "Reject Document") => {
         }
     });
 };
+
+export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '#ff9800') => {
+    const modalId = 'file-viewer-modal-' + Date.now();
+
+    const closeModal = () => {
+        const overlay = document.getElementById(modalId);
+        if (overlay) {
+            overlay.style.opacity = '0';
+            overlay.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }, 250);
+        }
+    };
+
+    const modalOverlay = $({
+        tag: 'div',
+        att: { id: modalId },
+        style: {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            backgroundColor: 'rgba(0,0,0,0.88)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: '999999',
+            opacity: '0',
+            transition: 'opacity 0.25s ease, transform 0.25s ease',
+            fontFamily: "'Inter', 'Segoe UI', sans-serif"
+        },
+        event: {
+            type: 'click',
+            method: (e) => { if (e.target.id === modalId) closeModal(); }
+        },
+        child: [
+            // Modal container
+            $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '92vw',
+                    maxWidth: '1100px',
+                    height: '90vh',
+                    backgroundColor: '#1a1a1a',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 32px 64px rgba(0,0,0,0.6)',
+                    border: '1px solid #333'
+                },
+                child: [
+                    // Header bar
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '14px 20px',
+                            backgroundColor: '#222',
+                            borderBottom: `3px solid ${accentColor}`,
+                            flexShrink: '0'
+                        },
+                        child: [
+                            // Title
+                            $({
+                                tag: 'div',
+                                style: { display: 'flex', alignItems: 'center', gap: '12px' },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-file-lines' },
+                                        style: { color: accentColor, fontSize: '18px' }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: title,
+                                        style: {
+                                            color: '#fff',
+                                            fontSize: '15px',
+                                            fontWeight: '600',
+                                            letterSpacing: '0.3px'
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Action buttons
+                            $({
+                                tag: 'div',
+                                style: { display: 'flex', gap: '10px', alignItems: 'center' },
+                                child: [
+                                    // Open in new tab button
+                                    $({
+                                        tag: 'a',
+                                        att: { href: fileUrl, target: '_blank', rel: 'noopener noreferrer' },
+                                        style: {
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '7px 14px',
+                                            backgroundColor: 'rgba(255,255,255,0.08)',
+                                            border: '1px solid #444',
+                                            borderRadius: '8px',
+                                            color: '#ccc',
+                                            fontSize: '12px',
+                                            textDecoration: 'none',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        child: [
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-external-link-alt' }, style: { fontSize: '11px' } }),
+                                            $({ tag: 'span', text: 'Open in Drive' })
+                                        ],
+                                        event: {
+                                            type: 'mouseenter',
+                                            method: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = '#fff'; },
+                                            type2: 'mouseleave',
+                                            method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ccc'; }
+                                        }
+                                    }),
+                                    // Close button
+                                    $({
+                                        tag: 'button',
+                                        style: {
+                                            width: '36px',
+                                            height: '36px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: 'rgba(255,255,255,0.05)',
+                                            border: '1px solid #444',
+                                            borderRadius: '8px',
+                                            color: '#888',
+                                            fontSize: '16px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        child: [
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-xmark' } })
+                                        ],
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            type2: 'mouseenter',
+                                            method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.15)'; e.currentTarget.style.borderColor = '#f44336'; e.currentTarget.style.color = '#f44336'; },
+                                            type3: 'mouseleave',
+                                            method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#888'; }
+                                        }
+                                    })
+                                ]
+                            })
+                        ]
+                    }),
+                    // Iframe viewer
+                    $({
+                        tag: 'iframe',
+                        att: {
+                            src: fileUrl,
+                            frameborder: '0',
+                            allowfullscreen: true,
+                            loading: 'lazy'
+                        },
+                        style: {
+                            flex: '1',
+                            width: '100%',
+                            border: 'none',
+                            backgroundColor: '#111'
+                        }
+                    })
+                ]
+            })
+        ]
+    });
+
+    document.body.appendChild(modalOverlay);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            modalOverlay.style.opacity = '1';
+        });
+    });
+
+    // ESC key to close
+    const handleKey = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', handleKey);
+        }
+    };
+    document.addEventListener('keydown', handleKey);
+};

@@ -73,7 +73,7 @@ post('/facilitiesImprovement', 'server/rde/accomplishment/facilResImprov.php');
 post('/IGPResearchProjects', 'server/rde/accomplishment/igpResProj.php');
 post('/participationResearch', 'server/rde/accomplishment/participationExh.php');
 post('/presentationResearch', 'server/rde/accomplishment/presentationRes.php');
-post('trainingActivitiesResearch', 'server/rde/accomplishment/traiActRes.php');
+post('/trainingActivitiesResearch', 'server/rde/accomplishment/traiActConductRes.php');
 // ROOT route
 get('/','server/auth.php');  // This handles redirects based on login status
 

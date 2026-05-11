@@ -116,7 +116,7 @@ export const trainingsAttended = () => {
                 formData.append('category', currentCategory)
             }
 
-            const response = await fetch('/api/trainings-attended', {
+            const response = await fetch('/trainingActivitiesResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -513,6 +513,11 @@ export const trainingsAttended = () => {
             })
         )
 
+        // Helper to ensure render functions return a DOM node
+        const safeRender = (renderedValue) => {
+            return typeof renderedValue === 'string' ? $({ tag: 'span', text: renderedValue }) : renderedValue
+        }
+
         // Attendees
         cells.push(
             $({
@@ -523,7 +528,7 @@ export const trainingsAttended = () => {
                     verticalAlign: 'top',
                     minWidth: '200px'
                 },
-                child: [renderAttendees(item.attendees)]
+                child: [safeRender(renderAttendees(item.attendees))]
             })
         )
 
@@ -554,7 +559,7 @@ export const trainingsAttended = () => {
                     border: '1px solid #444',
                     verticalAlign: 'top'
                 },
-                child: [renderCategoryBadge(item.category)]
+                child: [safeRender(renderCategoryBadge(item.category))]
             })
         )
 
@@ -617,7 +622,7 @@ export const trainingsAttended = () => {
                     verticalAlign: 'top',
                     maxWidth: '250px'
                 },
-                child: [renderLinks(item.paperTrailLinks)]
+                child: [safeRender(renderLinks(item.paperTrailLinks))]
             })
         )
 
@@ -737,7 +742,7 @@ export const trainingsAttended = () => {
             formData.append('action', 'delete_attended')
             formData.append('id', item.id)
 
-            const response = await fetch('/api/trainings-attended', {
+            const response = await fetch('/trainingActivitiesResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -1600,7 +1605,19 @@ export const trainingsAttended = () => {
                                 type: 'submit',
                                 method: async (e) => {
                                     e.preventDefault()
+                                    const submitBtn = e.target.querySelector('button[type="submit"]')
+                                    if (submitBtn) {
+                                        if (submitBtn.disabled) return
+                                        submitBtn.disabled = true
+                                        submitBtn.style.opacity = '0.7'
+                                        submitBtn.style.cursor = 'wait'
+                                    }
                                     await saveTrainingData(isEditing)
+                                    if (submitBtn) {
+                                        submitBtn.disabled = false
+                                        submitBtn.style.opacity = '1'
+                                        submitBtn.style.cursor = 'pointer'
+                                    }
                                 }
                             }
                         })
@@ -1708,7 +1725,7 @@ export const trainingsAttended = () => {
 
         showLoading()
         try {
-            const response = await fetch('/api/trainings-attended', {
+            const response = await fetch('/trainingActivitiesResearch', {
                 method: 'POST',
                 body: formData
             })
