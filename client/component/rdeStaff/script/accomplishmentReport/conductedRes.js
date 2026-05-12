@@ -193,16 +193,10 @@ export const conductedResearch = () => {
 
         if (totalTrainingsSpan) {
             totalTrainingsSpan.textContent = currentStats.totalTrainings || '0'
-            console.log('Total Trainings updated to:', currentStats.totalTrainings)
-        } else {
-            console.warn('Total trainings span not found')
         }
 
         if (totalAttendeesSpan) {
             totalAttendeesSpan.textContent = currentStats.totalAttendees || '0'
-            console.log('Total Attendees updated to:', currentStats.totalAttendees)
-        } else {
-            console.warn('Total attendees span not found')
         }
     }
 
@@ -221,14 +215,6 @@ export const conductedResearch = () => {
         if (recordCount) {
             recordCount.textContent = `${filteredData.length} of ${totalCount} records`
         }
-
-        // Also log stats for debugging
-        console.log('Current stats:', {
-            totalTrainings: currentStats.totalTrainings,
-            totalAttendees: currentStats.totalAttendees,
-            totalCount: totalCount,
-            filteredCount: filteredData.length
-        })
     }
 
     // Update table with data
@@ -1621,9 +1607,7 @@ export const conductedResearch = () => {
                                 $({
                                     tag: 'div',
                                     style: {
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr 1fr',
-                                        gap: '20px',
+                                        display: 'absolute',
                                         marginBottom: '20px'
                                     },
                                     child: [
@@ -1871,10 +1855,9 @@ export const conductedResearch = () => {
                                             ]
                                         })
 
-                                    ] // end of 2-column grid children
-                                }),  // end of 2-column grid
-
-                                // Resource Persons and Participants section - Two Column Layout
+                                    ]
+                                }),
+                                // Resource Persons and Participants section
                                 $({
                                     tag: 'div',
                                     style: {
@@ -1898,104 +1881,91 @@ export const conductedResearch = () => {
                                                     tag: 'div',
                                                     style: {
                                                         display: 'flex',
-                                                        justifyContent: 'space-between',
                                                         alignItems: 'center',
+                                                        gap: '10px',
                                                         marginBottom: '16px'
                                                     },
                                                     child: [
                                                         $({
                                                             tag: 'div',
                                                             style: {
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                borderRadius: '8px',
+                                                                backgroundColor: 'rgba(33, 150, 243, 0.15)',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
-                                                                gap: '10px'
+                                                                justifyContent: 'center'
                                                             },
                                                             child: [
                                                                 $({
-                                                                    tag: 'div',
-                                                                    style: {
-                                                                        width: '32px',
-                                                                        height: '32px',
-                                                                        borderRadius: '8px',
-                                                                        backgroundColor: 'rgba(33, 150, 243, 0.15)',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center'
-                                                                    },
-                                                                    child: [
-                                                                        $({
-                                                                            tag: 'span',
-                                                                            att: { className: 'fa-solid fa-user-tie' },
-                                                                            style: { color: '#2196f3', fontSize: '16px' }
-                                                                        })
-                                                                    ]
-                                                                }),
-                                                                $({
-                                                                    tag: 'label',
-                                                                    text: 'Resource Person',
-                                                                    style: {
-                                                                        color: '#ddd',
-                                                                        fontSize: '14px',
-                                                                        fontWeight: '600',
-                                                                        margin: 0
-                                                                    }
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-user-tie' },
+                                                                    style: { color: '#2196f3', fontSize: '16px' }
                                                                 })
                                                             ]
                                                         }),
                                                         $({
-                                                            tag: 'button',
-                                                            att: { type: 'button' },
-                                                            text: '+ Add',
+                                                            tag: 'label',
+                                                            text: 'Resource Person(s)',
                                                             style: {
-                                                                padding: '6px 14px',
-                                                                backgroundColor: '#2196f3',
-                                                                border: 'none',
-                                                                borderRadius: '6px',
-                                                                color: '#fff',
-                                                                fontSize: '12px',
-                                                                cursor: 'pointer',
-                                                                fontWeight: '500',
-                                                                transition: 'all 0.2s ease'
-                                                            },
-                                                            event: {
-                                                                type: 'click',
-                                                                method: () => {
-                                                                    const newRow = addResourcePersonField()
-                                                                    resourcePersonsContainer.appendChild(newRow)
-                                                                },
-                                                                type2: 'mouseenter',
-                                                                method2: (e) => {
-                                                                    e.target.style.backgroundColor = '#1976d2'
-                                                                },
-                                                                type3: 'mouseleave',
-                                                                method3: (e) => {
-                                                                    e.target.style.backgroundColor = '#2196f3'
-                                                                }
+                                                                color: '#ddd',
+                                                                fontSize: '14px',
+                                                                fontWeight: '600',
+                                                                margin: 0
+                                                            }
+                                                        }),
+                                                        $({
+                                                            tag: 'span',
+                                                            text: '(Separate multiple names with commas)',
+                                                            style: {
+                                                                fontSize: '11px',
+                                                                color: '#666',
+                                                                marginLeft: '8px'
                                                             }
                                                         })
                                                     ]
                                                 }),
                                                 $({
-                                                    tag: 'div',
-                                                    att: { id: 'resource-persons-container' },
-                                                    style: {
-                                                        minHeight: '100px',
-                                                        maxHeight: '300px',
-                                                        overflowY: 'auto',
-                                                        padding: '8px',
-                                                        backgroundColor: '#1e1e1e',
-                                                        borderRadius: '8px'
+                                                    tag: 'textarea',
+                                                    att: {
+                                                        id: 'resource-persons-input',
+                                                        placeholder: 'Enter resource person names separated by commas (e.g., John Doe, Jane Smith, Mike Brown)',
+                                                        rows: '4'
                                                     },
-                                                    elementHandler: (el) => {
-                                                        resourcePersonsContainer = el
-                                                        if (isEditing && resourcePersons.length > 0) {
-                                                            resourcePersons.forEach(person => {
-                                                                resourcePersonsContainer.appendChild(
-                                                                    addResourcePersonField(person.name, person.topic)
-                                                                )
-                                                            })
+                                                    style: {
+                                                        width: '100%',
+                                                        padding: '10px',
+                                                        backgroundColor: '#333',
+                                                        border: '1px solid #444',
+                                                        borderRadius: '8px',
+                                                        color: '#fff',
+                                                        fontSize: '13px',
+                                                        outline: 'none',
+                                                        resize: 'vertical',
+                                                        fontFamily: 'inherit'
+                                                    },
+                                                    text: isEditing && resourcePersons.length > 0 ?
+                                                        resourcePersons.map(p => p.name || p).join(', ') : '',
+                                                    event: {
+                                                        type: 'input',
+                                                        method: (e) => {
+                                                            // Update the resourcePersons array in real-time
+                                                            const value = e.target.value
+                                                            const names = value.split(',').map(s => s.trim()).filter(s => s)
+                                                            resourcePersons = names.map(name => ({ name: name, topic: '' }))
                                                         }
                                                     }
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        marginTop: '8px',
+                                                        fontSize: '11px',
+                                                        color: '#666',
+                                                        fontStyle: 'italic'
+                                                    },
+                                                    text: 'Example: Dr. Maria Santos, Prof. Juan Dela Cruz, Engr. Robert Reyes'
                                                 })
                                             ]
                                         }),
@@ -2014,104 +1984,91 @@ export const conductedResearch = () => {
                                                     tag: 'div',
                                                     style: {
                                                         display: 'flex',
-                                                        justifyContent: 'space-between',
                                                         alignItems: 'center',
+                                                        gap: '10px',
                                                         marginBottom: '16px'
                                                     },
                                                     child: [
                                                         $({
                                                             tag: 'div',
                                                             style: {
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                borderRadius: '8px',
+                                                                backgroundColor: 'rgba(156, 39, 176, 0.15)',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
-                                                                gap: '10px'
+                                                                justifyContent: 'center'
                                                             },
                                                             child: [
                                                                 $({
-                                                                    tag: 'div',
-                                                                    style: {
-                                                                        width: '32px',
-                                                                        height: '32px',
-                                                                        borderRadius: '8px',
-                                                                        backgroundColor: 'rgba(156, 39, 176, 0.15)',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center'
-                                                                    },
-                                                                    child: [
-                                                                        $({
-                                                                            tag: 'span',
-                                                                            att: { className: 'fa-solid fa-users' },
-                                                                            style: { color: '#9c27b0', fontSize: '16px' }
-                                                                        })
-                                                                    ]
-                                                                }),
-                                                                $({
-                                                                    tag: 'label',
-                                                                    text: 'Participants',
-                                                                    style: {
-                                                                        color: '#ddd',
-                                                                        fontSize: '14px',
-                                                                        fontWeight: '600',
-                                                                        margin: 0
-                                                                    }
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-users' },
+                                                                    style: { color: '#9c27b0', fontSize: '16px' }
                                                                 })
                                                             ]
                                                         }),
                                                         $({
-                                                            tag: 'button',
-                                                            att: { type: 'button' },
-                                                            text: '+ Add',
+                                                            tag: 'label',
+                                                            text: 'Participant(s)',
                                                             style: {
-                                                                padding: '6px 14px',
-                                                                backgroundColor: '#9c27b0',
-                                                                border: 'none',
-                                                                borderRadius: '6px',
-                                                                color: '#fff',
-                                                                fontSize: '12px',
-                                                                cursor: 'pointer',
-                                                                fontWeight: '500',
-                                                                transition: 'all 0.2s ease'
-                                                            },
-                                                            event: {
-                                                                type: 'click',
-                                                                method: () => {
-                                                                    const newRow = addParticipantField()
-                                                                    participantsContainer.appendChild(newRow)
-                                                                },
-                                                                type2: 'mouseenter',
-                                                                method2: (e) => {
-                                                                    e.target.style.backgroundColor = '#7b1fa2'
-                                                                },
-                                                                type3: 'mouseleave',
-                                                                method3: (e) => {
-                                                                    e.target.style.backgroundColor = '#9c27b0'
-                                                                }
+                                                                color: '#ddd',
+                                                                fontSize: '14px',
+                                                                fontWeight: '600',
+                                                                margin: 0
+                                                            }
+                                                        }),
+                                                        $({
+                                                            tag: 'span',
+                                                            text: '(Separate multiple names with commas)',
+                                                            style: {
+                                                                fontSize: '11px',
+                                                                color: '#666',
+                                                                marginLeft: '8px'
                                                             }
                                                         })
                                                     ]
                                                 }),
                                                 $({
-                                                    tag: 'div',
-                                                    att: { id: 'participants-container' },
-                                                    style: {
-                                                        minHeight: '100px',
-                                                        maxHeight: '300px',
-                                                        overflowY: 'auto',
-                                                        padding: '8px',
-                                                        backgroundColor: '#1e1e1e',
-                                                        borderRadius: '8px'
+                                                    tag: 'textarea',
+                                                    att: {
+                                                        id: 'participants-input',
+                                                        placeholder: 'Enter participant names separated by commas (e.g., John Doe, Jane Smith, Mike Brown)',
+                                                        rows: '4'
                                                     },
-                                                    elementHandler: (el) => {
-                                                        participantsContainer = el
-                                                        if (isEditing && participants.length > 0) {
-                                                            participants.forEach(participant => {
-                                                                participantsContainer.appendChild(
-                                                                    addParticipantField(participant.name, participant.role)
-                                                                )
-                                                            })
+                                                    style: {
+                                                        width: '100%',
+                                                        padding: '10px',
+                                                        backgroundColor: '#333',
+                                                        border: '1px solid #444',
+                                                        borderRadius: '8px',
+                                                        color: '#fff',
+                                                        fontSize: '13px',
+                                                        outline: 'none',
+                                                        resize: 'vertical',
+                                                        fontFamily: 'inherit'
+                                                    },
+                                                    text: isEditing && participants.length > 0 ?
+                                                        participants.map(p => p.name || p).join(', ') : '',
+                                                    event: {
+                                                        type: 'input',
+                                                        method: (e) => {
+                                                            // Update the participants array in real-time
+                                                            const value = e.target.value
+                                                            const names = value.split(',').map(s => s.trim()).filter(s => s)
+                                                            participants = names.map(name => ({ name: name, role: '' }))
                                                         }
                                                     }
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        marginTop: '8px',
+                                                        fontSize: '11px',
+                                                        color: '#666',
+                                                        fontStyle: 'italic'
+                                                    },
+                                                    text: 'Example: Dr. Ana Cruz (Research Chair), Prof. Carlos Garcia (Faculty), 50 Students'
                                                 })
                                             ]
                                         })
@@ -2157,7 +2114,6 @@ export const conductedResearch = () => {
                                         })
                                     ]
                                 }),
-
                                 // Paper Trail Files section
                                 $({
                                     tag: 'div',
@@ -2364,13 +2320,29 @@ export const conductedResearch = () => {
                                                                     }
                                                                 }),
 
-                                                                // View Document button (only if file exists)
-                                                                ...(existingFiles.activityProposal ? [
+                                                                // File name display (for both add and edit)
+                                                                $({
+                                                                    tag: 'div',
+                                                                    att: { id: 'activity-proposal-filename' },
+                                                                    style: {
+                                                                        marginTop: '10px',
+                                                                        fontSize: '11px',
+                                                                        color: '#888',
+                                                                        textAlign: 'center',
+                                                                        wordBreak: 'break-all'
+                                                                    },
+                                                                    text: existingFiles.activityProposal ?
+                                                                        `Current file: ${existingFiles.activityProposal.split('/').pop() || 'Document'}` :
+                                                                        'No file selected'
+                                                                }),
+
+                                                                // View Document button (only if file exists in edit mode)
+                                                                ...(existingFiles.activityProposal && isEditing ? [
                                                                     $({
                                                                         tag: 'button',
                                                                         att: { type: 'button' },
                                                                         style: {
-                                                                            marginTop: '12px',
+                                                                            marginTop: '8px',
                                                                             width: '100%',
                                                                             padding: '8px',
                                                                             backgroundColor: 'rgba(33, 150, 243, 0.1)',
@@ -2568,13 +2540,29 @@ export const conductedResearch = () => {
                                                                     }
                                                                 }),
 
-                                                                // View Document button (only if file exists)
-                                                                ...(existingFiles.attendanceSheet ? [
+                                                                // File name display (for both add and edit)
+                                                                $({
+                                                                    tag: 'div',
+                                                                    att: { id: 'attendance-sheet-filename' },
+                                                                    style: {
+                                                                        marginTop: '10px',
+                                                                        fontSize: '11px',
+                                                                        color: '#888',
+                                                                        textAlign: 'center',
+                                                                        wordBreak: 'break-all'
+                                                                    },
+                                                                    text: existingFiles.attendanceSheet ?
+                                                                        `Current file: ${existingFiles.attendanceSheet.split('/').pop() || 'Document'}` :
+                                                                        'No file selected'
+                                                                }),
+
+                                                                // View Document button (only if file exists in edit mode)
+                                                                ...(existingFiles.attendanceSheet && isEditing ? [
                                                                     $({
                                                                         tag: 'button',
                                                                         att: { type: 'button' },
                                                                         style: {
-                                                                            marginTop: '12px',
+                                                                            marginTop: '8px',
                                                                             width: '100%',
                                                                             padding: '8px',
                                                                             backgroundColor: 'rgba(33, 150, 243, 0.1)',
@@ -2772,13 +2760,29 @@ export const conductedResearch = () => {
                                                                     }
                                                                 }),
 
-                                                                // View Document button (only if file exists)
-                                                                ...(existingFiles.activityReport ? [
+                                                                // File name display (for both add and edit)
+                                                                $({
+                                                                    tag: 'div',
+                                                                    att: { id: 'activity-report-filename' },
+                                                                    style: {
+                                                                        marginTop: '10px',
+                                                                        fontSize: '11px',
+                                                                        color: '#888',
+                                                                        textAlign: 'center',
+                                                                        wordBreak: 'break-all'
+                                                                    },
+                                                                    text: existingFiles.activityReport ?
+                                                                        `Current file: ${existingFiles.activityReport.split('/').pop() || 'Document'}` :
+                                                                        'No file selected'
+                                                                }),
+
+                                                                // View Document button (only if file exists in edit mode)
+                                                                ...(existingFiles.activityReport && isEditing ? [
                                                                     $({
                                                                         tag: 'button',
                                                                         att: { type: 'button' },
                                                                         style: {
-                                                                            marginTop: '12px',
+                                                                            marginTop: '8px',
                                                                             width: '100%',
                                                                             padding: '8px',
                                                                             backgroundColor: 'rgba(33, 150, 243, 0.1)',
@@ -2976,13 +2980,29 @@ export const conductedResearch = () => {
                                                                     }
                                                                 }),
 
-                                                                // View Document button (only if file exists)
-                                                                ...(existingFiles.program ? [
+                                                                // File name display (for both add and edit)
+                                                                $({
+                                                                    tag: 'div',
+                                                                    att: { id: 'program-filename' },
+                                                                    style: {
+                                                                        marginTop: '10px',
+                                                                        fontSize: '11px',
+                                                                        color: '#888',
+                                                                        textAlign: 'center',
+                                                                        wordBreak: 'break-all'
+                                                                    },
+                                                                    text: existingFiles.program ?
+                                                                        `Current file: ${existingFiles.program.split('/').pop() || 'Document'}` :
+                                                                        'No file selected'
+                                                                }),
+
+                                                                // View Document button (only if file exists in edit mode)
+                                                                ...(existingFiles.program && isEditing ? [
                                                                     $({
                                                                         tag: 'button',
                                                                         att: { type: 'button' },
                                                                         style: {
-                                                                            marginTop: '12px',
+                                                                            marginTop: '8px',
                                                                             width: '100%',
                                                                             padding: '8px',
                                                                             backgroundColor: 'rgba(33, 150, 243, 0.1)',
@@ -3030,7 +3050,7 @@ export const conductedResearch = () => {
                                                     ]
                                                 }),
 
-                                                // Right Column - Photos section
+                                                // Right Column - Photos section (unchanged, keeps the same functionality)
                                                 $({
                                                     tag: 'div',
                                                     style: {
@@ -3125,13 +3145,11 @@ export const conductedResearch = () => {
                                                                                     }
                                                                                 }
                                                                             })
-                                                                            // Update count
                                                                             const photoCount = document.getElementById('photo-count')
                                                                             if (photoCount) {
                                                                                 photoCount.textContent = `${paperTrailFiles.photos.length + existingFiles.photos.length}`
                                                                             }
                                                                             showNotification(`${files.length} photo(s) selected. Click "Update Training/Activity" to save changes.`, 'info')
-                                                                            // Clear the input to allow re-uploading same files
                                                                             e.target.value = ''
                                                                         }
                                                                     }
@@ -3232,15 +3250,12 @@ export const conductedResearch = () => {
                                                                 minHeight: '120px'
                                                             },
                                                             elementHandler: (el) => {
-                                                                // Clear any existing content first
                                                                 el.innerHTML = ''
-                                                                // Add existing photos when editing
                                                                 if (isEditing && existingFiles.photos && existingFiles.photos.length > 0) {
                                                                     existingFiles.photos.forEach((photoUrl, index) => {
                                                                         addPhotoPreview(null, el, true, photoUrl, index)
                                                                     })
                                                                 }
-                                                                // If no photos and not editing, show empty message
                                                                 if ((!isEditing || !existingFiles.photos || existingFiles.photos.length === 0) && paperTrailFiles.photos.length === 0) {
                                                                     const emptyMessage = $({
                                                                         tag: 'div',
@@ -3263,7 +3278,6 @@ export const conductedResearch = () => {
                                         })
                                     ]
                                 }),
-
                                 // Modal footer
                                 $({
                                     tag: 'div',
