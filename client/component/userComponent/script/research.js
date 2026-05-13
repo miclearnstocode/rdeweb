@@ -1,5 +1,6 @@
 import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal } from '../../../lib/lib.js'
 import { handleResubmit } from './resubmit.js'
+import { Print } from "../../otherComponent/comment.js"
 
 
 // View Researches Modal
@@ -623,7 +624,6 @@ export const Research = () => {
         updateStatsFromData(total, pending, accepted, rejected)
     }
 
-    let mainContainer
     let documentsTable
     let uploadModal
     let formData = {
@@ -821,190 +821,379 @@ export const Research = () => {
         return container
     }
 
-    // View Comments with FileViewerModal
-    const viewComments = async (doc) => {
-        // Show loading state
-        let loading = Waiting()
-        document.body.appendChild(loading)
+    // View Comments Modal with Print functionality
+    const viewComments = (doc) => {
+        let commentsBody
+        let commentsData = []
 
-        try {
-            const form = new FormData()
-            form.append('commentRequest', 'true')
-            form.append('docId', doc.id)
-
-            const response = await fetch('/uploadResearchFile', {
-                method: 'POST',
-                body: form
+        // Build the content for the modal
+        const buildContent = () => {
+            const container = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    minHeight: '400px'
+                }
             })
 
-            if (!response.ok) throw new Error('Failed to load comments')
-            const commentsData = await response.json()
+            // Comments Body Container
+            commentsBody = $({
+                tag: 'div',
+                style: {
+                    flex: 1,
+                    overflow: 'auto',
+                    minHeight: '300px'
+                }
+            })
 
-            if (loading && loading.remove) loading.remove()
+            // Show loading state
+            commentsBody.appendChild($({
+                tag: 'div',
+                style: { textAlign: 'center', padding: '40px', color: '#888' },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '24px', marginBottom: '12px', display: 'block' } }),
+                    $({ tag: 'div', text: 'Loading comments...' })
+                ]
+            }))
+
+            container.appendChild(commentsBody)
+            return container
+        }
+
+        // Build footer with Print and Close buttons
+        const buildFooter = ({ closeModal }) => {
+            const footerContainer = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '12px',
+                    width: '100%'
+                }
+            });
+
+            const printBtn = $({
+                tag: 'button',
+                style: {
+                    padding: '8px 20px',
+                    backgroundColor: '#2196F3',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-print' }, style: { fontSize: '14px' } }),
+                    $({ tag: 'span', text: 'Print Comments' })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => printComments()
+                }
+            });
+
+            const closeBtn = $({
+                tag: 'button',
+                text: 'Close',
+                style: {
+                    padding: '8px 24px',
+                    backgroundColor: '#444',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    cursor: 'pointer'
+                },
+                event: {
+                    type: 'click',
+                    method: () => closeModal()
+                }
+            });
+
+            footerContainer.appendChild(printBtn);
+            footerContainer.appendChild(closeBtn);
+            return footerContainer;
+        };
+
+        // Create individual comment card
+        const createCommentCard = (comment) => {
+            const card = $({
+                tag: 'div',
+                style: {
+                    backgroundColor: '#2a2a2a',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    marginBottom: '16px',
+                    borderLeft: `4px solid ${comment.evalName ? '#2196F3' : '#FF9800'}`
+                }
+            });
+
+            // Evaluator info
+            const evaluatorInfo = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px',
+                    paddingBottom: '8px',
+                    borderBottom: '1px solid rgba(255,255,255,0.1)'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: { display: 'flex', alignItems: 'center', gap: '8px' },
+                        child: [
+                            $({ tag: 'i', att: { className: 'fas fa-user-circle' }, style: { color: '#2196F3', fontSize: '16px' } }),
+                            $({ tag: 'span', text: comment.evalName || 'Evaluator', style: { color: '#fff', fontWeight: '500' } })
+                        ]
+                    }),
+                    comment.date ? $({
+                        tag: 'span',
+                        text: new Date(comment.date).toLocaleDateString(),
+                        style: { color: '#888', fontSize: '12px' }
+                    }) : null
+                ]
+            });
+
+            card.appendChild(evaluatorInfo);
+
+            // Comment sections
+            const sections = [
+                { title: 'Title', content: comment.title, icon: 'fa-heading' },
+                { title: 'Introduction', content: comment.intro, icon: 'fa-book-open' },
+                { title: 'Abstract', content: comment.abstract, icon: 'fa-paragraph' },
+                { title: 'Objective', content: comment.objective, icon: 'fa-bullseye' },
+                { title: 'Methodology', content: comment.methodology, icon: 'fa-flask' },
+                { title: 'Results and Discussion', content: comment.results, icon: 'fa-chart-line' },
+                { title: 'Recommendation and Conclusion', content: comment.recommendation, icon: 'fa-lightbulb' },
+                { title: 'Literature', content: comment.literature, icon: 'fa-book' },
+                { title: 'Other Comments', content: comment.other, icon: 'fa-comment' }
+            ];
+
+            sections.forEach(section => {
+                if (section.content && section.content.trim() !== '') {
+                    const sectionEl = $({
+                        tag: 'div',
+                        style: { marginBottom: '12px' },
+                        child: [
+                            $({
+                                tag: 'div',
+                                style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' },
+                                child: [
+                                    $({ tag: 'i', att: { className: `fas ${section.icon}` }, style: { color: '#FF9800', fontSize: '12px' } }),
+                                    $({ tag: 'span', text: section.title, style: { color: '#FF9800', fontSize: '13px', fontWeight: '500' } })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: { color: '#ccc', fontSize: '13px', lineHeight: '1.5', whiteSpace: 'pre-wrap' },
+                                text: section.content
+                            })
+                        ]
+                    });
+                    card.appendChild(sectionEl);
+                }
+            });
+
+            return card;
+        };
+
+        // Display comments
+        const displayComments = (commentsData, docInfo) => {
+            commentsBody.innerHTML = '';
 
             if (!commentsData || commentsData.length === 0) {
-                document.body.appendChild(ConfirmationAlert('No comments available for this document', () => { }))
-                return
+                commentsBody.appendChild($({
+                    tag: 'div',
+                    style: { textAlign: 'center', padding: '40px', color: '#888' },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fas fa-comments' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
+                        $({ tag: 'div', text: 'No comments available for this document' })
+                    ]
+                }));
+                return;
             }
 
-            // Construct HTML content for the viewer
-            let htmlContent = `
+            commentsData.forEach(comment => {
+                const commentCard = createCommentCard(comment);
+                commentsBody.appendChild(commentCard);
+            });
+        };
+
+        // Print comments
+        const printComments = () => {
+            if (!commentsData || commentsData.length === 0) {
+                AlertModal({
+                    title: 'No Comments',
+                    message: 'No comments available to print'
+                });
+                return;
+            }
+
+            // Build print HTML
+            let printHtml = `
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <meta charset="UTF-8">
-                    <title>Comments - ${doc.title}</title>
-                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                    <title>Review Comments - ${doc.title}</title>
                     <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400500600700&display=swap')
-                        body { 
-                            background-color: #111 
-                            color: #eee 
-                            font-family: 'Inter', sans-serif 
-                            padding: 40px 
-                            line-height: 1.6
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            margin: 40px;
+                            background: white;
+                            color: #333;
                         }
-                        .container { max-width: 850px margin: 0 auto }
-                        .header { 
-                            background: linear-gradient(135deg, #1e1e1e 0%, #121212 100%)
-                            padding: 30px 
-                            border-radius: 16px 
-                            margin-bottom: 30px 
-                            border: 1px solid #333
-                            box-shadow: 0 10px 30px rgba(0,0,0,0.3)
+                        .header {
+                            text-align: center;
+                            margin-bottom: 30px;
+                            padding-bottom: 20px;
+                            border-bottom: 2px solid #333;
                         }
-                        .header h1 { margin: 0 0 15px 0 color: #fff font-size: 26px }
-                        .meta-info { display: flex flex-wrap: wrap gap: 20px color: #888 font-size: 14px }
-                        .meta-item { display: flex alignItems: center gap: 8px }
-                        .meta-item i { color: #4caf50 }
-                        
-                        .comment-card { 
-                            background: #1e1e1e 
-                            border-radius: 16px 
-                            padding: 30px 
-                            margin-bottom: 30px 
-                            border: 1px solid #333 
-                            border-left: 6px solid #4caf50
-                            box-shadow: 0 10px 25px rgba(0,0,0,0.2)
+                        .comment-card {
+                            margin-bottom: 30px;
+                            padding: 20px;
+                            border: 1px solid #ddd;
+                            border-radius: 8px;
+                            page-break-inside: avoid;
                         }
-                        .eval-header { 
-                            display: flex 
-                            justify-content: space-between 
-                            align-items: center 
-                            margin-bottom: 25px 
-                            padding-bottom: 15px 
-                            border-bottom: 1px solid rgba(255,255,255,0.1) 
+                        .eval-header {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 15px;
+                            padding-bottom: 10px;
+                            border-bottom: 1px solid #eee;
                         }
-                        .eval-name { font-weight: 700 color: #4caf50 font-size: 19px display: flex alignItems: center gap: 10px }
-                        .eval-date { color: #666 font-size: 13px font-weight: 500 }
-                        
-                        .section { margin-bottom: 24px }
-                        .section-title { 
-                            color: #FF9800 
-                            font-size: 13px 
-                            font-weight: 700 
-                            margin-bottom: 10px 
-                            display: flex 
-                            align-items: center 
-                            gap: 10px 
-                            text-transform: uppercase 
-                            letter-spacing: 1px
+                        .eval-name {
+                            font-weight: bold;
+                            color: #2196F3;
                         }
-                        .section-content { 
-                            color: #ccc 
-                            background: rgba(255,255,255,0.03)
-                            padding: 15px
-                            border-radius: 10px
-                            font-size: 14px 
-                            white-space: pre-wrap 
+                        .section {
+                            margin-bottom: 15px;
                         }
-                        
+                        .section-title {
+                            font-weight: bold;
+                            color: #FF9800;
+                            margin-bottom: 5px;
+                        }
+                        .section-content {
+                            margin-left: 10px;
+                        }
                         @media print {
-                            body { background: white color: black padding: 20px }
-                            .header, .comment-card { 
-                                background: white 
-                                color: black 
-                                border: 1px solid #ddd 
-                                box-shadow: none
-                                page-break-inside: avoid
+                            body {
+                                margin: 20px;
                             }
-                            .header h1, .eval-name { color: #000 }
-                            .section-title { color: #555 border-bottom: 1px solid #eee padding-bottom: 5px }
-                            .section-content { color: #333 background: none padding: 10px 0 }
-                            .meta-info { color: #444 }
+                            .comment-card {
+                                page-break-inside: avoid;
+                            }
                         }
                     </style>
                 </head>
                 <body>
-                    <div class="container">
-                        <div class="header">
-                            <h1><i class="fas fa-comments-alt"></i> Review Comments</h1>
-                            <div class="meta-info">
-                                <div class="meta-item"><i class="fas fa-file-alt"></i> <strong>Document:</strong> ${doc.title}</div>
-                                <div class="meta-item"><i class="fas fa-user"></i> <strong>Author:</strong> ${doc.author}</div>
-                                <div class="meta-item"><i class="fas fa-calendar-check"></i> <strong>Event:</strong> ${doc.eventName}</div>
-                            </div>
-                        </div>
-            `
+                    <div class="header">
+                        <h1>Review Comments</h1>
+                        <p><strong>Document:</strong> ${doc.title}</p>
+                        <p><strong>Author:</strong> ${doc.author} | <strong>Event:</strong> ${doc.eventName}</p>
+                    </div>
+            `;
 
             commentsData.forEach(comment => {
-                htmlContent += `
+                printHtml += `
                     <div class="comment-card">
                         <div class="eval-header">
-                            <div class="eval-name"><i class="fas fa-user-shield"></i> ${comment.evalName || 'Evaluator'}</div>
-                            <div class="eval-date"><i class="far fa-calendar-alt"></i> ${comment.date ? new Date(comment.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : ''}</div>
+                            <div class="eval-name">${comment.evalName || 'Evaluator'}</div>
+                            <div>${comment.date ? new Date(comment.date).toLocaleDateString() : ''}</div>
                         </div>
-                `
+                `;
 
                 const sections = [
-                    { title: 'Title', content: comment.title, icon: 'fa-heading' },
-                    { title: 'Introduction', content: comment.intro, icon: 'fa-book-open' },
-                    { title: 'Abstract', content: comment.abstract, icon: 'fa-paragraph' },
-                    { title: 'Objective', content: comment.objective, icon: 'fa-bullseye' },
-                    { title: 'Methodology', content: comment.methodology, icon: 'fa-flask' },
-                    { title: 'Results and Discussion', content: comment.results, icon: 'fa-chart-line' },
-                    { title: 'Recommendation and Conclusion', content: comment.recommendation, icon: 'fa-lightbulb' },
-                    { title: 'Literature', content: comment.literature, icon: 'fa-book' },
-                    { title: 'Other Comments', content: comment.other, icon: 'fa-comment-dots' }
-                ]
+                    { title: 'Title', content: comment.title },
+                    { title: 'Introduction', content: comment.intro },
+                    { title: 'Abstract', content: comment.abstract },
+                    { title: 'Objective', content: comment.objective },
+                    { title: 'Methodology', content: comment.methodology },
+                    { title: 'Results and Discussion', content: comment.results },
+                    { title: 'Recommendation and Conclusion', content: comment.recommendation },
+                    { title: 'Literature', content: comment.literature },
+                    { title: 'Other Comments', content: comment.other }
+                ];
 
                 sections.forEach(section => {
                     if (section.content && section.content.trim() !== '') {
-                        htmlContent += `
+                        printHtml += `
                             <div class="section">
-                                <div class="section-title"><i class="fas ${section.icon}"></i> ${section.title}</div>
+                                <div class="section-title">${section.title}</div>
                                 <div class="section-content">${section.content}</div>
                             </div>
-                        `
+                        `;
                     }
-                })
+                });
 
-                htmlContent += `</div>`
-            })
+                printHtml += `</div>`;
+            });
 
-            htmlContent += `</div></body></html>`
+            printHtml += `</body></html>`;
 
-            const blob = new Blob([htmlContent], { type: 'text/html' })
-            const url = URL.createObjectURL(blob)
+            const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=yes,scrollbars=yes');
+            printWindow.document.write(printHtml);
+            printWindow.document.close();
+            printWindow.print();
+            printWindow.close();
+        };
 
-            // Use the reusable modal from lib.js (hide Open Drive and add Print support)
-            FileViewerModal(url, `Review Comments: ${doc.title}`, '#4caf50', {
-                showOpenDrive: false,
-                onPrint: (iframe) => {
-                    if (iframe && iframe.contentWindow) {
-                        iframe.contentWindow.focus()
-                        iframe.contentWindow.print()
-                    }
+        // Load comments from API
+        const loadComments = async () => {
+            try {
+                const form = new FormData();
+                form.append('commentRequest', 'true');
+                form.append('docId', doc.id);
+
+                const response = await fetch('/uploadResearchFile', {
+                    method: 'POST',
+                    body: form
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    commentsData = data;
+                    displayComments(data, doc);
+                } else {
+                    throw new Error('Failed to load comments');
                 }
-            })
+            } catch (error) {
+                console.error('Error loading comments:', error);
+                commentsBody.innerHTML = '';
+                commentsBody.appendChild($({
+                    tag: 'div',
+                    style: { textAlign: 'center', padding: '40px', color: '#f44336' },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
+                        $({ tag: 'div', text: 'Error loading comments: ' + error.message })
+                    ]
+                }));
+            }
+        };
 
-        } catch (error) {
-            if (loading && loading.remove) loading.remove()
-            console.error('Error loading comments:', error)
-            document.body.appendChild(ConfirmationAlert('Error loading comments: ' + error.message, () => { }))
-        }
+        // Create and open the modal
+        CustomModal({
+            title: doc.title,
+            content: buildContent,
+            footer: buildFooter,
+            size: 'large',
+            onClose: () => {
+                commentsData = [];
+            }
+        });
+
+        // Load comments after modal is open
+        setTimeout(() => {
+            loadComments();
+        }, 100);
     }
-
     // Create table row
     const createTableRow = (doc) => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
@@ -1163,344 +1352,340 @@ export const Research = () => {
 
     // Open Revision Modal
     const openRevisionModal = async (doc) => {
-        const modal = $({
-            tag: 'div',
-            style: {
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.85)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 101,
-                backdropFilter: 'blur(5px)'
-            }
-        })
-
-        const modalContent = $({
-            tag: 'div',
-            style: {
-                backgroundColor: '#1a1a1a',
-                borderRadius: '16px',
-                width: '90%',
-                maxWidth: '550px',
-                maxHeight: '85vh',
-                overflow: 'auto',
-                boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
-            }
-        })
-
-        // Header
-        const header = $({
-            tag: 'div',
-            style: {
-                padding: '20px 24px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                position: 'sticky',
-                top: 0,
-                backgroundColor: '#1a1a1a',
-                zIndex: 1
-            },
-            child: [
-                $({
-                    tag: 'h3',
-                    text: 'Submit Revised Paper/Proposal',
-                    style: { color: '#fff', margin: 0, fontSize: '20px' }
-                }),
-                $({
-                    tag: 'i',
-                    att: { className: 'fas fa-times' },
-                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
-                    event: { type: 'click', method: () => modal.remove() }
-                })
-            ]
-        })
-
-        // Form body
-        const formBody = $({ tag: 'div', style: { padding: '24px' } })
-
-        // Document Title (readonly)
-        const titleField = $({ tag: 'div', style: { marginBottom: '24px' } })
-        titleField.appendChild($({
-            tag: 'label',
-            text: 'Document Title',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }
-        }))
-
-        const titleInput = $({
-            tag: 'input',
-            att: { type: 'text', value: doc.title || '', disabled: true },
-            style: {
-                width: '100%',
-                padding: '12px 14px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#aaa',
-                fontSize: '14px',
-                cursor: 'not-allowed'
-            }
-        })
-        titleField.appendChild(titleInput)
-        formBody.appendChild(titleField)
-
-        // File upload section (only Research File)
-        const fileSection = $({
-            tag: 'div',
-            style: {
-                backgroundColor: '#2a2a2a',
-                borderRadius: '12px',
-                padding: '20px',
-                marginBottom: '20px'
-            }
-        })
-
-        fileSection.appendChild($({
-            tag: 'div',
-            style: { fontSize: '12px', color: '#9C27B0', marginBottom: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' },
-            text: 'REVISED DOCUMENT'
-        }))
-
-        // File upload area
         let fileInput, fileNameDisplay, fileError
+        let selectedFile = null
 
-        const uploadArea = $({
-            tag: 'div',
-            style: {
-                border: '2px dashed #9C27B0',
-                borderRadius: '10px',
-                padding: '30px 20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                backgroundColor: 'rgba(156, 39, 176, 0.05)'
-            },
-            event: {
-                type: 'click',
-                method: () => fileInput.click()
-            }
-        })
+        // Build the content for the modal
+        const buildContent = () => {
+            const container = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '20px'
+                }
+            })
 
-        uploadArea.appendChild($({
-            tag: 'i',
-            att: { className: 'fas fa-cloud-upload-alt' },
-            style: { fontSize: '40px', color: '#9C27B0', marginBottom: '12px', display: 'block' }
-        }))
+            // Document Title (readonly)
+            const titleField = $({ tag: 'div', style: { marginBottom: '0px' } });
+            titleField.appendChild($({
+                tag: 'label',
+                text: 'Document Title',
+                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }
+            }));
 
-        uploadArea.appendChild($({
-            tag: 'div',
-            text: 'Click to upload revised document',
-            style: { color: '#9C27B0', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }
-        }))
+            const titleInput = $({
+                tag: 'input',
+                att: { type: 'text', value: doc.title || '', disabled: true },
+                style: {
+                    width: '100%',
+                    padding: '12px 14px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#aaa',
+                    fontSize: '14px',
+                    cursor: 'not-allowed'
+                }
+            })
+            titleField.appendChild(titleInput)
+            container.appendChild(titleField)
 
-        uploadArea.appendChild($({
-            tag: 'div',
-            text: 'PDF only (Max 10MB)',
-            style: { color: '#888', fontSize: '12px' }
-        }))
+            // File upload section
+            const fileSection = $({
+                tag: 'div',
+                style: {
+                    backgroundColor: '#2a2a2a',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    marginBottom: '0px'
+                }
+            })
 
-        fileNameDisplay = $({
-            tag: 'div',
-            style: { marginTop: '12px', fontSize: '12px', color: '#4caf50', textAlign: 'center' }
-        })
+            fileSection.appendChild($({
+                tag: 'div',
+                style: { fontSize: '12px', color: '#9C27B0', marginBottom: '16px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' },
+                text: 'REVISED DOCUMENT'
+            }))
 
-        fileError = $({
-            tag: 'div',
-            style: { marginTop: '8px', fontSize: '12px', color: '#f44336', textAlign: 'center' }
-        })
+            // File upload area
+            const uploadArea = $({
+                tag: 'div',
+                style: {
+                    border: '2px dashed #9C27B0',
+                    borderRadius: '10px',
+                    padding: '30px 20px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    backgroundColor: 'rgba(156, 39, 176, 0.05)'
+                },
+                event: {
+                    type: 'click',
+                    method: () => fileInput.click(),
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(156, 39, 176, 0.1)';
+                        e.currentTarget.style.borderColor = '#9C27B0';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(156, 39, 176, 0.05)';
+                        e.currentTarget.style.borderColor = '#9C27B0';
+                    }
+                }
+            })
 
-        fileInput = $({
-            tag: 'input',
-            att: { type: 'file', accept: '.pdf,application/pdf', style: 'display: none' },
-            event: {
-                type: 'change',
-                method: (e) => {
-                    const file = e.target.files[0]
-                    if (file) {
-                        if (file.type !== 'application/pdf') {
-                            fileError.innerText = 'Please select a valid PDF file'
-                            fileNameDisplay.innerText = ''
-                            fileInput.value = ''
-                        } else if (file.size > 10 * 1024 * 1024) {
-                            fileError.innerText = 'File size exceeds 10MB limit'
-                            fileNameDisplay.innerText = ''
-                            fileInput.value = ''
-                        } else {
-                            fileError.innerText = ''
-                            fileNameDisplay.innerText = `✓ Selected: ${file.name}`
+            uploadArea.appendChild($({
+                tag: 'i',
+                att: { className: 'fas fa-cloud-upload-alt' },
+                style: { fontSize: '40px', color: '#9C27B0', marginBottom: '12px', display: 'block' }
+            }))
+
+            uploadArea.appendChild($({
+                tag: 'div',
+                text: 'Click to upload revised document',
+                style: { color: '#9C27B0', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }
+            }))
+
+            uploadArea.appendChild($({
+                tag: 'div',
+                text: 'PDF only (Max 10MB)',
+                style: { color: '#888', fontSize: '12px' }
+            }))
+
+            fileNameDisplay = $({
+                tag: 'div',
+                style: { marginTop: '12px', fontSize: '12px', color: '#4caf50', textAlign: 'center' }
+            })
+
+            fileError = $({
+                tag: 'div',
+                style: { marginTop: '8px', fontSize: '12px', color: '#f44336', textAlign: 'center' }
+            })
+
+            fileInput = $({
+                tag: 'input',
+                att: { type: 'file', accept: '.pdf,application/pdf', style: 'display: none' },
+                event: {
+                    type: 'change',
+                    method: (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            if (file.type !== 'application/pdf') {
+                                fileError.innerText = 'Please select a valid PDF file';
+                                fileNameDisplay.innerText = '';
+                                fileInput.value = '';
+                                selectedFile = null;
+                            } else if (file.size > 10 * 1024 * 1024) {
+                                fileError.innerText = 'File size exceeds 10MB limit';
+                                fileNameDisplay.innerText = '';
+                                fileInput.value = '';
+                                selectedFile = null;
+                            } else {
+                                fileError.innerText = '';
+                                fileNameDisplay.innerText = `✓ Selected: ${file.name}`;
+                                selectedFile = file;
+                            }
                         }
                     }
                 }
-            }
-        })
+            })
 
-        fileSection.appendChild(uploadArea)
-        fileSection.appendChild(fileNameDisplay)
-        fileSection.appendChild(fileError)
-        fileSection.appendChild(fileInput)
+            fileSection.appendChild(uploadArea);
+            fileSection.appendChild(fileNameDisplay);
+            fileSection.appendChild(fileError);
+            fileSection.appendChild(fileInput);
+            container.appendChild(fileSection);
 
-        formBody.appendChild(fileSection)
+            // Info notice
+            const infoNotice = $({
+                tag: 'div',
+                style: {
+                    padding: '14px',
+                    backgroundColor: 'rgba(156, 39, 176, 0.08)',
+                    borderRadius: '10px',
+                    borderLeft: '4px solid #9C27B0',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { color: '#9C27B0', fontSize: '16px', marginTop: '2px' } }),
+                    $({
+                        tag: 'div',
+                        style: { flex: 1 },
+                        child: [
+                            $({
+                                tag: 'div',
+                                text: 'Revision Guidelines:',
+                                style: { color: '#9C27B0', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }
+                            }),
+                            $({
+                                tag: 'div',
+                                text: 'Please upload your revised research document where evaluator comments and suggestions are applied. The original document will remain along with the new version with revised tag.',
+                                style: { color: '#bbb', fontSize: '12px', lineHeight: '1.4' }
+                            })
+                        ]
+                    })
+                ]
+            })
+            container.appendChild(infoNotice);
 
-        // Info notice
-        const infoNotice = $({
-            tag: 'div',
-            style: {
-                padding: '14px',
-                backgroundColor: 'rgba(156, 39, 176, 0.08)',
-                borderRadius: '10px',
-                borderLeft: '4px solid #9C27B0',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '12px'
-            },
-            child: [
-                $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { color: '#9C27B0', fontSize: '16px', marginTop: '2px' } }),
-                $({
-                    tag: 'div',
-                    style: { flex: 1 },
-                    child: [
-                        $({
-                            tag: 'div',
-                            text: 'Revision Guidelines:',
-                            style: { color: '#9C27B0', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }
-                        }),
-                        $({
-                            tag: 'div',
-                            text: 'Please upload your revised research document were evaluator comments and suggestion is applied. The original document will remain along with the new version with revised tag.',
-                            style: { color: '#bbb', fontSize: '12px', lineHeight: '1.4' }
-                        })
-                    ]
-                })
-            ]
-        })
-        formBody.appendChild(infoNotice)
+            return container
+        }
 
-        // Form actions
-        const actions = $({
-            tag: 'div',
-            style: {
-                padding: '20px 24px',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                gap: '12px',
-                justifyContent: 'flex-end',
-                position: 'sticky',
-                bottom: 0,
-                backgroundColor: '#1a1a1a'
-            }
-        })
+        // Build the footer with action buttons
+        const buildFooter = ({ closeModal }) => {
+            const footerContainer = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    gap: '12px',
+                    justifyContent: 'flex-end',
+                    width: '100%'
+                }
+            })
 
-        const cancelBtn = $({
-            tag: 'button',
-            text: 'Cancel',
-            style: {
-                padding: '10px 24px',
-                backgroundColor: '#444',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-            },
-            event: {
-                type: 'click',
-                method: () => modal.remove()
-            }
-        })
+            const cancelBtn = $({
+                tag: 'button',
+                text: 'Cancel',
+                style: {
+                    padding: '10px 24px',
+                    backgroundColor: '#444',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: () => closeModal(),
+                    type2: 'mouseenter',
+                    method2: (e) => { e.currentTarget.style.backgroundColor = '#555'; },
+                    type3: 'mouseleave',
+                    method3: (e) => { e.currentTarget.style.backgroundColor = '#444'; }
+                }
+            })
 
-        const submitBtn = $({
-            tag: 'button',
-            text: 'Submit Revision',
-            style: {
-                padding: '10px 28px',
-                backgroundColor: '#9C27B0',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-            },
-            event: {
-                type: 'click',
-                method: async () => {
-                    let researchFile = null
-                    if (fileInput.files.length > 0) {
-                        researchFile = fileInput.files[0]
-                    } else {
-                        document.body.appendChild(ConfirmationAlert('Please select the revised research file (PDF)', () => { }))
-                        return
-                    }
+            const submitBtn = $({
+                tag: 'button',
+                text: 'Submit Revision',
+                style: {
+                    padding: '10px 28px',
+                    backgroundColor: '#9C27B0',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: async () => {
+                        if (!selectedFile) {
+                            AlertModal({
+                                title: 'File Required',
+                                message: 'Please select the revised research file (PDF)'
+                            });
+                            return;
+                        }
 
-                    if (researchFile.type !== 'application/pdf') {
-                        document.body.appendChild(ConfirmationAlert('Research file must be a valid PDF file', () => { }))
-                        return
-                    }
+                        if (selectedFile.type !== 'application/pdf') {
+                            AlertModal({
+                                title: 'Invalid File',
+                                message: 'Research file must be a valid PDF file'
+                            });
+                            return;
+                        }
 
-                    if (researchFile.size > 10 * 1024 * 1024) {
-                        document.body.appendChild(ConfirmationAlert('File size exceeds 10MB limit', () => { }))
-                        return
-                    }
+                        if (selectedFile.size > 10 * 1024 * 1024) {
+                            AlertModal({
+                                title: 'File Too Large',
+                                message: 'File size exceeds 10MB limit'
+                            });
+                            return;
+                        }
 
-                    // Show loading
-                    let loading = Waiting()
-                    document.body.appendChild(loading)
+                        // Show loading modal
+                        const loadingModal = LoadingModal({
+                            title: 'Submitting Revision',
+                            message: 'Please wait while we submit your revision...'
+                        });
 
-                    const formData = new FormData()
-                    formData.append('submitRevision', 'true')
-                    formData.append('original_research_id', doc.id)
-                    formData.append('original_title', doc.title)
-                    formData.append('researchDoc', researchFile)
+                        const formData = new FormData();
+                        formData.append('submitRevision', 'true');
+                        formData.append('original_research_id', doc.id);
+                        formData.append('original_title', doc.title);
+                        formData.append('researchDoc', selectedFile);
 
-                    try {
-                        const response = await fetch('/uploadResearchFile', {
-                            method: 'POST',
-                            body: formData
-                        })
+                        try {
+                            const response = await fetch('/uploadResearchFile', {
+                                method: 'POST',
+                                body: formData
+                            });
 
-                        const result = await response.json()
+                            const result = await response.json();
 
-                        if (loading && loading.remove) loading.remove()
+                            // Close loading modal
+                            if (loadingModal && loadingModal.closeModal) {
+                                loadingModal.closeModal();
+                            }
 
-                        if (result.status) {
-                            document.body.appendChild(ConfirmationAlert(
-                                result.message || 'Revision submitted successfully!',
-                                () => {
-                                    modal.remove()
-                                    if (window.refreshDocumentsTable) {
-                                        window.refreshDocumentsTable()
+                            if (result.status) {
+                                AlertModal({
+                                    title: 'Success',
+                                    message: result.message || 'Revision submitted successfully!',
+                                    onClose: () => {
+                                        closeModal();
+                                        if (window.refreshDocumentsTable) {
+                                            window.refreshDocumentsTable();
+                                        }
                                     }
-                                }
-                            ))
-                        } else {
-                            document.body.appendChild(ConfirmationAlert('Failed to submit revision: ' + result.message, () => { }))
+                                });
+                            } else {
+                                AlertModal({
+                                    title: 'Submission Failed',
+                                    message: 'Failed to submit revision: ' + result.message
+                                });
+                            }
+                        } catch (error) {
+                            if (loadingModal && loadingModal.closeModal) {
+                                loadingModal.closeModal();
+                            }
+                            console.error('Revision submission error:', error);
+                            AlertModal({
+                                title: 'Error',
+                                message: 'Error submitting revision: ' + error.message
+                            });
                         }
-                    } catch (error) {
-                        if (loading && loading.remove) loading.remove()
-                        console.error('Revision submission error:', error)
-                        document.body.appendChild(ConfirmationAlert('Error submitting revision: ' + error.message, () => { }))
                     }
                 }
+            })
+
+            // Add hover effect for submit button
+            submitBtn.addEventListener('mouseenter', () => { submitBtn.style.backgroundColor = '#7B1FA2'; })
+            submitBtn.addEventListener('mouseleave', () => { submitBtn.style.backgroundColor = '#9C27B0'; })
+
+            footerContainer.appendChild(cancelBtn);
+            footerContainer.appendChild(submitBtn);
+
+            return footerContainer;
+        }
+
+        // Create and open the modal
+        CustomModal({
+            title: 'Submit Revised Paper/Proposal', content: buildContent,
+            footer: buildFooter, size: 'small', onClose: () => {
+                if (fileInput) fileInput.value = '';
+                selectedFile = null
             }
-        })
-
-        actions.appendChild(cancelBtn)
-        actions.appendChild(submitBtn)
-
-        modalContent.appendChild(header)
-        modalContent.appendChild(formBody)
-        modalContent.appendChild(actions)
-        modal.appendChild(modalContent)
-        document.body.appendChild(modal)
+        });
     }
 
     // View file in modal (for research, program, endorsement files)
@@ -1545,12 +1730,15 @@ export const Research = () => {
             category: doc.category || '',
             presenter: doc.presenter || '',
             author: doc.author || '',
+            center: doc.center,
             researchFile: null,
             programFile: null,
             endorsementFile: null,
             localProgramFiles: [],
             localEndorsementFiles: [],
-            localEntryFiles: []
+            localEntryFiles: [],
+            date_started: doc.dateStarted,
+            dateCompleted: doc.dateCompleted,
         }
 
         // Open modal with pre-filled data
@@ -1776,7 +1964,7 @@ export const Research = () => {
         let dateFieldsContainer
         let programFileContainer
         let standardProgramFile // To store reference
-        let localFilesSection, localFilesTitle // For dynamic section
+        let localFilesSection, localFilesTitle // For dynamic 
 
         formData = {
             eventName: isEdit ? editData?.eventName || '' : '',
