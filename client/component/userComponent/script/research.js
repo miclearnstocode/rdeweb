@@ -1731,14 +1731,14 @@ export const Research = () => {
             presenter: doc.presenter || '',
             author: doc.author || '',
             center: doc.center,
+            dateStarted: doc.dateStarted,
+            dateCompleted: doc.dateCompleted,
             researchFile: null,
             programFile: null,
             endorsementFile: null,
             localProgramFiles: [],
             localEndorsementFiles: [],
-            localEntryFiles: [],
-            date_started: doc.dateStarted,
-            dateCompleted: doc.dateCompleted,
+            localEntryFiles: []
         }
 
         // Open modal with pre-filled data
@@ -2087,6 +2087,9 @@ export const Research = () => {
                         // Update layout
                         fileGrid.style.gridTemplateColumns = (isSymposium || isInHouse) ? '1fr 1fr' : '1fr 1fr 1fr'
 
+                        if (searchFieldContainer) {
+                            searchFieldContainer.style.display = isSymposium ? 'block' : 'none'
+                        }
                         // Hide/Show standard program file
                         if (standardProgramFile) {
                             standardProgramFile.style.display = (isSymposium || isInHouse) ? 'none' : 'block'
@@ -2166,7 +2169,7 @@ export const Research = () => {
 
         // Title field
         const titleField = $({ tag: 'div', style: { marginBottom: '20px' } })
-        titleField.appendChild($({ tag: 'label', text: 'Document Title *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+        titleField.appendChild($({ tag: 'label', text: 'Research Title *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
         titleInput = $({
             tag: 'input',
             att: { type: 'text', placeholder: 'Enter document title', value: isEdit ? editData?.title || '' : '' },
@@ -2185,6 +2188,131 @@ export const Research = () => {
             }
         })
         titleField.appendChild(titleInput)
+
+        const searchFieldContainer = $({ tag: 'div', style: { marginBottom: '20px', display: 'none' } })
+
+        searchFieldContainer.appendChild($({
+            tag: 'label',
+            text: 'Search Research Proposal Title',
+            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+        }))
+
+        const searchWrapper = $({
+            tag: 'div',
+            style: { position: 'relative' }
+        })
+
+        const searchInputField = $({
+            tag: 'input',
+            att: { type: 'text', placeholder: 'Type to search title, author, or presenter...' },
+            style: {
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px'
+            }
+        })
+
+        const resultsDropdown = $({
+            tag: 'div',
+            style: {
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                maxHeight: '250px',
+                overflowY: 'auto',
+                zIndex: 1000,
+                display: 'none',
+                marginTop: '4px'
+            }
+        })
+
+        searchWrapper.appendChild(searchInputField)
+        searchWrapper.appendChild(resultsDropdown)
+        searchFieldContainer.appendChild(searchWrapper)
+
+        // Debounced search function
+        let searchTimeout
+        searchInputField.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout)
+            const term = e.target.value.trim()
+
+            if (term.length < 2) {
+                resultsDropdown.style.display = 'none'
+                return
+            }
+
+            searchTimeout = setTimeout(() => performTitleSearch(term), 500)
+        })
+
+        const performTitleSearch = async (term) => {
+            resultsDropdown.innerHTML = '<div style="padding: 12px; color: #888; text-align: center;">Searching...</div>'
+            resultsDropdown.style.display = 'block'
+
+            const form = new FormData()
+            form.append('searchInhouseTitles', 'true')
+            form.append('search', term)
+
+            try {
+                const response = await fetch('/uploadResearchFile', { method: 'POST', body: form })
+                const data = await response.json()
+
+                if (data.list && data.list.length > 0) {
+                    resultsDropdown.innerHTML = ''
+                    data.list.forEach(item => {
+                        const resultItem = $({
+                            tag: 'div',
+                            style: {
+                                padding: '10px 12px',
+                                cursor: 'pointer',
+                                borderBottom: '1px solid #444',
+                                transition: 'background 0.2s'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    // Fill the title field only (don't auto-fill other fields)
+                                    titleInput.value = item.title
+                                    formData.title = item.title
+                                    resultsDropdown.style.display = 'none'
+                                    searchInputField.value = ''
+                                },
+                                type2: 'mouseenter',
+                                method2: (e) => { e.currentTarget.style.backgroundColor = '#3a3a3a' },
+                                type3: 'mouseleave',
+                                method3: (e) => { e.currentTarget.style.backgroundColor = 'transparent' }
+                            },
+                            child: [
+                                $({ tag: 'div', text: item.title, style: { color: '#fff', fontSize: '13px', fontWeight: '500', marginBottom: '4px' } }),
+                                $({ tag: 'div', text: `Author: ${item.author || 'N/A'}`, style: { color: '#888', fontSize: '11px' } }),
+                                item.presenter ? $({ tag: 'div', text: `Presenter: ${item.presenter}`, style: { color: '#888', fontSize: '11px' } }) : null
+                            ]
+                        })
+                        resultsDropdown.appendChild(resultItem)
+                    })
+                } else {
+                    resultsDropdown.innerHTML = '<div style="padding: 12px; color: #888; text-align: center;">No results found</div>'
+                }
+            } catch (error) {
+                resultsDropdown.innerHTML = '<div style="padding: 12px; color: #f44336; text-align: center;">Error searching</div>'
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchWrapper.contains(e.target)) {
+                resultsDropdown.style.display = 'none'
+            }
+        })
+
+        searchFieldContainer.appendChild(searchWrapper)
 
         // Category field
         const categoryField = $({ tag: 'div', style: { marginBottom: '20px' } })
@@ -2455,8 +2583,9 @@ export const Research = () => {
         dateFieldsContainer.appendChild(dateStartedWrapper)
         dateFieldsContainer.appendChild(dateCompletedWrapper)
 
-        // Add fields to two-column layout
+        //two-column layout
         twoColumnLayout.appendChild(titleField)
+        twoColumnLayout.appendChild(searchFieldContainer)
         twoColumnLayout.appendChild(categoryField)
         twoColumnLayout.appendChild(centerField)
         twoColumnLayout.appendChild(authorField)
@@ -2490,7 +2619,6 @@ export const Research = () => {
 
         fileGrid.appendChild(FileUploadField({ label: 'Research Entry File', fieldName: 'researchFile' }))
         fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
-
         standardProgramFile = FileUploadField({ label: 'Program File', fieldName: 'programFile' })
         fileGrid.appendChild(standardProgramFile)
 
@@ -2515,14 +2643,13 @@ export const Research = () => {
             tag: 'div',
             style: {
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 1fr',
                 gap: '20px'
             }
         })
 
         localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'localProgramFiles' }))
-        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Endorsement *', fieldName: 'localEndorsementFiles' }))
-        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Research Entry *', fieldName: 'localEntryFiles' }))
+        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'localEntryFiles' }))
 
         localFilesSection.appendChild(localFieldsGrid)
 
