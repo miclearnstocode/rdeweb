@@ -1,278 +1,200 @@
-import { $, ConfirmationAlert, Waiting, DeleteConfirmModal } from '../../../lib/lib.js'
-import { Print } from "../../otherComponent/comment.js"
+import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal } from '../../../lib/lib.js'
 import { handleResubmit } from './resubmit.js'
 
 
 // View Researches Modal
 const openViewResearchesModal = () => {
-    const modal = $({
-        tag: 'div',
-        style: {
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 102,
-            backdropFilter: 'blur(5px)'
-        }
-    })
+    let currentModal = null
+    let eventSelect, searchInput, tableBody
+    let loadResearchDataFn, addResearchToTableFn
 
-    const modalContent = $({
-        tag: 'div',
-        style: {
-            backgroundColor: '#1a1a1a',
-            borderRadius: '16px',
-            width: '90%',
-            maxWidth: '1200px',
-            maxHeight: '85vh',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
-        }
-    })
-
-    // Header
-    const header = $({
-        tag: 'div',
-        style: {
-            padding: '20px 24px',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexShrink: 0
-        },
-        child: [
-            $({
-                tag: 'h3',
-                text: 'Research Documents',
-                style: { color: '#fff', margin: 0, fontSize: '20px' }
-            }),
-            $({
-                tag: 'i',
-                att: { className: 'fas fa-times' },
-                style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
-                event: {
-                    type: 'click',
-                    method: () => modal.remove()
-                }
-            })
-        ]
-    })
-
-    // Search + Filter Bar
-    const searchContainer = $({
-        tag: 'div',
-        style: {
-            padding: '16px 24px',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            flexShrink: 0,
-            display: 'flex',
-            gap: '12px',
-            alignItems: 'center',
-            flexWrap: 'wrap'
-        }
-    })
-
-    // --- Event Filter Dropdown ---
-    const eventFilterWrapper = $({
-        tag: 'div',
-        style: {
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#2a2a2a',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            gap: '10px',
-            minWidth: '260px',
-            flex: '0 0 auto'
-        }
-    })
-
-    const filterIcon = $({
-        tag: 'i',
-        att: { className: 'fas fa-calendar-alt' },
-        style: { color: '#666', fontSize: '16px' }
-    })
-
-    const eventSelect = $({
-        tag: 'select',
-        style: {
-            flex: 1,
-            backgroundColor: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: '#6d6d6dff',
-            fontSize: '14px',
-            cursor: 'pointer',
-            appearance: 'none',
-            WebkitAppearance: 'none'
-        }
-    })
-
-    // Placeholder option
-    const placeholderOption = $({
-        tag: 'option',
-        text: 'Select an event...',
-        att: { value: '', disabled: true, selected: true }
-    })
-    eventSelect.appendChild(placeholderOption)
-
-    eventFilterWrapper.appendChild(filterIcon)
-    eventFilterWrapper.appendChild(eventSelect)
-
-    // --- Search Bar ---
-    const searchWrapper = $({
-        tag: 'div',
-        style: {
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#2a2a2a',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            gap: '12px',
-            flex: 1
-        }
-    })
-
-    const searchIcon = $({
-        tag: 'i',
-        att: { className: 'fas fa-search' },
-        style: { color: '#666', fontSize: '16px' }
-    })
-    const debounce = (func, delay) => {
-        let timeoutId
-        return function (...args) {
-            clearTimeout(timeoutId)
-            timeoutId = setTimeout(() => func.apply(this, args), delay)
-        }
-    }
-    // Search input event handler (find this in your code around line 150-200)
-    const searchInput = $({
-        tag: 'input',
-        att: {
-            type: 'text',
-            placeholder: 'Search by event name, campus/center, author, co-author, presenter, or file name...'
-        },
-        style: {
-            flex: 1,
-            backgroundColor: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: '#fff',
-            fontSize: '14px'
-        },
-        event: {
-            type: 'input',
-            method: debounce((e) => {
-                const searchTerm = e.target.value.trim()
-                const selectedEventId = eventSelect.value
-
-                if (selectedEventId) {
-                    // Reload data with search term
-                    loadResearchData(selectedEventId, searchTerm)
-                }
-            }, 500) // Debounce to avoid too many requests
-        }
-    })
-
-    searchWrapper.appendChild(searchIcon)
-    searchWrapper.appendChild(searchInput)
-
-    searchContainer.appendChild(eventFilterWrapper)
-    searchContainer.appendChild(searchWrapper)
-
-    // Table Container
-    const tableContainer = $({
-        tag: 'div',
-        style: {
-            flex: 1,
-            overflow: 'auto',
-            padding: '0 24px 24px 24px'
-        }
-    })
-
-    const table = $({
-        tag: 'table',
-        style: {
-            width: '100%',
-            borderCollapse: 'collapse'
-        }
-    })
-
-    // Table Header
-    const thead = $({ tag: 'thead', style: { position: 'sticky', top: 0, backgroundColor: '#1a1a1a', zIndex: 1 } })
-    const headerRow = $({ tag: 'tr', style: { borderBottom: '2px solid #333' } })
-
-    const columns = ['Event Name', 'Campus/Center', 'Files']
-    columns.forEach(col => {
-        headerRow.appendChild($({
-            tag: 'th',
-            text: col,
+    // Build the content for the modal
+    const buildContent = () => {
+        const container = $({
+            tag: 'div',
             style: {
-                padding: '16px 12px',
-                textAlign: 'left',
-                color: '#fff',
-                fontSize: '13px',
-                fontWeight: '600',
-                backgroundColor: '#1a1a1a'
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                minHeight: '500px'
             }
-        }))
-    })
+        })
 
-    thead.appendChild(headerRow)
-    table.appendChild(thead)
+        // Search + Filter Bar
+        const searchContainer = $({
+            tag: 'div',
+            style: {
+                padding: '16px 24px',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                flexShrink: 0,
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'center',
+                flexWrap: 'wrap'
+            }
+        })
 
-    // Table Body
-    const tableBody = $({ tag: 'tbody' })
-    table.appendChild(tableBody)
-    tableContainer.appendChild(table)
+        // Event Filter Dropdown
+        const eventFilterWrapper = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#2a2a2a',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                gap: '10px',
+                minWidth: '260px',
+                flex: '0 0 auto'
+            }
+        })
 
-    // Footer
-    const footer = $({
-        tag: 'div',
-        style: {
-            padding: '16px 24px',
-            borderTop: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            flexShrink: 0
-        },
-        child: [
-            $({
-                tag: 'button',
-                text: 'Close',
+        const filterIcon = $({
+            tag: 'i',
+            att: { className: 'fas fa-calendar-alt' },
+            style: { color: '#666', fontSize: '16px' }
+        })
+
+        eventSelect = $({
+            tag: 'select',
+            style: {
+                flex: 1,
+                backgroundColor: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: '#6d6d6dff',
+                fontSize: '14px',
+                cursor: 'pointer',
+                appearance: 'none',
+                WebkitAppearance: 'none'
+            }
+        })
+
+        const placeholderOption = $({
+            tag: 'option',
+            text: 'Select an event...',
+            att: { value: '', disabled: true, selected: true }
+        })
+        eventSelect.appendChild(placeholderOption)
+
+        eventFilterWrapper.appendChild(filterIcon)
+        eventFilterWrapper.appendChild(eventSelect)
+
+        // Search Bar
+        const searchWrapper = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#2a2a2a',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                gap: '12px',
+                flex: 1
+            }
+        })
+
+        const searchIcon = $({
+            tag: 'i',
+            att: { className: 'fas fa-search' },
+            style: { color: '#666', fontSize: '16px' }
+        })
+
+        const debounce = (func, delay) => {
+            let timeoutId
+            return function (...args) {
+                clearTimeout(timeoutId)
+                timeoutId = setTimeout(() => func.apply(this, args), delay)
+            }
+        }
+
+        searchInput = $({
+            tag: 'input',
+            att: {
+                type: 'text',
+                placeholder: 'Search by event name, campus/center, author, co-author, presenter, or file name...'
+            },
+            style: {
+                flex: 1,
+                backgroundColor: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: '#fff',
+                fontSize: '14px'
+            },
+            event: {
+                type: 'input',
+                method: debounce((e) => {
+                    const searchTerm = e.target.value.trim()
+                    const selectedEventId = eventSelect.value
+                    if (selectedEventId) {
+                        loadResearchDataFn(selectedEventId, searchTerm)
+                    }
+                }, 500)
+            }
+        })
+
+        searchWrapper.appendChild(searchIcon)
+        searchWrapper.appendChild(searchInput)
+
+        searchContainer.appendChild(eventFilterWrapper)
+        searchContainer.appendChild(searchWrapper)
+
+        // Table Container
+        const tableContainer = $({
+            tag: 'div',
+            style: {
+                flex: 1,
+                overflow: 'auto',
+                padding: '0 24px 24px 24px'
+            }
+        })
+
+        const table = $({
+            tag: 'table',
+            style: {
+                width: '100%',
+                borderCollapse: 'collapse'
+            }
+        })
+
+        // Table Header
+        const thead = $({ tag: 'thead', style: { position: 'sticky', top: 0, backgroundColor: '#1a1a1a', zIndex: 1 } })
+        const headerRow = $({ tag: 'tr', style: { borderBottom: '2px solid #333' } })
+        const columns = ['Event Name', 'Campus/Center', 'Files']
+
+        columns.forEach(col => {
+            headerRow.appendChild($({
+                tag: 'th',
+                text: col,
                 style: {
-                    padding: '8px 24px',
-                    backgroundColor: '#444',
-                    border: 'none',
-                    borderRadius: '8px',
+                    padding: '16px 12px',
+                    textAlign: 'left',
                     color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                },
-                event: {
-                    type: 'click',
-                    method: () => modal.remove()
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    backgroundColor: '#1a1a1a'
                 }
-            })
-        ]
-    })
+            }))
+        })
 
-    modalContent.appendChild(header)
-    modalContent.appendChild(searchContainer)
-    modalContent.appendChild(tableContainer)
-    modalContent.appendChild(footer)
-    modal.appendChild(modalContent)
-    document.body.appendChild(modal)
+        thead.appendChild(headerRow)
+        table.appendChild(thead)
 
-    // ── Helper: show a placeholder message in the table body ──
+        // Table Body
+        tableBody = $({ tag: 'tbody' })
+        table.appendChild(tableBody)
+        tableContainer.appendChild(table)
+
+        container.appendChild(searchContainer)
+        container.appendChild(tableContainer)
+
+        return container
+    }
+
+    // Helper: show a placeholder message in the table body
     const setTableMessage = (iconClass, mainText, subText = '') => {
+        if (!tableBody) return
         tableBody.innerHTML = ''
         const row = $({
             tag: 'tr',
@@ -292,10 +214,9 @@ const openViewResearchesModal = () => {
         tableBody.appendChild(row)
     }
 
-    // Function to create file tag with access control
+    // Function to create file tag with access control using FileViewerModal
     const createFileTag = (fileInfo, docId, fileType, fileUrl, presenter) => {
         const fileName = fileInfo.title || fileInfo.name || 'Untitled'
-        const isDrive = fileType === 'drive'
 
         const tag = $({
             tag: 'div',
@@ -337,9 +258,7 @@ const openViewResearchesModal = () => {
                             remove()
 
                             if (dat.status === 'allowed') {
-                                // Only handle Google Drive files
                                 if (fileUrl && (fileUrl.includes('drive.google.com') || fileUrl.includes('drive.google.com/file/d/'))) {
-                                    // Extract file ID for better embedding
                                     let embedUrl = fileUrl
                                     if (fileUrl.includes('/file/d/')) {
                                         const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
@@ -347,13 +266,12 @@ const openViewResearchesModal = () => {
                                             embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
                                         }
                                     }
-                                    // Open in new tab
-                                    window.open(embedUrl, '_blank')
+                                    // Use FileViewerModal instead of window.open
+                                    FileViewerModal(embedUrl, fileName, '#ff9800', { showOpenDrive: true })
                                 } else if (fileUrl) {
-                                    // If it's a Google Drive URL but doesn't match pattern, still try to open
-                                    window.open(fileUrl, '_blank')
+                                    FileViewerModal(fileUrl, fileName, '#ff9800', { showOpenDrive: true })
                                 } else {
-                                    alert('File URL not available')
+                                    AlertModal({ title: 'Error', message: 'File URL not available' })
                                 }
                             } else if (dat.status === 'requested') {
                                 document.body.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
@@ -378,12 +296,12 @@ const openViewResearchesModal = () => {
                             }
                         } else {
                             remove()
-                            alert('Error checking access. Please try again.')
+                            AlertModal({ title: 'Error', message: 'Error checking access. Please try again.' })
                         }
                     } catch (error) {
                         remove()
                         console.error('Error checking access:', error)
-                        alert('Error checking file access. Please try again.')
+                        AlertModal({ title: 'Error', message: 'Error checking file access. Please try again.' })
                     }
                 }
             },
@@ -411,171 +329,11 @@ const openViewResearchesModal = () => {
         return tag
     }
 
-    // File viewer component - simplified for Google Drive only
-    const createFileViewer = (docID, fileUrl = null, fileType = 'drive') => {
-        // Only handle Google Drive files
-        if (!fileUrl || !fileUrl.includes('drive.google.com')) {
-            console.error('Invalid or non-Google Drive file URL')
-            return null
-        }
-
-        // Extract Google Drive file ID for better embedding
-        let embedUrl = fileUrl
-        if (fileUrl.includes('/file/d/')) {
-            const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
-            if (fileIdMatch && fileIdMatch[1]) {
-                embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
-            }
-        }
-
-        let mainP
-
-        const fileViewer = $({
-            tag: 'iframe',
-            att: {
-                src: embedUrl,
-                title: 'Document Viewer'
-            },
-            style: {
-                width: '100%',
-                height: '100%',
-                border: 'none',
-                borderRadius: '8px'
-            }
-        })
-
-        return $({
-            tag: 'div',
-            style: {
-                width: '100%',
-                height: '100%',
-                position: 'fixed',
-                top: '0',
-                left: '0',
-                backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: 100,
-                backdropFilter: 'blur(5px)'
-            },
-            elementHandler: (el) => {
-                mainP = el
-
-                const modalContent = $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#1e1e1e',
-                        borderRadius: '12px',
-                        width: '90%',
-                        maxWidth: '1200px',
-                        height: '80vh',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                padding: '16px 24px',
-                                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                backgroundColor: '#1e1e1e'
-                            },
-                            child: [
-                                $({
-                                    tag: 'h3',
-                                    text: 'Document Viewer',
-                                    style: { color: '#fff', margin: 0, fontSize: '18px' }
-                                }),
-                                $({
-                                    tag: 'i',
-                                    att: { className: 'fas fa-times' },
-                                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            if (mainP && mainP.remove) mainP.remove()
-                                        }
-                                    }
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                flex: 1,
-                                padding: '20px',
-                                overflow: 'auto'
-                            },
-                            child: [fileViewer]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                padding: '16px 24px',
-                                borderTop: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '12px'
-                            },
-                            child: [
-                                $({
-                                    tag: 'button',
-                                    text: 'Open in New Tab',
-                                    style: {
-                                        padding: '8px 24px',
-                                        backgroundColor: '#2196F3',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        color: '#fff',
-                                        cursor: 'pointer'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            window.open(embedUrl, '_blank')
-                                        }
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Close',
-                                    style: {
-                                        padding: '8px 24px',
-                                        backgroundColor: '#444',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        color: '#fff',
-                                        cursor: 'pointer'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            if (mainP && mainP.remove) mainP.remove()
-                                        }
-                                    }
-                                })
-                            ]
-                        })
-                    ]
-                })
-
-                el.appendChild(modalContent)
-            }
-        })
-    }
-
-    // ── Load event list into the dropdown ──
+    // Load event list into the dropdown
     const loadEventList = async () => {
-        // Disable select while loading
-        eventSelect.disabled = true
+        if (!eventSelect) return
 
-        // Show a loading option
+        eventSelect.disabled = true
         const loadingOption = $({
             tag: 'option',
             text: 'Loading events...',
@@ -595,8 +353,6 @@ const openViewResearchesModal = () => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
             const data = await response.text().then(text => text ? JSON.parse(text) : {})
-
-            // Remove loading option
             loadingOption.remove()
 
             const events = data.events || data.list || data || []
@@ -620,48 +376,83 @@ const openViewResearchesModal = () => {
                 eventSelect.appendChild(option)
             })
 
-            // If a current event is already known, pre-select it and load data immediately
             const preselect = window.currentEventId || parseInt(localStorage.getItem('currentEventId'))
             if (preselect) {
                 eventSelect.value = preselect
-                loadResearchData(preselect)
+                loadResearchDataFn(preselect)
             } else {
-                // Show a "pick an event" prompt in the table
                 setTableMessage('fas fa-hand-pointer', 'Select an event above to view its research documents')
             }
 
         } catch (err) {
             console.error('Failed to load event list:', err)
             loadingOption && loadingOption.remove()
-
             const errOption = $({
                 tag: 'option',
                 text: 'Failed to load events',
                 att: { value: '', disabled: true }
             })
             eventSelect.appendChild(errOption)
-
             setTableMessage('fas fa-exclamation-triangle', 'Could not load event list', err.message)
         } finally {
             eventSelect.disabled = false
         }
     }
 
+    // Add research to table
+    const addResearchToTable = (eventName, location, files) => {
+        if (!tableBody) return
 
+        const row = $({
+            tag: 'tr',
+            att: { 'data-event': `${eventName} ${location} ${files.map(f => f.title || '').join(' ')}` },
+            style: { borderBottom: '1px solid rgba(255,255,255,0.05)' }
+        })
 
-    // ── Wire up the dropdown → reload table on change ──
-    eventSelect.addEventListener('change', (e) => {
-        const selectedId = parseInt(e.target.value)
-        if (!selectedId) return
+        const eventCell = $({
+            tag: 'td',
+            text: eventName,
+            style: { padding: '16px 12px', color: '#e0e0e0', fontSize: '14px', verticalAlign: 'top', fontWeight: '500' }
+        })
 
-        // Clear search box so results aren't filtered after switching events
-        searchInput.value = ''
+        const locationCell = $({
+            tag: 'td',
+            text: location,
+            style: { padding: '16px 12px', color: '#e0e0e0', fontSize: '14px', verticalAlign: 'top' }
+        })
 
-        loadResearchData(selectedId)
-    })
+        const filesCell = $({
+            tag: 'td',
+            att: { className: 'files-cell' },
+            style: { padding: '16px 12px', verticalAlign: 'top' }
+        })
 
+        if (files.length === 0) {
+            filesCell.appendChild($({ tag: 'span', text: 'No files', style: { color: '#666', fontSize: '12px' } }))
+        } else {
+            files.forEach(file => {
+                const fileTag = createFileTag(
+                    { title: file.title, name: file.title },
+                    file.id,
+                    file.file_type,
+                    file.file,
+                    file.author
+                )
+                filesCell.appendChild(fileTag)
+            })
+        }
+
+        row.appendChild(eventCell)
+        row.appendChild(locationCell)
+        row.appendChild(filesCell)
+        tableBody.appendChild(row)
+    }
+
+    // Load research data
     const loadResearchData = async (eventId, searchTerm = '') => {
-        tableBody.innerHTML = ''   // clear previous rows
+        if (!tableBody) return
+
+        tableBody.innerHTML = ''
 
         const loadingRow = $({
             tag: 'tr',
@@ -698,24 +489,21 @@ const openViewResearchesModal = () => {
 
             const data = await response.text().then(text => text ? JSON.parse(text) : {})
 
-            // Check if the response has status true or if we have data
             if (data.status === false && (!data.list || data.list.length === 0)) {
                 throw new Error(data.message || 'Server returned an error')
             }
 
             if (data.list && data.list.length > 0) {
                 data.list.forEach(group => {
-                    // Only show groups that have files (they will only have files if they matched the search)
                     if (group.list && group.list.length > 0) {
                         addResearchToTable(
-                            group.name,      // Event Name column
-                            group.location,  // Campus/Center column  
-                            group.list       // Files list
+                            group.name,
+                            group.location,
+                            group.list
                         )
                     }
                 })
 
-                // Show message if no results after search
                 if (searchTerm && data.list.length === 0) {
                     setTableMessage('fas fa-search', 'No matching results found', `No documents match "${searchTerm}"`)
                 }
@@ -763,54 +551,39 @@ const openViewResearchesModal = () => {
         }
     }
 
-    const addResearchToTable = (eventName, location, files) => {
-        const row = $({
-            tag: 'tr',
-            att: { 'data-event': `${eventName} ${location} ${files.map(f => f.title || '').join(' ')}` },
-            style: { borderBottom: '1px solid rgba(255,255,255,0.05)' }
-        })
+    // Assign functions to outer variables
+    loadResearchDataFn = loadResearchData
+    addResearchToTableFn = addResearchToTable
 
-        const eventCell = $({
-            tag: 'td',
-            text: eventName,  // ← This should be the event name
-            style: { padding: '16px 12px', color: '#e0e0e0', fontSize: '14px', verticalAlign: 'top', fontWeight: '500' }
-        })
-
-        const locationCell = $({
-            tag: 'td',
-            text: location,   // ← This should be the campus/center
-            style: { padding: '16px 12px', color: '#e0e0e0', fontSize: '14px', verticalAlign: 'top' }
-        })
-
-        const filesCell = $({
-            tag: 'td',
-            att: { className: 'files-cell' },
-            style: { padding: '16px 12px', verticalAlign: 'top' }
-        })
-
-        if (files.length === 0) {
-            filesCell.appendChild($({ tag: 'span', text: 'No files', style: { color: '#666', fontSize: '12px' } }))
-        } else {
-            files.forEach(file => {
-                const fileTag = createFileTag(
-                    { title: file.title, name: file.title },
-                    file.id,
-                    file.file_type,
-                    file.file,
-                    file.author
-                )
-                filesCell.appendChild(fileTag)
+    // Wire up dropdown change event
+    const wireEvents = () => {
+        if (eventSelect) {
+            eventSelect.addEventListener('change', (e) => {
+                const selectedId = parseInt(e.target.value)
+                if (!selectedId) return
+                if (searchInput) searchInput.value = ''
+                loadResearchDataFn(selectedId)
             })
         }
-
-        row.appendChild(eventCell)
-        row.appendChild(locationCell)
-        row.appendChild(filesCell)
-        tableBody.appendChild(row)
     }
 
-    // ── Kick everything off ──
-    loadEventList()
+    // Create the modal
+    const content = buildContent()
+    wireEvents()
+
+    currentModal = CustomModal({
+        title: 'Research Documents',
+        content: content,
+        size: 'large',
+        onClose: () => {
+            currentModal = null
+        }
+    })
+
+    // Load events after modal is open
+    setTimeout(() => {
+        loadEventList()
+    }, 100)
 }
 // Modern Document Management Component
 export const Research = () => {
@@ -961,8 +734,8 @@ export const Research = () => {
         })
 
         // Edit button (show for most statuses except rejected, revision_accepted, revision_rejected)
-        const currentStatus = (rowData.status || '').toLowerCase();
-        const showEdit = !['rejected', 'revision_accepted', 'revision_rejected'].includes(currentStatus);
+        const currentStatus = (rowData.status || '').toLowerCase()
+        const showEdit = !['rejected', 'revision_accepted', 'revision_rejected'].includes(currentStatus)
 
         const editBtn = $({
             tag: 'button',
@@ -1048,405 +821,188 @@ export const Research = () => {
         return container
     }
 
-    // View Comments Modal with Print functionality
-    const viewComments = (doc) => {
-        let commentsModal
-        let commentsBody
-
-        // Create modal
-        const modal = $({
-            tag: 'div',
-            style: {
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.9)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 100,
-                backdropFilter: 'blur(4px)'
-            },
-            elementHandler: (el) => { commentsModal = el }
-        })
-
-        const modalContent = $({
-            tag: 'div',
-            style: {
-                backgroundColor: '#1e1e1e',
-                borderRadius: '12px',
-                width: '90%',
-                maxWidth: '900px',
-                maxHeight: '85vh',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-            }
-        })
-
-        // Header
-        const header = $({
-            tag: 'div',
-            style: {
-                padding: '20px 24px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backgroundColor: '#1e1e1e'
-            },
-            child: [
-                $({
-                    tag: 'div',
-                    child: [
-                        $({ tag: 'h3', text: `Comments for: ${doc.title}`, style: { color: '#fff', margin: 0, fontSize: '18px', marginBottom: '8px' } }),
-                        $({
-                            tag: 'div',
-                            style: { display: 'flex', gap: '16px', fontSize: '12px', color: '#888' },
-                            child: [
-                                $({ tag: 'span', text: `Author: ${doc.author}` }),
-                                $({ tag: 'span', text: `Event: ${doc.eventName}` }),
-                                $({ tag: 'span', text: `Status: ${doc.status || 'Pending'}` })
-                            ]
-                        })
-                    ]
-                }),
-                $({
-                    tag: 'i',
-                    att: { className: 'fas fa-times' },
-                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
-                    event: {
-                        type: 'click',
-                        method: () => modal.remove()
-                    }
-                })
-            ]
-        })
-
-        // Comments Body Container
-        const commentsContainer = $({
-            tag: 'div',
-            style: {
-                flex: 1,
-                overflow: 'auto',
-                padding: '20px'
-            },
-            elementHandler: (el) => { commentsBody = el }
-        })
-
+    // View Comments with FileViewerModal
+    const viewComments = async (doc) => {
         // Show loading state
-        commentsContainer.appendChild($({
-            tag: 'div',
-            style: { textAlign: 'center', padding: '40px', color: '#888' },
-            child: [
-                $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '24px', marginBottom: '12px', display: 'block' } }),
-                $({ tag: 'div', text: 'Loading comments...' })
-            ]
-        }))
+        let loading = Waiting()
+        document.body.appendChild(loading)
 
-        // Footer with Print and Close buttons
-        const footer = $({
-            tag: 'div',
-            style: {
-                padding: '16px 24px',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px'
-            },
-            child: [
-                $({
-                    tag: 'button',
-                    text: 'Print Comments',
-                    style: {
-                        padding: '8px 20px',
-                        backgroundColor: '#2196F3',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    },
-                    child: [
-                        $({ tag: 'i', att: { className: 'fas fa-print' }, style: { fontSize: '14px' } }),
-                        $({ tag: 'span', text: 'Print' })
-                    ],
-                    event: {
-                        type: 'click',
-                        method: () => printCommentsWithComponent(doc)
-                    }
-                }),
-                $({
-                    tag: 'button',
-                    text: 'Close',
-                    style: {
-                        padding: '8px 24px',
-                        backgroundColor: '#444',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        cursor: 'pointer'
-                    },
-                    event: {
-                        type: 'click',
-                        method: () => modal.remove()
-                    }
-                })
-            ]
-        })
+        try {
+            const form = new FormData()
+            form.append('commentRequest', 'true')
+            form.append('docId', doc.id)
 
-        modalContent.appendChild(header)
-        modalContent.appendChild(commentsContainer)
-        modalContent.appendChild(footer)
-        modal.appendChild(modalContent)
-        document.body.appendChild(modal)
+            const response = await fetch('/uploadResearchFile', {
+                method: 'POST',
+                body: form
+            })
 
-        // Load comments from API
-        const loadComments = async () => {
-            try {
-                const form = new FormData()
-                form.append('commentRequest', 'true')
-                form.append('docId', doc.id)
+            if (!response.ok) throw new Error('Failed to load comments')
+            const commentsData = await response.json()
 
-                const response = await fetch('/uploadResearchFile', {
-                    method: 'POST',
-                    body: form
-                })
-
-                if (response.ok) {
-                    const data = await response.json()
-                    displayComments(data, doc)
-                } else {
-                    throw new Error('Failed to load comments')
-                }
-            } catch (error) {
-                console.error('Error loading comments:', error)
-                commentsBody.innerHTML = ''
-                commentsBody.appendChild($({
-                    tag: 'div',
-                    style: { textAlign: 'center', padding: '40px', color: '#f44336' },
-                    child: [
-                        $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
-                        $({ tag: 'div', text: 'Error loading comments: ' + error.message })
-                    ]
-                }))
-            }
-        }
-
-        // Display comments
-        const displayComments = (commentsData, docInfo) => {
-            commentsBody.innerHTML = ''
+            if (loading && loading.remove) loading.remove()
 
             if (!commentsData || commentsData.length === 0) {
-                commentsBody.appendChild($({
-                    tag: 'div',
-                    style: { textAlign: 'center', padding: '40px', color: '#888' },
-                    child: [
-                        $({ tag: 'i', att: { className: 'fas fa-comments' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
-                        $({ tag: 'div', text: 'No comments available for this document' })
-                    ]
-                }))
+                document.body.appendChild(ConfirmationAlert('No comments available for this document', () => { }))
                 return
             }
 
-            // Create comment cards
+            // Construct HTML content for the viewer
+            let htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Comments - ${doc.title}</title>
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400500600700&display=swap')
+                        body { 
+                            background-color: #111 
+                            color: #eee 
+                            font-family: 'Inter', sans-serif 
+                            padding: 40px 
+                            line-height: 1.6
+                        }
+                        .container { max-width: 850px margin: 0 auto }
+                        .header { 
+                            background: linear-gradient(135deg, #1e1e1e 0%, #121212 100%)
+                            padding: 30px 
+                            border-radius: 16px 
+                            margin-bottom: 30px 
+                            border: 1px solid #333
+                            box-shadow: 0 10px 30px rgba(0,0,0,0.3)
+                        }
+                        .header h1 { margin: 0 0 15px 0 color: #fff font-size: 26px }
+                        .meta-info { display: flex flex-wrap: wrap gap: 20px color: #888 font-size: 14px }
+                        .meta-item { display: flex alignItems: center gap: 8px }
+                        .meta-item i { color: #4caf50 }
+                        
+                        .comment-card { 
+                            background: #1e1e1e 
+                            border-radius: 16px 
+                            padding: 30px 
+                            margin-bottom: 30px 
+                            border: 1px solid #333 
+                            border-left: 6px solid #4caf50
+                            box-shadow: 0 10px 25px rgba(0,0,0,0.2)
+                        }
+                        .eval-header { 
+                            display: flex 
+                            justify-content: space-between 
+                            align-items: center 
+                            margin-bottom: 25px 
+                            padding-bottom: 15px 
+                            border-bottom: 1px solid rgba(255,255,255,0.1) 
+                        }
+                        .eval-name { font-weight: 700 color: #4caf50 font-size: 19px display: flex alignItems: center gap: 10px }
+                        .eval-date { color: #666 font-size: 13px font-weight: 500 }
+                        
+                        .section { margin-bottom: 24px }
+                        .section-title { 
+                            color: #FF9800 
+                            font-size: 13px 
+                            font-weight: 700 
+                            margin-bottom: 10px 
+                            display: flex 
+                            align-items: center 
+                            gap: 10px 
+                            text-transform: uppercase 
+                            letter-spacing: 1px
+                        }
+                        .section-content { 
+                            color: #ccc 
+                            background: rgba(255,255,255,0.03)
+                            padding: 15px
+                            border-radius: 10px
+                            font-size: 14px 
+                            white-space: pre-wrap 
+                        }
+                        
+                        @media print {
+                            body { background: white color: black padding: 20px }
+                            .header, .comment-card { 
+                                background: white 
+                                color: black 
+                                border: 1px solid #ddd 
+                                box-shadow: none
+                                page-break-inside: avoid
+                            }
+                            .header h1, .eval-name { color: #000 }
+                            .section-title { color: #555 border-bottom: 1px solid #eee padding-bottom: 5px }
+                            .section-content { color: #333 background: none padding: 10px 0 }
+                            .meta-info { color: #444 }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1><i class="fas fa-comments-alt"></i> Review Comments</h1>
+                            <div class="meta-info">
+                                <div class="meta-item"><i class="fas fa-file-alt"></i> <strong>Document:</strong> ${doc.title}</div>
+                                <div class="meta-item"><i class="fas fa-user"></i> <strong>Author:</strong> ${doc.author}</div>
+                                <div class="meta-item"><i class="fas fa-calendar-check"></i> <strong>Event:</strong> ${doc.eventName}</div>
+                            </div>
+                        </div>
+            `
+
             commentsData.forEach(comment => {
-                const commentCard = createCommentCard(comment)
-                commentsBody.appendChild(commentCard)
-            })
-        }
+                htmlContent += `
+                    <div class="comment-card">
+                        <div class="eval-header">
+                            <div class="eval-name"><i class="fas fa-user-shield"></i> ${comment.evalName || 'Evaluator'}</div>
+                            <div class="eval-date"><i class="far fa-calendar-alt"></i> ${comment.date ? new Date(comment.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : ''}</div>
+                        </div>
+                `
 
-        // Create individual comment card
-        const createCommentCard = (comment) => {
-            const card = $({
-                tag: 'div',
-                style: {
-                    backgroundColor: '#2a2a2a',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    marginBottom: '16px',
-                    borderLeft: `4px solid ${comment.evalName ? '#2196F3' : '#FF9800'}`
-                }
-            })
-
-            // Evaluator info
-            const evaluatorInfo = $({
-                tag: 'div',
-                style: {
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '12px',
-                    paddingBottom: '8px',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: { display: 'flex', alignItems: 'center', gap: '8px' },
-                        child: [
-                            $({ tag: 'i', att: { className: 'fas fa-user-circle' }, style: { color: '#2196F3', fontSize: '16px' } }),
-                            $({ tag: 'span', text: comment.evalName || 'Evaluator', style: { color: '#fff', fontWeight: '500' } })
-                        ]
-                    }),
-                    comment.date ? $({
-                        tag: 'span',
-                        text: new Date(comment.date).toLocaleDateString(),
-                        style: { color: '#888', fontSize: '12px' }
-                    }) : null
+                const sections = [
+                    { title: 'Title', content: comment.title, icon: 'fa-heading' },
+                    { title: 'Introduction', content: comment.intro, icon: 'fa-book-open' },
+                    { title: 'Abstract', content: comment.abstract, icon: 'fa-paragraph' },
+                    { title: 'Objective', content: comment.objective, icon: 'fa-bullseye' },
+                    { title: 'Methodology', content: comment.methodology, icon: 'fa-flask' },
+                    { title: 'Results and Discussion', content: comment.results, icon: 'fa-chart-line' },
+                    { title: 'Recommendation and Conclusion', content: comment.recommendation, icon: 'fa-lightbulb' },
+                    { title: 'Literature', content: comment.literature, icon: 'fa-book' },
+                    { title: 'Other Comments', content: comment.other, icon: 'fa-comment-dots' }
                 ]
-            })
 
-            card.appendChild(evaluatorInfo)
-
-            // Comment sections
-            const sections = [
-                { title: 'Title', content: comment.title, icon: 'fa-heading' },
-                { title: 'Introduction', content: comment.intro, icon: 'fa-book-open' },
-                { title: 'Abstract', content: comment.abstract, icon: 'fa-paragraph' },
-                { title: 'Objective', content: comment.objective, icon: 'fa-bullseye' },
-                { title: 'Methodology', content: comment.methodology, icon: 'fa-flask' },
-                { title: 'Results and Discussion', content: comment.results, icon: 'fa-chart-line' },
-                { title: 'Recommendation and Conclusion', content: comment.recommendation, icon: 'fa-lightbulb' },
-                { title: 'Literature', content: comment.literature, icon: 'fa-book' },
-                { title: 'Other Comments', content: comment.other, icon: 'fa-comment' }
-            ]
-
-            sections.forEach(section => {
-                if (section.content && section.content.trim() !== '') {
-                    const sectionEl = $({
-                        tag: 'div',
-                        style: { marginBottom: '12px' },
-                        child: [
-                            $({
-                                tag: 'div',
-                                style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' },
-                                child: [
-                                    $({ tag: 'i', att: { className: `fas ${section.icon}` }, style: { color: '#FF9800', fontSize: '12px' } }),
-                                    $({ tag: 'span', text: section.title, style: { color: '#FF9800', fontSize: '13px', fontWeight: '500' } })
-                                ]
-                            }),
-                            $({
-                                tag: 'div',
-                                style: { color: '#ccc', fontSize: '13px', lineHeight: '1.5', whiteSpace: 'pre-wrap' },
-                                text: section.content
-                            })
-                        ]
-                    })
-                    card.appendChild(sectionEl)
-                }
-            })
-
-            return card
-        }
-
-        // Print comments using the Print component
-        const printCommentsWithComponent = async (docInfo) => {
-            try {
-                const form = new FormData()
-                form.append('commentRequest', 'true')
-                form.append('docId', docInfo.id)
-
-                const response = await fetch('/uploadResearchFile', {
-                    method: 'POST',
-                    body: form
+                sections.forEach(section => {
+                    if (section.content && section.content.trim() !== '') {
+                        htmlContent += `
+                            <div class="section">
+                                <div class="section-title"><i class="fas ${section.icon}"></i> ${section.title}</div>
+                                <div class="section-content">${section.content}</div>
+                            </div>
+                        `
+                    }
                 })
 
-                if (response.ok) {
-                    const commentsData = await response.json()
+                htmlContent += `</div>`
+            })
 
-                    if (commentsData && commentsData.length > 0) {
-                        // For each comment, create a Print component
-                        commentsData.forEach(comment => {
-                            const printComponent = Print({
-                                title: docInfo.title,
-                                campus: comment.campus || docInfo.campus || 'Not specified',
-                                author: docInfo.author,
-                                category: docInfo.category,
-                                date: comment.date ? new Date(comment.date).toLocaleDateString() : new Date().toLocaleDateString(),
-                                review: comment,
-                                getHandler: (el) => {
-                                    // This will create the print content
-                                    // The Print component handles the rendering
-                                }
-                            })
+            htmlContent += `</div></body></html>`
 
-                            // Create a temporary container for printing
-                            const printContainer = $({
-                                tag: 'div',
-                                style: { display: 'none' },
-                                child: [printComponent]
-                            })
-                            document.body.appendChild(printContainer)
+            const blob = new Blob([htmlContent], { type: 'text/html' })
+            const url = URL.createObjectURL(blob)
 
-                            // Get the print content
-                            const printContent = printContainer.querySelector('#commentPDF') || printContainer
-                            const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=yes,scrollbars=yes')
-                            printWindow.document.write(`
-                                <!DOCTYPE html>
-                                <html>
-                                <head>
-                                    <title>Review Comments - ${docInfo.title}</title>
-                                    <link rel="stylesheet" href="/client/component/otherComponent/style/review.css">
-                                    <style>
-                                        body {
-                                            font-family: 'Segoe UI', Arial, sans-serif
-                                            margin: 40px
-                                            background: white
-                                            color: #333
-                                        }
-                                        .print-header {
-                                            text-align: center
-                                            margin-bottom: 30px
-                                            padding-bottom: 20px
-                                            border-bottom: 2px solid #333
-                                        }
-                                        @media print {
-                                            body {
-                                                margin: 20px
-                                            }
-                                        }
-                                    </style>
-                                </head>
-                                <body>
-                                    <div class="print-header">
-                                        <h1>Review Comments</h1>
-                                        <p><strong>Document:</strong> ${docInfo.title}</p>
-                                        <p><strong>Author:</strong> ${docInfo.author} | <strong>Event:</strong> ${docInfo.eventName}</p>
-                                    </div>
-                            `)
-                            printWindow.document.write(printContent.innerHTML)
-                            printWindow.document.write('</body></html>')
-                            printWindow.document.close()
-                            printWindow.print()
-                            printWindow.close()
-
-                            // Remove temporary container
-                            printContainer.remove()
-
-                            // Only print one window (break after first comment)
-                            // If you want all comments in one print, you'd need to combine them
-                            return
-                        })
-                    } else {
-                        alert('No comments available to print')
+            // Use the reusable modal from lib.js (hide Open Drive and add Print support)
+            FileViewerModal(url, `Review Comments: ${doc.title}`, '#4caf50', {
+                showOpenDrive: false,
+                onPrint: (iframe) => {
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.focus()
+                        iframe.contentWindow.print()
                     }
-                } else {
-                    alert('Failed to load comments for printing')
                 }
-            } catch (error) {
-                console.error('Error printing comments:', error)
-                alert('Error printing comments: ' + error.message)
-            }
-        }
+            })
 
-        // Load comments
-        loadComments()
+        } catch (error) {
+            if (loading && loading.remove) loading.remove()
+            console.error('Error loading comments:', error)
+            document.body.appendChild(ConfirmationAlert('Error loading comments: ' + error.message, () => { }))
+        }
     }
 
     // Create table row
@@ -1454,25 +1010,25 @@ export const Research = () => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
 
         // Get document data
-        let originalStatus = doc.status || 'pending';
-        const presentationDate = doc.date_of_presentation ? new Date(doc.date_of_presentation) : null;
-        const currentDate = new Date();
+        let originalStatus = doc.status || 'pending'
+        const presentationDate = doc.date_of_presentation ? new Date(doc.date_of_presentation) : null
+        const currentDate = new Date()
 
         // Dynamic status logic
-        let status;
+        let status
         if (originalStatus === 'rejected') {
-            status = 'rejected';
+            status = 'rejected'
         } else if (presentationDate && presentationDate < currentDate) {
             // Presentation has passed - show revision status
-            status = doc.revision_status || 'revision_pending';
+            status = doc.revision_status || 'revision_pending'
         } else {
             // No presentation date or future date - show original status
-            status = originalStatus;
+            status = originalStatus
         }
 
         // Clean up NULL values
         if (status === 'NULL' || status === 'null') {
-            status = 'pending';
+            status = 'pending'
         }
 
         // Handle file display with proper icons for Google Drive files
@@ -1571,10 +1127,10 @@ export const Research = () => {
 
     const createReviseButton = (doc) => {
         // Get the current display status
-        const currentStatus = (doc.status || '').toLowerCase();
+        const currentStatus = (doc.status || '').toLowerCase()
 
         // Only show if status is revision_pending or revision_rejected
-        const isEligible = currentStatus === 'revision_pending' || currentStatus === 'revision_rejected';
+        const isEligible = currentStatus === 'revision_pending' || currentStatus === 'revision_rejected'
 
         if (!isEligible) return null
 
@@ -1957,170 +1513,27 @@ export const Research = () => {
         }
         const displayName = typeNames[fileType] || 'Document'
 
-        // Create file viewer based on file type
-        const fileViewer = () => {
-            if (fileUrl.includes('drive.google.com')) {
-                // Google Drive file - extract file ID for embed
-                let embedUrl = fileUrl
-                if (fileUrl.includes('/file/d/')) {
-                    const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
-                    if (fileIdMatch && fileIdMatch[1]) {
-                        embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
-                    }
-                }
+        // Determine accent color
+        const accentColors = {
+            research: '#2196F3',
+            program: '#4caf50',
+            endorsement: '#ff9800'
+        }
+        const accentColor = accentColors[fileType] || '#2196F3'
 
-                return $({
-                    tag: 'iframe',
-                    att: {
-                        src: embedUrl,
-                        title: displayName
-                    },
-                    style: {
-                        width: '100%',
-                        height: '500px',
-                        border: 'none',
-                        borderRadius: '8px'
-                    }
-                })
-            } else {
-                // Local file
-                return $({
-                    tag: 'object',
-                    att: {
-                        data: fileUrl.startsWith('/') ? fileUrl : '/' + fileUrl,
-                        type: 'application/pdf'
-                    },
-                    style: {
-                        width: '100%',
-                        height: '500px',
-                        border: 'none',
-                        borderRadius: '8px'
-                    }
-                })
+        // Format URL for preview
+        let finalUrl = fileUrl
+        if (fileUrl.includes('drive.google.com') && fileUrl.includes('/file/d/')) {
+            const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
+            if (fileIdMatch && fileIdMatch[1]) {
+                finalUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
             }
+        } else if (!fileUrl.includes('http') && !fileUrl.startsWith('/')) {
+            finalUrl = '/' + fileUrl
         }
 
-        const modal = $({
-            tag: 'div',
-            style: {
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.9)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 100,
-                backdropFilter: 'blur(4px)'
-            },
-            child: [
-                $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#1e1e1e',
-                        borderRadius: '12px',
-                        width: '90%',
-                        maxWidth: '1200px',
-                        maxHeight: '90vh',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-                    },
-                    child: [
-                        // Header
-                        $({
-                            tag: 'div',
-                            style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                backgroundColor: '#1e1e1e'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    child: [
-                                        $({ tag: 'h3', text: displayName, style: { color: '#fff', margin: 0, fontSize: '18px' } }),
-                                        $({
-                                            tag: 'div',
-                                            style: { fontSize: '12px', color: '#888', marginTop: '4px' },
-                                            text: fileUrl.split('/').pop() || 'Document'
-                                        })
-                                    ]
-                                }),
-                                $({
-                                    tag: 'i',
-                                    att: { className: 'fas fa-times' },
-                                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
-                                    event: {
-                                        type: 'click',
-                                        method: () => modal.remove()
-                                    }
-                                })
-                            ]
-                        }),
-                        // Content
-                        $({
-                            tag: 'div',
-                            style: { padding: '20px', flex: 1, overflow: 'auto' },
-                            child: [fileViewer()]
-                        }),
-                        // Footer
-                        $({
-                            tag: 'div',
-                            style: {
-                                padding: '16px 24px',
-                                borderTop: '1px solid rgba(255,255,255,0.1)',
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '12px'
-                            },
-                            child: [
-                                $({
-                                    tag: 'button',
-                                    text: 'Close',
-                                    style: {
-                                        padding: '8px 24px',
-                                        backgroundColor: '#444',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        color: '#fff',
-                                        cursor: 'pointer'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => modal.remove()
-                                    }
-                                }),
-                                $({
-                                    tag: 'button',
-                                    text: 'Open in New Tab',
-                                    style: {
-                                        padding: '8px 24px',
-                                        backgroundColor: '#2196F3',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        color: '#fff',
-                                        cursor: 'pointer'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: () => window.open(fileUrl, '_blank')
-                                    }
-                                })
-                            ]
-                        })
-                    ]
-                })
-            ]
-        })
-
-        document.body.appendChild(modal)
+        // Use the reusable modal from lib.js (hide Open Drive as requested)
+        FileViewerModal(finalUrl, displayName, accentColor, { showOpenDrive: false })
     }
 
     // Edit document
@@ -2132,10 +1545,12 @@ export const Research = () => {
             category: doc.category || '',
             presenter: doc.presenter || '',
             author: doc.author || '',
-            coAuthors: doc.coAuthors || [],
             researchFile: null,
             programFile: null,
-            endorsementFile: null
+            endorsementFile: null,
+            localProgramFiles: [],
+            localEndorsementFiles: [],
+            localEntryFiles: []
         }
 
         // Open modal with pre-filled data
@@ -2278,6 +1693,81 @@ export const Research = () => {
         return container
     }
 
+    // Local Files Upload Component (Multiple PDFs)
+    const LocalFilesUploadField = ({ label, fieldName }) => {
+        let fileInput, fileNameDisplay
+
+        const container = $({
+            tag: 'div',
+            style: { marginBottom: '20px' }
+        })
+
+        const labelEl = $({
+            tag: 'label',
+            text: label,
+            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+        })
+
+        const uploadArea = $({
+            tag: 'div',
+            style: {
+                border: '2px dashed #4caf50',
+                borderRadius: '8px',
+                padding: '30px 20px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                backgroundColor: 'rgba(76, 175, 80, 0.05)'
+            },
+            event: {
+                type: 'click',
+                method: () => fileInput.click()
+            }
+        })
+
+        fileNameDisplay = $({
+            tag: 'div',
+            style: { marginTop: '12px', fontSize: '13px', color: '#888', textAlign: 'left' }
+        })
+
+        fileInput = $({
+            tag: 'input',
+            att: { type: 'file', accept: '.pdf', multiple: true, style: 'display: none' },
+            event: {
+                type: 'change',
+                method: (e) => {
+                    const files = Array.from(e.target.files)
+                    if (files.length > 0) {
+                        const invalidFiles = files.filter(f => f.type !== 'application/pdf')
+                        if (invalidFiles.length > 0) {
+                            alert('All files must be PDF format.')
+                            fileInput.value = ''
+                            formData[fieldName] = []
+                            fileNameDisplay.innerHTML = ''
+                            return
+                        }
+                        formData[fieldName] = files
+                        fileNameDisplay.innerHTML = files.map(f => `<div style="margin-bottom: 4px color: #4caf50"><i class="fas fa-file-pdf"></i> ${f.name} (${(f.size / 1024).toFixed(1)} KB)</div>`).join('')
+                    } else {
+                        fileNameDisplay.innerHTML = ''
+                        formData[fieldName] = []
+                    }
+                }
+            }
+        })
+
+        uploadArea.appendChild($({ tag: 'i', att: { className: 'fas fa-file-upload' }, style: { fontSize: '40px', color: '#4caf50', marginBottom: '12px', display: 'block' } }))
+        uploadArea.appendChild($({ tag: 'div', text: 'Select multiple PDF files', style: { color: '#fff', fontSize: '15px', fontWeight: '500' } }))
+        uploadArea.appendChild($({ tag: 'div', text: 'Only PDF files are allowed', style: { color: '#666', fontSize: '12px', marginTop: '6px' } }))
+
+        container.appendChild(labelEl)
+        container.appendChild(uploadArea)
+        container.appendChild(fileNameDisplay)
+        container.appendChild(fileInput)
+
+        return container
+    }
+
     // Open upload modal
     const openUploadModal = (isEdit = false, editData = null) => {
         let titleInput, categorySelect, centerSelect, authorInput, presenterInput, coAuthorInput, coAuthorList
@@ -2285,7 +1775,26 @@ export const Research = () => {
         let dateStartedField, dateCompletedField
         let dateFieldsContainer
         let programFileContainer
+        let standardProgramFile // To store reference
+        let localFilesSection, localFilesTitle // For dynamic section
 
+        formData = {
+            eventName: isEdit ? editData?.eventName || '' : '',
+            title: isEdit ? editData?.title || '' : '',
+            category: isEdit ? editData?.category || '' : '',
+            center: isEdit ? editData?.center || '' : '',
+            presenter: isEdit ? editData?.presenter || '' : '',
+            author: isEdit ? editData?.author || '' : '',
+            coAuthors: isEdit ? (Array.isArray(editData?.coAuthors) ? editData.coAuthors : JSON.parse(editData?.coAuthors || '[]')) : [],
+            researchFile: null,
+            programFile: null,
+            endorsementFile: null,
+            localProgramFiles: [],
+            localEndorsementFiles: [],
+            localEntryFiles: [],
+            date_started: isEdit ? editData?.date_started || '' : '',
+            date_completed: isEdit ? editData?.date_completed || '' : ''
+        }
         const modal = $({
             tag: 'div',
             style: {
@@ -2383,11 +1892,31 @@ export const Research = () => {
                         const selectedEventName = e.target.value
                         formData.eventName = selectedEventName
 
-                        // Check if selected event is Symposium
+                        // Check event types
                         const isSymposium = selectedEventName.toLowerCase().includes('symposium')
+                        const isInHouse = selectedEventName.toLowerCase().includes('in house review') || selectedEventName.toLowerCase().includes('in-house review')
 
-                        // Update file grid columns - ADD THIS LINE HERE
-                        fileGrid.style.gridTemplateColumns = isSymposium ? '1fr 1fr' : '1fr 1fr 1fr'
+                        // Update layout
+                        fileGrid.style.gridTemplateColumns = (isSymposium || isInHouse) ? '1fr 1fr' : '1fr 1fr 1fr'
+
+                        // Hide/Show standard program file
+                        if (standardProgramFile) {
+                            standardProgramFile.style.display = (isSymposium || isInHouse) ? 'none' : 'block'
+                        }
+
+                        // Hide/Show dynamic local files section
+                        if (localFilesSection) {
+                            if (isSymposium || isInHouse) {
+                                localFilesSection.style.display = 'block'
+                                localFilesTitle.innerText = isSymposium ? 'Local Symposium Files' : 'Local In-House Files'
+                            } else {
+                                localFilesSection.style.display = 'none'
+                                formData.localProgramFiles = []
+                                formData.localEndorsementFiles = []
+                                formData.localEntryFiles = []
+                            }
+                        }
+
                         // Show/hide date fields
                         if (dateFieldsContainer) {
                             dateFieldsContainer.style.display = isSymposium ? 'grid' : 'none'
@@ -2395,7 +1924,7 @@ export const Research = () => {
 
                         // Show/hide program file upload
                         if (programFileContainer) {
-                            programFileContainer.style.display = isSymposium ? 'none' : 'block'
+                            programFileContainer.style.display = (isSymposium || isInHouse) ? 'none' : 'block'
                         }
                     }
                 }
@@ -2771,20 +2300,45 @@ export const Research = () => {
             }
         })
 
-        // Create program file container that can be hidden
-        programFileContainer = $({
-            tag: 'div',
-            style: {
-                display: 'block'  // Visible by default
-            }
-        })
-        programFileContainer.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }))
-
-        fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }))
-        fileGrid.appendChild(programFileContainer)
+        fileGrid.appendChild(FileUploadField({ label: 'Research Entry File', fieldName: 'researchFile' }))
         fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
 
+        standardProgramFile = FileUploadField({ label: 'Program File', fieldName: 'programFile' })
+        fileGrid.appendChild(standardProgramFile)
+
         fileSection.appendChild(fileGrid)
+
+        // Dynamic Program File section for In-House / Symposium
+        localFilesSection = $({
+            tag: 'div',
+            style: {
+                marginTop: '20px',
+                padding: '20px',
+                backgroundColor: 'rgba(76, 175, 80, 0.05)',
+                borderRadius: '12px',
+                border: '1px solid rgba(76, 175, 80, 0.2)',
+                display: 'none'
+            }
+        })
+        localFilesTitle = $({ tag: 'h4', text: 'Local Files', style: { color: '#4caf50', marginBottom: '16px', fontSize: '16px' } })
+        localFilesSection.appendChild(localFilesTitle)
+
+        const localFieldsGrid = $({
+            tag: 'div',
+            style: {
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '20px'
+            }
+        })
+
+        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'localProgramFiles' }))
+        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Endorsement *', fieldName: 'localEndorsementFiles' }))
+        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Research Entry *', fieldName: 'localEntryFiles' }))
+
+        localFilesSection.appendChild(localFieldsGrid)
+
+        fileSection.appendChild(localFilesSection)
         formBody.appendChild(fileSection)
 
         // Form actions
@@ -2838,6 +2392,7 @@ export const Research = () => {
                 type: 'click',
                 method: async () => {
                     const isSymposium = formData.eventName.toLowerCase().includes('symposium')
+                    const isInHouse = formData.eventName.toLowerCase().includes('in house review') || formData.eventName.toLowerCase().includes('in-house review')
 
                     // Validate required fields
                     if (!formData.eventName || !formData.title || !formData.category || !formData.center || !formData.author || !formData.presenter) {
@@ -2852,19 +2407,26 @@ export const Research = () => {
                             return
                         }
 
-                        // For non-Symposium events, program file is required
-                        if (!isSymposium && !formData.programFile) {
-                            alert('Program file is required for non-Symposium events')
-                            return
+                        // Program file validation logic
+                        if (isInHouse || isSymposium) {
+                            if (!formData.localProgramFiles || formData.localProgramFiles.length === 0 ||
+                                !formData.localEndorsementFiles || formData.localEndorsementFiles.length === 0 ||
+                                !formData.localEntryFiles || formData.localEntryFiles.length === 0) {
+                                alert(`Program File, Endorsement, and Research Entry are all required in the local files section for ${isSymposium ? 'Symposium' : 'In House Review'}`)
+                                return
+                            }
+                        } else {
+                            // For other events, program file is optional (as per requirement "becomes required ONLY for...")
+                            // But if they did upload one, validate it
+                            if (formData.programFile && formData.programFile.type !== 'application/pdf') {
+                                alert('Program file must be a valid PDF file')
+                                return
+                            }
                         }
 
                         // Validate PDF files
                         if (formData.researchFile && formData.researchFile.type !== 'application/pdf') {
                             alert('Research file must be a valid PDF file')
-                            return
-                        }
-                        if (!isSymposium && formData.programFile && formData.programFile.type !== 'application/pdf') {
-                            alert('Program file must be a valid PDF file')
                             return
                         }
                         if (formData.endorsementFile && formData.endorsementFile.type !== 'application/pdf') {
@@ -2932,9 +2494,26 @@ export const Research = () => {
                         if (formData.researchFile) {
                             form.append('researchDoc', formData.researchFile)
                         }
-                        // Only append program file if not Symposium
-                        if (!isSymposium && formData.programFile) {
+                        // Only append program file if not Symposium and not In-House
+                        if (!isSymposium && !isInHouse && formData.programFile) {
                             form.append('programFile', formData.programFile)
+                        }
+
+                        // Append multiple local files (Program, Endorsement, Entry)
+                        const localFileCategories = [
+                            { name: 'localProgramFiles[]', files: formData.localProgramFiles },
+                            { name: 'localEndorsementFiles[]', files: formData.localEndorsementFiles },
+                            { name: 'localEntryFiles[]', files: formData.localEntryFiles }
+                        ]
+
+                        if (isInHouse || isSymposium) {
+                            localFileCategories.forEach(cat => {
+                                if (cat.files && cat.files.length > 0) {
+                                    cat.files.forEach(file => {
+                                        form.append(cat.name, file)
+                                    })
+                                }
+                            })
                         }
 
                         const response = await fetch('/getresearch', {
@@ -3006,6 +2585,9 @@ export const Research = () => {
                                         researchFile: null,
                                         programFile: null,
                                         endorsementFile: null,
+                                        localProgramFiles: [],
+                                        localEndorsementFiles: [],
+                                        localEntryFiles: [],
                                         date_started: null,
                                         date_completed: null
                                     }

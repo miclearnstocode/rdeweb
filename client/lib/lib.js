@@ -25,20 +25,20 @@ export const $ = ({ tag, att, text, html, child, elementHandler, style, external
         document.head.appendChild(link)
     }
     if (tag) {
-        Tag = document.createElement(tag);
+        Tag = document.createElement(tag)
     } else {
         console.log('tag is missing..!')
     }
     if (event) {
         Object.keys(event).forEach(key => {
             if (key.startsWith('type')) {
-                const suffix = key.replace('type', '');
-                const methodKey = 'method' + suffix;
+                const suffix = key.replace('type', '')
+                const methodKey = 'method' + suffix
                 if (event[methodKey]) {
-                    Tag.addEventListener(event[key], event[methodKey]);
+                    Tag.addEventListener(event[key], event[methodKey])
                 }
             }
-        });
+        })
     }
     if (text) {
         Tag.innerText = text
@@ -57,17 +57,17 @@ export const $ = ({ tag, att, text, html, child, elementHandler, style, external
     }
     if (child) {
         child.forEach(val => {
-            if (val) Tag.appendChild(val);
+            if (val) Tag.appendChild(val)
         })
     }
-    return Tag;
+    return Tag
 }
 
 export const Fragment = ({ child }) => {
     const fragment = document.createDocumentFragment()
     if (child) {
         child.forEach(val => {
-            if (val) fragment.appendChild(val);
+            if (val) fragment.appendChild(val)
         })
     }
     return fragment
@@ -81,22 +81,22 @@ export const Ordinate = ({ width, height, ordinateX, ordinateY }) => {
 }
 
 export const TextAreaExpand = (value) => {
-    let numberOfLineBreaks = (value.match(/\n/g) || []).length;
-    return 2.5 + numberOfLineBreaks * 2.5 + 2;
+    let numberOfLineBreaks = (value.match(/\n/g) || []).length
+    return 2.5 + numberOfLineBreaks * 2.5 + 2
 }
 
 export const formatSize = (bytes, decimalPoint) => {
-    if (bytes === 0) return 0;
+    if (bytes === 0) return 0
     let k = 1024,
         dm = decimalPoint || 2,
         sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-        i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm));
+        i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm))
 }
 
 export const CanvasRender = ({ pdf, canvas, fileUrl, getSource }) => {
     pdf.ctx = canvas.getContext('2d')
-    let currentPage = 1;
+    let currentPage = 1
 
     const queRender = (num) => {
         if (pdf.Rendering) {
@@ -155,16 +155,16 @@ export const CapsuOffice = [
 
 // Get center code from display name
 export const getCenterCode = (displayName) => {
-    if (!displayName) return "";
-    if (displayName === "Extension") return "Extension";
+    if (!displayName) return ""
+    if (displayName === "Extension") return "Extension"
 
-    const match = displayName.match(/\(([^)]+)\)/);
-    return match ? match[1] : displayName;
+    const match = displayName.match(/\(([^)]+)\)/)
+    return match ? match[1] : displayName
 }
 
 // Get all center codes
 export const getCenterCodes = () => {
-    return CapsuOffice.map(center => getCenterCode(center));
+    return CapsuOffice.map(center => getCenterCode(center))
 }
 
 export const Waiting = () => {
@@ -314,47 +314,47 @@ export const ConfirmationAlert = (message, eventClose) => {
 }
 
 export function TextToBase64Barcode(text, prop) {
-    var canvas = document.createElement("canvas");
-    JsBarcode(canvas, text, prop);
-    return canvas.toDataURL("image/png");
+    var canvas = document.createElement("canvas")
+    JsBarcode(canvas, text, prop)
+    return canvas.toDataURL("image/png")
 }
 
 export function base64ToArrayBuffer(base64) {
-    var binary_string = window.atob(base64);
-    var len = binary_string.length;
-    var bytes = new Uint8Array(len);
+    var binary_string = window.atob(base64)
+    var len = binary_string.length
+    var bytes = new Uint8Array(len)
     for (var i = 0; i < len; i++) {
-        bytes[i] = binary_string.charCodeAt(i);
+        bytes[i] = binary_string.charCodeAt(i)
     }
-    return bytes.buffer;
+    return bytes.buffer
 }
 
 export function dataURLtoFile(dataurl, filename) {
 
     var arr = dataurl.split(','),
-        mime = arr[0].match(/:(.*?);/)[1],
+        mime = arr[0].match(/:(.*?)/)[1],
         bstr = atob(arr[1]),
         n = bstr.length,
-        u8arr = new Uint8Array(n);
+        u8arr = new Uint8Array(n)
 
     while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
+        u8arr[n] = bstr.charCodeAt(n)
     }
 
-    return new File([u8arr], filename, { type: mime });
+    return new File([u8arr], filename, { type: mime })
 }
 
 
 export const MONTHS = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"];
+    "July", "August", "September", "October", "November", "December"]
 
 export const formatDateLong = (dateStr) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr.includes(' ') ? dateStr.replace(' ', 'T') : dateStr);
-    const month = MONTHS[d.getMonth()];
-    const day = d.getDate();
-    const year = d.getFullYear();
-    return `${month} ${day}, ${year}`;
+    if (!dateStr) return ''
+    const d = new Date(dateStr.includes(' ') ? dateStr.replace(' ', 'T') : dateStr)
+    const month = MONTHS[d.getMonth()]
+    const day = d.getDate()
+    const year = d.getFullYear()
+    return `${month} ${day}, ${year}`
 }
 
 /**
@@ -365,10 +365,10 @@ export const formatDateLong = (dateStr) => {
  */
 export const GeneratePDF = async (element, options = {}) => {
     if (!window.html2pdf) {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-        document.head.appendChild(script);
-        await new Promise(resolve => script.onload = resolve);
+        const script = document.createElement('script')
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+        document.head.appendChild(script)
+        await new Promise(resolve => script.onload = resolve)
     }
 
     const defaultOptions = {
@@ -382,10 +382,10 @@ export const GeneratePDF = async (element, options = {}) => {
             letterRendering: true
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+    }
 
-    return html2pdf().set({ ...defaultOptions, ...options }).from(element).outputPdf('blob');
-};
+    return html2pdf().set({ ...defaultOptions, ...options }).from(element).outputPdf('blob')
+}
 
 export const SpecialChar = (userInput) => {
     userInput.addEventListener('keypress', (event) => {
@@ -422,13 +422,13 @@ export class Request {
 
     Json() {
         this.res = async (res) => {
-            const text = await res.text();
-            if (!text) return {};
+            const text = await res.text()
+            if (!text) return {}
             try {
-                return JSON.parse(text);
+                return JSON.parse(text)
             } catch (e) {
-                console.error('Failed to parse JSON response:', e, 'Raw text:', text);
-                return {};
+                console.error('Failed to parse JSON response:', e, 'Raw text:', text)
+                return {}
             }
         }
     }
@@ -449,67 +449,67 @@ export class Request {
 
 export const Move = ({ panel, object, getLocation }) => {
     let currentX, currentY, initialX, initialY
-    let xOffset = 0;
-    let yOffset = 0;
-    let active = false;
+    let xOffset = 0
+    let yOffset = 0
+    let active = false
     let viewerSig = panel
     let imgHolder = object
 
     //================================================
 
-    viewerSig.addEventListener("touchstart", dragStart, false);
-    viewerSig.addEventListener("touchend", dragEnd, false);
-    viewerSig.addEventListener("touchmove", drag, false);
+    viewerSig.addEventListener("touchstart", dragStart, false)
+    viewerSig.addEventListener("touchend", dragEnd, false)
+    viewerSig.addEventListener("touchmove", drag, false)
 
-    viewerSig.addEventListener("mousedown", dragStart, false);
-    viewerSig.addEventListener("mouseup", dragEnd, false);
-    viewerSig.addEventListener("mousemove", drag, false);
+    viewerSig.addEventListener("mousedown", dragStart, false)
+    viewerSig.addEventListener("mouseup", dragEnd, false)
+    viewerSig.addEventListener("mousemove", drag, false)
 
     function dragStart(e) {
 
         if (e.type === "touchstart") {
 
-            initialX = e.touches[0].clientX - xOffset;
-            initialY = e.touches[0].clientY - yOffset;
+            initialX = e.touches[0].clientX - xOffset
+            initialY = e.touches[0].clientY - yOffset
         } else {
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
+            initialX = e.clientX - xOffset
+            initialY = e.clientY - yOffset
         }
 
         if (e.target === imgHolder) {
-            active = true;
+            active = true
         }
     }
 
     function dragEnd(e) {
-        initialX = currentX;
-        initialY = currentY;
+        initialX = currentX
+        initialY = currentY
 
-        active = false;
+        active = false
     }
 
     function drag(e) {
         if (active) {
-            e.preventDefault();
+            e.preventDefault()
 
             if (e.type === "touchmove") {
-                currentX = e.touches[0].clientX - initialX;
-                currentY = e.touches[0].clientY - initialY;
+                currentX = e.touches[0].clientX - initialX
+                currentY = e.touches[0].clientY - initialY
             } else {
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
+                currentX = e.clientX - initialX
+                currentY = e.clientY - initialY
             }
-            xOffset = currentX;
-            yOffset = currentY;
+            xOffset = currentX
+            yOffset = currentY
 
-            setTranslate(currentX, currentY, imgHolder);
+            setTranslate(currentX, currentY, imgHolder)
 
 
         }
     }
 
     function setTranslate(xPos, yPos, el) {
-        el.style.transform = "translate3d(" + xPos + "px, " + yPos + "px, 0)";
+        el.style.transform = "translate3d(" + xPos + "px, " + yPos + "px, 0)"
         getLocation(el)
     }
 }
@@ -534,57 +534,57 @@ export const TimeConvert = (time) => {
 }
 
 export const Zip = (data) => {
-    const zip = new JSZip();
-    zip.file("hello.txt", "Hello[p my)6cxsw2q");
+    const zip = new JSZip()
+    zip.file("hello.txt", "Hello[p my)6cxsw2q")
     zip.generateAsync({ type: "base64" }).then(function (base64) {
-        window.location = "data:application/zip;base64," + base64;
+        window.location = "data:application/zipbase64," + base64
     }, function (err) {
         console.log(err)
-    });
+    })
 }
 
 export const ResizeImage = (imageUrl, get) => {
-    let reader = new FileReader();
+    let reader = new FileReader()
     reader.onload = function (e) {
-        let img = document.createElement("img");
+        let img = document.createElement("img")
         img.onload = function (event) {
             // This line is dynamically creating a canvas element
-            let canvas = document.createElement("canvas");
-            var MAX_WIDTH = 196;
-            var MAX_HEIGHT = 196;
+            let canvas = document.createElement("canvas")
+            var MAX_WIDTH = 196
+            var MAX_HEIGHT = 196
 
-            var width = img.width;
-            var height = img.height;
+            var width = img.width
+            var height = img.height
 
             // Change the resizing logic
             if (width > height) {
                 if (width > MAX_WIDTH) {
-                    height = height * (MAX_WIDTH / width);
-                    width = MAX_WIDTH;
+                    height = height * (MAX_WIDTH / width)
+                    width = MAX_WIDTH
                 }
             } else {
                 if (height > MAX_HEIGHT) {
-                    width = width * (MAX_HEIGHT / height);
-                    height = MAX_HEIGHT;
+                    width = width * (MAX_HEIGHT / height)
+                    height = MAX_HEIGHT
                 }
             }
 
 
-            let ctx = canvas.getContext("2d");
+            let ctx = canvas.getContext("2d")
 
 
             //This line shows the actual resizing of image
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(img, 0, 0, width, height);
+            canvas.width = width
+            canvas.height = height
+            ctx.drawImage(img, 0, 0, width, height)
 
 
             //This line is used to display the resized image in the body
             get(canvas.toDataURL(imageUrl.type))
         }
-        img.src = e.target.result;
+        img.src = e.target.result
     }
-    reader.readAsDataURL(imageUrl);
+    reader.readAsDataURL(imageUrl)
 
 }
 
@@ -622,7 +622,7 @@ export class CanvasPdf {
     getFile(file) {
         this.buffer = new Promise(async function (res, rej) {
             setTimeout(async () => {
-                res(await fetch('/' + file).then((res) => res.arrayBuffer()));
+                res(await fetch('/' + file).then((res) => res.arrayBuffer()))
                 res("No data")
             }, 1000)
         })
@@ -679,18 +679,18 @@ export const SearchMethod = ({ nodeList, textArray, display }) => {
     })
 }
 export const UnderConstruction = ({ message = "This feature is under construction", duration = 3000 }) => {
-    let notificationContainer;
+    let notificationContainer
 
     const getContainer = (el) => {
-        notificationContainer = el;
+        notificationContainer = el
 
         // Auto remove after duration
         setTimeout(() => {
             if (notificationContainer && notificationContainer.remove) {
-                notificationContainer.classList.add('fade-out');
+                notificationContainer.classList.add('fade-out')
                 setTimeout(() => {
                     if (notificationContainer.parentNode) {
-                        notificationContainer.remove();
+                        notificationContainer.remove()
                     }
                 }, 300)
             }
@@ -758,61 +758,61 @@ export const UnderConstruction = ({ message = "This feature is under constructio
 export const ValidatePDF = (file, maxSizeMB = 10) => {
     return new Promise((resolve) => {
         if (!file) {
-            resolve({ valid: false, error: 'No file selected' });
-            return;
+            resolve({ valid: false, error: 'No file selected' })
+            return
         }
 
         // 1. Basic Extension Check
         if (!file.name.toLowerCase().endsWith('.pdf')) {
-            resolve({ valid: false, error: 'Invalid file extension. Expected .pdf' });
-            return;
+            resolve({ valid: false, error: 'Invalid file extension. Expected .pdf' })
+            return
         }
 
         // 2. Size Check
-        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+        const maxSizeBytes = maxSizeMB * 1024 * 1024
         if (file.size > maxSizeBytes) {
-            resolve({ valid: false, error: 'File is too large. Max size: ' + maxSizeMB + 'MB.' });
-            return;
+            resolve({ valid: false, error: 'File is too large. Max size: ' + maxSizeMB + 'MB.' })
+            return
         }
 
         // 3. Magic Number Check (%PDF)
-        const reader = new FileReader();
-        const blob = file.slice(0, 4);
+        const reader = new FileReader()
+        const blob = file.slice(0, 4)
         reader.onload = (e) => {
-            const arr = new Uint8Array(e.target.result);
-            let header = '';
+            const arr = new Uint8Array(e.target.result)
+            let header = ''
             for (let i = 0; i < arr.length; i++) {
-                header += String.fromCharCode(arr[i]);
+                header += String.fromCharCode(arr[i])
             }
 
             if (header !== '%PDF') {
-                resolve({ valid: false, error: 'Invalid document structure (PDF header missing).' });
+                resolve({ valid: false, error: 'Invalid document structure (PDF header missing).' })
             } else {
-                resolve({ valid: true, error: null });
+                resolve({ valid: true, error: null })
             }
-        };
-        reader.onerror = () => resolve({ valid: false, error: 'Failed to read file.' });
-        reader.readAsArrayBuffer(blob);
-    });
+        }
+        reader.onerror = () => resolve({ valid: false, error: 'Failed to read file.' })
+        reader.readAsArrayBuffer(blob)
+    })
 }
 
 export const DeleteConfirmModal = (title = "Delete Record", message = "Are you sure you want to delete this?") => {
     return new Promise((resolve) => {
-        const modalId = 'modern-delete-modal-' + Date.now();
+        const modalId = 'modern-delete-modal-' + Date.now()
 
         const closeModal = (result) => {
-            const overlay = document.getElementById(modalId);
+            const overlay = document.getElementById(modalId)
             if (overlay) {
-                overlay.style.opacity = '0';
-                const content = overlay.querySelector('.modal-content');
-                if (content) content.style.transform = 'scale(0.9) translateY(20px)';
+                overlay.style.opacity = '0'
+                const content = overlay.querySelector('.modal-content')
+                if (content) content.style.transform = 'scale(0.9) translateY(20px)'
 
                 setTimeout(() => {
-                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                    resolve(result);
-                }, 300);
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+                    resolve(result)
+                }, 300)
             }
-        };
+        }
 
         const modalOverlay = $({
             tag: 'div',
@@ -836,7 +836,7 @@ export const DeleteConfirmModal = (title = "Delete Record", message = "Are you s
             event: {
                 type: 'click',
                 method: (e) => {
-                    if (e.target.id === modalId) closeModal(false);
+                    if (e.target.id === modalId) closeModal(false)
                 }
             },
             child: [
@@ -965,64 +965,64 @@ export const DeleteConfirmModal = (title = "Delete Record", message = "Are you s
                     ]
                 })
             ]
-        });
+        })
 
-        document.body.appendChild(modalOverlay);
+        document.body.appendChild(modalOverlay)
 
         // Trigger animations
         setTimeout(() => {
-            modalOverlay.style.opacity = '1';
-            const content = modalOverlay.querySelector('.modal-content');
-            if (content) content.style.transform = 'scale(1) translateY(0)';
-        }, 10);
-    });
-};
+            modalOverlay.style.opacity = '1'
+            const content = modalOverlay.querySelector('.modal-content')
+            if (content) content.style.transform = 'scale(1) translateY(0)'
+        }, 10)
+    })
+}
 export const RejectCommentModal = (title = "Reject Document") => {
     return new Promise((resolve) => {
-        const modalId = 'reject-comment-modal-' + Date.now();
+        const modalId = 'reject-comment-modal-' + Date.now()
 
         const closeModal = (result) => {
-            const overlay = document.getElementById(modalId);
+            const overlay = document.getElementById(modalId)
             if (overlay) {
-                overlay.style.opacity = '0';
-                const content = overlay.querySelector('.modal-content');
-                if (content) content.style.transform = 'scale(0.9) translateY(20px)';
+                overlay.style.opacity = '0'
+                const content = overlay.querySelector('.modal-content')
+                if (content) content.style.transform = 'scale(0.9) translateY(20px)'
 
                 setTimeout(() => {
-                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                    resolve(result);
-                }, 300);
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+                    resolve(result)
+                }, 300)
             }
-        };
+        }
 
-        let reasonTextarea;
+        let reasonTextarea
 
         const handleSubmit = () => {
-            const reason = reasonTextarea ? reasonTextarea.value.trim() : '';
+            const reason = reasonTextarea ? reasonTextarea.value.trim() : ''
             if (!reason) {
                 // Highlight textarea if empty
                 if (reasonTextarea) {
-                    reasonTextarea.style.borderColor = '#f44336';
-                    reasonTextarea.style.boxShadow = '0 0 0 3px rgba(244, 67, 54, 0.2)';
-                    reasonTextarea.placeholder = 'Please enter a reason for rejection...';
+                    reasonTextarea.style.borderColor = '#f44336'
+                    reasonTextarea.style.boxShadow = '0 0 0 3px rgba(244, 67, 54, 0.2)'
+                    reasonTextarea.placeholder = 'Please enter a reason for rejection...'
                     setTimeout(() => {
-                        reasonTextarea.style.borderColor = '#444';
-                        reasonTextarea.style.boxShadow = 'none';
-                        reasonTextarea.placeholder = 'Enter detailed reason for rejection...';
-                    }, 2000);
+                        reasonTextarea.style.borderColor = '#444'
+                        reasonTextarea.style.boxShadow = 'none'
+                        reasonTextarea.placeholder = 'Enter detailed reason for rejection...'
+                    }, 2000)
                 }
-                return;
+                return
             }
-            closeModal({ confirmed: true, reason: reason });
-        };
+            closeModal({ confirmed: true, reason: reason })
+        }
 
         // Handle Enter key to submit (Ctrl+Enter for new line)
         const handleKeydown = (e) => {
             if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
+                e.preventDefault()
+                handleSubmit()
             }
-        };
+        }
 
         const modalOverlay = $({
             tag: 'div',
@@ -1046,7 +1046,7 @@ export const RejectCommentModal = (title = "Reject Document") => {
             event: {
                 type: 'click',
                 method: (e) => {
-                    if (e.target.id === modalId) closeModal({ confirmed: false, reason: '' });
+                    if (e.target.id === modalId) closeModal({ confirmed: false, reason: '' })
                 }
             },
             child: [
@@ -1148,16 +1148,16 @@ export const RejectCommentModal = (title = "Reject Document") => {
                                 autofocus: true
                             },
                             elementHandler: (el) => {
-                                reasonTextarea = el;
-                                el.addEventListener('keydown', handleKeydown);
+                                reasonTextarea = el
+                                el.addEventListener('keydown', handleKeydown)
                                 el.addEventListener('focus', () => {
-                                    el.style.borderColor = '#f44336';
-                                    el.style.boxShadow = '0 0 0 3px rgba(244, 67, 54, 0.1)';
-                                });
+                                    el.style.borderColor = '#f44336'
+                                    el.style.boxShadow = '0 0 0 3px rgba(244, 67, 54, 0.1)'
+                                })
                                 el.addEventListener('blur', () => {
-                                    el.style.borderColor = '#444';
-                                    el.style.boxShadow = 'none';
-                                });
+                                    el.style.borderColor = '#444'
+                                    el.style.boxShadow = 'none'
+                                })
                             }
                         }),
 
@@ -1221,13 +1221,13 @@ export const RejectCommentModal = (title = "Reject Document") => {
                                         method: () => closeModal({ confirmed: false, reason: '' }),
                                         type2: 'mouseenter',
                                         method2: (e) => {
-                                            e.target.style.backgroundColor = '#444';
-                                            e.target.style.transform = 'translateY(-1px)';
+                                            e.target.style.backgroundColor = '#444'
+                                            e.target.style.transform = 'translateY(-1px)'
                                         },
                                         type3: 'mouseleave',
                                         method3: (e) => {
-                                            e.target.style.backgroundColor = '#333';
-                                            e.target.style.transform = 'translateY(0)';
+                                            e.target.style.backgroundColor = '#333'
+                                            e.target.style.transform = 'translateY(0)'
                                         }
                                     }
                                 }),
@@ -1253,15 +1253,15 @@ export const RejectCommentModal = (title = "Reject Document") => {
                                         method: handleSubmit,
                                         type2: 'mouseenter',
                                         method2: (e) => {
-                                            e.target.style.backgroundColor = '#d32f2f';
-                                            e.target.style.transform = 'translateY(-1px)';
-                                            e.target.style.boxShadow = '0 6px 16px rgba(244, 67, 54, 0.4)';
+                                            e.target.style.backgroundColor = '#d32f2f'
+                                            e.target.style.transform = 'translateY(-1px)'
+                                            e.target.style.boxShadow = '0 6px 16px rgba(244, 67, 54, 0.4)'
                                         },
                                         type3: 'mouseleave',
                                         method3: (e) => {
-                                            e.target.style.backgroundColor = '#f44336';
-                                            e.target.style.transform = 'translateY(0)';
-                                            e.target.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
+                                            e.target.style.backgroundColor = '#f44336'
+                                            e.target.style.transform = 'translateY(0)'
+                                            e.target.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)'
                                         }
                                     }
                                 })
@@ -1270,49 +1270,50 @@ export const RejectCommentModal = (title = "Reject Document") => {
                     ]
                 })
             ]
-        });
+        })
 
-        document.body.appendChild(modalOverlay);
+        document.body.appendChild(modalOverlay)
 
         // Trigger animations
         setTimeout(() => {
-            modalOverlay.style.opacity = '1';
-            const content = modalOverlay.querySelector('.modal-content');
-            if (content) content.style.transform = 'scale(1) translateY(0)';
+            modalOverlay.style.opacity = '1'
+            const content = modalOverlay.querySelector('.modal-content')
+            if (content) content.style.transform = 'scale(1) translateY(0)'
 
             // Focus textarea
             if (reasonTextarea) {
-                reasonTextarea.focus();
+                reasonTextarea.focus()
             }
-        }, 10);
+        }, 10)
 
         // Character count update
         if (reasonTextarea) {
             reasonTextarea.addEventListener('input', () => {
-                const count = document.getElementById('char-count');
+                const count = document.getElementById('char-count')
                 if (count) {
-                    const length = reasonTextarea.value.length;
-                    count.textContent = `${length} / 1000`;
-                    count.style.color = length > 900 ? '#f44336' : length > 750 ? '#ff9800' : '#666';
+                    const length = reasonTextarea.value.length
+                    count.textContent = `${length} / 1000`
+                    count.style.color = length > 900 ? '#f44336' : length > 750 ? '#ff9800' : '#666'
                 }
-            });
+            })
         }
-    });
-};
+    })
+}
 
-export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '#ff9800') => {
-    const modalId = 'file-viewer-modal-' + Date.now();
+export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '#ff9800', options = {}) => {
+    const { showOpenDrive = true, onPrint = null } = options
+    const modalId = 'file-viewer-modal-' + Date.now()
 
     const closeModal = () => {
-        const overlay = document.getElementById(modalId);
+        const overlay = document.getElementById(modalId)
         if (overlay) {
-            overlay.style.opacity = '0';
-            overlay.style.transform = 'scale(1.02)';
+            overlay.style.opacity = '0'
+            overlay.style.transform = 'scale(1.02)'
             setTimeout(() => {
-                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            }, 250);
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+            }, 250)
         }
-    };
+    }
 
     const modalOverlay = $({
         tag: 'div',
@@ -1336,7 +1337,7 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
         },
         event: {
             type: 'click',
-            method: (e) => { if (e.target.id === modalId) closeModal(); }
+            method: (e) => { if (e.target.id === modalId) closeModal() }
         },
         child: [
             // Modal container
@@ -1395,8 +1396,41 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
                                 tag: 'div',
                                 style: { display: 'flex', gap: '10px', alignItems: 'center' },
                                 child: [
+                                    // Print button
+                                    onPrint ? $({
+                                        tag: 'button',
+                                        style: {
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '7px 14px',
+                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                            border: '1px solid rgba(33, 150, 243, 0.3)',
+                                            borderRadius: '8px',
+                                            color: '#2196F3',
+                                            fontSize: '12px',
+                                            cursor: 'pointer',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        child: [
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-print' }, style: { fontSize: '11px' } }),
+                                            $({ tag: 'span', text: 'Print' })
+                                        ],
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                const iframe = document.getElementById(modalId + '-iframe')
+                                                onPrint(iframe)
+                                            },
+                                            type2: 'mouseenter',
+                                            method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.2)' },
+                                            type3: 'mouseleave',
+                                            method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.1)' }
+                                        }
+                                    }) : null,
                                     // Open in new tab button
-                                    $({
+                                    showOpenDrive ? $({
                                         tag: 'a',
                                         att: { href: fileUrl, target: '_blank', rel: 'noopener noreferrer' },
                                         style: {
@@ -1419,11 +1453,11 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
                                         ],
                                         event: {
                                             type: 'mouseenter',
-                                            method: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = '#fff'; },
+                                            method: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = '#fff' },
                                             type2: 'mouseleave',
-                                            method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ccc'; }
+                                            method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#ccc' }
                                         }
-                                    }),
+                                    }) : null,
                                     // Close button
                                     $({
                                         tag: 'button',
@@ -1448,9 +1482,9 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
                                             type: 'click',
                                             method: closeModal,
                                             type2: 'mouseenter',
-                                            method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.15)'; e.currentTarget.style.borderColor = '#f44336'; e.currentTarget.style.color = '#f44336'; },
+                                            method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.15)'; e.currentTarget.style.borderColor = '#f44336'; e.currentTarget.style.color = '#f44336' },
                                             type3: 'mouseleave',
-                                            method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#888'; }
+                                            method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#888' }
                                         }
                                     })
                                 ]
@@ -1461,6 +1495,7 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
                     $({
                         tag: 'iframe',
                         att: {
+                            id: modalId + '-iframe',
                             src: fileUrl,
                             frameborder: '0',
                             allowfullscreen: true,
@@ -1476,23 +1511,397 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
                 ]
             })
         ]
-    });
+    })
 
-    document.body.appendChild(modalOverlay);
+    document.body.appendChild(modalOverlay)
 
     // Animate in
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            modalOverlay.style.opacity = '1';
-        });
-    });
+            modalOverlay.style.opacity = '1'
+        })
+    })
 
     // ESC key to close
     const handleKey = (e) => {
         if (e.key === 'Escape') {
-            closeModal();
-            document.removeEventListener('keydown', handleKey);
+            closeModal()
+            document.removeEventListener('keydown', handleKey)
         }
-    };
-    document.addEventListener('keydown', handleKey);
-};
+    }
+    document.addEventListener('keydown', handleKey)
+}
+
+// Custom Modal Library
+export const CustomModal = ({
+    title = 'Modal',
+    content = null,
+    size = 'medium',
+    onClose = null,
+    showCloseButton = true,
+    closeOnOverlayClick = true,
+    footer = null
+}) => {
+    const modalId = 'custom-modal-' + Date.now()
+
+    // Size configurations
+    const sizes = {
+        small: { width: '400px', maxWidth: '90%' },
+        medium: { width: '800px', maxWidth: '90%' },
+        large: { width: '1100px', maxWidth: '95%' },
+        full: { width: '95%', maxWidth: '95%', height: '90vh' }
+    }
+
+    const selectedSize = sizes[size] || sizes.medium
+
+    const closeModal = () => {
+        const overlay = document.getElementById(modalId)
+        if (overlay) {
+            overlay.style.opacity = '0'
+            overlay.style.transform = 'scale(0.98)'
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+                if (onClose && typeof onClose === 'function') onClose()
+            }, 250)
+        }
+    }
+
+    const modalOverlay = $({
+        tag: 'div',
+        att: { id: modalId },
+        style: {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: '999999',
+            opacity: '0',
+            transform: 'scale(0.98)',
+            transition: 'opacity 0.25s ease, transform 0.25s ease'
+        },
+        event: closeOnOverlayClick ? {
+            type: 'click',
+            method: (e) => { if (e.target.id === modalId) closeModal() }
+        } : {}
+    })
+
+    // Modal container
+    const modalContainer = $({
+        tag: 'div',
+        style: {
+            display: 'flex',
+            flexDirection: 'column',
+            width: selectedSize.width,
+            maxWidth: selectedSize.maxWidth,
+            height: selectedSize.height || 'auto',
+            maxHeight: '85vh',
+            backgroundColor: '#1a1a1a',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 32px 64px rgba(0,0,0,0.6)',
+            border: '1px solid rgba(255,255,255,0.1)'
+        }
+    })
+
+    // Header
+    const headerEl = $({
+        tag: 'div',
+        style: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '20px 24px',
+            backgroundColor: '#1a1a1a',
+            borderBottom: '2px solid rgba(255,255,255,0.1)',
+            flexShrink: '0'
+        },
+        child: [
+            $({
+                tag: 'h3',
+                text: title,
+                style: {
+                    color: '#fff',
+                    margin: 0,
+                    fontSize: '18px',
+                    fontWeight: '600'
+                }
+            }),
+            showCloseButton ? $({
+                tag: 'button',
+                style: {
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    color: '#999',
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                },
+                child: [
+                    $({ tag: 'span', html: '&times', style: { fontSize: '24px', lineHeight: '1' } })
+                ],
+                event: {
+                    type: 'click',
+                    method: closeModal,
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.15)'
+                        e.currentTarget.style.borderColor = '#f44336'
+                        e.currentTarget.style.color = '#f44336'
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+                        e.currentTarget.style.color = '#999'
+                    }
+                }
+            }) : null
+        ]
+    })
+
+    // Content area
+    const contentArea = $({
+        tag: 'div',
+        style: {
+            flex: '1',
+            overflow: 'auto',
+            padding: '24px'
+        }
+    })
+
+    if (content) {
+        if (typeof content === 'function') {
+            contentArea.appendChild(content({ closeModal }))
+        } else if (content.tagName || content.appendChild) {
+            contentArea.appendChild(content)
+        } else if (typeof content === 'string') {
+            contentArea.innerHTML = content
+        }
+    }
+
+    modalContainer.appendChild(headerEl)
+    modalContainer.appendChild(contentArea)
+
+    // Footer
+    if (footer) {
+        const footerEl = $({
+            tag: 'div',
+            style: {
+                padding: '16px 24px',
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                backgroundColor: '#1a1a1a',
+                flexShrink: '0'
+            }
+        })
+
+        if (typeof footer === 'function') {
+            footerEl.appendChild(footer({ closeModal }))
+        } else if (footer.tagName || footer.appendChild) {
+            footerEl.appendChild(footer)
+        } else if (Array.isArray(footer)) {
+            footer.forEach(btn => footerEl.appendChild(btn))
+        }
+
+        modalContainer.appendChild(footerEl)
+    } else {
+        // Default footer with close button
+        const defaultFooter = $({
+            tag: 'div',
+            style: {
+                padding: '16px 24px',
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                backgroundColor: '#1a1a1a',
+                flexShrink: '0'
+            }
+        })
+        modalContainer.appendChild(defaultFooter)
+    }
+
+    modalOverlay.appendChild(modalContainer)
+    document.body.appendChild(modalOverlay)
+
+    // Animate in
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            modalOverlay.style.opacity = '1'
+            modalOverlay.style.transform = 'scale(1)'
+        })
+    })
+
+    // ESC key to close
+    const handleKey = (e) => {
+        if (e.key === 'Escape') {
+            closeModal()
+            document.removeEventListener('keydown', handleKey)
+        }
+    }
+    document.addEventListener('keydown', handleKey)
+
+    return { closeModal, modalId }
+}
+
+// Helper function to create a confirmation modal
+export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel' }) => {
+    let modalInstance
+
+    const footer = ({ closeModal }) => {
+        return $({
+            tag: 'div',
+            style: { display: 'flex', gap: '12px', justifyContent: 'flex-end' },
+            child: [
+                $({
+                    tag: 'button',
+                    text: cancelText,
+                    style: {
+                        padding: '8px 20px',
+                        backgroundColor: '#444',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            closeModal()
+                            if (onCancel) onCancel()
+                        }
+                    }
+                }),
+                $({
+                    tag: 'button',
+                    text: confirmText,
+                    style: {
+                        padding: '8px 24px',
+                        backgroundColor: '#f44336',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            closeModal()
+                            if (onConfirm) onConfirm()
+                        }
+                    }
+                })
+            ]
+        })
+    }
+
+    const content = $({
+        tag: 'div',
+        style: { textAlign: 'center', padding: '20px 0' },
+        child: [
+            $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '48px', color: '#ff9800', marginBottom: '16px', display: 'block' } }),
+            $({ tag: 'p', text: message, style: { color: '#ccc', fontSize: '15px', lineHeight: '1.5', margin: 0 } })
+        ]
+    })
+
+    modalInstance = CustomModal({
+        title,
+        content,
+        footer,
+        size: 'small',
+        closeOnOverlayClick: false
+    })
+
+    return modalInstance
+}
+
+// Helper function to create an alert modal
+export const AlertModal = ({ title, message, onClose, buttonText = 'OK' }) => {
+    const footer = ({ closeModal }) => {
+        return $({
+            tag: 'div',
+            style: { display: 'flex', justifyContent: 'center' },
+            child: [
+                $({
+                    tag: 'button',
+                    text: buttonText,
+                    style: {
+                        padding: '8px 32px',
+                        backgroundColor: '#2196F3',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            closeModal()
+                            if (onClose) onClose()
+                        }
+                    }
+                })
+            ]
+        })
+    }
+
+    const content = $({
+        tag: 'div',
+        style: { textAlign: 'center', padding: '20px 0' },
+        child: [
+            $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { fontSize: '48px', color: '#2196F3', marginBottom: '16px', display: 'block' } }),
+            $({ tag: 'p', text: message, style: { color: '#ccc', fontSize: '15px', lineHeight: '1.5', margin: 0 } })
+        ]
+    })
+
+    return CustomModal({
+        title,
+        content,
+        footer,
+        size: 'small',
+        closeOnOverlayClick: false
+    })
+}
+
+// Helper function to create a loading modal
+export const LoadingModal = ({ title = 'Loading...', message = 'Please wait...' }) => {
+    const content = $({
+        tag: 'div',
+        style: { textAlign: 'center', padding: '40px 20px' },
+        child: [
+            $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '48px', color: '#2196F3', marginBottom: '16px', display: 'block' } }),
+            $({ tag: 'p', text: message, style: { color: '#ccc', fontSize: '14px', margin: 0 } })
+        ]
+    })
+
+    return CustomModal({
+        title,
+        content,
+        size: 'small',
+        showCloseButton: false,
+        closeOnOverlayClick: false,
+        footer: null
+    })
+}
