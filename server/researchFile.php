@@ -97,7 +97,7 @@ function getCenterCode($centerName) {
     return !empty($code) ? $code : 'END';
 }
 
-function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $category, $author, $title, $type = 'research', $isProgram = false, $isEndorsement = false) {
+function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $category, $author, $title, $type = 'research', $isProgram = false, $isEndorsement = false, $isCertificate = false) {
     try {
         // Check if file exists
         if (!file_exists($tempFilePath)) {
@@ -137,9 +137,7 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         
         // Create entry folder name: lastname_keyword
         $entryFolderName = $authorLastName . '_' . $titleKeywords;
-        
-        error_log("Creating folder structure for: $eventName -> $centerName -> $category -> $entryFolderName");
-        
+                
         // Create complete folder structure
         $folders = $drive->createCompleteFolderStructure(
             $cleanEventName,
@@ -156,8 +154,12 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         // Determine which folder to upload to based on file type
         $targetFolderId = $folders['entry_folder_id'];
         
-        // Special naming for program files: EventName_OriginalFileName_Category-Title.ext
-        if ($type === 'program' || $isProgram) {
+        if ($type === 'certificate' || $isCertificate) {
+            $pathInfo = pathinfo($fileName);
+            $nameOnly = $pathInfo['filename'];
+            $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
+            $prefixedFileName = $cleanEventName . '_Certificate_' . $nameOnly . $extension;
+        } else if ($type === 'program' || $isProgram) {
             $pathInfo = pathinfo($fileName);
             $nameOnly = $pathInfo['filename'];
             $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
@@ -457,13 +459,23 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
                         $result['existingRecord'] = $existingFileRecord;
                         
                         // Determine which file caused the duplicate
-                        if (!empty($fileData['proposal_hash']) && $existingFileRecord['file_type'] == 'proposal') {
-                            $result['duplicateReason'] = "The research/proposal file has already been uploaded for research ID {$existingFileRecord['research_id']}: '{$existingFileRecord['title']}' by {$existingFileRecord['author']}";
-                        } elseif (!empty($fileData['program_hash']) && $existingFileRecord['file_type'] == 'program') {
-                            $result['duplicateReason'] = "The program file has already been uploaded for research ID {$existingFileRecord['research_id']}: '{$existingFileRecord['title']}' by {$existingFileRecord['author']}";
-                        } elseif (!empty($fileData['endorsement_hash']) && $existingFileRecord['file_type'] == 'endorsement') {
-                            $result['duplicateReason'] = "The endorsement letter has already been used for research ID {$existingFileRecord['research_id']}: '{$existingFileRecord['title']}' by {$existingFileRecord['author']}";
-                        }
+                        $fileTypeNames = [
+                            'proposal' => 'research file',
+                            'program' => 'program file', 
+                            'endorsement' => 'endorsement letter'
+                        ];
+
+                        $fileTypeName = $fileTypeNames[$existingFileRecord['file_type']] ?? 'file';
+                        $status = $existingFileRecord['status'] ?? 'pending';
+
+                        $statusMessage = '';
+                        if ($status === 'pending') {
+                            $statusMessage = " Your submission is still pending review.";
+                        } elseif ($status === 'rejected') {
+                            $statusMessage = " This entry was rejected. Please check your email for feedback before resubmitting.";
+                            }
+
+                        $result['duplicateReason'] = "Duplicate {$fileTypeName} detected for '{$existingFileRecord['title']}' by {$existingFileRecord['author']}." . $statusMessage . " Please use a different file or wait for your pending submission to be processed.";
                         
                         $result['message'] = "Duplicate file detected. This file has been uploaded before.";
                         return $result;
@@ -608,8 +620,6 @@ function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventId =
     
     return $existing;
 }
-
-
 function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
     // Center to code mapping
     $centerCodes = [
@@ -744,8 +754,6 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
     
     return $paperTrailNo;
 }
-
-
 function getResearchFilesForRevision($con, $userId) {
     $query = "SELECT 
         rf.id,
@@ -798,12 +806,8 @@ function getResearchFilesForRevision($con, $userId) {
 }
 
 if (isset($_POST['uploadResearch'])) {
-    // Temporarily disable the error-catching output buffer
     ob_end_clean();
-    
-    // Start new buffer without callback
     ob_start();
-    
     error_reporting(E_ALL);
     ini_set('display_errors', 0);
     
@@ -817,7 +821,6 @@ if (isset($_POST['uploadResearch'])) {
     
     try {
         if ($con = new mysqli($host, $username, $pass, $dbName)) {
-            // Test connection
             if ($con->connect_error) {
                 throw new Exception("Database connection failed: " . $con->connect_error);
             }
@@ -841,6 +844,7 @@ if (isset($_POST['uploadResearch'])) {
                 $author = $_POST['author'];
                 $category = $_POST['category'];
                 $center = $_POST['center'];
+                $campus = $_POST['campus'];
                 $coAuthor = $_POST['coAuthor'] ?? '[]';
                 $presenter = $_POST['presenter'];
                 $date_started = $_POST['date_started'] ?? null;
@@ -942,8 +946,6 @@ if (isset($_POST['uploadResearch'])) {
                     }
                 }
                 
-                // If no duplicates found, proceed with uploads
-                
                 // 1. Upload Endorsement Letter to Google Drive
                 if (!isset($_FILES['uploadedFileEndorsement']) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
                     throw new Exception('Endorsement letter upload failed. Error code: ' . ($_FILES['uploadedFileEndorsement']['error'] ?? 'NO_FILE'));
@@ -972,7 +974,6 @@ if (isset($_POST['uploadResearch'])) {
                 
                 error_log("Endorsement uploaded successfully: " . $endorsementDriveResult['drive_file_id']);
                 
-                // Insert endorsement record with Drive metadata
                 $defaultTime = date('Y-m-d H:i:s');
                 
                 $query2 = "INSERT INTO endorsement (
@@ -988,8 +989,7 @@ if (isset($_POST['uploadResearch'])) {
                     endorsement.drive_entry_folder_id,
                     endorsement.event,
                     endorsement.status,
-                    endorsement.date
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    endorsement.date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
                 $stateM = $con->prepare($query2);
                 if (!$stateM) {
@@ -1018,8 +1018,7 @@ if (isset($_POST['uploadResearch'])) {
                     $drive_entry_folder_id,
                     $eventType, 
                     $sta,
-                    $defaultTime
-                );
+                    $defaultTime);
                 
                 $st = $stateM->execute();
                 
@@ -1060,12 +1059,7 @@ if (isset($_POST['uploadResearch'])) {
                     $eventType,
                     $center,
                     $category,
-                    $author,
-                    $title,
-                    'research',
-                    false,
-                    false
-                );
+                    $author, $title, 'research', false, false);
                 
                 if (!$researchDriveResult['success']) {
                     throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
@@ -1073,19 +1067,21 @@ if (isset($_POST['uploadResearch'])) {
                 
                 error_log("Research uploaded successfully: " . $researchDriveResult['drive_file_id']);
                 
-                // 3. Upload Program File (OPTIONAL - only for non-Symposium)
+                // 3. Upload Program File (for In-House and Symposium events)
                 $programDriveResult = null;
                 $programFile = null;
                 $programDriveFileId = null;
                 $programDriveViewUrl = null;
-                
+
                 $isSymposium = stripos($eventType, 'symposium') !== false;
-                
-                if (!$isSymposium && isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                $isInHouse = stripos($eventType, 'in house review') !== false || stripos($eventType, 'in-house review') !== false;
+
+                // Upload program file for In-House and Symposium events
+                if (($isSymposium || $isInHouse) && isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
                     $tempProgramPath = $_FILES['programFile']['tmp_name'];
                     $programFileName = $_FILES['programFile']['name'];
                     
-                    error_log("Uploading program: $programFileName");
+                    error_log("Uploading program file for " . ($isSymposium ? "Symposium" : "In-House") . ": $programFileName");
                     
                     if (file_exists($tempProgramPath)) {
                         $programDriveResult = uploadResearchToDrive(
@@ -1105,17 +1101,45 @@ if (isset($_POST['uploadResearch'])) {
                             $programFile = json_encode($programDriveResult);
                             $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
                             $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
-                            error_log("Program uploaded successfully: " . $programDriveResult['drive_file_id']);
+                            error_log("Program uploaded successfully: " . $programDriveFileId);
                         }
                     }
-                } else {
-                    error_log("Program file not required or not uploaded");
-                    // Set program fields to NULL
-                    $programFile = null;
-                    $programDriveFileId = null;
-                    $programDriveViewUrl = null;
                 }
-                
+
+                // 4. Upload Certificate File (for Symposium/In-House events)
+                $certificateDriveResult = null;
+                $certificateDriveFileId = null;
+                $certificateDriveViewUrl = null;
+
+                if (($isSymposium || $isInHouse) && isset($_FILES['certificateFile']) && $_FILES['certificateFile']['error'] === UPLOAD_ERR_OK) {
+                    $tempCertificatePath = $_FILES['certificateFile']['tmp_name'];
+                    $certificateFileName = $_FILES['certificateFile']['name'];
+                    
+                    error_log("Uploading certificate for " . ($isSymposium ? "Symposium" : "In-House") . ": $certificateFileName");
+                    
+                    if (file_exists($tempCertificatePath)) {
+                        $certificateDriveResult = uploadResearchToDrive(
+                            $tempCertificatePath,
+                            $certificateFileName,
+                            $eventType,
+                            $center,
+                            $category,
+                            $author,
+                            $title,
+                            'certificate',
+                            false,
+                            false,
+                            true
+                        );
+                        
+                        if ($certificateDriveResult && $certificateDriveResult['success']) {
+                            $certificateDriveFileId = $certificateDriveResult['drive_file_id'] ?? null;
+                            $certificateDriveViewUrl = $certificateDriveResult['drive_view_url'] ?? null;
+                            error_log("Certificate uploaded successfully: " . $certificateDriveFileId);
+                        }
+                    }
+                }
+
                 $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
 
                 // Validate date fields for Symposium
@@ -1144,6 +1168,8 @@ if (isset($_POST['uploadResearch'])) {
                     researchfile.program,
                     researchfile.program_drive_file_id,
                     researchfile.program_drive_view_url,
+                    researchfile.certificate_drive_file_id,
+                    researchfile.certificate_drive_view_url,
                     researchfile.event,
                     researchfile.event_id,
                     researchfile.campus,
@@ -1152,9 +1178,9 @@ if (isset($_POST['uploadResearch'])) {
                     researchfile.status,
                     researchfile.date_started,
                     researchfile.date_completed
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-                $rev = NULL;
+                $rev = 'pending';
 
                 $stementResNew = $con->prepare($querV2);
                 if (!$stementResNew) {
@@ -1168,14 +1194,9 @@ if (isset($_POST['uploadResearch'])) {
                 $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
 
                 $bound = $stementResNew->bind_param(
-                    'ssssssssssssssssssssssssss',  // 26 's' parameters
-                    $paperTrailNo, 
-                    $senderId,
-                    $endorsementId,
-                    $author,
-                    $title,
-                    $center,
-                    $category,
+                    'ssssssssssssssssssssssssssss',  // 28 's' parameters
+                    $paperTrailNo, $senderId, $endorsementId,
+                    $author, $title, $center, $category,
                     $researchDriveResult['drive_file_id'],
                     $researchDriveResult['drive_view_url'],
                     $researchDriveResult['drive_download_url'],
@@ -1187,16 +1208,10 @@ if (isset($_POST['uploadResearch'])) {
                     $programFile,
                     $programDriveFileId,
                     $programDriveViewUrl,
-                    $eventType,
-                    $eventId,
-                    $center,
-                    $coAuthor,
-                    $presenter,
-                    $rev,
-                    $date_started,
-                    $date_completed
-                );
-
+                    $certificateDriveFileId,     
+                    $certificateDriveViewUrl,      
+                    $eventType, $eventId, $campus,
+                    $coAuthor, $presenter, $rev, $date_started, $date_completed );
                 if (!$bound) {
                     throw new Exception("Bind failed for researchfile: " . $stementResNew->error);
                 }
@@ -1245,6 +1260,43 @@ if (isset($_POST['uploadResearch'])) {
     
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+if (isset($_POST['searchInhouseTitles'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->list = [];
+    $response->message = '';
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $searchTerm = '%' . $con->real_escape_string($_POST['search'] ?? '') . '%';
+        
+        $query = "SELECT DISTINCT rf.title, rf.author, rf.presenter, rf.drive_view_url
+                  FROM researchfile rf
+                  INNER JOIN endorsement e ON rf.endorsementid = e.id
+                  WHERE e.status = 'accepted'
+                  AND (rf.event LIKE '%In House Review%' OR rf.event LIKE '%In-House Review%')
+                  AND (rf.title LIKE ? OR rf.author LIKE ? OR rf.presenter LIKE ?)
+                  ORDER BY rf.title ASC
+                  LIMIT 20";
+        
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("sss", $searchTerm, $searchTerm, $searchTerm);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $response->list[] = $row;
+        }
+        
+        $response->status = true;
+        $stmt->close();
+    }
+    
+    $con->close();
+    header('Content-Type: application/json');
     echo json_encode($response);
     exit();
 }
@@ -1845,26 +1897,11 @@ if (isset($_POST['researchReviewed'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $userId = $_SESSION['userId'] ?? 0;
         
-        // Automated Revision Check: Mark records as pending revision if presentation date has passed
-        // ONLY if the status is currently NULL (not yet processed/notified)
-        $updateRevisionQuery = "UPDATE researchfile rf
-                               JOIN event_list el ON rf.event_id = el.id
-                               SET rf.revision_status = 'revision_pending'
-                               WHERE rf.senderid = ? 
-                               AND (el.date_of_presentation < NOW() OR (DATE(el.date_of_presentation) <= CURDATE() AND el.date_of_presentation IS NOT NULL))
-                               AND rf.revision_status IS NULL";
-        $stmtUp = $con->prepare($updateRevisionQuery);
-        if ($stmtUp) {
-            $stmtUp->bind_param("i", $userId);
-            $stmtUp->execute();
-            $stmtUp->close();
-        }
-        
         $queryEndorsement = "SELECT * FROM `endorsement` WHERE `senderid`='$userId'";
         
         foreach ($con->query($queryEndorsement) as $val) {
             $endorsement = new stdClass();
-            $endorsement->endorsementFile = $val['drive_view_url']; // Use Drive URL
+            $endorsement->endorsementFile = $val['drive_view_url'];
             $endorsement->drive_file_id = $val['drive_file_id'] ?? null;
             $endorsement->drive_download_url = $val['drive_download_url'] ?? null;
             $endorsement->eventType = $val['event'];
@@ -1874,12 +1911,15 @@ if (isset($_POST['researchReviewed'])) {
             $endorsement->ResearchDocs = [];
             $enID = $val['id'];
             
-            // UPDATED QUERY to include program_drive_view_url and status/date_of_presentation
             $queryResearch = "SELECT 
                 rf.author,
                 rf.coauthor,
                 rf.presenter,
                 rf.title,
+                rf.center,
+                rf.campus,
+                rf.date_started,
+                rf.date_completed,
                 rf.id as docId,
                 rf.category,
                 rf.drive_view_url as file,
@@ -1890,12 +1930,15 @@ if (isset($_POST['researchReviewed'])) {
                 rf.drive_center_folder_id,
                 rf.program_drive_view_url,
                 rf.program_drive_file_id,
+                rf.certificate_drive_file_id,
+                rf.certificate_drive_view_url,
                 rf.revision_status,
                 rf.revision_count,
                 rf.title_changed,
                 rf.event_id,
-                rf.status,
-                el.date_of_presentation
+                rf.status as original_status,
+                el.date_of_presentation,
+                el.name as event_name
             FROM `researchfile` rf
             LEFT JOIN `event_list` el ON rf.event_id = el.id
             WHERE rf.senderid='$userId' AND rf.endorsementid='$enID'";
@@ -1906,9 +1949,13 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->coauthor = $res['coauthor'];
                 $researchDocs->presenter = $res['presenter'];
                 $researchDocs->title = $res['title'];
+                $researchDocs->center = $res['center'];
+                $researchDocs->campus = $res['campus'];
+                $researchDocs->date_started = $res['date_started'];
+                $researchDocs->date_completed = $res['date_completed'];
                 $researchDocs->docId = $res['docId'];
                 $researchDocs->category = $res['category'];
-                $researchDocs->researchFile = $res['file']; // Google Drive URL
+                $researchDocs->researchFile = $res['file'];
                 $researchDocs->drive_file_id = $res['drive_file_id'];
                 $researchDocs->drive_download_url = $res['drive_download_url'];
                 $researchDocs->drive_folder_id = $res['drive_folder_id'];
@@ -1916,33 +1963,45 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->drive_center_folder_id = $res['drive_center_folder_id'];
                 $researchDocs->program_drive_view_url = $res['program_drive_view_url'];
                 $researchDocs->program_drive_file_id = $res['program_drive_file_id']; 
+                $researchDocs->certificate_drive_file_id = $res['certificate_drive_file_id'];
+                $researchDocs->certificate_drive_view_url = $res['certificate_drive_view_url'];
                 $researchDocs->revision_status = $res['revision_status'];
                 $researchDocs->revision_count = $res['revision_count'];
                 $researchDocs->title_changed = $res['title_changed'];
                 $researchDocs->event_id = $res['event_id'];
                 $researchDocs->date_of_presentation = $res['date_of_presentation'];
+                $researchDocs->original_status = $res['original_status'];
+                $researchDocs->event_name = $res['event_name'];
                 
-                // Get current date for comparison
+                // SERVER-SIDE STATUS LOGIC (no auto-update to database)
                 $currentDate = date('Y-m-d H:i:s');
                 $presentationDate = $res['date_of_presentation'] ?? null;
-
-                // Dynamic status logic
-                if ($res['status'] === 'rejected') {
+                $originalStatus = $res['original_status'] ?? 'pending';
+                $revisionStatus = $res['revision_status'] ?? null;
+                
+                // Determine the display status based on business rules
+                if ($originalStatus === 'rejected') {
                     $displayStatus = 'rejected';
-                } else if (!empty($presentationDate) && $presentationDate < $currentDate) {
-                    // Presentation has passed - show revision status
-                    $displayStatus = !empty($res['revision_status']) ? $res['revision_status'] : 'revision_pending';
+                } elseif ($presentationDate === null) {
+                    // No presentation date set - use original status
+                    $displayStatus = $originalStatus;
+                } elseif ($presentationDate < $currentDate) {
+                    // Presentation has passed - use revision status
+                    $displayStatus = !empty($revisionStatus) ? $revisionStatus : 'revision_pending';
                 } else {
-                    // No presentation date or future date - show original status
-                    $displayStatus = $res['status'] ?? 'pending';
+                    // Future presentation date - use original status
+                    $displayStatus = $originalStatus;
                 }
-
+                
                 $researchDocs->status = $displayStatus;
                 $endorsement->ResearchDocs[] = $researchDocs;
             }
             $response->list[] = $endorsement;
         }
+        $con->close();
     }
+    
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
 }
@@ -2268,16 +2327,32 @@ if (isset($_POST['getResearch'])) {
         $accessResult = $con->query($accessQuery);
         $accessRow = $accessResult->fetch_assoc();
         
-        // Automated Revision Check: Mark records as pending revision if presentation date has passed
-        // ONLY if the status is currently NULL
+        // Helper function to determine status
+        $getDisplayStatus = function($status, $revisionStatus, $presentationDate) {
+            $currentDate = date('Y-m-d H:i:s');
+            
+            // If date_of_presentation is NULL, use rf.status
+            if (empty($presentationDate)) {
+                return $status ?? 'pending';
+            }
+            
+            // If date_of_presentation has value
+            if (!empty($presentationDate)) {
+                // Check if presentation date has passed
+                if ($presentationDate < $currentDate) {
+                    // Event already presented - use revision_status
+                    return !empty($revisionStatus) ? $revisionStatus : 'revision_pending';
+                } else {
+                    // Future presentation date - use original status
+                    return $status ?? 'pending';
+                }
+            }
+            
+            // Fallback
+            return $status ?? 'pending';
+        };
+        
         $statusUpdateFilter = ($accessRow && $accessRow['researchaccess'] !== null) ? "" : " AND rf.senderid = '$serderId'";
-        $updateRevisionQuery = "UPDATE researchfile rf
-                               JOIN event_list el ON rf.event_id = el.id
-                               SET rf.revision_status = 'revision_pending'
-                               WHERE (el.date_of_presentation < NOW() OR (DATE(el.date_of_presentation) <= CURDATE() AND el.date_of_presentation IS NOT NULL))
-                               AND rf.revision_status IS NULL
-                               $statusUpdateFilter";
-        $con->query($updateRevisionQuery);
 
         if ($accessRow && $accessRow['researchaccess'] !== null) {
             // Query for users with research access - keyset pagination
@@ -2314,12 +2389,12 @@ if (isset($_POST['getResearch'])) {
                 $data->coauthor = $row['coauthor'];
                 $data->presenter = $row['presenter'];
                 
-                // Dynamic Status Logic
-                $displayStatus = $row['status'];
-                if (!empty($row['date_of_presentation'])) {
-                    $displayStatus = $row['revision_status'] ?: 'revision_pending';
-                }
-                $data->status = $displayStatus;
+                // Calculate display status on server
+                $data->status = $getDisplayStatus(
+                    $row['status'], 
+                    $row['revision_status'], 
+                    $row['date_of_presentation']
+                );
                 
                 $data->revision_status = $row['revision_status'];
                 $data->revision_count = $row['revision_count'];
@@ -2373,21 +2448,13 @@ if (isset($_POST['getResearch'])) {
                 $data->coauthor = $row['coauthor'];
                 $data->presenter = $row['presenter'];
                 
-                // Get current date for comparison
-                $currentDate = date('Y-m-d H:i:s');
-                $presentationDate = $row['date_of_presentation'] ?? null;
-
-                // Dynamic status logic
-                if ($row['status'] === 'rejected') {
-                    $displayStatus = 'rejected';
-                } else if (!empty($presentationDate) && $presentationDate < $currentDate) {
-                    // Presentation has passed - show revision status
-                    $displayStatus = !empty($row['revision_status']) ? $row['revision_status'] : 'revision_pending';
-                } else {
-                    // No presentation date or future date - show original status
-                    $displayStatus = $row['status'] ?? 'pending';
-                }
-                $data->status = $displayStatus;
+                // Calculate display status on server
+                $data->status = $getDisplayStatus(
+                    $row['status'], 
+                    $row['revision_status'], 
+                    $row['date_of_presentation']
+                );
+                
                 $data->revision_status = $row['revision_status'];
                 $data->revision_count = $row['revision_count'];
                 $data->title_changed = $row['title_changed'];

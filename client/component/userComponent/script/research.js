@@ -193,7 +193,7 @@ const openViewResearchesModal = () => {
         return container
     }
 
-    // Helper: show a placeholder message in the table body
+    // show a placeholder message in the table body
     const setTableMessage = (iconClass, mainText, subText = '') => {
         if (!tableBody) return
         tableBody.innerHTML = ''
@@ -629,6 +629,7 @@ export const Research = () => {
     let formData = {
         eventName: '',
         title: '',
+        campus: '',
         category: '',
         presenter: '',
         author: '',
@@ -672,13 +673,13 @@ export const Research = () => {
     const getStatusBadge = (status) => {
         const styles = {
             pending: { bg: '#FF9800', text: 'Pending', icon: 'fa-clock' },
-            accepted: { bg: '#4CAF50', text: 'Accepted', icon: 'fa-check-circle' },
+            accepted: { bg: '#4CAF50', text: 'Proposal Accepted', icon: 'fa-check-circle' },
             rejected: { bg: '#f44336', text: 'Rejected', icon: 'fa-times-circle' },
             review: { bg: '#2196F3', text: 'Under Review', icon: 'fa-eye' },
-            revision_pending: { bg: '#9C27B0', text: 'Revision Pending', icon: 'fa-exclamation-circle' },
-            revision_submitted: { bg: '#673AB7', text: 'Revision Submitted', icon: 'fa-paper-plane' },
-            revision_accepted: { bg: '#009688', text: 'Revision Accepted', icon: 'fa-check-double' },
-            revision_rejected: { bg: '#E91E63', text: 'Revision Rejected', icon: 'fa-times-circle' }
+            revision_pending: { bg: '#9C27B0', text: 'Waiting for Revised Paper', icon: 'fa-exclamation-circle' },
+            revision_submitted: { bg: '#673AB7', text: 'Revised Paper Submitted', icon: 'fa-paper-plane' },
+            revision_accepted: { bg: '#009688', text: 'Revised Paper Accepted', icon: 'fa-check-double' },
+            revision_rejected: { bg: '#E91E63', text: 'Rejected Revised Paper', icon: 'fa-times-circle' }
         }
         const normalizedStatus = (status || '').toLowerCase()
         const config = styles[normalizedStatus] || styles.pending
@@ -709,78 +710,94 @@ export const Research = () => {
             style: {
                 display: 'flex',
                 gap: '8px',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                flexWrap: 'wrap'
             }
         })
 
-        // View Comments button (always show)
-        const viewCommentsBtn = $({
-            tag: 'button',
-            att: { className: 'action-btn view-comments-btn', title: 'View Comments' },
-            style: {
-                background: '#4caf50',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-            },
-            child: [
-                $({ tag: 'i', att: { className: 'fas fa-comment-dots' }, style: { color: 'white', fontSize: '14px' } })
-            ],
-            event: {
-                type: 'click',
-                method: () => viewComments(rowData)
-            }
-        })
-
-        // Edit button (show for most statuses except rejected, revision_accepted, revision_rejected)
+        // Get current status
         const currentStatus = (rowData.status || '').toLowerCase()
-        const showEdit = !['rejected', 'revision_accepted', 'revision_rejected'].includes(currentStatus)
 
-        const editBtn = $({
-            tag: 'button',
-            att: { className: 'action-btn edit-btn', title: 'Edit Document' },
-            style: {
-                background: '#FF9800',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-            },
-            child: [
-                $({ tag: 'i', att: { className: 'fas fa-edit' }, style: { color: 'white', fontSize: '14px' } })
-            ],
-            event: {
-                type: 'click',
-                method: () => editDocument(rowData)
-            }
-        })
+        // Define visibility rules based on your table
+        const showComments = !['pending', 'revision_pending'].includes(currentStatus)
+        const showEdit = ['pending', 'revision_pending', 'revision_submitted', 'revision_rejected'].includes(currentStatus)
+        const showDelete = ['pending', 'revision_pending', 'revision_submitted', 'revision_rejected'].includes(currentStatus)
+        const showResubmit = currentStatus === 'rejected'
 
-        // Delete button (show for most statuses)
-        const deleteBtn = $({
-            tag: 'button',
-            att: { className: 'action-btn delete-btn', title: 'Delete Document' },
-            style: {
-                background: '#f44336',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '6px 10px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-            },
-            child: [
-                $({ tag: 'i', att: { className: 'fas fa-trash-alt' }, style: { color: 'white', fontSize: '14px' } })
-            ],
-            event: {
-                type: 'click',
-                method: () => deleteDocument(rowData)
-            }
-        })
+        // View Comments button
+        if (showComments) {
+            const viewCommentsBtn = $({
+                tag: 'button',
+                att: { className: 'action-btn view-comments-btn', title: 'View Comments' },
+                style: {
+                    background: '#4caf50',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-comment-dots' }, style: { color: 'white', fontSize: '14px' } })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => viewComments(rowData)
+                }
+            })
+            container.appendChild(viewCommentsBtn)
+        }
 
-        // Resubmit button (show only if rejected)
-        if (currentStatus === 'rejected') {
+        // Edit button
+        if (!hideEditDelete && showEdit) {
+            const editBtn = $({
+                tag: 'button',
+                att: { className: 'action-btn edit-btn', title: 'Edit Document' },
+                style: {
+                    background: '#FF9800',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-edit' }, style: { color: 'white', fontSize: '14px' } })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => editDocument(rowData)
+                }
+            })
+            container.appendChild(editBtn)
+        }
+
+        // Delete button
+        if (!hideEditDelete && showDelete) {
+            const deleteBtn = $({
+                tag: 'button',
+                att: { className: 'action-btn delete-btn', title: 'Delete Document' },
+                style: {
+                    background: '#f44336',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: 'fas fa-trash-alt' }, style: { color: 'white', fontSize: '14px' } })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => deleteDocument(rowData)
+                }
+            })
+            container.appendChild(deleteBtn)
+        }
+
+        // Resubmit button (only for rejected)
+        if (showResubmit) {
             const resubmitBtn = $({
                 tag: 'button',
                 att: { className: 'action-btn resubmit-btn', title: 'Resubmit Document' },
@@ -790,10 +807,7 @@ export const Research = () => {
                     borderRadius: '6px',
                     padding: '6px 10px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
+                    transition: 'all 0.2s'
                 },
                 child: [
                     $({ tag: 'i', att: { className: 'fas fa-redo' }, style: { color: 'white', fontSize: '14px' } })
@@ -809,18 +823,9 @@ export const Research = () => {
             container.appendChild(resubmitBtn)
         }
 
-        // Add standard buttons
-        container.appendChild(viewCommentsBtn)
-
-        if (!hideEditDelete) {
-            if (showEdit) {
-                container.appendChild(editBtn)
-            }
-            container.appendChild(deleteBtn)
-        }
-
         return container
     }
+
 
     // View Comments Modal with Print functionality
     const viewComments = (doc) => {
@@ -1195,77 +1200,157 @@ export const Research = () => {
             loadComments();
         }, 100);
     }
-    // Create table row
+
     const createTableRow = (doc) => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
 
-        // Get document data
-        let originalStatus = doc.status || 'pending'
-        const presentationDate = doc.date_of_presentation ? new Date(doc.date_of_presentation) : null
-        const currentDate = new Date()
-
-        // Dynamic status logic
-        let status
-        if (originalStatus === 'rejected') {
-            status = 'rejected'
-        } else if (presentationDate && presentationDate < currentDate) {
-            // Presentation has passed - show revision status
-            status = doc.revision_status || 'revision_pending'
-        } else {
-            // No presentation date or future date - show original status
-            status = originalStatus
-        }
+        // Use the backend-computed status directly
+        let status = doc.status || 'pending'
 
         // Clean up NULL values
-        if (status === 'NULL' || status === 'null') {
+        if (status === 'NULL' || status === 'null' || status === null) {
             status = 'pending'
         }
 
-        // Handle file display with proper icons for Google Drive files
-        const getFileIcon = (fileUrl, fileType = 'research') => {
-            if (!fileUrl || fileUrl === '—') return '—'
-            if (fileUrl.includes('drive.google.com')) {
-                return $({
-                    tag: 'i',
-                    att: { className: 'fab fa-google-drive' },
-                    style: { color: '#0F9D58', fontSize: '18px', cursor: 'pointer' },
-                    event: {
-                        type: 'click',
-                        method: (e) => {
-                            e.stopPropagation()
-                            viewFileInModal(fileUrl, fileType)
-                        }
+        // Create a single file display with all files
+        const createFileList = () => {
+            const container = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                }
+            })
+
+            // Helper to create individual file row
+            const createFileRow = (label, fileUrl, fileType, iconColor) => {
+                if (!fileUrl || fileUrl === '—' || fileUrl === null) return null
+
+                const row = $({
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontSize: '12px'
                     }
                 })
+
+                // Label
+                row.appendChild($({
+                    tag: 'span',
+                    text: label + ':',
+                    style: {
+                        minWidth: '100px',
+                        color: '#888',
+                        fontWeight: '500'
+                    }
+                }))
+
+                // File icon/link
+                let fileElement
+                if (fileUrl.includes('drive.google.com')) {
+                    fileElement = $({
+                        tag: 'a',
+                        att: { href: '#', title: 'View file' },
+                        style: {
+                            color: iconColor,
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            cursor: 'pointer'
+                        },
+                        child: [
+                            $({ tag: 'i', att: { className: 'fab fa-google-drive' }, style: { fontSize: '14px' } }),
+                            $({ tag: 'span', text: 'View', style: { fontSize: '12px' } })
+                        ],
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                viewFileInModal(fileUrl, fileType)
+                            }
+                        }
+                    })
+                } else {
+                    fileElement = $({
+                        tag: 'a',
+                        att: { href: '#', title: 'View file' },
+                        style: {
+                            color: iconColor,
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            cursor: 'pointer'
+                        },
+                        child: [
+                            $({ tag: 'i', att: { className: 'fas fa-file-pdf' }, style: { fontSize: '14px' } }),
+                            $({ tag: 'span', text: 'View', style: { fontSize: '12px' } })
+                        ],
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                viewFileInModal(fileUrl, fileType)
+                            }
+                        }
+                    })
+                }
+
+                row.appendChild(fileElement)
+                return row
             }
+
+            // Add all files
+            const researchRow = createFileRow('Research', doc.researchFile, 'research', '#2196F3')
+            if (researchRow) container.appendChild(researchRow)
+
+            const programRow = createFileRow('Program', doc.programFile, 'program', '#4caf50')
+            if (programRow) container.appendChild(programRow)
+
+            const endorsementRow = createFileRow('Endorsement', doc.endorsementFile, 'endorsement', '#ff9800')
+            if (endorsementRow) container.appendChild(endorsementRow)
+
+            const certificateRow = createFileRow('Certificate', doc.certificateFile, 'certificate', '#9C27B0')
+            if (certificateRow) container.appendChild(certificateRow)
+
+            // If no files
+            if (container.children.length === 0) {
+                container.appendChild($({
+                    tag: 'span',
+                    text: '—',
+                    style: { color: '#666' }
+                }))
+            }
+
+            return container
         }
 
-        const researchFileDisplay = doc.researchFile && doc.researchFile !== '—' ? getFileIcon(doc.researchFile) : '—'
-        const programFileDisplay = doc.programFile && doc.programFile !== '—' ? getFileIcon(doc.programFile) : '—'
-        const endorsementFileDisplay = doc.endorsementFile && doc.endorsementFile !== '—' ? getFileIcon(doc.endorsementFile) : '—'
         const reviseButton = createReviseButton(doc)
         const actionButtons = createActionButtons(doc, !!reviseButton)
 
         const actionsCell = $({
             tag: 'td',
-            style: { padding: '16px 12px', verticalAlign: 'middle' }
+            style: { padding: '16px 12px', verticalAlign: 'middle', textAlign: 'center' }
         })
 
         // Create container for buttons
         const buttonContainer = $({
             tag: 'div',
-            style: { display: 'flex', gap: '8px', flexWrap: 'wrap' }
+            style: { display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }
         })
 
-        // Put Revise button first if it exists
         if (reviseButton) {
             buttonContainer.appendChild(reviseButton)
         }
         buttonContainer.appendChild(actionButtons)
-
         actionsCell.appendChild(buttonContainer)
 
-        // Then in your cells array, use actionsCell as the 11th element
         const cells = [
             doc.eventName || '—',
             getStatusBadge(status),
@@ -1274,9 +1359,7 @@ export const Research = () => {
             doc.presenter || '—',
             doc.author || '—',
             (doc.coAuthors || []).join(', ') || '—',
-            researchFileDisplay,
-            programFileDisplay,
-            endorsementFileDisplay,
+            createFileList(),
             actionsCell
         ]
 
@@ -1287,7 +1370,7 @@ export const Research = () => {
                     padding: '16px 12px',
                     color: '#e0e0e0',
                     fontSize: '14px',
-                    verticalAlign: 'middle'
+                    verticalAlign: 'center'
                 }
             })
 
@@ -1304,13 +1387,12 @@ export const Research = () => {
     }
 
     const createReviseButton = (doc) => {
-        // Get the current display status
         const currentStatus = (doc.status || '').toLowerCase()
 
-        // Only show if status is revision_pending or revision_rejected
-        const isEligible = currentStatus === 'revision_pending' || currentStatus === 'revision_rejected'
+        // Show revise button only for revision_pending or revision_rejected
+        const showRevise = currentStatus === 'revision_pending' || currentStatus === 'revision_rejected'
 
-        if (!isEligible) return null
+        if (!showRevise) return null
 
         const reviseBtn = $({
             tag: 'button',
@@ -1325,7 +1407,7 @@ export const Research = () => {
             },
             child: [
                 $({ tag: 'i', att: { className: 'fas fa-upload' }, style: { color: 'white', fontSize: '14px' } }),
-                $({ tag: 'span', text: 'Update Revision', style: { marginLeft: '6px', fontSize: '12px', color: 'white', fontWeight: 'bold' } })
+                $({ tag: 'span', text: 'Update Revision', style: { marginLeft: '6px', fontSize: '11px', color: 'white', fontWeight: 'bold' } })
             ],
             event: {
                 type: 'click',
@@ -1683,7 +1765,8 @@ export const Research = () => {
         const typeNames = {
             research: 'Research Document',
             program: 'Program File',
-            endorsement: 'Endorsement Letter'
+            endorsement: 'Endorsement Letter',
+            certificate: 'Certificate File'
         }
         const displayName = typeNames[fileType] || 'Document'
 
@@ -1691,7 +1774,8 @@ export const Research = () => {
         const accentColors = {
             research: '#2196F3',
             program: '#4caf50',
-            endorsement: '#ff9800'
+            endorsement: '#ff9800',
+            certificate: '#8a2be2'
         }
         const accentColor = accentColors[fileType] || '#2196F3'
 
@@ -1725,6 +1809,7 @@ export const Research = () => {
         formData = {
             eventName: doc.eventName || '',
             title: doc.title || '',
+            campus: doc.campus || '',
             category: doc.category || '',
             center: doc.center || '',
             presenter: doc.presenter || '',
@@ -1969,6 +2054,7 @@ export const Research = () => {
         formData = {
             eventName: isEdit ? editData?.eventName || '' : '',
             title: isEdit ? editData?.title || '' : '',
+            campus: isEdit ? editData?.campus || '' : '',
             category: isEdit ? editData?.category || '' : '',
             center: isEdit ? editData?.center || '' : '',
             presenter: isEdit ? editData?.presenter || '' : '',
@@ -1978,9 +2064,6 @@ export const Research = () => {
             programFile: null,
             endorsementFile: null,
             certificateFile: null,
-            localProgramFiles: [],
-            localEndorsementFiles: [],
-            localEntryFiles: [],
             date_started: isEdit ? editData?.date_started || '' : '',
             date_completed: isEdit ? editData?.date_completed || '' : ''
         }
@@ -2103,9 +2186,8 @@ export const Research = () => {
                                 localFilesTitle.innerText = isSymposium ? 'Local Symposium Files' : 'Local In-House Files'
                             } else {
                                 localFilesSection.style.display = 'none'
-                                formData.localProgramFiles = []
-                                formData.localEndorsementFiles = []
-                                formData.localEntryFiles = []
+                                formData.programFile = null
+                                formData.certificateFile = null
                             }
                         }
 
@@ -2314,6 +2396,63 @@ export const Research = () => {
         })
 
         searchFieldContainer.appendChild(searchWrapper)
+
+        // Campus field (add this after the title field section)
+        const campusField = $({ tag: 'div', style: { marginBottom: '20px' } })
+        campusField.appendChild($({
+            tag: 'label',
+            text: 'Campus *',
+            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+        }))
+
+        const campusSelect = $({
+            tag: 'select',
+            style: {
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px'
+            },
+            event: {
+                type: 'change',
+                method: (e) => { formData.campus = e.target.value }
+            },
+            elementHandler: (el) => {
+                const campuses = [
+                    'Roxas City Main',
+                    'Dayao',
+                    'Pontevedra',
+                    'Pilar',
+                    'Sigma',
+                    'Burias',
+                    'Mambusao',
+                    'Tapaz',
+                    'Dumarao'
+                ]
+
+                el.appendChild($({
+                    tag: 'option',
+                    text: '-- Select Campus --',
+                    att: { value: '', disabled: true, selected: true }
+                }))
+
+                campuses.forEach(campus => {
+                    el.appendChild($({
+                        tag: 'option',
+                        text: campus,
+                        att: { value: campus }
+                    }))
+                })
+
+                if (isEdit && editData?.campus) {
+                    el.value = editData.campus
+                }
+            }
+        })
+        campusField.appendChild(campusSelect)
 
         // Category field
         const categoryField = $({ tag: 'div', style: { marginBottom: '20px' } })
@@ -2587,13 +2726,22 @@ export const Research = () => {
         //two-column layout
         twoColumnLayout.appendChild(titleField)
         twoColumnLayout.appendChild(searchFieldContainer)
+        twoColumnLayout.appendChild(campusField)
         twoColumnLayout.appendChild(categoryField)
         twoColumnLayout.appendChild(centerField)
         twoColumnLayout.appendChild(authorField)
         twoColumnLayout.appendChild(presenterField)
         twoColumnLayout.appendChild(coAuthorField)
         twoColumnLayout.appendChild(dateFieldsContainer)
-
+        const fullWidthContainer = $({
+            tag: 'div',
+            style: {
+                gridColumn: '1 / -1',  // Span across both columns
+                marginTop: '0'
+            }
+        })
+        fullWidthContainer.appendChild(coAuthorField)
+        twoColumnLayout.appendChild(fullWidthContainer)
         formBody.appendChild(eventField)
         formBody.appendChild(twoColumnLayout)
 
@@ -2613,15 +2761,13 @@ export const Research = () => {
             tag: 'div',
             style: {
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 1fr',
                 gap: '20px'
             }
         })
 
         fileGrid.appendChild(FileUploadField({ label: 'Research Entry File', fieldName: 'researchFile' }))
         fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
-        standardProgramFile = FileUploadField({ label: 'Program File', fieldName: 'programFile' })
-        fileGrid.appendChild(standardProgramFile)
 
         fileSection.appendChild(fileGrid)
 
@@ -2649,8 +2795,8 @@ export const Research = () => {
             }
         })
 
-        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'ProgramFile' }))
-        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'CertificateFile' }))
+        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'programFile' }))
+        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'certificateFile' }))
 
         localFilesSection.appendChild(localFieldsGrid)
 
@@ -2723,21 +2869,6 @@ export const Research = () => {
                             return
                         }
 
-                        // Program file validation logic
-                        if (isInHouse || isSymposium) {
-                            if (!formData.ProgramFile || formData.ProgramFile.length === 0 ||
-                                !formData.CertificateFile || formData.CertificateFile.length === 0) {
-                                alert(`Program File, Certificate are all required in the local files section for ${isSymposium ? 'Symposium' : 'In House Review'}`)
-                                return
-                            }
-                        } else {
-                            // For other events, program file is optional (as per requirement "becomes required ONLY for...")
-                            // But if they did upload one, validate it
-                            if (formData.programFile && formData.programFile.type !== 'application/pdf') {
-                                alert('Program file must be a valid PDF file')
-                                return
-                            }
-                        }
 
                         // Validate PDF files
                         if (formData.researchFile && formData.researchFile.type !== 'application/pdf') {
@@ -2747,9 +2878,6 @@ export const Research = () => {
                         if (formData.endorsementFile && formData.endorsementFile.type !== 'application/pdf') {
                             alert('Endorsement letter must be a valid PDF file')
                             return
-                        }
-                        if (formData.certificateFile) {
-                            form.append('certificateFile', formData.certificateFile)
                         }
                     }
 
@@ -2795,6 +2923,7 @@ export const Research = () => {
                         form.append('title', formData.title)
                         form.append('category', formData.category)
                         form.append('center', formData.center)
+                        form.append('campus', formData.campus)
                         form.append('author', formData.author)
                         form.append('presenter', formData.presenter)
                         form.append('coAuthor', JSON.stringify(formData.coAuthors || []))
@@ -2819,9 +2948,8 @@ export const Research = () => {
 
                         // Append multiple local files (Program, Endorsement, Entry)
                         const localFileCategories = [
-                            { name: 'localProgramFiles[]', files: formData.localProgramFiles },
-                            { name: 'localEndorsementFiles[]', files: formData.localEndorsementFiles },
-                            { name: 'localEntryFiles[]', files: formData.localEntryFiles }
+                            { name: 'programFile', files: formData.programFile },
+                            { name: 'certificateFile', files: formData.certificateFile },
                         ]
 
                         if (isInHouse || isSymposium) {
@@ -2895,6 +3023,7 @@ export const Research = () => {
                                         eventName: '',
                                         eventId: '',
                                         title: '',
+                                        campus: '',
                                         category: '',
                                         center: '',
                                         presenter: '',
@@ -2904,9 +3033,6 @@ export const Research = () => {
                                         programFile: null,
                                         endorsementFile: null,
                                         certificateFile: null,
-                                        localProgramFiles: [],
-                                        localEndorsementFiles: [],
-                                        localEntryFiles: [],
                                         date_started: null,
                                         date_completed: null
                                     }
@@ -2961,7 +3087,7 @@ export const Research = () => {
         const titleSection = $({
             tag: 'div',
             child: [
-                $({ tag: 'h1', text: 'Research Documents', style: { color: '#fff', fontSize: '28px', margin: 0, marginBottom: '8px' } }),
+                $({ tag: 'h1', text: 'Research Documents', style: { color: '#fff', fontSize: '30px', margin: 0, marginBottom: '8px' } }),
                 $({ tag: 'p', text: 'Manage and track all research submissions of this center', style: { color: '#888', fontSize: '14px', margin: 0 } })
             ]
         })
@@ -3045,9 +3171,9 @@ export const Research = () => {
 
         const stats = [
             { label: 'Total Documents', value: '0', icon: 'fa-file-alt', color: '#2196F3' },
-            { label: 'Pending Review', value: '0', icon: 'fa-clock', color: '#FF9800' },
-            { label: 'Accepted', value: '0', icon: 'fa-check-circle', color: '#4CAF50' },
-            { label: 'Rejected', value: '0', icon: 'fa-times-circle', color: '#f44336' }
+            { label: 'Pending Proposal', value: '0', icon: 'fa-clock', color: '#FF9800' },
+            { label: 'Accepted Proposal', value: '0', icon: 'fa-check-circle', color: '#4CAF50' },
+            { label: 'Rejected Proposal', value: '0', icon: 'fa-times-circle', color: '#f44336' }
         ]
 
         stats.forEach((stat, index) => {
@@ -3103,7 +3229,7 @@ export const Research = () => {
         // Table header
         const thead = $({ tag: 'thead' })
         const headerRow = $({ tag: 'tr', style: { backgroundColor: '#2a2a2a', borderBottom: '2px solid #333' } })
-        const columns = ['Event Name', 'Status', 'Title', 'Category', 'Presenter', 'Author', 'Co-Authors', 'Research', 'Program', 'Endorsement', 'Actions']
+        const columns = ['Event Name', 'Status', 'Title', 'Category', 'Presenter', 'Author', 'Co-Authors', 'Attachments', 'Actions']
 
         columns.forEach(col => {
             headerRow.appendChild($({
@@ -3234,7 +3360,7 @@ export const Research = () => {
                                         presenter: researchDoc.presenter || '—',
                                         author: researchDoc.author || '—',
                                         coAuthors: coAuthors,
-                                        status: researchDoc.status || 'pending',
+                                        status: researchDoc.status,
                                         revision_status: endorsement.revision_status || researchDoc.revision_status || null,
                                         revision_count: endorsement.revision_count || researchDoc.revision_count || 0,
                                         revised_title: endorsement.revised_title || researchDoc.revised_title || null,
@@ -3242,6 +3368,7 @@ export const Research = () => {
                                         researchFile: researchDoc.drive_view_url || researchDoc.researchFile || '—',
                                         programFile: researchDoc.program_drive_view_url || researchDoc.program_drive_file_id || '—',
                                         endorsementFile: endorsement.drive_view_url || endorsement.endorsementFile || '—',
+                                        certificateFile: researchDoc.certificate_drive_view_url || '—',
                                         drive_file_id: researchDoc.drive_file_id,
                                         drive_view_url: researchDoc.drive_view_url,
                                         endorsement_id: endorsement.id,
