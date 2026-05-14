@@ -186,7 +186,7 @@ function handleInsert($con, $driveService, $data, $files) {
     $date = $data['date'] ?? '';
     $budget = isset($data['budget']) && $data['budget'] !== '' ? (float)$data['budget'] : null;
     $fundSource = $data['fundSource'] ?? $data['fund_source'] ?? null;
-    $topicsDiscussed = $data['topicsDiscussed'] ?? $data['topics_discussed'] ?? '';
+    $topicsDiscussed = $data['topics_discussed'];
     $attendees = isset($data['attendees']) ? (int)$data['attendees'] : 0;
     
     // Validate required fields
@@ -298,23 +298,62 @@ function handleInsert($con, $driveService, $data, $files) {
         $photos = uploadTrainingPhotos($driveService, $photoFiles, $photosFolderId);
     }
     
-    // Prepare resource persons JSON
+    // Process Resource Persons - Accept comma-separated string or JSON
     $resourcePersons = [];
-    if (!empty($data['resourcePersons'])) {
-        $resourcePersons = is_string($data['resourcePersons']) 
-            ? json_decode($data['resourcePersons'], true) 
-            : $data['resourcePersons'];
-        if (!is_array($resourcePersons)) $resourcePersons = [];
+    if (isset($data['resourcePersons']) && !empty($data['resourcePersons'])) {
+        $input = $data['resourcePersons'];
+        
+        // Check if it's a JSON string
+        if (is_string($input) && (strpos($input, '[') === 0 || strpos($input, '{') === 0)) {
+            $decoded = json_decode($input, true);
+            if (is_array($decoded)) {
+                $resourcePersons = $decoded;
+            } else {
+                // If JSON decode failed, treat as comma-separated string
+                $names = array_map('trim', explode(',', $input));
+                $resourcePersons = array_map(function($name) {
+                    return ['name' => $name];
+                }, array_filter($names));
+            }
+        } else {
+            // Treat as comma-separated string
+            $names = array_map('trim', explode(',', $input));
+            $resourcePersons = array_map(function($name) {
+                return ['name' => $name];
+            }, array_filter($names));
+        }
     }
+    error_log("Resource Persons processed: " . json_encode($resourcePersons));
     
-    // Prepare participants JSON
+    // Process Participants - Accept comma-separated string or JSON
     $participants = [];
-    if (!empty($data['participants'])) {
-        $participants = is_string($data['participants']) 
-            ? json_decode($data['participants'], true) 
-            : $data['participants'];
-        if (!is_array($participants)) $participants = [];
+    if (isset($data['participants']) && !empty($data['participants'])) {
+        $input = $data['participants'];
+        
+        // Check if it's a JSON string
+        if (is_string($input) && (strpos($input, '[') === 0 || strpos($input, '{') === 0)) {
+            $decoded = json_decode($input, true);
+            if (is_array($decoded)) {
+                $participants = $decoded;
+            } else {
+                // If JSON decode failed, treat as comma-separated string
+                $names = array_map('trim', explode(',', $input));
+                $participants = array_map(function($name) {
+                    return ['name' => $name];
+                }, array_filter($names));
+            }
+        } else {
+            // Treat as comma-separated string
+            $names = array_map('trim', explode(',', $input));
+            $participants = array_map(function($name) {
+                return ['name' => $name];
+            }, array_filter($names));
+        }
     }
+    error_log("Participants processed: " . json_encode($participants));
+    
+    $resourcePersonsJson = json_encode($resourcePersons);
+    $participantsJson = json_encode($participants);
     
     // Prepare SQL query
     $query = "INSERT INTO conducted_trainings (
@@ -364,9 +403,6 @@ function handleInsert($con, $driveService, $data, $files) {
         'urls' => $photos['urls'] ?? [],
         'file_ids' => $photos['file_ids'] ?? []
     ]);
-    
-    $resourcePersonsJson = json_encode($resourcePersons);
-    $participantsJson = json_encode($participants);
     
     $stmt->bind_param(
         "ssssssssssssssssssssssssi",
@@ -656,7 +692,6 @@ function handleUpdate($con, $driveService, $data, $files) {
         }
     }
     
-    // Handle JSON fields
     if (isset($data['resourcePersons'])) {
         $resourcePersons = is_string($data['resourcePersons']) 
             ? json_decode($data['resourcePersons'], true) 
@@ -885,8 +920,6 @@ function handleDelete($con, $driveService, $data) {
             }
         }
     }
-    
-    // Delete from database
     $deleteQuery = "DELETE FROM conducted_trainings WHERE id = ?";
     $deleteStmt = $con->prepare($deleteQuery);
     $deleteStmt->bind_param("i", $recordId);
@@ -901,13 +934,10 @@ function handleDelete($con, $driveService, $data) {
     }
 }
 
-// ==================== MAIN HANDLER ====================
-
-// Initialize database connection - Use your existing connection from db.php
 if (!isset($conn)) {
     global $conn;
 }
-$con = $conn; // Use the connection from db.php
+$con = $conn;
 
 if (!$con || $con->connect_error) {
     $response = ['success' => false, 'message' => "Database connection failed: " . ($con ? $con->connect_error : "No connection")];
@@ -916,21 +946,17 @@ if (!$con || $con->connect_error) {
 }
 
 try {
-    // Initialize Google Drive service
     if (!class_exists('GoogleDriveService')) {
         throw new Exception("GoogleDriveService class not found. Please check driver_config.php");
     }
     
     $driveService = new GoogleDriveService();
 
-    // Initialize response variable
     $response = ['success' => false, 'message' => 'No action specified'];
     
-    // Determine action - check both POST and GET
     $action = $_POST['action'] ?? $_GET['action'] ?? '';
     
     if ($_SERVER['REQUEST_METHOD'] === 'GET' || $action === 'fetch_conducted') {
-        // FETCH operation
         $data = $_GET;
         if ($action === 'fetch_conducted') {
             $data = array_merge($data, $_POST);
@@ -938,18 +964,14 @@ try {
         $response = handleFetch($con, $data);
 
     } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // Check what action we're performing
+
         if ($action === 'update_conducted') {
-            // UPDATE operation
             $response = handleUpdate($con, $driveService, $_POST, $_FILES);
         } elseif ($action === 'delete_conducted') {
-            // DELETE operation
             $response = handleDelete($con, $driveService, $_POST);
         } elseif ($action === 'add_conducted') {
-            // INSERT operation
             $response = handleInsert($con, $driveService, $_POST, $_FILES);
         } else {
-            // Default to INSERT if no action specified
             $response = handleInsert($con, $driveService, $_POST, $_FILES);
         }
     } else {
@@ -964,7 +986,6 @@ try {
     ];
 }
 
-// Clean output buffer and send JSON response
 while (ob_get_level()) ob_end_clean();
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode($response);

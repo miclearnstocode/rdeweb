@@ -15,8 +15,6 @@ export const conductedResearch = () => {
     let nextCursor = null
     let totalCount = 0
     let initialLoadDone = false
-    let resourcePersons = []
-    let participants = []
     // Stats state
     let currentStats = {
         totalTrainings: 0,
@@ -621,7 +619,7 @@ export const conductedResearch = () => {
             item.title || '—',
             formatDate(item.date),
             item.budgetFundSource || '—',
-            item.topicsDiscussed || '—'
+            item.topics_discussed || '—'
         ]
 
         fixedValues.forEach((value, index) => {
@@ -912,16 +910,6 @@ export const conductedResearch = () => {
             }
         }
 
-        // Resource persons state
-        let resourcePersons = []
-        if (isEditing && item.resourcePersons) {
-            try {
-                resourcePersons = typeof item.resourcePersons === 'string' ? JSON.parse(item.resourcePersons) : item.resourcePersons
-                if (!Array.isArray(resourcePersons)) resourcePersons = []
-            } catch (e) {
-                resourcePersons = []
-            }
-        }
 
         // Participants state
         let participants = []
@@ -1507,14 +1495,6 @@ export const conductedResearch = () => {
                 zIndex: '1000',
                 fontFamily: 'Segoe UI, sans-serif'
             },
-            event: {
-                type: 'click',
-                method: (e) => {
-                    if (e.target === e.currentTarget) {
-                        closeModal()
-                    }
-                }
-            },
             child: [
                 $({
                     tag: 'div',
@@ -1833,7 +1813,7 @@ export const conductedResearch = () => {
                                                 $({
                                                     tag: 'textarea',
                                                     att: {
-                                                        name: 'topicsDiscussed',
+                                                        name: 'topics_discussed',
                                                         placeholder: 'Enter topics discussed...',
                                                         rows: '3',
                                                         required: true
@@ -1850,7 +1830,7 @@ export const conductedResearch = () => {
                                                         resize: 'vertical',
                                                         fontFamily: 'inherit'
                                                     },
-                                                    text: isEditing ? (item.topicsDiscussed || '') : ''
+                                                    text: isEditing ? (item.topics_discussed || '') : ''
                                                 })
                                             ]
                                         })
@@ -1930,6 +1910,7 @@ export const conductedResearch = () => {
                                                     tag: 'textarea',
                                                     att: {
                                                         id: 'resource-persons-input',
+                                                        name: 'resourcePersons',  // ADD THIS - name attribute!
                                                         placeholder: 'Enter resource person names separated by commas (e.g., John Doe, Jane Smith, Mike Brown)',
                                                         rows: '4'
                                                     },
@@ -1946,16 +1927,8 @@ export const conductedResearch = () => {
                                                         fontFamily: 'inherit'
                                                     },
                                                     text: isEditing && resourcePersons.length > 0 ?
-                                                        resourcePersons.map(p => p.name || p).join(', ') : '',
-                                                    event: {
-                                                        type: 'input',
-                                                        method: (e) => {
-                                                            // Update the resourcePersons array in real-time
-                                                            const value = e.target.value
-                                                            const names = value.split(',').map(s => s.trim()).filter(s => s)
-                                                            resourcePersons = names.map(name => ({ name: name, topic: '' }))
-                                                        }
-                                                    }
+                                                        resourcePersons.map(p => p.name || p).join(', ') : ''
+                                                    // REMOVE the input event handler - let the form submit directly!
                                                 }),
                                                 $({
                                                     tag: 'div',
@@ -2033,6 +2006,7 @@ export const conductedResearch = () => {
                                                     tag: 'textarea',
                                                     att: {
                                                         id: 'participants-input',
+                                                        name: 'participants',  // ADD THIS - name attribute!
                                                         placeholder: 'Enter participant names separated by commas (e.g., John Doe, Jane Smith, Mike Brown)',
                                                         rows: '4'
                                                     },
@@ -2049,16 +2023,8 @@ export const conductedResearch = () => {
                                                         fontFamily: 'inherit'
                                                     },
                                                     text: isEditing && participants.length > 0 ?
-                                                        participants.map(p => p.name || p).join(', ') : '',
-                                                    event: {
-                                                        type: 'input',
-                                                        method: (e) => {
-                                                            // Update the participants array in real-time
-                                                            const value = e.target.value
-                                                            const names = value.split(',').map(s => s.trim()).filter(s => s)
-                                                            participants = names.map(name => ({ name: name, role: '' }))
-                                                        }
-                                                    }
+                                                        participants.map(p => p.name || p).join(', ') : ''
+                                                    // REMOVE the input event handler - let the form submit directly!
                                                 }),
                                                 $({
                                                     tag: 'div',
@@ -2068,7 +2034,7 @@ export const conductedResearch = () => {
                                                         color: '#666',
                                                         fontStyle: 'italic'
                                                     },
-                                                    text: 'Example: Dr. Ana Cruz (Research Chair), Prof. Carlos Garcia (Faculty), 50 Students'
+                                                    text: 'Example: Dr. Ana Cruz, Prof. Carlos Garcia, 50 Students'
                                                 })
                                             ]
                                         })
@@ -3464,9 +3430,13 @@ export const conductedResearch = () => {
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_conducted' : 'add_conducted')
 
-        // Add dynamic arrays as JSON
-        formData.append('resourcePersons', JSON.stringify(resourcePersons))
-        formData.append('participants', JSON.stringify(participants))
+        // Get values directly from textareas - NO JSON conversion needed!
+        const resourcePersonsText = document.getElementById('resource-persons-input')?.value || ''
+        const participantsText = document.getElementById('participants-input')?.value || ''
+
+        // Send as raw strings - PHP will handle parsing
+        formData.append('resourcePersons', resourcePersonsText)
+        formData.append('participants', participantsText)
 
         // Handle file uploads
         // Activity Proposal
