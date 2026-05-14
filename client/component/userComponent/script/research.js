@@ -636,6 +636,7 @@ export const Research = () => {
         researchFile: null,
         programFile: null,
         endorsementFile: null,
+        certificateFile: null,
         date_started: null,
         date_completed: null
     }
@@ -1237,18 +1238,6 @@ export const Research = () => {
                     }
                 })
             }
-            return $({
-                tag: 'i',
-                att: { className: 'fas fa-file-pdf' },
-                style: { color: '#f44336', fontSize: '18px', cursor: 'pointer' },
-                event: {
-                    type: 'click',
-                    method: (e) => {
-                        e.stopPropagation()
-                        viewFileInModal(fileUrl, fileType)
-                    }
-                }
-            })
         }
 
         const researchFileDisplay = doc.researchFile && doc.researchFile !== '—' ? getFileIcon(doc.researchFile) : '—'
@@ -1721,27 +1710,38 @@ export const Research = () => {
         FileViewerModal(finalUrl, displayName, accentColor, { showOpenDrive: false })
     }
 
-    // Edit document
     const editDocument = (doc) => {
-        // Pre-fill form data
+        // Extract just the filename from Google Drive URL
+        const getFileNameFromUrl = (url) => {
+            if (!url || url === '—') return null;
+            // If it's a Google Drive URL, show the file ID or a generic name
+            if (url.includes('drive.google.com')) {
+                return 'Google Drive File (kept as is)';
+            }
+            // If it's a local path, get the filename
+            return url.split('/').pop();
+        }
+
         formData = {
             eventName: doc.eventName || '',
             title: doc.title || '',
             category: doc.category || '',
+            center: doc.center || '',
             presenter: doc.presenter || '',
             author: doc.author || '',
-            center: doc.center,
-            dateStarted: doc.dateStarted,
-            dateCompleted: doc.dateCompleted,
-            researchFile: null,
+            coAuthors: doc.coAuthors || [],
+            researchFile: null,  // New file to upload (optional)
             programFile: null,
             endorsementFile: null,
-            localProgramFiles: [],
-            localEndorsementFiles: [],
-            localEntryFiles: []
+            certificateFile: null,
+            // Store existing file info for display
+            existingResearchFile: getFileNameFromUrl(doc.researchFile),
+            existingProgramFile: getFileNameFromUrl(doc.programFile),
+            existingEndorsementFile: getFileNameFromUrl(doc.endorsementFile),
+            date_started: doc.date_started || '',
+            date_completed: doc.date_completed || ''
         }
 
-        // Open modal with pre-filled data
         openUploadModal(true, doc)
     }
 
@@ -1977,6 +1977,7 @@ export const Research = () => {
             researchFile: null,
             programFile: null,
             endorsementFile: null,
+            certificateFile: null,
             localProgramFiles: [],
             localEndorsementFiles: [],
             localEntryFiles: [],
@@ -2648,8 +2649,8 @@ export const Research = () => {
             }
         })
 
-        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'localProgramFiles' }))
-        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'localEntryFiles' }))
+        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'ProgramFile' }))
+        localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'CertificateFile' }))
 
         localFilesSection.appendChild(localFieldsGrid)
 
@@ -2724,10 +2725,9 @@ export const Research = () => {
 
                         // Program file validation logic
                         if (isInHouse || isSymposium) {
-                            if (!formData.localProgramFiles || formData.localProgramFiles.length === 0 ||
-                                !formData.localEndorsementFiles || formData.localEndorsementFiles.length === 0 ||
-                                !formData.localEntryFiles || formData.localEntryFiles.length === 0) {
-                                alert(`Program File, Endorsement, and Research Entry are all required in the local files section for ${isSymposium ? 'Symposium' : 'In House Review'}`)
+                            if (!formData.ProgramFile || formData.ProgramFile.length === 0 ||
+                                !formData.CertificateFile || formData.CertificateFile.length === 0) {
+                                alert(`Program File, Certificate are all required in the local files section for ${isSymposium ? 'Symposium' : 'In House Review'}`)
                                 return
                             }
                         } else {
@@ -2747,6 +2747,9 @@ export const Research = () => {
                         if (formData.endorsementFile && formData.endorsementFile.type !== 'application/pdf') {
                             alert('Endorsement letter must be a valid PDF file')
                             return
+                        }
+                        if (formData.certificateFile) {
+                            form.append('certificateFile', formData.certificateFile)
                         }
                     }
 
@@ -2900,6 +2903,7 @@ export const Research = () => {
                                         researchFile: null,
                                         programFile: null,
                                         endorsementFile: null,
+                                        certificateFile: null,
                                         localProgramFiles: [],
                                         localEndorsementFiles: [],
                                         localEntryFiles: [],
