@@ -96,7 +96,6 @@ function getCenterCode($centerName) {
     
     return !empty($code) ? $code : 'END';
 }
-
 function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $category, $author, $title, $type = 'research', $isProgram = false, $isEndorsement = false, $isCertificate = false) {
     try {
         // Check if file exists
@@ -110,9 +109,7 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         if ($fileSize > 10 * 1024 * 1024) { // 10MB
             throw new Exception("File too large: " . round($fileSize / 1024 / 1024, 2) . "MB");
         }
-        
-        // Include Drive config
-        require_once __DIR__ . '/../config/driver_config.php';
+
         
         if (!class_exists('GoogleDriveService')) {
             throw new Exception("GoogleDriveService class not found");
@@ -190,7 +187,30 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         error_log("Making file public: " . $uploadResult['id']);
         $drive->makeFilePublic($uploadResult['id']);
         
-        // 4. Generate proper URLs
+        // 4. Upload a second copy to the Paper Trail folder
+        try {
+            $paperTrailFolderId = getOrCreatePaperTrailFolder($drive, $centerName);
+            if ($paperTrailFolderId) {
+                // The filename is already prefixed with the event name
+                $secondUploadResult = $drive->uploadFile(
+                    $tempFilePath,
+                    $prefixedFileName,
+                    $paperTrailFolderId
+                );
+                
+                if (!$secondUploadResult['success'] || empty($secondUploadResult['id'])) {
+                    error_log("Failed to upload second copy to Paper Trail: " . ($secondUploadResult['error'] ?? 'Unknown error'));
+                } else {
+                    error_log("Successfully uploaded $prefixedFileName to Paper Trail folder");
+                    // Make the second copy publicly viewable
+                    $drive->makeFilePublic($secondUploadResult['id']);
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Error uploading to Paper Trail folder: " . $e->getMessage());
+        }
+        
+        // 5. Generate proper URLs
         $fileId = $uploadResult['id'];
         $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
         
@@ -219,9 +239,8 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         error_log("Google Drive upload failed for $fileName: " . $e->getMessage());
         throw new Exception("Failed to upload $fileName to Google Drive: " . $e->getMessage());
     }
+    
 }
-
-// Helper function to clean folder names for Google Drive
 function cleanFolderNameForDrive($name) {
     if (empty($name)) {
         return 'Untitled_' . time();
@@ -246,6 +265,15 @@ function cleanFolderNameForDrive($name) {
     
     return $clean;
 }
+
+function CreatePaperTrailFolder($drive, $centerName) {
+    // Root folder: "Paper"
+    $paperFolderId = $drive->findOrCreateFolder('Research Paper Trails', null);
+    
+    // The files go directly into the Paper Trail folder
+    return $paperFolderId;
+}
+
 function getResearchFileUrl($researchRecord) {
     // Priority: 1. Drive URL, 2. Local file path, 3. Empty string
     if (!empty($researchRecord['drive_view_url'])) {
@@ -271,7 +299,6 @@ function getResearchFileUrl($researchRecord) {
         ];
     }
 }
-//Helper function to check for duplicate research entries
 function checkDuplicateResearch($con, $researchData, $fileData = []) {
     $result = [
         'isDuplicate' => false,
@@ -555,7 +582,6 @@ function generateFileHash($filePath) {
     fclose($handle);
     return hash_final($hashContext);
 }
-
 function getEventScopedFileHash($fileHash, $eventId) {
     if (empty($eventId) || empty($fileHash)) {
         return $fileHash;
@@ -563,7 +589,6 @@ function getEventScopedFileHash($fileHash, $eventId) {
 
     return hash('sha256', $eventId . '::' . $fileHash);
 }
-
 function storeFileHash($con, $researchId, $fileType, $fileHash, $eventId = null) {
     // Store a scoped hash per event so identical files in different events do not conflict.
     $scopedHash = getEventScopedFileHash($fileHash, $eventId);
@@ -578,7 +603,6 @@ function storeFileHash($con, $researchId, $fileType, $fileHash, $eventId = null)
         $stmt->close();
     }
 }
-
 function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventId = null, $eventType = null) {
     if ($eventId !== null) {
         $scopedHash = getEventScopedFileHash($fileHash, $eventId);
@@ -804,6 +828,7 @@ function getResearchFilesForRevision($con, $userId) {
     
     return $processedResults;
 }
+
 
 if (isset($_POST['uploadResearch'])) {
     ob_end_clean();
@@ -1265,38 +1290,146 @@ if (isset($_POST['uploadResearch'])) {
 }
 
 if (isset($_POST['searchInhouseTitles'])) {
+    // Clean output buffer to prevent HTML errors
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+    
     $response = new stdClass();
     $response->status = false;
     $response->list = [];
     $response->message = '';
     
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $searchTerm = '%' . $con->real_escape_string($_POST['search'] ?? '') . '%';
-        
-        $query = "SELECT DISTINCT rf.title, rf.author, rf.presenter, rf.drive_view_url
-                  FROM researchfile rf
-                  INNER JOIN endorsement e ON rf.endorsementid = e.id
-                  WHERE e.status = 'accepted'
-                  AND (rf.event LIKE '%In House Review%' OR rf.event LIKE '%In-House Review%')
-                  AND (rf.title LIKE ? OR rf.author LIKE ? OR rf.presenter LIKE ?)
-                  ORDER BY rf.title ASC
-                  LIMIT 20";
-        
-        $stmt = $con->prepare($query);
-        $stmt->bind_param("sss", $searchTerm, $searchTerm, $searchTerm);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        while ($row = $result->fetch_assoc()) {
-            $response->list[] = $row;
+    try {
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            $con->set_charset("utf8mb4");
+            
+            $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
+            $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
+            
+            $query = "SELECT DISTINCT rf.title, rf.author, rf.presenter, rf.drive_view_url, rf.id
+                      FROM researchfile rf
+                      INNER JOIN endorsement e ON rf.endorsementid = e.id
+                      WHERE e.status = 'accepted'
+                      AND (rf.event LIKE '%In House Review%' OR rf.event LIKE '%In-House Review%')
+                      AND (rf.title LIKE ? OR rf.author LIKE ? OR rf.presenter LIKE ?)
+                      ORDER BY rf.title ASC
+                      LIMIT 20";
+            
+            $stmt = $con->prepare($query);
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $con->error);
+            }
+            
+            $stmt->bind_param("sss", $searchPattern, $searchPattern, $searchPattern);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            while ($row = $result->fetch_assoc()) {
+                $item = new stdClass();
+                $item->title = $row['title'];
+                $item->author = $row['author'];
+                $item->presenter = $row['presenter'];
+                $item->drive_view_url = $row['drive_view_url'];
+                $item->id = $row['id'];
+                $response->list[] = $item;
+            }
+            
+            $response->status = true;
+            $response->message = 'Found ' . count($response->list) . ' results';
+            $stmt->close();
+            $con->close();
+        } else {
+            throw new Exception("Database connection failed");
         }
-        
-        $response->status = true;
-        $stmt->close();
+    } catch (Exception $e) {
+        error_log("searchInhouseTitles error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+        $response->list = [];
     }
     
-    $con->close();
-    header('Content-Type: application/json');
+    // Clear any output buffers and send clean JSON
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
+    echo json_encode($response);
+    exit();
+}
+if (isset($_POST['getAcceptedInhouseReviews'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->data = [];
+    
+    try {
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            $userId = $_SESSION['userId'] ?? 0;
+            
+            //rf.senderid = ? this keep the return data per center or per campus
+            $query = "SELECT 
+                        rf.id,
+                        rf.title,
+                        rf.author,
+                        rf.coauthor,
+                        rf.category,
+                        rf.center,
+                        rf.event,
+                        rf.event_id,
+                        e.status,
+                        el.name as event_name,
+                        el.date as event_date
+                      FROM researchfile rf
+                      LEFT JOIN endorsement e ON rf.endorsementid = e.id
+                      LEFT JOIN event_list el ON rf.event_id = el.id
+                      WHERE (rf.event LIKE '%In-House Review%' 
+                             OR rf.event LIKE '%in house review%'
+                             OR rf.event LIKE '%In House Review%')
+                      AND rf.senderid = ? 
+                      AND e.status = 'accepted' 
+                      ORDER BY el.date DESC, rf.id DESC";
+            
+            $stmt = $con->prepare($query);
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            while ($row = $result->fetch_assoc()) {
+                $data = new stdClass();
+                $data->id = $row['id'];
+                $data->title = $row['title'];
+                $data->author = $row['author'];
+                $data->category = $row['category'] ?? '';
+                $data->center = $row['center'] ?? '';
+                $data->event_name = $row['event_name'] ?? $row['event'];
+                $data->event_date = $row['event_date'] ?? '';
+                $data->status = $row['status'];
+                
+                // Parse coauthors
+                if (!empty($row['coauthor'])) {
+                    $coauthors = json_decode($row['coauthor'], true);
+                    $data->coauthors = is_array($coauthors) ? $coauthors : [];
+                } else {
+                    $data->coauthors = [];
+                }
+                
+                $response->data[] = $data;
+            }
+            
+            $response->status = true;
+            $response->message = count($response->data) . ' accepted in-house review(s) found';
+            
+            $stmt->close();
+            $con->close();
+        } else {
+            throw new Exception("Database connection failed");
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching accepted in-house reviews: " . $e->getMessage());
+        $response->message = "Error: " . $e->getMessage();
+        $response->status = false;
+    }
+    
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
 }

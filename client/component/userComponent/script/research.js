@@ -1689,7 +1689,19 @@ export const Research = () => {
                             title: 'Submitting Revision',
                             message: 'Please wait while we submit your revision...'
                         });
-
+                        const localFileCategories = [
+                            { name: 'programFile', files: formData.programFile },
+                            { name: 'certificateFile', files: formData.certificateFile },
+                        ]
+                        if (isInHouse || isSymposium) {
+                            localFileCategories.forEach(cat => {
+                                if (cat.files && cat.files.length > 0) {
+                                    cat.files.forEach(file => {
+                                        form.append(cat.name, file)
+                                    })
+                                }
+                            })
+                        }
                         const formData = new FormData();
                         formData.append('submitRevision', 'true');
                         formData.append('original_research_id', doc.id);
@@ -1816,7 +1828,7 @@ export const Research = () => {
             presenter: doc.presenter || '',
             author: doc.author || '',
             coAuthors: doc.coAuthors || [],
-            researchFile: null,  // New file to upload (optional)
+            researchFile: null,
             programFile: null,
             endorsementFile: null,
             certificateFile: null,
@@ -1884,90 +1896,7 @@ export const Research = () => {
         })
     }
 
-    // File upload input component
-    const FileUploadField = ({ label, fieldName, accept = '.pdf,application/pdf' }) => {
-        let fileInput, fileLabel, fileNameDisplay
-
-        const container = $({
-            tag: 'div',
-            style: { marginBottom: '20px' }
-        })
-
-        const labelEl = $({
-            tag: 'label',
-            text: label,
-            style: {
-                display: 'block',
-                color: '#bbb',
-                marginBottom: '8px',
-                fontSize: '14px',
-                fontWeight: '500'
-            }
-        })
-
-        const uploadArea = $({
-            tag: 'div',
-            style: {
-                border: '2px dashed #444',
-                borderRadius: '8px',
-                padding: '20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                backgroundColor: 'rgba(255,255,255,0.05)'
-            },
-            event: {
-                type: 'click',
-                method: () => fileInput.click()
-            }
-        })
-
-        fileNameDisplay = $({
-            tag: 'div',
-            style: { marginTop: '8px', fontSize: '12px', color: '#888' }
-        })
-
-        fileInput = $({
-            tag: 'input',
-            att: { type: 'file', accept, style: 'display: none' },
-            event: {
-                type: 'change',
-                method: (e) => {
-                    const file = e.target.files[0]
-                    if (file) {
-                        if (file.type !== 'application/pdf') {
-                            alert('Please select a PDF file')
-                            fileInput.value = ''
-                            return
-                        }
-                        fileNameDisplay.innerText = `Selected: ${file.name}`
-                        fileNameDisplay.style.color = '#4caf50'
-                        formData[fieldName] = file
-                    } else {
-                        fileNameDisplay.innerText = ''
-                        formData[fieldName] = null
-                    }
-                }
-            }
-        })
-
-        uploadArea.appendChild($({
-            tag: 'i',
-            att: { className: 'fas fa-cloud-upload-alt' },
-            style: { fontSize: '32px', color: '#666', marginBottom: '8px', display: 'block' }
-        }))
-        uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#888', fontSize: '14px' } }))
-        uploadArea.appendChild($({ tag: 'div', text: '(PDF only)', style: { color: '#666', fontSize: '12px', marginTop: '4px' } }))
-
-        container.appendChild(labelEl)
-        container.appendChild(uploadArea)
-        container.appendChild(fileNameDisplay)
-        container.appendChild(fileInput)
-
-        return container
-    }
-
-    // Local Files Upload Component (Multiple PDFs)
+    // Local Files Upload Component
     const LocalFilesUploadField = ({ label, fieldName }) => {
         let fileInput, fileNameDisplay
 
@@ -2044,12 +1973,12 @@ export const Research = () => {
 
     // Open upload modal
     const openUploadModal = (isEdit = false, editData = null) => {
-        let titleInput, categorySelect, centerSelect, authorInput, presenterInput, coAuthorInput, coAuthorList
+        let titleInput, categorySelect, centerSelect, authorInput, presenterInput, coAuthorInput, coAuthorList, campusSelect
         let eventSelect
         let dateStartedField, dateCompletedField
         let dateFieldsContainer
         let programFileContainer
-        let standardProgramFile // To store reference
+        let standardProgramFile
         let localFilesSection, localFilesTitle
         let isSymposiumMode = false
         let symposiumModalActive = false
@@ -2152,7 +2081,6 @@ export const Research = () => {
         // Normal Form Content
         const normalFormContent = createNormalFormContent()
 
-        // Symposium placeholder (will be replaced when needed)
         const symposiumPlaceholder = $({
             tag: 'div',
             style: { display: 'none', padding: '24px' },
@@ -2264,6 +2192,9 @@ export const Research = () => {
                             const selectedOption = e.target.options[e.target.selectedIndex]
                             const selectedEventId = selectedOption ? selectedOption.getAttribute('id') : null
 
+                            // Check if selected event is In-House Review (not Symposium)
+                            const isInHouse = selectedEventName && selectedEventName.toLowerCase().includes('in-house')
+
                             // Check if selected event is Symposium
                             const isSymposium = selectedEventName && selectedEventName.toLowerCase().includes('symposium')
 
@@ -2302,15 +2233,12 @@ export const Research = () => {
                             formData.eventName = selectedEventName
                             formData.eventId = selectedEventId
 
-                            // Update file grid columns
-                            if (fileGrid) {
-                                fileGrid.style.gridTemplateColumns = isSymposium ? '1fr 1fr' : '1fr 1fr 1fr'
+                            // Show/hide local files section for In-House events only
+                            if (localFilesSection) {
+                                localFilesSection.style.display = isInHouse ? 'block' : 'none'
                             }
                             if (dateFieldsContainer) {
-                                dateFieldsContainer.style.display = isSymposium ? 'grid' : 'none'
-                            }
-                            if (programFileContainer) {
-                                programFileContainer.style.display = isSymposium ? 'none' : 'block'
+                                dateFieldsContainer.style.display = isInHouse ? 'grid' : 'none'
                             }
                         }
                     }
@@ -2382,6 +2310,34 @@ export const Research = () => {
                 }
             })
             titleField.appendChild(titleInput)
+
+            const campusField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            campusField.appendChild($({ tag: 'label', text: 'Campus *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            campusSelect = $({
+                tag: 'select',
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: {
+                    type: 'change',
+                    method: (e) => { formData.campus = e.target.value }
+                },
+                elementHandler: (el) => {
+                    const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz']
+                    el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true } }))
+                    campuses.forEach(campus => {
+                        el.appendChild($({ tag: 'option', text: campus, att: { value: campus } }))
+                    })
+                    if (isEdit && editData?.campus) el.value = editData.campus
+                }
+            })
+            campusField.appendChild(campusSelect)
 
             // Category field
             const categoryField = $({ tag: 'div', style: { marginBottom: '20px' } })
@@ -2652,6 +2608,7 @@ export const Research = () => {
 
             // Add to layout
             twoColumnLayout.appendChild(titleField)
+            twoColumnLayout.appendChild(campusField)
             twoColumnLayout.appendChild(categoryField)
             twoColumnLayout.appendChild(centerField)
             twoColumnLayout.appendChild(authorField)
@@ -2678,22 +2635,46 @@ export const Research = () => {
                 tag: 'div',
                 style: {
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gridTemplateColumns: '1fr 1fr',
                     gap: '20px'
                 }
             })
 
-            programFileContainer = $({
-                tag: 'div',
-                style: { display: 'block' }
-            })
-            programFileContainer.appendChild(FileUploadField({ label: 'Program File', fieldName: 'programFile' }))
-
-            fileGrid.appendChild(FileUploadField({ label: 'Research File', fieldName: 'researchFile' }))
-            fileGrid.appendChild(programFileContainer)
+            fileGrid.appendChild(FileUploadField({ label: 'Research Entry File', fieldName: 'researchFile' }))
             fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
 
             fileSection.appendChild(fileGrid)
+
+            // Dynamic Program File section for In-House only (not Symposium)
+            localFilesSection = $({
+                tag: 'div',
+                style: {
+                    marginTop: '20px',
+                    padding: '20px',
+                    backgroundColor: 'rgba(76, 175, 80, 0.05)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(76, 175, 80, 0.2)',
+                    display: 'none'
+                }
+            })
+            localFilesTitle = $({ tag: 'h4', text: 'Local Files', style: { color: '#4caf50', marginBottom: '16px', fontSize: '16px' } })
+            localFilesSection.appendChild(localFilesTitle)
+
+            const localFieldsGrid = $({
+                tag: 'div',
+                style: {
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '20px'
+                }
+            })
+
+            localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'programFile' }))
+            localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'certificateFile' }))
+
+            localFilesSection.appendChild(localFieldsGrid)
+
+            fileSection.appendChild(localFilesSection)
             formBody.appendChild(fileSection)
 
             container.appendChild(formBody)
