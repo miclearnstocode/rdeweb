@@ -1549,13 +1549,25 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         };
 
-        // Function to update co-author list display
+        const formBody = $({
+            tag: 'div',
+            style: { padding: '24px' }
+        })
+        // Two column layout
+        const twoColumnLayout = $({
+            tag: 'div',
+            style: {
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px',
+                marginBottom: '20px'
+            }
+        });
+
         const updateCoAuthorList = () => {
             if (!coAuthorContainer) return;
-
             const listContainer = coAuthorContainer.querySelector('.coauthor-list');
             if (!listContainer) return;
-
             listContainer.innerHTML = '';
             formData.coAuthors.forEach((author, idx) => {
                 const tag = $({
@@ -1588,20 +1600,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 listContainer.appendChild(tag);
             });
         };
-        const formBody = $({
-            tag: 'div',
-            style: { padding: '24px' }
-        })
-        // Two column layout
-        const twoColumnLayout = $({
-            tag: 'div',
-            style: {
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '20px',
-                marginBottom: '20px'
-            }
-        });
 
         campusField = createTextField('Campus *', 'Enter campus/location', (e) => { formData.campus = e.target.value; });
         categorySelect = createSelectField('Category *', categories, (e) => {
@@ -1611,7 +1609,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         centerSelect = createSelectField('Center *', Object.keys(centerCategoryMapping), (e) => { formData.center = e.target.value; });
         authorInput = createTextField('Main Author *', 'Enter main author name', (e) => { formData.author = e.target.value; });
         presenterInput = createTextField('Presenter *', 'Enter presenter name', (e) => { formData.presenter = e.target.value; });
-        coAuthorContainer = createCoAuthorField();
+        coAuthorContainer = createCoAuthorField(updateCoAuthorList);
         dateStartedField = createDateField('Date Started *', (e) => { formData.date_started = e.target.value; });
         dateCompletedField = createDateField('Date Completed *', (e) => { formData.date_completed = e.target.value; });
 
@@ -1722,7 +1720,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         return container;
     };
 
-    // Helper functions for form fields
     const createTextField = (label, placeholder, onInput) => {
         const container = $({ tag: 'div', style: { marginBottom: '0' } });
         container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }));
@@ -1792,7 +1789,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         return container;
     };
 
-    const createCoAuthorField = () => {
+    const createCoAuthorField = (updateCoAuthorListFn) => {
         const container = $({ tag: 'div', style: { marginBottom: '0' } });
         container.appendChild($({ tag: 'label', text: 'Co-Authors', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }));
 
@@ -1828,7 +1825,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     const name = input.value.trim();
                     if (name) {
                         formData.coAuthors.push(name);
-                        updateCoAuthorList();
+                        updateCoAuthorListFn();
                         input.value = '';
                     }
                 }

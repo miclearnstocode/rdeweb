@@ -2606,7 +2606,6 @@ export const Research = () => {
             dateFieldsContainer.appendChild(dateStartedWrapper)
             dateFieldsContainer.appendChild(dateCompletedWrapper)
 
-            // Add to layout
             twoColumnLayout.appendChild(titleField)
             twoColumnLayout.appendChild(campusField)
             twoColumnLayout.appendChild(categoryField)
