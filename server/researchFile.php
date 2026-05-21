@@ -9,7 +9,7 @@ header('Content-Type: application/json; charset=utf-8');
 // Start output buffering with callback to catch errors
 ob_start(function($buffer) {
     // Check if the buffer contains HTML error messages
-    if (strpos($buffer, '<b>Warning</b>') !== false || 
+    if (strpos($buffer, '<b>Warning</b>') !== false ||  
         strpos($buffer, '<b>Notice</b>') !== false ||
         strpos($buffer, '<b>Fatal error</b>') !== false) {
         
@@ -96,7 +96,7 @@ function getCenterCode($centerName) {
     
     return !empty($code) ? $code : 'END';
 }
-function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $category, $author, $title, $type = 'research', $isProgram = false, $isEndorsement = false, $isCertificate = false) {
+function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $category, $author, $title, $type = 'research', $isProgram = false, $isEndorsement = false, $isCertificate = false, $isLocalInHouse = false, $paperTrailNo = null) {
     try {
         // Check if file exists
         if (!file_exists($tempFilePath)) {
@@ -104,13 +104,12 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
             throw new Exception("Temporary file not found: $tempFilePath");
         }
         
-        // Check file size (optional - max 10MB)
+        // Check file size (max 10MB)
         $fileSize = filesize($tempFilePath);
-        if ($fileSize > 10 * 1024 * 1024) { // 10MB
+        if ($fileSize > 10 * 1024 * 1024) {
             throw new Exception("File too large: " . round($fileSize / 1024 / 1024, 2) . "MB");
         }
 
-        
         if (!class_exists('GoogleDriveService')) {
             throw new Exception("GoogleDriveService class not found");
         }
@@ -122,125 +121,143 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         $cleanCenterName = cleanFolderNameForDrive($centerName);
         $cleanCategoryName = cleanFolderNameForDrive($category);
         
-        // Get author's last name for folder naming
+        // Get author's last name for folder and file naming
         $authorParts = explode(' ', trim($author));
         $authorLastName = end($authorParts);
         $authorLastName = cleanFolderNameForDrive($authorLastName);
         
-        // Get first three words of title for keyword
-        $titleWords = explode(' ', trim($title));
-        $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
-        $titleKeywords = cleanFolderNameForDrive($titleKeywords);
+        // Create folder structure: Event -> Center -> Category
+        $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
+        if (!$eventFolderId) throw new Exception("Failed to create event folder");
         
-        // Create entry folder name: lastname_keyword
-        $entryFolderName = $authorLastName . '_' . $titleKeywords;
-                
-        // Create complete folder structure
-        $folders = $drive->createCompleteFolderStructure(
-            $cleanEventName,
-            $cleanCenterName,
-            $cleanCategoryName,
-            $entryFolderName
-        );
+        $centerFolderId = $drive->findOrCreateFolder($cleanCenterName, $eventFolderId);
+        if (!$centerFolderId) throw new Exception("Failed to create center folder");
         
-        if (empty($folders['entry_folder_id'])) {
-            error_log("Failed to create entry folder structure: " . json_encode($folders));
-            throw new Exception("Failed to create entry folder structure");
-        }
+        $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $centerFolderId);
+        if (!$categoryFolderId) throw new Exception("Failed to create category folder");
         
-        // Determine which folder to upload to based on file type
-        $targetFolderId = $folders['entry_folder_id'];
+        $targetFolderId = null;
+        $prefixedFileName = '';
+        $entryFolderName = null;
         
-        if ($type === 'certificate' || $isCertificate) {
-            $pathInfo = pathinfo($fileName);
-            $nameOnly = $pathInfo['filename'];
-            $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
-            $prefixedFileName = $cleanEventName . '_Certificate_' . $nameOnly . $extension;
-        } else if ($type === 'program' || $isProgram) {
-            $pathInfo = pathinfo($fileName);
-            $nameOnly = $pathInfo['filename'];
-            $extension = isset($pathInfo['extension']) ? '.' . $pathInfo['extension'] : '';
-            // Use the exact literal suffix requested: Local In House Review
-            $suffix = ' Local In-House Review';
-            $prefixedFileName = $cleanEventName . '_' . $nameOnly . $suffix . $extension;
+        if ($isLocalInHouse) {
+            // LOCAL IN-HOUSE: Files go directly inside Category folder (no subfolder)
+            $targetFolderId = $categoryFolderId;
+            
+            // Determine file type suffix
+            $fileTypeSuffix = '';
+            if ($type === 'research') {
+                $fileTypeSuffix = 'research_file';
+            } elseif ($isEndorsement) {
+                $fileTypeSuffix = 'endorsement_file';
+            } elseif ($isProgram) {
+                $fileTypeSuffix = 'program_file';
+            } elseif ($isCertificate) {
+                $fileTypeSuffix = 'certificate_file';
+            }
+            
+            // Format using author last name: {LastName} {fileType}.pdf
+            $prefixedFileName = $authorLastName . ' ' . $fileTypeSuffix . '.pdf';
+            
         } else {
-            // Default naming for others
-            $prefixedFileName = $cleanEventName . '_' . $fileName;
+            // UNIVERSITY IN-HOUSE / SYMPOSIUM: Create per-research folder using paper_trail_no
+            if (!empty($paperTrailNo)) {
+                // Clean title for folder name
+                $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
+                $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
+                $cleanTitle = trim($cleanTitle);
+                
+                // Limit title length to avoid extremely long folder names
+                if (strlen($cleanTitle) > 100) {
+                    $cleanTitle = substr($cleanTitle, 0, 97) . '...';
+                }
+                
+                $cleanTitle = cleanFolderNameForDrive($cleanTitle);
+                
+                // Create entry folder name: {paper_trail_no} - {title}
+                $entryFolderName = $paperTrailNo . ' - ' . $cleanTitle;
+            } else {
+                // Fallback to old naming: lastname_keyword
+                $titleWords = explode(' ', trim($title));
+                $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
+                $titleKeywords = cleanFolderNameForDrive($titleKeywords);
+                $entryFolderName = $authorLastName . '_' . $titleKeywords;
+            }
+            
+            // Clean the folder name for Google Drive
+            $entryFolderName = cleanFolderNameForDrive($entryFolderName);
+            
+            // Create entry folder inside Category
+            $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $categoryFolderId);
+            if (!$entryFolderId) throw new Exception("Failed to create entry folder");
+            
+            $targetFolderId = $entryFolderId;
+            
+            // Filename format for files inside per-research folder: {LastName}_{fileType}.pdf
+            if ($type === 'research') {
+                $prefixedFileName = $authorLastName . '_completed_research.pdf';
+            } elseif ($isEndorsement) {
+                $prefixedFileName = $authorLastName . '_endorsement_letter.pdf';
+            } elseif ($isProgram) {
+                $prefixedFileName = $authorLastName . '_program_file.pdf';
+            } elseif ($isCertificate) {
+                $prefixedFileName = $authorLastName . '_certificate_file.pdf';
+            } else {
+                $prefixedFileName = $fileName;
+            }
         }
         
-        // 2. Upload the file to appropriate folder
+        if (empty($targetFolderId)) {
+            throw new Exception("Failed to determine target folder");
+        }
+        
+        // Upload file to main storage
         error_log("Uploading $type file: $prefixedFileName to folder: $targetFolderId");
-        $uploadResult = $drive->uploadFile(
-            $tempFilePath,
-            $prefixedFileName,
-            $targetFolderId
-        );
+        $uploadResult = $drive->uploadFile($tempFilePath, $prefixedFileName, $targetFolderId);
 
-        // Check if upload was successful
         if (!$uploadResult['success'] || empty($uploadResult['id'])) {
             $errorMsg = $uploadResult['error'] ?? "Upload failed: No file ID returned from Google Drive";
             error_log("Google Drive upload failed for $fileName: $errorMsg");
             throw new Exception($errorMsg);
         }
         
-        // 3. Make file publicly viewable
-        error_log("Making file public: " . $uploadResult['id']);
+        // Make file publicly viewable
         $drive->makeFilePublic($uploadResult['id']);
         
-        // 4. Upload a second copy to the Paper Trail folder
-        try {
-            $paperTrailFolderId = getOrCreatePaperTrailFolder($drive, $centerName);
-            if ($paperTrailFolderId) {
-                // The filename is already prefixed with the event name
-                $secondUploadResult = $drive->uploadFile(
-                    $tempFilePath,
-                    $prefixedFileName,
-                    $paperTrailFolderId
-                );
-                
-                if (!$secondUploadResult['success'] || empty($secondUploadResult['id'])) {
-                    error_log("Failed to upload second copy to Paper Trail: " . ($secondUploadResult['error'] ?? 'Unknown error'));
-                } else {
-                    error_log("Successfully uploaded $prefixedFileName to Paper Trail folder");
-                    // Make the second copy publicly viewable
-                    $drive->makeFilePublic($secondUploadResult['id']);
-                }
-            }
-        } catch (Exception $e) {
-            error_log("Error uploading to Paper Trail folder: " . $e->getMessage());
-        }
-        
-        // 5. Generate proper URLs
+        // Generate URLs
         $fileId = $uploadResult['id'];
         $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
         
-        // 5. Return success with all metadata
+        // Return success with all metadata
         $result = [
             'success' => true,
             'drive_file_id' => $uploadResult['id'],
             'drive_view_url' => $embedUrl,
-            'drive_download_url' => "https://drive.google.com/uc?id={$fileId}&export=download",
-            'drive_folder_id' => $targetFolderId, // This is the entry folder ID
-            'drive_event_folder_id' => $folders['event_folder_id'] ?? null,
-            'drive_center_folder_id' => $folders['center_folder_id'] ?? null,
-            'drive_category_folder_id' => $folders['category_folder_id'] ?? null,
-            'drive_entry_folder_id' => $folders['entry_folder_id'] ?? null,
+            'drive_download_url' => $downloadUrl,
+            'drive_folder_id' => $targetFolderId,
+            'drive_event_folder_id' => $eventFolderId,
+            'drive_center_folder_id' => $centerFolderId,
+            'drive_category_folder_id' => $categoryFolderId,
             'file_size' => $uploadResult['size'] ?? 0,
-            'file_name' => $uploadResult['name'] ?? $fileName,
+            'file_name' => $prefixedFileName,
             'center_name' => $centerName,
             'category_name' => $category,
-            'entry_folder_name' => $entryFolderName
+            'entry_folder_name' => $entryFolderName,
+            'is_local_in_house' => $isLocalInHouse,
+            'paper_trail_no' => $paperTrailNo,
+            'author_last_name' => $authorLastName
         ];
         
-        error_log("$type file upload successful: " . $fileName);
+        error_log("File upload successful: " . $prefixedFileName);
         return $result;
         
     } catch (Exception $e) {
         error_log("Google Drive upload failed for $fileName: " . $e->getMessage());
         throw new Exception("Failed to upload $fileName to Google Drive: " . $e->getMessage());
     }
-    
 }
+
 function cleanFolderNameForDrive($name) {
     if (empty($name)) {
         return 'Untitled_' . time();
@@ -264,14 +281,6 @@ function cleanFolderNameForDrive($name) {
     }
     
     return $clean;
-}
-
-function CreatePaperTrailFolder($drive, $centerName) {
-    // Root folder: "Paper"
-    $paperFolderId = $drive->findOrCreateFolder('Research Paper Trails', null);
-    
-    // The files go directly into the Paper Trail folder
-    return $paperFolderId;
 }
 
 function getResearchFileUrl($researchRecord) {
@@ -828,77 +837,235 @@ function getResearchFilesForRevision($con, $userId) {
     
     return $processedResults;
 }
-
+function uploadToPaperTrail($tempFilePath, $fileName, $eventName, $author, $title, $type, $isProgram, $isEndorsement, $isCertificate, $isLocalInHouse, $paperTrailNo = null) {
+    try {
+        // Check if file exists
+        if (!file_exists($tempFilePath)) {
+            error_log("Paper Trail: File not found: $tempFilePath");
+            return ['success' => false, 'error' => "Temporary file not found: $tempFilePath"];
+        }
+        
+        if (!class_exists('GoogleDriveService')) {
+            error_log("Paper Trail: GoogleDriveService class not found");
+            return ['success' => false, 'error' => "GoogleDriveService class not found"];
+        }
+        
+        $drive = new GoogleDriveService();
+        $year = date('Y');
+        
+        // Get author's last name
+        $authorParts = explode(' ', trim($author));
+        $authorLastName = end($authorParts);
+        $authorLastName = cleanFolderNameForDrive($authorLastName);
+        
+        // Create entry folder name using paper_trail_no and title
+        $entryFolderName = '';
+        if (!empty($paperTrailNo)) {
+            // Clean title for folder name
+            $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
+            $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
+            $cleanTitle = trim($cleanTitle);
+            
+            // Limit title length
+            if (strlen($cleanTitle) > 100) {
+                $cleanTitle = substr($cleanTitle, 0, 97) . '...';
+            }
+            
+            $cleanTitle = cleanFolderNameForDrive($cleanTitle);
+            $entryFolderName = $paperTrailNo . ' - ' . $cleanTitle;
+        } else {
+            // Fallback to old naming
+            $titleWords = explode(' ', trim($title));
+            $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
+            $titleKeywords = cleanFolderNameForDrive($titleKeywords);
+            $entryFolderName = $authorLastName . '_' . $titleKeywords;
+        }
+        
+        // Clean the folder name
+        $entryFolderName = cleanFolderNameForDrive($entryFolderName);
+        
+        // Determine Paper Trail root folder
+        $paperTrailRootName = $isLocalInHouse ? 'Local In-House Review' : 'Symposium';
+        
+        // Create folder structure
+        $paperTrailRootId = $drive->findOrCreateFolder('Paper Trail', null);
+        if (!$paperTrailRootId) {
+            return ['success' => false, 'error' => "Failed to create Paper Trail root folder"];
+        }
+        
+        $subTypeFolderId = $drive->findOrCreateFolder($paperTrailRootName, $paperTrailRootId);
+        if (!$subTypeFolderId) {
+            return ['success' => false, 'error' => "Failed to create $paperTrailRootName folder"];
+        }
+        
+        $yearFolderId = $drive->findOrCreateFolder($year, $subTypeFolderId);
+        if (!$yearFolderId) {
+            return ['success' => false, 'error' => "Failed to create Year folder: $year"];
+        }
+        
+        // Create entry folder inside Year folder
+        $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $yearFolderId);
+        if (!$entryFolderId) {
+            return ['success' => false, 'error' => "Failed to create entry folder: $entryFolderName"];
+        }
+        
+        // Determine file name using author's last name
+        $paperTrailFileName = '';
+        
+        if ($isLocalInHouse) {
+            // Local In-House files: {LastName} {fileType}.pdf
+            $fileTypeSuffix = '';
+            if ($type === 'research') {
+                $fileTypeSuffix = 'research_file';
+            } elseif ($isEndorsement) {
+                $fileTypeSuffix = 'endorsement_file';
+            } elseif ($isProgram) {
+                $fileTypeSuffix = 'program_file';
+            } elseif ($isCertificate) {
+                $fileTypeSuffix = 'certificate_file';
+            } else {
+                $fileTypeSuffix = 'document';
+            }
+            $paperTrailFileName = $authorLastName . ' ' . $fileTypeSuffix . '.pdf';
+        } else {
+            // Symposium files: {LastName}_{fileType}.pdf
+            if ($type === 'research') {
+                $paperTrailFileName = $authorLastName . '_completed_research.pdf';
+            } elseif ($isEndorsement) {
+                $paperTrailFileName = $authorLastName . '_endorsement_letter.pdf';
+            } elseif ($isProgram) {
+                $paperTrailFileName = $authorLastName . '_program_file.pdf';
+            } elseif ($isCertificate) {
+                $paperTrailFileName = $authorLastName . '_certificate_file.pdf';
+            } else {
+                $paperTrailFileName = basename($fileName);
+            }
+        }
+        
+        // Upload file
+        $uploadResult = $drive->uploadFile($tempFilePath, $paperTrailFileName, $entryFolderId);
+        
+        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
+            $errorMsg = $uploadResult['error'] ?? 'Unknown error';
+            error_log("Paper Trail upload failed: $errorMsg");
+            return ['success' => false, 'error' => $errorMsg];
+        }
+        
+        // Make file publicly viewable
+        $drive->makeFilePublic($uploadResult['id']);
+        
+        $fileId = $uploadResult['id'];
+        $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+        
+        error_log("Paper Trail upload successful: $paperTrailFileName to folder: $entryFolderId");
+        
+        return [
+            'success' => true,
+            'drive_file_id' => $fileId,
+            'drive_view_url' => $embedUrl,
+            'drive_download_url' => $downloadUrl,
+            'paper_trail_root_id' => $paperTrailRootId,
+            'sub_type_folder_id' => $subTypeFolderId,
+            'year_folder_id' => $yearFolderId,
+            'entry_folder_id' => $entryFolderId,
+            'entry_folder_name' => $entryFolderName,
+            'year' => $year,
+            'submission_type' => $paperTrailRootName,
+            'file_name' => $paperTrailFileName,
+            'paper_trail_no' => $paperTrailNo,
+            'author_last_name' => $authorLastName
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Paper Trail upload failed: " . $e->getMessage());
+        return [
+            'success' => false,
+            'error' => $e->getMessage()
+        ];
+    }
+}
 
 if (isset($_POST['uploadResearch'])) {
-    ob_end_clean();
-    ob_start();
-    error_reporting(E_ALL);
-    ini_set('display_errors', 0);
     
-    $center = $_POST['center'] ?? '';
-    $senderId = $_SESSION['userId'];
     $response = new stdClass();
     $response->message = '';
-    $response->serverMessage = "";
     $response->status = false;
-    $response->debug = [];
+    $response->paper_trail_no = null;
     
     try {
-        if ($con = new mysqli($host, $username, $pass, $dbName)) {
-            if ($con->connect_error) {
-                throw new Exception("Database connection failed: " . $con->connect_error);
+        // Check database connection
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+        
+        // Safely get POST data with defaults
+        $center = isset($_POST['center']) ? trim($_POST['center']) : '';
+        $senderId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 0;
+        $eventType = isset($_POST['eventType']) ? trim($_POST['eventType']) : '';
+        $isLocalInHouse = isset($_POST['is_local_in_house']) && $_POST['is_local_in_house'] === 'true';
+        
+        if (empty($eventType)) {
+            throw new Exception("Event type is required");
+        }
+        
+        // Check event deadline
+        $checkQuery = "SELECT COUNT(*) as count FROM event_list WHERE name = ? AND dead_line > CURRENT_TIMESTAMP";
+        $checkStatement = $con->prepare($checkQuery);
+        if (!$checkStatement) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+        
+        $checkStatement->bind_param("s", $eventType);
+        $checkStatement->execute();
+        $result = $checkStatement->get_result();
+        $row = $result->fetch_assoc();
+        $eventActive = ($row && $row['count'] > 0);
+        $checkStatement->close();
+        
+        if (!$eventActive) {
+            $response->message = "Sorry, the event has closed.";
+            $response->status = false;
+        } else {
+            // Get research data from POST
+            $title = isset($_POST['title']) ? trim($_POST['title']) : '';
+            $author = isset($_POST['author']) ? trim($_POST['author']) : '';
+            $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+            $campus = isset($_POST['campus']) ? trim($_POST['campus']) : '';
+            $coAuthor = isset($_POST['coAuthor']) ? $_POST['coAuthor'] : '[]';
+            $presenter = isset($_POST['presenter']) ? trim($_POST['presenter']) : '';
+            $date_started = isset($_POST['date_started']) && !empty($_POST['date_started']) ? $_POST['date_started'] : null;
+            $date_completed = isset($_POST['date_completed']) && !empty($_POST['date_completed']) ? $_POST['date_completed'] : null;
+            $finalSymposiumTitle = isset($_POST['final_symposium_title']) && !empty($_POST['final_symposium_title']) ? $_POST['final_symposium_title'] : null;
+            $title_changed = isset($_POST['title_changed']) ? (int)$_POST['title_changed'] : 0;
+            
+            // Validate required fields
+            if (empty($title) || empty($author) || empty($category) || empty($center) || empty($campus) || empty($presenter)) {
+                throw new Exception("Missing required fields: title, author, category, center, campus, or presenter");
             }
             
-            $eventType = $_POST['eventType'];
-            $checkQuery = "SELECT COUNT(*) FROM event_list WHERE event_list.name=? AND event_list.dead_line>CURRENT_TIMESTAMP";
-            $checkStatement = $con->prepare($checkQuery);
-            if (!$checkStatement) {
-                throw new Exception("Prepare failed: " . $con->error);
-            }
-            
-            $checkStatement->bind_param("s", $eventType);
-            $checkStatement->execute();
-            $resss = $checkStatement->get_result()->fetch_row();
-
-            if ($resss[0] !== 0) {
-                $userDisignation = $_SESSION['userDesignation'];
-                
-                // Get research data from POST
-                $title = $_POST['title'];
-                $author = $_POST['author'];
-                $category = $_POST['category'];
-                $center = $_POST['center'];
-                $campus = $_POST['campus'];
-                $coAuthor = $_POST['coAuthor'] ?? '[]';
-                $presenter = $_POST['presenter'];
-                $date_started = $_POST['date_started'] ?? null;
-                $date_completed = $_POST['date_completed'] ?? $_POST['date_Completed'] ?? null;
-                
-                // Get event_id
-                $eventId = null;
-                $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
-                $eventStmt = $con->prepare($eventIdQuery);
+            // Get event_id
+            $eventId = null;
+            $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
+            $eventStmt = $con->prepare($eventIdQuery);
+            if ($eventStmt) {
                 $eventStmt->bind_param("s", $eventType);
                 $eventStmt->execute();
                 $eventResult = $eventStmt->get_result();
                 $eventRow = $eventResult->fetch_assoc();
                 $eventId = $eventRow ? $eventRow['id'] : null;
-                
-                // ===== DUPLICATE VALIDATION - Check within SAME EVENT only =====
-                // Check if the same title and author already exists for this specific event
-                $duplicateCheckQuery = "SELECT COUNT(*) as count, id, title, author, event_id, event 
-                                       FROM researchfile 
-                                       WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
-                                       AND TRIM(LOWER(author)) = TRIM(LOWER(?))
-                                       AND event_id = ?
-                                       LIMIT 1";
-                
-                $dupStmt = $con->prepare($duplicateCheckQuery);
-                if (!$dupStmt) {
-                    throw new Exception("Prepare failed for duplicate check: " . $con->error);
-                }
-                
+                $eventStmt->close();
+            }
+            
+            // ===== DUPLICATE VALIDATION =====
+            $duplicateCheckQuery = "SELECT COUNT(*) as count FROM researchfile 
+                                   WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+                                   AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+                                   AND event_id = ?";
+            
+            $dupStmt = $con->prepare($duplicateCheckQuery);
+            if ($dupStmt) {
                 $dupStmt->bind_param("ssi", $title, $author, $eventId);
                 $dupStmt->execute();
                 $dupResult = $dupStmt->get_result();
@@ -906,80 +1073,77 @@ if (isset($_POST['uploadResearch'])) {
                 $dupStmt->close();
                 
                 if ($existingRecord && $existingRecord['count'] > 0) {
-                    // Duplicate found in the SAME event
-                    $response->message = "DUPLICATE DETECTED: A research with the title '{$title}' and author '{$author}' already exists for the event '{$eventType}'.\n\nPlease check your submissions. If you believe this is a mistake, contact the system administrator.";
-                    $response->status = false;
-                    
-                    ob_clean();
-                    header('Content-Type: application/json; charset=utf-8');
-                    echo json_encode($response);
-                    exit();
+                    throw new Exception("A research with the title '{$title}' and author '{$author}' already exists for this event.");
                 }
-                // CHECK REVISION STATUS BEFORE ALLOWING UPLOAD
-                if (isset($_POST['is_revision']) && $_POST['is_revision'] === 'true') {
-                    $originalResearchId = $_POST['original_research_id'] ?? 0;
-                    
-                    // Verify the research is eligible for revision
-                    $checkRevisionQuery = "SELECT revision_status, revision_count FROM researchfile WHERE id = ? AND senderid = ?";
-                    $checkStmt = $con->prepare($checkRevisionQuery);
-                    $checkStmt->bind_param("ii", $originalResearchId, $senderId);
-                    $checkStmt->execute();
-                    $checkResult = $checkStmt->get_result();
-                    $revisionData = $checkResult->fetch_assoc();
-                    
-                    if (!$revisionData || !in_array($revisionData['revision_status'], ['revision_pending', 'revision_rejected'])) {
-                            throw new Exception("This document is not eligible for revision submission");
-                        }
+            }
+            
+            $programDriveFileId = null;
+            $programDriveViewUrl = null;
+            $certificateDriveFileId = null;
+            $certificateDriveViewUrl = null;
+            $endorsementId = null;
+            $drive_file_id = null;
+            $drive_view_url = null;
+            $drive_download_url = null;
+            
+            // ========== FOR LOCAL IN-HOUSE: Upload ONLY Program and Certificate files ==========
+            if ($isLocalInHouse) {
+                // Upload Program File (required)
+                if (!isset($_FILES['programFile']) || $_FILES['programFile']['error'] !== UPLOAD_ERR_OK) {
+                    throw new Exception('Program file is required for Local In-House Review');
                 }
-                // Check endorsement file if exists
-                if (isset($_FILES['uploadedFileEndorsement']) && $_FILES['uploadedFileEndorsement']['error'] === UPLOAD_ERR_OK) {
-                    $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
-                    $endorsementFileHash = generateFileHash($tempEndorsementPath);
+                
+                $tempProgramPath = $_FILES['programFile']['tmp_name'];
+                $programFileName = $_FILES['programFile']['name'];
+                
+                if (file_exists($tempProgramPath)) {
+                    $programDriveResult = uploadResearchToDrive(
+                        $tempProgramPath, $programFileName, $eventType, $center,
+                        $category, $author, $title, 'program', true, false, false, true
+                    );
                     
-                    if ($endorsementFileHash) {
-                        $existingEndorsement = checkDuplicateByFileHashAndEvent($con, $endorsementFileHash, 'endorsement', $eventId, $eventType);
-                        if ($existingEndorsement) {
-                            throw new Exception("DUPLICATE ENDORSEMENT: This endorsement letter file has already been used for the same event '{$eventType}' for research ID {$existingEndorsement['research_id']}: '{$existingEndorsement['title']}' by {$existingEndorsement['author']}");
-                        }
+                    if ($programDriveResult && $programDriveResult['success']) {
+                        $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
+                        $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
+                    } else {
+                        throw new Exception("Program file upload failed: " . ($programDriveResult['error'] ?? 'Unknown error'));
                     }
                 }
                 
-                // Check research file if exists
-                if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
-                    $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
-                    $researchFileHash = generateFileHash($tempResearchPath);
+                // Upload Certificate File (required)
+                if (!isset($_FILES['certificateFile']) || $_FILES['certificateFile']['error'] !== UPLOAD_ERR_OK) {
+                    throw new Exception('Certificate file is required for Local In-House Review');
+                }
+                
+                $tempCertificatePath = $_FILES['certificateFile']['tmp_name'];
+                $certificateFileName = $_FILES['certificateFile']['name'];
+                
+                if (file_exists($tempCertificatePath)) {
+                    $certificateDriveResult = uploadResearchToDrive(
+                        $tempCertificatePath, $certificateFileName, $eventType, $center,
+                        $category, $author, $title, 'certificate', false, false, true, true
+                    );
                     
-                    if ($researchFileHash) {
-                        $existingResearch = checkDuplicateByFileHashAndEvent($con, $researchFileHash, 'proposal', $eventId, $eventType);
-                        if ($existingResearch) {
-                            throw new Exception("DUPLICATE RESEARCH: This research/proposal file has already been used for the same event '{$eventType}' for research ID {$existingResearch['research_id']}: '{$existingResearch['title']}' by {$existingResearch['author']}");
-                        }
+                    if ($certificateDriveResult && $certificateDriveResult['success']) {
+                        $certificateDriveFileId = $certificateDriveResult['drive_file_id'] ?? null;
+                        $certificateDriveViewUrl = $certificateDriveResult['drive_view_url'] ?? null;
+                    } else {
+                        throw new Exception("Certificate file upload failed: " . ($certificateDriveResult['error'] ?? 'Unknown error'));
                     }
                 }
                 
-                // Check program file if exists
-                $programFileHash = null;
-                if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
-                    $tempProgramPath = $_FILES['programFile']['tmp_name'];
-                    $programFileHash = generateFileHash($tempProgramPath);
-                    
-                    if ($programFileHash) {
-                        $existingProgram = checkDuplicateByFileHashAndEvent($con, $programFileHash, 'program', $eventId, $eventType);
-                        if ($existingProgram) {
-                            throw new Exception("DUPLICATE PROGRAM: This program file has already been used for the same event '{$eventType}' for research ID {$existingProgram['research_id']}: '{$existingProgram['title']}' by {$existingProgram['author']}");
-                        }
-                    }
-                }
-                
-                // 1. Upload Endorsement Letter to Google Drive
+                // NO endorsement and NO research file uploads for Local In-House
+            
+            } else {
+                // ========== FOR UNIVERSITY: Upload Endorsement and Research files ==========
+                // Upload Endorsement Letter (required)
                 if (!isset($_FILES['uploadedFileEndorsement']) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
-                    throw new Exception('Endorsement letter upload failed. Error code: ' . ($_FILES['uploadedFileEndorsement']['error'] ?? 'NO_FILE'));
+                    throw new Exception('Endorsement letter is required');
                 }
                 
                 $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
                 $endorsementFileName = $_FILES['uploadedFileEndorsement']['name'];
                 
-                // Upload endorsement to Drive
                 $endorsementDriveResult = uploadResearchToDrive(
                     $tempEndorsementPath,
                     $endorsementFileName,
@@ -990,300 +1154,276 @@ if (isset($_POST['uploadResearch'])) {
                     $title,
                     'endorsement',
                     false,
-                    true
+                    true,
+                    false,
+                    false
                 );
                 
                 if (!$endorsementDriveResult['success']) {
                     throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
                 }
                 
-                error_log("Endorsement uploaded successfully: " . $endorsementDriveResult['drive_file_id']);
-                
+                // Save endorsement to database
                 $defaultTime = date('Y-m-d H:i:s');
-                
                 $query2 = "INSERT INTO endorsement (
-                    endorsement.senderid,
-                    endorsement.center,
-                    endorsement.file, 
-                    endorsement.drive_file_id,
-                    endorsement.drive_view_url,
-                    endorsement.drive_download_url,
-                    endorsement.drive_event_folder_id,
-                    endorsement.drive_center_folder_id,
-                    endorsement.drive_category_folder_id,
-                    endorsement.drive_entry_folder_id,
-                    endorsement.event,
-                    endorsement.status,
-                    endorsement.date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    senderid, center, file, drive_file_id, drive_view_url, 
+                    drive_download_url, drive_event_folder_id, drive_center_folder_id, 
+                    drive_category_folder_id, drive_entry_folder_id, event, status, date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 $stateM = $con->prepare($query2);
                 if (!$stateM) {
                     throw new Exception("Prepare failed for endorsement: " . $con->error);
                 }
                 
-                $sta = NULL;
                 $endorsementFileJson = json_encode($endorsementDriveResult);
-                
                 $drive_event_folder_id = $endorsementDriveResult['drive_event_folder_id'] ?? null;
                 $drive_center_folder_id = $endorsementDriveResult['drive_center_folder_id'] ?? null;
                 $drive_category_folder_id = $endorsementDriveResult['drive_category_folder_id'] ?? null;
                 $drive_entry_folder_id = $endorsementDriveResult['drive_entry_folder_id'] ?? null;
+                $endorsementStatus = null;
                 
                 $stateM->bind_param(
                     'sssssssssssss',
-                    $senderId, 
-                    $center,
-                    $endorsementFileJson,
+                    $senderId, $center, $endorsementFileJson,
                     $endorsementDriveResult['drive_file_id'],
                     $endorsementDriveResult['drive_view_url'],
                     $endorsementDriveResult['drive_download_url'],
-                    $drive_event_folder_id,
-                    $drive_center_folder_id,
-                    $drive_category_folder_id,
-                    $drive_entry_folder_id,
-                    $eventType, 
-                    $sta,
-                    $defaultTime);
+                    $drive_event_folder_id, $drive_center_folder_id,
+                    $drive_category_folder_id, $drive_entry_folder_id,
+                    $eventType, $endorsementStatus, $defaultTime
+                );
                 
-                $st = $stateM->execute();
-                
-                if (!$st) {
-                    throw new Exception("Failed to execute endorsement insert: " . $stateM->error);
+                if (!$stateM->execute()) {
+                    throw new Exception("Failed to save endorsement: " . $stateM->error);
                 }
                 
                 $endorsementId = $con->insert_id;
-                error_log("Endorsement saved to DB with ID: $endorsementId");
+                $stateM->close();
                 
-                // 2. Upload Research File
+                // Upload Research File (required)
                 if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
-                    $errorCode = $_FILES['researchDoc']['error'] ?? 'NO_FILE';
-                    $errorMsg = "Research file upload failed. Error code: $errorCode";
-                    if ($errorCode == 1 || $errorCode == 2) {
-                        $errorMsg .= " (File too large)";
-                    } elseif ($errorCode == 3) {
-                        $errorMsg .= " (File only partially uploaded)";
-                    } elseif ($errorCode == 4) {
-                        $errorMsg .= " (No file selected)";
-                    }
-                    throw new Exception($errorMsg);
+                    throw new Exception('Research file is required');
                 }
                 
                 $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
                 $researchFileName = $_FILES['researchDoc']['name'];
                 
-                error_log("Uploading research: $researchFileName");
-                
                 if (!file_exists($tempResearchPath)) {
-                    throw new Exception("Research file not found on server. Temp path: $tempResearchPath");
+                    throw new Exception("Research file not found on server");
                 }
                 
-                // Upload research paper to Google Drive
                 $researchDriveResult = uploadResearchToDrive(
-                    $tempResearchPath,
-                    $researchFileName,
-                    $eventType,
-                    $center,
-                    $category,
-                    $author, $title, 'research', false, false);
+                    $tempResearchPath, $researchFileName, $eventType, $center,
+                    $category, $author, $title, 'research', false, false, false, false
+                );
                 
                 if (!$researchDriveResult['success']) {
                     throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
                 }
                 
-                error_log("Research uploaded successfully: " . $researchDriveResult['drive_file_id']);
-                
-                // 3. Upload Program File (for In-House and Symposium events)
-                $programDriveResult = null;
-                $programFile = null;
-                $programDriveFileId = null;
-                $programDriveViewUrl = null;
-
-                $isSymposium = stripos($eventType, 'symposium') !== false;
-                $isInHouse = stripos($eventType, 'in house review') !== false || stripos($eventType, 'in-house review') !== false;
-
-                // Upload program file for In-House and Symposium events
-                if (($isSymposium || $isInHouse) && isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
-                    $tempProgramPath = $_FILES['programFile']['tmp_name'];
-                    $programFileName = $_FILES['programFile']['name'];
-                    
-                    error_log("Uploading program file for " . ($isSymposium ? "Symposium" : "In-House") . ": $programFileName");
-                    
-                    if (file_exists($tempProgramPath)) {
-                        $programDriveResult = uploadResearchToDrive(
-                            $tempProgramPath,
-                            $programFileName,
-                            $eventType,
-                            $center,
-                            $category,
-                            $author,
-                            $title,
-                            'program',
-                            true,
-                            false
-                        );
-                        
-                        if ($programDriveResult && $programDriveResult['success']) {
-                            $programFile = json_encode($programDriveResult);
-                            $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
-                            $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
-                            error_log("Program uploaded successfully: " . $programDriveFileId);
-                        }
-                    }
-                }
-
-                // 4. Upload Certificate File (for Symposium/In-House events)
-                $certificateDriveResult = null;
-                $certificateDriveFileId = null;
-                $certificateDriveViewUrl = null;
-
-                if (($isSymposium || $isInHouse) && isset($_FILES['certificateFile']) && $_FILES['certificateFile']['error'] === UPLOAD_ERR_OK) {
-                    $tempCertificatePath = $_FILES['certificateFile']['tmp_name'];
-                    $certificateFileName = $_FILES['certificateFile']['name'];
-                    
-                    error_log("Uploading certificate for " . ($isSymposium ? "Symposium" : "In-House") . ": $certificateFileName");
-                    
-                    if (file_exists($tempCertificatePath)) {
-                        $certificateDriveResult = uploadResearchToDrive(
-                            $tempCertificatePath,
-                            $certificateFileName,
-                            $eventType,
-                            $center,
-                            $category,
-                            $author,
-                            $title,
-                            'certificate',
-                            false,
-                            false,
-                            true
-                        );
-                        
-                        if ($certificateDriveResult && $certificateDriveResult['success']) {
-                            $certificateDriveFileId = $certificateDriveResult['drive_file_id'] ?? null;
-                            $certificateDriveViewUrl = $certificateDriveResult['drive_view_url'] ?? null;
-                            error_log("Certificate uploaded successfully: " . $certificateDriveFileId);
-                        }
-                    }
-                }
-
-                $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
-
-                // Validate date fields for Symposium
-                if ($isSymposium) {
-                    if (empty($date_started) || empty($date_completed)) {
-                        throw new Exception("Date Started and Date Completed are required for Symposium events");
-                    }
-                }
-
-                $querV2 = "INSERT INTO researchfile(
-                    researchfile.paper_trail_no,
-                    researchfile.senderid,
-                    researchfile.endorsementid,
-                    researchfile.author,
-                    researchfile.title,
-                    researchfile.center,
-                    researchfile.category,
-                    researchfile.drive_file_id,
-                    researchfile.drive_view_url,
-                    researchfile.drive_download_url,
-                    researchfile.drive_folder_id,
-                    researchfile.drive_event_folder_id,
-                    researchfile.drive_center_folder_id,
-                    researchfile.drive_category_folder_id,
-                    researchfile.drive_entry_folder_id,
-                    researchfile.program,
-                    researchfile.program_drive_file_id,
-                    researchfile.program_drive_view_url,
-                    researchfile.certificate_drive_file_id,
-                    researchfile.certificate_drive_view_url,
-                    researchfile.event,
-                    researchfile.event_id,
-                    researchfile.campus,
-                    researchfile.coauthor,
-                    researchfile.presenter,
-                    researchfile.status,
-                    researchfile.date_started,
-                    researchfile.date_completed
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-                $rev = 'pending';
-
-                $stementResNew = $con->prepare($querV2);
-                if (!$stementResNew) {
-                    throw new Exception("Prepare failed for researchfile: " . $con->error);
-                }
-
-                $drive_folder_id = $researchDriveResult['drive_folder_id'] ?? null;
-                $drive_event_folder_id = $researchDriveResult['drive_event_folder_id'] ?? null;
-                $drive_center_folder_id = $researchDriveResult['drive_center_folder_id'] ?? null;
-                $drive_category_folder_id = $researchDriveResult['drive_category_folder_id'] ?? null;
-                $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
-
-                $bound = $stementResNew->bind_param(
-                    'ssssssssssssssssssssssssssss',  // 28 's' parameters
-                    $paperTrailNo, $senderId, $endorsementId,
-                    $author, $title, $center, $category,
-                    $researchDriveResult['drive_file_id'],
-                    $researchDriveResult['drive_view_url'],
-                    $researchDriveResult['drive_download_url'],
-                    $drive_folder_id,
-                    $drive_event_folder_id,
-                    $drive_center_folder_id,
-                    $drive_category_folder_id,
-                    $drive_entry_folder_id,
-                    $programFile,
-                    $programDriveFileId,
-                    $programDriveViewUrl,
-                    $certificateDriveFileId,     
-                    $certificateDriveViewUrl,      
-                    $eventType, $eventId, $campus,
-                    $coAuthor, $presenter, $rev, $date_started, $date_completed );
-                if (!$bound) {
-                    throw new Exception("Bind failed for researchfile: " . $stementResNew->error);
-                }
-
-                $state = $stementResNew->execute();
-
-                if (!$state) {
-                    throw new Exception("Database error for $researchFileName: " . $stementResNew->error);
-                }
-                
-                $researchFileId = $con->insert_id;
-                $response->paper_trail_no = $paperTrailNo;
-
-                // ===== Store File Hashes for Future Duplicate Detection =====
-                if ($researchFileId) {
-                    if (isset($researchFileHash) && $researchFileHash) {
-                        storeFileHash($con, $researchFileId, 'proposal', $researchFileHash, $eventId);
-                    }
-                    
-                    if (isset($programFileHash) && $programFileHash) {
-                        storeFileHash($con, $researchFileId, 'program', $programFileHash, $eventId);
-                    }
-                    
-                    if (isset($endorsementFileHash) && $endorsementFileHash) {
-                        storeFileHash($con, $researchFileId, 'endorsement', $endorsementFileHash, $eventId);
-                    }
-                }
-                
-                $response->message = "$researchFileName uploaded to Google Drive successfully.\n";
-                if ($programDriveResult && $programDriveResult['success']) {
-                    $response->message .= "Program attachment uploaded successfully.\n";
-                }
-                $response->status = true;
-                
-            } else {
-                $response->message = "Sorry..., The event has closed.";
+                $drive_file_id = $researchDriveResult['drive_file_id'] ?? null;
+                $drive_view_url = $researchDriveResult['drive_view_url'] ?? null;
+                $drive_download_url = $researchDriveResult['drive_download_url'] ?? null;
             }
-        } else {
-            throw new Exception("Database connection failed: " . $con->error);
+            
+            // Generate paper trail number
+            $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
+            
+            // Insert research file record (using ONLY existing columns from your table)
+            $querV2 = "INSERT INTO researchfile(
+                paper_trail_no, senderid, endorsementid, event_id, author, coauthor, presenter,
+                date_started, date_completed, title, final_symposium_title, event, status,
+                category, center, campus, drive_file_id, drive_view_url, drive_download_url,
+                program_drive_file_id, program_drive_view_url, certificate_drive_file_id, 
+                certificate_drive_view_url, title_changed
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            $stementResNew = $con->prepare($querV2);
+            if (!$stementResNew) {
+                throw new Exception("Prepare failed for researchfile: " . $con->error);
+            }
+            
+            $rev = 'pending';
+            
+            $stementResNew->bind_param(
+                'siississsssssssssssssssi',
+                $paperTrailNo, $senderId, $endorsementId, $eventId, $author, $coAuthor, $presenter,
+                $date_started, $date_completed, $title, $finalSymposiumTitle, $eventType, $rev,
+                $category, $center, $campus, $drive_file_id, $drive_view_url, $drive_download_url,
+                $programDriveFileId, $programDriveViewUrl, $certificateDriveFileId, $certificateDriveViewUrl,
+                $title_changed
+            );
+            
+            if (!$stementResNew->execute()) {
+                throw new Exception("Database error: " . $stementResNew->error);
+            }
+            
+            $researchId = $con->insert_id;
+            $response->status = true;
+            $response->message = "Research submitted successfully!";
+            $response->paper_trail_no = $paperTrailNo;
+            $response->researchId = $researchId;
+            
+            // Return file URLs for the second API call (Local In-House only)
+            if ($isLocalInHouse) {
+                $response->programDriveFileId = $programDriveFileId;
+                $response->programDriveViewUrl = $programDriveViewUrl;
+                $response->certificateDriveFileId = $certificateDriveFileId;
+                $response->certificateDriveViewUrl = $certificateDriveViewUrl;
+            }
+            
+            $stementResNew->close();
         }
+        
+        $con->close();
+        
     } catch (Exception $e) {
         error_log("Exception in uploadResearch: " . $e->getMessage());
-        $response->message = "Error: " . $e->getMessage();
+        $response->message = $e->getMessage();
         $response->status = false;
     }
     
+    // Clean output and send JSON
     ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+if (isset($_POST['saveLocalInhouse'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->saved_id = null;
+
+    try {
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Get form data
+        $eventId = isset($_POST['eventId']) ? (int)$_POST['eventId'] : 0;
+        $eventName = $_POST['eventName'] ?? '';
+        $documentTitle = trim($_POST['document_title'] ?? '');
+        $campus = trim($_POST['campus'] ?? '');
+        $category = trim($_POST['category'] ?? '');
+        $center = trim($_POST['center'] ?? '');
+        $mainAuthor = trim($_POST['main_author'] ?? '');
+        $presenter = trim($_POST['presenter'] ?? '');
+        $coAuthors = $_POST['co_authors'] ?? '[]';
+        $senderId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 0;
+
+        // Upload Program File to Google Drive
+        if (!isset($_FILES['programFile']) || $_FILES['programFile']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Program file is required");
+        }
+        
+        $programDriveResult = uploadResearchToDrive(
+            $_FILES['programFile']['tmp_name'],
+            $_FILES['programFile']['name'],
+            $eventName,
+            $center,
+            $category,
+            $mainAuthor,
+            $documentTitle,
+            'program',
+            true,
+            false,
+            false,
+            true
+        );
+        
+        if (!$programDriveResult['success']) {
+            throw new Exception("Program file upload failed: " . ($programDriveResult['error'] ?? 'Unknown error'));
+        }
+        
+        // Upload Certificate File to Google Drive
+        if (!isset($_FILES['certificateFile']) || $_FILES['certificateFile']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Certificate file is required");
+        }
+        
+        $certificateDriveResult = uploadResearchToDrive(
+            $_FILES['certificateFile']['tmp_name'],
+            $_FILES['certificateFile']['name'],
+            $eventName,
+            $center,
+            $category,
+            $mainAuthor,
+            $documentTitle,
+            'certificate',
+            false,
+            false,
+            true,
+            true
+        );
+        
+        if (!$certificateDriveResult['success']) {
+            throw new Exception("Certificate file upload failed: " . ($certificateDriveResult['error'] ?? 'Unknown error'));
+        }
+
+        // ===== INSERT INTO local_inhouse table (without title_changed) =====
+        $query = "INSERT INTO local_inhouse (
+            document_title, 
+            campus, 
+            category, 
+            center,
+            main_author, 
+            presenter, 
+            co_authors,
+            program_file_view_url,      
+            program_file_download_url,
+            certificate_file_view_url,  
+            certificate_file_download_url,
+            created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $programViewUrl = $programDriveResult['drive_view_url'] ?? null;
+        $programDownloadUrl = $programDriveResult['drive_download_url'] ?? null;
+        $certificateViewUrl = $certificateDriveResult['drive_view_url'] ?? null;
+        $certificateDownloadUrl = $certificateDriveResult['drive_download_url'] ?? null;
+
+        $stmt->bind_param(
+            'sssssssssss',
+            $documentTitle, 
+            $campus, 
+            $category, 
+            $center,
+            $mainAuthor, 
+            $presenter, 
+            $coAuthors,
+            $programViewUrl, 
+            $programDownloadUrl,
+            $certificateViewUrl, 
+            $certificateDownloadUrl
+        );
+
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to save Local In-House: " . $stmt->error);
+        }
+
+        $localId = $con->insert_id;
+
+        $response->saved_id = $localId;
+        $response->status = true;
+        $response->message = "Local In-House Review saved successfully";
+        
+        $stmt->close();
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("saveLocalInhouse error: " . $e->getMessage());
+        $response->message = $e->getMessage();
+        $response->status = false;
+    }
+
+    ob_end_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
