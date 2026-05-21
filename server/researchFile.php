@@ -985,7 +985,6 @@ function uploadToPaperTrail($tempFilePath, $fileName, $eventName, $author, $titl
         ];
     }
 }
-
 if (isset($_POST['uploadResearch'])) {
     
     $response = new stdClass();
@@ -1077,18 +1076,29 @@ if (isset($_POST['uploadResearch'])) {
                 }
             }
             
+            // Initialize variables
             $programDriveFileId = null;
             $programDriveViewUrl = null;
+            $programDriveDownloadUrl = null;
             $certificateDriveFileId = null;
             $certificateDriveViewUrl = null;
+            $certificateDriveDownloadUrl = null;
             $endorsementId = null;
             $drive_file_id = null;
             $drive_view_url = null;
             $drive_download_url = null;
+            $drive_folder_id = null;
+            $drive_event_folder_id = null;
+            $drive_center_folder_id = null;
+            $drive_category_folder_id = null;
+            $drive_entry_folder_id = null;
             
-            // ========== FOR LOCAL IN-HOUSE: Upload ONLY Program and Certificate files ==========
+            // Generate paper trail number FIRST
+            $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
+            
+            // ========== FOR LOCAL IN-HOUSE ==========
             if ($isLocalInHouse) {
-                // Upload Program File (required)
+                // Upload Program File
                 if (!isset($_FILES['programFile']) || $_FILES['programFile']['error'] !== UPLOAD_ERR_OK) {
                     throw new Exception('Program file is required for Local In-House Review');
                 }
@@ -1099,18 +1109,19 @@ if (isset($_POST['uploadResearch'])) {
                 if (file_exists($tempProgramPath)) {
                     $programDriveResult = uploadResearchToDrive(
                         $tempProgramPath, $programFileName, $eventType, $center,
-                        $category, $author, $title, 'program', true, false, false, true
+                        $category, $author, $title, 'program', true, false, false, true, $paperTrailNo
                     );
                     
                     if ($programDriveResult && $programDriveResult['success']) {
                         $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
                         $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
+                        $programDriveDownloadUrl = $programDriveResult['drive_download_url'] ?? null;
                     } else {
                         throw new Exception("Program file upload failed: " . ($programDriveResult['error'] ?? 'Unknown error'));
                     }
                 }
                 
-                // Upload Certificate File (required)
+                // Upload Certificate File
                 if (!isset($_FILES['certificateFile']) || $_FILES['certificateFile']['error'] !== UPLOAD_ERR_OK) {
                     throw new Exception('Certificate file is required for Local In-House Review');
                 }
@@ -1121,22 +1132,22 @@ if (isset($_POST['uploadResearch'])) {
                 if (file_exists($tempCertificatePath)) {
                     $certificateDriveResult = uploadResearchToDrive(
                         $tempCertificatePath, $certificateFileName, $eventType, $center,
-                        $category, $author, $title, 'certificate', false, false, true, true
+                        $category, $author, $title, 'certificate', false, false, true, true, $paperTrailNo
                     );
                     
                     if ($certificateDriveResult && $certificateDriveResult['success']) {
                         $certificateDriveFileId = $certificateDriveResult['drive_file_id'] ?? null;
                         $certificateDriveViewUrl = $certificateDriveResult['drive_view_url'] ?? null;
+                        $certificateDriveDownloadUrl = $certificateDriveResult['drive_download_url'] ?? null;
                     } else {
                         throw new Exception("Certificate file upload failed: " . ($certificateDriveResult['error'] ?? 'Unknown error'));
                     }
                 }
-                
-                // NO endorsement and NO research file uploads for Local In-House
             
             } else {
-                // ========== FOR UNIVERSITY: Upload Endorsement and Research files ==========
-                // Upload Endorsement Letter (required)
+                // ========== FOR UNIVERSITY/SYMPOSIUM ==========
+                
+                // Upload Endorsement Letter
                 if (!isset($_FILES['uploadedFileEndorsement']) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
                     throw new Exception('Endorsement letter is required');
                 }
@@ -1156,7 +1167,8 @@ if (isset($_POST['uploadResearch'])) {
                     false,
                     true,
                     false,
-                    false
+                    false,
+                    $paperTrailNo
                 );
                 
                 if (!$endorsementDriveResult['success']) {
@@ -1166,7 +1178,7 @@ if (isset($_POST['uploadResearch'])) {
                 // Save endorsement to database
                 $defaultTime = date('Y-m-d H:i:s');
                 $query2 = "INSERT INTO endorsement (
-                    senderid, center, file, drive_file_id, drive_view_url, 
+                    senderid, center, campus, drive_file_id, drive_view_url, 
                     drive_download_url, drive_event_folder_id, drive_center_folder_id, 
                     drive_category_folder_id, drive_entry_folder_id, event, status, date
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -1176,22 +1188,27 @@ if (isset($_POST['uploadResearch'])) {
                     throw new Exception("Prepare failed for endorsement: " . $con->error);
                 }
                 
-                $endorsementFileJson = json_encode($endorsementDriveResult);
                 $drive_event_folder_id = $endorsementDriveResult['drive_event_folder_id'] ?? null;
                 $drive_center_folder_id = $endorsementDriveResult['drive_center_folder_id'] ?? null;
                 $drive_category_folder_id = $endorsementDriveResult['drive_category_folder_id'] ?? null;
-                $drive_entry_folder_id = $endorsementDriveResult['drive_entry_folder_id'] ?? null;
+                $drive_entry_folder_id = $endorsementDriveResult['entry_folder_id'] ?? null;
                 $endorsementStatus = null;
                 
                 $stateM->bind_param(
-                    'sssssssssssss',
-                    $senderId, $center, $endorsementFileJson,
+                    'issssssssssss',
+                    $senderId,
+                    $center,
+                    $campus,
                     $endorsementDriveResult['drive_file_id'],
                     $endorsementDriveResult['drive_view_url'],
                     $endorsementDriveResult['drive_download_url'],
-                    $drive_event_folder_id, $drive_center_folder_id,
-                    $drive_category_folder_id, $drive_entry_folder_id,
-                    $eventType, $endorsementStatus, $defaultTime
+                    $drive_event_folder_id,
+                    $drive_center_folder_id,
+                    $drive_category_folder_id,
+                    $drive_entry_folder_id,
+                    $eventType,
+                    $endorsementStatus,
+                    $defaultTime
                 );
                 
                 if (!$stateM->execute()) {
@@ -1200,8 +1217,9 @@ if (isset($_POST['uploadResearch'])) {
                 
                 $endorsementId = $con->insert_id;
                 $stateM->close();
+                error_log("Endorsement saved with ID: $endorsementId");
                 
-                // Upload Research File (required)
+                // Upload Research File
                 if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
                     throw new Exception('Research file is required');
                 }
@@ -1215,7 +1233,7 @@ if (isset($_POST['uploadResearch'])) {
                 
                 $researchDriveResult = uploadResearchToDrive(
                     $tempResearchPath, $researchFileName, $eventType, $center,
-                    $category, $author, $title, 'research', false, false, false, false
+                    $category, $author, $title, 'research', false, false, false, false, $paperTrailNo
                 );
                 
                 if (!$researchDriveResult['success']) {
@@ -1225,19 +1243,22 @@ if (isset($_POST['uploadResearch'])) {
                 $drive_file_id = $researchDriveResult['drive_file_id'] ?? null;
                 $drive_view_url = $researchDriveResult['drive_view_url'] ?? null;
                 $drive_download_url = $researchDriveResult['drive_download_url'] ?? null;
+                $drive_folder_id = $researchDriveResult['drive_folder_id'] ?? null;
+                $drive_event_folder_id = $researchDriveResult['drive_event_folder_id'] ?? null;
+                $drive_center_folder_id = $researchDriveResult['drive_center_folder_id'] ?? null;
+                $drive_category_folder_id = $researchDriveResult['drive_category_folder_id'] ?? null;
+                $drive_entry_folder_id = $researchDriveResult['entry_folder_id'] ?? null;
             }
             
-            // Generate paper trail number
-            $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
-            
-            // Insert research file record (using ONLY existing columns from your table)
+            // Insert research file record - COUNT THE ? PLACEHOLDERS: 28 total
             $querV2 = "INSERT INTO researchfile(
                 paper_trail_no, senderid, endorsementid, event_id, author, coauthor, presenter,
                 date_started, date_completed, title, final_symposium_title, event, status,
                 category, center, campus, drive_file_id, drive_view_url, drive_download_url,
-                program_drive_file_id, program_drive_view_url, certificate_drive_file_id, 
-                certificate_drive_view_url, title_changed
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                drive_folder_id, drive_event_folder_id, drive_center_folder_id, drive_category_folder_id,
+                drive_entry_folder_id, program_drive_file_id, program_drive_view_url, 
+                certificate_drive_file_id, certificate_drive_view_url, title_changed
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stementResNew = $con->prepare($querV2);
             if (!$stementResNew) {
@@ -1246,13 +1267,38 @@ if (isset($_POST['uploadResearch'])) {
             
             $rev = 'pending';
             
+            // 29 variables to match 29 placeholders
             $stementResNew->bind_param(
-                'siississsssssssssssssssi',
-                $paperTrailNo, $senderId, $endorsementId, $eventId, $author, $coAuthor, $presenter,
-                $date_started, $date_completed, $title, $finalSymposiumTitle, $eventType, $rev,
-                $category, $center, $campus, $drive_file_id, $drive_view_url, $drive_download_url,
-                $programDriveFileId, $programDriveViewUrl, $certificateDriveFileId, $certificateDriveViewUrl,
-                $title_changed
+                'siississsssssssssssssssssssii',  // 29
+                $paperTrailNo,    
+                $senderId,         
+                $endorsementId,     
+                $eventId,          
+                $author,            
+                $coAuthor,        
+                $presenter,        
+                $date_started,      
+                $date_completed,    
+                $title,            
+                $finalSymposiumTitle, 
+                $eventType,       
+                $rev,              
+                $category,         
+                $center,          
+                $campus,         
+                $drive_file_id,     
+                $drive_view_url,    
+                $drive_download_url, 
+                $drive_folder_id, 
+                $drive_event_folder_id, 
+                $drive_center_folder_id, 
+                $drive_category_folder_id, 
+                $drive_entry_folder_id, 
+                $programDriveFileId, 
+                $programDriveViewUrl, 
+                $certificateDriveFileId, 
+                $certificateDriveViewUrl, 
+                $title_changed      
             );
             
             if (!$stementResNew->execute()) {
@@ -1265,12 +1311,14 @@ if (isset($_POST['uploadResearch'])) {
             $response->paper_trail_no = $paperTrailNo;
             $response->researchId = $researchId;
             
-            // Return file URLs for the second API call (Local In-House only)
+            // Return file URLs for Local In-House
             if ($isLocalInHouse) {
                 $response->programDriveFileId = $programDriveFileId;
                 $response->programDriveViewUrl = $programDriveViewUrl;
+                $response->programDriveDownloadUrl = $programDriveDownloadUrl;
                 $response->certificateDriveFileId = $certificateDriveFileId;
                 $response->certificateDriveViewUrl = $certificateDriveViewUrl;
+                $response->certificateDriveDownloadUrl = $certificateDriveDownloadUrl;
             }
             
             $stementResNew->close();
@@ -1303,9 +1351,25 @@ if (isset($_POST['saveLocalInhouse'])) {
             throw new Exception("Database connection failed: " . $con->connect_error);
         }
 
-        // Get form data
-        $eventId = isset($_POST['eventId']) ? (int)$_POST['eventId'] : 0;
-        $eventName = $_POST['eventName'] ?? '';
+        // Get research_id from POST (this is the foreign key)
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+        
+        if ($researchId <= 0) {
+            throw new Exception("Invalid research_id. Researchfile record must exist first.");
+        }
+
+        // Verify the research_id exists in researchfile table
+        $checkStmt = $con->prepare("SELECT id FROM researchfile WHERE id = ?");
+        $checkStmt->bind_param('i', $researchId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        
+        if ($checkResult->num_rows === 0) {
+            throw new Exception("Researchfile with ID {$researchId} does not exist.");
+        }
+        $checkStmt->close();
+
+        // Get form data (NO FILE UPLOADS HERE - only URLs from the first API call)
         $documentTitle = trim($_POST['document_title'] ?? '');
         $campus = trim($_POST['campus'] ?? '');
         $category = trim($_POST['category'] ?? '');
@@ -1313,58 +1377,21 @@ if (isset($_POST['saveLocalInhouse'])) {
         $mainAuthor = trim($_POST['main_author'] ?? '');
         $presenter = trim($_POST['presenter'] ?? '');
         $coAuthors = $_POST['co_authors'] ?? '[]';
-        $senderId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 0;
+        
+        // Get file URLs from POST (passed from first API call)
+        $programFileViewUrl = $_POST['program_file_view_url'] ?? '';
+        $programFileDownloadUrl = $_POST['program_file_download_url'] ?? '';
+        $certificateFileViewUrl = $_POST['certificate_file_view_url'] ?? '';
+        $certificateFileDownloadUrl = $_POST['certificate_file_download_url'] ?? '';
 
-        // Upload Program File to Google Drive
-        if (!isset($_FILES['programFile']) || $_FILES['programFile']['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception("Program file is required");
-        }
-        
-        $programDriveResult = uploadResearchToDrive(
-            $_FILES['programFile']['tmp_name'],
-            $_FILES['programFile']['name'],
-            $eventName,
-            $center,
-            $category,
-            $mainAuthor,
-            $documentTitle,
-            'program',
-            true,
-            false,
-            false,
-            true
-        );
-        
-        if (!$programDriveResult['success']) {
-            throw new Exception("Program file upload failed: " . ($programDriveResult['error'] ?? 'Unknown error'));
-        }
-        
-        // Upload Certificate File to Google Drive
-        if (!isset($_FILES['certificateFile']) || $_FILES['certificateFile']['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception("Certificate file is required");
-        }
-        
-        $certificateDriveResult = uploadResearchToDrive(
-            $_FILES['certificateFile']['tmp_name'],
-            $_FILES['certificateFile']['name'],
-            $eventName,
-            $center,
-            $category,
-            $mainAuthor,
-            $documentTitle,
-            'certificate',
-            false,
-            false,
-            true,
-            true
-        );
-        
-        if (!$certificateDriveResult['success']) {
-            throw new Exception("Certificate file upload failed: " . ($certificateDriveResult['error'] ?? 'Unknown error'));
+        // Validate required fields
+        if (empty($documentTitle) || empty($mainAuthor) || empty($category) || empty($center) || empty($campus)) {
+            throw new Exception("Missing required fields for Local In-House Review");
         }
 
-        // ===== INSERT INTO local_inhouse table (without title_changed) =====
+        // ===== INSERT INTO local_inhouse table (NO FILE UPLOADS) =====
         $query = "INSERT INTO local_inhouse (
+            research_id,
             document_title, 
             campus, 
             category, 
@@ -1377,20 +1404,16 @@ if (isset($_POST['saveLocalInhouse'])) {
             certificate_file_view_url,  
             certificate_file_download_url,
             created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         $stmt = $con->prepare($query);
         if (!$stmt) {
             throw new Exception("Prepare failed: " . $con->error);
         }
 
-        $programViewUrl = $programDriveResult['drive_view_url'] ?? null;
-        $programDownloadUrl = $programDriveResult['drive_download_url'] ?? null;
-        $certificateViewUrl = $certificateDriveResult['drive_view_url'] ?? null;
-        $certificateDownloadUrl = $certificateDriveResult['drive_download_url'] ?? null;
-
         $stmt->bind_param(
-            'sssssssssss',
+            'isssssssssss',
+            $researchId,
             $documentTitle, 
             $campus, 
             $category, 
@@ -1398,10 +1421,10 @@ if (isset($_POST['saveLocalInhouse'])) {
             $mainAuthor, 
             $presenter, 
             $coAuthors,
-            $programViewUrl, 
-            $programDownloadUrl,
-            $certificateViewUrl, 
-            $certificateDownloadUrl
+            $programFileViewUrl, 
+            $programFileDownloadUrl,
+            $certificateFileViewUrl, 
+            $certificateFileDownloadUrl
         );
 
         if (!$stmt->execute()) {
