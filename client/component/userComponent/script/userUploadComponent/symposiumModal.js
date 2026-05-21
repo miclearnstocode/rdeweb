@@ -1305,7 +1305,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
     };
 
     const createStep2Content = () => {
-        const container = $({ tag: 'div' });
+        const container = $({ tag: 'div' })
 
         // Info box
         const infoBox = $({
@@ -1334,8 +1334,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     ]
                 })
             ]
-        });
-        container.appendChild(infoBox);
+        })
+        container.appendChild(infoBox)
 
         // Display In-House title for reference (dynamic based on selection)
         const refSection = $({
@@ -1350,11 +1350,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 $({ tag: 'div', text: 'In-House Review Title:', style: { color: '#888', fontSize: '12px', marginBottom: '4px' } }),
                 $({ tag: 'div', text: '—', style: { color: '#fff', fontSize: '14px', fontWeight: '500' }, att: { id: 'refInhouseTitle' } })
             ]
-        });
-        container.appendChild(refSection);
+        })
+        container.appendChild(refSection)
 
         // Title change checkbox
-        const checkboxSection = $({ tag: 'div', style: { marginBottom: '24px' } });
+        const checkboxSection = $({ tag: 'div', style: { marginBottom: '24px' } })
 
         const checkboxLabel = $({
             tag: 'label',
@@ -1367,29 +1367,29 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     event: {
                         type: 'change',
                         method: (e) => {
-                            formData.title_changed = e.target.checked;
-                            newTitleContainer.style.display = formData.title_changed ? 'block' : 'none';
+                            formData.title_changed = e.target.checked
+                            newTitleContainer.style.display = formData.title_changed ? 'block' : 'none'
                         }
                     }
                 }),
                 $({ tag: 'span', text: 'Has the research title changed for the Symposium?', style: { color: '#fff', fontSize: '14px' } })
             ]
-        });
-        checkboxSection.appendChild(checkboxLabel);
-        container.appendChild(checkboxSection);
+        })
+        checkboxSection.appendChild(checkboxLabel)
+        container.appendChild(checkboxSection)
 
         // New title field
-        const newTitleContainer = $({ tag: 'div', style: { display: 'none', marginBottom: '24px' } });
+        const newTitleContainer = $({ tag: 'div', style: { display: 'none', marginBottom: '24px' } })
         newTitleContainer.appendChild($({
             tag: 'label',
             text: 'New Research Title for Symposium *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
         newTitleContainer.appendChild($({
             tag: 'div',
             text: 'This will be saved as the Final Symposium Title',
             style: { color: '#888', fontSize: '12px', marginBottom: '8px' }
-        }));
+        }))
 
         const newTitleInput = $({
             tag: 'input',
@@ -1405,125 +1405,125 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             },
             event: {
                 type: 'input',
-                method: (e) => { formData.new_title = e.target.value; }
+                method: (e) => { formData.new_title = e.target.value }
             }
-        });
-        newTitleContainer.appendChild(newTitleInput);
-        container.appendChild(newTitleContainer);
+        })
+        newTitleContainer.appendChild(newTitleInput)
+        container.appendChild(newTitleContainer)
 
         container.__validate = () => {
             if (formData.title_changed && (!formData.new_title || formData.new_title.trim() === '')) {
-                ConfirmationAlert('Please enter the new research title for the Symposium', () => { });
-                return false;
+                ConfirmationAlert('Please enter the new research title for the Symposium', () => { })
+                return false
             }
-            return true;
-        };
+            return true
+        }
 
         const updateReference = () => {
-            const refEl = refSection.querySelector('#refInhouseTitle');
+            const refEl = refSection.querySelector('#refInhouseTitle')
             if (refEl) {
                 if (formData.presentation_type === 'local') {
-                    refEl.innerText = formData.local_title || '—';
+                    refEl.innerText = formData.local_title || '—'
                 } else if (formData.presentation_type === 'university') {
                     if (formData.selected_university_review) {
-                        refEl.innerText = formData.selected_university_review.title || '—';
+                        refEl.innerText = formData.selected_university_review.title || '—'
                     } else {
-                        refEl.innerText = formData.university_title || '—';
+                        refEl.innerText = formData.university_title || '—'
                     }
                 }
             }
-        };
+        }
 
-        container.__updateReference = updateReference;
+        container.__updateReference = updateReference
 
-        return container;
-    };
+        return container
+    }
 
     const createStep3Content = () => {
-        const container = $({ tag: 'div' });
+        const container = $({ tag: 'div' })
 
         // Store references to fields for dynamic updates
-        let categorySelect, centerSelect, authorInput, presenterInput, coAuthorContainer;
-        let dateStartedField, dateCompletedField;
-        let campusSelect; // Changed from campusField to campusSelect
+        let categorySelect, centerSelect, authorInput, presenterInput, coAuthorContainer
+        let dateStartedField, dateCompletedField
+        let campusSelect // Changed from campusField to campusSelect
 
         // Function to auto-fill from selected university in-house review
         const autoFillFromUniversityReview = (selectedReview) => {
-            if (!selectedReview) return;
+            if (!selectedReview) return
 
             // Auto-fill Category
             if (selectedReview.category && categorySelect) {
-                const categorySelectEl = categorySelect.querySelector('select');
+                const categorySelectEl = categorySelect.querySelector('select')
                 if (categorySelectEl) {
-                    categorySelectEl.value = selectedReview.category;
-                    formData.category = selectedReview.category;
+                    categorySelectEl.value = selectedReview.category
+                    formData.category = selectedReview.category
                     // Trigger change to update centers
-                    const changeEvent = new Event('change');
-                    categorySelectEl.dispatchEvent(changeEvent);
+                    const changeEvent = new Event('change')
+                    categorySelectEl.dispatchEvent(changeEvent)
                 }
             }
 
             // Auto-fill Center (need to wait for category change to populate centers)
             setTimeout(() => {
                 if (selectedReview.center && centerSelect) {
-                    const centerSelectEl = centerSelect.querySelector('select');
+                    const centerSelectEl = centerSelect.querySelector('select')
                     if (centerSelectEl) {
-                        centerSelectEl.value = selectedReview.center;
-                        formData.center = selectedReview.center;
+                        centerSelectEl.value = selectedReview.center
+                        formData.center = selectedReview.center
                     }
                 }
-            }, 100);
+            }, 100)
 
             // Auto-fill Author
             if (selectedReview.author && authorInput) {
-                const authorInputEl = authorInput.querySelector('input');
+                const authorInputEl = authorInput.querySelector('input')
                 if (authorInputEl) {
-                    authorInputEl.value = selectedReview.author;
-                    formData.author = selectedReview.author;
+                    authorInputEl.value = selectedReview.author
+                    formData.author = selectedReview.author
                 }
             }
 
             // Auto-fill Co-authors
             if (selectedReview.coauthors && selectedReview.coauthors.length > 0 && coAuthorContainer) {
-                formData.coAuthors = [...selectedReview.coauthors];
-                updateCoAuthorList();
-                console.log('Auto-filled co-authors:', formData.coAuthors);
+                formData.coAuthors = [...selectedReview.coauthors]
+                updateCoAuthorList()
+                console.log('Auto-filled co-authors:', formData.coAuthors)
             }
 
             // Auto-fill Campus if available
             if (selectedReview.campus && campusSelect) {
-                const campusSelectEl = campusSelect.querySelector('select');
+                const campusSelectEl = campusSelect.querySelector('select')
                 if (campusSelectEl) {
-                    campusSelectEl.value = selectedReview.campus;
-                    formData.campus = selectedReview.campus;
+                    campusSelectEl.value = selectedReview.campus
+                    formData.campus = selectedReview.campus
                 }
             }
 
             // Auto-fill Date Started if available
             if (selectedReview.date_started && dateStartedField) {
-                const dateStartedEl = dateStartedField.querySelector('input');
+                const dateStartedEl = dateStartedField.querySelector('input')
                 if (dateStartedEl) {
-                    dateStartedEl.value = selectedReview.date_started;
-                    formData.date_started = selectedReview.date_started;
+                    dateStartedEl.value = selectedReview.date_started
+                    formData.date_started = selectedReview.date_started
                 }
             }
 
             // Auto-fill Date Completed if available
             if (selectedReview.date_completed && dateCompletedField) {
-                const dateCompletedEl = dateCompletedField.querySelector('input');
+                const dateCompletedEl = dateCompletedField.querySelector('input')
                 if (dateCompletedEl) {
-                    dateCompletedEl.value = selectedReview.date_completed;
-                    formData.date_completed = selectedReview.date_completed;
+                    dateCompletedEl.value = selectedReview.date_completed
+                    formData.date_completed = selectedReview.date_completed
                 }
             }
-        };
+        }
 
         // Function to update co-author list display
         const updateCoAuthorList = () => {
-            if (!coAuthorContainer) return;
-            const listContainer = coAuthorContainer.querySelector('.coauthor-list');
-            if (!listContainer) return;
-            listContainer.innerHTML = '';
+            if (!coAuthorContainer) return
+            const listContainer = coAuthorContainer.querySelector('.coauthor-list')
+            if (!listContainer) return
+            listContainer.innerHTML = ''
             formData.coAuthors.forEach((author, idx) => {
                 const tag = $({
                     tag: 'div',
@@ -1545,45 +1545,45 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                             event: {
                                 type: 'click',
                                 method: () => {
-                                    formData.coAuthors.splice(idx, 1);
-                                    updateCoAuthorList();
+                                    formData.coAuthors.splice(idx, 1)
+                                    updateCoAuthorList()
                                 }
                             }
                         })
                     ]
-                });
-                listContainer.appendChild(tag);
-            });
-        };
+                })
+                listContainer.appendChild(tag)
+            })
+        }
 
         // Function to update centers based on selected category
         const updateCenters = (category) => {
-            const centers = categoryToCenters[category] || Object.keys(centerCategoryMapping);
-            const selectEl = centerSelect.querySelector('select');
+            const centers = categoryToCenters[category] || Object.keys(centerCategoryMapping)
+            const selectEl = centerSelect.querySelector('select')
             if (selectEl) {
-                const currentValue = selectEl.value;
-                selectEl.innerHTML = '';
-                selectEl.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }));
+                const currentValue = selectEl.value
+                selectEl.innerHTML = ''
+                selectEl.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
                 centers.forEach(center => {
-                    selectEl.appendChild($({ tag: 'option', text: center, att: { value: center } }));
-                });
+                    selectEl.appendChild($({ tag: 'option', text: center, att: { value: center } }))
+                })
                 if (currentValue && centers.includes(currentValue)) {
-                    selectEl.value = currentValue;
-                    formData.center = currentValue;
+                    selectEl.value = currentValue
+                    formData.center = currentValue
                 } else {
-                    formData.center = '';
+                    formData.center = ''
                 }
             }
-        };
+        }
 
         // ========== CREATE CAMPUS DROPDOWN (matching Step 1) ==========
         const createCampusDropdown = () => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } });
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: 'Campus *',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }));
+            }))
             
             const select = $({
                 tag: 'select',
@@ -1599,30 +1599,30 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 event: {
                     type: 'change',
                     method: (e) => {
-                        formData.campus = e.target.value;
+                        formData.campus = e.target.value
                     }
                 },
                 elementHandler: (el) => {
-                    const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz'];
-                    el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true } }));
+                    const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz']
+                    el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true } }))
                     campuses.forEach(campus => {
-                        el.appendChild($({ tag: 'option', text: campus, att: { value: campus } }));
-                    });
+                        el.appendChild($({ tag: 'option', text: campus, att: { value: campus } }))
+                    })
                 }
-            });
+            })
             
-            container.appendChild(select);
-            return container;
-        };
+            container.appendChild(select)
+            return container
+        }
 
         // ========== CREATE CATEGORY DROPDOWN ==========
         const createCategoryDropdown = () => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } });
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: 'Category *',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }));
+            }))
             
             const select = $({
                 tag: 'select',
@@ -1638,31 +1638,31 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 event: {
                     type: 'change',
                     method: (e) => {
-                        formData.category = e.target.value;
-                        updateCenters(e.target.value);
+                        formData.category = e.target.value
+                        updateCenters(e.target.value)
                     }
                 },
                 elementHandler: (el) => {
-                    el.innerHTML = '';
-                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }));
+                    el.innerHTML = ''
+                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
                     categories.forEach(cat => {
-                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }));
-                    });
+                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
+                    })
                 }
-            });
+            })
             
-            container.appendChild(select);
-            return container;
-        };
+            container.appendChild(select)
+            return container
+        }
 
         // ========== CREATE CENTER DROPDOWN ==========
         const createCenterDropdown = () => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } });
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: 'Center *',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }));
+            }))
             
             const select = $({
                 tag: 'select',
@@ -1678,27 +1678,27 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 event: {
                     type: 'change',
                     method: (e) => {
-                        formData.center = e.target.value;
+                        formData.center = e.target.value
                     }
                 },
                 elementHandler: (el) => {
-                    el.innerHTML = '';
-                    el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }));
+                    el.innerHTML = ''
+                    el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
                 }
-            });
+            })
             
-            container.appendChild(select);
-            return container;
-        };
+            container.appendChild(select)
+            return container
+        }
 
         // ========== CREATE TEXT FIELD ==========
         const createTextField = (label, placeholder, onInput) => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } });
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: label,
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }));
+            }))
             const input = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: placeholder },
@@ -1712,19 +1712,19 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     fontSize: '14px'
                 },
                 event: { type: 'input', method: onInput }
-            });
-            container.appendChild(input);
-            return container;
-        };
+            })
+            container.appendChild(input)
+            return container
+        }
 
         // ========== CREATE DATE FIELD ==========
         const createDateField = (label, onChange) => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } });
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: label,
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }));
+            }))
             const input = $({
                 tag: 'input',
                 att: { type: 'date' },
@@ -1738,21 +1738,21 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     fontSize: '14px'
                 },
                 event: { type: 'change', method: onChange }
-            });
-            container.appendChild(input);
-            return container;
-        };
+            })
+            container.appendChild(input)
+            return container
+        }
 
         // ========== CREATE CO-AUTHOR FIELD ==========
         const createCoAuthorField = (updateCoAuthorListFn) => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } });
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: 'Co-Authors',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }));
+            }))
 
-            const inputGroup = $({ tag: 'div', style: { display: 'flex', gap: '10px', marginBottom: '12px' } });
+            const inputGroup = $({ tag: 'div', style: { display: 'flex', gap: '10px', marginBottom: '12px' } })
             const input = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: 'Enter co-author name' },
@@ -1765,7 +1765,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     color: '#fff',
                     fontSize: '14px'
                 }
-            });
+            })
             const addBtn = $({
                 tag: 'button',
                 text: 'Add',
@@ -1781,38 +1781,38 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 event: {
                     type: 'click',
                     method: () => {
-                        const name = input.value.trim();
+                        const name = input.value.trim()
                         if (name) {
-                            formData.coAuthors.push(name);
-                            updateCoAuthorListFn();
-                            input.value = '';
+                            formData.coAuthors.push(name)
+                            updateCoAuthorListFn()
+                            input.value = ''
                         }
                     }
                 }
-            });
+            })
 
             const listContainer = $({
                 tag: 'div',
                 style: { display: 'flex', flexWrap: 'wrap', gap: '8px' },
                 att: { className: 'coauthor-list' }
-            });
+            })
 
-            inputGroup.appendChild(input);
-            inputGroup.appendChild(addBtn);
-            container.appendChild(inputGroup);
-            container.appendChild(listContainer);
+            inputGroup.appendChild(input)
+            inputGroup.appendChild(addBtn)
+            container.appendChild(inputGroup)
+            container.appendChild(listContainer)
 
-            return container;
-        };
+            return container
+        }
 
         // ========== CREATE FILE UPLOAD FIELD ==========
         const createFileUploadField = (label, fieldName) => {
-            const container = $({ tag: 'div' });
+            const container = $({ tag: 'div' })
             container.appendChild($({
                 tag: 'label',
                 text: label,
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }));
+            }))
 
             const uploadArea = $({
                 tag: 'div',
@@ -1829,17 +1829,17 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     type: 'click',
                     method: () => fileInput.click()
                 }
-            });
+            })
 
             uploadArea.appendChild($({
                 tag: 'i',
                 att: { className: 'fas fa-cloud-upload-alt' },
                 style: { fontSize: '32px', color: '#666', marginBottom: '8px', display: 'block' }
-            }));
-            uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#888', fontSize: '14px' } }));
-            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', style: { color: '#666', fontSize: '12px', marginTop: '4px' } }));
+            }))
+            uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#888', fontSize: '14px' } }))
+            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', style: { color: '#666', fontSize: '12px', marginTop: '4px' } }))
 
-            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '8px', fontSize: '12px', color: '#4caf50', textAlign: 'center' } });
+            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '8px', fontSize: '12px', color: '#4caf50', textAlign: 'center' } })
 
             const fileInput = $({
                 tag: 'input',
@@ -1847,36 +1847,36 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 event: {
                     type: 'change',
                     method: (e) => {
-                        const file = e.target.files[0];
+                        const file = e.target.files[0]
                         if (file) {
                             if (file.type !== 'application/pdf') {
-                                ConfirmationAlert('Please select a valid PDF file', () => { });
-                                fileInput.value = '';
-                                return;
+                                ConfirmationAlert('Please select a valid PDF file', () => { })
+                                fileInput.value = ''
+                                return
                             }
                             if (file.size > 10 * 1024 * 1024) {
-                                ConfirmationAlert('File size exceeds 10MB limit', () => { });
-                                fileInput.value = '';
-                                return;
+                                ConfirmationAlert('File size exceeds 10MB limit', () => { })
+                                fileInput.value = ''
+                                return
                             }
-                            formData[fieldName] = file;
-                            fileNameDisplay.innerText = `✓ Selected: ${file.name}`;
+                            formData[fieldName] = file
+                            fileNameDisplay.innerText = `✓ Selected: ${file.name}`
                         }
                     }
                 }
-            });
+            })
 
-            container.appendChild(uploadArea);
-            container.appendChild(fileNameDisplay);
-            container.appendChild(fileInput);
+            container.appendChild(uploadArea)
+            container.appendChild(fileNameDisplay)
+            container.appendChild(fileInput)
 
-            return container;
-        };
+            return container
+        }
 
         const formBody = $({
             tag: 'div',
             style: { padding: '24px' }
-        });
+        })
         
         // Two column layout
         const twoColumnLayout = $({
@@ -1887,27 +1887,27 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 gap: '20px',
                 marginBottom: '20px'
             }
-        });
+        })
 
         // Create all fields
-        campusSelect = createCampusDropdown();
-        categorySelect = createCategoryDropdown();
-        centerSelect = createCenterDropdown();
-        authorInput = createTextField('Main Author *', 'Enter main author name', (e) => { formData.author = e.target.value; });
-        presenterInput = createTextField('Presenter *', 'Enter presenter name', (e) => { formData.presenter = e.target.value; });
-        coAuthorContainer = createCoAuthorField(updateCoAuthorList);
-        dateStartedField = createDateField('Date Started *', (e) => { formData.date_started = e.target.value; });
-        dateCompletedField = createDateField('Date Completed *', (e) => { formData.date_completed = e.target.value; });
+        campusSelect = createCampusDropdown()
+        categorySelect = createCategoryDropdown()
+        centerSelect = createCenterDropdown()
+        authorInput = createTextField('Main Author *', 'Enter main author name', (e) => { formData.author = e.target.value })
+        presenterInput = createTextField('Presenter *', 'Enter presenter name', (e) => { formData.presenter = e.target.value })
+        coAuthorContainer = createCoAuthorField(updateCoAuthorList)
+        dateStartedField = createDateField('Date Started *', (e) => { formData.date_started = e.target.value })
+        dateCompletedField = createDateField('Date Completed *', (e) => { formData.date_completed = e.target.value })
 
-        twoColumnLayout.appendChild(campusSelect);
-        twoColumnLayout.appendChild(categorySelect);
-        twoColumnLayout.appendChild(centerSelect); 
-        twoColumnLayout.appendChild(authorInput);
-        twoColumnLayout.appendChild(presenterInput);
-        twoColumnLayout.appendChild(coAuthorContainer);
-        twoColumnLayout.appendChild(dateStartedField);
-        twoColumnLayout.appendChild(dateCompletedField);
-        container.appendChild(twoColumnLayout);
+        twoColumnLayout.appendChild(campusSelect)
+        twoColumnLayout.appendChild(categorySelect)
+        twoColumnLayout.appendChild(centerSelect) 
+        twoColumnLayout.appendChild(authorInput)
+        twoColumnLayout.appendChild(presenterInput)
+        twoColumnLayout.appendChild(coAuthorContainer)
+        twoColumnLayout.appendChild(dateStartedField)
+        twoColumnLayout.appendChild(dateCompletedField)
+        container.appendChild(twoColumnLayout)
 
         // File upload sections
         const fileSection = $({
@@ -1917,9 +1917,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 paddingTop: '20px',
                 borderTop: '1px solid rgba(255,255,255,0.1)'
             }
-        });
+        })
 
-        fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#fff', marginBottom: '16px', fontSize: '16px' } }));
+        fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#fff', marginBottom: '16px', fontSize: '16px' } }))
 
         const fileGrid = $({
             tag: 'div',
@@ -1928,67 +1928,67 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 gridTemplateColumns: '1fr 1fr',
                 gap: '20px'
             }
-        });
+        })
 
-        const researchFileField = createFileUploadField('Completed Research File *', 'researchFile');
-        const endorsementFileField = createFileUploadField('Endorsement Letter *', 'endorsementFile');
+        const researchFileField = createFileUploadField('Completed Research File *', 'researchFile')
+        const endorsementFileField = createFileUploadField('Endorsement Letter *', 'endorsementFile')
 
-        fileGrid.appendChild(researchFileField);
-        fileGrid.appendChild(endorsementFileField);
-        fileSection.appendChild(fileGrid);
-        container.appendChild(fileSection);
+        fileGrid.appendChild(researchFileField)
+        fileGrid.appendChild(endorsementFileField)
+        fileSection.appendChild(fileGrid)
+        container.appendChild(fileSection)
 
         // Store field references
         container.fields = {
             campusSelect, categorySelect, centerSelect, authorInput, presenterInput,
             dateStartedField, dateCompletedField, researchFileField, endorsementFileField, coAuthorContainer
-        };
+        }
 
         // Store auto-fill function for external access
-        container.autoFillFromUniversityReview = autoFillFromUniversityReview;
+        container.autoFillFromUniversityReview = autoFillFromUniversityReview
 
         container.__validate = () => {
             if (!formData.campus || formData.campus.trim() === '') {
-                ConfirmationAlert('Please select the campus/location', () => { });
-                return false;
+                ConfirmationAlert('Please select the campus/location', () => { })
+                return false
             }
             if (!formData.category) {
-                ConfirmationAlert('Please select a category', () => { });
-                return false;
+                ConfirmationAlert('Please select a category', () => { })
+                return false
             }
             if (!formData.center) {
-                ConfirmationAlert('Please select a center', () => { });
-                return false;
+                ConfirmationAlert('Please select a center', () => { })
+                return false
             }
             if (!formData.author || formData.author.trim() === '') {
-                ConfirmationAlert('Please enter the main author name', () => { });
-                return false;
+                ConfirmationAlert('Please enter the main author name', () => { })
+                return false
             }
             if (!formData.presenter || formData.presenter.trim() === '') {
-                ConfirmationAlert('Please enter the presenter name', () => { });
-                return false;
+                ConfirmationAlert('Please enter the presenter name', () => { })
+                return false
             }
             if (!formData.date_started) {
-                ConfirmationAlert('Please select the date started', () => { });
-                return false;
+                ConfirmationAlert('Please select the date started', () => { })
+                return false
             }
             if (!formData.date_completed) {
-                ConfirmationAlert('Please select the date completed', () => { });
-                return false;
+                ConfirmationAlert('Please select the date completed', () => { })
+                return false
             }
             if (!formData.researchFile) {
-                ConfirmationAlert('Please upload the completed research file', () => { });
-                return false;
+                ConfirmationAlert('Please upload the completed research file', () => { })
+                return false
             }
             if (!formData.endorsementFile) {
-                ConfirmationAlert('Please upload the endorsement letter', () => { });
-                return false;
+                ConfirmationAlert('Please upload the endorsement letter', () => { })
+                return false
             }
-            return true;
-        };
+            return true
+        }
 
-        return container;
-    };
+        return container
+    }
 
     const createTextField = (label, placeholder, onInput) => {
         const container = $({ tag: 'div', style: { marginBottom: '0' } })
@@ -2181,46 +2181,46 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
     }
 
     const navigateStep = (delta) => {
-        const newStep = currentStep + delta;
-        if (newStep < 1 || newStep > 3) return;
+        const newStep = currentStep + delta
+        if (newStep < 1 || newStep > 3) return
 
         // Validate current step before proceeding
         if (delta === 1 && stepContents[currentStep - 1].__validate) {
-            if (!stepContents[currentStep - 1].__validate()) return;
+            if (!stepContents[currentStep - 1].__validate()) return
         }
 
         // Update step 2 reference if coming from step 1
         if (delta === 1 && currentStep === 1 && stepContents[1].__updateReference) {
-            stepContents[1].__updateReference();
+            stepContents[1].__updateReference()
         }
 
-        stepContents[currentStep - 1].style.display = 'none';
-        currentStep = newStep;
-        stepContents[currentStep - 1].style.display = 'block';
+        stepContents[currentStep - 1].style.display = 'none'
+        currentStep = newStep
+        stepContents[currentStep - 1].style.display = 'block'
 
         // Update step indicators
         for (let i = 1; i <= 3; i++) {
-            const circle = document.querySelector(`.step-circle-${i}`);
-            const text = document.querySelector(`.step-text-${i}`);
+            const circle = document.querySelector(`.step-circle-${i}`)
+            const text = document.querySelector(`.step-text-${i}`)
             if (circle) {
-                circle.style.backgroundColor = i <= currentStep ? '#2196F3' : '#333';
+                circle.style.backgroundColor = i <= currentStep ? '#2196F3' : '#333'
             }
             if (text) {
-                text.style.color = i <= currentStep ? '#2196F3' : '#666';
+                text.style.color = i <= currentStep ? '#2196F3' : '#666'
             }
         }
 
         // Update buttons
-        const prevBtn = document.querySelector('.footer-prev');
-        const nextBtn = document.querySelector('.footer-next');
-        const submitBtn = document.querySelector('.footer-submit');
+        const prevBtn = document.querySelector('.footer-prev')
+        const nextBtn = document.querySelector('.footer-next')
+        const submitBtn = document.querySelector('.footer-submit')
 
-        if (prevBtn) prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
-        if (nextBtn) nextBtn.style.display = currentStep === 3 ? 'none' : 'block';
-        if (submitBtn) submitBtn.style.display = currentStep === 3 ? 'block' : 'none';
-    };
+        if (prevBtn) prevBtn.style.display = currentStep === 1 ? 'none' : 'block'
+        if (nextBtn) nextBtn.style.display = currentStep === 3 ? 'none' : 'block'
+        if (submitBtn) submitBtn.style.display = currentStep === 3 ? 'block' : 'none'
+    }
 
-    const handleNext = () => navigateStep(1);
+    const handleNext = () => navigateStep(1)
 
     const submitSymposium = async () => {
         // Validate final step (only for university type)
