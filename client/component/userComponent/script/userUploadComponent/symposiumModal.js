@@ -293,7 +293,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 fontWeight: '500',
                 display: 'none'
             },
-            att: { className: 'footer-prev' },
+            att: { className: 'footer-prev', type: 'button' },
             event: {
                 type: 'click',
                 method: () => navigateStep(-1)
@@ -313,7 +313,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 fontSize: '14px',
                 fontWeight: '500'
             },
-            att: { className: 'footer-next' },
+            att: { className: 'footer-next', type: 'button' },
             event: {
                 type: 'click',
                 method: () => handleNext()
@@ -334,7 +334,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 fontWeight: '500',
                 display: 'none'
             },
-            att: { className: 'footer-submit' },
+            att: { className: 'footer-submit', type: 'button' },
             event: {
                 type: 'click',
                 method: () => submitSymposium()
@@ -419,7 +419,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     method: (e) => {
                         const file = e.target.files[0];
                         if (file) {
-                            if (file.type !== 'application/pdf') {
+                            const isPdfFile = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+                            if (!isPdfFile) {
                                 ConfirmationAlert('Please select a valid PDF file', () => { });
                                 fileInput.value = '';
                                 return;
@@ -1849,7 +1850,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     method: (e) => {
                         const file = e.target.files[0]
                         if (file) {
-                            if (file.type !== 'application/pdf') {
+                            const isPdfFile = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+                            if (!isPdfFile) {
                                 ConfirmationAlert('Please select a valid PDF file', () => { })
                                 fileInput.value = ''
                                 return
@@ -2156,7 +2158,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 method: (e) => {
                     const file = e.target.files[0]
                     if (file) {
-                        if (file.type !== 'application/pdf') {
+                        const isPdfFile = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+                        if (!isPdfFile) {
                             ConfirmationAlert('Please select a valid PDF file', () => { })
                             fileInput.value = ''
                             return
@@ -2185,18 +2188,32 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         if (newStep < 1 || newStep > 3) return
 
         // Validate current step before proceeding
-        if (delta === 1 && stepContents[currentStep - 1].__validate) {
-            if (!stepContents[currentStep - 1].__validate()) return
+        if (delta === 1) {
+            // Make sure stepContents[currentStep - 1] exists before accessing __validate
+            const currentStepContent = stepContents[currentStep - 1]
+            if (currentStepContent && currentStepContent.__validate) {
+                if (!currentStepContent.__validate()) return
+            }
         }
 
         // Update step 2 reference if coming from step 1
-        if (delta === 1 && currentStep === 1 && stepContents[1].__updateReference) {
+        if (delta === 1 && currentStep === 1 && stepContents[1] && stepContents[1].__updateReference) {
             stepContents[1].__updateReference()
         }
 
-        stepContents[currentStep - 1].style.display = 'none'
+        // Hide current step - check if it exists
+        const currentContent = stepContents[currentStep - 1]
+        if (currentContent) {
+            currentContent.style.display = 'none'
+        }
+        
         currentStep = newStep
-        stepContents[currentStep - 1].style.display = 'block'
+        
+        // Show new step - check if it exists
+        const newContent = stepContents[currentStep - 1]
+        if (newContent) {
+            newContent.style.display = 'block'
+        }
 
         // Update step indicators
         for (let i = 1; i <= 3; i++) {
@@ -2223,8 +2240,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
     const handleNext = () => navigateStep(1)
 
     const submitSymposium = async () => {
-        // Validate final step (only for university type)
-        if (formData.presentation_type === 'university') {
+        // Validate final step for all presentation types before submitting
+        if (stepContents[2] && stepContents[2].__validate) {
             if (!stepContents[2].__validate()) return
         }
 
