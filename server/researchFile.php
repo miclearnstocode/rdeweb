@@ -1,21 +1,23 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 0); 
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/drive_errors.log');
 
 header('Content-Type: application/json; charset=utf-8');
 
 // Start output buffering with callback to catch errors
-ob_start(function($buffer) {
+ob_start(function ($buffer) {
     // Check if the buffer contains HTML error messages
-    if (strpos($buffer, '<b>Warning</b>') !== false ||  
+    if (
+        strpos($buffer, '<b>Warning</b>') !== false ||
         strpos($buffer, '<b>Notice</b>') !== false ||
-        strpos($buffer, '<b>Fatal error</b>') !== false) {
-        
+        strpos($buffer, '<b>Fatal error</b>') !== false
+    ) {
+
         // Log the error
         error_log("HTML error in output buffer: " . substr($buffer, 0, 500));
-        
+
         // Return a clean JSON error
         return json_encode([
             'status' => false,
@@ -49,34 +51,35 @@ require_once __DIR__ . '/Mailer/mailTemplate.php';
 require_once __DIR__ . '/Mailer/MailSender.php';
 date_default_timezone_set('Asia/Manila');
 
-function getCenterCode($centerName) {
+function getCenterCode($centerName)
+{
     // Mapping of full center names to their codes
     $centerMapping = [
         'Crop Science Research & Developement Center' => 'CSRDC',
-        'Crop Science Research & Development Center' => 'CSRDC', 
+        'Crop Science Research & Development Center' => 'CSRDC',
         'Livestock Research & Development Center' => 'LRDC',
         'Fisheries Research & Development Center' => 'FRDC',
         'Food and Industrial Technology Research & Development Center' => 'FIRDC',
-        'Food and Industrial Technology Research & Developm...' => 'FITRDC', 
+        'Food and Industrial Technology Research & Developm...' => 'FITRDC',
         'Social Science Research & Development Center' => 'SSRDC',
         'Machinery and Agricultural Technology Engineering Center' => 'MATEC',
         'Coconut Research and Development Center' => 'CocoRDC',
         'Coconut Research and Development Center (Coco RDC)' => 'CocoRDC',
         'Extension' => 'Extension'
     ];
-    
+
     // Try exact match first
     if (isset($centerMapping[$centerName])) {
         return $centerMapping[$centerName];
     }
-    
+
     // Try partial match for truncated names
     foreach ($centerMapping as $key => $code) {
         if (strpos($centerName, substr($key, 0, 20)) !== false) {
             return $code;
         }
     }
-    
+
     // Try to extract code from name (e.g., "Coconut Research and Development Center (Coco RDC)")
     if (preg_match('/\(([^)]+)\)/', $centerName, $matches)) {
         $code = preg_replace('/[^a-zA-Z]/', '', $matches[1]);
@@ -84,7 +87,7 @@ function getCenterCode($centerName) {
             return $code;
         }
     }
-    
+
     // Extract initials as fallback
     $words = explode(' ', $centerName);
     $code = '';
@@ -93,18 +96,16 @@ function getCenterCode($centerName) {
             $code .= substr($word, 0, 1);
         }
     }
-    
+
     return !empty($code) ? $code : 'END';
 }
-function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $category, $author, $title, $type = 'research', $isProgram = false, $isEndorsement = false, $isCertificate = false, $isLocalInHouse = false, $paperTrailNo = null) {
+function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName, $category, $author, $title, $type = 'research', $isProgram = false, $isEndorsement = false, $isCertificate = false, $isLocalInHouse = false, $paperTrailNo = null, $createPerResearchFolder = false)
+{
     try {
-        // Check if file exists
         if (!file_exists($tempFilePath)) {
-            error_log("File not found: $tempFilePath");
             throw new Exception("Temporary file not found: $tempFilePath");
         }
-        
-        // Check file size (max 10MB)
+
         $fileSize = filesize($tempFilePath);
         if ($fileSize > 10 * 1024 * 1024) {
             throw new Exception("File too large: " . round($fileSize / 1024 / 1024, 2) . "MB");
@@ -113,124 +114,136 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         if (!class_exists('GoogleDriveService')) {
             throw new Exception("GoogleDriveService class not found");
         }
-        
+
         $drive = new GoogleDriveService();
-        
-        // Clean names for Google Drive
+
         $cleanEventName = cleanFolderNameForDrive($eventName);
         $cleanCenterName = cleanFolderNameForDrive($centerName);
         $cleanCategoryName = cleanFolderNameForDrive($category);
-        
-        // Get author's last name for folder and file naming
+
         $authorParts = explode(' ', trim($author));
         $authorLastName = end($authorParts);
         $authorLastName = cleanFolderNameForDrive($authorLastName);
-        
-        // Create folder structure: Event -> Center -> Category
+
+        // Create base folder structure: Event -> Center -> Category
         $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
-        if (!$eventFolderId) throw new Exception("Failed to create event folder");
-        
+        if (!$eventFolderId)
+            throw new Exception("Failed to create event folder");
+
         $centerFolderId = $drive->findOrCreateFolder($cleanCenterName, $eventFolderId);
-        if (!$centerFolderId) throw new Exception("Failed to create center folder");
-        
+        if (!$centerFolderId)
+            throw new Exception("Failed to create center folder");
+
         $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $centerFolderId);
-        if (!$categoryFolderId) throw new Exception("Failed to create category folder");
-        
+        if (!$categoryFolderId)
+            throw new Exception("Failed to create category folder");
+
         $targetFolderId = null;
         $prefixedFileName = '';
+        $entryFolderId = null;
         $entryFolderName = null;
-        
+
         if ($isLocalInHouse) {
-            // LOCAL IN-HOUSE: Files go directly inside Category folder (no subfolder)
+            // ===== LOCAL IN-HOUSE: Files go directly inside Category folder =====
             $targetFolderId = $categoryFolderId;
-            
-            // Determine file type suffix
+
             $fileTypeSuffix = '';
-            if ($type === 'research') {
-                $fileTypeSuffix = 'research_file';
-            } elseif ($isEndorsement) {
-                $fileTypeSuffix = 'endorsement_file';
-            } elseif ($isProgram) {
+            if ($isProgram) {
                 $fileTypeSuffix = 'program_file';
             } elseif ($isCertificate) {
                 $fileTypeSuffix = 'certificate_file';
+            } elseif ($type === 'research') {
+                $fileTypeSuffix = 'research_file';
+            } elseif ($isEndorsement) {
+                $fileTypeSuffix = 'endorsement_file';
             }
-            
-            // Format using author last name: {LastName} {fileType}.pdf
-            $prefixedFileName = $authorLastName . ' ' . $fileTypeSuffix . '.pdf';
-            
+
+            $prefixedFileName = 'Local In House - ' . $authorLastName . ' ' . $fileTypeSuffix . '.pdf';
+
         } else {
-            // UNIVERSITY IN-HOUSE / SYMPOSIUM: Create per-research folder using paper_trail_no
-            if (!empty($paperTrailNo)) {
-                // Clean title for folder name
-                $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
-                $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
-                $cleanTitle = trim($cleanTitle);
-                
-                // Limit title length to avoid extremely long folder names
-                if (strlen($cleanTitle) > 100) {
-                    $cleanTitle = substr($cleanTitle, 0, 97) . '...';
-                }
-                
-                $cleanTitle = cleanFolderNameForDrive($cleanTitle);
-                
-                // Create entry folder name: {paper_trail_no} - {title}
-                $entryFolderName = $paperTrailNo . ' - ' . $cleanTitle;
-            } else {
-                // Fallback to old naming: lastname_keyword
+            // ===== SYMPOSIUM/UNIVERSITY: Create per-research folder inside Category =====
+            if ($createPerResearchFolder) {
+                // Get keywords from title for folder name (first 3 words)
                 $titleWords = explode(' ', trim($title));
                 $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
                 $titleKeywords = cleanFolderNameForDrive($titleKeywords);
-                $entryFolderName = $authorLastName . '_' . $titleKeywords;
+
+                // Create entry folder name: {author last name} - {title keywords}
+                $entryFolderName = $authorLastName . ' - ' . $titleKeywords;
+                $entryFolderName = cleanFolderNameForDrive($entryFolderName);
+
+                // Create entry folder inside Category
+                $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $categoryFolderId);
+                if (!$entryFolderId)
+                    throw new Exception("Failed to create entry folder: $entryFolderName");
+
+                $targetFolderId = $entryFolderId;
+            } else {
+                $targetFolderId = $categoryFolderId;
             }
-            
-            // Clean the folder name for Google Drive
-            $entryFolderName = cleanFolderNameForDrive($entryFolderName);
-            
-            // Create entry folder inside Category
-            $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $categoryFolderId);
-            if (!$entryFolderId) throw new Exception("Failed to create entry folder");
-            
-            $targetFolderId = $entryFolderId;
-            
-            // Filename format for files inside per-research folder: {LastName}_{fileType}.pdf
+
+            // Clean title for filename
+            $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
+            $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
+            $cleanTitle = trim($cleanTitle);
+            if (strlen($cleanTitle) > 50) {
+                $cleanTitle = substr($cleanTitle, 0, 47) . '...';
+            }
+            $cleanTitle = cleanFolderNameForDrive($cleanTitle);
+
+            // Filename format
             if ($type === 'research') {
-                $prefixedFileName = $authorLastName . '_completed_research.pdf';
+                $prefixedFileName = $cleanTitle . ' - completed research.pdf';
             } elseif ($isEndorsement) {
-                $prefixedFileName = $authorLastName . '_endorsement_letter.pdf';
-            } elseif ($isProgram) {
-                $prefixedFileName = $authorLastName . '_program_file.pdf';
-            } elseif ($isCertificate) {
-                $prefixedFileName = $authorLastName . '_certificate_file.pdf';
+                $prefixedFileName = $cleanTitle . ' - endorsement letter.pdf';
             } else {
                 $prefixedFileName = $fileName;
             }
         }
-        
+
         if (empty($targetFolderId)) {
             throw new Exception("Failed to determine target folder");
         }
-        
-        // Upload file to main storage
+
         error_log("Uploading $type file: $prefixedFileName to folder: $targetFolderId");
         $uploadResult = $drive->uploadFile($tempFilePath, $prefixedFileName, $targetFolderId);
 
         if (!$uploadResult['success'] || empty($uploadResult['id'])) {
-            $errorMsg = $uploadResult['error'] ?? "Upload failed: No file ID returned from Google Drive";
-            error_log("Google Drive upload failed for $fileName: $errorMsg");
+            $errorMsg = $uploadResult['error'] ?? "Upload failed: No file ID returned";
             throw new Exception($errorMsg);
         }
-        
-        // Make file publicly viewable
+
         $drive->makeFilePublic($uploadResult['id']);
-        
-        // Generate URLs
+
         $fileId = $uploadResult['id'];
         $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
         $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
-        
-        // Return success with all metadata
-        $result = [
+
+        // Paper Trail copy for Symposium files only
+        $paperTrailCopy = null;
+        if (!empty($paperTrailNo) && !$isLocalInHouse) {
+            $paperTrailCopy = uploadToPaperTrail(
+                $tempFilePath,
+                $fileName,
+                $eventName,
+                $author,
+                $title,
+                $type,
+                $isProgram,
+                $isEndorsement,
+                $isCertificate,
+                $isLocalInHouse,
+                $paperTrailNo
+            );
+
+            if ($paperTrailCopy && isset($paperTrailCopy['success']) && $paperTrailCopy['success']) {
+                error_log("Paper Trail copy successful for $fileName");
+            } else {
+                error_log("Paper Trail copy failed for $fileName: " . ($paperTrailCopy['error'] ?? 'Unknown error'));
+            }
+        }
+
+        return [
             'success' => true,
             'drive_file_id' => $uploadResult['id'],
             'drive_view_url' => $embedUrl,
@@ -239,51 +252,48 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
             'drive_event_folder_id' => $eventFolderId,
             'drive_center_folder_id' => $centerFolderId,
             'drive_category_folder_id' => $categoryFolderId,
+            'drive_entry_folder_id' => $entryFolderId,
+            'entry_folder_name' => $entryFolderName,
             'file_size' => $uploadResult['size'] ?? 0,
             'file_name' => $prefixedFileName,
-            'center_name' => $centerName,
-            'category_name' => $category,
-            'entry_folder_name' => $entryFolderName,
-            'is_local_in_house' => $isLocalInHouse,
-            'paper_trail_no' => $paperTrailNo,
-            'author_last_name' => $authorLastName
+            'author_last_name' => $authorLastName,
+            'paper_trail_copy' => $paperTrailCopy
         ];
-        
-        error_log("File upload successful: " . $prefixedFileName);
-        return $result;
-        
+
     } catch (Exception $e) {
         error_log("Google Drive upload failed for $fileName: " . $e->getMessage());
         throw new Exception("Failed to upload $fileName to Google Drive: " . $e->getMessage());
     }
 }
 
-function cleanFolderNameForDrive($name) {
+function cleanFolderNameForDrive($name)
+{
     if (empty($name)) {
         return 'Untitled_' . time();
     }
-    
+
     // Remove special characters that Google Drive doesn't like
     $clean = preg_replace('/[^\w\s\-_.,()&]/', '', $name);
-    
+
     // Replace multiple spaces with single space
     $clean = preg_replace('/\s+/', ' ', $clean);
-    
+
     // Trim whitespace
     $clean = trim($clean);
-    
+
     // Remove trailing periods and commas
     $clean = rtrim($clean, '.,');
-    
+
     // If too long, truncate (Google Drive has 255 char limit)
     if (strlen($clean) > 200) {
         $clean = substr($clean, 0, 197) . '...';
     }
-    
+
     return $clean;
 }
 
-function getResearchFileUrl($researchRecord) {
+function getResearchFileUrl($researchRecord)
+{
     // Priority: 1. Drive URL, 2. Local file path, 3. Empty string
     if (!empty($researchRecord['drive_view_url'])) {
         return [
@@ -308,14 +318,15 @@ function getResearchFileUrl($researchRecord) {
         ];
     }
 }
-function checkDuplicateResearch($con, $researchData, $fileData = []) {
+function checkDuplicateResearch($con, $researchData, $fileData = [])
+{
     $result = [
         'isDuplicate' => false,
         'message' => '',
         'existingRecord' => null,
         'duplicateReason' => ''
     ];
-    
+
     try {
         // Build query to check for existing records with same identity fields
         $query = "SELECT 
@@ -337,23 +348,23 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
                   LEFT JOIN endorsement e ON rf.endorsementid = e.id
                   LEFT JOIN event_list el ON rf.event_id = el.id
                   WHERE 1=1";
-        
+
         $params = [];
         $types = "";
-        
+
         // Check identity fields
         if (!empty($researchData['title'])) {
             $query .= " AND rf.title = ?";
             $params[] = $researchData['title'];
             $types .= "s";
         }
-        
+
         if (!empty($researchData['author'])) {
             $query .= " AND rf.author = ?";
             $params[] = $researchData['author'];
             $types .= "s";
         }
-        
+
         if (isset($researchData['coauthor'])) {
             // Normalize coauthor for comparison (sort to handle different orders)
             $coauthorInput = $researchData['coauthor'];
@@ -364,61 +375,61 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
                     $coauthorInput = json_encode($coauthorArray);
                 }
             }
-            
+
             $query .= " AND rf.coauthor = ?";
             $params[] = $coauthorInput;
             $types .= "s";
         }
-        
+
         if (!empty($researchData['presenter'])) {
             $query .= " AND rf.presenter = ?";
             $params[] = $researchData['presenter'];
             $types .= "s";
         }
-        
+
         if (!empty($researchData['event_id'])) {
             $query .= " AND rf.event_id = ?";
             $params[] = $researchData['event_id'];
             $types .= "s";
         }
-        
+
         if (!empty($researchData['category'])) {
             $query .= " AND rf.category = ?";
             $params[] = $researchData['category'];
             $types .= "s";
         }
-        
+
         if (!empty($researchData['center'])) {
             $query .= " AND rf.center = ?";
             $params[] = $researchData['center'];
             $types .= "s";
         }
-        
+
         if (!empty($researchData['campus'])) {
             $query .= " AND rf.campus = ?";
             $params[] = $researchData['campus'];
             $types .= "s";
         }
-        
+
         // If no identity fields provided, return early
         if (empty($params)) {
             $result['message'] = "No identity fields provided for duplicate check";
             return $result;
         }
-        
+
         // Execute identity check
         $stmt = $con->prepare($query);
         if (!$stmt) {
             throw new Exception("Prepare failed: " . $con->error);
         }
-        
+
         if (!empty($params)) {
             $stmt->bind_param($types, ...$params);
         }
-        
+
         $stmt->execute();
         $identityResult = $stmt->get_result();
-        
+
         // Check for exact identity matches first
         if ($identityResult->num_rows > 0) {
             $existingRecord = $identityResult->fetch_assoc();
@@ -428,12 +439,12 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
             $result['message'] = "Duplicate research entry detected. Please check existing submissions.";
             return $result;
         }
-        
+
         // If no exact match, check for file-based duplicates (if file data provided)
         if (!empty($fileData)) {
             // Check for duplicate by file hashes
             if (!empty($fileData['proposal_hash']) || !empty($fileData['program_hash']) || !empty($fileData['endorsement_hash'])) {
-                
+
                 $fileQuery = "SELECT 
                                 fh.research_id,
                                 rf.id,
@@ -447,57 +458,57 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
                               FROM file_hashes fh
                               JOIN researchfile rf ON fh.research_id = rf.id
                               WHERE 1=1";
-                
+
                 $fileParams = [];
                 $fileTypes = "";
                 $fileConditions = [];
-                
+
                 // Check for duplicate research/proposal file by hash
                 if (!empty($fileData['proposal_hash'])) {
                     $fileConditions[] = "(fh.file_hash = ? AND fh.file_type = 'proposal')";
                     $fileParams[] = $fileData['proposal_hash'];
                     $fileTypes .= "s";
                 }
-                
+
                 // Check for duplicate program file by hash
                 if (!empty($fileData['program_hash'])) {
                     $fileConditions[] = "(fh.file_hash = ? AND fh.file_type = 'program')";
                     $fileParams[] = $fileData['program_hash'];
                     $fileTypes .= "s";
                 }
-                
+
                 // Check for duplicate endorsement file by hash
                 if (!empty($fileData['endorsement_hash'])) {
                     $fileConditions[] = "(fh.file_hash = ? AND fh.file_type = 'endorsement')";
                     $fileParams[] = $fileData['endorsement_hash'];
                     $fileTypes .= "s";
                 }
-                
+
                 if (!empty($fileConditions)) {
                     $fileQuery .= " AND (" . implode(" OR ", $fileConditions) . ")";
                     $fileQuery .= " ORDER BY fh.created_at DESC LIMIT 1";
-                    
+
                     $fileStmt = $con->prepare($fileQuery);
                     if (!$fileStmt) {
                         throw new Exception("Prepare failed for file hash check: " . $con->error);
                     }
-                    
+
                     if (!empty($fileParams)) {
                         $fileStmt->bind_param($fileTypes, ...$fileParams);
                     }
-                    
+
                     $fileStmt->execute();
                     $fileResult = $fileStmt->get_result();
-                    
+
                     if ($fileResult->num_rows > 0) {
                         $existingFileRecord = $fileResult->fetch_assoc();
                         $result['isDuplicate'] = true;
                         $result['existingRecord'] = $existingFileRecord;
-                        
+
                         // Determine which file caused the duplicate
                         $fileTypeNames = [
                             'proposal' => 'research file',
-                            'program' => 'program file', 
+                            'program' => 'program file',
                             'endorsement' => 'endorsement letter'
                         ];
 
@@ -509,16 +520,16 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
                             $statusMessage = " Your submission is still pending review.";
                         } elseif ($status === 'rejected') {
                             $statusMessage = " This entry was rejected. Please check your email for feedback before resubmitting.";
-                            }
+                        }
 
                         $result['duplicateReason'] = "Duplicate {$fileTypeName} detected for '{$existingFileRecord['title']}' by {$existingFileRecord['author']}." . $statusMessage . " Please use a different file or wait for your pending submission to be processed.";
-                        
+
                         $result['message'] = "Duplicate file detected. This file has been uploaded before.";
                         return $result;
                     }
                 }
             }
-            
+
             // Also check for endorsement ID duplicate (legacy check)
             if (!empty($fileData['endorsement_id'])) {
                 $endorsementQuery = "SELECT 
@@ -528,13 +539,13 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
                                      FROM researchfile rf
                                      WHERE rf.endorsementid = ?
                                      LIMIT 1";
-                
+
                 $endStmt = $con->prepare($endorsementQuery);
                 if ($endStmt) {
                     $endStmt->bind_param("i", $fileData['endorsement_id']);
                     $endStmt->execute();
                     $endResult = $endStmt->get_result();
-                    
+
                     if ($endResult->num_rows > 0) {
                         $existingEndRecord = $endResult->fetch_assoc();
                         $result['isDuplicate'] = true;
@@ -546,9 +557,9 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
                 }
             }
         }
-        
+
         return $result;
-        
+
     } catch (Exception $e) {
         error_log("Error in checkDuplicateResearch: " . $e->getMessage());
         $result['message'] = "Error checking for duplicates: " . $e->getMessage();
@@ -556,26 +567,27 @@ function checkDuplicateResearch($con, $researchData, $fileData = []) {
     }
 }
 //Generate a hash for file content to detect identical files even with different names
-function generateFileHash($filePath) {
+function generateFileHash($filePath)
+{
     if (!file_exists($filePath)) {
         return false;
     }
-    
+
     // Use SHA256 for better collision resistance
     // Only hash first 1MB + last 1MB for performance with large files
     $handle = fopen($filePath, 'rb');
     if (!$handle) {
         return false;
     }
-    
+
     $hashContext = hash_init('sha256');
     $fileSize = filesize($filePath);
-    
+
     if ($fileSize > 2 * 1024 * 1024) { // If file > 2MB
         // Hash first 1MB
         $firstChunk = fread($handle, 1024 * 1024);
         hash_update($hashContext, $firstChunk);
-        
+
         // Seek to last 1MB
         fseek($handle, -1024 * 1024, SEEK_END);
         $lastChunk = fread($handle, 1024 * 1024);
@@ -587,24 +599,26 @@ function generateFileHash($filePath) {
             hash_update($hashContext, $chunk);
         }
     }
-    
+
     fclose($handle);
     return hash_final($hashContext);
 }
-function getEventScopedFileHash($fileHash, $eventId) {
+function getEventScopedFileHash($fileHash, $eventId)
+{
     if (empty($eventId) || empty($fileHash)) {
         return $fileHash;
     }
 
     return hash('sha256', $eventId . '::' . $fileHash);
 }
-function storeFileHash($con, $researchId, $fileType, $fileHash, $eventId = null) {
+function storeFileHash($con, $researchId, $fileType, $fileHash, $eventId = null)
+{
     // Store a scoped hash per event so identical files in different events do not conflict.
     $scopedHash = getEventScopedFileHash($fileHash, $eventId);
 
     $query = "INSERT IGNORE INTO file_hashes (research_id, file_type, file_hash, created_at) 
               VALUES (?, ?, ?, NOW())";
-    
+
     $stmt = $con->prepare($query);
     if ($stmt) {
         $stmt->bind_param("iss", $researchId, $fileType, $scopedHash);
@@ -612,7 +626,8 @@ function storeFileHash($con, $researchId, $fileType, $fileHash, $eventId = null)
         $stmt->close();
     }
 }
-function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventId = null, $eventType = null) {
+function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventId = null, $eventType = null)
+{
     if ($eventId !== null) {
         $scopedHash = getEventScopedFileHash($fileHash, $eventId);
         $query = "SELECT rf.id as research_id, rf.title, rf.author, rf.event_id, rf.event 
@@ -622,12 +637,12 @@ function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventId =
                   AND rf.event_id = ?
                   AND (fh.file_hash = ? OR fh.file_hash = ?)
                   LIMIT 1";
-        
+
         $stmt = $con->prepare($query);
         if (!$stmt) {
             return null;
         }
-        
+
         $stmt->bind_param("siss", $fileType, $eventId, $scopedHash, $fileHash);
     } else {
         $query = "SELECT rf.id as research_id, rf.title, rf.author, rf.event 
@@ -637,23 +652,24 @@ function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventId =
                   AND fh.file_type = ?
                   AND rf.event = ?
                   LIMIT 1";
-        
+
         $stmt = $con->prepare($query);
         if (!$stmt) {
             return null;
         }
-        
+
         $stmt->bind_param("sss", $fileHash, $fileType, $eventType);
     }
-    
+
     $stmt->execute();
     $result = $stmt->get_result();
     $existing = $result->fetch_assoc();
     $stmt->close();
-    
+
     return $existing;
 }
-function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
+function generatePaperTrailNumber($con, $eventId, $center, $title, $author)
+{
     // Center to code mapping
     $centerCodes = [
         'Crop Science Research & Developement Center (CSRDC)' => 'A',
@@ -665,10 +681,10 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
         'Coconut Research and Development Center (Coco RDC)' => 'G',
         'Extension (Extension)' => 'H'
     ];
-    
+
     // Get center code
     $centerCode = $centerCodes[$center] ?? 'X';
-    
+
     // FIRST: Check if this research already has a paper trail number from a previous submission
     // Match by title and author (case-insensitive, trimmed)
     $checkExistingQuery = "SELECT paper_trail_no, center, event_id 
@@ -678,22 +694,22 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
                           AND paper_trail_no IS NOT NULL 
                           AND paper_trail_no != ''
                           LIMIT 1";
-    
+
     $checkStmt = $con->prepare($checkExistingQuery);
     if (!$checkStmt) {
         throw new Exception("Failed to prepare existing check query: " . $con->error);
     }
-    
+
     $checkStmt->bind_param("ss", $title, $author);
     $checkStmt->execute();
     $existingResult = $checkStmt->get_result();
     $existingPaper = $existingResult->fetch_assoc();
-    
+
     // If existing paper trail number found, return it (maintain consistency)
     if ($existingPaper && !empty($existingPaper['paper_trail_no'])) {
         return $existingPaper['paper_trail_no'];
     }
-    
+
     // SECOND: If no existing paper trail number, check for duplicate submissions
     // (same title and author but no paper trail number yet - should use same center logic)
     $checkDuplicateQuery = "SELECT id, center, event_id 
@@ -701,24 +717,24 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
                            WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
                            AND TRIM(LOWER(author)) = TRIM(LOWER(?))
                            LIMIT 1";
-    
+
     $dupStmt = $con->prepare($checkDuplicateQuery);
     if (!$dupStmt) {
         throw new Exception("Failed to prepare duplicate check query: " . $con->error);
     }
-    
+
     $dupStmt->bind_param("ss", $title, $author);
     $dupStmt->execute();
     $dupResult = $dupStmt->get_result();
     $duplicate = $dupResult->fetch_assoc();
-    
+
     // If duplicate found but no paper trail number, we need to generate one
     // Use the original submission's center (not the current one) for consistency
     if ($duplicate) {
         // Use the center from the original submission
         $originalCenter = $duplicate['center'];
         $centerCode = $centerCodes[$originalCenter] ?? 'X';
-        
+
         // Get the original submission's event year
         $originalEventId = $duplicate['event_id'];
         $yearQuery = "SELECT YEAR(date) as year FROM event_list WHERE id = ? LIMIT 1";
@@ -741,53 +757,56 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author) {
         if (!$yearStmt) {
             throw new Exception("Failed to prepare year query: " . $con->error);
         }
-        
+
         $yearStmt->bind_param("i", $eventId);
         $yearStmt->execute();
         $yearResult = $yearStmt->get_result();
         $yearRow = $yearResult->fetch_assoc();
-        
+
         if (!$yearRow || !$yearRow['year']) {
             throw new Exception("Could not determine event year for event ID: $eventId");
         }
-        
+
         $eventYear = $yearRow['year'];
         $yearStmt->close();
     }
-    
+
     // Get the next sequence number for this year and center
     $pattern = $eventYear . '-' . $centerCode . '-%';
-    
+
     $seqQuery = "SELECT MAX(CAST(SUBSTRING_INDEX(paper_trail_no, '-', -1) AS UNSIGNED)) as max_seq 
                  FROM researchfile 
                  WHERE paper_trail_no LIKE ?";
-    
+
     $seqStmt = $con->prepare($seqQuery);
     if (!$seqStmt) {
         throw new Exception("Failed to prepare sequence query: " . $con->error);
     }
-    
+
     $seqStmt->bind_param("s", $pattern);
     $seqStmt->execute();
     $seqResult = $seqStmt->get_result();
     $seqRow = $seqResult->fetch_assoc();
-    
+
     $nextSeq = ($seqRow['max_seq'] ?? 0) + 1;
-    
+
     // Format with leading zeros (3 digits)
     $formattedSeq = str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
-    
+
     // Generate the paper trail number
     $paperTrailNo = $eventYear . '-' . $centerCode . '-' . $formattedSeq;
-    
+
     // Clean up statements
     $checkStmt->close();
-    if (isset($dupStmt)) $dupStmt->close();
-    if (isset($seqStmt)) $seqStmt->close();
-    
+    if (isset($dupStmt))
+        $dupStmt->close();
+    if (isset($seqStmt))
+        $seqStmt->close();
+
     return $paperTrailNo;
 }
-function getResearchFilesForRevision($con, $userId) {
+function getResearchFilesForRevision($con, $userId)
+{
     $query = "SELECT 
         rf.id,
         rf.title as original_title,
@@ -817,12 +836,12 @@ function getResearchFilesForRevision($con, $userId) {
     WHERE rf.senderid = ? 
     AND rf.revision_status IN ('revision_pending', 'revision_rejected')
     ORDER BY rf.last_revision_date DESC, rf.id DESC";
-    
+
     $stmt = $con->prepare($query);
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     // Process the result to include both original and revised files
     $processedResults = [];
     while ($row = $result->fetch_assoc()) {
@@ -831,135 +850,110 @@ function getResearchFilesForRevision($con, $userId) {
             'file_id' => $row['revised_drive_file_id'],
             'exists' => !empty($row['revised_drive_file_id'])
         ];
-        
+
         $processedResults[] = $row;
     }
-    
+
     return $processedResults;
 }
-function uploadToPaperTrail($tempFilePath, $fileName, $eventName, $author, $title, $type, $isProgram, $isEndorsement, $isCertificate, $isLocalInHouse, $paperTrailNo = null) {
+function uploadToPaperTrail($tempFilePath, $fileName, $eventName, $author, $title, $type, $isProgram, $isEndorsement, $isCertificate, $isLocalInHouse, $paperTrailNo = null)
+{
     try {
-        // Check if file exists
         if (!file_exists($tempFilePath)) {
-            error_log("Paper Trail: File not found: $tempFilePath");
             return ['success' => false, 'error' => "Temporary file not found: $tempFilePath"];
         }
-        
+
         if (!class_exists('GoogleDriveService')) {
-            error_log("Paper Trail: GoogleDriveService class not found");
             return ['success' => false, 'error' => "GoogleDriveService class not found"];
         }
-        
+
         $drive = new GoogleDriveService();
         $year = date('Y');
-        
-        // Get author's last name
+
         $authorParts = explode(' ', trim($author));
         $authorLastName = end($authorParts);
         $authorLastName = cleanFolderNameForDrive($authorLastName);
-        
-        // Create entry folder name using paper_trail_no and title
-        $entryFolderName = '';
-        if (!empty($paperTrailNo)) {
-            // Clean title for folder name
-            $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
-            $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
-            $cleanTitle = trim($cleanTitle);
-            
-            // Limit title length
-            if (strlen($cleanTitle) > 100) {
-                $cleanTitle = substr($cleanTitle, 0, 97) . '...';
-            }
-            
-            $cleanTitle = cleanFolderNameForDrive($cleanTitle);
-            $entryFolderName = $paperTrailNo . ' - ' . $cleanTitle;
-        } else {
-            // Fallback to old naming
-            $titleWords = explode(' ', trim($title));
-            $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
-            $titleKeywords = cleanFolderNameForDrive($titleKeywords);
-            $entryFolderName = $authorLastName . '_' . $titleKeywords;
+
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
+        $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
+        $cleanTitle = trim($cleanTitle);
+        if (strlen($cleanTitle) > 80) {
+            $cleanTitle = substr($cleanTitle, 0, 77) . '...';
         }
-        
-        // Clean the folder name
-        $entryFolderName = cleanFolderNameForDrive($entryFolderName);
-        
-        // Determine Paper Trail root folder
+        $cleanTitle = cleanFolderNameForDrive($cleanTitle);
+
+        // Determine Paper Trail root folder based on submission type
         $paperTrailRootName = $isLocalInHouse ? 'Local In-House Review' : 'Symposium';
-        
-        // Create folder structure
+
+        // Paper Trail -> {Symposium|Local In-House Review} -> Year -> {paper_trail_no} - {title}
         $paperTrailRootId = $drive->findOrCreateFolder('Paper Trail', null);
         if (!$paperTrailRootId) {
             return ['success' => false, 'error' => "Failed to create Paper Trail root folder"];
         }
-        
+
         $subTypeFolderId = $drive->findOrCreateFolder($paperTrailRootName, $paperTrailRootId);
         if (!$subTypeFolderId) {
             return ['success' => false, 'error' => "Failed to create $paperTrailRootName folder"];
         }
-        
+
         $yearFolderId = $drive->findOrCreateFolder($year, $subTypeFolderId);
         if (!$yearFolderId) {
             return ['success' => false, 'error' => "Failed to create Year folder: $year"];
         }
-        
-        // Create entry folder inside Year folder
-        $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $yearFolderId);
-        if (!$entryFolderId) {
-            return ['success' => false, 'error' => "Failed to create entry folder: $entryFolderName"];
-        }
-        
-        // Determine file name using author's last name
-        $paperTrailFileName = '';
-        
-        if ($isLocalInHouse) {
-            // Local In-House files: {LastName} {fileType}.pdf
-            $fileTypeSuffix = '';
-            if ($type === 'research') {
-                $fileTypeSuffix = 'research_file';
-            } elseif ($isEndorsement) {
-                $fileTypeSuffix = 'endorsement_file';
-            } elseif ($isProgram) {
-                $fileTypeSuffix = 'program_file';
-            } elseif ($isCertificate) {
-                $fileTypeSuffix = 'certificate_file';
-            } else {
-                $fileTypeSuffix = 'document';
-            }
-            $paperTrailFileName = $authorLastName . ' ' . $fileTypeSuffix . '.pdf';
+
+        // Create research folder: {paper_trail_no} - {title}
+        $researchFolderName = '';
+        if (!empty($paperTrailNo)) {
+            $researchFolderName = $paperTrailNo . ' - ' . $cleanTitle;
         } else {
-            // Symposium files: {LastName}_{fileType}.pdf
-            if ($type === 'research') {
-                $paperTrailFileName = $authorLastName . '_completed_research.pdf';
-            } elseif ($isEndorsement) {
-                $paperTrailFileName = $authorLastName . '_endorsement_letter.pdf';
-            } elseif ($isProgram) {
-                $paperTrailFileName = $authorLastName . '_program_file.pdf';
+            $researchFolderName = $authorLastName . '_' . preg_replace('/[^a-zA-Z0-9]/', '_', substr($cleanTitle, 0, 30));
+        }
+        $researchFolderName = cleanFolderNameForDrive($researchFolderName);
+
+        $researchFolderId = $drive->findOrCreateFolder($researchFolderName, $yearFolderId);
+        if (!$researchFolderId) {
+            return ['success' => false, 'error' => "Failed to create research folder: $researchFolderName"];
+        }
+
+        // Determine file name for Paper Trail
+        $paperTrailFileName = '';
+
+        if ($isLocalInHouse) {
+            if ($isProgram) {
+                $paperTrailFileName = 'program_file.pdf';
             } elseif ($isCertificate) {
-                $paperTrailFileName = $authorLastName . '_certificate_file.pdf';
+                $paperTrailFileName = 'certificate_file.pdf';
+            } elseif ($type === 'research') {
+                $paperTrailFileName = 'research_file.pdf';
+            } elseif ($isEndorsement) {
+                $paperTrailFileName = 'endorsement_file.pdf';
+            } else {
+                $paperTrailFileName = 'document.pdf';
+            }
+        } else {
+            // Symposium files
+            if ($type === 'research') {
+                $paperTrailFileName = 'completed_research.pdf';
+            } elseif ($isEndorsement) {
+                $paperTrailFileName = 'endorsement_letter.pdf';
             } else {
                 $paperTrailFileName = basename($fileName);
             }
         }
-        
-        // Upload file
-        $uploadResult = $drive->uploadFile($tempFilePath, $paperTrailFileName, $entryFolderId);
-        
+
+        $uploadResult = $drive->uploadFile($tempFilePath, $paperTrailFileName, $researchFolderId);
+
         if (!$uploadResult['success'] || empty($uploadResult['id'])) {
             $errorMsg = $uploadResult['error'] ?? 'Unknown error';
-            error_log("Paper Trail upload failed: $errorMsg");
             return ['success' => false, 'error' => $errorMsg];
         }
-        
-        // Make file publicly viewable
+
         $drive->makeFilePublic($uploadResult['id']);
-        
+
         $fileId = $uploadResult['id'];
         $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
         $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
-        
-        error_log("Paper Trail upload successful: $paperTrailFileName to folder: $entryFolderId");
-        
+
         return [
             'success' => true,
             'drive_file_id' => $fileId,
@@ -968,103 +962,89 @@ function uploadToPaperTrail($tempFilePath, $fileName, $eventName, $author, $titl
             'paper_trail_root_id' => $paperTrailRootId,
             'sub_type_folder_id' => $subTypeFolderId,
             'year_folder_id' => $yearFolderId,
-            'entry_folder_id' => $entryFolderId,
-            'entry_folder_name' => $entryFolderName,
+            'research_folder_id' => $researchFolderId,
+            'research_folder_name' => $researchFolderName,
             'year' => $year,
             'submission_type' => $paperTrailRootName,
             'file_name' => $paperTrailFileName,
             'paper_trail_no' => $paperTrailNo,
             'author_last_name' => $authorLastName
         ];
-        
+
     } catch (Exception $e) {
         error_log("Paper Trail upload failed: " . $e->getMessage());
-        return [
-            'success' => false,
-            'error' => $e->getMessage()
-        ];
+        return ['success' => false, 'error' => $e->getMessage()];
     }
 }
 if (isset($_POST['uploadResearch'])) {
+    ob_end_clean();
+    ob_start();
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
     
+    $center = $_POST['center'] ?? '';
+    $senderId = $_SESSION['userId'];
     $response = new stdClass();
     $response->message = '';
+    $response->serverMessage = "";
     $response->status = false;
-    $response->paper_trail_no = null;
+    $response->debug = [];
     
     try {
-        // Check database connection
-        $con = new mysqli($host, $username, $pass, $dbName);
-        if ($con->connect_error) {
-            throw new Exception("Database connection failed: " . $con->connect_error);
-        }
-        
-        // Safely get POST data with defaults
-        $center = isset($_POST['center']) ? trim($_POST['center']) : '';
-        $senderId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 0;
-        $eventType = isset($_POST['eventType']) ? trim($_POST['eventType']) : '';
-        $isLocalInHouse = isset($_POST['is_local_in_house']) && $_POST['is_local_in_house'] === 'true';
-        
-        if (empty($eventType)) {
-            throw new Exception("Event type is required");
-        }
-        
-        // Check event deadline
-        $checkQuery = "SELECT COUNT(*) as count FROM event_list WHERE name = ? AND dead_line > CURRENT_TIMESTAMP";
-        $checkStatement = $con->prepare($checkQuery);
-        if (!$checkStatement) {
-            throw new Exception("Prepare failed: " . $con->error);
-        }
-        
-        $checkStatement->bind_param("s", $eventType);
-        $checkStatement->execute();
-        $result = $checkStatement->get_result();
-        $row = $result->fetch_assoc();
-        $eventActive = ($row && $row['count'] > 0);
-        $checkStatement->close();
-        
-        if (!$eventActive) {
-            $response->message = "Sorry, the event has closed.";
-            $response->status = false;
-        } else {
-            // Get research data from POST
-            $title = isset($_POST['title']) ? trim($_POST['title']) : '';
-            $author = isset($_POST['author']) ? trim($_POST['author']) : '';
-            $category = isset($_POST['category']) ? trim($_POST['category']) : '';
-            $campus = isset($_POST['campus']) ? trim($_POST['campus']) : '';
-            $coAuthor = isset($_POST['coAuthor']) ? $_POST['coAuthor'] : '[]';
-            $presenter = isset($_POST['presenter']) ? trim($_POST['presenter']) : '';
-            $date_started = isset($_POST['date_started']) && !empty($_POST['date_started']) ? $_POST['date_started'] : null;
-            $date_completed = isset($_POST['date_completed']) && !empty($_POST['date_completed']) ? $_POST['date_completed'] : null;
-            $finalSymposiumTitle = isset($_POST['final_symposium_title']) && !empty($_POST['final_symposium_title']) ? $_POST['final_symposium_title'] : null;
-            $title_changed = isset($_POST['title_changed']) ? (int)$_POST['title_changed'] : 0;
-            
-            // Validate required fields
-            if (empty($title) || empty($author) || empty($category) || empty($center) || empty($campus) || empty($presenter)) {
-                throw new Exception("Missing required fields: title, author, category, center, campus, or presenter");
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            if ($con->connect_error) {
+                throw new Exception("Database connection failed: " . $con->connect_error);
             }
             
-            // Get event_id
-            $eventId = null;
-            $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
-            $eventStmt = $con->prepare($eventIdQuery);
-            if ($eventStmt) {
+            $eventType = $_POST['eventType'];
+            $checkQuery = "SELECT COUNT(*) FROM event_list WHERE event_list.name=? AND event_list.dead_line>CURRENT_TIMESTAMP";
+            $checkStatement = $con->prepare($checkQuery);
+            if (!$checkStatement) {
+                throw new Exception("Prepare failed: " . $con->error);
+            }
+            
+            $checkStatement->bind_param("s", $eventType);
+            $checkStatement->execute();
+            $resss = $checkStatement->get_result()->fetch_row();
+
+            if ($resss[0] !== 0) {
+                $userDisignation = $_SESSION['userDesignation'];
+                
+                // Get research data from POST
+                $title = $_POST['title'];
+                $author = $_POST['author'];
+                $category = $_POST['category'];
+                $center = $_POST['center'];
+                $campus = $_POST['campus'];
+                $coAuthor = $_POST['coAuthor'] ?? '[]';
+                $presenter = $_POST['presenter'];
+                $date_started = $_POST['date_started'] ?? null;
+                $date_completed = $_POST['date_completed'] ?? $_POST['date_Completed'] ?? null;
+                
+                // Get event_id
+                $eventId = null;
+                $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
+                $eventStmt = $con->prepare($eventIdQuery);
                 $eventStmt->bind_param("s", $eventType);
                 $eventStmt->execute();
                 $eventResult = $eventStmt->get_result();
                 $eventRow = $eventResult->fetch_assoc();
                 $eventId = $eventRow ? $eventRow['id'] : null;
-                $eventStmt->close();
-            }
-            
-            // ===== DUPLICATE VALIDATION =====
-            $duplicateCheckQuery = "SELECT COUNT(*) as count FROM researchfile 
-                                   WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
-                                   AND TRIM(LOWER(author)) = TRIM(LOWER(?))
-                                   AND event_id = ?";
-            
-            $dupStmt = $con->prepare($duplicateCheckQuery);
-            if ($dupStmt) {
+                
+                // ===== DUPLICATE VALIDATION - Check within SAME EVENT only =====
+                // Check if the same title and author already exists for this specific event
+                $duplicateCheckQuery = "SELECT COUNT(*) as count, id, title, author, event_id, event 
+                                       FROM researchfile 
+                                       WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+                                       AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+                                       AND event_id = ?
+                                       LIMIT 1";
+                
+                $dupStmt = $con->prepare($duplicateCheckQuery);
+                if (!$dupStmt) {
+                    throw new Exception("Prepare failed for duplicate check: " . $con->error);
+                }
+                
                 $dupStmt->bind_param("ssi", $title, $author, $eventId);
                 $dupStmt->execute();
                 $dupResult = $dupStmt->get_result();
@@ -1072,89 +1052,80 @@ if (isset($_POST['uploadResearch'])) {
                 $dupStmt->close();
                 
                 if ($existingRecord && $existingRecord['count'] > 0) {
-                    throw new Exception("A research with the title '{$title}' and author '{$author}' already exists for this event.");
-                }
-            }
-            
-            // Initialize variables
-            $programDriveFileId = null;
-            $programDriveViewUrl = null;
-            $programDriveDownloadUrl = null;
-            $certificateDriveFileId = null;
-            $certificateDriveViewUrl = null;
-            $certificateDriveDownloadUrl = null;
-            $endorsementId = null;
-            $drive_file_id = null;
-            $drive_view_url = null;
-            $drive_download_url = null;
-            $drive_folder_id = null;
-            $drive_event_folder_id = null;
-            $drive_center_folder_id = null;
-            $drive_category_folder_id = null;
-            $drive_entry_folder_id = null;
-            
-            // Generate paper trail number FIRST
-            $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
-            
-            // ========== FOR LOCAL IN-HOUSE ==========
-            if ($isLocalInHouse) {
-                // Upload Program File
-                if (!isset($_FILES['programFile']) || $_FILES['programFile']['error'] !== UPLOAD_ERR_OK) {
-                    throw new Exception('Program file is required for Local In-House Review');
-                }
-                
-                $tempProgramPath = $_FILES['programFile']['tmp_name'];
-                $programFileName = $_FILES['programFile']['name'];
-                
-                if (file_exists($tempProgramPath)) {
-                    $programDriveResult = uploadResearchToDrive(
-                        $tempProgramPath, $programFileName, $eventType, $center,
-                        $category, $author, $title, 'program', true, false, false, true, $paperTrailNo
-                    );
+                    // Duplicate found in the SAME event
+                    $response->message = "DUPLICATE DETECTED: A research with the title '{$title}' and author '{$author}' already exists for the event '{$eventType}'.\n\nPlease check your submissions. If you believe this is a mistake, contact the system administrator.";
+                    $response->status = false;
                     
-                    if ($programDriveResult && $programDriveResult['success']) {
-                        $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
-                        $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
-                        $programDriveDownloadUrl = $programDriveResult['drive_download_url'] ?? null;
-                    } else {
-                        throw new Exception("Program file upload failed: " . ($programDriveResult['error'] ?? 'Unknown error'));
+                    ob_clean();
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode($response);
+                    exit();
+                }
+                // CHECK REVISION STATUS BEFORE ALLOWING UPLOAD
+                if (isset($_POST['is_revision']) && $_POST['is_revision'] === 'true') {
+                    $originalResearchId = $_POST['original_research_id'] ?? 0;
+                    
+                    // Verify the research is eligible for revision
+                    $checkRevisionQuery = "SELECT revision_status, revision_count FROM researchfile WHERE id = ? AND senderid = ?";
+                    $checkStmt = $con->prepare($checkRevisionQuery);
+                    $checkStmt->bind_param("ii", $originalResearchId, $senderId);
+                    $checkStmt->execute();
+                    $checkResult = $checkStmt->get_result();
+                    $revisionData = $checkResult->fetch_assoc();
+                    
+                    if (!$revisionData || !in_array($revisionData['revision_status'], ['revision_pending', 'revision_rejected'])) {
+                            throw new Exception("This document is not eligible for revision submission");
+                        }
+                }
+                // Check endorsement file if exists
+                if (isset($_FILES['uploadedFileEndorsement']) && $_FILES['uploadedFileEndorsement']['error'] === UPLOAD_ERR_OK) {
+                    $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
+                    $endorsementFileHash = generateFileHash($tempEndorsementPath);
+                    
+                    if ($endorsementFileHash) {
+                        $existingEndorsement = checkDuplicateByFileHashAndEvent($con, $endorsementFileHash, 'endorsement', $eventId, $eventType);
+                        if ($existingEndorsement) {
+                            throw new Exception("DUPLICATE ENDORSEMENT: This endorsement letter file has already been used for the same event '{$eventType}' for research ID {$existingEndorsement['research_id']}: '{$existingEndorsement['title']}' by {$existingEndorsement['author']}");
+                        }
                     }
                 }
                 
-                // Upload Certificate File
-                if (!isset($_FILES['certificateFile']) || $_FILES['certificateFile']['error'] !== UPLOAD_ERR_OK) {
-                    throw new Exception('Certificate file is required for Local In-House Review');
-                }
-                
-                $tempCertificatePath = $_FILES['certificateFile']['tmp_name'];
-                $certificateFileName = $_FILES['certificateFile']['name'];
-                
-                if (file_exists($tempCertificatePath)) {
-                    $certificateDriveResult = uploadResearchToDrive(
-                        $tempCertificatePath, $certificateFileName, $eventType, $center,
-                        $category, $author, $title, 'certificate', false, false, true, true, $paperTrailNo
-                    );
+                // Check research file if exists
+                if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
+                    $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
+                    $researchFileHash = generateFileHash($tempResearchPath);
                     
-                    if ($certificateDriveResult && $certificateDriveResult['success']) {
-                        $certificateDriveFileId = $certificateDriveResult['drive_file_id'] ?? null;
-                        $certificateDriveViewUrl = $certificateDriveResult['drive_view_url'] ?? null;
-                        $certificateDriveDownloadUrl = $certificateDriveResult['drive_download_url'] ?? null;
-                    } else {
-                        throw new Exception("Certificate file upload failed: " . ($certificateDriveResult['error'] ?? 'Unknown error'));
+                    if ($researchFileHash) {
+                        $existingResearch = checkDuplicateByFileHashAndEvent($con, $researchFileHash, 'proposal', $eventId, $eventType);
+                        if ($existingResearch) {
+                            throw new Exception("DUPLICATE RESEARCH: This research/proposal file has already been used for the same event '{$eventType}' for research ID {$existingResearch['research_id']}: '{$existingResearch['title']}' by {$existingResearch['author']}");
+                        }
                     }
                 }
-            
-            } else {
-                // ========== FOR UNIVERSITY/SYMPOSIUM ==========
                 
-                // Upload Endorsement Letter
+                // Check program file if exists
+                $programFileHash = null;
+                if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                    $tempProgramPath = $_FILES['programFile']['tmp_name'];
+                    $programFileHash = generateFileHash($tempProgramPath);
+                    
+                    if ($programFileHash) {
+                        $existingProgram = checkDuplicateByFileHashAndEvent($con, $programFileHash, 'program', $eventId, $eventType);
+                        if ($existingProgram) {
+                            throw new Exception("DUPLICATE PROGRAM: This program file has already been used for the same event '{$eventType}' for research ID {$existingProgram['research_id']}: '{$existingProgram['title']}' by {$existingProgram['author']}");
+                        }
+                    }
+                }
+                
+                // 1. Upload Endorsement Letter to Google Drive
                 if (!isset($_FILES['uploadedFileEndorsement']) || $_FILES['uploadedFileEndorsement']['error'] !== UPLOAD_ERR_OK) {
-                    throw new Exception('Endorsement letter is required');
+                    throw new Exception('Endorsement letter upload failed. Error code: ' . ($_FILES['uploadedFileEndorsement']['error'] ?? 'NO_FILE'));
                 }
                 
                 $tempEndorsementPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
                 $endorsementFileName = $_FILES['uploadedFileEndorsement']['name'];
                 
+                // Upload endorsement to Drive
                 $endorsementDriveResult = uploadResearchToDrive(
                     $tempEndorsementPath,
                     $endorsementFileName,
@@ -1165,40 +1136,50 @@ if (isset($_POST['uploadResearch'])) {
                     $title,
                     'endorsement',
                     false,
-                    true,
-                    false,
-                    false,
-                    $paperTrailNo
+                    true
                 );
                 
                 if (!$endorsementDriveResult['success']) {
                     throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
                 }
                 
-                // Save endorsement to database
+                error_log("Endorsement uploaded successfully: " . $endorsementDriveResult['drive_file_id']);
+                
                 $defaultTime = date('Y-m-d H:i:s');
+                
                 $query2 = "INSERT INTO endorsement (
-                    senderid, center, campus, drive_file_id, drive_view_url, 
-                    drive_download_url, drive_event_folder_id, drive_center_folder_id, 
-                    drive_category_folder_id, drive_entry_folder_id, event, status, date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    endorsement.senderid,
+                    endorsement.center,
+                    endorsement.file, 
+                    endorsement.drive_file_id,
+                    endorsement.drive_view_url,
+                    endorsement.drive_download_url,
+                    endorsement.drive_event_folder_id,
+                    endorsement.drive_center_folder_id,
+                    endorsement.drive_category_folder_id,
+                    endorsement.drive_entry_folder_id,
+                    endorsement.event,
+                    endorsement.status,
+                    endorsement.date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
                 $stateM = $con->prepare($query2);
                 if (!$stateM) {
                     throw new Exception("Prepare failed for endorsement: " . $con->error);
                 }
                 
+                $sta = NULL;
+                $endorsementFileJson = json_encode($endorsementDriveResult);
+                
                 $drive_event_folder_id = $endorsementDriveResult['drive_event_folder_id'] ?? null;
                 $drive_center_folder_id = $endorsementDriveResult['drive_center_folder_id'] ?? null;
                 $drive_category_folder_id = $endorsementDriveResult['drive_category_folder_id'] ?? null;
-                $drive_entry_folder_id = $endorsementDriveResult['entry_folder_id'] ?? null;
-                $endorsementStatus = null;
+                $drive_entry_folder_id = $endorsementDriveResult['drive_entry_folder_id'] ?? null;
                 
                 $stateM->bind_param(
-                    'issssssssssss',
-                    $senderId,
+                    'sssssssssssss',
+                    $senderId, 
                     $center,
-                    $campus,
+                    $endorsementFileJson,
                     $endorsementDriveResult['drive_file_id'],
                     $endorsementDriveResult['drive_view_url'],
                     $endorsementDriveResult['drive_download_url'],
@@ -1206,133 +1187,248 @@ if (isset($_POST['uploadResearch'])) {
                     $drive_center_folder_id,
                     $drive_category_folder_id,
                     $drive_entry_folder_id,
-                    $eventType,
-                    $endorsementStatus,
-                    $defaultTime
-                );
+                    $eventType, 
+                    $sta,
+                    $defaultTime);
                 
-                if (!$stateM->execute()) {
-                    throw new Exception("Failed to save endorsement: " . $stateM->error);
+                $st = $stateM->execute();
+                
+                if (!$st) {
+                    throw new Exception("Failed to execute endorsement insert: " . $stateM->error);
                 }
                 
                 $endorsementId = $con->insert_id;
-                $stateM->close();
-                error_log("Endorsement saved with ID: $endorsementId");
+                error_log("Endorsement saved to DB with ID: $endorsementId");
                 
-                // Upload Research File
+                // 2. Upload Research File
                 if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
-                    throw new Exception('Research file is required');
+                    $errorCode = $_FILES['researchDoc']['error'] ?? 'NO_FILE';
+                    $errorMsg = "Research file upload failed. Error code: $errorCode";
+                    if ($errorCode == 1 || $errorCode == 2) {
+                        $errorMsg .= " (File too large)";
+                    } elseif ($errorCode == 3) {
+                        $errorMsg .= " (File only partially uploaded)";
+                    } elseif ($errorCode == 4) {
+                        $errorMsg .= " (No file selected)";
+                    }
+                    throw new Exception($errorMsg);
                 }
                 
                 $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
                 $researchFileName = $_FILES['researchDoc']['name'];
                 
+                error_log("Uploading research: $researchFileName");
+                
                 if (!file_exists($tempResearchPath)) {
-                    throw new Exception("Research file not found on server");
+                    throw new Exception("Research file not found on server. Temp path: $tempResearchPath");
                 }
                 
+                // Upload research paper to Google Drive
                 $researchDriveResult = uploadResearchToDrive(
-                    $tempResearchPath, $researchFileName, $eventType, $center,
-                    $category, $author, $title, 'research', false, false, false, false, $paperTrailNo
-                );
+                    $tempResearchPath,
+                    $researchFileName,
+                    $eventType,
+                    $center,
+                    $category,
+                    $author, $title, 'research', false, false);
                 
                 if (!$researchDriveResult['success']) {
                     throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
                 }
                 
-                $drive_file_id = $researchDriveResult['drive_file_id'] ?? null;
-                $drive_view_url = $researchDriveResult['drive_view_url'] ?? null;
-                $drive_download_url = $researchDriveResult['drive_download_url'] ?? null;
+                error_log("Research uploaded successfully: " . $researchDriveResult['drive_file_id']);
+                
+                // 3. Upload Program File (for In-House and Symposium events)
+                $programDriveResult = null;
+                $programFile = null;
+                $programDriveFileId = null;
+                $programDriveViewUrl = null;
+
+                $isSymposium = stripos($eventType, 'symposium') !== false;
+                $isInHouse = stripos($eventType, 'in house review') !== false || stripos($eventType, 'in-house review') !== false;
+
+                // Upload program file for In-House and Symposium events
+                if (($isSymposium || $isInHouse) && isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                    $tempProgramPath = $_FILES['programFile']['tmp_name'];
+                    $programFileName = $_FILES['programFile']['name'];
+                    
+                    error_log("Uploading program file for " . ($isSymposium ? "Symposium" : "In-House") . ": $programFileName");
+                    
+                    if (file_exists($tempProgramPath)) {
+                        $programDriveResult = uploadResearchToDrive(
+                            $tempProgramPath,
+                            $programFileName,
+                            $eventType,
+                            $center,
+                            $category,
+                            $author,
+                            $title,
+                            'program',
+                            true,
+                            false
+                        );
+                        
+                        if ($programDriveResult && $programDriveResult['success']) {
+                            $programFile = json_encode($programDriveResult);
+                            $programDriveFileId = $programDriveResult['drive_file_id'] ?? null;
+                            $programDriveViewUrl = $programDriveResult['drive_view_url'] ?? null;
+                            error_log("Program uploaded successfully: " . $programDriveFileId);
+                        }
+                    }
+                }
+
+                // 4. Upload Certificate File (for Symposium/In-House events)
+                $certificateDriveResult = null;
+                $certificateDriveFileId = null;
+                $certificateDriveViewUrl = null;
+
+                if (($isSymposium || $isInHouse) && isset($_FILES['certificateFile']) && $_FILES['certificateFile']['error'] === UPLOAD_ERR_OK) {
+                    $tempCertificatePath = $_FILES['certificateFile']['tmp_name'];
+                    $certificateFileName = $_FILES['certificateFile']['name'];
+                    
+                    error_log("Uploading certificate for " . ($isSymposium ? "Symposium" : "In-House") . ": $certificateFileName");
+                    
+                    if (file_exists($tempCertificatePath)) {
+                        $certificateDriveResult = uploadResearchToDrive(
+                            $tempCertificatePath,
+                            $certificateFileName,
+                            $eventType,
+                            $center,
+                            $category,
+                            $author,
+                            $title,
+                            'certificate',
+                            false,
+                            false,
+                            true
+                        );
+                        
+                        if ($certificateDriveResult && $certificateDriveResult['success']) {
+                            $certificateDriveFileId = $certificateDriveResult['drive_file_id'] ?? null;
+                            $certificateDriveViewUrl = $certificateDriveResult['drive_view_url'] ?? null;
+                            error_log("Certificate uploaded successfully: " . $certificateDriveFileId);
+                        }
+                    }
+                }
+
+                $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $title, $author);
+
+                // Validate date fields for Symposium
+                if ($isSymposium) {
+                    if (empty($date_started) || empty($date_completed)) {
+                        throw new Exception("Date Started and Date Completed are required for Symposium events");
+                    }
+                }
+
+                $querV2 = "INSERT INTO researchfile(
+                    researchfile.paper_trail_no,
+                    researchfile.senderid,
+                    researchfile.endorsementid,
+                    researchfile.author,
+                    researchfile.title,
+                    researchfile.center,
+                    researchfile.category,
+                    researchfile.drive_file_id,
+                    researchfile.drive_view_url,
+                    researchfile.drive_download_url,
+                    researchfile.drive_folder_id,
+                    researchfile.drive_event_folder_id,
+                    researchfile.drive_center_folder_id,
+                    researchfile.drive_category_folder_id,
+                    researchfile.drive_entry_folder_id,
+                    researchfile.program,
+                    researchfile.program_drive_file_id,
+                    researchfile.program_drive_view_url,
+                    researchfile.certificate_drive_file_id,
+                    researchfile.certificate_drive_view_url,
+                    researchfile.event,
+                    researchfile.event_id,
+                    researchfile.campus,
+                    researchfile.coauthor,
+                    researchfile.presenter,
+                    researchfile.status,
+                    researchfile.date_started,
+                    researchfile.date_completed
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+                $rev = 'pending';
+
+                $stementResNew = $con->prepare($querV2);
+                if (!$stementResNew) {
+                    throw new Exception("Prepare failed for researchfile: " . $con->error);
+                }
+
                 $drive_folder_id = $researchDriveResult['drive_folder_id'] ?? null;
                 $drive_event_folder_id = $researchDriveResult['drive_event_folder_id'] ?? null;
                 $drive_center_folder_id = $researchDriveResult['drive_center_folder_id'] ?? null;
                 $drive_category_folder_id = $researchDriveResult['drive_category_folder_id'] ?? null;
-                $drive_entry_folder_id = $researchDriveResult['entry_folder_id'] ?? null;
-            }
-            
-            // Insert research file record - COUNT THE ? PLACEHOLDERS: 28 total
-            $querV2 = "INSERT INTO researchfile(
-                paper_trail_no, senderid, endorsementid, event_id, author, coauthor, presenter,
-                date_started, date_completed, title, final_symposium_title, event, status,
-                category, center, campus, drive_file_id, drive_view_url, drive_download_url,
-                drive_folder_id, drive_event_folder_id, drive_center_folder_id, drive_category_folder_id,
-                drive_entry_folder_id, program_drive_file_id, program_drive_view_url, 
-                certificate_drive_file_id, certificate_drive_view_url, title_changed
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $drive_entry_folder_id = $researchDriveResult['drive_entry_folder_id'] ?? null;
 
-            $stementResNew = $con->prepare($querV2);
-            if (!$stementResNew) {
-                throw new Exception("Prepare failed for researchfile: " . $con->error);
+                $bound = $stementResNew->bind_param(
+                    'ssssssssssssssssssssssssssss',  // 28 's' parameters
+                    $paperTrailNo, $senderId, $endorsementId,
+                    $author, $title, $center, $category,
+                    $researchDriveResult['drive_file_id'],
+                    $researchDriveResult['drive_view_url'],
+                    $researchDriveResult['drive_download_url'],
+                    $drive_folder_id,
+                    $drive_event_folder_id,
+                    $drive_center_folder_id,
+                    $drive_category_folder_id,
+                    $drive_entry_folder_id,
+                    $programFile,
+                    $programDriveFileId,
+                    $programDriveViewUrl,
+                    $certificateDriveFileId,     
+                    $certificateDriveViewUrl,      
+                    $eventType, $eventId, $campus,
+                    $coAuthor, $presenter, $rev, $date_started, $date_completed );
+                if (!$bound) {
+                    throw new Exception("Bind failed for researchfile: " . $stementResNew->error);
+                }
+
+                $state = $stementResNew->execute();
+
+                if (!$state) {
+                    throw new Exception("Database error for $researchFileName: " . $stementResNew->error);
+                }
+                
+                $researchFileId = $con->insert_id;
+                $response->paper_trail_no = $paperTrailNo;
+
+                // ===== Store File Hashes for Future Duplicate Detection =====
+                if ($researchFileId) {
+                    if (isset($researchFileHash) && $researchFileHash) {
+                        storeFileHash($con, $researchFileId, 'proposal', $researchFileHash, $eventId);
+                    }
+                    
+                    if (isset($programFileHash) && $programFileHash) {
+                        storeFileHash($con, $researchFileId, 'program', $programFileHash, $eventId);
+                    }
+                    
+                    if (isset($endorsementFileHash) && $endorsementFileHash) {
+                        storeFileHash($con, $researchFileId, 'endorsement', $endorsementFileHash, $eventId);
+                    }
+                }
+                
+                $response->message = "$researchFileName uploaded to Google Drive successfully.\n";
+                if ($programDriveResult && $programDriveResult['success']) {
+                    $response->message .= "Program attachment uploaded successfully.\n";
+                }
+                $response->status = true;
+                
+            } else {
+                $response->message = "Sorry..., The event has closed.";
             }
-            
-            $rev = 'pending';
-            
-            // 29 variables to match 29 placeholders
-            $stementResNew->bind_param(
-                'siississsssssssssssssssssssii',  // 29
-                $paperTrailNo,    
-                $senderId,         
-                $endorsementId,     
-                $eventId,          
-                $author,            
-                $coAuthor,        
-                $presenter,        
-                $date_started,      
-                $date_completed,    
-                $title,            
-                $finalSymposiumTitle, 
-                $eventType,       
-                $rev,              
-                $category,         
-                $center,          
-                $campus,         
-                $drive_file_id,     
-                $drive_view_url,    
-                $drive_download_url, 
-                $drive_folder_id, 
-                $drive_event_folder_id, 
-                $drive_center_folder_id, 
-                $drive_category_folder_id, 
-                $drive_entry_folder_id, 
-                $programDriveFileId, 
-                $programDriveViewUrl, 
-                $certificateDriveFileId, 
-                $certificateDriveViewUrl, 
-                $title_changed      
-            );
-            
-            if (!$stementResNew->execute()) {
-                throw new Exception("Database error: " . $stementResNew->error);
-            }
-            
-            $researchId = $con->insert_id;
-            $response->status = true;
-            $response->message = "Research submitted successfully!";
-            $response->paper_trail_no = $paperTrailNo;
-            $response->researchId = $researchId;
-            
-            // Return file URLs for Local In-House
-            if ($isLocalInHouse) {
-                $response->programDriveFileId = $programDriveFileId;
-                $response->programDriveViewUrl = $programDriveViewUrl;
-                $response->programDriveDownloadUrl = $programDriveDownloadUrl;
-                $response->certificateDriveFileId = $certificateDriveFileId;
-                $response->certificateDriveViewUrl = $certificateDriveViewUrl;
-                $response->certificateDriveDownloadUrl = $certificateDriveDownloadUrl;
-            }
-            
-            $stementResNew->close();
+        } else {
+            throw new Exception("Database connection failed: " . $con->error);
         }
-        
-        $con->close();
-        
     } catch (Exception $e) {
         error_log("Exception in uploadResearch: " . $e->getMessage());
-        $response->message = $e->getMessage();
+        $response->message = "Error: " . $e->getMessage();
         $response->status = false;
     }
     
-    // Clean output and send JSON
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
@@ -1342,8 +1438,11 @@ if (isset($_POST['uploadResearch'])) {
 if (isset($_POST['saveLocalInhouse'])) {
     $response = new stdClass();
     $response->status = false;
+    $response->success = false;
     $response->message = '';
     $response->saved_id = null;
+    $response->paper_trail_no = null;
+    $response->research_id = null;
 
     try {
         $con = new mysqli($host, $username, $pass, $dbName);
@@ -1351,25 +1450,11 @@ if (isset($_POST['saveLocalInhouse'])) {
             throw new Exception("Database connection failed: " . $con->connect_error);
         }
 
-        // Get research_id from POST (this is the foreign key)
-        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
-        
-        if ($researchId <= 0) {
-            throw new Exception("Invalid research_id. Researchfile record must exist first.");
-        }
+        $senderId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 0;
+        $eventId = isset($_POST['eventId']) ? (int) $_POST['eventId'] : 0;
+        $eventName = isset($_POST['eventName']) ? trim($_POST['eventName']) : '';
 
-        // Verify the research_id exists in researchfile table
-        $checkStmt = $con->prepare("SELECT id FROM researchfile WHERE id = ?");
-        $checkStmt->bind_param('i', $researchId);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-        
-        if ($checkResult->num_rows === 0) {
-            throw new Exception("Researchfile with ID {$researchId} does not exist.");
-        }
-        $checkStmt->close();
-
-        // Get form data (NO FILE UPLOADS HERE - only URLs from the first API call)
+        // Get form data
         $documentTitle = trim($_POST['document_title'] ?? '');
         $campus = trim($_POST['campus'] ?? '');
         $category = trim($_POST['category'] ?? '');
@@ -1377,19 +1462,184 @@ if (isset($_POST['saveLocalInhouse'])) {
         $mainAuthor = trim($_POST['main_author'] ?? '');
         $presenter = trim($_POST['presenter'] ?? '');
         $coAuthors = $_POST['co_authors'] ?? '[]';
-        
-        // Get file URLs from POST (passed from first API call)
-        $programFileViewUrl = $_POST['program_file_view_url'] ?? '';
-        $programFileDownloadUrl = $_POST['program_file_download_url'] ?? '';
-        $certificateFileViewUrl = $_POST['certificate_file_view_url'] ?? '';
-        $certificateFileDownloadUrl = $_POST['certificate_file_download_url'] ?? '';
 
         // Validate required fields
         if (empty($documentTitle) || empty($mainAuthor) || empty($category) || empty($center) || empty($campus)) {
             throw new Exception("Missing required fields for Local In-House Review");
         }
 
-        // ===== INSERT INTO local_inhouse table (NO FILE UPLOADS) =====
+        // Generate paper trail number for Local In-House
+        $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $documentTitle, $mainAuthor);
+
+        // Upload files to BOTH locations
+        require_once __DIR__ . '/../config/driver_config.php';
+        $drive = new GoogleDriveService();
+
+        $cleanTitle = cleanFolderNameForDrive($documentTitle);
+        $year = date('Y');
+
+        // Get author last name for folder naming
+        $authorParts = explode(' ', trim($mainAuthor));
+        $authorLastName = end($authorParts);
+        $authorLastName = cleanFolderNameForDrive($authorLastName);
+
+        // ===== LOCATION 1: Event -> Center -> Category (for event storage) =====
+        $cleanEventName = cleanFolderNameForDrive($eventName);
+        $cleanCenterName = cleanFolderNameForDrive($center);
+        $cleanCategoryName = cleanFolderNameForDrive($category);
+
+        $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
+        if (!$eventFolderId)
+            throw new Exception("Failed to create event folder");
+
+        $centerFolderId = $drive->findOrCreateFolder($cleanCenterName, $eventFolderId);
+        if (!$centerFolderId)
+            throw new Exception("Failed to create center folder");
+
+        $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $centerFolderId);
+        if (!$categoryFolderId)
+            throw new Exception("Failed to create category folder");
+
+        // For Local In-House, files go directly in Category folder (NO per-research folder)
+        $eventStorageFolderId = $categoryFolderId;
+
+        // ===== LOCATION 2: Paper Trail -> Local In-House Review -> Year -> {Paper_Trail_No} - {Title} =====
+        $paperTrailRootId = $drive->findOrCreateFolder('Paper Trail', null);
+        $localInHouseFolderId = $drive->findOrCreateFolder('Local In-House Review', $paperTrailRootId);
+        $yearFolderId = $drive->findOrCreateFolder($year, $localInHouseFolderId);
+        $researchFolderName = $paperTrailNo . ' - ' . $cleanTitle;
+        $paperTrailFolderId = $drive->findOrCreateFolder($researchFolderName, $yearFolderId);
+
+        // Upload Program File to BOTH locations
+        $programDriveFileId = null;
+        $programDriveViewUrl = null;
+        $programDriveDownloadUrl = null;
+        $programEventFileId = null;
+        $programEventViewUrl = null;
+
+        if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+            $tempProgramPath = $_FILES['programFile']['tmp_name'];
+            $programFileName = 'program_file.pdf';
+            $programEventFileName = 'Local In House - ' . $authorLastName . ' program_file.pdf';
+
+            // Upload to Paper Trail
+            $programPaperTrailResult = $drive->uploadFile($tempProgramPath, $programFileName, $paperTrailFolderId);
+            if ($programPaperTrailResult['success']) {
+                $drive->makeFilePublic($programPaperTrailResult['id']);
+                $programDriveFileId = $programPaperTrailResult['id'];
+                $programDriveViewUrl = "https://drive.google.com/file/d/{$programDriveFileId}/preview";
+                $programDriveDownloadUrl = "https://drive.google.com/uc?id={$programDriveFileId}&export=download";
+                error_log("Program file uploaded to Paper Trail: ID = $programDriveFileId");
+            } else {
+                throw new Exception("Program file upload to Paper Trail failed: " . ($programPaperTrailResult['error'] ?? 'Unknown error'));
+            }
+
+            // Upload to Event folder
+            $programEventResult = $drive->uploadFile($tempProgramPath, $programEventFileName, $eventStorageFolderId);
+            if ($programEventResult['success']) {
+                $drive->makeFilePublic($programEventResult['id']);
+                $programEventFileId = $programEventResult['id'];
+                $programEventViewUrl = "https://drive.google.com/file/d/{$programEventFileId}/preview";
+                error_log("Program file uploaded to Event folder: ID = $programEventFileId");
+            } else {
+                error_log("Program file upload to Event folder failed: " . ($programEventResult['error'] ?? 'Unknown error'));
+                // Don't throw, continue with Paper Trail copy at least
+            }
+        }
+
+        // Upload Certificate File to BOTH locations
+        $certificateDriveFileId = null;
+        $certificateDriveViewUrl = null;
+        $certificateDriveDownloadUrl = null;
+        $certificateEventFileId = null;
+        $certificateEventViewUrl = null;
+
+        if (isset($_FILES['certificateFile']) && $_FILES['certificateFile']['error'] === UPLOAD_ERR_OK) {
+            $tempCertificatePath = $_FILES['certificateFile']['tmp_name'];
+            $certificateFileName = 'certificate_file.pdf';
+            $certificateEventFileName = 'Local In House - ' . $authorLastName . ' certificate_file.pdf';
+
+            // Upload to Paper Trail
+            $certificatePaperTrailResult = $drive->uploadFile($tempCertificatePath, $certificateFileName, $paperTrailFolderId);
+            if ($certificatePaperTrailResult['success']) {
+                $drive->makeFilePublic($certificatePaperTrailResult['id']);
+                $certificateDriveFileId = $certificatePaperTrailResult['id'];
+                $certificateDriveViewUrl = "https://drive.google.com/file/d/{$certificateDriveFileId}/preview";
+                $certificateDriveDownloadUrl = "https://drive.google.com/uc?id={$certificateDriveFileId}&export=download";
+                error_log("Certificate file uploaded to Paper Trail: ID = $certificateDriveFileId");
+            } else {
+                throw new Exception("Certificate file upload to Paper Trail failed: " . ($certificatePaperTrailResult['error'] ?? 'Unknown error'));
+            }
+
+            // Upload to Event folder
+            $certificateEventResult = $drive->uploadFile($tempCertificatePath, $certificateEventFileName, $eventStorageFolderId);
+            if ($certificateEventResult['success']) {
+                $drive->makeFilePublic($certificateEventResult['id']);
+                $certificateEventFileId = $certificateEventResult['id'];
+                $certificateEventViewUrl = "https://drive.google.com/file/d/{$certificateEventFileId}/preview";
+                error_log("Certificate file uploaded to Event folder: ID = $certificateEventFileId");
+            } else {
+                error_log("Certificate file upload to Event folder failed: " . ($certificateEventResult['error'] ?? 'Unknown error'));
+                // Don't throw, continue with Paper Trail copy at least
+            }
+        }
+
+        // ===== STEP 1: INSERT INTO researchfile TABLE FIRST =====
+        $rev = 'pending';
+        $nullEndorsement = null;
+        $title_changed = 0;
+
+        $insertResearchQuery = "INSERT INTO researchfile(
+            paper_trail_no, senderid, endorsementid, event_id, author, coauthor, presenter,
+            date_started, date_completed, title, final_symposium_title, event, status,
+            category, center, campus, title_changed,
+            drive_file_id, drive_view_url, drive_download_url,
+            drive_event_folder_id, drive_center_folder_id, drive_category_folder_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $insertResearchStmt = $con->prepare($insertResearchQuery);
+        if (!$insertResearchStmt) {
+            throw new Exception("Prepare failed for researchfile: " . $con->error);
+        }
+
+        // For Local In-House, store the Event folder program file as the primary file
+        $insertResearchStmt->bind_param(
+            'siiissssssssssssissssss',
+            $paperTrailNo,
+            $senderId,
+            $nullEndorsement,
+            $eventId,
+            $mainAuthor,
+            $coAuthors,
+            $presenter,
+            $date_started,
+            $date_completed,
+            $documentTitle,
+            $final_symposium_tile,
+            $eventName,
+            $rev,
+            $category,
+            $center,
+            $campus,
+            $title_changed,
+            $programEventFileId,
+            $programEventViewUrl,           // drive_view_url
+            $programDriveDownloadUrl,       // drive_download_url (Paper Trail download)
+            $eventFolderId,                 // drive_event_folder_id
+            $centerFolderId,                // drive_center_folder_id
+            $categoryFolderId               // drive_category_folder_id
+        );
+
+        if (!$insertResearchStmt->execute()) {
+            throw new Exception("Failed to insert researchfile: " . $insertResearchStmt->error);
+        }
+
+        $researchId = $con->insert_id;
+        $insertResearchStmt->close();
+
+        error_log("Researchfile created with ID: $researchId for Local In-House");
+
+        // ===== STEP 2: INSERT INTO local_inhouse TABLE USING research_id =====
         $query = "INSERT INTO local_inhouse (
             research_id,
             document_title, 
@@ -1399,44 +1649,59 @@ if (isset($_POST['saveLocalInhouse'])) {
             main_author, 
             presenter, 
             co_authors,
-            program_file_view_url,      
+            program_file_view_url, 
             program_file_download_url,
-            certificate_file_view_url,  
+            certificate_file_view_url, 
             certificate_file_download_url,
+            program_event_file_id,
+            program_event_view_url,
+            certificate_event_file_id,
+            certificate_event_view_url,
+            paper_trail_folder_id,
+            event_folder_id,
             created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         $stmt = $con->prepare($query);
         if (!$stmt) {
-            throw new Exception("Prepare failed: " . $con->error);
+            throw new Exception("Prepare failed for local_inhouse: " . $con->error);
         }
 
         $stmt->bind_param(
-            'isssssssssss',
+            'isssssssssssssssss',
             $researchId,
-            $documentTitle, 
-            $campus, 
-            $category, 
+            $documentTitle,
+            $campus,
+            $category,
             $center,
-            $mainAuthor, 
-            $presenter, 
+            $mainAuthor,
+            $presenter,
             $coAuthors,
-            $programFileViewUrl, 
-            $programFileDownloadUrl,
-            $certificateFileViewUrl, 
-            $certificateFileDownloadUrl
+            $programDriveViewUrl,
+            $programDriveDownloadUrl,
+            $certificateDriveViewUrl,
+            $certificateDriveDownloadUrl,
+            $programEventFileId,
+            $programEventViewUrl,
+            $certificateEventFileId,
+            $certificateEventViewUrl,
+            $paperTrailFolderId,
+            $categoryFolderId
         );
 
         if (!$stmt->execute()) {
-            throw new Exception("Failed to save Local In-House: " . $stmt->error);
+            throw new Exception("Failed to insert into local_inhouse: " . $stmt->error);
         }
 
         $localId = $con->insert_id;
 
         $response->saved_id = $localId;
+        $response->research_id = $researchId;
+        $response->paper_trail_no = $paperTrailNo;
         $response->status = true;
+        $response->success = true;
         $response->message = "Local In-House Review saved successfully";
-        
+
         $stmt->close();
         $con->close();
 
@@ -1446,7 +1711,256 @@ if (isset($_POST['saveLocalInhouse'])) {
         $response->status = false;
     }
 
-    ob_end_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+if (isset($_POST['uploadSymposium'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->success = false;
+    $response->research_id = null;
+    $response->paper_trail_no = null;
+
+    try {
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        $senderId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 0;
+        $eventType = isset($_POST['eventType']) ? trim($_POST['eventType']) : '';
+        $eventId = isset($_POST['eventId']) ? (int) $_POST['eventId'] : 0;
+        $selectedInhouseId = isset($_POST['selected_inhouse_id']) ? (int) $_POST['selected_inhouse_id'] : null;
+
+        if (empty($eventType)) {
+            throw new Exception("Event type is required");
+        }
+
+        // Get symposium data from POST
+        $originalTitle = isset($_POST['original_title']) ? trim($_POST['original_title']) : '';
+        $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+        $center = isset($_POST['center']) ? trim($_POST['center']) : '';
+        $author = isset($_POST['author']) ? trim($_POST['author']) : '';
+        $presenter = isset($_POST['presenter']) ? trim($_POST['presenter']) : '';
+        $campus = isset($_POST['campus']) ? trim($_POST['campus']) : '';
+        $coAuthor = isset($_POST['coAuthor']) ? $_POST['coAuthor'] : '[]';
+        $date_started = isset($_POST['date_started']) && !empty($_POST['date_started']) ? $_POST['date_started'] : null;
+        $date_completed = isset($_POST['date_completed']) && !empty($_POST['date_completed']) ? $_POST['date_completed'] : null;
+        $finalSymposiumTitle = isset($_POST['final_symposium_title']) && !empty($_POST['final_symposium_title']) ? $_POST['final_symposium_title'] : null;
+        $title_changed = isset($_POST['title_changed']) ? (int) $_POST['title_changed'] : 0;
+
+        // Validate required fields
+        if (empty($originalTitle) || empty($author) || empty($category) || empty($center) || empty($campus) || empty($presenter)) {
+            throw new Exception("Missing required fields for Symposium submission");
+        }
+
+        // Generate paper trail number for Symposium
+        $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $originalTitle, $author);
+
+        require_once __DIR__ . '/../config/driver_config.php';
+        $drive = new GoogleDriveService();
+
+        // Clean names for folder creation
+        $cleanEventName = cleanFolderNameForDrive($eventType);
+        $cleanCenterName = cleanFolderNameForDrive($center);
+        $cleanCategoryName = cleanFolderNameForDrive($category);
+
+        // Get author last name
+        $authorParts = explode(' ', trim($author));
+        $authorLastName = end($authorParts);
+        $authorLastName = cleanFolderNameForDrive($authorLastName);
+
+        // Get keywords from title for folder name (first 3 words)
+        $titleWords = explode(' ', trim($originalTitle));
+        $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
+        $titleKeywords = cleanFolderNameForDrive($titleKeywords);
+
+        // Create entry folder name: {author last name} - {title keywords}
+        $entryFolderName = $authorLastName . ' - ' . $titleKeywords;
+        $entryFolderName = cleanFolderNameForDrive($entryFolderName);
+
+        // Create folder structure: Event -> Center -> Category -> {Author_LastName} - {Title_Keywords}
+        $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
+        if (!$eventFolderId)
+            throw new Exception("Failed to create event folder");
+
+        $centerFolderId = $drive->findOrCreateFolder($cleanCenterName, $eventFolderId);
+        if (!$centerFolderId)
+            throw new Exception("Failed to create center folder");
+
+        $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $centerFolderId);
+        if (!$categoryFolderId)
+            throw new Exception("Failed to create category folder");
+
+        // Create entry folder inside Category
+        $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $categoryFolderId);
+        if (!$entryFolderId)
+            throw new Exception("Failed to create entry folder: $entryFolderName");
+
+        $cleanTitleForFile = cleanFolderNameForDrive($originalTitle);
+
+        // Upload Endorsement Letter to entry folder
+        if (!isset($_FILES['endorsementFile']) || $_FILES['endorsementFile']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('Endorsement letter is required for Symposium');
+        }
+
+        $tempEndorsementPath = $_FILES['endorsementFile']['tmp_name'];
+        $endorsementFileName = $cleanTitleForFile . ' - endorsement letter.pdf';
+
+        $endorsementDriveResult = $drive->uploadFile($tempEndorsementPath, $endorsementFileName, $entryFolderId);
+        if (!$endorsementDriveResult['success']) {
+            throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
+        }
+        $drive->makeFilePublic($endorsementDriveResult['id']);
+
+        // Save endorsement to database
+        $defaultTime = date('Y-m-d H:i:s');
+        $query2 = "INSERT INTO endorsement (
+            senderid, center, campus, drive_file_id, drive_view_url, 
+            drive_download_url, drive_event_folder_id, drive_center_folder_id, 
+            drive_category_folder_id, drive_entry_folder_id, event, status, date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $stateM = $con->prepare($query2);
+        if (!$stateM) {
+            throw new Exception("Prepare failed for endorsement: " . $con->error);
+        }
+
+        $endorsementDriveViewUrl = "https://drive.google.com/file/d/{$endorsementDriveResult['id']}/preview";
+        $endorsementDriveDownloadUrl = "https://drive.google.com/uc?id={$endorsementDriveResult['id']}&export=download";
+        $status = 'pending';
+        $stateM->bind_param(
+            'issssssssssss',
+            $senderId,
+            $center,
+            $campus,
+            $endorsementDriveResult['id'],
+            $endorsementDriveViewUrl,
+            $endorsementDriveDownloadUrl,
+            $eventFolderId,
+            $centerFolderId,
+            $categoryFolderId,
+            $entryFolderId,
+            $eventType,
+            $status,
+            $defaultTime
+        );
+
+        if (!$stateM->execute()) {
+            throw new Exception("Failed to save endorsement: " . $stateM->error);
+        }
+
+        $endorsementId = $con->insert_id;
+        $stateM->close();
+        error_log("Symposium endorsement saved with ID: $endorsementId");
+
+        // Upload Completed Research File to the SAME entry folder
+        if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('Completed research file is required for Symposium');
+        }
+
+        $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
+        $researchFileName = $cleanTitleForFile . ' - completed research.pdf';
+
+        $researchDriveResult = $drive->uploadFile($tempResearchPath, $researchFileName, $entryFolderId);
+        if (!$researchDriveResult['success']) {
+            throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
+        }
+        $drive->makeFilePublic($researchDriveResult['id']);
+
+        $drive_file_id = $researchDriveResult['id'];
+        $drive_view_url = "https://drive.google.com/file/d/{$drive_file_id}/preview";
+        $drive_download_url = "https://drive.google.com/uc?id={$drive_file_id}&export=download";
+        $drive_folder_id = $entryFolderId;
+        $drive_event_folder_id = $eventFolderId;
+        $drive_center_folder_id = $centerFolderId;
+        $drive_category_folder_id = $categoryFolderId;
+        $drive_entry_folder_id = $entryFolderId;
+
+        // ===== PAPER TRAIL COPY FOR SYMPOSIUM =====
+        $year = date('Y');
+        $paperTrailRootId = $drive->findOrCreateFolder('Paper Trail', null);
+        $symposiumFolderId = $drive->findOrCreateFolder('Symposium', $paperTrailRootId);
+        $yearFolderId = $drive->findOrCreateFolder($year, $symposiumFolderId);
+        $paperTrailResearchFolderName = $paperTrailNo . ' - ' . $cleanTitleForFile;
+        $paperTrailFolderId = $drive->findOrCreateFolder($paperTrailResearchFolderName, $yearFolderId);
+
+        // Copy files to Paper Trail
+        $drive->copyFile($endorsementDriveResult['id'], $paperTrailFolderId, 'endorsement_letter.pdf');
+        $drive->copyFile($researchDriveResult['id'], $paperTrailFolderId, 'completed_research.pdf');
+
+        error_log("Paper Trail folder created: $paperTrailFolderId for Symposium");
+
+        // ===== INSERT INTO researchfile table for Symposium =====
+        $rev = 'pending';
+        $insertQuery = "INSERT INTO researchfile(
+            paper_trail_no, senderid, endorsementid, event_id, author, coauthor, presenter,
+            date_started, date_completed, title, final_symposium_title, event, status,
+            category, center, campus, 
+            drive_file_id, drive_view_url, drive_download_url,
+            drive_folder_id, drive_event_folder_id, drive_center_folder_id, drive_category_folder_id,
+            drive_entry_folder_id, title_changed
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $insertStmt = $con->prepare($insertQuery);
+        if (!$insertStmt) {
+            throw new Exception("Prepare failed for researchfile: " . $con->error);
+        }
+
+        $insertStmt->bind_param(
+            'siiissssssssssssssssssssssi',
+            $paperTrailNo,
+            $senderId,
+            $endorsementId,
+            $eventId,
+            $author,
+            $coAuthor,
+            $presenter,
+            $date_started,
+            $date_completed,
+            $originalTitle,
+            $finalSymposiumTitle,
+            $eventType,
+            $rev,
+            $category,
+            $center,
+            $campus,
+            $drive_file_id,
+            $drive_view_url,
+            $drive_download_url,
+            $drive_folder_id,
+            $drive_event_folder_id,
+            $drive_center_folder_id,
+            $drive_category_folder_id,
+            $drive_entry_folder_id,
+            $title_changed
+        );
+
+        if (!$insertStmt->execute()) {
+            throw new Exception("Failed to insert symposium research: " . $insertStmt->error);
+        }
+
+        $newResearchId = $con->insert_id;
+        $insertStmt->close();
+
+        $response->status = true;
+        $response->success = true;
+        $response->message = "Symposium submission successful!";
+        $response->research_id = $newResearchId;
+        $response->paper_trail_no = $paperTrailNo;
+
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("uploadSymposium error: " . $e->getMessage());
+        $response->message = $e->getMessage();
+        $response->status = false;
+        $response->success = false;
+    }
+
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
@@ -1454,21 +1968,21 @@ if (isset($_POST['saveLocalInhouse'])) {
 
 if (isset($_POST['searchInhouseTitles'])) {
     // Clean output buffer to prevent HTML errors
-    while (ob_get_level()) ob_end_clean();
+    while (ob_get_level())
+        ob_end_clean();
     ob_start();
-    
+
     $response = new stdClass();
     $response->status = false;
     $response->list = [];
     $response->message = '';
-    
+
     try {
         if ($con = new mysqli($host, $username, $pass, $dbName)) {
-            $con->set_charset("utf8mb4");
-            
+
             $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
             $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
-            
+
             $query = "SELECT DISTINCT rf.title, rf.author, rf.presenter, rf.drive_view_url, rf.id
                       FROM researchfile rf
                       INNER JOIN endorsement e ON rf.endorsementid = e.id
@@ -1477,16 +1991,16 @@ if (isset($_POST['searchInhouseTitles'])) {
                       AND (rf.title LIKE ? OR rf.author LIKE ? OR rf.presenter LIKE ?)
                       ORDER BY rf.title ASC
                       LIMIT 20";
-            
+
             $stmt = $con->prepare($query);
             if (!$stmt) {
                 throw new Exception("Prepare failed: " . $con->error);
             }
-            
+
             $stmt->bind_param("sss", $searchPattern, $searchPattern, $searchPattern);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             while ($row = $result->fetch_assoc()) {
                 $item = new stdClass();
                 $item->title = $row['title'];
@@ -1496,7 +2010,7 @@ if (isset($_POST['searchInhouseTitles'])) {
                 $item->id = $row['id'];
                 $response->list[] = $item;
             }
-            
+
             $response->status = true;
             $response->message = 'Found ' . count($response->list) . ' results';
             $stmt->close();
@@ -1510,7 +2024,7 @@ if (isset($_POST['searchInhouseTitles'])) {
         $response->message = $e->getMessage();
         $response->list = [];
     }
-    
+
     // Clear any output buffers and send clean JSON
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
@@ -1523,11 +2037,11 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
     $response->status = false;
     $response->message = '';
     $response->data = [];
-    
+
     try {
         if ($con = new mysqli($host, $username, $pass, $dbName)) {
             $userId = $_SESSION['userId'] ?? 0;
-            
+
             //rf.senderid = ? this keep the return data per center or per campus
             $query = "SELECT 
                         rf.id,
@@ -1550,12 +2064,12 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
                       AND rf.senderid = ? 
                       AND e.status = 'accepted' 
                       ORDER BY el.date DESC, rf.id DESC";
-            
+
             $stmt = $con->prepare($query);
             $stmt->bind_param("i", $userId);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             while ($row = $result->fetch_assoc()) {
                 $data = new stdClass();
                 $data->id = $row['id'];
@@ -1566,7 +2080,7 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
                 $data->event_name = $row['event_name'] ?? $row['event'];
                 $data->event_date = $row['event_date'] ?? '';
                 $data->status = $row['status'];
-                
+
                 // Parse coauthors
                 if (!empty($row['coauthor'])) {
                     $coauthors = json_decode($row['coauthor'], true);
@@ -1574,13 +2088,13 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
                 } else {
                     $data->coauthors = [];
                 }
-                
+
                 $response->data[] = $data;
             }
-            
+
             $response->status = true;
             $response->message = count($response->data) . ' accepted in-house review(s) found';
-            
+
             $stmt->close();
             $con->close();
         } else {
@@ -1591,7 +2105,7 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
         $response->message = "Error: " . $e->getMessage();
         $response->status = false;
     }
-    
+
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
@@ -1626,16 +2140,16 @@ if (isset($_POST['acceptRequest'])) {
 
             if ($status) {
                 $response->status = true;
-                
+
                 // ============================================
                 // UNCOMMENTED AND FIXED EMAIL SENDING CODE
                 // ============================================
-                
+
                 $from = new stdClass();
                 $from->email = $rdeEmail;
                 $from->password = $emailPassword;
                 $from->name = 'Research, Development and Extension';
-                
+
                 // Get the research papers under this endorsement
                 $emailStatement = $con->prepare("SELECT 
                     DISTINCT account_detail.email, 
@@ -1645,25 +2159,25 @@ if (isset($_POST['acceptRequest'])) {
                 FROM researchfile 
                 LEFT JOIN account_detail ON account_detail.id = researchfile.senderid 
                 WHERE researchfile.endorsementid=?");
-                
+
                 $emailStatement->bind_param("s", $docId);
                 $emailStatement->execute();
                 $emRes = $emailStatement->get_result();
-                
+
                 $emailCount = 0;
                 while ($row = $emRes->fetch_assoc()) {
                     $to = new stdClass();
                     $to->name = $row['fullName'];
                     $to->email = $row['email'];
-                    
+
                     // Send acceptance email
                     $emailResult = SendEmail($from, $to, AcceptedEntry($row['event'], $row['title']));
-                    
+
                     if ($emailResult) {
                         $emailCount++;
                     }
                 }
-                
+
                 if ($emailCount > 0) {
                     $response->message = "Document Accepted and email notifications sent to $emailCount submitter(s)";
                 } else {
@@ -1678,7 +2192,7 @@ if (isset($_POST['acceptRequest'])) {
     } else {
         $response->message = $con->error;
     }
-    
+
     echo json_encode($response);
 }
 // this is for evaluator
@@ -1704,11 +2218,11 @@ if (isset($_POST['researchSubmit'])) {
         $centerStmt->execute();
         $centerResult = $centerStmt->get_result();
         $centerRow = $centerResult->fetch_assoc();
-        
+
         // If we found a matching center in the database, use its name
         // Otherwise, use the original value but convert to proper case for comparison
         $dbCenterName = $centerRow ? $centerRow['name'] : $center;
-        
+
         error_log("Evaluator center (session): $center");
         error_log("Looking for researchfiles with center: $dbCenterName");
 
@@ -1744,15 +2258,15 @@ if (isset($_POST['researchSubmit'])) {
 
         $stm = $con->prepare($sqlQueries);
         $stat = 'accepted';
-        
+
         // Create multiple variations for matching
         $centerExact = $dbCenterName;
         $centerLike = "%$dbCenterName%";
         $centerUpper = strtoupper($center);
         $centerLikeUpper = "%" . strtoupper($dbCenterName) . "%";
-        
+
         $stm->bind_param("sssssi", $stat, $centerExact, $centerLike, $centerUpper, $centerLikeUpper, $eventId);
-        
+
         $stm->execute();
         $resultRes = $stm->get_result();
 
@@ -1761,7 +2275,7 @@ if (isset($_POST['researchSubmit'])) {
             $data->status = NULL;
             $data->id = $val['id'];
             $data->author = $val['author'];
-            
+
             // BACKWARD COMPATIBILITY: Use Google Drive URL if available, otherwise local file
             if (!empty($val['drive_view_url'])) {
                 $data->file = $val['drive_view_url']; // Google Drive URL
@@ -1769,12 +2283,12 @@ if (isset($_POST['researchSubmit'])) {
                 $data->drive_file_id = $val['drive_file_id'];
                 $data->drive_download_url = $val['drive_download_url'];
             } else {
-                $data->file = $val['local_file']; 
+                $data->file = $val['local_file'];
                 $data->file_type = 'local';
                 $data->drive_file_id = null;
                 $data->drive_download_url = null;
             }
-            
+
             $data->title = $val['research_title']; // Research document title
             $data->event = $val['event'];
             $data->category = $val['category'];
@@ -1793,7 +2307,7 @@ if (isset($_POST['researchSubmit'])) {
             $data->recommendation = '';
             $data->literature = '';
             $data->other = '';
-            
+
             // Initialize status flags
             $data->hasComment = false;
             $data->hasScore = false;
@@ -1824,12 +2338,12 @@ if (isset($_POST['researchSubmit'])) {
                     THEN 1 ELSE 0 
                 END as has_comment_content
             FROM comments WHERE comments.resid = ? AND comments.evalid = ? AND comments.eventType = ?";
-            
+
             $statement = $con->prepare($comquery);
             $statement->bind_param('sss', $val['id'], $evalId, $val['event']);
             $statement->execute();
             $res = $statement->get_result();
-            
+
             while ($v = $res->fetch_assoc()) {
                 $data->status = 'updated';
                 $data->comment_title = $v['comment_title']; // Store comment title separately
@@ -1843,7 +2357,7 @@ if (isset($_POST['researchSubmit'])) {
                 $data->other = $v['other'];
                 $data->hasComment = ($v['has_comment_content'] == 1);
             }
-            
+
             // Check if this document has been scored
             $scoreQuery = "SELECT 
                 COUNT(*) as score_count,
@@ -1853,19 +2367,19 @@ if (isset($_POST['researchSubmit'])) {
                 END as has_score_content
             FROM score_board 
             WHERE doc_id = ? AND eval_id = ?";
-            
+
             $scoreStmt = $con->prepare($scoreQuery);
             $scoreStmt->bind_param('ss', $val['id'], $evalId);
             $scoreStmt->execute();
             $scoreResult = $scoreStmt->get_result();
-            
+
             if ($scoreRow = $scoreResult->fetch_assoc()) {
                 $data->hasScore = ($scoreRow['has_score_content'] == 1);
             }
-            
+
             $response->list[] = $data;
         }
-        
+
         error_log("Found " . count($response->list) . " research files for center: $dbCenterName");
     }
     echo json_encode($response);
@@ -1877,20 +2391,20 @@ if (isset($_POST['updateReview'])) {
     $response->status = false;
     $response->message = '';
     $response->emailStatus = '';
-    
+
     // Log all POST data for debugging
     error_log("=== updateReview called ===");
     error_log("POST data: " . print_r($_POST, true));
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $category = $_SESSION['category'] ?? $_SESSION['center'] ?? '';
         $response->userName = $_SESSION['userName'] ?? '';
         $evalId = $_SESSION['userId'] ?? 0;
         $evalName = $_SESSION['userFulname'] ?? '';
         $docsId = $_POST['docId'] ?? '';
-        
+
         error_log("evalId: $evalId, docsId: $docsId");
-        
+
         // Get the event ID and event name from the research file
         $eventId = 0;
         $eventType = '';
@@ -1900,12 +2414,12 @@ if (isset($_POST['updateReview'])) {
             $eventQuery->execute();
             $eventResult = $eventQuery->get_result();
             $eventRow = $eventResult->fetch_assoc();
-            $eventId   = $eventRow['event_id']   ?? $_SESSION['eventId']   ?? 0;
-            $eventType = $eventRow['event_name']  ?? $_SESSION['eventTYpe'] ?? '';
+            $eventId = $eventRow['event_id'] ?? $_SESSION['eventId'] ?? 0;
+            $eventType = $eventRow['event_name'] ?? $_SESSION['eventTYpe'] ?? '';
             $eventQuery->close();
             error_log("eventId: $eventId, eventType: $eventType");
         }
-        
+
         $title = $_POST['title'] ?? '';
         $intro = $_POST['intro'] ?? '';
         $abstract = $_POST['abstract'] ?? '';
@@ -1915,9 +2429,9 @@ if (isset($_POST['updateReview'])) {
         $recommendation = $_POST['recommendation'] ?? '';
         $literature = $_POST['literature'] ?? '';
         $other = $_POST['other'] ?? '';
-        
+
         error_log("Comment data - title: '$title', intro: '$intro', abstract: '$abstract'");
-        
+
         // Get document details for email
         $docInfo = [];
         if ($docsId) {
@@ -1936,14 +2450,14 @@ if (isset($_POST['updateReview'])) {
             LEFT JOIN account_detail ON researchfile.senderid = account_detail.id
             LEFT JOIN event_list ON researchfile.event_id = event_list.id
             WHERE researchfile.id = ?");
-            
+
             $documentDetails->bind_param("s", $docsId);
             $documentDetails->execute();
             $docResult = $documentDetails->get_result();
             $docInfo = $docResult->fetch_assoc();
             $documentDetails->close();
         }
-        
+
         // Check if comments exist for this evaluator and document
         $found = false;
         if ($docsId && $evalId) {
@@ -1956,7 +2470,7 @@ if (isset($_POST['updateReview'])) {
             $checkQuery->close();
             error_log("Comments exist: " . ($found ? 'yes' : 'no'));
         }
-        
+
         if ($found) {
             // Update existing comments
             $comQ = "UPDATE comments SET 
@@ -1973,27 +2487,36 @@ if (isset($_POST['updateReview'])) {
                 comments.isCommented = 1,
                 comments.date = NOW()
                 WHERE comments.resid = ? AND comments.evalid = ?";
-            
+
             error_log("UPDATE Query: " . $comQ);
-            
+
             $statement = $con->prepare($comQ);
-            $statement->bind_param("ssssssssssss", 
-                $title, $intro, $abstract, $objective, $methodology, 
-                $results, $recommendation, $literature, $other,
+            $statement->bind_param(
+                "ssssssssssss",
+                $title,
+                $intro,
+                $abstract,
+                $objective,
+                $methodology,
+                $results,
+                $recommendation,
+                $literature,
+                $other,
                 $eventType,
-                $docsId, $evalId
+                $docsId,
+                $evalId
             );
-            
+
             // Log the values being bound
             error_log("Binding values: title='$title', intro='$intro', abstract='$abstract', objective='$objective', methodology='$methodology', results='$results', recommendation='$recommendation', literature='$literature', other='$other', docsId='$docsId', evalId='$evalId'");
-            
+
             $status = $statement->execute();
-            
+
             if ($status) {
                 $response->status = true;
                 $response->message = "Comments Updated successfully..!";
                 error_log("UPDATE successful");
-                
+
                 // Send email notification
                 if (!empty($docInfo)) {
                     $response->emailStatus = sendCommentEmail($con, $evalName, $docInfo, [
@@ -2008,7 +2531,7 @@ if (isset($_POST['updateReview'])) {
                         'other' => $other
                     ], $docsId, $evalId, $rdeEmail, $emailPassword);
                 }
-                
+
             } else {
                 $response->message = "Update failed: " . $statement->error;
                 error_log("UPDATE failed: " . $statement->error);
@@ -2032,25 +2555,36 @@ if (isset($_POST['updateReview'])) {
                 other,
                 isCommented,
                 date ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
-            
+
             error_log("INSERT Query: " . $comQuery);
-            
+
             $statementQ = $con->prepare($comQuery);
-            $statementQ->bind_param("sssssssssssss", 
-                $docsId, $evalId, $eventId, $eventType,
-                $title, $intro, $abstract, $objective, $methodology, 
-                $results, $recommendation, $literature, $other
+            $statementQ->bind_param(
+                "sssssssssssss",
+                $docsId,
+                $evalId,
+                $eventId,
+                $eventType,
+                $title,
+                $intro,
+                $abstract,
+                $objective,
+                $methodology,
+                $results,
+                $recommendation,
+                $literature,
+                $other
             );
-            
+
             error_log("Binding values: docsId='$docsId', evalId='$evalId', eventId='$eventId', eventType='$eventType', title='$title', intro='$intro', abstract='$abstract', objective='$objective', methodology='$methodology', results='$results', recommendation='$recommendation', literature='$literature', other='$other'");
-            
+
             $statusIn = $statementQ->execute();
-            
+
             if ($statusIn) {
                 $response->status = true;
                 $response->message = "Comments Saved successfully..!";
                 error_log("INSERT successful");
-                
+
                 // Send email notification
                 if (!empty($docInfo)) {
                     $response->emailStatus = sendCommentEmail($con, $evalName, $docInfo, [
@@ -2065,7 +2599,7 @@ if (isset($_POST['updateReview'])) {
                         'other' => $other
                     ], $docsId, $evalId, $rdeEmail, $emailPassword);
                 }
-                
+
             } else {
                 $response->message = "Insert failed: " . $statementQ->error;
                 error_log("INSERT failed: " . $statementQ->error);
@@ -2076,7 +2610,7 @@ if (isset($_POST['updateReview'])) {
         $response->message = "Database connection error";
         error_log("Database connection error");
     }
-    
+
     // Ensure we always return JSON
     header('Content-Type: application/json');
     $jsonResponse = json_encode($response);
@@ -2085,18 +2619,19 @@ if (isset($_POST['updateReview'])) {
     exit();
 }
 
-function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $evalId, $rdeEmail, $emailPassword) {
-    
+function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $evalId, $rdeEmail, $emailPassword)
+{
+
     if (empty($docInfo) || empty($docInfo['email'])) {
         return "Could not send email: No author email found.";
     }
-    
+
     // Clean the comments before sending
     $cleanedComments = [];
     foreach ($comments as $key => $comment) {
         $cleanedComments[$key] = cleanCommentHtml($comment);
     }
-    
+
     // Check if there are any actual comments after cleaning
     $hasComments = false;
     foreach ($cleanedComments as $comment) {
@@ -2105,26 +2640,26 @@ function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $e
             break;
         }
     }
-    
+
     if (!$hasComments) {
         return "No email sent: No comments were added.";
     }
-    
+
     // Get the system base URL
     $baseUrl = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
     $baseUrl .= $_SERVER['HTTP_HOST'];
     $documentUrl = $baseUrl . "/account/Login?redirect=";
-    
+
     // Prepare the email
     $from = new stdClass();
     $from->email = $rdeEmail;
     $from->password = $emailPassword;
     $from->name = 'CAPSU RDE System';
-    
+
     $to = new stdClass();
     $to->name = $docInfo['fullName'] ?? $docInfo['author'];
     $to->email = $docInfo['email'];
-    
+
     // Generate email content - use event_name from the joined query
     $emailContent = CommentNotification(
         $evaluatorName,
@@ -2135,10 +2670,10 @@ function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $e
         $cleanedComments,
         $documentUrl
     );
-    
+
     // Send email
     $mailResult = SendEmail($from, $to, $emailContent);
-    
+
     if ($mailResult->status) {
         // Log the email sending
         $logQuery = "INSERT INTO email_log (document_id, evaluator_id, author_email, sent_date, email_type) 
@@ -2146,7 +2681,7 @@ function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $e
         $logStmt = $con->prepare($logQuery);
         $logStmt->bind_param("sss", $docsId, $evalId, $to->email);
         $logStmt->execute();
-        
+
         return "Email notification sent to author.";
     } else {
         return "Failed to send email: " . ($mailResult->message ?? 'Unknown error');
@@ -2154,47 +2689,48 @@ function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $e
 }
 
 // Helper function to clean HTML comments
-function cleanCommentHtml($html) {
+function cleanCommentHtml($html)
+{
     if (empty($html)) {
         return '';
     }
-    
+
     // Decode HTML entities
     $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    
+
     // Remove &nbsp; (non-breaking spaces) and replace with regular spaces
     $html = str_replace('&nbsp;', ' ', $html);
-    
+
     // Remove multiple spaces
     $html = preg_replace('/\s+/', ' ', $html);
-    
+
     // Trim whitespace
     $html = trim($html);
-    
+
     // Remove empty tags
     $html = preg_replace('/<(\w+)[^>]*>\s*<\/\1>/', '', $html);
-    
+
     // Remove tags that only contain whitespace or &nbsp;
     $html = preg_replace('/<(\w+)[^>]*>(\s|&nbsp;)*<\/\1>/', '', $html);
-    
+
     // Convert <br> tags to newlines for plain text display in email
     $html = str_replace(['<br>', '<br/>', '<br />'], "\n", $html);
-    
+
     // Remove other HTML tags but keep the content (for plain text in email preview)
     $plainText = strip_tags($html);
-    
+
     return $plainText;
 }
 //displayed the data in the center table
 if (isset($_POST['researchReviewed'])) {
     $response = new stdClass();
     $response->list = [];
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $userId = $_SESSION['userId'] ?? 0;
-        
+
         $queryEndorsement = "SELECT * FROM `endorsement` WHERE `senderid`='$userId'";
-        
+
         foreach ($con->query($queryEndorsement) as $val) {
             $endorsement = new stdClass();
             $endorsement->endorsementFile = $val['drive_view_url'];
@@ -2206,7 +2742,7 @@ if (isset($_POST['researchReviewed'])) {
             $endorsement->id = $val['id'];
             $endorsement->ResearchDocs = [];
             $enID = $val['id'];
-            
+
             $queryResearch = "SELECT 
                 rf.author,
                 rf.coauthor,
@@ -2238,7 +2774,7 @@ if (isset($_POST['researchReviewed'])) {
             FROM `researchfile` rf
             LEFT JOIN `event_list` el ON rf.event_id = el.id
             WHERE rf.senderid='$userId' AND rf.endorsementid='$enID'";
-            
+
             foreach ($con->query($queryResearch) as $res) {
                 $researchDocs = new stdClass();
                 $researchDocs->author = $res['author'];
@@ -2258,7 +2794,7 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->drive_event_folder_id = $res['drive_event_folder_id'];
                 $researchDocs->drive_center_folder_id = $res['drive_center_folder_id'];
                 $researchDocs->program_drive_view_url = $res['program_drive_view_url'];
-                $researchDocs->program_drive_file_id = $res['program_drive_file_id']; 
+                $researchDocs->program_drive_file_id = $res['program_drive_file_id'];
                 $researchDocs->certificate_drive_file_id = $res['certificate_drive_file_id'];
                 $researchDocs->certificate_drive_view_url = $res['certificate_drive_view_url'];
                 $researchDocs->revision_status = $res['revision_status'];
@@ -2268,13 +2804,13 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->date_of_presentation = $res['date_of_presentation'];
                 $researchDocs->original_status = $res['original_status'];
                 $researchDocs->event_name = $res['event_name'];
-                
+
                 // SERVER-SIDE STATUS LOGIC (no auto-update to database)
                 $currentDate = date('Y-m-d H:i:s');
                 $presentationDate = $res['date_of_presentation'] ?? null;
                 $originalStatus = $res['original_status'] ?? 'pending';
                 $revisionStatus = $res['revision_status'] ?? null;
-                
+
                 // Determine the display status based on business rules
                 if ($originalStatus === 'rejected') {
                     $displayStatus = 'rejected';
@@ -2288,7 +2824,7 @@ if (isset($_POST['researchReviewed'])) {
                     // Future presentation date - use original status
                     $displayStatus = $originalStatus;
                 }
-                
+
                 $researchDocs->status = $displayStatus;
                 $endorsement->ResearchDocs[] = $researchDocs;
             }
@@ -2296,7 +2832,7 @@ if (isset($_POST['researchReviewed'])) {
         }
         $con->close();
     }
-    
+
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
@@ -2552,7 +3088,7 @@ if (isset($_POST['researchFileAdmin'])) {
     $response = new stdClass();
     $response->list = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        
+
         // UPDATED QUERY for Google Drive
         $queryAd = "SELECT 
             researchfile.id,
@@ -2571,7 +3107,7 @@ if (isset($_POST['researchFileAdmin'])) {
             researchfile.status,
             researchfile.event
         FROM `researchfile`";
-        
+
         foreach ($con->query($queryAd) as $val) {
             $data = new stdClass();
             $data->id = $val['id'];
@@ -2590,7 +3126,7 @@ if (isset($_POST['researchFileAdmin'])) {
             $data->date = $val['date'] ?? null;
             $data->status = $val['status'];
             $data->event = $val['event'];
-            
+
             if (is_null($val['status'])) {
                 array_splice($response->list, 0, 0, [$data]);
             } else {
@@ -2610,28 +3146,28 @@ if (isset($_POST['getResearch'])) {
     $response->list = [];
     $response->hasMore = false;
     $response->lastId = 0;
-    
+
     // Pagination parameters
     $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 20;
     $lastId = isset($_POST['lastId']) ? intval($_POST['lastId']) : 0;
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $serderId = $_SESSION['userId'] ?? 0;
-        
+
         // Check user access
         $accessQuery = "SELECT `researchaccess` FROM `account` WHERE `id`='$serderId'";
         $accessResult = $con->query($accessQuery);
         $accessRow = $accessResult->fetch_assoc();
-        
+
         // Helper function to determine status
-        $getDisplayStatus = function($status, $revisionStatus, $presentationDate) {
+        $getDisplayStatus = function ($status, $revisionStatus, $presentationDate) {
             $currentDate = date('Y-m-d H:i:s');
-            
+
             // If date_of_presentation is NULL, use rf.status
             if (empty($presentationDate)) {
                 return $status ?? 'pending';
             }
-            
+
             // If date_of_presentation has value
             if (!empty($presentationDate)) {
                 // Check if presentation date has passed
@@ -2643,11 +3179,11 @@ if (isset($_POST['getResearch'])) {
                     return $status ?? 'pending';
                 }
             }
-            
+
             // Fallback
             return $status ?? 'pending';
         };
-        
+
         $statusUpdateFilter = ($accessRow && $accessRow['researchaccess'] !== null) ? "" : " AND rf.senderid = '$serderId'";
 
         if ($accessRow && $accessRow['researchaccess'] !== null) {
@@ -2671,9 +3207,9 @@ if (isset($_POST['getResearch'])) {
             WHERE rf.id > $lastId
             ORDER BY rf.id ASC
             LIMIT $limit";
-            
+
             $result = $con->query($query);
-            
+
             while ($row = $result->fetch_assoc()) {
                 $data = new stdClass();
                 $data->id = $row['id'];
@@ -2684,14 +3220,14 @@ if (isset($_POST['getResearch'])) {
                 $data->campus = $row['campus'];
                 $data->coauthor = $row['coauthor'];
                 $data->presenter = $row['presenter'];
-                
+
                 // Calculate display status on server
                 $data->status = $getDisplayStatus(
-                    $row['status'], 
-                    $row['revision_status'], 
+                    $row['status'],
+                    $row['revision_status'],
                     $row['date_of_presentation']
                 );
-                
+
                 $data->revision_status = $row['revision_status'];
                 $data->revision_count = $row['revision_count'];
                 $data->title_changed = $row['title_changed'];
@@ -2699,13 +3235,13 @@ if (isset($_POST['getResearch'])) {
                 $response->list[] = $data;
                 $response->lastId = $row['id'];
             }
-            
+
             // Check if more records exist
             $checkQuery = "SELECT COUNT(*) as count FROM `researchfile` WHERE id > " . $response->lastId;
             $checkResult = $con->query($checkQuery);
             $checkRow = $checkResult->fetch_assoc();
             $response->hasMore = ($checkRow['count'] > 0);
-            
+
         } else {
             // Query for regular users - keyset pagination
             $query = "SELECT 
@@ -2730,9 +3266,9 @@ if (isset($_POST['getResearch'])) {
             WHERE rf.senderid='$serderId' AND rf.id > $lastId
             ORDER BY rf.id ASC
             LIMIT $limit";
-            
+
             $result = $con->query($query);
-            
+
             while ($row = $result->fetch_assoc()) {
                 $data = new stdClass();
                 $data->id = $row['id'];
@@ -2743,14 +3279,14 @@ if (isset($_POST['getResearch'])) {
                 $data->campus = $row['campus'];
                 $data->coauthor = $row['coauthor'];
                 $data->presenter = $row['presenter'];
-                
+
                 // Calculate display status on server
                 $data->status = $getDisplayStatus(
-                    $row['status'], 
-                    $row['revision_status'], 
+                    $row['status'],
+                    $row['revision_status'],
                     $row['date_of_presentation']
                 );
-                
+
                 $data->revision_status = $row['revision_status'];
                 $data->revision_count = $row['revision_count'];
                 $data->title_changed = $row['title_changed'];
@@ -2758,22 +3294,22 @@ if (isset($_POST['getResearch'])) {
                 $data->month = $row['month'];
                 $data->date = $row['month'] . '/' . $row['date'] . '/' . $row['year'];
                 $data->file_type = 'drive';
-                
+
                 $response->list[] = $data;
                 $response->lastId = $row['id'];
             }
-            
+
             // Check if more records exist
             $checkQuery = "SELECT COUNT(*) as count FROM `researchfile` WHERE `senderid`='$serderId' AND id > " . $response->lastId;
             $checkResult = $con->query($checkQuery);
             $checkRow = $checkResult->fetch_assoc();
             $response->hasMore = ($checkRow['count'] > 0);
         }
-        
+
         $response->status = true;
         $con->close();
     }
-    
+
     echo json_encode($response);
 }
 
@@ -2782,13 +3318,13 @@ if (isset($_POST['getEndorse'])) {
     $response->status = false;
     $response->message = '';
     $response->list = [];
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $serderId = $_SESSION['userId'];
-        
+
         foreach ($con->query("SELECT  `endorsement` FROM `account` WHERE `id`='$serderId'") as $val) {
             if ($val['endorsement'] !== null) {
-                
+
                 // UPDATED QUERY for Google Drive
                 foreach ($con->query("SELECT 
                     researchfile.id,
@@ -2804,7 +3340,7 @@ if (isset($_POST['getEndorse'])) {
                     researchfile.presenter,
                     researchfile.status
                 FROM `researchfile`") as $v) {
-                    
+
                     $data = new stdClass();
                     $data->id = $v['id'];
                     $data->author = $v['author'];
@@ -2814,20 +3350,20 @@ if (isset($_POST['getEndorse'])) {
                     $data->endorsement = $v['endorsement'];
                     $data->userId = $serderId;
                     $data->signurl = $_SESSION['userEsign'];
-                    
+
                     if ($v['approval'] === null) {
                         $v['approval'] = json_encode([]);
                     }
-                    
+
                     $app = json_decode($v['approval']);
                     $data->approval = false;
-                    
+
                     for ($x = 0; $x < sizeof($app); $x++) {
                         if ($serderId === $app[$x]->id) {
                             $data->approval = true;
                         }
                     }
-                    
+
                     $data->title = $v['title'];
                     $data->category = $v['category'];
                     $data->campus = $v['campus'];
@@ -3116,12 +3652,12 @@ if (isset($_POST['saveResearchPer'])) {
                 FROM researchfile 
                 LEFT JOIN endorsement ON researchfile.endorsementid=endorsement.id
                 WHERE researchfile.endorsementid=?";
-                
+
                 $fetchStmt = $con->prepare($fetchQuery);
                 $fetchStmt->bind_param("s", $endorId);
                 $fetchStmt->execute();
                 $fetchRes = $fetchStmt->get_result();
-                
+
                 while ($row = $fetchRes->fetch_assoc()) {
                     $data = new stdClass();
                     $data->id = $row['id'];
@@ -3151,7 +3687,8 @@ if (isset($_POST['saveResearchPer'])) {
 }
 //get research files for events
 if (isset($_POST['researchFile'])) {
-    while (ob_get_level()) ob_end_clean();
+    while (ob_get_level())
+        ob_end_clean();
     ini_set('memory_limit', '256M');
     set_time_limit(30);
 
@@ -3167,7 +3704,7 @@ if (isset($_POST['researchFile'])) {
 
         $userId = isset($_SESSION['userId']) ? intval($_SESSION['userId']) : 0;
         $eventId = intval($_POST['eventId']);
-        
+
         // Get search term if provided
         $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
 
@@ -3214,7 +3751,7 @@ if (isset($_POST['researchFile'])) {
             } else {
                 $query .= " AND rf.campus IS NOT NULL AND rf.campus != ''";
             }
-            
+
             // Add search condition if search term is provided
             if (!empty($searchTerm)) {
                 $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
@@ -3232,7 +3769,8 @@ if (isset($_POST['researchFile'])) {
             $query .= " ORDER BY el.name, " . ($isNewEvent ? "rf.center" : "rf.campus") . ", rf.title";
 
             $stmt = $con->prepare($query);
-            if (!$stmt) throw new Exception('Prepare failed: ' . $con->error);
+            if (!$stmt)
+                throw new Exception('Prepare failed: ' . $con->error);
 
             // Bind parameters
             if (!empty($searchTerm)) {
@@ -3241,28 +3779,28 @@ if (isset($_POST['researchFile'])) {
             } else {
                 $stmt->bind_param('i', $eventId);
             }
-            
+
             $stmt->execute();
             $result = $stmt->get_result();
 
             $groupedResults = [];
-            
+
             if ($result && $result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
                     // Get location based on event type
-                    $location = $isNewEvent 
+                    $location = $isNewEvent
                         ? ($row['center'] ?? 'N/A')
                         : ($row['campus'] ?? 'N/A');
-                    
+
                     // Use event name + location as the grouping key
                     $currentEventName = $row['event_name'] ?: $eventName;
                     $key = $currentEventName . '|' . $location;
 
                     if (!isset($groupedResults[$key])) {
                         $groupedResults[$key] = [
-                            'name'     => $currentEventName,     // → Event Name column
+                            'name' => $currentEventName,     // → Event Name column
                             'location' => $location,              // → Campus/Center column
-                            'list'     => []
+                            'list' => []
                         ];
                     }
 
@@ -3270,50 +3808,51 @@ if (isset($_POST['researchFile'])) {
                     $data->author = htmlspecialchars($row['author'] ?? '', ENT_QUOTES, 'UTF-8');
                     $data->coauthor = htmlspecialchars($row['coauthor'] ?? '', ENT_QUOTES, 'UTF-8');
                     $data->presenter = htmlspecialchars($row['presenter'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $data->title  = htmlspecialchars($row['title']  ?? '', ENT_QUOTES, 'UTF-8');
-                    $data->id     = intval($row['id']);
+                    $data->title = htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->id = intval($row['id']);
 
                     if (!empty($row['drive_view_url'])) {
-                        $data->file              = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
-                        $data->file_type         = 'drive';
-                        $data->drive_file_id     = htmlspecialchars($row['drive_file_id'] ?? '', ENT_QUOTES, 'UTF-8');
+                        $data->file = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
+                        $data->file_type = 'drive';
+                        $data->drive_file_id = htmlspecialchars($row['drive_file_id'] ?? '', ENT_QUOTES, 'UTF-8');
                         $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', ENT_QUOTES, 'UTF-8');
                     } elseif (!empty($row['local_file'])) {
-                        $data->file      = htmlspecialchars($row['local_file'], ENT_QUOTES, 'UTF-8');
+                        $data->file = htmlspecialchars($row['local_file'], ENT_QUOTES, 'UTF-8');
                         $data->file_type = 'local';
                     } else {
-                        $data->file      = null;
+                        $data->file = null;
                         $data->file_type = 'none';
                     }
 
                     $data->category = htmlspecialchars($row['category'] ?? '', ENT_QUOTES, 'UTF-8');
-                    $data->center   = htmlspecialchars($row['center']   ?? '', ENT_QUOTES, 'UTF-8');
-                    $data->campus   = htmlspecialchars($row['campus']   ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->center = htmlspecialchars($row['center'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->campus = htmlspecialchars($row['campus'] ?? '', ENT_QUOTES, 'UTF-8');
 
                     $groupedResults[$key]['list'][] = $data;
                 }
-                
+
                 // Store the number of rows BEFORE freeing the result
                 $totalRows = $result->num_rows;
-                
+
                 // Now it's safe to free the result
                 $result->free();
-                
+
                 // Convert to indexed array
                 $response->list = array_values($groupedResults);
-                
+
                 // Sort by event name then location
-                usort($response->list, function($a, $b) {
+                usort($response->list, function ($a, $b) {
                     $nameCompare = strcasecmp($a['name'], $b['name']);
-                    if ($nameCompare !== 0) return $nameCompare;
+                    if ($nameCompare !== 0)
+                        return $nameCompare;
                     return strcasecmp($a['location'], $b['location']);
                 });
-                
+
                 // Set status to true since we have data
                 $response->status = true;
                 $response->message = 'Retrieved ' . count($response->list) . ' groups with ' . $totalRows . ' total files';
                 $response->search_term = $searchTerm;
-                
+
             } else {
                 // No data found
                 $response->status = true; // Still true, just empty result
@@ -3332,8 +3871,8 @@ if (isset($_POST['researchFile'])) {
     } catch (Exception $e) {
         error_log("researchFile error: " . $e->getMessage());
         $response->message = 'Error: ' . $e->getMessage();
-        $response->status  = false;
-        $response->list    = [];
+        $response->status = false;
+        $response->list = [];
     }
 
     header('Content-Type: application/json; charset=utf-8');
@@ -3344,24 +3883,24 @@ if (isset($_POST['researchFile'])) {
     exit();
 }
 
-if (isset($_POST['searchResearch'])) {  
-    
+if (isset($_POST['searchResearch'])) {
+
     $response = new stdClass();
     $response->status = false;
     $response->message = '';
     $response->list = [];
-    
+
     try {
         if ($con = new mysqli($host, $username, $pass, $dbName)) {
             $searchTerm = $_POST['searchTerm'] ?? '';
             $userId = $_SESSION['userId'] ?? null;
-            
+
             // Debug logging
             error_log("Search term received: " . $searchTerm);
-            
+
             // Clean search term for SQL
             $searchTerm = $con->real_escape_string($searchTerm);
-            
+
             // UPDATED QUERY: Handle both Google Drive and local files
             $query = "
                 SELECT DISTINCT
@@ -3394,17 +3933,17 @@ if (isset($_POST['searchResearch'])) {
                     OR endorsement.center LIKE '%$searchTerm%'
                 )
                 ORDER BY event_list.name, researchfile.title";
-            
+
             error_log("Executing query: " . $query);
             $result = $con->query($query);
-            
+
             if ($result) {
                 $groupedResults = [];
-                
+
                 while ($row = $result->fetch_assoc()) {
                     $eventId = $row['event_id'];
                     $eventName = $row['event_name'];
-                    
+
                     // Initialize event group if not exists
                     if (!isset($groupedResults[$eventId])) {
                         $groupedResults[$eventId] = [
@@ -3413,13 +3952,13 @@ if (isset($_POST['searchResearch'])) {
                             'list' => []
                         ];
                     }
-                    
+
                     // Add research file to event group
                     $researchData = new stdClass();
                     $researchData->id = $row['id'];
                     $researchData->author = $row['author'];
                     $researchData->title = $row['title'];
-                    
+
                     // BACKWARD COMPATIBILITY: Use Google Drive URL if available, otherwise local file
                     if (!empty($row['drive_view_url'])) {
                         $researchData->file = $row['drive_view_url'];
@@ -3441,24 +3980,24 @@ if (isset($_POST['searchResearch'])) {
                         $researchData->drive_download_url = null;
                         $researchData->local_file = null;
                     }
-                    
+
                     $researchData->category = $row['category'];
                     $researchData->center = $row['center'];
                     $researchData->event = $row['event'];
                     $researchData->drive_folder_id = $row['drive_folder_id'];
                     $researchData->drive_event_folder_id = $row['drive_event_folder_id'];
                     $researchData->drive_center_folder_id = $row['drive_center_folder_id'];
-                    
+
                     $groupedResults[$eventId]['list'][] = $researchData;
                 }
-                
+
                 // Convert to simple array
                 $response->list = array_values($groupedResults);
                 $response->status = true;
                 $response->message = 'Search completed. Found ' . count($response->list) . ' events with matching files.';
-                
+
                 error_log("Search successful: " . count($response->list) . " events found");
-                
+
             } else {
                 $response->message = 'Query failed: ' . $con->error;
                 error_log("Query failed: " . $con->error);
@@ -3471,7 +4010,7 @@ if (isset($_POST['searchResearch'])) {
         $response->message = 'Server error: ' . $e->getMessage();
         error_log("Search exception: " . $e->getMessage());
     }
-    
+
     // Ensure no output before this
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
@@ -3504,7 +4043,7 @@ if (isset($_POST['acceptDel'])) {
 //new Request
 if (isset($_POST['incomingEndorsement'])) {
     $response = [];
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $queries = "SELECT endorsement.id, 
             endorsement.senderid,
@@ -3521,7 +4060,7 @@ if (isset($_POST['incomingEndorsement'])) {
         FROM endorsement
         LEFT JOIN account_detail ON endorsement.senderid=account_detail.id
         WHERE `status`='' OR `status` IS NULL";
-        
+
         foreach ($con->query($queries) as $val) {
             $data = new stdClass();
             $data->id = $val['id'];
@@ -3533,26 +4072,26 @@ if (isset($_POST['incomingEndorsement'])) {
             $data->senderType = $val['usertype'];
             $data->senderEmail = $val['email'];
             $data->researchDocs = [];
-            
+
             // Determine location type based on center
             if ($val['center'] === 'Extension') {
                 $data->locationType = 'campus';
             } else {
                 $data->locationType = 'center';
             }
-            
+
             // Handle file URL with backward compatibility
             $legacyFile = $val['file'];
             $driveFileId = $val['drive_file_id'];
             $driveViewUrl = $val['drive_view_url'];
             $driveDownloadUrl = $val['drive_download_url'];
-            
+
             // Create a unified file object
             $fileObject = new stdClass();
-            
+
             // Check if we have Google Drive URLs
             $hasGoogleDrive = !empty($driveFileId) || !empty($driveViewUrl) || !empty($driveDownloadUrl);
-            
+
             if ($hasGoogleDrive) {
                 // We have Google Drive files
                 $fileObject->fileUrl = !empty($driveDownloadUrl) ? $driveDownloadUrl : (!empty($driveViewUrl) ? $driveViewUrl : '');
@@ -3562,11 +4101,11 @@ if (isset($_POST['incomingEndorsement'])) {
                 $fileObject->driveDownloadUrl = $driveDownloadUrl;
                 $fileObject->isGoogleDrive = true;
             }
-            
+
             // Always include legacy file for backward compatibility
             if (!empty($legacyFile)) {
                 $fileObject->legacyFile = $legacyFile;
-                
+
                 // If no Google Drive URL, use legacy as primary
                 if (!$hasGoogleDrive) {
                     $fileObject->fileUrl = $legacyFile;
@@ -3574,10 +4113,10 @@ if (isset($_POST['incomingEndorsement'])) {
                     $fileObject->isGoogleDrive = false;
                 }
             }
-            
+
             // Set the file data as the file object (not just the URL)
             $data->file = $fileObject;
-            
+
             // Query for research files
             foreach ($con->query("SELECT 
                 `id`, 
@@ -3599,7 +4138,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 `presenter`,
                 `category` 
             FROM `researchfile` WHERE `endorsementid`='$data->id'") as $v) {
-                
+
                 $research = new stdClass();
                 $research->id = $v['id'];
                 $research->senderid = $v['senderid'];
@@ -3611,7 +4150,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->coauthor = $v['coauthor'];
                 $research->presenter = $v['presenter'];
                 $research->category = $v['category'];
-                
+
                 // For Extension, we'll use the campus from account_detail
                 // For other centers, we'll use the center from researchfile
                 if ($val['center'] === 'Extension') {
@@ -3621,35 +4160,35 @@ if (isset($_POST['incomingEndorsement'])) {
                     $research->displayLocation = $v['center']; // Use researchfile.center
                     $research->locationType = 'center';
                 }
-                
+
                 // Handle research file with backward compatibility
                 $researchLegacyFile = $v['legacy_file'];
                 $researchDriveViewUrl = $v['drive_view_url'];
                 $researchDriveFileId = $v['drive_file_id'];
                 $researchDriveDownloadUrl = $v['drive_download_url'];
-                
+
                 // Create unified research file object
                 $researchFileObject = new stdClass();
-                
+
                 // Check if we have Google Drive for research file
                 $hasResearchGoogleDrive = !empty($researchDriveFileId) || !empty($researchDriveViewUrl) || !empty($researchDriveDownloadUrl);
-                
+
                 if ($hasResearchGoogleDrive) {
                     // Google Drive research file
-                    $researchFileObject->fileUrl = !empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : 
-                                                  (!empty($researchDriveViewUrl) ? $researchDriveViewUrl : '');
-                    $researchFileObject->viewUrl = !empty($researchDriveViewUrl) ? $researchDriveViewUrl : 
-                                                  (!empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : '');
+                    $researchFileObject->fileUrl = !empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl :
+                        (!empty($researchDriveViewUrl) ? $researchDriveViewUrl : '');
+                    $researchFileObject->viewUrl = !empty($researchDriveViewUrl) ? $researchDriveViewUrl :
+                        (!empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : '');
                     $researchFileObject->driveFileId = $researchDriveFileId;
                     $researchFileObject->driveViewUrl = $researchDriveViewUrl;
                     $researchFileObject->driveDownloadUrl = $researchDriveDownloadUrl;
                     $researchFileObject->isGoogleDrive = true;
                 }
-                
+
                 // Always include legacy research file
                 if (!empty($researchLegacyFile)) {
                     $researchFileObject->legacyFile = $researchLegacyFile;
-                    
+
                     // If no Google Drive URL, use legacy as primary
                     if (!$hasResearchGoogleDrive) {
                         $researchFileObject->fileUrl = $researchLegacyFile;
@@ -3657,9 +4196,9 @@ if (isset($_POST['incomingEndorsement'])) {
                         $researchFileObject->isGoogleDrive = false;
                     }
                 }
-                
+
                 $research->file = $researchFileObject;
-                
+
                 // Handle program file separately
                 $programDriveViewUrl = $v['program_drive_view_url'];
                 if (!empty($programDriveViewUrl)) {
@@ -3669,12 +4208,12 @@ if (isset($_POST['incomingEndorsement'])) {
                     $research->program_drive_view_url = null;
                     $research->programFile = null;
                 }
-                
+
                 // Include all other fields
                 $research->drive_folder_id = $v['drive_folder_id'];
                 $research->drive_event_folder_id = $v['drive_event_folder_id'];
                 $research->drive_center_folder_id = $v['drive_center_folder_id'];
-                
+
                 $data->researchDocs[] = $research;
             }
             $response[] = $data;
@@ -3714,14 +4253,14 @@ if (isset($_POST['researchDocsNew'])) {
             FROM researchfile
             LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
             WHERE endorsement.status='accepted'";
-        
+
         foreach ($con->query($query) as $val) {
             $data = new stdClass();
             $data->id = $val['id'];
             $data->senderid = $val['senderid'];
             $data->author = $val['author'];
             $data->title = $val['title'];
-            
+
             // For backward compatibility with existing frontend
             // Use Google Drive URL if available, otherwise local file
             if (!empty($val['drive_view_url'])) {
@@ -3729,7 +4268,7 @@ if (isset($_POST['researchDocsNew'])) {
             } else {
                 $data->file = $val['file'];  // Local file path
             }
-            
+
             // Add separate fields for clarity
             $data->local_file = $val['file'];
             $data->drive_view_url = $val['drive_view_url'];
@@ -3831,7 +4370,7 @@ if (isset($_POST['rejectIndorse'])) {
     error_log("=== START rejectIndorse ===");
     error_log("POST data: " . print_r($_POST, true));
     error_log("Session ID: " . $_SESSION['userId']);
-    
+
     $response = new stdClass();
     $response->message = "";
     $response->status = false;
@@ -3839,19 +4378,19 @@ if (isset($_POST['rejectIndorse'])) {
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         error_log("Database connected successfully");
-        
+
         // Get current RDE staff user info
         $staffId = $_SESSION['userId'];
         $staffEmail = ''; // This will actually store the staff's NAME (from email column)
         $staffName = '';  // This will store the username
-        
+
         // Get RDE staff info from rdestaff table
         $staffQuery = "SELECT email, username FROM rdestaff WHERE id=?";
         $staffStmt = $con->prepare($staffQuery);
         $staffStmt->bind_param("i", $staffId);
         $staffStmt->execute();
         $staffRes = $staffStmt->get_result();
-        
+
         if ($staffRow = $staffRes->fetch_assoc()) {
             // In rdestaff table, 'email' column actually stores the full name
             $staffEmail = $staffRow['email']; // This is the staff's FULL NAME
@@ -3864,7 +4403,7 @@ if (isset($_POST['rejectIndorse'])) {
             $staffStmt2->bind_param("i", $staffId);
             $staffStmt2->execute();
             $staffRes2 = $staffStmt2->get_result();
-            
+
             if ($staffRow2 = $staffRes2->fetch_assoc()) {
                 $staffEmail = $staffRow2['email'];
                 $staffName = $staffRow2['fullName'];
@@ -3876,7 +4415,7 @@ if (isset($_POST['rejectIndorse'])) {
 
         // Start transaction
         $con->begin_transaction();
-        
+
         try {
             // 1. Update endorsement status
             $query = "UPDATE endorsement SET endorsement.status=? WHERE endorsement.id=?";
@@ -3906,18 +4445,18 @@ if (isset($_POST['rejectIndorse'])) {
 
             // Commit transaction
             $con->commit();
-            
+
             $response->status = true;
-            
+
             // Define email credentials (you should get these from a config file)
             $rdeEmail = "rde@example.com"; // Replace with actual RDE email address
             $emailPassword = "password"; // Replace with actual email password
-            
+
             $from = new stdClass();
             $from->email = $rdeEmail;
             $from->password = $emailPassword;
             $from->name = 'Research, Development and Extension';
-            
+
             // Get sender info for email
             $senderQuery = "SELECT 
                 account_detail.email, 
@@ -3927,47 +4466,47 @@ if (isset($_POST['rejectIndorse'])) {
             FROM endorsement 
             LEFT JOIN account_detail ON endorsement.senderid = account_detail.id 
             WHERE endorsement.id=?";
-            
+
             $senderStmt = $con->prepare($senderQuery);
             $senderStmt->bind_param("s", $docId);
             $senderStmt->execute();
             $senderRes = $senderStmt->get_result();
-            
+
             if ($senderRow = $senderRes->fetch_assoc()) {
                 $to = new stdClass();
                 $to->name = $senderRow['fullName'];
                 $to->email = $senderRow['email'];
                 $eventName = $senderRow['event'];
                 $campus = $senderRow['campus'] ?? 'Main';
-                
+
                 // Get research titles
                 $titlesQuery = "SELECT title, author FROM researchfile WHERE endorsementid=?";
                 $titlesStmt = $con->prepare($titlesQuery);
                 $titlesStmt->bind_param("s", $docId);
                 $titlesStmt->execute();
                 $titlesRes = $titlesStmt->get_result();
-                
+
                 $researchTitles = [];
                 $researchAuthors = [];
                 while ($titleRow = $titlesRes->fetch_assoc()) {
                     $researchTitles[] = $titleRow['title'];
                     $researchAuthors[] = $titleRow['author'];
                 }
-                
+
                 // Format for display
                 $formattedTitles = implode(', ', $researchTitles);
                 $formattedAuthors = implode(', ', array_unique($researchAuthors));
-                
+
                 if (empty($formattedTitles)) {
                     $formattedTitles = "Research Document(s)";
                 }
-                
+
                 $detailedReason = $reason;
-                
+
                 // Send email - make sure SendEmail function exists
                 if (function_exists('SendEmail')) {
                     $emailResult = SendEmail($from, $to, RejectedEntry($detailedReason, $eventName, $formattedTitles));
-                    
+
                     if ($emailResult->status) {
                         $response->emailStat = 'Email sent successfully to ' . $to->email;
                         error_log("Email sent successfully to " . $to->email);
@@ -3983,9 +4522,9 @@ if (isset($_POST['rejectIndorse'])) {
                 $response->emailStat = 'Could not find sender information for email';
                 error_log("Could not find sender for endorsement ID: " . $docId);
             }
-            
+
             $response->message = "Document Rejected Successfully";
-            
+
         } catch (Exception $e) {
             // Rollback on error
             $con->rollback();
@@ -4002,14 +4541,14 @@ if (isset($_POST['getRejectedForResubmit'])) {
     $response->status = false;
     $response->message = '';
     $response->data = [];
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $userId = $_SESSION['userId']; // This is the senderid from account_detail
-        
+
         // Check if a specific docId (endorsement ID) was provided
         if (isset($_POST['docId']) && !empty($_POST['docId'])) {
             $endorsementId = $_POST['docId'];
-            
+
             // Fetch ONLY the specific document using endorsement_id
             $query = "SELECT 
                 rf.id,
@@ -4035,21 +4574,21 @@ if (isset($_POST['getRejectedForResubmit'])) {
             LEFT JOIN endorsement e ON rf.endorsementid = e.id
             LEFT JOIN rejecteddocs rd ON e.id = rd.docid
             WHERE rf.senderid = ? AND rf.status = 'rejected' AND e.id = ?";
-            
+
             $stmt = $con->prepare($query);
             $stmt->bind_param("ss", $userId, $endorsementId);
-            
+
         }
-        
+
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($row = $result->fetch_assoc()) {
             $data = new stdClass();
             $data->id = $row['id'];
             $data->title = $row['title'];
             $data->author = $row['author'];
-            
+
             // Parse coauthor
             if (!empty($row['coauthor'])) {
                 $coauthorData = json_decode($row['coauthor'], true);
@@ -4057,46 +4596,46 @@ if (isset($_POST['getRejectedForResubmit'])) {
             } else {
                 $data->coauthor = [];
             }
-            
+
             $data->presenter = $row['presenter'] ?? '';
             $data->category = $row['category'];
             $data->center = $row['center'];
             $data->event = $row['event'];
-            
+
             // Research file
             $data->research_file = [
                 'url' => $row['drive_view_url'],
                 'file_id' => $row['drive_file_id']
             ];
-            
+
             // Program file
             $data->program_file = [
                 'url' => $row['program_drive_view_url'],
                 'file_id' => $row['program_drive_file_id']
             ];
-            
+
             // Endorsement file
             $data->endorsement_file = [
                 'url' => $row['endorsement_url'],
                 'file_id' => $row['endorsement_file_id']
             ];
-            
+
             $data->rejection_reason = $row['reason'];
             $data->rejection_date = $row['rejection_date'];
             $data->resubmit_count = $row['resubmit_count'] ?? 0;
             $data->resubmitted = $row['resubmitted'] ?? 0;
             $data->endorsement_id = $row['endorsement_id'];
-            
+
             $response->data[] = $data;
         }
-        
+
         $response->status = true;
         $response->message = count($response->data) . ' document(s) found';
-        
+
     } else {
         $response->message = "Database connection error";
     }
-    
+
     echo json_encode($response);
     exit();
 }
@@ -4104,15 +4643,15 @@ if (isset($_POST['getRejectedForResubmit'])) {
 if (isset($_POST['resubmitDocument'])) {
     error_log("=== START resubmitDocument ===");
     error_log("POST data: " . print_r($_POST, true));
-    
+
     $response = new stdClass();
     $response->status = false;
     $response->message = '';
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $endorsementId = $_POST['docId']; // This is the endorsement ID
         $userId = $_SESSION['userId'];
-        
+
         // Find the researchfile using endorsementid column - include folder information
         $checkQuery = "SELECT 
             rf.id,
@@ -4136,34 +4675,34 @@ if (isset($_POST['resubmitDocument'])) {
             rf.drive_entry_folder_id
         FROM researchfile rf
         WHERE rf.endorsementid = ?";
-        
+
         $checkStmt = $con->prepare($checkQuery);
         $checkStmt->bind_param("s", $endorsementId);
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
-        
+
         if ($checkResult->num_rows === 0) {
             error_log("No researchfile found with endorsementid = $endorsementId");
             $response->message = "Document not found";
             echo json_encode($response);
             exit();
         }
-        
+
         $docInfo = $checkResult->fetch_assoc();
         $researchfileId = $docInfo['id'];
         $resubmitCount = ($docInfo['resubmit_count'] ?? 0) + 1;
-        
+
         error_log("Found researchfile ID: $researchfileId for endorsement ID: $endorsementId");
-        
+
         // Capture folder information from the old files
         $entryFolderId = $docInfo['drive_entry_folder_id'];
-        
+
         error_log("Entry folder ID: " . ($entryFolderId ?: 'none - will create new'));
-        
+
         // STEP 1: Capture all old file IDs for THIS SPECIFIC DOCUMENT
         $oldDriveFileId = $docInfo['drive_file_id'];
         $oldProgramDriveFileId = $docInfo['program_drive_file_id'];
-        
+
         // Get old endorsement file ID from endorsement table
         $oldEndorseQuery = "SELECT drive_file_id FROM endorsement WHERE id = ?";
         $oldEndorseStmt = $con->prepare($oldEndorseQuery);
@@ -4172,16 +4711,16 @@ if (isset($_POST['resubmitDocument'])) {
         $oldEndorseResult = $oldEndorseStmt->get_result();
         $oldEndorseData = $oldEndorseResult->fetch_assoc();
         $oldEndorsementFileId = $oldEndorseData['drive_file_id'] ?? null;
-        
+
         error_log("For endorsement ID $endorsementId:");
         error_log("  - Research file ID: " . ($oldDriveFileId ?: 'none'));
         error_log("  - Program file ID: " . ($oldProgramDriveFileId ?: 'none'));
         error_log("  - Endorsement file ID: " . ($oldEndorsementFileId ?: 'none'));
-        
+
         // STEP 2: Initialize Drive service
         require_once __DIR__ . '/../config/driver_config.php';
         $driveService = new GoogleDriveService();
-        
+
         // STEP 3: DELETE OLD FILES FIRST - ONLY for files being replaced
         if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK && !empty($oldDriveFileId)) {
             try {
@@ -4193,7 +4732,7 @@ if (isset($_POST['resubmitDocument'])) {
                 // Continue with upload even if delete fails
             }
         }
-        
+
         if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK && !empty($oldProgramDriveFileId)) {
             try {
                 error_log("Deleting old program file for endorsement $endorsementId: $oldProgramDriveFileId");
@@ -4204,7 +4743,7 @@ if (isset($_POST['resubmitDocument'])) {
                 // Continue with upload even if delete fails
             }
         }
-        
+
         if (isset($_FILES['endorsementFile']) && $_FILES['endorsementFile']['error'] === UPLOAD_ERR_OK && !empty($oldEndorsementFileId)) {
             try {
                 error_log("Deleting old endorsement file for endorsement $endorsementId: $oldEndorsementFileId");
@@ -4215,12 +4754,12 @@ if (isset($_POST['resubmitDocument'])) {
                 // Continue with upload even if delete fails
             }
         }
-        
+
         // Track what needs to be updated
         $updates = [];
         $params = [];
         $types = "";
-        
+
         // Check each field for changes
         if (isset($_POST['title']) && trim($_POST['title']) !== $docInfo['title']) {
             $updates[] = "title = ?";
@@ -4228,49 +4767,49 @@ if (isset($_POST['resubmitDocument'])) {
             $types .= "s";
             error_log("Title changed");
         }
-        
+
         if (isset($_POST['author']) && trim($_POST['author']) !== $docInfo['author']) {
             $updates[] = "author = ?";
             $params[] = trim($_POST['author']);
             $types .= "s";
             error_log("Author changed");
         }
-        
+
         if (isset($_POST['presenter']) && trim($_POST['presenter']) !== $docInfo['presenter']) {
             $updates[] = "presenter = ?";
             $params[] = trim($_POST['presenter']);
             $types .= "s";
             error_log("Presenter changed");
         }
-        
+
         if (isset($_POST['category']) && trim($_POST['category']) !== $docInfo['category']) {
             $updates[] = "category = ?";
             $params[] = trim($_POST['category']);
             $types .= "s";
             error_log("Category changed");
         }
-        
+
         if (isset($_POST['center']) && trim($_POST['center']) !== $docInfo['center']) {
             $updates[] = "center = ?";
             $params[] = trim($_POST['center']);
             $types .= "s";
             error_log("Center changed");
         }
-        
+
         // Handle coauthor changes
         if (isset($_POST['coauthor'])) {
             $newCoauthor = $_POST['coauthor'];
             $oldCoauthor = $docInfo['coauthor'];
-            
+
             $coauthorData = json_decode($newCoauthor, true);
             $coauthorChanged = false;
-            
+
             if (json_last_error() === JSON_ERROR_NONE) {
                 $coauthorChanged = json_encode($coauthorData) !== $oldCoauthor;
             } else {
                 $coauthorChanged = $newCoauthor !== $oldCoauthor;
             }
-            
+
             if ($coauthorChanged) {
                 if (json_last_error() === JSON_ERROR_NONE) {
                     $updates[] = "coauthor = ?";
@@ -4283,110 +4822,110 @@ if (isset($_POST['resubmitDocument'])) {
                 error_log("Coauthor changed");
             }
         }
-        
+
         // STEP 4: Upload new files to the SAME entry folder
         // Create entry folder if it doesn't exist
         if (empty($entryFolderId)) {
             error_log("No entry folder found, creating new folder structure");
-            
+
             // Generate entry folder name from author and title
             $authorParts = explode(' ', trim($docInfo['author']));
             $authorLastName = end($authorParts);
             $titleWords = explode(' ', trim($docInfo['title']));
             $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
             $entryFolderName = $authorLastName . '_' . $titleKeywords;
-            
+
             $newFolders = $driveService->createCompleteFolderStructure(
                 $docInfo['event'],
                 $docInfo['center'],
                 $docInfo['category'],
                 $entryFolderName
             );
-            
+
             $entryFolderId = $newFolders['entry_folder_id'];
-            
+
             // Update folder IDs in database
             $updates[] = "drive_event_folder_id = ?";
             $params[] = $newFolders['event_folder_id'];
             $types .= "s";
-            
+
             $updates[] = "drive_center_folder_id = ?";
             $params[] = $newFolders['center_folder_id'];
             $types .= "s";
-            
+
             $updates[] = "drive_category_folder_id = ?";
             $params[] = $newFolders['category_folder_id'];
             $types .= "s";
-            
+
             $updates[] = "drive_entry_folder_id = ?";
             $params[] = $newFolders['entry_folder_id'];
             $types .= "s";
-            
+
             error_log("Created new entry folder: $entryFolderId");
         }
-        
+
         // Upload research file
         if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
             $tempPath = $_FILES['researchDoc']['tmp_name'];
             $fileName = $_FILES['researchDoc']['name'];
-            
+
             error_log("Uploading new research file to folder $entryFolderId: $fileName");
-            
+
             $driveResult = $driveService->uploadFile($tempPath, $fileName, $entryFolderId);
-            
+
             if (!$driveResult['success']) {
                 throw new Exception("Failed to upload new research file: " . ($driveResult['error'] ?? 'Unknown error'));
             }
-            
+
             // Make file public
             $driveService->makeFilePublic($driveResult['id']);
-            
+
             $updates[] = "drive_file_id = ?";
             $params[] = $driveResult['id'];
             $types .= "s";
-            
+
             $updates[] = "drive_view_url = ?";
             $params[] = "https://drive.google.com/file/d/{$driveResult['id']}/preview";
             $types .= "s";
-            
+
             error_log("Research file uploaded to new ID: " . $driveResult['id']);
         }
-        
+
         // Upload program file
         if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
             $tempPath = $_FILES['programFile']['tmp_name'];
             $fileName = $_FILES['programFile']['name'];
-            
+
             error_log("Uploading new program file to folder $entryFolderId: $fileName");
-            
+
             $driveResult = $driveService->uploadFile($tempPath, $fileName, $entryFolderId);
-            
+
             if (!$driveResult['success']) {
                 throw new Exception("Failed to upload new program file: " . ($driveResult['error'] ?? 'Unknown error'));
             }
-            
+
             // Make file public
             $driveService->makeFilePublic($driveResult['id']);
-            
+
             $updates[] = "program_drive_file_id = ?";
             $params[] = $driveResult['id'];
             $types .= "s";
-            
+
             $updates[] = "program_drive_view_url = ?";
             $params[] = "https://drive.google.com/file/d/{$driveResult['id']}/preview";
             $types .= "s";
-            
+
             error_log("Program file uploaded to new ID: " . $driveResult['id']);
         }
-        
+
         // Upload endorsement file (goes to center folder, not entry folder)
         if (isset($_FILES['endorsementFile']) && $_FILES['endorsementFile']['error'] === UPLOAD_ERR_OK) {
             $tempPath = $_FILES['endorsementFile']['tmp_name'];
             $fileName = $_FILES['endorsementFile']['name'];
-            
+
             // Get or create center folder for endorsement
             $centerFolderId = $docInfo['drive_center_folder_id'];
-            
+
             if (empty($centerFolderId)) {
                 // Create center folder structure
                 $folders = $driveService->createResearchFolderStructure(
@@ -4395,18 +4934,18 @@ if (isset($_POST['resubmitDocument'])) {
                 );
                 $centerFolderId = $folders['center_folder_id'];
             }
-            
+
             error_log("Uploading new endorsement file to center folder $centerFolderId: $fileName");
-            
+
             $driveResult = $driveService->uploadFile($tempPath, $fileName, $centerFolderId);
-            
+
             if (!$driveResult['success']) {
                 throw new Exception("Failed to upload new endorsement file: " . ($driveResult['error'] ?? 'Unknown error'));
             }
-            
+
             // Make file public
             $driveService->makeFilePublic($driveResult['id']);
-            
+
             // Update endorsement table
             $updateEndorseQuery = "UPDATE endorsement SET 
                 drive_file_id = ?,
@@ -4417,7 +4956,7 @@ if (isset($_POST['resubmitDocument'])) {
             $updateEndorseStmt = $con->prepare($updateEndorseQuery);
             $downloadUrl = "https://drive.google.com/uc?id={$driveResult['id']}&export=download";
             $viewUrl = "https://drive.google.com/file/d/{$driveResult['id']}/preview";
-            
+
             $updateEndorseStmt->bind_param(
                 "ssss",
                 $driveResult['id'],
@@ -4425,14 +4964,14 @@ if (isset($_POST['resubmitDocument'])) {
                 $downloadUrl,
                 $endorsementId
             );
-            
+
             if (!$updateEndorseStmt->execute()) {
                 throw new Exception("Failed to update endorsement table: " . $updateEndorseStmt->error);
             }
-            
+
             error_log("Endorsement file uploaded to new ID: " . $driveResult['id']);
         }
-        
+
         // Set status to NULL (waiting for acceptance)
         $updates[] = "status = NULL";
         $updates[] = "resubmitted = 1";
@@ -4460,44 +4999,44 @@ if (isset($_POST['resubmitDocument'])) {
 
         try {
             $updateStmt = $con->prepare($updateQuery);
-            
+
             if (!$updateStmt) {
                 throw new Exception("Failed to prepare update: " . $con->error);
             }
-            
+
             // Bind parameters dynamically
             $bindParams = array_merge([$types], $params);
             $bindParamsRef = [];
             foreach ($bindParams as $key => $value) {
                 $bindParamsRef[$key] = &$bindParams[$key];
             }
-            
+
             call_user_func_array([$updateStmt, 'bind_param'], $bindParamsRef);
-            
+
             if (!$updateStmt->execute()) {
                 throw new Exception("Failed to execute update: " . $updateStmt->error);
             }
-            
+
             if ($updateStmt->affected_rows === 0) {
                 throw new Exception("Failed to update document - no rows affected");
             }
-            
+
             // ALWAYS update endorsement status to NULL regardless of which files changed
             $updateEndorseStatusQuery = "UPDATE endorsement SET status = NULL WHERE id = ?";
             $updateEndorseStatusStmt = $con->prepare($updateEndorseStatusQuery);
             $updateEndorseStatusStmt->bind_param("s", $endorsementId);
-            
+
             if (!$updateEndorseStatusStmt->execute()) {
                 throw new Exception("Failed to update endorsement status: " . $updateEndorseStatusStmt->error);
             }
-            
+
             error_log("Endorsement status set to NULL for ID: $endorsementId");
-            
+
             $con->commit();
-            
+
             $response->status = true;
             $response->message = "Document resubmitted successfully. Status changed to waiting for acceptance.";
-            
+
         } catch (Exception $e) {
             $con->rollback();
             $response->message = "Error: " . $e->getMessage();
@@ -4506,7 +5045,7 @@ if (isset($_POST['resubmitDocument'])) {
     } else {
         $response->message = "Database connection error";
     }
-    
+
     echo json_encode($response);
     exit();
 }
@@ -4516,15 +5055,15 @@ if (isset($_POST['resubmitDocument'])) {
 if (isset($_POST['submitRevision'])) {
     error_log("=== START submitRevision ===");
     error_log("POST data: " . print_r($_POST, true));
-    
+
     $response = new stdClass();
     $response->status = false;
     $response->message = '';
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $researchId = $_POST['original_research_id'] ?? 0;
         $userId = $_SESSION['userId'] ?? 0;
-        
+
         // 1. Get original research record
         $query = "SELECT rf.*, el.date_of_presentation 
                   FROM researchfile rf
@@ -4535,13 +5074,13 @@ if (isset($_POST['submitRevision'])) {
         $stmt->execute();
         $result = $stmt->get_result();
         $doc = $result->fetch_assoc();
-        
+
         if (!$doc) {
             $response->message = "Research record not found or access denied.";
             echo json_encode($response);
             exit();
         }
-        
+
         // Verify document is eligible for revision
         $isEligible = in_array($doc['revision_status'], ['revision_pending', 'revision_rejected']);
         if (!$isEligible) {
@@ -4549,37 +5088,37 @@ if (isset($_POST['submitRevision'])) {
             echo json_encode($response);
             exit();
         }
-        
+
         // 2. Upload new file to Google Drive
         if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
             $response->message = "Revised research document is required.";
             echo json_encode($response);
             exit();
         }
-        
+
         // Validate file type and size
         $fileType = $_FILES['researchDoc']['type'];
         $fileSize = $_FILES['researchDoc']['size'];
-        
+
         if ($fileType !== 'application/pdf') {
             $response->message = "Only PDF files are allowed.";
             echo json_encode($response);
             exit();
         }
-        
+
         if ($fileSize > 10 * 1024 * 1024) { // 10MB limit
             $response->message = "File size must not exceed 10MB.";
             echo json_encode($response);
             exit();
         }
-        
+
         try {
             require_once __DIR__ . '/../config/driver_config.php';
             $driveService = new GoogleDriveService();
-            
+
             // Get folder to upload to (prefer entry folder, fallback to center or event)
             $targetFolderId = $doc['drive_entry_folder_id'] ?? $doc['drive_folder_id'];
-            
+
             if (empty($targetFolderId)) {
                 // If no folder found, use the createCompleteFolderStructure helper
                 $authorParts = explode(' ', trim($doc['author']));
@@ -4587,7 +5126,7 @@ if (isset($_POST['submitRevision'])) {
                 $titleWords = explode(' ', trim($doc['title']));
                 $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
                 $entryFolderName = $authorLastName . '_' . $titleKeywords;
-                
+
                 $folders = $driveService->createCompleteFolderStructure(
                     $doc['event'],
                     $doc['center'] ?? 'General',
@@ -4596,7 +5135,7 @@ if (isset($_POST['submitRevision'])) {
                 );
                 $targetFolderId = $folders['entry_folder_id'];
             }
-            
+
             // ===== EVENT-BASED FILE NAMING WITH UPLOADED FILE TITLE =====
             $eventName = $doc['event'];
             $revisionCount = ($doc['revision_count'] ?? 0) + 1;
@@ -4609,9 +5148,9 @@ if (isset($_POST['submitRevision'])) {
 
             // Determine file type based on event name
             $isSymposium = stripos($eventName, 'Symposium') !== false;
-            $isInHouse = stripos($eventName, 'In-House Review') !== false || 
-                        stripos($eventName, 'In House Review') !== false || 
-                        stripos($eventName, 'In-house Review') !== false;
+            $isInHouse = stripos($eventName, 'In-House Review') !== false ||
+                stripos($eventName, 'In House Review') !== false ||
+                stripos($eventName, 'In-house Review') !== false;
 
             $baseFileName = '';
             if ($isSymposium) {
@@ -4624,20 +5163,20 @@ if (isset($_POST['submitRevision'])) {
 
             // Build filename using the uploaded file's title
             $newFileName = $baseFileName . ' v' . $revisionCount . ' - ' . $cleanTitle . $extension;
-            
+
             $driveResult = $driveService->uploadFile($_FILES['researchDoc']['tmp_name'], $newFileName, $targetFolderId);
-            
+
             if (!$driveResult['success']) {
                 throw new Exception("Drive upload failed: " . ($driveResult['error'] ?? 'Unknown error'));
             }
-            
+
             $driveService->makeFilePublic($driveResult['id']);
             $newFileId = $driveResult['id'];
             $newViewUrl = "https://drive.google.com/file/d/{$newFileId}/preview";
             $newDownloadUrl = "https://drive.google.com/uc?id={$newFileId}&export=download";
-            
+
             error_log("New file uploaded: ID = $newFileId, URL = $newViewUrl");
-            
+
             // 3. Update database
             $updateQuery = "UPDATE researchfile SET 
                 revision_status = 'revision_submitted',
@@ -4652,24 +5191,25 @@ if (isset($_POST['submitRevision'])) {
                 resubmitted = 1,
                 status = NULL
                 WHERE id = ?";
-            
+
             $updateStmt = $con->prepare($updateQuery);
-            $updateStmt->bind_param("issssssi", 
-                $revisionCount, 
-                $newFileId, 
+            $updateStmt->bind_param(
+                "issssssi",
+                $revisionCount,
+                $newFileId,
                 $newViewUrl,
                 $newDownloadUrl,
-                $newFileId, 
+                $newFileId,
                 $newViewUrl,
                 $newDownloadUrl,
                 $researchId
             );
-            
+
             if ($updateStmt->execute()) {
                 $response->status = true;
                 $response->message = "Revision submitted successfully! Your document is now under review.";
                 $response->revision_count = $revisionCount;
-                
+
                 // Update endorsement status to NULL to reset review process
                 $endorsementId = $doc['endorsementid'];
                 if ($endorsementId) {
@@ -4680,7 +5220,7 @@ if (isset($_POST['submitRevision'])) {
                     $endorseStmt->close();
                     error_log("Endorsement status reset to NULL for ID: $endorsementId");
                 }
-                
+
                 // Track update in document log
                 $logQuery = "INSERT INTO document_log (user_id, doc_id, details, date) VALUES (?, ?, ?, NOW())";
                 $logStmt = $con->prepare($logQuery);
@@ -4688,13 +5228,13 @@ if (isset($_POST['submitRevision'])) {
                 $logStmt->bind_param("iss", $userId, $researchId, $details);
                 $logStmt->execute();
                 $logStmt->close();
-                
+
                 error_log("Revision submitted successfully for research ID: $researchId, revision count: $revisionCount");
-                
+
             } else {
                 throw new Exception("Database update failed: " . $updateStmt->error);
             }
-            
+
         } catch (Exception $e) {
             error_log("Revision submission failed: " . $e->getMessage());
             $response->message = "Error: " . $e->getMessage();
@@ -4702,7 +5242,7 @@ if (isset($_POST['submitRevision'])) {
     } else {
         $response->message = "Database connection error.";
     }
-    
+
     header('Content-Type: application/json');
     echo json_encode($response);
     exit();
@@ -4712,13 +5252,13 @@ if (isset($_POST['deleteEndorsement'])) {
     $response = new stdClass();
     $response->message = '';
     $response->status = false;
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $docId = $_POST['docId'];
-        
+
         // Start transaction
         $con->begin_transaction();
-        
+
         try {
             // Get all Google Drive file IDs and folder IDs for this endorsement
             $fileQuery = "SELECT 
@@ -4737,37 +5277,37 @@ if (isset($_POST['deleteEndorsement'])) {
             FROM endorsement e
             LEFT JOIN researchfile rf ON rf.endorsementid = e.id
             WHERE e.id = ?";
-            
+
             $fileStmt = $con->prepare($fileQuery);
             $fileStmt->bind_param("s", $docId);
             $fileStmt->execute();
             $fileResult = $fileStmt->get_result();
-            
+
             $driveFileIds = [];
             $folderIds = [];
             $researchIds = [];
-            
+
             while ($row = $fileResult->fetch_assoc()) {
                 // Collect endorsement drive files
                 if (!empty($row['endorsement_drive_id'])) {
                     $driveFileIds[] = $row['endorsement_drive_id'];
                 }
-                
+
                 // Collect research drive files
                 if (!empty($row['research_drive_id'])) {
                     $driveFileIds[] = $row['research_drive_id'];
                 }
-                
+
                 // Collect program drive files
                 if (!empty($row['program_drive_file_id'])) {
                     $driveFileIds[] = $row['program_drive_file_id'];
                 }
-                
+
                 // Collect research IDs for comment deletion
                 if (!empty($row['research_id'])) {
                     $researchIds[] = $row['research_id'];
                 }
-                
+
                 // Collect folder IDs (optional - we might keep folders even if empty)
                 if (!empty($row['drive_entry_folder_id'])) {
                     $folderIds[] = $row['drive_entry_folder_id'];
@@ -4776,22 +5316,22 @@ if (isset($_POST['deleteEndorsement'])) {
                     $folderIds[] = $row['research_entry_folder'];
                 }
             }
-            
+
             error_log("Files to delete from Google Drive: " . json_encode($driveFileIds));
-            
+
             // Initialize Google Drive service
             require_once __DIR__ . '/../config/driver_config.php';
-            
+
             if (!class_exists('GoogleDriveService')) {
                 throw new Exception("GoogleDriveService class not found");
             }
-            
+
             $driveService = new GoogleDriveService();
-            
+
             // Move files to trash in Google Drive
             $trashedCount = 0;
             $failedFiles = [];
-            
+
             foreach ($driveFileIds as $fileId) {
                 try {
                     if (!empty($fileId)) {
@@ -4811,13 +5351,13 @@ if (isset($_POST['deleteEndorsement'])) {
                     // Continue with other files even if one fails
                 }
             }
-            
+
             // Delete comments for all research files
             if (!empty($researchIds)) {
                 $placeholders = implode(',', array_fill(0, count($researchIds), '?'));
                 $commentDeleteQuery = "DELETE FROM comments WHERE resid IN ($placeholders)";
                 $commentDeleteStmt = $con->prepare($commentDeleteQuery);
-                
+
                 // Dynamically bind parameters
                 $types = str_repeat('s', count($researchIds));
                 $commentDeleteStmt->bind_param($types, ...$researchIds);
@@ -4825,61 +5365,61 @@ if (isset($_POST['deleteEndorsement'])) {
                 $commentsDeleted = $commentDeleteStmt->affected_rows;
                 error_log("Deleted $commentsDeleted comments for research IDs: " . implode(',', $researchIds));
             }
-            
+
             // Delete researchfile records
             $deleteResearchQuery = "DELETE FROM researchfile WHERE endorsementid = ?";
             $deleteResearchStmt = $con->prepare($deleteResearchQuery);
             $deleteResearchStmt->bind_param("s", $docId);
             $deleteResearchStmt->execute();
             $researchDeleted = $deleteResearchStmt->affected_rows;
-            
+
             // Delete endorsement record
             $deleteEndorseQuery = "DELETE FROM endorsement WHERE id = ?";
             $deleteEndorseStmt = $con->prepare($deleteEndorseQuery);
             $deleteEndorseStmt->bind_param("s", $docId);
             $deleteEndorseStmt->execute();
             $endorsementDeleted = $deleteEndorseStmt->affected_rows;
-            
+
             if ($endorsementDeleted > 0) {
                 // Log the deletion
                 $logQuery = "INSERT INTO document_log (user_id, doc_id, details, date) VALUES (?, ?, ?, NOW())";
                 $logStmt = $con->prepare($logQuery);
-                
+
                 $userName = $_SESSION['userName'] ?? $_SESSION['userFulname'] ?? 'Unknown User';
                 $details = "User: $userName deleted endorsement ID: $docId. ";
                 $details .= "$trashedCount Google Drive file(s) moved to trash.";
-                
+
                 if (!empty($failedFiles)) {
                     $details .= " Failed to trash: " . implode(', ', $failedFiles);
                 }
-                
+
                 $sessionUserId = $_SESSION['userId'] ?? 0;
                 $logStmt->bind_param("sss", $sessionUserId, $docId, $details);
                 $logStmt->execute();
-                
+
                 $con->commit();
-                
+
                 // Build response message
                 $response->status = true;
                 $response->message = "Document deleted successfully. ";
                 $response->message .= "$trashedCount file(s) moved to Google Drive trash.";
-                
+
                 if ($researchDeleted > 0) {
                     $response->message .= " $researchDeleted research record(s) deleted.";
                 }
-                
+
                 if (!empty($failedFiles)) {
                     $response->message .= " Warning: " . count($failedFiles) . " file(s) could not be trashed.";
                     $response->failed_files = $failedFiles;
                 }
-                
+
                 $response->trashed_count = $trashedCount;
                 $response->research_deleted = $researchDeleted;
-                
+
             } else {
                 throw new Exception("No endorsement record found to delete");
             }
-            
+
         } catch (Exception $e) {
             $con->rollback();
             $response->message = "Error: " . $e->getMessage();
@@ -4890,7 +5430,7 @@ if (isset($_POST['deleteEndorsement'])) {
     } else {
         $response->message = "Database connection error: " . mysqli_connect_error();
     }
-    
+
     // Ensure clean JSON output
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
@@ -4919,7 +5459,7 @@ if (isset($_POST['rejectRequest'])) {
 if (isset($_POST['fileReqRes'])) {
     $response = '';
     $docId = $_POST['docId'];
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         // Updated query to get Google Drive URL from researchfile table
         $query = "SELECT 
@@ -4930,15 +5470,15 @@ if (isset($_POST['fileReqRes'])) {
             researchfile.author,
             researchfile.title
         FROM researchfile WHERE researchfile.id=?";
-        
+
         $statement = $con->prepare($query);
         $statement->bind_param('s', $docId);
         $statement->execute();
         $result = $statement->get_result();
-        
+
         if ($result->num_rows > 0) {
             $val = $result->fetch_assoc();
-            
+
             // Return JSON with all Google Drive metadata
             $response = [
                 'drive_view_url' => $val['researchfile'],
@@ -4948,7 +5488,7 @@ if (isset($_POST['fileReqRes'])) {
                 'author' => $val['author'],
                 'title' => $val['title']
             ];
-            
+
             // If no drive_view_url exists, check if there's a local file
             if (empty($val['researchfile'])) {
                 // Fallback to old logic (for backward compatibility)
@@ -4957,7 +5497,7 @@ if (isset($_POST['fileReqRes'])) {
                 $fallbackStatement->bind_param('s', $docId);
                 $fallbackStatement->execute();
                 $fallbackResult = $fallbackStatement->get_result();
-                
+
                 if ($fallbackResult->num_rows > 0) {
                     $fallbackVal = $fallbackResult->fetch_assoc();
                     $response = [
@@ -4973,7 +5513,7 @@ if (isset($_POST['fileReqRes'])) {
             $fallbackStatement->bind_param('s', $docId);
             $fallbackStatement->execute();
             $fallbackResult = $fallbackStatement->get_result();
-            
+
             if ($fallbackResult->num_rows > 0) {
                 $fallbackVal = $fallbackResult->fetch_assoc();
                 $response = [
@@ -4983,7 +5523,7 @@ if (isset($_POST['fileReqRes'])) {
             }
         }
     }
-    
+
     // Return JSON response
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
@@ -4997,7 +5537,7 @@ if (isset($_POST['viewDocReq'])) {
     $response->drive_file_id = '';
     $response->drive_view_url = '';
     $response->drive_download_url = '';
-    
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         // UPDATED QUERY for Google Drive
         $query = "SELECT 
@@ -5009,13 +5549,13 @@ if (isset($_POST['viewDocReq'])) {
             researchfile.drive_event_folder_id,
             researchfile.drive_center_folder_id
         FROM researchfile WHERE researchfile.id=? LIMIT 1";
-        
+
         $docId = $_POST['docId'];
         $statement = $con->prepare($query);
         $statement->bind_param('s', $docId);
         $statement->execute();
         $res = $statement->get_result();
-        
+
         while ($val = $res->fetch_assoc()) {
             $response->data = $val['file']; // Google Drive URL
             $response->drive_file_id = $val['drive_file_id'];
@@ -5032,24 +5572,24 @@ if (isset($_POST['viewDocReq'])) {
     echo json_encode($response);
 }
 
-if(isset($_POST['resetComments'])){
+if (isset($_POST['resetComments'])) {
     $response = new stdClass();
     $response->status = false;
     $response->message = '';
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query="DELETE FROM comments
+        $query = "DELETE FROM comments
         WHERE comments.resid=? AND comments.evalid=?";
-        $statement=$con->prepare($query);
+        $statement = $con->prepare($query);
         $sessionUserId = $_SESSION['userId'] ?? 0;
-        $statement->bind_param("ss",$_POST['docId'],$sessionUserId);
-        $status=$statement->execute();
-        if($status){
-            $response->status=true;
-        }else{
-            $response->message=$statement->error;
+        $statement->bind_param("ss", $_POST['docId'], $sessionUserId);
+        $status = $statement->execute();
+        if ($status) {
+            $response->status = true;
+        } else {
+            $response->message = $statement->error;
         }
-    }else{
-        $response->message=$con->error;
+    } else {
+        $response->message = $con->error;
     }
     echo json_encode($response);
     exit();
