@@ -772,7 +772,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         leftColumn.appendChild(localCategorySection);
 
         // Center
-        const localCenterSection = $({ tag: 'div', style: { gridColumn: '1 / -1'} });
+        const localCenterSection = $({ tag: 'div', style: { gridColumn: '1 / -1' } });
         localCenterSection.appendChild($({
             tag: 'label',
             text: 'Center *',
@@ -1585,7 +1585,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 text: 'Campus *',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
             }))
-            
+
             const select = $({
                 tag: 'select',
                 style: {
@@ -1611,7 +1611,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     })
                 }
             })
-            
+
             container.appendChild(select)
             return container
         }
@@ -1624,7 +1624,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 text: 'Category *',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
             }))
-            
+
             const select = $({
                 tag: 'select',
                 style: {
@@ -1651,7 +1651,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     })
                 }
             })
-            
+
             container.appendChild(select)
             return container
         }
@@ -1664,7 +1664,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 text: 'Center *',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
             }))
-            
+
             const select = $({
                 tag: 'select',
                 style: {
@@ -1687,7 +1687,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
                 }
             })
-            
+
             container.appendChild(select)
             return container
         }
@@ -1879,7 +1879,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             tag: 'div',
             style: { padding: '24px' }
         })
-        
+
         // Two column layout
         const twoColumnLayout = $({
             tag: 'div',
@@ -1903,7 +1903,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
         twoColumnLayout.appendChild(campusSelect)
         twoColumnLayout.appendChild(categorySelect)
-        twoColumnLayout.appendChild(centerSelect) 
+        twoColumnLayout.appendChild(centerSelect)
         twoColumnLayout.appendChild(authorInput)
         twoColumnLayout.appendChild(presenterInput)
         twoColumnLayout.appendChild(coAuthorContainer)
@@ -2206,9 +2206,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         if (currentContent) {
             currentContent.style.display = 'none'
         }
-        
+
         currentStep = newStep
-        
+
         // Show new step - check if it exists
         const newContent = stepContents[currentStep - 1]
         if (newContent) {
@@ -2249,191 +2249,146 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         document.body.appendChild(loading)
 
         try {
-            // For LOCAL presentation type
+            // ===== FOR LOCAL PRESENTATION TYPE =====
             if (formData.presentation_type === 'local') {
-                // Validate files
+                // Validate required files
                 if (!formData.local_program) throw new Error('Program file is required')
                 if (!formData.local_certificateFile) throw new Error('Certificate file is required')
 
-                const getFinalTitle = () => {
-                    return formData.title_changed ? formData.new_title : formData.local_title
+                const researchTitle = formData.title_changed ? formData.new_title : formData.local_title
+
+                // Use uploadSymposium endpoint for ALL symposium submissions
+                const symposiumFormData = new FormData()
+                symposiumFormData.append('uploadSymposium', 'true')
+                symposiumFormData.append('eventType', eventName)
+                symposiumFormData.append('eventId', eventId)
+                symposiumFormData.append('presentation_type', 'local')
+                
+                // Local In-House fields
+                symposiumFormData.append('local_title', formData.local_title)
+                symposiumFormData.append('local_campus', formData.local_campus)
+                symposiumFormData.append('local_category', formData.local_category)
+                symposiumFormData.append('local_center', formData.local_center)
+                symposiumFormData.append('local_author', formData.local_author)
+                symposiumFormData.append('local_presenter', formData.local_presenter)
+                symposiumFormData.append('local_coAuthors', JSON.stringify(formData.local_coAuthors || []))
+                
+                // Program and certificate files
+                if (formData.local_program) {
+                    symposiumFormData.append('programFile', formData.local_program)
+                }
+                if (formData.local_certificateFile) {
+                    symposiumFormData.append('certificateFile', formData.local_certificateFile)
+                }
+                
+                // Title change info
+                symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
+                if (formData.title_changed && formData.new_title) {
+                    symposiumFormData.append('final_symposium_title', formData.new_title)
+                }
+                
+                // Symposium fields (Step 3)
+                symposiumFormData.append('category', formData.category)
+                symposiumFormData.append('center', formData.center)
+                symposiumFormData.append('author', formData.author)
+                symposiumFormData.append('presenter', formData.presenter)
+                symposiumFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
+                symposiumFormData.append('campus', formData.campus)
+                symposiumFormData.append('date_started', formData.date_started)
+                symposiumFormData.append('date_completed', formData.date_completed)
+                
+                // Step 3 files
+                if (formData.researchFile) {
+                    symposiumFormData.append('researchDoc', formData.researchFile)
+                }
+                if (formData.endorsementFile) {
+                    symposiumFormData.append('endorsementFile', formData.endorsementFile)
                 }
 
-                const researchTitle = getFinalTitle()
-                const finalSymposiumTitle = formData.title_changed ? formData.new_title : null
-
-                // ===== FIRST API CALL: Upload files and create researchfile record =====
-                const researchFileFormData = new FormData()
-                researchFileFormData.append('uploadResearch', 'true')
-                researchFileFormData.append('eventType', eventName)
-                researchFileFormData.append('eventId', eventId)
-                researchFileFormData.append('title', researchTitle)
-                researchFileFormData.append('final_symposium_title', finalSymposiumTitle || '')
-                researchFileFormData.append('category', formData.local_category)
-                researchFileFormData.append('center', formData.local_center)
-                researchFileFormData.append('campus', formData.local_campus)
-                researchFileFormData.append('author', formData.local_author)
-                researchFileFormData.append('presenter', formData.local_presenter)
-                researchFileFormData.append('coAuthor', JSON.stringify(formData.local_coAuthors || []))
-                researchFileFormData.append('date_started', formData.date_started || null)
-                researchFileFormData.append('date_completed', formData.date_completed || null)
-                researchFileFormData.append('title_changed', formData.title_changed ? '1' : '0')
-                researchFileFormData.append('is_local_in_house', 'true')
-                
-                // Attach files for upload (ONLY ONCE)
-                researchFileFormData.append('programFile', formData.local_program)
-                researchFileFormData.append('certificateFile', formData.local_certificateFile)
-
-                const researchFileResponse = await fetch('/uploadResearchFile', {
+                const response = await fetch('/uploadResearchFile', {
                     method: 'POST',
-                    body: researchFileFormData
+                    body: symposiumFormData
                 })
 
-                if (!researchFileResponse.ok) {
-                    const errorText = await researchFileResponse.text()
+                if (!response.ok) {
+                    const errorText = await response.text()
                     console.error('Server error:', errorText)
-                    throw new Error(`Server error: ${researchFileResponse.status}`)
+                    throw new Error(`Server error: ${response.status}`)
                 }
 
-                const researchFileResult = await researchFileResponse.json()
+                const result = await response.json()
 
-                if (!researchFileResult.status || !researchFileResult.researchId) {
-                    throw new Error('Failed to create researchfile record: ' + (researchFileResult.message || 'Unknown error'))
+                if (!result.status) {
+                    throw new Error(result.message || 'Symposium submission failed')
                 }
 
-                const researchId = researchFileResult.researchId
-                console.log('Researchfile created with ID:', researchId)
-
-                // ===== SECOND API CALL: Save to local_inhouse table using researchId (NO FILE UPLOADS) =====
-                const localInhouseFormData = new FormData()
-                localInhouseFormData.append('saveLocalInhouse', 'true')
-                localInhouseFormData.append('research_id', researchId)
-                localInhouseFormData.append('eventId', eventId)
-                localInhouseFormData.append('eventName', eventName)
-                localInhouseFormData.append('document_title', formData.local_title)
-                localInhouseFormData.append('campus', formData.local_campus)
-                localInhouseFormData.append('category', formData.local_category)
-                localInhouseFormData.append('center', formData.local_center)
-                localInhouseFormData.append('main_author', formData.local_author)
-                localInhouseFormData.append('presenter', formData.local_presenter)
-                localInhouseFormData.append('co_authors', JSON.stringify(formData.local_coAuthors || []))
-                
-                // Pass the Google Drive URLs from the first response (NO FILES)
-                if (researchFileResult.programDriveViewUrl) {
-                    localInhouseFormData.append('program_file_view_url', researchFileResult.programDriveViewUrl)
-                }
-                if (researchFileResult.programDriveDownloadUrl) {
-                    localInhouseFormData.append('program_file_download_url', researchFileResult.programDriveDownloadUrl)
-                }
-                if (researchFileResult.certificateDriveViewUrl) {
-                    localInhouseFormData.append('certificate_file_view_url', researchFileResult.certificateDriveViewUrl)
-                }
-                if (researchFileResult.certificateDriveDownloadUrl) {
-                    localInhouseFormData.append('certificate_file_download_url', researchFileResult.certificateDriveDownloadUrl)
-                }
-
-                // DO NOT append programFile or certificateFile here - they are already uploaded!
-                const localResponse = await fetch('/uploadResearchFile', {
-                    method: 'POST',
-                    body: localInhouseFormData
-                })
-
-                if (!localResponse.ok) {
-                    const errorText = await localResponse.text()
-                    console.error('Server error:', errorText)
-                    throw new Error(`Server error: ${localResponse.status}`)
-                }
-
-                const localResult = await localResponse.json()
-
-                if (!localResult.status) {
-                    throw new Error('Failed to save Local In-House Review: ' + (localResult.message || 'Unknown error'))
-                }
-
-                console.log('Local In-House saved with ID:', localResult.saved_id)
+                console.log('Local In-House Symposium submission successful')
 
             } else if (formData.presentation_type === 'university') {
-                // ===== UNIVERSITY TYPE: Save to researchfile + endorsement tables =====
-                
-                // Validate step 2 (title change)
-                if (stepContents[1].__validate && !stepContents[1].__validate()) {
+                // ===== FOR UNIVERSITY PRESENTATION TYPE =====
+                if (stepContents[1] && stepContents[1].__validate && !stepContents[1].__validate()) {
                     throw new Error('Please complete the title change section')
                 }
-                
+
                 const selectedReview = inhouseReviewsList.find(r => r.id == formData.selected_inhouse_id)
-                const researchTitle = selectedReview ? selectedReview.title : ''
-                const finalSymposiumTitle = formData.title_changed ? formData.new_title : null
-
-                const submitFormData = new FormData()
-                submitFormData.append('uploadResearch', 'true')
-                submitFormData.append('eventType', eventName)
-                submitFormData.append('eventId', eventId)
                 
-                // Step 2: Title Change data (saves to researchfile)
-                submitFormData.append('title_changed', formData.title_changed ? '1' : '0')
-                if (formData.title_changed && formData.new_title) {
-                    submitFormData.append('new_title', formData.new_title)
-                }
-                
-                // Step 3: Symposium Details (saves to researchfile)
-                submitFormData.append('title', researchTitle)
-                submitFormData.append('final_symposium_title', finalSymposiumTitle || '')
-                submitFormData.append('category', formData.category)
-                submitFormData.append('center', formData.center)
-                submitFormData.append('author', formData.author)
-                submitFormData.append('presenter', formData.presenter)
-                submitFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
-                submitFormData.append('campus', formData.campus)
-                submitFormData.append('date_started', formData.date_started)
-                submitFormData.append('date_completed', formData.date_completed)
-                submitFormData.append('is_local_in_house', 'false')
-
-                // Step 3: Research File (saves to researchfile table)
-                if (formData.researchFile) {
-                    submitFormData.append('researchDoc', formData.researchFile)
-                }
-                
-                // Step 3: Endorsement Letter (saves to endorsement table)
-                if (formData.endorsementFile) {
-                    submitFormData.append('uploadedFileEndorsement', formData.endorsementFile)
-                }
-
-                // Reference to selected university in-house review
-                submitFormData.append('selected_inhouse_id', formData.selected_inhouse_id)
-                submitFormData.append('university_title', researchTitle)
+                const symposiumFormData = new FormData()
+                symposiumFormData.append('uploadSymposium', 'true')
+                symposiumFormData.append('eventType', eventName)
+                symposiumFormData.append('eventId', eventId)
+                symposiumFormData.append('presentation_type', 'university')
+                symposiumFormData.append('selected_inhouse_id', formData.selected_inhouse_id)
+                symposiumFormData.append('original_title', selectedReview ? selectedReview.title : '')
                 
                 if (selectedReview) {
-                    submitFormData.append('university_author', selectedReview.author)
-                    submitFormData.append('university_category', selectedReview.category || '')
-                    submitFormData.append('university_center', selectedReview.center || '')
-                    submitFormData.append('university_coauthors', JSON.stringify(selectedReview.coauthors || []))
-                }
-
-                const symposiumResponse = await fetch('/uploadResearchFile', {
-                    method: 'POST',
-                    body: submitFormData
-                })
-
-                if (!symposiumResponse.ok) {
-                    const errorText = await symposiumResponse.text()
-                    console.error('Server error response:', errorText)
-                    throw new Error(`Server error: ${symposiumResponse.status}`)
-                }
-
-                const responseText = await symposiumResponse.text()
-                let symposiumResult
-                try {
-                    symposiumResult = JSON.parse(responseText)
-                } catch (e) {
-                    console.error('JSON parse error. Raw response:', responseText)
-                    throw new Error('Server returned invalid response. Please check server logs.')
-                }
-
-                if (!symposiumResult.status) {
-                    throw new Error(symposiumResult.message || 'Submission failed')
+                    symposiumFormData.append('original_author', selectedReview.author)
+                    symposiumFormData.append('original_category', selectedReview.category || '')
+                    symposiumFormData.append('original_center', selectedReview.center || '')
+                    symposiumFormData.append('original_coauthors', JSON.stringify(selectedReview.coauthors || []))
                 }
                 
-                console.log('University submission successful')
+                symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
+                
+                if (formData.title_changed && formData.new_title) {
+                    symposiumFormData.append('final_symposium_title', formData.new_title)
+                }
+                
+                // Symposium fields (Step 3)
+                symposiumFormData.append('category', formData.category)
+                symposiumFormData.append('center', formData.center)
+                symposiumFormData.append('author', formData.author)
+                symposiumFormData.append('presenter', formData.presenter)
+                symposiumFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
+                symposiumFormData.append('campus', formData.campus)
+                symposiumFormData.append('date_started', formData.date_started)
+                symposiumFormData.append('date_completed', formData.date_completed)
+                
+                // Step 3 files
+                if (formData.researchFile) {
+                    symposiumFormData.append('researchDoc', formData.researchFile)
+                }
+                if (formData.endorsementFile) {
+                    symposiumFormData.append('endorsementFile', formData.endorsementFile)
+                }
+
+                const response = await fetch('/uploadResearchFile', {
+                    method: 'POST',
+                    body: symposiumFormData
+                })
+
+                if (!response.ok) {
+                    const errorText = await response.text()
+                    console.error('Server error:', errorText)
+                    throw new Error(`Server error: ${response.status}`)
+                }
+
+                const result = await response.json()
+
+                if (!result.status) {
+                    throw new Error(result.message || 'Symposium submission failed')
+                }
+
+                console.log('University Symposium submission successful')
             }
 
             if (loading && loading.remove) loading.remove()
