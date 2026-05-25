@@ -1796,7 +1796,55 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             container.appendChild(select)
             return container
         }
-
+        const createTextField = (label, placeholder, onInput) => {
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
+            container.appendChild($({ 
+                tag: 'label', 
+                text: label, 
+                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } 
+            }))
+            const input = $({
+                tag: 'input',
+                att: { type: 'text', placeholder: placeholder },
+                style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: '#2a2a2a',
+                    border: '1px solid #444',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '14px'
+                },
+                event: { 
+                    type: 'input', 
+                    method: (e) => {
+                        const inputEl = e.target;
+                        const start = inputEl.selectionStart;
+                        const end = inputEl.selectionEnd;
+                        let value = inputEl.value;
+                        
+                        // Capitalize first letter of each word
+                        let words = value.split(' ');
+                        let capitalized = words.map(word => {
+                            if (word.length === 0) return word;
+                            return word.charAt(0).toUpperCase() + word.slice(1);
+                        }).join(' ');
+                        
+                        if (capitalized !== value) {
+                            inputEl.value = capitalized;
+                            inputEl.setSelectionRange(start, end);
+                            // Pass the VALUE (string), not the event
+                            if (onInput) onInput(capitalized);
+                        } else {
+                            // Pass the VALUE (string), not the event
+                            if (onInput) onInput(value);
+                        }
+                    }
+                }
+            })
+            container.appendChild(input)
+            return container
+        }
         const createDateField = (label, onChange) => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
@@ -1910,8 +1958,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         campusSelect = createCampusDropdown()
         categorySelect = createCategoryDropdown()
         centerSelect = createCenterDropdown()
-        authorInput = createTextField('Main Author *', 'Enter main author name', (e) => { formData.author = e.target.value })
-        presenterInput = createTextField('Presenter *', 'Enter presenter name', (e) => { formData.presenter = e.target.value })
+        authorInput = createTextField('Main Author *', 'Enter main author name', (e) => { formData.author })
+        presenterInput = createTextField('Presenter *', 'Enter presenter name', (e) => { formData.presenter })
         coAuthorContainer = createCoAuthorField(updateCoAuthorList)
         dateStartedField = createDateField('Date Started *', (e) => { formData.date_started = e.target.value })
         dateCompletedField = createDateField('Date Completed *', (e) => { formData.date_completed = e.target.value })
@@ -2004,54 +2052,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             return true
         }
 
-        return container
-    }
-
-    const createTextField = (label, placeholder, onInput) => {
-        const container = $({ tag: 'div', style: { marginBottom: '0' } })
-        container.appendChild($({ 
-            tag: 'label', 
-            text: label, 
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } 
-        }))
-        const input = $({
-            tag: 'input',
-            att: { type: 'text', placeholder: placeholder },
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: { 
-                type: 'input', 
-                method: (e) => {
-                    const inputEl = e.target;
-                    const start = inputEl.selectionStart;
-                    const end = inputEl.selectionEnd;
-                    let value = inputEl.value;
-                    
-                    // Capitalize first letter of each word
-                    let words = value.split(' ');
-                    let capitalized = words.map(word => {
-                        if (word.length === 0) return word;
-                        return word.charAt(0).toUpperCase() + word.slice(1);
-                    }).join(' ');
-                    
-                    if (capitalized !== value) {
-                        inputEl.value = capitalized;
-                        inputEl.setSelectionRange(start, end);
-                        if (onInput) onInput(capitalized);
-                    } else {
-                        if (onInput) onInput(value);
-                    }
-                }
-            }
-        })
-        container.appendChild(input)
         return container
     }
 
