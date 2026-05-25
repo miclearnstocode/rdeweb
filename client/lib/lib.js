@@ -200,9 +200,18 @@ export const Waiting = () => {
     }))
 }
 
-export const ConfirmationAlert = (message, eventClose) => {
+export const ConfirmationAlert = (message, eventClose, options = {}) => {
+    const { 
+        title = 'Success', 
+        icon = 'check-circle',
+        iconColor = '#4caf50',
+        buttonText = 'Close',
+        buttonColor = '#4caf50'
+    } = options;
+    
     let modalContainer
     let modal
+    let timeoutId
 
     const getModalContainer = (el) => {
         modalContainer = el
@@ -215,32 +224,63 @@ export const ConfirmationAlert = (message, eventClose) => {
     // Close function
     const closeModal = (e) => {
         if (e) e.stopPropagation()
+        if (timeoutId) clearTimeout(timeoutId)
         if (modalContainer && modalContainer.remove) {
-            modalContainer.remove()
-        }
-        if (eventClose && typeof eventClose === 'function') {
-            eventClose()
+            modalContainer.style.opacity = '0'
+            modalContainer.style.transform = 'scale(0.95)'
+            setTimeout(() => {
+                if (modalContainer && modalContainer.remove) {
+                    modalContainer.remove()
+                }
+                if (eventClose && typeof eventClose === 'function') {
+                    eventClose()
+                }
+            }, 200)
+        } else {
+            if (eventClose && typeof eventClose === 'function') {
+                eventClose()
+            }
         }
     }
 
-    // Close button with direct click event
+    // Auto close after 5 seconds
+    if (options.autoClose !== false) {
+        timeoutId = setTimeout(() => {
+            closeModal()
+        }, 5000)
+    }
+
+    // Get icon HTML
+    const getIconHtml = () => {
+        const icons = {
+            'check-circle': '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/></svg>',
+            'error': '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/></svg>',
+            'warning': '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="currentColor"/></svg>',
+            'info': '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/></svg>'
+        }
+        return icons[icon] || icons['check-circle']
+    }
+
     const closeButton = $({
-        tag: 'div',
-        att: {
-            className: 'textClose'
-        },
-        text: 'Close',
+        tag: 'button',
+        text: buttonText,
         style: {
             cursor: 'pointer',
-            padding: '10px 20px',
+            padding: '12px 28px',
             textAlign: 'center',
-            backgroundColor: '#00bcd4',
+            backgroundColor: buttonColor,
             color: '#fff',
-            borderRadius: '5px',
-            marginTop: '10px',
+            borderRadius: '30px',
+            marginTop: '16px',
             userSelect: 'none',
-            width: 'fit-content',
-            margin: '10px auto 0'
+            width: 'auto',
+            minWidth: '120px',
+            margin: '16px auto 0',
+            border: 'none',
+            fontSize: '14px',
+            fontWeight: '600',
+            transition: 'all 0.2s ease',
+            boxShadow: `0 4px 12px ${buttonColor}40`
         },
         event: {
             type: 'click',
@@ -248,23 +288,31 @@ export const ConfirmationAlert = (message, eventClose) => {
                 e.stopPropagation()
                 e.preventDefault()
                 closeModal(e)
+            },
+            type2: 'mouseenter',
+            method2: (e) => {
+                e.target.style.transform = 'translateY(-2px)'
+                e.target.style.boxShadow = `0 6px 16px ${buttonColor}60`
+            },
+            type3: 'mouseleave',
+            method3: (e) => {
+                e.target.style.transform = 'translateY(0)'
+                e.target.style.boxShadow = `0 4px 12px ${buttonColor}40`
             }
         }
     })
 
     const messageBox = $({
         tag: 'div',
-        att: {
-            className: 'messageBox'
-        },
-        text: message,
         style: {
-            padding: '20px',
+            padding: '8px 0',
             textAlign: 'center',
-            color: '#fff',
-            fontSize: '1.1vw',
+            color: '#e0e0e0',
+            fontSize: '15px',
+            lineHeight: '1.5',
             wordBreak: 'break-word'
-        }
+        },
+        text: message
     })
 
     return ($({
@@ -279,13 +327,26 @@ export const ConfirmationAlert = (message, eventClose) => {
             left: '0',
             width: '100%',
             height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.8)',
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(8px)',
             display: 'flex',
-            zIndex: '10000',
+            zIndex: '1000',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            opacity: '0',
+            transition: 'opacity 0.2s ease, transform 0.2s ease',
+            transform: 'scale(0.95)'
         },
-        elementHandler: getModalContainer,
+        elementHandler: (el) => {
+            getModalContainer(el)
+            // Trigger animation
+            setTimeout(() => {
+                if (el) {
+                    el.style.opacity = '1'
+                    el.style.transform = 'scale(1)'
+                }
+            }, 10)
+        },
         child: [
             $({
                 tag: 'div',
@@ -293,20 +354,71 @@ export const ConfirmationAlert = (message, eventClose) => {
                     className: 'confirmAlert'
                 },
                 style: {
-                    background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                    padding: '2rem',
-                    borderRadius: '1vw',
-                    border: '1px solid #333',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-                    minWidth: '300px',
-                    maxWidth: '500px',
+                    background: 'linear-gradient(145deg, #1e1e2a 0%, #15151d 100%)',
+                    padding: '32px',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                    minWidth: '320px',
+                    maxWidth: '450px',
+                    width: '90%',
                     position: 'relative',
-                    pointerEvents: 'auto'
+                    pointerEvents: 'auto',
+                    textAlign: 'center'
                 },
                 elementHandler: getModalMain,
                 child: [
+                    // Icon
+                    $({
+                        tag: 'div',
+                        style: {
+                            color: iconColor,
+                            marginBottom: '20px',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                        },
+                        html: getIconHtml()
+                    }),
+                    // Title
+                    $({
+                        tag: 'h3',
+                        text: title,
+                        style: {
+                            color: '#fff',
+                            fontSize: '22px',
+                            fontWeight: '700',
+                            margin: '0 0 12px 0'
+                        }
+                    }),
+                    // Message
                     messageBox,
-                    closeButton
+                    // Close button
+                    closeButton,
+                    // Progress bar for auto-close
+                    options.autoClose !== false ? $({
+                        tag: 'div',
+                        style: {
+                            width: '100%',
+                            height: '3px',
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            borderRadius: '3px',
+                            marginTop: '20px',
+                            overflow: 'hidden'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    backgroundColor: iconColor,
+                                    borderRadius: '3px',
+                                    animation: 'shrinkProgress 5s linear forwards'
+                                }
+                            })
+                        ]
+                    }) : null
                 ]
             })
         ]
@@ -357,12 +469,6 @@ export const formatDateLong = (dateStr) => {
     return `${month} ${day}, ${year}`
 }
 
-/**
- * Generates a PDF from an HTML element
- * @param {HTMLElement} element The element to convert
- * @param {Object} options Options for html2pdf
- * @returns {Promise<Blob>} The PDF blob
- */
 export const GeneratePDF = async (element, options = {}) => {
     if (!window.html2pdf) {
         const script = document.createElement('script')
@@ -1757,7 +1863,6 @@ export const CustomModal = ({
     return { closeModal, modalId }
 }
 
-// Helper function to create a confirmation modal
 export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel' }) => {
     let modalInstance
 
@@ -1834,7 +1939,6 @@ export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirm
     return modalInstance
 }
 
-// Helper function to create an alert modal
 export const AlertModal = ({ title, message, onClose, buttonText = 'OK' }) => {
     const footer = ({ closeModal }) => {
         return $({
@@ -1885,7 +1989,6 @@ export const AlertModal = ({ title, message, onClose, buttonText = 'OK' }) => {
     })
 }
 
-// Helper function to create a loading modal
 export const LoadingModal = ({ title = 'Loading...', message = 'Please wait...' }) => {
     const content = $({
         tag: 'div',
