@@ -1912,7 +1912,7 @@ if (isset($_POST['uploadSymposium'])) {
             
             // ===== STEP 2: INSERT INTO researchfile TABLE =====
             $rev = 'pending';
-            $finalTitle = $title_changed && !empty($finalSymposiumTitle) ? $finalSymposiumTitle : $localTitle;
+            $originalTitle = isset($_POST['original_title']) ? trim($_POST['original_title']) : $localTitle;
             $localInhouseFlag = 1;
             $researchDriveDownloadUrl = "https://drive.google.com/uc?id={$researchDriveFileId}&export=download";
             
@@ -1938,7 +1938,7 @@ if (isset($_POST['uploadSymposium'])) {
                 $presenter,
                 $date_started,
                 $date_completed,
-                $finalTitle,
+                $originalTitle,
                 $finalSymposiumTitle,
                 $eventType,
                 $rev,
@@ -2343,7 +2343,7 @@ if (isset($_POST['uploadSymposium'])) {
             $researchDriveDownloadUrl = "https://drive.google.com/uc?id={$researchDriveFileId}&export=download";
             
             $researchStmt->bind_param(
-                'siiissssssssssssssssssssssi',
+                'siiissssssssssssssssssssi',
                 $paperTrailNo,
                 $senderId,
                 $endorsementId,
@@ -3266,10 +3266,16 @@ if (isset($_POST['researchReviewed'])) {
                 rf.title_changed,
                 rf.event_id,
                 rf.status as original_status,
+                rf.local_inhouse,
                 el.date_of_presentation,
-                el.name as event_name
+                el.name as event_name,
+                li.program_file_view_url as local_program_file_view_url,
+                li.program_file_download_url as local_program_file_download_url,
+                li.certificate_file_view_url as local_certificate_file_view_url,
+                li.certificate_file_download_url as local_certificate_file_download_url
             FROM `researchfile` rf
             LEFT JOIN `event_list` el ON rf.event_id = el.id
+            LEFT JOIN `local_inhouse` li ON rf.id = li.research_id
             WHERE rf.senderid='$userId' AND rf.endorsementid='$enID'";
 
             foreach ($con->query($queryResearch) as $res) {
@@ -3301,8 +3307,12 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->date_of_presentation = $res['date_of_presentation'];
                 $researchDocs->original_status = $res['original_status'];
                 $researchDocs->event_name = $res['event_name'];
+                $researchDocs->local_inhouse = $res['local_inhouse'];
+                $researchDocs->local_program_file_view_url = $res['local_program_file_view_url'];
+                $researchDocs->local_program_file_download_url = $res['local_program_file_download_url'];
+                $researchDocs->local_certificate_file_view_url = $res['local_certificate_file_view_url'];
+                $researchDocs->local_certificate_file_download_url = $res['local_certificate_file_download_url'];
 
-                // SERVER-SIDE STATUS LOGIC (no auto-update to database)
                 $currentDate = date('Y-m-d H:i:s');
                 $presentationDate = $res['date_of_presentation'] ?? null;
                 $originalStatus = $res['original_status'] ?? 'pending';

@@ -1238,7 +1238,6 @@ export const Research = () => {
                     }
                 })
 
-                // Label
                 row.appendChild($({
                     tag: 'span',
                     text: label + ':',
@@ -1249,7 +1248,6 @@ export const Research = () => {
                     }
                 }))
 
-                // File icon/link
                 let fileElement
                 if (fileUrl.includes('drive.google.com')) {
                     fileElement = $({
@@ -1307,7 +1305,7 @@ export const Research = () => {
                 return row
             }
 
-            // Add all files
+            // Regular files (for all submissions)
             const researchRow = createFileRow('Research', doc.researchFile, 'research', '#2196F3')
             if (researchRow) container.appendChild(researchRow)
 
@@ -1319,6 +1317,15 @@ export const Research = () => {
 
             const certificateRow = createFileRow('Certificate', doc.certificateFile, 'certificate', '#9C27B0')
             if (certificateRow) container.appendChild(certificateRow)
+
+            // Local In-House specific files (Program and Certificate from local_inhouse table)
+            if (doc.local_inhouse === 1 || doc.local_inhouse === '1') {
+                const localProgramRow = createFileRow('Local Program', doc.local_program_file_view_url, 'program', '#4caf50')
+                if (localProgramRow) container.appendChild(localProgramRow)
+
+                const localCertificateRow = createFileRow('Local Certificate', doc.local_certificate_file_view_url, 'certificate', '#9C27B0')
+                if (localCertificateRow) container.appendChild(localCertificateRow)
+            }
 
             // If no files
             if (container.children.length === 0) {
@@ -1792,19 +1799,8 @@ export const Research = () => {
         }
         const accentColor = accentColors[fileType] || '#2196F3'
 
-        // Format URL for preview
-        let finalUrl = fileUrl
-        if (fileUrl.includes('drive.google.com') && fileUrl.includes('/file/d/')) {
-            const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
-            if (fileIdMatch && fileIdMatch[1]) {
-                finalUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
-            }
-        } else if (!fileUrl.includes('http') && !fileUrl.startsWith('/')) {
-            finalUrl = '/' + fileUrl
-        }
-
-        // Use the reusable modal from lib.js (hide Open Drive as requested)
-        FileViewerModal(finalUrl, displayName, accentColor, { showOpenDrive: false })
+        // Use the FileViewerModal from lib.js - fileUrl is already the Google Drive preview URL
+        FileViewerModal(fileUrl, displayName, accentColor, { showOpenDrive: true })
     }
 
     const editDocument = (doc) => {
@@ -1883,7 +1879,9 @@ export const Research = () => {
 
                         // Show success message
                         document.body.appendChild(ConfirmationAlert(result.message, () => {
-                            loadDocuments()
+                            if (window.refreshDocumentsTable) {
+                                window.refreshDocumentsTable()
+                            }
                         }))
                     } else {
                         alert('Failed to delete: ' + result.message)
@@ -3091,7 +3089,10 @@ export const Research = () => {
                                         date: endorsement.date,
                                         date_started: researchDoc.date_started || null,
                                         date_completed: researchDoc.date_completed || null,
-                                        program_drive_view_url: researchDoc.program_drive_view_url
+                                        program_drive_view_url: researchDoc.program_drive_view_url,
+                                        local_inhouse: researchDoc.local_inhouse,
+                                        local_program_file_view_url: researchDoc.local_program_file_view_url,
+                                        local_certificate_file_view_url: researchDoc.local_certificate_file_view_url
                                     }
                                     const row = createTableRow(documentObj)
                                     tbody.appendChild(row)

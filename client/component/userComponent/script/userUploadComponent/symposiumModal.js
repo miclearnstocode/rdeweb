@@ -1,4 +1,4 @@
-import { $, Waiting, ConfirmationAlert} from '../../../../lib/lib.js'
+import { $, Waiting, ConfirmationAlert, ConfirmationModal} from '../../../../lib/lib.js'
 
 export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedded = false }) => {
     let currentStep = 1
@@ -409,7 +409,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 style: {
                     border: '2px dashed #444',
                     borderRadius: '8px',
-                    padding: '16px',
+                    padding: '32px',
+                    minHeight: '130px',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
@@ -1470,6 +1471,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                         method: (e) => {
                             formData.title_changed = e.target.checked
                             newTitleContainer.style.display = formData.title_changed ? 'block' : 'none'
+                            if (!formData.title_changed) {
+                                formData.new_title = ''
+                            }
                         }
                     }
                 }),
@@ -1494,7 +1498,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
         const newTitleInput = $({
             tag: 'input',
-            att: { type: 'text', placeholder: 'Enter the new symposium title' },
+            att: { type: 'text', placeholder: 'New symposium title' },
             style: {
                 width: '100%',
                 padding: '12px 14px',
@@ -2344,6 +2348,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 
                 // Local In-House fields
                 symposiumFormData.append('local_title', formData.local_title)
+                symposiumFormData.append('original_title', formData.local_title)  // ← ORIGINAL local title
                 symposiumFormData.append('local_campus', formData.local_campus)
                 symposiumFormData.append('local_category', formData.local_category)
                 symposiumFormData.append('local_center', formData.local_center)
@@ -2362,7 +2367,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 // Title change info
                 symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
                 if (formData.title_changed && formData.new_title) {
-                    symposiumFormData.append('final_symposium_title', formData.new_title)
+                    symposiumFormData.append('final_symposium_title', formData.new_title)  // ← NEW title only if changed
+                } else {
+                    symposiumFormData.append('final_symposium_title', '')  // Send empty if not changed
                 }
                 
                 // Symposium fields (Step 3)
@@ -2416,6 +2423,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 symposiumFormData.append('eventId', eventId)
                 symposiumFormData.append('presentation_type', 'university')
                 symposiumFormData.append('selected_inhouse_id', formData.selected_inhouse_id)
+                
+                // FIXED: Only append original_title ONCE
                 symposiumFormData.append('original_title', selectedReview ? selectedReview.title : '')
                 
                 if (selectedReview) {
@@ -2425,10 +2434,12 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     symposiumFormData.append('original_coauthors', JSON.stringify(selectedReview.coauthors || []))
                 }
                 
+                // Title change info
                 symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
-                
                 if (formData.title_changed && formData.new_title) {
-                    symposiumFormData.append('final_symposium_title', formData.new_title)
+                    symposiumFormData.append('final_symposium_title', formData.new_title)  // ← NEW title only if changed
+                } else {
+                    symposiumFormData.append('final_symposium_title', '')  // Send empty if not changed
                 }
                 
                 // Symposium fields (Step 3)
@@ -2469,18 +2480,27 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 console.log('University Symposium submission successful')
             }
 
+            // In submitSymposium, after successful submission:
             if (loading && loading.remove) loading.remove()
 
-            resetFormData()
-            ConfirmationAlert('Symposium submission saved successfully!', () => {
-                if (modalContainer) modalContainer.remove()
+            // Close the current modal and notify success
+            if (modalContainer) modalContainer.remove()
+
+            ConfirmationAlert('Paper and Local Proposal have been successfully uploaded!', () => {
                 if (onSuccess) onSuccess()
             })
 
         } catch (error) {
             if (loading && loading.remove) loading.remove()
             console.error('Submission error:', error)
-            ConfirmationAlert(error.message || 'An error occurred during submission. Please try again.', () => { })
+            
+            // Show error modal
+            ConfirmationAlert({
+                title: 'Submission Failed',
+                message: error.message || 'An error occurred during submission. Please try again.',
+                confirmText: 'OK',
+                cancelText: ''
+            })
         }
     }
 
@@ -2618,5 +2638,19 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         `
     })
 
+    const addProgressAnimation = () => {
+        if (!document.querySelector('#progress-animation-style')) {
+            const style = document.createElement('style')
+            style.id = 'progress-animation-style'
+            style.textContent = `
+                @keyframes shrinkProgress {
+                    from { width: 100%; }
+                    to { width: 0%; }
+                }
+            `
+            document.head.appendChild(style)
+        }
+    }
+    addProgressAnimation()
     return createModal()
 }
