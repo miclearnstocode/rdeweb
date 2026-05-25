@@ -1,4 +1,4 @@
-import { $, Waiting, ConfirmationAlert } from '../../../../lib/lib.js'
+import { $, Waiting, ConfirmationAlert} from '../../../../lib/lib.js'
 
 export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedded = false }) => {
     let currentStep = 1
@@ -221,8 +221,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             stepIndicators.appendChild(stepItem)
         })
 
-        // Progress line
-        const progressLine = $({
+        // Progress line - background (gray)
+        const progressLineBg = $({
             tag: 'div',
             style: {
                 position: 'absolute',
@@ -234,7 +234,26 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 zIndex: 1
             }
         })
-        stepIndicators.appendChild(progressLine)
+
+        // Progress line - fill (blue)
+        const progressFill = $({
+            tag: 'div',
+            style: {
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                height: '100%',
+                width: '33.33%',  // Start at 33.33% for step 1
+                backgroundColor: '#2196F3',
+                transition: 'width 0.3s ease',
+                zIndex: 2,
+                borderRadius: '2px'
+            },
+            att: { className: 'progress-fill' }
+        })
+
+        progressLineBg.appendChild(progressFill)
+        stepIndicators.appendChild(progressLineBg)
         stepWrapper.appendChild(stepIndicators)
 
         // Step contents container
@@ -361,29 +380,29 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
     }
 
     const createStep1Content = () => {
-        const container = $({ tag: 'div' });
+        const container = $({ tag: 'div' })
 
         // Store references
-        let searchInput = null;
-        let searchResultsContainer = null;
-        let selectedInhouseId = null;
-        let filteredReviewsList = [];
+        let searchInput = null
+        let searchResultsContainer = null
+        let selectedInhouseId = null
+        let filteredReviewsList = []
 
         // File display references
-        let programFileNameDisplay, programFileInput;
-        let certificateFileNameDisplay, certificateFileInput;
+        let programFileNameDisplay, programFileInput
+        let certificateFileNameDisplay, certificateFileInput
 
         // Local form field references
-        let localTitleInput, localCampusInput, localCategorySelect, localCenterSelect;
-        let localAuthorInput, localPresenterInput, localCoAuthorListContainer;
+        let localTitleInput, localCampusInput, localCategorySelect, localCenterSelect
+        let localAuthorInput, localPresenterInput, localCoAuthorListContainer
 
         const createLocalFileUploadField = (label, fieldName, onFileSelect) => {
-            const containerDiv = $({ tag: 'div' });
+            const containerDiv = $({ tag: 'div' })
             containerDiv.appendChild($({
                 tag: 'label',
                 text: label,
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }));
+            }))
 
             const uploadArea = $({
                 tag: 'div',
@@ -400,16 +419,16 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     type: 'click',
                     method: () => fileInput.click()
                 }
-            });
+            })
 
             uploadArea.appendChild($({
                 tag: 'i',
                 att: { className: 'fas fa-cloud-upload-alt' },
                 style: { fontSize: '28px', color: '#666', marginBottom: '6px', display: 'block' }
-            }));
-            uploadArea.appendChild($({ tag: 'div', text: `Click to upload`, style: { color: '#888', fontSize: '12px' } }));
+            }))
+            uploadArea.appendChild($({ tag: 'div', text: `Click to upload`, style: { color: '#888', fontSize: '12px' } }))
 
-            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '6px', fontSize: '11px', color: '#4caf50', textAlign: 'center' } });
+            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '6px', fontSize: '11px', color: '#4caf50', textAlign: 'center' } })
 
             const fileInput = $({
                 tag: 'input',
@@ -417,42 +436,75 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 event: {
                     type: 'change',
                     method: (e) => {
-                        const file = e.target.files[0];
+                        const file = e.target.files[0]
                         if (file) {
                             const isPdfFile = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
                             if (!isPdfFile) {
-                                ConfirmationAlert('Please select a valid PDF file', () => { });
-                                fileInput.value = '';
-                                return;
+                                ConfirmationAlert('Please select a valid PDF file', () => { })
+                                fileInput.value = ''
+                                return
                             }
                             if (file.size > 10 * 1024 * 1024) {
-                                ConfirmationAlert('File size exceeds 10MB limit', () => { });
-                                fileInput.value = '';
-                                return;
+                                ConfirmationAlert('File size exceeds 10MB limit', () => { })
+                                fileInput.value = ''
+                                return
                             }
-                            onFileSelect(file);
-                            fileNameDisplay.innerText = `✓ ${file.name.substring(0, 30)}${file.name.length > 30 ? '...' : ''}`;
+                            onFileSelect(file)
+                            fileNameDisplay.innerText = `✓ ${file.name.substring(0, 30)}${file.name.length > 30 ? '...' : ''}`
                         }
                     }
                 }
-            });
+            })
 
-            containerDiv.appendChild(uploadArea);
-            containerDiv.appendChild(fileNameDisplay);
-            containerDiv.appendChild(fileInput);
+            containerDiv.appendChild(uploadArea)
+            containerDiv.appendChild(fileNameDisplay)
+            containerDiv.appendChild(fileInput)
 
             // Store references for reset
             if (fieldName === 'local_programFile') {
-                programFileNameDisplay = fileNameDisplay;
-                programFileInput = fileInput;
+                programFileNameDisplay = fileNameDisplay
+                programFileInput = fileInput
             } else if (fieldName === 'local_certificateFile') {
-                certificateFileNameDisplay = fileNameDisplay;
-                certificateFileInput = fileInput;
+                certificateFileNameDisplay = fileNameDisplay
+                certificateFileInput = fileInput
             }
 
-            return containerDiv;
-        };
-
+            return containerDiv
+        }
+        const updateLocalCoAuthorList = () => {
+            if (!localCoAuthorListContainer) return
+            localCoAuthorListContainer.innerHTML = ''
+            ;(formData.local_coAuthors || []).forEach((author, idx) => {
+                const tag = $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#2a2a2a',
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '12px'
+                    },
+                    child: [
+                        $({ tag: 'span', text: author, style: { color: '#fff' } }),
+                        $({
+                            tag: 'i',
+                            att: { className: 'fas fa-times' },
+                            style: { color: '#999', fontSize: '10px', cursor: 'pointer' },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    formData.local_coAuthors.splice(idx, 1)
+                                    updateLocalCoAuthorList()
+                                }
+                            }
+                        })
+                    ]
+                })
+                localCoAuthorListContainer.appendChild(tag)
+            })
+        }
         // Info box
         const infoBox = $({
             tag: 'div',
@@ -480,18 +532,18 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     ]
                 })
             ]
-        });
-        container.appendChild(infoBox);
+        })
+        container.appendChild(infoBox)
 
         // ========== PRESENTATION TYPE SELECTION ==========
-        const typeSection = $({ tag: 'div', style: { marginBottom: '24px' } });
+        const typeSection = $({ tag: 'div', style: { marginBottom: '24px' } })
         typeSection.appendChild($({
             tag: 'label',
             text: 'Where was the paper presented for In-House Review? *',
             style: { display: 'block', color: '#bbb', marginBottom: '12px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
 
-        const typeOptions = $({ tag: 'div', style: { display: 'flex', gap: '16px' } });
+        const typeOptions = $({ tag: 'div', style: { display: 'flex', gap: '16px' } })
 
         // Local option container
         const localContainer = $({
@@ -505,7 +557,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 border: '2px solid transparent',
                 transition: 'all 0.2s'
             }
-        });
+        })
 
         const localRadio = $({
             tag: 'input',
@@ -515,35 +567,35 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 type: 'change',
                 method: (e) => {
                     if (e.target.checked) {
-                        formData.presentation_type = 'local';
-                        localContainer.style.borderColor = '#2196F3';
-                        universityContainer.style.borderColor = 'transparent';
-                        localFieldsContainer.style.display = 'block';
-                        universityFields.style.display = 'none';
-                        formData.university_title = '';
-                        formData.selected_inhouse_id = null;
+                        formData.presentation_type = 'local'
+                        localContainer.style.borderColor = '#2196F3'
+                        universityContainer.style.borderColor = 'transparent'
+                        localFieldsContainer.style.display = 'block'
+                        universityFields.style.display = 'none'
+                        formData.university_title = ''
+                        formData.selected_inhouse_id = null
                     }
                 }
             }
-        });
+        })
 
-        const localTitleSpan = $({ tag: 'span', text: 'Local In-House Review', style: { fontWeight: '600', color: '#fff' } });
-        const localDescSpan = $({ tag: 'div', text: 'Presented at campus/center level', style: { fontSize: '12px', color: '#888', marginTop: '8px', marginLeft: '28px' } });
-        const localRadioLabel = $({ tag: 'label', style: { display: 'flex', alignItems: 'center', cursor: 'pointer' }, child: [localRadio, localTitleSpan] });
+        const localTitleSpan = $({ tag: 'span', text: 'Local In-House Review', style: { fontWeight: '600', color: '#fff' } })
+        const localDescSpan = $({ tag: 'div', text: 'Presented at campus/center level', style: { fontSize: '12px', color: '#888', marginTop: '8px', marginLeft: '28px' } })
+        const localRadioLabel = $({ tag: 'label', style: { display: 'flex', alignItems: 'center', cursor: 'pointer' }, child: [localRadio, localTitleSpan] })
 
-        localContainer.appendChild(localRadioLabel);
-        localContainer.appendChild(localDescSpan);
+        localContainer.appendChild(localRadioLabel)
+        localContainer.appendChild(localDescSpan)
 
         localContainer.addEventListener('click', () => {
-            localRadio.checked = true;
-            formData.presentation_type = 'local';
-            localContainer.style.borderColor = '#2196F3';
-            universityContainer.style.borderColor = 'transparent';
-            localFieldsContainer.style.display = 'block';
-            universityFields.style.display = 'none';
-            formData.university_title = '';
-            formData.selected_inhouse_id = null;
-        });
+            localRadio.checked = true
+            formData.presentation_type = 'local'
+            localContainer.style.borderColor = '#2196F3'
+            universityContainer.style.borderColor = 'transparent'
+            localFieldsContainer.style.display = 'block'
+            universityFields.style.display = 'none'
+            formData.university_title = ''
+            formData.selected_inhouse_id = null
+        })
 
         // University option container
         const universityContainer = $({
@@ -557,7 +609,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 border: '2px solid transparent',
                 transition: 'all 0.2s'
             }
-        });
+        })
 
         const universityRadio = $({
             tag: 'input',
@@ -567,96 +619,96 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 type: 'change',
                 method: (e) => {
                     if (e.target.checked) {
-                        formData.presentation_type = 'university';
-                        universityContainer.style.borderColor = '#2196F3';
-                        localContainer.style.borderColor = 'transparent';
-                        localFieldsContainer.style.display = 'none';
-                        universityFields.style.display = 'block';
+                        formData.presentation_type = 'university'
+                        universityContainer.style.borderColor = '#2196F3'
+                        localContainer.style.borderColor = 'transparent'
+                        localFieldsContainer.style.display = 'none'
+                        universityFields.style.display = 'block'
 
                         // Reset local form data
-                        formData.local_title = '';
-                        formData.local_campus = '';
-                        formData.local_category = '';
-                        formData.local_center = '';
-                        formData.local_author = '';
-                        formData.local_presenter = '';
-                        formData.local_coAuthors = [];
-                        formData.local_program = null;
-                        formData.local_certificateFile = null;
+                        formData.local_title = ''
+                        formData.local_campus = ''
+                        formData.local_category = ''
+                        formData.local_center = ''
+                        formData.local_author = ''
+                        formData.local_presenter = ''
+                        formData.local_coAuthors = []
+                        formData.local_program = null
+                        formData.local_certificateFile = null
 
                         // Clear local fields
-                        if (localTitleInput) localTitleInput.value = '';
-                        if (localCampusInput) localCampusInput.value = '';
-                        if (localCategorySelect) localCategorySelect.value = '';
-                        if (localCenterSelect) localCenterSelect.innerHTML = '';
-                        if (localAuthorInput) localAuthorInput.value = '';
-                        if (localPresenterInput) localPresenterInput.value = '';
-                        if (localCoAuthorListContainer) localCoAuthorListContainer.innerHTML = '';
-                        if (programFileNameDisplay) programFileNameDisplay.innerText = '';
-                        if (programFileInput) programFileInput.value = '';
-                        if (certificateFileNameDisplay) certificateFileNameDisplay.innerText = '';
-                        if (certificateFileInput) certificateFileInput.value = '';
+                        if (localTitleInput) localTitleInput.value = ''
+                        if (localCampusInput) localCampusInput.value = ''
+                        if (localCategorySelect) localCategorySelect.value = ''
+                        if (localCenterSelect) localCenterSelect.innerHTML = ''
+                        if (localAuthorInput) localAuthorInput.value = ''
+                        if (localPresenterInput) localPresenterInput.value = ''
+                        if (localCoAuthorListContainer) localCoAuthorListContainer.innerHTML = ''
+                        if (programFileNameDisplay) programFileNameDisplay.innerText = ''
+                        if (programFileInput) programFileInput.value = ''
+                        if (certificateFileNameDisplay) certificateFileNameDisplay.innerText = ''
+                        if (certificateFileInput) certificateFileInput.value = ''
 
                         // Load in-house reviews when university is selected
                         if (inhouseReviewsList.length === 0) {
-                            loadInhouseReviews();
+                            loadInhouseReviews()
                         }
                     }
                 }
             }
-        });
+        })
 
-        const universityTitleSpan = $({ tag: 'span', text: 'University In-House Review', style: { fontWeight: '600', color: '#fff' } });
-        const universityDescSpan = $({ tag: 'div', text: 'Presented at university level', style: { fontSize: '12px', color: '#888', marginTop: '8px', marginLeft: '28px' } });
-        const universityRadioLabel = $({ tag: 'label', style: { display: 'flex', alignItems: 'center', cursor: 'pointer' }, child: [universityRadio, universityTitleSpan] });
+        const universityTitleSpan = $({ tag: 'span', text: 'University In-House Review', style: { fontWeight: '600', color: '#fff' } })
+        const universityDescSpan = $({ tag: 'div', text: 'Presented at university level', style: { fontSize: '12px', color: '#888', marginTop: '8px', marginLeft: '28px' } })
+        const universityRadioLabel = $({ tag: 'label', style: { display: 'flex', alignItems: 'center', cursor: 'pointer' }, child: [universityRadio, universityTitleSpan] })
 
-        universityContainer.appendChild(universityRadioLabel);
-        universityContainer.appendChild(universityDescSpan);
+        universityContainer.appendChild(universityRadioLabel)
+        universityContainer.appendChild(universityDescSpan)
 
         universityContainer.addEventListener('click', () => {
-            universityRadio.checked = true;
-            formData.presentation_type = 'university';
-            universityContainer.style.borderColor = '#2196F3';
-            localContainer.style.borderColor = 'transparent';
-            localFieldsContainer.style.display = 'none';
-            universityFields.style.display = 'block';
+            universityRadio.checked = true
+            formData.presentation_type = 'university'
+            universityContainer.style.borderColor = '#2196F3'
+            localContainer.style.borderColor = 'transparent'
+            localFieldsContainer.style.display = 'none'
+            universityFields.style.display = 'block'
 
             // Reset local form data
-            formData.local_title = '';
-            formData.local_campus = '';
-            formData.local_category = '';
-            formData.local_center = '';
-            formData.local_author = '';
-            formData.local_presenter = '';
-            formData.local_coAuthors = [];
-            formData.local_program = null;
-            formData.local_certificateFile = null;
+            formData.local_title = ''
+            formData.local_campus = ''
+            formData.local_category = ''
+            formData.local_center = ''
+            formData.local_author = ''
+            formData.local_presenter = ''
+            formData.local_coAuthors = []
+            formData.local_program = null
+            formData.local_certificateFile = null
 
             // Clear local fields
-            if (localTitleInput) localTitleInput.value = '';
-            if (localCampusInput) localCampusInput.value = '';
-            if (localCategorySelect) localCategorySelect.value = '';
-            if (localCenterSelect) localCenterSelect.innerHTML = '';
-            if (localAuthorInput) localAuthorInput.value = '';
-            if (localPresenterInput) localPresenterInput.value = '';
-            if (localCoAuthorListContainer) localCoAuthorListContainer.innerHTML = '';
-            if (programFileNameDisplay) programFileNameDisplay.innerText = '';
-            if (programFileInput) programFileInput.value = '';
-            if (certificateFileNameDisplay) certificateFileNameDisplay.innerText = '';
-            if (certificateFileInput) certificateFileInput.value = '';
+            if (localTitleInput) localTitleInput.value = ''
+            if (localCampusInput) localCampusInput.value = ''
+            if (localCategorySelect) localCategorySelect.value = ''
+            if (localCenterSelect) localCenterSelect.innerHTML = ''
+            if (localAuthorInput) localAuthorInput.value = ''
+            if (localPresenterInput) localPresenterInput.value = ''
+            if (localCoAuthorListContainer) localCoAuthorListContainer.innerHTML = ''
+            if (programFileNameDisplay) programFileNameDisplay.innerText = ''
+            if (programFileInput) programFileInput.value = ''
+            if (certificateFileNameDisplay) certificateFileNameDisplay.innerText = ''
+            if (certificateFileInput) certificateFileInput.value = ''
 
             if (inhouseReviewsList.length === 0) {
-                loadInhouseReviews();
+                loadInhouseReviews()
             }
-        });
+        })
 
-        typeOptions.appendChild(localContainer);
-        typeOptions.appendChild(universityContainer);
-        typeSection.appendChild(typeOptions);
-        container.appendChild(typeSection);
+        typeOptions.appendChild(localContainer)
+        typeOptions.appendChild(universityContainer)
+        typeSection.appendChild(typeOptions)
+        container.appendChild(typeSection)
 
         // ========== LOCAL FIELDS CONTAINER (Hidden by default) ==========
-        const localFieldsContainer = $({ tag: 'div', style: { display: 'none' } });
+        const localFieldsContainer = $({ tag: 'div', style: { display: 'none' } })
 
         // Two column grid for local fields
         const localGrid = $({
@@ -667,18 +719,20 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 gap: '20px',
                 marginBottom: '20px'
             }
-        });
+        })
 
         // --- Left Column ---
-        const leftColumn = $({ tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '20px' } });
+        const leftColumn = $({ tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '20px' } })
 
         // Document Title
-        const localTitleSection = $({ tag: 'div' });
+        const localTitleSection = $({ tag: 'div' })
         localTitleSection.appendChild($({
             tag: 'label',
             text: 'Document Title *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
+
+        // Create input
         localTitleInput = $({
             tag: 'input',
             att: { type: 'text', placeholder: 'Exact title presented in Local In-House Review' },
@@ -694,21 +748,40 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             event: {
                 type: 'input',
                 method: (e) => {
-                    formData.local_title = e.target.value;
-                    formData.selected_inhouse_id = null;
+                    const input = e.target
+                    const start = input.selectionStart
+                    const end = input.selectionEnd
+                    let value = input.value
+                    
+                    // Capitalize first letter of each word
+                    let words = value.split(' ')
+                    let capitalized = words.map(word => {
+                        if (word.length === 0) return word
+                        return word.charAt(0).toUpperCase() + word.slice(1)
+                    }).join(' ')
+                    
+                    if (capitalized !== value) {
+                        input.value = capitalized
+                        input.setSelectionRange(start, end)
+                        formData.local_title = capitalized
+                    } else {
+                        formData.local_title = value
+                    }
+                    formData.selected_inhouse_id = null
                 }
             }
-        });
-        localTitleSection.appendChild(localTitleInput);
-        leftColumn.appendChild(localTitleSection);
+        })
+
+        localTitleSection.appendChild(localTitleInput)
+        leftColumn.appendChild(localTitleSection)
 
         // Campus
-        const localCampusSection = $({ tag: 'div' });
+        const localCampusSection = $({ tag: 'div' })
         localCampusSection.appendChild($({
             tag: 'label',
             text: 'Campus *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
         localCampusInput = $({
             tag: 'select',
             style: {
@@ -732,16 +805,16 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 })
             }
         })
-        localCampusSection.appendChild(localCampusInput);
-        leftColumn.appendChild(localCampusSection);
+        localCampusSection.appendChild(localCampusInput)
+        leftColumn.appendChild(localCampusSection)
 
         // Category
-        const localCategorySection = $({ tag: 'div' });
+        const localCategorySection = $({ tag: 'div' })
         localCategorySection.appendChild($({
             tag: 'label',
             text: 'Category *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
         localCategorySelect = $({
             tag: 'select',
             style: {
@@ -756,28 +829,28 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             event: {
                 type: 'change',
                 method: (e) => {
-                    formData.local_category = e.target.value;
-                    updateLocalCenters(e.target.value);
+                    formData.local_category = e.target.value
+                    updateLocalCenters(e.target.value)
                 }
             },
             elementHandler: (el) => {
-                el.innerHTML = '';
-                el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }));
+                el.innerHTML = ''
+                el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
                 categories.forEach(cat => {
-                    el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }));
-                });
+                    el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
+                })
             }
-        });
-        localCategorySection.appendChild(localCategorySelect);
-        leftColumn.appendChild(localCategorySection);
+        })
+        localCategorySection.appendChild(localCategorySelect)
+        leftColumn.appendChild(localCategorySection)
 
         // Center
-        const localCenterSection = $({ tag: 'div', style: { gridColumn: '1 / -1' } });
+        const localCenterSection = $({ tag: 'div', style: { gridColumn: '1 / -1' } })
         localCenterSection.appendChild($({
             tag: 'label',
             text: 'Center *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
         localCenterSelect = $({
             tag: 'select',
             style: {
@@ -791,21 +864,21 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             },
             event: {
                 type: 'change',
-                method: (e) => { formData.local_center = e.target.value; }
+                method: (e) => { formData.local_center = e.target.value }
             }
-        });
-        localCenterSection.appendChild(localCenterSelect);
+        })
+        localCenterSection.appendChild(localCenterSelect)
 
         // --- Right Column ---
-        const rightColumn = $({ tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '20px' } });
+        const rightColumn = $({ tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '20px' } })
 
         // Main Author
-        const localAuthorSection = $({ tag: 'div' });
+        const localAuthorSection = $({ tag: 'div' })
         localAuthorSection.appendChild($({
             tag: 'label',
             text: 'Main Author *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
         localAuthorInput = $({
             tag: 'input',
             att: { type: 'text', placeholder: 'Enter main author name' },
@@ -820,19 +893,39 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             },
             event: {
                 type: 'input',
-                method: (e) => { formData.local_author = e.target.value; }
+                method: (e) => {
+                    const input = e.target
+                    const start = input.selectionStart
+                    const end = input.selectionEnd
+                    let value = input.value
+                    
+                    // Capitalize first letter of each word
+                    let words = value.split(' ')
+                    let capitalized = words.map(word => {
+                        if (word.length === 0) return word
+                        return word.charAt(0).toUpperCase() + word.slice(1)
+                    }).join(' ')
+                    
+                    if (capitalized !== value) {
+                        input.value = capitalized
+                        input.setSelectionRange(start, end)
+                        formData.local_author = capitalized
+                    } else {
+                        formData.local_author = value
+                    }
+                }
             }
-        });
-        localAuthorSection.appendChild(localAuthorInput);
-        rightColumn.appendChild(localAuthorSection);
+        })
+        localAuthorSection.appendChild(localAuthorInput)
+        rightColumn.appendChild(localAuthorSection)
 
         // Presenter
-        const localPresenterSection = $({ tag: 'div' });
+        const localPresenterSection = $({ tag: 'div' })
         localPresenterSection.appendChild($({
             tag: 'label',
             text: 'Presenter *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
         localPresenterInput = $({
             tag: 'input',
             att: { type: 'text', placeholder: 'Enter presenter name' },
@@ -847,21 +940,41 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             },
             event: {
                 type: 'input',
-                method: (e) => { formData.local_presenter = e.target.value; }
+                method: (e) => {
+                    const input = e.target
+                    const start = input.selectionStart
+                    const end = input.selectionEnd
+                    let value = input.value
+                    
+                    // Capitalize first letter of each word
+                    let words = value.split(' ')
+                    let capitalized = words.map(word => {
+                        if (word.length === 0) return word
+                        return word.charAt(0).toUpperCase() + word.slice(1)
+                    }).join(' ')
+                    
+                    if (capitalized !== value) {
+                        input.value = capitalized
+                        input.setSelectionRange(start, end)
+                        formData.local_presenter = capitalized
+                    } else {
+                        formData.local_presenter = value
+                    }
+                }
             }
-        });
-        localPresenterSection.appendChild(localPresenterInput);
-        rightColumn.appendChild(localPresenterSection);
+        })
+        localPresenterSection.appendChild(localPresenterInput)
+        rightColumn.appendChild(localPresenterSection)
 
-        // Co-Authors
-        const localCoAuthorSection = $({ tag: 'div' });
+        // Co-Authors section
+        const localCoAuthorSection = $({ tag: 'div' })
         localCoAuthorSection.appendChild($({
             tag: 'label',
             text: 'Co-Authors',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
 
-        const localCoAuthorInputGroup = $({ tag: 'div', style: { display: 'flex', gap: '10px', marginBottom: '12px' } });
+        const localCoAuthorInputGroup = $({ tag: 'div', style: { display: 'flex', gap: '10px', marginBottom: '12px' } })
         const localCoAuthorInput = $({
             tag: 'input',
             att: { type: 'text', placeholder: 'Enter co-author name' },
@@ -873,8 +986,30 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 borderRadius: '8px',
                 color: '#fff',
                 fontSize: '14px'
+            },
+            event: {
+                type: 'input',
+                method: (e) => {
+                    const input = e.target
+                    const start = input.selectionStart
+                    const end = input.selectionEnd
+                    let value = input.value
+                    
+                    // Capitalize first letter of each word
+                    let words = value.split(' ')
+                    let capitalized = words.map(word => {
+                        if (word.length === 0) return word
+                        return word.charAt(0).toUpperCase() + word.slice(1)
+                    }).join(' ')
+                    
+                    if (capitalized !== value) {
+                        input.value = capitalized
+                        input.setSelectionRange(start, end)
+                    }
+                }
             }
-        });
+        })
+
         const localCoAuthorAddBtn = $({
             tag: 'button',
             text: 'Add',
@@ -890,68 +1025,33 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             event: {
                 type: 'click',
                 method: () => {
-                    const name = localCoAuthorInput.value.trim();
+                    const name = localCoAuthorInput.value.trim()
                     if (name) {
-                        if (!formData.local_coAuthors) formData.local_coAuthors = [];
-                        formData.local_coAuthors.push(name);
-                        updateLocalCoAuthorList();
-                        localCoAuthorInput.value = '';
+                        if (!formData.local_coAuthors) formData.local_coAuthors = []
+                        formData.local_coAuthors.push(name)
+                        updateLocalCoAuthorList() // Now this function is defined
+                        localCoAuthorInput.value = ''
                     }
                 }
             }
-        });
-        localCoAuthorInputGroup.appendChild(localCoAuthorInput);
-        localCoAuthorInputGroup.appendChild(localCoAuthorAddBtn);
+        })
+
+        localCoAuthorInputGroup.appendChild(localCoAuthorInput)
+        localCoAuthorInputGroup.appendChild(localCoAuthorAddBtn)
 
         localCoAuthorListContainer = $({
             tag: 'div',
             style: { display: 'flex', flexWrap: 'wrap', gap: '8px' },
             att: { className: 'local-coauthor-list' }
-        });
+        })
 
-        localCoAuthorSection.appendChild(localCoAuthorInputGroup);
-        localCoAuthorSection.appendChild(localCoAuthorListContainer);
-        rightColumn.appendChild(localCoAuthorSection);
-        localGrid.appendChild(leftColumn);
-        localGrid.appendChild(rightColumn);
-        localGrid.appendChild(localCenterSection);
-        localFieldsContainer.appendChild(localGrid);
-
-        // Function to update local co-author list
-        const updateLocalCoAuthorList = () => {
-            if (!localCoAuthorListContainer) return;
-            localCoAuthorListContainer.innerHTML = '';
-            (formData.local_coAuthors || []).forEach((author, idx) => {
-                const tag = $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#2a2a2a',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '12px'
-                    },
-                    child: [
-                        $({ tag: 'span', text: author, style: { color: '#fff' } }),
-                        $({
-                            tag: 'i',
-                            att: { className: 'fas fa-times' },
-                            style: { color: '#999', fontSize: '10px', cursor: 'pointer' },
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    formData.local_coAuthors.splice(idx, 1);
-                                    updateLocalCoAuthorList();
-                                }
-                            }
-                        })
-                    ]
-                });
-                localCoAuthorListContainer.appendChild(tag);
-            });
-        };
+        localCoAuthorSection.appendChild(localCoAuthorInputGroup)
+        localCoAuthorSection.appendChild(localCoAuthorListContainer)
+        rightColumn.appendChild(localCoAuthorSection)
+        localGrid.appendChild(leftColumn)
+        localGrid.appendChild(rightColumn)
+        localGrid.appendChild(localCenterSection)
+        localFieldsContainer.appendChild(localGrid)
 
         // --- File Uploads Section (Full Width) - ONLY Program and Certificate Files ---
         const localFileUploadsGrid = $({
@@ -964,30 +1064,30 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 paddingTop: '20px',
                 borderTop: '1px solid rgba(255,255,255,0.1)'
             }
-        });
-        localFileUploadsGrid.appendChild(createLocalFileUploadField('Program File *', 'local_programFile', (file) => { formData.local_program = file; }));
-        localFileUploadsGrid.appendChild(createLocalFileUploadField('Certificate File *', 'local_certificateFile', (file) => { formData.local_certificateFile = file; }));
+        })
+        localFileUploadsGrid.appendChild(createLocalFileUploadField('Program File *', 'local_programFile', (file) => { formData.local_program = file }))
+        localFileUploadsGrid.appendChild(createLocalFileUploadField('Certificate File *', 'local_certificateFile', (file) => { formData.local_certificateFile = file }))
 
-        localFieldsContainer.appendChild(localFileUploadsGrid);
+        localFieldsContainer.appendChild(localFileUploadsGrid)
 
         // Function to update local centers based on category
         const updateLocalCenters = (category) => {
-            const centers = categoryToCenters[category] || Object.keys(centerCategoryMapping);
+            const centers = categoryToCenters[category] || Object.keys(centerCategoryMapping)
             if (localCenterSelect) {
-                const currentValue = localCenterSelect.value;
-                localCenterSelect.innerHTML = '';
-                localCenterSelect.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }));
+                const currentValue = localCenterSelect.value
+                localCenterSelect.innerHTML = ''
+                localCenterSelect.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
                 centers.forEach(center => {
-                    localCenterSelect.appendChild($({ tag: 'option', text: center, att: { value: center } }));
-                });
+                    localCenterSelect.appendChild($({ tag: 'option', text: center, att: { value: center } }))
+                })
                 if (currentValue && centers.includes(currentValue)) {
-                    localCenterSelect.value = currentValue;
+                    localCenterSelect.value = currentValue
                 }
             }
-        };
+        }
 
         // ========== UNIVERSITY FIELDS ==========
-        const universityFields = $({ tag: 'div', style: { display: 'none' } });
+        const universityFields = $({ tag: 'div', style: { display: 'none' } })
 
         // Loading indicator
         const loadingDiv = $({
@@ -997,20 +1097,20 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '24px', marginBottom: '10px', display: 'block' } }),
                 $({ tag: 'div', text: 'Loading your accepted in-house reviews...' })
             ]
-        });
+        })
 
         // Search input for university in-house review
-        const searchSection = $({ tag: 'div', style: { marginBottom: '24px' } });
+        const searchSection = $({ tag: 'div', style: { marginBottom: '24px' } })
         searchSection.appendChild($({
             tag: 'label',
             text: 'Search Accepted University In-House Review *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }));
+        }))
 
         const searchWrapper = $({
             tag: 'div',
             style: { position: 'relative', width: '100%' }
-        });
+        })
 
         searchInput = $({
             tag: 'input',
@@ -1028,11 +1128,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             event: {
                 type: 'input',
                 method: (e) => {
-                    const searchTerm = e.target.value.toLowerCase();
-                    filterAndDisplayResults(searchTerm);
+                    const searchTerm = e.target.value.toLowerCase()
+                    filterAndDisplayResults(searchTerm)
                 }
             }
-        });
+        })
 
         const searchIcon = $({
             tag: 'i',
@@ -1045,11 +1145,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 color: '#666',
                 fontSize: '16px'
             }
-        });
+        })
 
-        searchWrapper.appendChild(searchInput);
-        searchWrapper.appendChild(searchIcon);
-        searchSection.appendChild(searchWrapper);
+        searchWrapper.appendChild(searchInput)
+        searchWrapper.appendChild(searchIcon)
+        searchSection.appendChild(searchWrapper)
 
         searchResultsContainer = $({
             tag: 'div',
@@ -1062,10 +1162,10 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 border: '1px solid #444',
                 display: 'none'
             }
-        });
+        })
 
-        searchSection.appendChild(searchResultsContainer);
-        universityFields.appendChild(searchSection);
+        searchSection.appendChild(searchResultsContainer)
+        universityFields.appendChild(searchSection)
 
         const selectedReviewSection = $({
             tag: 'div',
@@ -1077,42 +1177,42 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 display: 'none'
             },
             att: { id: 'selectedReviewDisplay' }
-        });
+        })
 
         const selectedReviewContent = $({
             tag: 'div',
             style: { fontSize: '13px' },
             child: []
-        });
-        selectedReviewSection.appendChild(selectedReviewContent);
-        universityFields.appendChild(selectedReviewSection);
+        })
+        selectedReviewSection.appendChild(selectedReviewContent)
+        universityFields.appendChild(selectedReviewSection)
 
         const filterAndDisplayResults = (searchTerm) => {
             if (!searchTerm || searchTerm.trim() === '') {
-                searchResultsContainer.style.display = 'none';
-                searchResultsContainer.innerHTML = '';
-                return;
+                searchResultsContainer.style.display = 'none'
+                searchResultsContainer.innerHTML = ''
+                return
             }
 
             filteredReviewsList = inhouseReviewsList.filter(review =>
                 review.title.toLowerCase().includes(searchTerm) ||
                 review.author.toLowerCase().includes(searchTerm)
-            );
+            )
 
             if (filteredReviewsList.length === 0) {
-                searchResultsContainer.style.display = 'block';
-                searchResultsContainer.innerHTML = '';
+                searchResultsContainer.style.display = 'block'
+                searchResultsContainer.innerHTML = ''
                 const noResult = $({
                     tag: 'div',
                     style: { padding: '16px', textAlign: 'center', color: '#888', fontSize: '13px' },
                     text: 'No matching in-house reviews found'
-                });
-                searchResultsContainer.appendChild(noResult);
-                return;
+                })
+                searchResultsContainer.appendChild(noResult)
+                return
             }
 
-            searchResultsContainer.style.display = 'block';
-            searchResultsContainer.innerHTML = '';
+            searchResultsContainer.style.display = 'block'
+            searchResultsContainer.innerHTML = ''
 
             filteredReviewsList.forEach(review => {
                 const resultItem = $({
@@ -1127,43 +1227,43 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                         $({ tag: 'div', style: { color: '#888', fontSize: '12px' }, text: `Author: ${review.author}` }),
                         review.event_name ? $({ tag: 'div', style: { color: '#666', fontSize: '11px', marginTop: '4px' }, text: `Event: ${review.event_name}` }) : null
                     ]
-                });
-                searchResultsContainer.appendChild(resultItem);
-            });
-        };
+                })
+                searchResultsContainer.appendChild(resultItem)
+            })
+        }
 
         const selectInhouseReview = (selected) => {
-            formData.university_title = selected.title;
-            formData.selected_inhouse_id = selected.id;
-            formData.university_author = selected.author;
-            formData.university_category = selected.category;
-            formData.university_center = selected.center;
-            formData.university_coauthors = selected.coauthors || [];
-            formData.selected_university_review = selected;
+            formData.university_title = selected.title
+            formData.selected_inhouse_id = selected.id
+            formData.university_author = selected.author
+            formData.university_category = selected.category
+            formData.university_center = selected.center
+            formData.university_coauthors = selected.coauthors || []
+            formData.selected_university_review = selected
 
-            searchInput.value = `${selected.title} (${selected.author})`;
-            searchResultsContainer.style.display = 'none';
-            searchResultsContainer.innerHTML = '';
-            selectedReviewSection.style.display = 'block';
-            selectedReviewContent.innerHTML = '';
+            searchInput.value = `${selected.title} (${selected.author})`
+            searchResultsContainer.style.display = 'none'
+            searchResultsContainer.innerHTML = ''
+            selectedReviewSection.style.display = 'block'
+            selectedReviewContent.innerHTML = ''
 
-            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#4caf50', marginBottom: '8px', fontWeight: 'bold' }, text: '✓ Presented in In-House Review:' }));
-            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#fff', marginBottom: '4px' }, text: `Title: ${selected.title}` }));
-            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Author: ${selected.author}` }));
+            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#4caf50', marginBottom: '8px', fontWeight: 'bold' }, text: '✓ Presented in In-House Review:' }))
+            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#fff', marginBottom: '4px' }, text: `Title: ${selected.title}` }))
+            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Author: ${selected.author}` }))
 
             if (selected.coauthors && selected.coauthors.length > 0) {
-                const coauthorsText = selected.coauthors.join(', ');
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Co-Authors: ${coauthorsText}` }));
+                const coauthorsText = selected.coauthors.join(', ')
+                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Co-Authors: ${coauthorsText}` }))
             }
 
             if (selected.category) {
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Category: ${selected.category}` }));
+                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Category: ${selected.category}` }))
             }
             if (selected.center) {
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Center: ${selected.center}` }));
+                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Center: ${selected.center}` }))
             }
             if (selected.event_name) {
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#888', fontSize: '11px', marginTop: '4px' }, text: `Event: ${selected.event_name}` }));
+                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#888', fontSize: '11px', marginTop: '4px' }, text: `Event: ${selected.event_name}` }))
             }
 
             const changeLink = $({
@@ -1177,133 +1277,133 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                         event: {
                             type: 'click',
                             method: () => {
-                                selectedReviewSection.style.display = 'none';
-                                searchInput.value = '';
-                                formData.selected_inhouse_id = null;
-                                formData.selected_university_review = null;
-                                formData.university_title = '';
-                                formData.university_coauthors = [];
+                                selectedReviewSection.style.display = 'none'
+                                searchInput.value = ''
+                                formData.selected_inhouse_id = null
+                                formData.selected_university_review = null
+                                formData.university_title = ''
+                                formData.university_coauthors = []
                             }
                         }
                     })
                 ]
-            });
-            selectedReviewContent.appendChild(changeLink);
+            })
+            selectedReviewContent.appendChild(changeLink)
 
             if (stepContents[2] && stepContents[2].autoFillFromUniversityReview) {
-                stepContents[2].autoFillFromUniversityReview(selected);
+                stepContents[2].autoFillFromUniversityReview(selected)
             }
-        };
+        }
 
         const loadInhouseReviews = async () => {
-            loadingDiv.style.display = 'block';
-            searchInput.disabled = true;
-            searchInput.placeholder = 'Loading reviews...';
+            loadingDiv.style.display = 'block'
+            searchInput.disabled = true
+            searchInput.placeholder = 'Loading reviews...'
 
             try {
-                const formDataReq = new FormData();
-                formDataReq.append('getAcceptedInhouseReviews', 'true');
+                const formDataReq = new FormData()
+                formDataReq.append('getAcceptedInhouseReviews', 'true')
 
                 const response = await fetch('/uploadResearchFile', {
                     method: 'POST',
                     body: formDataReq
-                });
+                })
 
-                const result = await response.json();
+                const result = await response.json()
 
-                searchInput.disabled = false;
-                searchInput.placeholder = 'Type to search by title or author...';
+                searchInput.disabled = false
+                searchInput.placeholder = 'Type to search by title or author...'
 
                 if (result.status && result.data && result.data.length > 0) {
-                    inhouseReviewsList = result.data;
-                    loadingDiv.style.display = 'none';
+                    inhouseReviewsList = result.data
+                    loadingDiv.style.display = 'none'
                 } else {
-                    loadingDiv.innerHTML = '';
+                    loadingDiv.innerHTML = ''
                     loadingDiv.appendChild($({
                         tag: 'div',
                         style: { textAlign: 'center', padding: '20px', color: '#f44336' },
                         text: 'No accepted in-house reviews found. Please complete an in-house review first.'
-                    }));
-                    searchInput.disabled = true;
+                    }))
+                    searchInput.disabled = true
                 }
             } catch (error) {
-                console.error('Error loading in-house reviews:', error);
-                searchInput.disabled = false;
-                loadingDiv.innerHTML = '';
+                console.error('Error loading in-house reviews:', error)
+                searchInput.disabled = false
+                loadingDiv.innerHTML = ''
                 loadingDiv.appendChild($({
                     tag: 'div',
                     style: { textAlign: 'center', padding: '20px', color: '#f44336' },
                     text: 'Error loading in-house reviews. Please refresh and try again.'
-                }));
+                }))
             }
-        };
+        }
 
-        universityFields.appendChild(loadingDiv);
+        universityFields.appendChild(loadingDiv)
 
         // Append local and university fields to container
-        container.appendChild(localFieldsContainer);
-        container.appendChild(universityFields);
+        container.appendChild(localFieldsContainer)
+        container.appendChild(universityFields)
 
         // Click outside to close results
         document.addEventListener('click', (e) => {
             if (searchResultsContainer && !searchResultsContainer.contains(e.target) && e.target !== searchInput) {
-                searchResultsContainer.style.display = 'none';
+                searchResultsContainer.style.display = 'none'
             }
-        });
+        })
 
         // Store references for validation
         container.__validate = () => {
 
             if (!formData.presentation_type) {
-                ConfirmationAlert('Please select where the paper was presented for In-House Review', () => { });
-                return false;
+                ConfirmationAlert('Please select where the paper was presented for In-House Review', () => { })
+                return false
             }
 
             if (formData.presentation_type === 'local') {
                 if (!formData.local_title || formData.local_title.trim() === '') {
-                    ConfirmationAlert('Please enter the Document Title', () => { });
-                    return false;
+                    ConfirmationAlert('Please enter the Document Title', () => { })
+                    return false
                 }
                 if (!formData.local_campus || formData.local_campus.trim() === '') {
-                    ConfirmationAlert('Please enter the Campus', () => { });
-                    return false;
+                    ConfirmationAlert('Please enter the Campus', () => { })
+                    return false
                 }
                 if (!formData.local_category) {
-                    ConfirmationAlert('Please select a Category', () => { });
-                    return false;
+                    ConfirmationAlert('Please select a Category', () => { })
+                    return false
                 }
                 if (!formData.local_center) {
-                    ConfirmationAlert('Please select a Center', () => { });
-                    return false;
+                    ConfirmationAlert('Please select a Center', () => { })
+                    return false
                 }
                 if (!formData.local_author || formData.local_author.trim() === '') {
-                    ConfirmationAlert('Please enter the Main Author', () => { });
-                    return false;
+                    ConfirmationAlert('Please enter the Main Author', () => { })
+                    return false
                 }
                 if (!formData.local_presenter || formData.local_presenter.trim() === '') {
-                    ConfirmationAlert('Please enter the Presenter', () => { });
-                    return false;
+                    ConfirmationAlert('Please enter the Presenter', () => { })
+                    return false
                 }
                 if (!formData.local_program) {
-                    ConfirmationAlert('Please upload the Program File', () => { });
-                    return false;
+                    ConfirmationAlert('Please upload the Program File', () => { })
+                    return false
                 }
                 if (!formData.local_certificateFile) {
-                    ConfirmationAlert('Please upload the Certificate File', () => { });
-                    return false;
+                    ConfirmationAlert('Please upload the Certificate File', () => { })
+                    return false
                 }
             } else if (formData.presentation_type === 'university') {
                 if (!formData.selected_inhouse_id) {
-                    ConfirmationAlert('Please search and select an accepted University In-House Review', () => { });
-                    return false;
+                    ConfirmationAlert('Please search and select an accepted University In-House Review', () => { })
+                    return false
                 }
             }
 
-            return true;
-        };
+            return true
+        }
 
-        return container;
-    };
+        return container
+    }
 
     const createStep2Content = () => {
         const container = $({ tag: 'div' })
@@ -1424,13 +1524,18 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             const refEl = refSection.querySelector('#refInhouseTitle')
             if (refEl) {
                 if (formData.presentation_type === 'local') {
-                    refEl.innerText = formData.local_title || '—'
+                    // Add null check and default value
+                    refEl.innerText = (formData.local_title && formData.local_title.trim() !== '') ? formData.local_title : '—'
                 } else if (formData.presentation_type === 'university') {
-                    if (formData.selected_university_review) {
-                        refEl.innerText = formData.selected_university_review.title || '—'
+                    if (formData.selected_university_review && formData.selected_university_review.title) {
+                        refEl.innerText = formData.selected_university_review.title
+                    } else if (formData.university_title && formData.university_title.trim() !== '') {
+                        refEl.innerText = formData.university_title
                     } else {
-                        refEl.innerText = formData.university_title || '—'
+                        refEl.innerText = '—'
                     }
+                } else {
+                    refEl.innerText = '—'
                 }
             }
         }
@@ -1692,33 +1797,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             return container
         }
 
-        // ========== CREATE TEXT FIELD ==========
-        const createTextField = (label, placeholder, onInput) => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } })
-            container.appendChild($({
-                tag: 'label',
-                text: label,
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }))
-            const input = $({
-                tag: 'input',
-                att: { type: 'text', placeholder: placeholder },
-                style: {
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
-                },
-                event: { type: 'input', method: onInput }
-            })
-            container.appendChild(input)
-            return container
-        }
-
-        // ========== CREATE DATE FIELD ==========
         const createDateField = (label, onChange) => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
@@ -1744,69 +1822,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             return container
         }
 
-        // ========== CREATE CO-AUTHOR FIELD ==========
-        const createCoAuthorField = (updateCoAuthorListFn) => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } })
-            container.appendChild($({
-                tag: 'label',
-                text: 'Co-Authors',
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }))
-
-            const inputGroup = $({ tag: 'div', style: { display: 'flex', gap: '10px', marginBottom: '12px' } })
-            const input = $({
-                tag: 'input',
-                att: { type: 'text', placeholder: 'Enter co-author name' },
-                style: {
-                    flex: 1,
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
-                }
-            })
-            const addBtn = $({
-                tag: 'button',
-                text: 'Add',
-                style: {
-                    padding: '8px 20px',
-                    backgroundColor: '#2196F3',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                },
-                event: {
-                    type: 'click',
-                    method: () => {
-                        const name = input.value.trim()
-                        if (name) {
-                            formData.coAuthors.push(name)
-                            updateCoAuthorListFn()
-                            input.value = ''
-                        }
-                    }
-                }
-            })
-
-            const listContainer = $({
-                tag: 'div',
-                style: { display: 'flex', flexWrap: 'wrap', gap: '8px' },
-                att: { className: 'coauthor-list' }
-            })
-
-            inputGroup.appendChild(input)
-            inputGroup.appendChild(addBtn)
-            container.appendChild(inputGroup)
-            container.appendChild(listContainer)
-
-            return container
-        }
-
-        // ========== CREATE FILE UPLOAD FIELD ==========
         const createFileUploadField = (label, fieldName) => {
             const container = $({ tag: 'div' })
             container.appendChild($({
@@ -1994,7 +2009,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
     const createTextField = (label, placeholder, onInput) => {
         const container = $({ tag: 'div', style: { marginBottom: '0' } })
-        container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+        container.appendChild($({ 
+            tag: 'label', 
+            text: label, 
+            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } 
+        }))
         const input = $({
             tag: 'input',
             att: { type: 'text', placeholder: placeholder },
@@ -2007,7 +2026,30 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 color: '#fff',
                 fontSize: '14px'
             },
-            event: { type: 'input', method: onInput }
+            event: { 
+                type: 'input', 
+                method: (e) => {
+                    const inputEl = e.target;
+                    const start = inputEl.selectionStart;
+                    const end = inputEl.selectionEnd;
+                    let value = inputEl.value;
+                    
+                    // Capitalize first letter of each word
+                    let words = value.split(' ');
+                    let capitalized = words.map(word => {
+                        if (word.length === 0) return word;
+                        return word.charAt(0).toUpperCase() + word.slice(1);
+                    }).join(' ');
+                    
+                    if (capitalized !== value) {
+                        inputEl.value = capitalized;
+                        inputEl.setSelectionRange(start, end);
+                        if (onInput) onInput(capitalized);
+                    } else {
+                        if (onInput) onInput(value);
+                    }
+                }
+            }
         })
         container.appendChild(input)
         return container
@@ -2077,6 +2119,27 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 borderRadius: '8px',
                 color: '#fff',
                 fontSize: '14px'
+            },
+            event: {
+                type: 'input',
+                method: (e) => {
+                    const inputEl = e.target
+                    const start = inputEl.selectionStart
+                    const end = inputEl.selectionEnd
+                    let value = inputEl.value
+                    
+                    // Capitalize first letter of each word
+                    let words = value.split(' ')
+                    let capitalized = words.map(word => {
+                        if (word.length === 0) return word
+                        return word.charAt(0).toUpperCase() + word.slice(1)
+                    }).join(' ')
+                    
+                    if (capitalized !== value) {
+                        inputEl.value = capitalized
+                        inputEl.setSelectionRange(start, end)
+                    }
+                }
             }
         })
         const addBtn = $({
@@ -2189,7 +2252,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
         // Validate current step before proceeding
         if (delta === 1) {
-            // Make sure stepContents[currentStep - 1] exists before accessing __validate
             const currentStepContent = stepContents[currentStep - 1]
             if (currentStepContent && currentStepContent.__validate) {
                 if (!currentStepContent.__validate()) return
@@ -2201,7 +2263,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             stepContents[1].__updateReference()
         }
 
-        // Hide current step - check if it exists
+        // Hide current step
         const currentContent = stepContents[currentStep - 1]
         if (currentContent) {
             currentContent.style.display = 'none'
@@ -2209,7 +2271,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
         currentStep = newStep
 
-        // Show new step - check if it exists
+        // Show new step
         const newContent = stepContents[currentStep - 1]
         if (newContent) {
             newContent.style.display = 'block'
@@ -2225,6 +2287,13 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             if (text) {
                 text.style.color = i <= currentStep ? '#2196F3' : '#666'
             }
+        }
+        
+        // Update progress line fill - Each step = 33.33%
+        const progressFill = document.querySelector('.progress-fill')
+        if (progressFill) {
+            const progressPercentage = (currentStep / 3) * 100
+            progressFill.style.width = `${progressPercentage}%`
         }
 
         // Update buttons
@@ -2498,6 +2567,12 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 if (text) {
                     text.style.color = i === 1 ? '#2196F3' : '#666'
                 }
+            }
+            
+            // Reset progress fill to 33.33% (Step 1)
+            const progressFill = document.querySelector('.progress-fill')
+            if (progressFill) {
+                progressFill.style.width = '33.33%'
             }
 
             // Reset buttons
