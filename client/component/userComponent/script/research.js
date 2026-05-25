@@ -673,9 +673,9 @@ export const Research = () => {
     // Status badge styling
     const getStatusBadge = (status) => {
         const styles = {
-            pending: { bg: '#FF9800', text: 'Pending', icon: 'fa-clock' },
+            pending: { bg: '#FF9800', text: 'Pending Proposal', icon: 'fa-clock' },
             accepted: { bg: '#4CAF50', text: 'Proposal Accepted', icon: 'fa-check-circle' },
-            rejected: { bg: '#f44336', text: 'Rejected', icon: 'fa-times-circle' },
+            rejected: { bg: '#f44336', text: 'Rejected Proposal', icon: 'fa-times-circle' },
             review: { bg: '#2196F3', text: 'Under Review', icon: 'fa-eye' },
             revision_pending: { bg: '#9C27B0', text: 'Waiting for Revised Paper', icon: 'fa-exclamation-circle' },
             revision_submitted: { bg: '#673AB7', text: 'Revised Paper Submitted', icon: 'fa-paper-plane' },

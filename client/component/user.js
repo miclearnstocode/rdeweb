@@ -12,6 +12,7 @@ import { ReqButton } from "./userComponent/script/Request.js";
 import { Publication } from "./userComponent/script/publicationUser.js";
 import { PatentUM } from "./userComponent/script/patentUMuser.js";
 import { Utilization } from './userComponent/script/utilizationUser.js';
+
 // Map of tab IDs to their components and configurations
 const tabs = {
     'research-tab': {
@@ -104,9 +105,7 @@ export const UserPanel = () => {
         needsRedirect = true;
     }
 
-
     if (needsRedirect) {
-
         window.location.replace(redirectUrl);
         return null; // Return null to prevent rendering
     }
@@ -116,11 +115,8 @@ export const UserPanel = () => {
 
     // Find which tab matches the current URL (only check enabled tabs)
     Object.entries(tabs).forEach(([tabId, tab]) => {
-        const matches = !tab.disabled && currentPath.startsWith(tab.urlPattern);
-
         if (!tab.disabled && currentPath.startsWith(tab.urlPattern)) {
             activeTabId = tabId;
-            //console.log(`✓ Setting active tab to: ${tabId} (${tab.label})`);
         }
     });
 
@@ -206,22 +202,21 @@ export const UserPanel = () => {
                     }
                 });
 
-                // CRITICAL: Force remove any existing active classes
+                // Remove any existing classes
                 button.className = button.className
+                    .replace(/active-nav/g, '')
                     .replace(/userAnimate/g, '')
                     .replace(/disabled-tab/g, '')
                     .trim();
 
                 // Add disabled class if tab is disabled
                 if (tab.disabled) {
-                    button.className += ' disabled-tab';
+                    button.classList.add('disabled-tab');
                 }
 
                 // Add active class ONLY if this is the active tab AND it's not disabled
                 if (tabId === activeTabId && !tab.disabled) {
-                    button.className += ' userAnimate';
-                } else {
-                    // not active
+                    button.classList.add('active-nav');
                 }
 
                 const buttonWrapper = $({
@@ -235,6 +230,16 @@ export const UserPanel = () => {
 
                 nav.appendChild(buttonWrapper);
             });
+            
+            // After all buttons are rendered, ensure no duplicate active states
+            // This handles the case where multiple buttons might have gotten active class
+            const activeButtons = nav.querySelectorAll('.active-nav');
+            if (activeButtons.length > 1) {
+                // Keep only the first one (should be the correct one) and remove others
+                for (let i = 1; i < activeButtons.length; i++) {
+                    activeButtons[i].classList.remove('active-nav');
+                }
+            }
         },
         getFrame: (frame) => {
             frame.className = 'modern-frame';
@@ -248,8 +253,6 @@ export const UserPanel = () => {
                 activeTab = tabs['research-tab'];
             }
 
-            //console.log('Rendering frame for tab:', activeTabId, activeTab?.label);
-
             if (activeTab && !activeTab.disabled) {
                 const pageWrapper = $({
                     tag: 'div',
@@ -259,10 +262,8 @@ export const UserPanel = () => {
                     child: [activeTab.page()]
                 });
                 frame.appendChild(pageWrapper);
-                //console.log(`✅ Rendered page for: ${activeTab.label}`);
             } else {
                 // Ultimate fallback
-                //console.error('❌ No valid tab found, showing error');
                 frame.appendChild(Error());
             }
         }

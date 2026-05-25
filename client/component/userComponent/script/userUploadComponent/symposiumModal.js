@@ -2409,6 +2409,18 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
                 console.log('Local In-House Symposium submission successful')
 
+                if (loading && loading.remove) loading.remove()
+                
+                // Close the current modal
+                if (modalContainer) modalContainer.remove()
+                
+                // Show success message
+                ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
+                    if (onSuccess) onSuccess()
+                })
+                
+                return
+
             } else if (formData.presentation_type === 'university') {
                 // ===== FOR UNIVERSITY PRESENTATION TYPE =====
                 if (stepContents[1] && stepContents[1].__validate && !stepContents[1].__validate()) {
