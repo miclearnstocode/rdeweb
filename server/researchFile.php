@@ -1749,7 +1749,6 @@ if (isset($_POST['uploadSymposium'])) {
         $finalSymposiumTitle = isset($_POST['final_symposium_title']) && !empty($_POST['final_symposium_title']) ? $_POST['final_symposium_title'] : null;
         $title_changed = isset($_POST['title_changed']) ? (int) $_POST['title_changed'] : 0;
 
-        require_once __DIR__ . '/../config/driver_config.php';
         $drive = new GoogleDriveService();
 
         if ($presentationType === 'local') {
@@ -1929,7 +1928,7 @@ if (isset($_POST['uploadSymposium'])) {
             $researchStmt = $con->prepare($researchQuery);
             
             $researchStmt->bind_param(
-                'siiissssssssssssississsssi',
+                'siiissssssssssssisssssssss',
                 $paperTrailNo,
                 $senderId,
                 $endorsementId,
@@ -2335,17 +2334,16 @@ if (isset($_POST['uploadSymposium'])) {
             $researchQuery = "INSERT INTO researchfile(
                 paper_trail_no, senderid, endorsementid, event_id, author, coauthor, presenter,
                 date_started, date_completed, title, final_symposium_title, event, status,
-                category, center, campus, title_changed,
-                drive_file_id, drive_view_url, drive_download_url,
+                category, center, campus, drive_file_id, drive_view_url, drive_download_url,
                 drive_folder_id, drive_event_folder_id, drive_center_folder_id, 
-                drive_category_folder_id, drive_entry_folder_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                drive_category_folder_id, drive_entry_folder_id, title_changed
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             $researchStmt = $con->prepare($researchQuery);
             $researchDriveDownloadUrl = "https://drive.google.com/uc?id={$researchDriveFileId}&export=download";
             
             $researchStmt->bind_param(
-                'siiisssssssssssssssssssssii',
+                'siiissssssssssssssssssssssi',
                 $paperTrailNo,
                 $senderId,
                 $endorsementId,
@@ -2369,8 +2367,8 @@ if (isset($_POST['uploadSymposium'])) {
                 $eventFolderId,
                 $centerFolderId,
                 $categoryFolderId,
-                $title_changed,
-                $entryFolderId
+                $entryFolderId,
+                $title_changed
             );
             
             if (!$researchStmt->execute()) {
