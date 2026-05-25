@@ -353,7 +353,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 fontWeight: '500',
                 display: 'none'
             },
-            att: { className: 'footer-submit', type: 'button' },
+            att: { className: 'footer-submit', type: 'button', disabled: false },
             event: {
                 type: 'click',
                 method: () => submitSymposium()
@@ -1958,8 +1958,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         campusSelect = createCampusDropdown()
         categorySelect = createCategoryDropdown()
         centerSelect = createCenterDropdown()
-        authorInput = createTextField('Main Author *', 'Enter main author name', (e) => { formData.author })
-        presenterInput = createTextField('Presenter *', 'Enter presenter name', (e) => { formData.presenter })
+        authorInput = createTextField('Main Author *', 'Author Name', (value) => { formData.author = value })
+        presenterInput = createTextField('Presenter *', 'Presenter name', (value) => { formData.presenter = value })
         coAuthorContainer = createCoAuthorField(updateCoAuthorList)
         dateStartedField = createDateField('Date Started *', (e) => { formData.date_started = e.target.value })
         dateCompletedField = createDateField('Date Completed *', (e) => { formData.date_completed = e.target.value })
@@ -2296,14 +2296,23 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             progressFill.style.width = `${progressPercentage}%`
         }
 
-        // Update buttons
+        // Update buttons - FIX HERE
         const prevBtn = document.querySelector('.footer-prev')
         const nextBtn = document.querySelector('.footer-next')
         const submitBtn = document.querySelector('.footer-submit')
 
-        if (prevBtn) prevBtn.style.display = currentStep === 1 ? 'none' : 'block'
-        if (nextBtn) nextBtn.style.display = currentStep === 3 ? 'none' : 'block'
-        if (submitBtn) submitBtn.style.display = currentStep === 3 ? 'block' : 'none'
+        if (prevBtn) {
+            prevBtn.style.display = currentStep === 1 ? 'none' : 'block'
+        }
+        if (nextBtn) {
+            nextBtn.style.display = currentStep === 3 ? 'none' : 'block'
+        }
+        if (submitBtn) {
+            // Always ensure submit button is visible only on step 3
+            submitBtn.style.display = currentStep === 3 ? 'block' : 'none'
+            // Remove any disabled attribute if it exists
+            submitBtn.disabled = false
+        }
     }
 
     const handleNext = () => navigateStep(1)
@@ -2582,7 +2591,10 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
             if (prevBtn) prevBtn.style.display = 'none'
             if (nextBtn) nextBtn.style.display = 'block'
-            if (submitBtn) submitBtn.style.display = 'none'
+            if (submitBtn) {
+                    submitBtn.style.display = 'none'
+                    submitBtn.disabled = false
+                }
         }
     }
 
