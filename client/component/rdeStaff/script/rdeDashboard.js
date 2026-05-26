@@ -121,7 +121,7 @@ export const RdeDashboard = () => {
         const track = document.createElementNS(svgNS, 'circle');
         track.setAttribute('cx', cx); track.setAttribute('cy', cy);
         track.setAttribute('r', R); track.setAttribute('fill', 'none');
-        track.setAttribute('stroke', 'rgba(255,255,255,0.05)'); track.setAttribute('stroke-width', strokeW);
+        track.setAttribute('stroke', 'transparent'); track.setAttribute('stroke-width', strokeW);
         svg.appendChild(track);
 
         let offset = 0;
