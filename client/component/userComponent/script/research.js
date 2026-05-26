@@ -2848,7 +2848,11 @@ export const Research = () => {
             style: {
                 padding: '24px',
                 backgroundColor: '#121212',
-                minHeight: '100vh'
+                height: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                boxSizing: 'border-box'
             }
         })
 
