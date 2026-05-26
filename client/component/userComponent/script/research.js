@@ -1,4 +1,4 @@
-import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal } from '../../../lib/lib.js'
+import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal, AlertModal } from '../../../lib/lib.js'
 import { handleResubmit } from './resubmit.js'
 import { Print } from "../../otherComponent/comment.js"
 import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
@@ -401,7 +401,7 @@ const openViewResearchesModal = () => {
         }
     }
 
-    // Add research to table
+    // research to table
     const addResearchToTable = (eventName, location, files) => {
         if (!tableBody) return
 
@@ -587,7 +587,7 @@ const openViewResearchesModal = () => {
         loadEventList()
     }, 100)
 }
-// Modern Document Management Component
+
 export const Research = () => {
     // Utility to update stats cards
     const updateStatsFromData = (total, pending, accepted, rejected) => {
@@ -1759,7 +1759,7 @@ export const Research = () => {
                 }
             })
 
-            // Add hover effect for submit button
+            //hover effect for submit button
             submitBtn.addEventListener('mouseenter', () => { submitBtn.style.backgroundColor = '#7B1FA2'; })
             submitBtn.addEventListener('mouseleave', () => { submitBtn.style.backgroundColor = '#9C27B0'; })
 
@@ -1900,7 +1900,7 @@ export const Research = () => {
 
         const container = $({
             tag: 'div',
-            style: { marginBottom: '20px' }
+            style: { marginBottom: '10px' }
         })
 
         const labelEl = $({
@@ -1973,8 +1973,6 @@ export const Research = () => {
     const openUploadModal = (isEdit = false, editData = null) => {
         let titleInput, categorySelect, centerSelect, authorInput, presenterInput, coAuthorInput, coAuthorList, campusSelect
         let eventSelect
-        let dateStartedField, dateCompletedField
-        let dateFieldsContainer
         let programFileContainer
         let standardProgramFile
         let localFilesSection, localFilesTitle
@@ -1994,9 +1992,7 @@ export const Research = () => {
             researchFile: null,
             programFile: null,
             endorsementFile: null,
-            certificateFile: null,
-            date_started: isEdit ? editData?.date_started || '' : '',
-            date_completed: isEdit ? editData?.date_completed || '' : ''
+            certificateFile: null
         }
         const modal = $({
             tag: 'div',
@@ -2139,6 +2135,119 @@ export const Research = () => {
             att: { id: 'submitBtn' }
         })
 
+        submitBtn.addEventListener('click', async () => {
+            // Validate required fields
+            if (!formData.eventName) {
+                alert('Please select an event');
+                return;
+            }
+            if (!formData.title) {
+                alert('Please enter a document title');
+                return;
+            }
+            if (!formData.campus) {
+                alert('Please select a campus');
+                return;
+            }
+            if (!formData.category) {
+                alert('Please select a category');
+                return;
+            }
+            if (!formData.center) {
+                alert('Please select a center');
+                return;
+            }
+            if (!formData.author) {
+                alert('Please enter main author');
+                return;
+            }
+            if (!formData.presenter) {
+                alert('Please enter presenter');
+                return;
+            }
+            if (!formData.researchFile) {
+                alert('Please upload the research file');
+                return;
+            }
+            if (!formData.endorsementFile) {
+                alert('Please upload the endorsement letter');
+                return;
+            }
+
+            // Check for In-House event - require program file
+            const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
+            if (isInHouse && (!formData.programFile || formData.programFile.length === 0)) {
+                alert('Program file is required for In-House Review events');
+                return;
+            }
+
+            // Create FormData for submission
+            const submitFormData = new FormData();
+            submitFormData.append('uploadResearch', 'true');
+            submitFormData.append('eventType', formData.eventName);
+            submitFormData.append('title', formData.title);
+            submitFormData.append('author', formData.author);
+            submitFormData.append('category', formData.category);
+            submitFormData.append('center', formData.center);
+            submitFormData.append('campus', formData.campus);
+            submitFormData.append('coAuthor', JSON.stringify(formData.coAuthors));
+            submitFormData.append('presenter', formData.presenter);
+            
+            // Append files
+            if (formData.researchFile) {
+                submitFormData.append('researchDoc', formData.researchFile);
+            }
+            if (formData.endorsementFile) {
+                submitFormData.append('uploadedFileEndorsement', formData.endorsementFile);
+            }
+            
+            // For In-House events, append program and certificate files
+            if (isInHouse) {
+                if (formData.programFile && formData.programFile.length > 0) {
+                    formData.programFile.forEach(file => {
+                        submitFormData.append('programFile', file);
+                    });
+                }
+                if (formData.certificateFile && formData.certificateFile.length > 0) {
+                    formData.certificateFile.forEach(file => {
+                        submitFormData.append('certificateFile', file);
+                    });
+                }
+            }
+
+            // Show loading
+            const loading = Waiting();
+            document.body.appendChild(loading);
+
+            try {
+                const response = await fetch('/uploadResearchFile', {
+                    method: 'POST',
+                    body: submitFormData
+                });
+                
+                const result = await response.json();
+                
+                // Remove loading
+                if (loading && loading.remove) loading.remove();
+                
+                if (result.status) {
+                    // Close modal
+                    modal.remove();
+                    // Show success message
+                    document.body.appendChild(ConfirmationAlert(result.message, () => {
+                        if (window.refreshDocumentsTable) {
+                            window.refreshDocumentsTable();
+                        }
+                    }));
+                } else {
+                    document.body.appendChild(ConfirmationAlert('Submission failed: ' + result.message));
+                }
+            } catch (error) {
+                if (loading && loading.remove) loading.remove();
+                console.error('Submission error:', error);
+                document.body.appendChild(ConfirmationAlert('Error submitting form: ' + error.message));
+            }
+        });
         footer.appendChild(cancelBtn)
         footer.appendChild(submitBtn)
 
@@ -2169,7 +2278,7 @@ export const Research = () => {
             })
 
             // Event selection
-            const eventField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            const eventField = $({ tag: 'div', style: { marginBottom: '10px' } })
             eventField.appendChild($({ tag: 'label', text: 'Event Name *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             eventSelect = $({
                 tag: 'select',
@@ -2235,9 +2344,6 @@ export const Research = () => {
                             if (localFilesSection) {
                                 localFilesSection.style.display = isInHouse ? 'block' : 'none'
                             }
-                            if (dateFieldsContainer) {
-                                dateFieldsContainer.style.display = isInHouse ? 'grid' : 'none'
-                            }
                         }
                     }
                 },
@@ -2288,11 +2394,11 @@ export const Research = () => {
             eventField.appendChild(eventSelect)
 
             // Title field
-            const titleField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            const titleField = $({ tag: 'div', style: { marginBottom: '0' } })
             titleField.appendChild($({ tag: 'label', text: 'Document Title *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             titleInput = $({
                 tag: 'input',
-                att: { type: 'text', placeholder: 'Enter document title', value: isEdit ? editData?.title || '' : '' },
+                att: { type: 'text', placeholder: 'Enter document title', value: isEdit ? capitalizeFirstLetter(editData?.title || '') : '' },
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -2304,12 +2410,15 @@ export const Research = () => {
                 },
                 event: {
                     type: 'input',
-                    method: (e) => { formData.title = e.target.value }
+                    method: (e) => { 
+                        formData.title = capitalizeFirstLetter(e.target.value);
+                        e.target.value = formData.title; // Update input field to show capitalized version
+                    }
                 }
             })
             titleField.appendChild(titleInput)
 
-            const campusField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            const campusField = $({ tag: 'div', style: { marginBottom: '0' } })
             campusField.appendChild($({ tag: 'label', text: 'Campus *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             campusSelect = $({
                 tag: 'select',
@@ -2338,7 +2447,7 @@ export const Research = () => {
             campusField.appendChild(campusSelect)
 
             // Category field
-            const categoryField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            const categoryField = $({ tag: 'div', style: { marginBottom: '0' } })
             categoryField.appendChild($({ tag: 'label', text: 'Category *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             categorySelect = $({
                 tag: 'select',
@@ -2376,7 +2485,7 @@ export const Research = () => {
             categoryField.appendChild(categorySelect)
 
             // Center field
-            const centerField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            const centerField = $({ tag: 'div', style: { marginBottom: '0' } })
             centerField.appendChild($({ tag: 'label', text: 'Center *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             centerSelect = $({
                 tag: 'select',
@@ -2404,11 +2513,11 @@ export const Research = () => {
             centerField.appendChild(centerSelect)
 
             // Author field
-            const authorField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            const authorField = $({ tag: 'div', style: { marginBottom: '0' } })
             authorField.appendChild($({ tag: 'label', text: 'Main Author *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             authorInput = $({
                 tag: 'input',
-                att: { type: 'text', placeholder: 'Enter main author name', value: isEdit ? editData?.author || '' : '' },
+                att: { type: 'text', placeholder: 'Enter main author name', value: isEdit ? capitalizeFirstLetter(editData?.author || '') : '' },
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -2420,17 +2529,20 @@ export const Research = () => {
                 },
                 event: {
                     type: 'input',
-                    method: (e) => { formData.author = e.target.value }
+                    method: (e) => { 
+                        formData.author = capitalizeFirstLetter(e.target.value);
+                        e.target.value = formData.author;
+                    }
                 }
             })
             authorField.appendChild(authorInput)
 
             // Presenter field
-            const presenterField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            const presenterField = $({ tag: 'div', style: { marginBottom: '0' } })
             presenterField.appendChild($({ tag: 'label', text: 'Presenter *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             presenterInput = $({
                 tag: 'input',
-                att: { type: 'text', placeholder: 'Enter presenter name', value: isEdit ? editData?.presenter || '' : '' },
+                att: { type: 'text', placeholder: 'Enter presenter name', value: isEdit ? capitalizeFirstLetter(editData?.presenter || '') : '' },
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -2442,13 +2554,16 @@ export const Research = () => {
                 },
                 event: {
                     type: 'input',
-                    method: (e) => { formData.presenter = e.target.value }
+                    method: (e) => {
+                        formData.presenter = capitalizeFirstLetter(e.target.value);
+                        e.target.value = formData.presenter;
+                    }
                 }
             })
             presenterField.appendChild(presenterInput)
 
             // Co-authors field
-            const coAuthorField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            const coAuthorField = $({ tag: 'div', style: { marginBottom: '0' } })
             coAuthorField.appendChild($({ tag: 'label', text: 'Co-Authors', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
 
             const coAuthorInputGroup = $({
@@ -2467,6 +2582,12 @@ export const Research = () => {
                     borderRadius: '8px',
                     color: '#fff',
                     fontSize: '14px'
+                },
+                event: {
+                    type: 'input',
+                    method: (e) => {
+                        e.target.value = capitalizeFirstLetter(e.target.value);
+                    }
                 }
             })
 
@@ -2545,64 +2666,6 @@ export const Research = () => {
             coAuthorField.appendChild(coAuthorInputGroup)
             coAuthorField.appendChild(coAuthorList)
 
-            // Date fields
-            dateFieldsContainer = $({
-                tag: 'div',
-                style: {
-                    display: 'none',
-                    gridColumn: '1 / -1',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '20px',
-                    marginTop: '20px',
-                    paddingTop: '20px',
-                    borderTop: '1px solid rgba(255,255,255,0.1)'
-                }
-            })
-
-            const dateStartedWrapper = $({ tag: 'div' })
-            dateStartedWrapper.appendChild($({ tag: 'label', text: 'Date Started *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-            dateStartedField = $({
-                tag: 'input',
-                att: { type: 'date', value: isEdit ? (editData?.date_started || '') : '' },
-                style: {
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
-                },
-                event: {
-                    type: 'change',
-                    method: (e) => { formData.date_started = e.target.value }
-                }
-            })
-            dateStartedWrapper.appendChild(dateStartedField)
-
-            const dateCompletedWrapper = $({ tag: 'div' })
-            dateCompletedWrapper.appendChild($({ tag: 'label', text: 'Date Completed *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-            dateCompletedField = $({
-                tag: 'input',
-                att: { type: 'date', value: isEdit ? (editData?.date_completed || '') : '' },
-                style: {
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
-                },
-                event: {
-                    type: 'change',
-                    method: (e) => { formData.date_completed = e.target.value }
-                }
-            })
-            dateCompletedWrapper.appendChild(dateCompletedField)
-
-            dateFieldsContainer.appendChild(dateStartedWrapper)
-            dateFieldsContainer.appendChild(dateCompletedWrapper)
 
             twoColumnLayout.appendChild(titleField)
             twoColumnLayout.appendChild(campusField)
@@ -2611,8 +2674,6 @@ export const Research = () => {
             twoColumnLayout.appendChild(authorField)
             twoColumnLayout.appendChild(presenterField)
             twoColumnLayout.appendChild(coAuthorField)
-            twoColumnLayout.appendChild(dateFieldsContainer)
-
             formBody.appendChild(eventField)
             formBody.appendChild(twoColumnLayout)
 
@@ -2770,6 +2831,14 @@ export const Research = () => {
 
             return container
         }
+    }
+
+    function capitalizeFirstLetter(str) {
+        if (!str) return str;
+        return str.split(' ').map(word => {
+            if (word.length === 0) return word;
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
     }
 
     // Create the main UI
