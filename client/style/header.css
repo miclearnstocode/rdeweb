@@ -1,115 +1,248 @@
-.headerDiv{
-    border-bottom: solid thin rgba(200,200,200,0.3);
-    height: fit-content;
+/* Modern Header Styles */
+.headerDiv {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-bottom: 1px solid rgba(76, 175, 80, 0.3);
+    height: 70px;
     width: 100%;
-    display: flex;justify-content: center;
-    background-color: rgba(100,100,100,0.5);
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
-.headerTable{
+
+.headerContainer {
     height: 100%;
     width: 100%;
-    margin: auto auto auto 0;
-}
-.headerTD{
-    text-align: center;
-    font-family: Arial,sans-serif;
-    font-size: 2vw;
-    color: deepskyblue;
-    font-weight: bolder;
-    width: 5%;
-    height: fit-content;
-
-}
-.headerTDdetails{
-    font-size: 1.4vw;
-    color: #222222;
-    font-family: "Times New Roman", sans-serif;
-    font-weight: bolder;
-    text-shadow: 0 0 .5vw ghostwhite;
-    width: fit-content ;
-
-}
-.headerTDLogout{
-    width: 40vw ;
-    padding-right: 1vw;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.logoutDiv{
-    margin: auto 0 auto auto;
-    width: fit-content;
-    padding-left: 1vw;
-    padding-right: 1vw;
-    font-family: "Arial Black",sans-serif;
-    font-size: 1.2vw;
-    height: fit-content;
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     cursor: pointer;
-    color: #bbb;
-}
-.logoutDiv:hover{
-    color: deepskyblue;
-    border-bottom: solid thin deepskyblue;
-}
-.iconClass{
-    font-size: 1.4vw;
-    color: #bbb;
-    margin: auto 1vw;
-    animation: open 1s;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
 }
 
-.classMe{
-    width: 5vw;
-    animation: hold .3s;
-    background-image: linear-gradient(to right, black,transparent);
+.logo:hover {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 0.1));
+    transform: translateY(-1px);
 }
 
+.logo span {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4caf50, #81c784);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.title {
+    font-size: 18px;
+    color: #e0e0e0;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border-left: 2px solid rgba(76, 175, 80, 0.5);
+    padding-left: 20px;
+}
+
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Toolbox Styles */
+.iconClass {
+    font-size: 18px;
+    color: #bbb;
+    margin: 0 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.iconClass:hover {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+    transform: scale(1.05);
+}
+
+/* User Info Styles */
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 16px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 30px;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.username {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e0e0e0;
+}
+
+/* Logout Button */
+.logoutDiv {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: rgba(244, 67, 54, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #f44336;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.logoutDiv:hover {
+    background: rgba(244, 67, 54, 0.2);
+    transform: translateY(-1px);
+}
+
+.logoutDiv i {
+    font-size: 14px;
+}
+
+/* Suggestion Button Styles */
+.recomBot {
+    height: 100%;
+    width: 50%;
+    margin: auto;
+    justify-content: center;
+    display: flex;
+    font-family: "Arial Black", sans-serif;
+    color: #bbb;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.recomBot:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+}
+
+/* Chat Styles */
+.chatHeads {
+    background-color: transparent;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.chatHeads:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.closeImage {
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.closeImage:hover {
+    color: #f44336;
+}
+
+.closeImage:active {
+    color: #ff8a80;
+}
+
+/* Animations */
 @keyframes hold {
-    from{
-       width: .1vw;
+    from {
+        width: 0.1vw;
         opacity: 0;
     }
-    to{
+    to {
         width: 5vw;
         opacity: 1;
     }
 }
 
 @keyframes open {
-    from{
+    from {
         opacity: 0;
+        transform: scale(0.9);
     }
-    to{
+    to {
         opacity: 1;
+        transform: scale(1);
     }
 }
-.recomBot{
-    height: 100%;
-    width: 50%;
-    margin: auto;
-    justify-content: center;
-    display: flex;
-    font-family: "Arial Black",sans-serif;
-    color: #bbb;
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .headerContainer {
+        padding: 0 16px;
+    }
+    
+    .title {
+        display: none;
+    }
+    
+    .logo span {
+        font-size: 20px;
+    }
+    
+    .username {
+        display: none;
+    }
+    
+    .iconClass {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+    
+    .logoutDiv span {
+        display: none;
+    }
+    
+    .logoutDiv {
+        padding: 8px 12px;
+    }
 }
-.recomBot:hover{
-    background-color: rgba(0,0,0,0.3);
-    color: deepskyblue;
-    transition: .3s;
-}
-.chatHeads{
-    background-color: transparent;
-    border-radius: 1vw;
-}
-.chatHeads:hover{
-    background-color: rgba(50,50,50,0.5);
-    transition: .3s;
-}
-.closeImage{
-    color: ghostwhite;
-}
-.closeImage:hover{
-    color: deepskyblue;
-}
-.closeImage:active{
-    color: lightblue;
+
+@media (max-width: 480px) {
+    .headerDiv {
+        height: 60px;
+    }
+    
+    .logo span {
+        font-size: 18px;
+    }
+    
+    .iconClass {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+        margin: 0 4px;
+    }
 }

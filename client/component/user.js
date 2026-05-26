@@ -85,7 +85,7 @@ const tabs = {
 // Order of tabs for display (using IDs)
 const tabOrder = ['research-tab', 'proposal-tab', 'communication-tab',/* 'publication-tab', 'patent-tab', 'utilization-tab',*/ 'settings-tab'];
 
-//Logo of RDE
+//Logo of CAPSU
 export const UserPanel = () => {
 
     const currentPath = window.location.pathname;
@@ -140,34 +140,19 @@ export const UserPanel = () => {
                         },
                         child: [
                             $({
-                                tag: 'span',
+                                tag: 'img',
                                 att: {
-                                    className: 'logo-r'
+                                    src: '/client/images/cap.png',
+                                    alt: 'CAPSU Logo',
+                                    className: 'capsu-logo'
                                 },
-                                text: 'R'
-                            }),
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: 'logo-d'
-                                },
-                                text: 'D'
-                            }),
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: 'logo-e'
-                                },
-                                text: 'E'
+                                style: {
+                                    width: '150px',
+                                    height: '150px',
+                                    objectFit: 'contain'
+                                }
                             })
                         ]
-                    }),
-                    $({
-                        tag: 'div',
-                        att: {
-                            className: 'logo-text'
-                        },
-                        text: 'Research Development and Extension'
                     })
                 ]
             }))
@@ -209,12 +194,12 @@ export const UserPanel = () => {
                     .replace(/disabled-tab/g, '')
                     .trim();
 
-                // Add disabled class if tab is disabled
+                // disabled class if tab is disabled
                 if (tab.disabled) {
                     button.classList.add('disabled-tab');
                 }
 
-                // Add active class ONLY if this is the active tab AND it's not disabled
+                // active class ONLY if this is the active tab AND it's not disabled
                 if (tabId === activeTabId && !tab.disabled) {
                     button.classList.add('active-nav');
                 }
@@ -269,7 +254,7 @@ export const UserPanel = () => {
         }
     }
 
-    // Only add Header if root element exists
+    // Only Header if root element exists
     const root = document.getElementById('root');
     if (root) {
         root.appendChild(Header());
