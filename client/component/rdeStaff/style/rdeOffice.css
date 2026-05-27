@@ -1,85 +1,146 @@
-.mainButton{
-    background-color: rgba(0,0,0,0.3);
-    color: #888;
-    font-size: 1.3vw;
+/* Modern Sidebar Styles */
+.mainButton {
+    background: transparent;
+    color: #838383;
+    font-size: 14px;
+    border-radius: 12px;
+    margin: 4px 12px;
+    padding: 12px 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
-.mainButton:hover{
-    background-color: rgba(0,0,0,0.4);
-    color: deepskyblue;
-    transition: .3s;
+.mainButton::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
 }
 
-.activeStaffBot{
-    background-color: rgba(0,0,0,0.6);
-    color: #bbb;
-    text-shadow: 0 0 .4vw black;
-    font-size: 1.4vw;
-    pointer-events: none;
+.mainButton:hover {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(46, 125, 50, 0.05));
+    color: #2e7d32;
+    transform: translateX(4px);
 }
 
-.searchInput{
+.mainButton:hover::before {
+    transform: scaleY(1);
+}
+
+.activeStaffBot {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(46, 125, 50, 0.08));
+    color: #2e7d32;
+    font-weight: 600;
+    position: relative;
+    border-radius: 12px;
+}
+
+.activeStaffBot::before {
+    transform: scaleY(1);
+}
+
+.activeStaffBot i {
+    color: #4caf50;
+}
+
+/* CAPSU Logo Hover Effect */
+.capsu-logo-sidebar {
+    transition: transform 0.3s ease;
+}
+
+.capsu-logo-sidebar:hover {
+    transform: scale(1.05);
+}
+
+/* Modern Scrollbar */
+.tabs-scroll-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.tabs-scroll-container::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 4px;
+}
+
+.tabs-scroll-container::-webkit-scrollbar-thumb {
+    background: #4caf50;
+    border-radius: 4px;
+}
+
+.tabs-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #2e7d32;
+}
+
+/* Keep existing styles below */
+.searchInput {
     width: 10vw;
 }
 
-.searchInput:focus{
+.searchInput:focus {
     width: 20vw;
     transition: .3s;
 }
 
-.comFile{
+.comFile {
     width: 95%;
     margin: 1vh auto auto;
-    background-color: rgba(100,100,100,0.2);
+    background-color: rgba(100, 100, 100, 0.2);
     border: solid thin #888;
     border-radius: .3vw;
     box-shadow: .2vw .5vh .5vw black;
 }
 
-.comFile:hover{
-    background-color: rgba(200,200,200,0.2);
+.comFile:hover {
+    background-color: rgba(200, 200, 200, 0.2);
     border-color: deepskyblue;
     transition: .3s;
 }
 
-.botConFile{
+.botConFile {
     cursor: pointer;
     color: deepskyblue;
-    background-color: rgba(0,0,0,0.3);
+    background-color: rgba(0, 0, 0, 0.3);
 }
-.botConFile:hover{
+
+.botConFile:hover {
     color: black;
     text-shadow: 0 0 .3vw ghostwhite;
-     background-color: rgba(0,0,0,0.7);
+    background-color: rgba(0, 0, 0, 0.7);
     transition: .3s;
 }
 
-.botConFile:active{
-    background-color: rgba(5,5,5,0.5);
+.botConFile:active {
+    background-color: rgba(5, 5, 5, 0.5);
 }
 
-.closeCont:hover{
-    background-color: rgba(0,0,0,0.2);
+.closeCont:hover {
+    background-color: rgba(0, 0, 0, 0.2);
     transition: .3s;
 }
 
-.uploadDiv{
-    background-color: rgba(0,0,0,0.2);
+.uploadDiv {
+    background-color: rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    border:solid thin deepskyblue;
+    border: solid thin deepskyblue;
     margin: 1vh auto;
 }
 
-.uploadDiv:hover{
-    background-color: rgba(0,0,0,0.5);
+.uploadDiv:hover {
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
-.burger{
+.burger {
     width: .1vw;
     display: none;
 }
 
-.showStateHide{
+.showStateHide {
     width: 30vw;
     display: block;
     transition: .3s;
@@ -87,159 +148,172 @@
 }
 
 @keyframes showMenu {
-    from{
+    from {
         width: .1vw;
         display: block;
         opacity: 0;
     }
-    to{
+
+    to {
         width: 30vw;
     }
 }
-.barmenu{
+
+.barmenu {
     color: deepskyblue;
 }
 
-.barmenu:hover{
+.barmenu:hover {
     background-color: #333;
-    box-shadow:0 0 .2vw black;
+    box-shadow: 0 0 .2vw black;
 }
 
-.endorseIncoming{
+.endorseIncoming {
     background-color: #555;
     cursor: pointer;
 }
 
-.endorseIncoming:hover{
+.endorseIncoming:hover {
     background-color: #333;
     border: solid thin deepskyblue;
 }
 
-.endorseIncoming:focus{
+.endorseIncoming:focus {
     border-color: deepskyblue;
 }
-.botRes{
+
+.botRes {
     background-color: #555;
 }
 
-.botRes:hover{
+.botRes:hover {
     background-color: #444;
     border: solid thin deepskyblue;
     transition: .3s;
 }
 
-.botControllStaff{
+.botControllStaff {
     background-color: #222;
     cursor: pointer;
 }
 
-.botControllStaff:hover{
+.botControllStaff:hover {
     background-color: #111;
 }
 
-.resFilist{
+.resFilist {
     background-color: #444;
 }
 
-.resFilist:hover{
-    background-color: rgba(0,0,0,0.2);
+.resFilist:hover {
+    background-color: rgba(0, 0, 0, 0.2);
     border: solid thin lightskyblue;
     transition: .3s;
 }
 
-.botMe{
+.botMe {
     color: deepskyblue;
     border-radius: .5vw;
 }
 
-.botMe:hover{
-    background-color:black;
+.botMe:hover {
+    background-color: black;
     color: black;
     text-shadow: 0 0 .2vw ghostwhite;
     transition: .3s;
 }
 
-.delRecBot{
+.delRecBot {
     height: 100%;
 }
 
-.delRecBot:hover{
+.delRecBot:hover {
     background-color: #333;
     transition: .3s;
 }
 
-.delRecBot:active{
+.delRecBot:active {
     background-color: #444;
     transition: .3s;
 }
 
-.printAllReload:hover{
+.printAllReload:hover {
     background-color: #333;
     transition: .3s;
     color: deepskyblue;
 }
 
-.resBotCan{
+.resBotCan {
     color: deepskyblue;
 }
 
-.resBotCan:hover{
-    background-color: rgba(0,0,0,0.2);
-    color:black;
+.resBotCan:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: black;
     text-shadow: 0 0 .3vw ghostwhite;
     transition: .3s;
 }
 
-.exitView{
+.exitView {
     color: #888;
     border-radius: .5vw;
 }
 
-.exitView:hover{
-    background-color: rgba(0,0,0,0.4 );
+.exitView:hover {
+    background-color: rgba(0, 0, 0, 0.4);
     color: deepskyblue;
     transition: .3s;
 }
-.botPr{
+
+.botPr {
     color: #999;
     font-size: 1vw;
-    font-family:"Arial Black",sans-serif;
+    font-family: "Arial Black", sans-serif;
 }
-.botPr:hover{
+
+.botPr:hover {
     color: deepskyblue;
-    background-color: rgba(0,0,0,0.4);
+    background-color: rgba(0, 0, 0, 0.4);
 }
-.endorsFile{
+
+.endorsFile {
     background-color: #444;
     color: #bbb;
     cursor: pointer;
 }
-.endorsFile:hover{
+
+.endorsFile:hover {
     transition: .3s;
     background-color: #222;
     color: ghostwhite;
 }
-.resPop{
+
+.resPop {
     animation: popUp 1s;
 }
-@keyframes  popUp{
-    from{
+
+@keyframes popUp {
+    from {
         opacity: 0;
     }
-    to{
+
+    to {
         opacity: 1;
     }
 }
-.saveBotEn{
+
+.saveBotEn {
     background-color: #555;
     color: #bbb;
 }
-.saveBotEn:hover{
+
+.saveBotEn:hover {
     background-color: #222;
     transition: .3s;
     color: deepskyblue;
 }
-/* Research Modal Styles - Add to rdeOffice.css */
+
+/* Research Modal Styles */
 .research-modal-overlay.modal-overlay {
     position: fixed;
     top: 0;
@@ -332,6 +406,7 @@
     color: white !important;
     font-weight: bold !important;
 }
+
 .research-modal-content.modal-content .print-btn:hover {
     background-color: #3597b0;
 }
@@ -341,6 +416,7 @@
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

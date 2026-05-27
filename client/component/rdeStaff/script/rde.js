@@ -1,4 +1,3 @@
-
 import { $ } from "../../../lib/lib.js";
 import { Header } from "../../otherComponent/header.js";
 import { Communication } from "./communication.js";
@@ -19,19 +18,24 @@ const button = ({ label, event, url }) => {
         let me = current.split('/')[2];
         let urls = url.replace(window.location.origin, '')
         if (me === urls.split('/')[2]) {
-            b.className += ' activeStaffBot'
+            b.classList.add('activeStaffBot')
         }
     }
 
     return ($({
         tag: 'div',
         style: {
-            height: '10vh',
-            width: '100%',
+            padding: '14px 20px',
+            margin: '6px 12px',
+            borderRadius: '12px',
             display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '1px',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: '12px',
             cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative',
+            overflow: 'hidden'
         },
         att: {
             className: 'mainButton'
@@ -43,14 +47,24 @@ const button = ({ label, event, url }) => {
         elementHandler: getB,
         child: [
             $({
+                tag: 'i',
+                att: {
+                    className: getIconForLabel(label)
+                },
+                style: {
+                    fontSize: '18px',
+                    width: '24px',
+                    textAlign: 'center'
+                }
+            }),
+            $({
                 tag: 'div',
                 style: {
-                    width: 'fit-content',
-                    height: 'fit-content',
-                    margin: 'auto',
-                    fontFamily: 'arial black,sans-serif',
-                    fontSize: '15px'
-                    //fontSize: label.length > 20 ? '13px' : '15px'
+                    flex: 1,
+                    fontFamily: 'Inter, Segoe UI, sans-serif',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    letterSpacing: '0.3px'
                 },
                 text: label
             })
@@ -58,16 +72,25 @@ const button = ({ label, event, url }) => {
     }))
 }
 
+// Helper function to get icon for each label
+const getIconForLabel = (label) => {
+    const icons = {
+        'Event/Activity': 'fas fa-calendar-alt',
+        'Proposed Research': 'fas fa-file-alt',
+        'Internally Funded Research': 'fas fa-university',
+        'Completed Research': 'fas fa-check-circle',
+        'Monitoring': 'fas fa-chart-line',
+        'Accomplishments': 'fas fa-trophy',
+        'Research Utilization': 'fas fa-handshake',
+        'Summary': 'fas fa-chart-bar',
+        'Certifications': 'fas fa-certificate'
+    };
+    return icons[label] || 'fas fa-folder';
+}
+
 const Body = () => {
     let mainBody
     const botArray = []
-
-    /*botArray.push({
-        url: '/rdeOffice/communication',
-        label: 'Communication',
-        button: button,
-        page: Communication
-    })*/
 
     botArray.push({
         url: '/rdeOffice/research',
@@ -123,68 +146,86 @@ const Body = () => {
         button: button,
         page: CertificationResearch
     })
+
     const Tabs = () => {
-        const label = $({
-            tag: 'div', style: {
-                fontFamily: 'arial black,sans-serif', fontSize: '1.5vw', color: 'deepskyblue',
-                height: '10vh', margin: 'auto', width: '100%', display: 'flex',
-                justifyContent: 'center', backgroundColor: '#666',
-                borderBottom: '1px solid #777', position: 'sticky', top: '0', zIndex: '100',
-                cursor: 'pointer'
+        const logoSection = $({
+            tag: 'div',
+            style: {
+                padding: '24px 16px',
+                marginBottom: '20px',
+                borderBottom: '1px solid rgba(76, 175, 80, 0.2)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
             },
-            event: { type: 'click', method: () => window.location.assign('/rdeOffice/dashboard') },
-            child: [$({
-                tag: 'div', text: 'RDE OFFICE',
-                style: { margin: 'auto', height: 'fit-content', width: 'fit-content' }
-            })]
+            event: {
+                type: 'click',
+                method: () => window.location.assign('/rdeOffice/dashboard')
+            },
+            child: [
+                $({
+                    tag: 'img',
+                    att: {
+                        src: '/client/images/cap.png',
+                        alt: 'CAPSU Logo',
+                        className: 'capsu-logo-sidebar'
+                    },
+                    style: {
+                        width: '120px',
+                        height: '120px',
+                        objectFit: 'contain',
+                        transition: 'transform 0.3s ease'
+                    }
+                })
+            ]
         })
 
         return ($({
             tag: 'div',
             style: {
-                width: '15%',
-                margin: 'auto',
-                marginLeft: '0',
+                width: '280px',
+                margin: '0',
                 height: '100%',
-                backgroundColor: '#666',
+                background: 'transparent',
+                backdropFilter: 'blur(10px)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden'
+                boxShadow: '2px 0 12px rgba(0,0,0,0.08)',
+                borderRight: '1px solid rgba(0,0,0,0.05)'
             },
             child: [
-                label,
+                logoSection,
                 $({
                     tag: 'div',
                     style: {
-                        width: '100%',
-                        height: 'calc(100% - 10vh)',
+                        flex: 1,
                         overflowY: 'auto',
                         overflowX: 'hidden',
-                        paddingTop: '1vh',
-                        paddingBottom: '1vh',
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: '#888 #444',
+                        padding: '8px 0'
                     },
                     elementHandler: (el) => {
                         const style = document.createElement('style');
                         style.textContent = `
                             .tabs-scroll-container::-webkit-scrollbar {
-                                width: 6px;
+                                width: 4px;
                             }
                             .tabs-scroll-container::-webkit-scrollbar-track {
-                                background: #444;
-                                border-radius: 3px;
+                                background: #f1f1f1;
+                                border-radius: 4px;
                             }
                             .tabs-scroll-container::-webkit-scrollbar-thumb {
-                                background: #888;
-                                border-radius: 3px;
+                                background: #4caf50;
+                                border-radius: 4px;
                             }
                             .tabs-scroll-container::-webkit-scrollbar-thumb:hover {
-                                background: #aaa;
+                                background: #2e7d32;
                             }
                         `;
                         document.head.appendChild(style);
-
                         el.className = 'tabs-scroll-container';
                         getBotHolder(el);
                     }
@@ -216,7 +257,6 @@ const Body = () => {
             }
         })
 
-        // If no route matched, default to Dashboard
         if (!matched) {
             const dashboard = RdeDashboard();
             if (dashboard instanceof Node) el.appendChild(dashboard);
@@ -238,19 +278,20 @@ const Body = () => {
     return ($({
         tag: 'div',
         style: {
-            height: '94.5%',
+            height: 'calc(100% - 70px)',
             width: '100%',
             display: 'flex',
-            justifyContent: 'center'
+            backgroundColor: 'transparent'
         },
         child: [
             Tabs(),
             $({
                 tag: 'div',
                 style: {
-                    width: '84.8%',
-                    marginLeft: '0',
-                    overflow: 'hidden' // Prevent main content from overflowing
+                    flex: 1,
+                    overflow: 'auto',
+                    padding: '24px',
+                    backgroundColor: 'transparent'
                 },
                 elementHandler: getComponent
             })
@@ -263,7 +304,9 @@ export const RdeOffice = () => {
         tag: 'div',
         style: {
             width: '100%',
-            height: '99.8vh',
+            height: '100vh',
+            overflow: 'hidden',
+            backgroundColor: 'transparent'
         },
         externalStyle: '/client/component/rdeStaff/style/rdeOffice.css',
         child: [
