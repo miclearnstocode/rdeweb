@@ -606,7 +606,7 @@ export const Header = () => {
                     paddingLeft: '1vw',
                     borderRadius: '.5vw 0 0 .5vw',
                     width: 'fit-content',
-                    backgroundColor: 'rgba(0,0,0,0.2)',
+                    backgroundColor: 'transparent',
                     position: 'relative',
                     gap: '8px'
                 },
@@ -646,96 +646,82 @@ export const Header = () => {
             $({
                 tag: 'div',
                 att: {
-                    className: 'headerContainer'
+                    className: 'headerLeftContainer'
                 },
                 child: [
                     $({
                         tag: 'div',
                         att: {
-                            className: 'headerLeft'
+                            className: 'logo'
                         },
                         child: [
                             $({
-                                tag: 'div',
+                                tag: 'i',
                                 att: {
-                                    className: 'logo'
+                                    className: 'fas fa-flask'
                                 },
-                                child: [
-                                    $({
-                                        tag: 'i',
-                                        att: {
-                                            className: 'fas fa-flask'
-                                        },
-                                        style: {
-                                            fontSize: '28px',
-                                            color: '#4caf50'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        text: 'RDE',
-                                        style: {
-                                            fontSize: '24px',
-                                            fontWeight: 'bold',
-                                            marginLeft: '10px',
-                                            background: 'linear-gradient(135deg, #4caf50, #81c784)',
-                                            WebkitBackgroundClip: 'text',
-                                            backgroundClip: 'text',
-                                            color: 'transparent'
-                                        }
-                                    })
-                                ],
-                                event: {
-                                    type: 'click',
-                                    method: () => {
-                                        window.location.assign('/admin/addAccount')
-                                    }
+                                style: {
+                                    fontSize: '28px',
+                                    color: '#4caf50'
                                 }
                             }),
                             $({
-                                tag: 'div',
-                                att: {
-                                    className: 'title'
-                                },
-                                text: 'Research, Development, and Extension'
+                                tag: 'span',
+                                text: 'RDE',
+                                style: {
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    marginLeft: '10px',
+                                    background: 'linear-gradient(135deg, #4caf50, #81c784)',
+                                    WebkitBackgroundClip: 'text',
+                                    backgroundClip: 'text',
+                                    color: 'transparent'
+                                }
                             })
                         ]
                     }),
                     $({
                         tag: 'div',
                         att: {
-                            className: 'headerRight'
+                            className: 'title'
+                        },
+                        text: 'Research, Development, and Extension'
+                    })
+                ]
+            }),
+            $({
+                tag: 'div',
+                att: {
+                    className: 'headerRightContainer'
+                },
+                child: [
+                    ToolBox(),
+                    $({
+                        tag: 'div',
+                        att: {
+                            className: 'userInfo'
                         },
                         child: [
-                            ToolBox(),
                             $({
-                                tag: 'div',
+                                tag: 'i',
                                 att: {
-                                    className: 'userInfo'
+                                    className: 'fas fa-user-circle'
                                 },
-                                child: [
-                                    $({
-                                        tag: 'i',
-                                        att: {
-                                            className: 'fas fa-user-circle'
-                                        },
-                                        style: {
-                                            fontSize: '20px',
-                                            color: '#4caf50'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        att: {
-                                            className: 'username'
-                                        },
-                                        elementHandler: getUserName
-                                    })
-                                ]
+                                style: {
+                                    fontSize: '20px',
+                                    color: '#4caf50'
+                                }
                             }),
-                            Logout()
+                            $({
+                                tag: 'span',
+                                att: {
+                                    className: 'username'
+                                },
+                                elementHandler: getUserName
+                            })
                         ]
-                    })
+                    }),
+                    Logout()
                 ]
             })
         ],
