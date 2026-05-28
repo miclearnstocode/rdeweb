@@ -1,27 +1,49 @@
 import {$, ConfirmationAlert, Request, SpecialChar, Waiting} from '../../../lib/lib.js'
 
-const encodeUser = () => {
+const encodeCenterChair = () => {
     const accountData = {
         center: '',
         gmail: '',
-        userType: 'Center Director', // Default user type
+        userType: '',
         campus: ''
+    }
+
+    const generateUserType = (centerValue, campusValue = '') => {
+        if (centerValue === 'Extension') {
+            if (campusValue && campusValue.trim() !== '') {
+                return `${campusValue} Extension Chair`
+            }
+            return ''
+        }
+        
+        // Map center values to user types
+        const centerMap = {
+            'CSRDC': 'CSRDC Chair',
+            'LRDC': 'LRDC Chair',
+            'FRDC': 'FRDC Chair',
+            'FITRDC': 'FITRDC Chair',
+            'SSRDC': 'SSRDC Chair',
+            'MATEC': 'MATEC Chair',
+            'Coco RDC': 'Coco RDC Chair'
+        }
+        
+        return centerMap[centerValue] || 'Center Chair'
     }
 
     const getData = {
         getCenter: (value) => {
             accountData.center = value
+            accountData.campus = '' // Reset campus when center changes
             
-            // Set userType based on center selection
-            if (value === 'Extension') {
-                accountData.userType = 'Extension Campus Chair'
+            // Update user type based on center (without campus for Extension)
+            if (value !== 'Extension') {
+                accountData.userType = generateUserType(value)
             } else {
-                accountData.userType = 'Center Director'
-                // Clear campus when switching from Extension to other centers
-                accountData.campus = ''
+                accountData.userType = generateUserType(value, '') // Show placeholder
             }
             
             updateCampusField(value) // Show/hide campus field based on selection
+            updateUserTypeDisplay() // Update display immediately
             validateForm()
         },
         getGmail: (value) => {
@@ -30,6 +52,11 @@ const encodeUser = () => {
         },
         getCampus: (value) => {
             accountData.campus = value
+            // Update user type to include campus name for Extension
+            if (accountData.center === 'Extension') {
+                accountData.userType = generateUserType(accountData.center, value)
+                updateUserTypeDisplay() // Update display when campus is selected
+            }
             validateForm()
         }
     }
@@ -48,12 +75,24 @@ const encodeUser = () => {
             isValid = isValid && accountData.campus && accountData.campus.trim() !== ''
         }
         
+        // Also check that user type is valid (not placeholder)
+        if (accountData.center === 'Extension' && (!accountData.campus || accountData.campus.trim() === '')) {
+            isValid = false
+        }
+        
         submitBtn.disabled = !isValid
+        if (submitBtn.disabled) {
+            submitBtn.style.opacity = '0.5'
+            submitBtn.style.cursor = 'not-allowed'
+        } else {
+            submitBtn.style.opacity = '1'
+            submitBtn.style.cursor = 'pointer'
+        }
     }
 
     const label = $({
         tag: 'div',
-        text: 'Center Director / Extension Campus Chair Account Registration',
+        text: 'Center Chair Account Registration',
         att: {
             className: 'form-label'
         }
@@ -78,7 +117,7 @@ const encodeUser = () => {
             child: [
                 $({
                     tag: 'option',
-                    text: '-- Select Center--',
+                    text: '-- Select Center --',
                     att: {
                         disabled: true,
                         selected: true,
@@ -171,53 +210,146 @@ const encodeUser = () => {
         }))
     }
 
-    // Campus input component (only shown for Extension)
-    const campusInput = () => {
-        return input({
-            prop: {
-                type: 'text',
-                placeholder: 'Enter Campus Name (e.g., Burias, Pontevedra, Roxas City Main, etc.)',
-                className: 'inputAddUser',
-                id: 'campusInput'
+    // Campus select component (dropdown for Extension campuses)
+    const campusSelect = () => {
+        const campuses = [
+            'Roxas City Main',
+            'Burias',
+            'Mambusao',
+            'Dayao',
+            'Pilar',
+            'Pontevedra',
+            'Sigma',
+            'Sapian',
+            'Tapaz',
+            'Dumarao'
+        ]
+
+        const selectEl = $({
+            tag: 'select',
+            event: {
+                type: 'change',
+                method: (event) => {
+                    getData.getCampus(event.target.value)
+                }
             },
-            getDataMethod: getData.getCampus,
-            filter: true
+            att: {
+                className: 'selectAddUser',
+                id: 'campusSelect'
+            },
+            child: [
+                $({
+                    tag: 'option',
+                    text: '-- Select Campus --',
+                    att: {
+                        disabled: true,
+                        selected: true,
+                        value: ''
+                    }
+                }),
+                ...campuses.map(campus => 
+                    $({
+                        tag: 'option',
+                        text: campus,
+                        att: { value: campus }
+                    })
+                )
+            ]
         })
+        
+        return ($({
+            tag: 'div',
+            att: {
+                className: 'input-container',
+                id: 'campusSelectContainer'
+            },
+            child: [selectEl]
+        }))
+    }
+
+    // User type display (shows what role will be created)
+    let userTypeDisplayElement = null
+    
+    const createUserTypeDisplay = () => {
+        const displayEl = $({
+            tag: 'div',
+            att: {
+                className: 'user-type-display',
+                id: 'userTypeDisplay'
+            },
+            child: [
+                $({
+                    tag: 'span',
+                    text: 'Role to be created: ',
+                    att: {
+                        className: 'user-type-label'
+                    }
+                }),
+                $({
+                    tag: 'span',
+                    text: accountData.userType,
+                    att: {
+                        className: 'user-type-value',
+                        id: 'userTypeValue'
+                    }
+                })
+            ]
+        })
+        return displayEl
+    }
+    
+    // Function to update user type display
+    const updateUserTypeDisplay = () => {
+        const userTypeValueSpan = document.getElementById('userTypeValue')
+        if (userTypeValueSpan) {
+            userTypeValueSpan.textContent = accountData.userType
+            
+            // Change color based on whether it's a placeholder or actual role
+            if (accountData.userType) {
+                userTypeValueSpan.style.color = '#ff9800' // Orange for waiting
+                userTypeValueSpan.style.fontWeight = 'normal'
+            } else if (accountData.userType && accountData.userType.includes('Chair')) {
+                userTypeValueSpan.style.color = '#4CAF50' // Green for valid role
+                userTypeValueSpan.style.fontWeight = 'bold'
+            } else {
+                userTypeValueSpan.style.color = '#cccccc' // Gray for not selected
+                userTypeValueSpan.style.fontWeight = 'normal'
+            }
+        }
     }
 
     // Store reference to campus field container
     let campusFieldContainer = null
 
-    // Function to create campus field
-    const createCampusField = () => {
-        return campusInput()
-    }
-
     // Function to update campus field visibility
     const updateCampusField = (centerValue) => {
-        const container = document.querySelector('.encodeUser-container')
+        const container = document.querySelector('.encodeCenterChair-container')
         if (!container) return
         
-        // Find the position after the select element
-        const selectContainer = container.querySelector('.input-container')
+        // Find the position after the user type display
+        let insertAfterElement = document.getElementById('userTypeDisplay')
         
         // Remove existing campus field if any
-        const existingCampus = document.getElementById('campusFieldContainer')
+        const existingCampus = document.getElementById('campusSelectContainer')
         if (existingCampus) {
             existingCampus.remove()
             campusFieldContainer = null
         }
         
-        // Add campus field if Extension is selected (right after the select)
+        // Add campus dropdown if Extension is selected
         if (centerValue === 'Extension') {
-            campusFieldContainer = createCampusField()
-            campusFieldContainer.id = 'campusFieldContainer'
+            campusFieldContainer = campusSelect()
+            campusFieldContainer.id = 'campusSelectContainer'
             
-            // Insert campus field after the select container
-            if (selectContainer && selectContainer.nextSibling) {
-                selectContainer.parentNode.insertBefore(campusFieldContainer, selectContainer.nextSibling)
-            } else if (selectContainer) {
-                selectContainer.parentNode.appendChild(campusFieldContainer)
+            // Insert campus field after the user type display
+            if (insertAfterElement && insertAfterElement.parentNode) {
+                if (insertAfterElement.nextSibling) {
+                    insertAfterElement.parentNode.insertBefore(campusFieldContainer, insertAfterElement.nextSibling)
+                } else {
+                    insertAfterElement.parentNode.appendChild(campusFieldContainer)
+                }
+            } else if (container) {
+                container.appendChild(campusFieldContainer)
             }
         }
     }
@@ -243,13 +375,19 @@ const encodeUser = () => {
                     
                     // Validation
                     if (accountData.center.trim() === '' || accountData.gmail.trim() === '') {
-                        alert("Please select a center/campus and enter Gmail address!")
+                        alert("Please select a center and enter Gmail address!")
                         return
                     }
                     
                     // Validate campus for Extension
                     if (accountData.center === 'Extension' && (!accountData.campus || accountData.campus.trim() === '')) {
-                        alert("Please enter campus name for Extension Campus Chair!")
+                        alert("Please select a campus for Extension Chair!")
+                        return
+                    }
+                    
+                    // Validate that user type is valid (not placeholder)
+                    if (accountData.center === 'Extension' && accountData.userType) {
+                        alert("Please select a campus first!")
                         return
                     }
                     
@@ -266,21 +404,23 @@ const encodeUser = () => {
                     submitBtn.disabled = true
                     
                     try {
+                        // Determine the final center value to send
+                        let centerValue = accountData.center
+                        let campusValue = ''
+                        
+                        if (accountData.center === 'Extension') {
+                            campusValue = accountData.campus
+                            centerValue = accountData.campus // Send campus name as center for Extension
+                        }
+                        
                         // Prepare form data
                         const formData = [
                             { name: 'registerAccount', value: 'true' },
                             { name: 'email', value: accountData.gmail },
                             { name: 'accountName', value: accountData.userType },
-                            { name: 'center', value: accountData.center }
+                            { name: 'center', value: centerValue },
+                            { name: 'campus', value: campusValue }
                         ]
-                        
-                        // Add campus to form data if Extension
-                        if (accountData.center === 'Extension' && accountData.campus) {
-                            formData.push({ name: 'campus', value: accountData.campus })
-                        } else {
-                            // For non-Extension centers, set campus to empty string or null
-                            formData.push({ name: 'campus', value: '' })
-                        }
                         
                         const req = new Request('/addcapaccount')
                         req.Post(formData)
@@ -291,7 +431,7 @@ const encodeUser = () => {
                         
                         if (data.status) {
                             setTimeout(() => {
-                                alert(data.message)
+                                alert(`Successfully registered ${accountData.userType} account!`)
                                 window.location.replace('/account/Login')
                             }, 100)
                         } else {
@@ -315,15 +455,16 @@ const encodeUser = () => {
     const container = $({
         tag: 'div',
         att: {
-            className: 'encodeUser-container'
+            className: 'encodeCenterChair-container'
         },
         child: [
             label,
             select({ getDataMethod: getData.getCenter }),
+            createUserTypeDisplay(),
             input({
                 prop: {
                     type: 'email',
-                    placeholder: 'Enter Gmail account',
+                    placeholder: 'example@gmail.com',
                     className: 'inputAddUser',
                     id: 'gmailInput'
                 },
@@ -333,15 +474,299 @@ const encodeUser = () => {
         ]
     })
 
-    // Store reference to the container for later use
-    setTimeout(() => {
-        // If Extension was previously selected (e.g., on page load), show campus field
-        if (accountData.center === 'Extension') {
-            updateCampusField('Extension')
-        }
-    }, 100)
-
     return container
+}
+
+const encodeResearchChair = () => {
+    const accountData = {
+        campus: '',
+        gmail: '',
+        userType: ''
+    }
+
+    // Helper function to generate user type based on campus selection
+    const generateUserType = (campusValue) => {
+        if (campusValue && campusValue.trim() !== '') {
+            return `${campusValue} Research Chair`
+        }
+        return ''
+    }
+
+    const getData = {
+        getCampus: (value) => {
+            accountData.campus = value
+            // Update user type when campus is selected
+            accountData.userType = generateUserType(value)
+            updateUserTypeDisplay()
+            validateForm()
+        },
+        getGmail: (value) => {
+            accountData.gmail = value
+            validateForm()
+        }
+    }
+
+    // Validation function
+    const validateForm = () => {
+        const submitBtn = document.getElementById('researchChairSubmitBtn')
+        if (!submitBtn) return
+        
+        const isValid = 
+            accountData.campus.trim() !== '' &&
+            accountData.gmail.trim() !== '' &&
+            accountData.userType !== '' // Check if userType is not empty
+        
+        submitBtn.disabled = !isValid
+        if (submitBtn.disabled) {
+            submitBtn.style.opacity = '0.5'
+            submitBtn.style.cursor = 'not-allowed'
+        } else {
+            submitBtn.style.opacity = '1'
+            submitBtn.style.cursor = 'pointer'
+        }
+    }
+
+    // Function to update user type display
+    const updateUserTypeDisplay = () => {
+        const userTypeValueSpan = document.getElementById('researchChairUserTypeValue')
+        if (userTypeValueSpan) {
+            if (accountData.userType && accountData.userType !== '') {
+                userTypeValueSpan.textContent = accountData.userType
+                userTypeValueSpan.style.color = '#4CAF50' // Green for valid role
+                userTypeValueSpan.style.fontWeight = 'bold'
+            } else {
+                userTypeValueSpan.textContent = '-- Select Campus First --'
+                userTypeValueSpan.style.color = '#ff9800' // Orange for waiting
+                userTypeValueSpan.style.fontWeight = 'normal'
+            }
+        }
+    }
+
+    const label = $({
+        tag: 'div',
+        text: 'Research Chair Account Registration',
+        att: {
+            className: 'form-label'
+        }
+    })
+
+    // Campus dropdown component
+    const campusSelect = () => {
+        const campuses = [
+            'Roxas City Main',
+            'Burias',
+            'Mambusao',
+            'Dayao',
+            'Pilar',
+            'Pontevedra',
+            'Sigma',
+            'Sapian',
+            'Tapaz',
+            'Dumarao'
+        ]
+
+        const selectEl = $({
+            tag: 'select',
+            event: {
+                type: 'change',
+                method: (event) => {
+                    getData.getCampus(event.target.value)
+                }
+            },
+            att: {
+                className: 'selectAddUser',
+                id: 'researchChairCampusSelect'
+            },
+            child: [
+                $({
+                    tag: 'option',
+                    text: '-- Select Campus --',
+                    att: {
+                        disabled: true,
+                        selected: true,
+                        value: ''
+                    }
+                }),
+                ...campuses.map(campus => 
+                    $({
+                        tag: 'option',
+                        text: campus,
+                        att: { value: campus }
+                    })
+                )
+            ]
+        })
+        
+        return ($({
+            tag: 'div',
+            att: {
+                className: 'input-container'
+            },
+            child: [selectEl]
+        }))
+    }
+
+    // User type display component
+    const userTypeDisplay = () => {
+        const displayEl = $({
+            tag: 'div',
+            att: {
+                className: 'user-type-display',
+                id: 'researchChairUserTypeDisplay'
+            },
+            child: [
+                $({
+                    tag: 'span',
+                    text: 'Role to be created: ',
+                    att: {
+                        className: 'user-type-label'
+                    }
+                }),
+                $({
+                    tag: 'span',
+                    text: '-- Select Campus First --',
+                    att: {
+                        className: 'user-type-value',
+                        id: 'researchChairUserTypeValue'
+                    }
+                })
+            ]
+        })
+        return displayEl
+    }
+
+    // Email input component
+    const emailInput = () => {
+        const inputEl = $({
+            tag: 'input',
+            att: {
+                type: 'email',
+                placeholder: 'Enter Gmail account',
+                className: 'inputAddUser',
+                id: 'researchChairGmailInput'
+            },
+            event: {
+                type: 'input',
+                method: (event) => {
+                    getData.getGmail(event.target.value)
+                }
+            }
+        })
+        
+        return ($({
+            tag: 'div',
+            att: {
+                className: 'input-container'
+            },
+            child: [inputEl]
+        }))
+    }
+
+    const Submit = () => {
+        return ($({
+            tag: 'button',
+            att: {
+                className: 'submitAddUser researchChairSubmit',
+                id: 'researchChairSubmitBtn',
+                disabled: true
+            },
+            text: 'Submit',
+            event: {
+                type: 'click',
+                method: async (event) => {
+                    const submitBtn = document.getElementById('researchChairSubmitBtn')
+                    
+                    if (submitBtn.disabled) {
+                        event.preventDefault()
+                        return
+                    }
+                    
+                    // Validation
+                    if (accountData.campus.trim() === '' || accountData.gmail.trim() === '') {
+                        alert("Please select a campus and enter Gmail address!")
+                        return
+                    }
+                    
+                    // Validate that user type is valid (not empty)
+                    if (!accountData.userType || accountData.userType === '') {
+                        alert("Please select a campus first!")
+                        return
+                    }
+                    
+                    // Validate email format
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                    if (!emailRegex.test(accountData.gmail)) {
+                        alert("Please enter a valid email address!")
+                        return
+                    }
+                    
+                    const load = Waiting()
+                    document.body.appendChild(load)
+                    
+                    submitBtn.disabled = true
+                    
+                    try {
+                        // Prepare form data
+                        const formData = [
+                            { name: 'registerAccount', value: 'true' },
+                            { name: 'email', value: accountData.gmail },
+                            { name: 'accountName', value: accountData.userType },
+                            { name: 'center', value: accountData.campus },
+                            { name: 'campus', value: accountData.campus }
+                        ]
+                        
+                        const req = new Request('/addcapaccount')
+                        req.Post(formData)
+                        req.Json()
+                        
+                        const data = await req.Send()
+                        load.remove()
+                        
+                        if (data.status) {
+                            setTimeout(() => {
+                                alert(`Successfully registered ${accountData.userType} account!`)
+                                // Reset form after successful submission
+                                accountData.campus = ''
+                                accountData.gmail = ''
+                                accountData.userType = ''
+                                const campusSelectEl = document.getElementById('researchChairCampusSelect')
+                                const gmailInputEl = document.getElementById('researchChairGmailInput')
+                                if (campusSelectEl) campusSelectEl.value = ''
+                                if (gmailInputEl) gmailInputEl.value = ''
+                                updateUserTypeDisplay()
+                                validateForm()
+                            }, 100)
+                        } else {
+                            alert(data.message)
+                            submitBtn.disabled = false
+                            validateForm()
+                        }
+                    } catch (error) {
+                        load.remove()
+                        console.error('Error:', error)
+                        alert('An error occurred during submission')
+                        submitBtn.disabled = false
+                        validateForm()
+                    }
+                }
+            }
+        }))
+    }
+
+    // Create the main container
+    return $({
+        tag: 'div',
+        att: {
+            className: 'encodeCenterChair-container researchChairContainer'
+        },
+        child: [
+            label,
+            campusSelect(),
+            userTypeDisplay(),
+            emailInput(),
+            Submit()
+        ]
+    })
 }
 
 const encodeEvaluator = () => {
@@ -861,6 +1286,13 @@ const rdeUser = () => {
             data.password.trim() !== ''
         
         submitBtn.disabled = !isValid
+        if (submitBtn.disabled) {
+            submitBtn.style.opacity = '0.5'
+            submitBtn.style.cursor = 'not-allowed'
+        } else {
+            submitBtn.style.opacity = '1'
+            submitBtn.style.cursor = 'pointer'
+        }
     }
 
     const label = $({
@@ -974,7 +1406,7 @@ const rdeUser = () => {
             label,
             input({
                 prop: {
-                    placeholder: 'Full name',
+                    placeholder: 'Juan Dela Cruz',
                     className: 'inputRDE',
                     type: 'text'
                 },
@@ -1054,6 +1486,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 gmailInput.style.border = ''
             })
         }
+
+        // Research Chair form validation
+        const researchChairSubmitBtn = document.getElementById('researchChairSubmitBtn')
+        if (researchChairSubmitBtn) {
+            researchChairSubmitBtn.disabled = true
+            researchChairSubmitBtn.style.opacity = '0.5'
+            researchChairSubmitBtn.style.cursor = 'not-allowed'
+        }
+        
+        const researchChairGmailInput = document.getElementById('researchChairGmailInput')
+        if (researchChairGmailInput) {
+            researchChairGmailInput.addEventListener('blur', (event) => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                if (event.target.value && !emailRegex.test(event.target.value)) {
+                    event.target.style.border = '2px solid red'
+                } else {
+                    event.target.style.border = ''
+                }
+            })
+            
+            researchChairGmailInput.addEventListener('input', () => {
+                researchChairGmailInput.style.border = ''
+            })
+        }
     }, 100)
 })
 
@@ -1082,9 +1538,10 @@ export const AddUser=()=>{
                         att:{
                             className:'adminLabel'
                         },
-                        text:'Register new Account'
+                        text:'Register New Accounts'
                     }),
-                    encodeUser(),
+                    encodeCenterChair(),
+                    encodeResearchChair(),
                     rdeUser()
                 ]
             }),

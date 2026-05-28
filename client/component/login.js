@@ -1,7 +1,5 @@
 import {$, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting} from '../lib/lib.js'
 
-
-
 /**
 
  * It creates a login panel
@@ -698,10 +696,12 @@ const Signup = (prop) => {
 
     let email
     let center
+    let campus
     let username
     let password
     let conPass
     let fullName
+    let userRole
 
     const get = {
         email: (value) => {
@@ -713,6 +713,9 @@ const Signup = (prop) => {
         center: (value) => {
             center = value
         },
+        campus: (value) => {
+            campus = value
+        },
         username: (value) => {
             username = value
         },
@@ -722,6 +725,9 @@ const Signup = (prop) => {
         conPass: (value) => {
             conPass = value
         },
+        userRole: (value) => {
+            userRole = value
+        }
     }
 
     // Toggle password visibility function
@@ -773,6 +779,24 @@ const Signup = (prop) => {
     }
 
     const getContainer = (container) => {
+        // Create form element to wrap all inputs
+        const form = $({
+            tag: 'form',
+            att: {
+                id: 'signup-form',
+                autocomplete: 'on'
+            },
+            event: {
+                type: 'submit',
+                method: (event) => {
+                    event.preventDefault() // Prevent default form submission
+                    // Trigger the submit button click programmatically
+                    const submitBtn = document.getElementById('signup-submit-btn')
+                    if (submitBtn) submitBtn.click()
+                }
+            }
+        })
+        
         const option = ({label, placeholder, value}) => {
             const getOpt = (opt) => {
                 if (label) {
@@ -792,9 +816,104 @@ const Signup = (prop) => {
             }))
         }
         
+        // Campus list for reuse
+        const campuses = [
+            "Roxas City Main",
+            "Pilar",
+            "Pontevedra",
+            "Mambusao",
+            "Burias",
+            "Sigma",
+            "Sapian",
+            "Tapaz",
+            "Dumarao",
+            "Dayao"
+        ];
+        
+        // Role Selection Dropdown (UI only - not saved to database)
+        const getRoleSelect = (select) => {
+            select.appendChild(option({
+                label: '-- Select Role --',
+                placeholder: true,
+            }))
+            
+            const roles = [
+                { label: 'Research Chair', value: 'research_chair' },
+                { label: 'Research Center Chair', value: 'research_center_chair' }
+            ];
+            
+            roles.forEach(role => {
+                select.appendChild($({
+                    tag: 'option',
+                    text: role.label,
+                    att: {
+                        value: role.value
+                    }
+                }))
+            })
+        }
+
+        form.appendChild(TableCont({
+            label: 'Register as',
+            element: $({
+                tag: 'select',
+                elementHandler: getRoleSelect,
+                event: {
+                    type: 'change',
+                    method: (event) => {
+                        const selectedRole = event.target.value
+                        get.userRole(selectedRole)
+                        
+                        // Show/hide appropriate dropdowns based on role selection
+                        const campusContainer = document.getElementById('campus-container')
+                        const centerContainer = document.getElementById('center-container')
+                        const extensionCampusContainer = document.getElementById('extension-campus-container')
+                        
+                        if (selectedRole === 'research_chair') {
+                            // Research Chair - Show Campus, Hide Center and Extension Campus
+                            if (campusContainer) campusContainer.style.display = 'block'
+                            if (centerContainer) centerContainer.style.display = 'none'
+                            if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
+                            // Reset center value
+                            get.center(undefined)
+                            // Reset the center select element
+                            const centerSelect = document.getElementById('select-sign')
+                            if (centerSelect) centerSelect.selectedIndex = 0
+                        } else if (selectedRole === 'research_center_chair') {
+                            // Research Center Chair - Show Center, Hide Campus
+                            if (campusContainer) campusContainer.style.display = 'none'
+                            if (centerContainer) centerContainer.style.display = 'block'
+                            // Reset campus value
+                            get.campus(undefined)
+                            // Reset the campus select element
+                            const campusSelect = document.getElementById('select-campus')
+                            if (campusSelect) campusSelect.selectedIndex = 0
+                            // Check if Extension is currently selected
+                            const centerSelect = document.getElementById('select-sign')
+                            if (centerSelect && centerSelect.value === 'Extension') {
+                                if (extensionCampusContainer) extensionCampusContainer.style.display = 'block'
+                            } else {
+                                if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
+                            }
+                        } else {
+                            // No selection - Hide all
+                            if (campusContainer) campusContainer.style.display = 'none'
+                            if (centerContainer) centerContainer.style.display = 'none'
+                            if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
+                        }
+                    }
+                },
+                att: {
+                    id: 'select-role',
+                    className: 'selectSign'
+                },
+            })
+        }))
+        
+        // Research Center Selection Dropdown
         const getSelect = (select) => {
             select.appendChild(option({
-                label: '-- Select Center --',
+                label: '-- Select Research Center --',
                 placeholder: true,
             }))
             
@@ -817,8 +936,9 @@ const Signup = (prop) => {
                 }))
             })
         }
-        
-        container.appendChild(TableCont({
+
+        // Center container
+        const centerTable = TableCont({
             label: 'Research Center',
             element: $({
                 tag: 'select',
@@ -826,7 +946,23 @@ const Signup = (prop) => {
                 event: {
                     type: 'change',
                     method: (event) => {
-                        get.center(event.target.value)
+                        const selectedCenter = event.target.value
+                        get.center(selectedCenter)
+                        
+                        // Show/hide extension campus dropdown based on selection
+                        const extensionCampusContainer = document.getElementById('extension-campus-container')
+                        
+                        if (selectedCenter === 'Extension' && userRole === 'research_center_chair') {
+                            if (extensionCampusContainer) extensionCampusContainer.style.display = 'block'
+                        } else {
+                            if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
+                            // Reset campus if not extension
+                            if (selectedCenter !== 'Extension') {
+                                get.campus(undefined)
+                                const extensionCampusSelect = document.getElementById('select-extension-campus')
+                                if (extensionCampusSelect) extensionCampusSelect.selectedIndex = 0
+                            }
+                        }
                     }
                 },
                 att: {
@@ -834,16 +970,125 @@ const Signup = (prop) => {
                     className: 'selectSign'
                 },
             })
-        }))
+        })
+        
+        // Wrap in a div for easy show/hide
+        const centerWrapper = $({
+            tag: 'div',
+            att: {
+                id: 'center-container',
+                style: 'display: none;'
+            },
+            child: [centerTable]
+        })
+        form.appendChild(centerWrapper)
+        
+        // Extension Campus Selection Dropdown (shown only when Extension is selected)
+        const getExtensionCampusSelect = (select) => {
+            select.appendChild(option({
+                label: '-- Select Extension Campus --',
+                placeholder: true,
+            }))
+            
+            campuses.forEach(val => {
+                select.appendChild($({
+                    tag: 'option',
+                    text: val,
+                    att: {
+                        value: val
+                    }
+                }))
+            })
+        }
+        
+        // Extension Campus container (initially hidden)
+        const extensionCampusTable = TableCont({
+            label: 'Extension Campus',
+            element: $({
+                tag: 'select',
+                elementHandler: getExtensionCampusSelect,
+                event: {
+                    type: 'change',
+                    method: (event) => {
+                        get.campus(event.target.value)
+                    }
+                },
+                att: {
+                    id: 'select-extension-campus',
+                    className: 'selectSign'
+                },
+            })
+        })
+        
+        // Wrap in a div for easy show/hide
+        const extensionCampusWrapper = $({
+            tag: 'div',
+            att: {
+                id: 'extension-campus-container',
+                style: 'display: none;'
+            },
+            child: [extensionCampusTable]
+        })
+        form.appendChild(extensionCampusWrapper)
+        
+        // Campus Selection Dropdown (for Research Chair role)
+        const getCampusSelect = (select) => {
+            select.appendChild(option({
+                label: '-- Select Campus --',
+                placeholder: true,
+            }))
+            
+            campuses.forEach(val => {
+                select.appendChild($({
+                    tag: 'option',
+                    text: val,
+                    att: {
+                        value: val
+                    }
+                }))
+            })
+        }
+        
+        // Campus container (initially hidden)
+        const campusTable = TableCont({
+            label: 'Campus',
+            element: $({
+                tag: 'select',
+                elementHandler: getCampusSelect,
+                event: {
+                    type: 'change',
+                    method: (event) => {
+                        get.campus(event.target.value)
+                    }
+                },
+                att: {
+                    id: 'select-campus',
+                    className: 'selectSign'
+                },
+            })
+        })
+        
+        // Wrap in a div for easy show/hide
+        const campusWrapper = $({
+            tag: 'div',
+            att: {
+                id: 'campus-container',
+                style: 'display: none;'
+            },
+            child: [campusTable]
+        })
+        form.appendChild(campusWrapper)
 
-        container.appendChild(TableCont({
+        form.appendChild(TableCont({
             label: 'Email address',
             element: $({
                 tag: 'input',
                 att: {
+                    type: 'email',
                     className: 'signInput',
                     placeholder: 'xxxx@capsu.edu.ph',
                     id: 'signup-email',
+                    name: 'email',
                     autocomplete: 'email'
                 },
                 event: {
@@ -855,14 +1100,17 @@ const Signup = (prop) => {
             })
         }))
 
-        container.appendChild(TableCont({
+        form.appendChild(TableCont({
             label: 'Full name',
             element: $({
                 tag: 'input',
                 att: {
+                    type: 'text',
                     id: 'signinput-fullname',
+                    name: 'fullname',
                     className: 'signInput',
-                    placeholder: 'Enter full name'
+                    placeholder: 'Enter full name',
+                    autocomplete: 'name'
                 },
                 event: {
                     type: 'input',
@@ -873,14 +1121,17 @@ const Signup = (prop) => {
             })
         }))
 
-        container.appendChild(TableCont({
+        form.appendChild(TableCont({
             label: 'Username',
             element: $({
                 tag: 'input',
                 att: {
+                    type: 'text',
                     id: 'signinput-Username',
+                    name: 'username',
                     className: 'signInput',
-                    placeholder: 'Enter username'
+                    placeholder: 'Enter username',
+                    autocomplete: 'username'
                 },
                 event: {
                     type: 'input',
@@ -893,7 +1144,7 @@ const Signup = (prop) => {
         }))
 
         // Password field with eye icon
-        container.appendChild(TableCont({
+        form.appendChild(TableCont({
             label: 'Password',
             element: $({
                 tag: 'div',
@@ -965,7 +1216,7 @@ const Signup = (prop) => {
         }))
 
         // Confirm Password field with eye icon
-        container.appendChild(TableCont({
+        form.appendChild(TableCont({
             label: 'Re-type Password',
             element: $({
                 tag: 'div',
@@ -985,7 +1236,7 @@ const Signup = (prop) => {
                             placeholder: 'Re-enter password',
                             maxLength: '20',
                             id: 'signup-confirm-password',
-                            name: 'confirmPasswod',
+                            name: 'confirmPassword',
                             autocomplete: 'new-password'
                         },
                         style: {
@@ -1035,22 +1286,45 @@ const Signup = (prop) => {
             })
         }))
 
-        container.appendChild(TableCont({
+        form.appendChild(TableCont({
             label: '',
             element: $({
                 tag: 'input',
                 att: {
-                    type: 'button',
+                    type: 'submit',
                     className: 'submit',
-                    value: 'Submit'
+                    value: 'Submit',
+                    id: 'signup-submit-btn'
                 },
                 event: {
                     type: 'click',
-                    method: async () => {
-                        if (center === undefined) {
-                            alert("Please select a Research Center..!")
+                    method: async (event) => {
+                        event.preventDefault() // Prevent form from submitting traditionally
+                        
+                        // Validate role selection first (UI only)
+                        if (userRole === undefined) {
+                            alert("Please select a role (Research Chair or Research Center Chair)..!")
                             return
                         }
+                        
+                        // Validate based on role
+                        if (userRole === 'research_chair') {
+                            if (campus === undefined) {
+                                alert("Please select a Campus..!")
+                                return
+                            }
+                        } else if (userRole === 'research_center_chair') {
+                            if (center === undefined) {
+                                alert("Please select a Research Center..!")
+                                return
+                            }
+                            // If Extension is selected, campus is required
+                            if (center === 'Extension' && campus === undefined) {
+                                alert("Please select an Extension Campus..!")
+                                return
+                            }
+                        }
+                        
                         if (email === undefined) {
                             alert("E-Mail is missing..!")
                             return
@@ -1077,13 +1351,27 @@ const Signup = (prop) => {
                             return
                         }
 
-                        const form = new FormData();
-                        form.append('auth', 'signup')
-                        form.append('cName', center.toUpperCase())
-                        form.append('userEmail', email)
-                        form.append('fullName', fullName)
-                        form.append('username', username)
-                        form.append('password', password)
+                        const formData = new FormData();
+                        formData.append('auth', 'signup')
+                        // NOTE: role is NOT sent to backend - it's UI only
+                        
+                        // Append appropriate field based on role
+                        if (userRole === 'research_chair') {
+                            // Research Chair sends campus
+                            formData.append('campus', campus.toUpperCase())
+                        } else if (userRole === 'research_center_chair') {
+                            // Research Center Chair sends center name
+                            formData.append('cName', center.toUpperCase())
+                            // If Extension is selected, also send campus
+                            if (center === 'Extension' && campus) {
+                                formData.append('campus', campus.toUpperCase())
+                            }
+                        }
+                        
+                        formData.append('userEmail', email)
+                        formData.append('fullName', fullName)
+                        formData.append('username', username)
+                        formData.append('password', password)
                         
                         let loading = Waiting()
                         document.body.appendChild(loading)
@@ -1095,7 +1383,7 @@ const Signup = (prop) => {
                         try {
                             const res = await fetch('/server/authToken.php', {
                                 method: "POST",
-                                body: form
+                                body: formData
                             })
                             
                             if (res.ok) {
@@ -1130,6 +1418,9 @@ const Signup = (prop) => {
                 }
             })
         }))
+        
+        // Append the form to the container
+        container.appendChild(form)
     }
 
     return ($({
@@ -1140,7 +1431,6 @@ const Signup = (prop) => {
         elementHandler: getContainer
     }))
 }
-
 
 const logo = () => {
 
@@ -1401,9 +1691,6 @@ export const LoginPage = () => {
             })
 
         ]
-
-
-
     }))
 
 }

@@ -419,3 +419,27 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
+
+.user-type-display {
+    width: 100%;
+    max-width: 500px;
+    margin: 10px auto;
+    padding: 12px 16px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #4CAF50;
+    font-family: 'Quattrocento Sans', sans-serif;
+    text-align: center;
+}
+
+.user-type-label {
+    color: rgb(211, 211, 211);
+    font-size: 15px;
+}
+
+.user-type-value {
+    color: #4CAF50;
+    font-weight: bold;
+    font-size: 16px;
+    margin-left: 5px;
+}
