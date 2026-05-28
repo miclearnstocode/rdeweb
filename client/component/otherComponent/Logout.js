@@ -1,12 +1,12 @@
 import {$} from '../../lib/lib.js'
 
-export const Logout=()=>{
+export const Logout = () => {
     return($({
         tag:'div',
         att:{
             className:'logoutDiv'
         },
-        text:'Log-out',
+        html: '<i class="fas fa-sign-out-alt"></i> Log-out',
         event:{
             type:'click',
             method:async ()=>{
