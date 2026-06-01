@@ -1,9 +1,12 @@
 import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal, AlertModal } from '../../lib/lib.js'
 
+// Track current selected paper type
+let currentPaperType = 'undergraduate';
+
 // View Researches Modal (for viewing other campuses' papers)
 const openViewResearchesModal = () => {
     let currentModal = null
-    let eventSelect, searchInput, tableBody
+    let eventSelect, searchInput, tableBody, paperTypeSelect
     let loadResearchDataFn
 
     // Build the content for the modal
@@ -32,6 +35,58 @@ const openViewResearchesModal = () => {
             }
         })
 
+        // Paper Type Filter Dropdown (Undergraduate/Graduate)
+        const paperTypeWrapper = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#2a2a2a',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                gap: '10px',
+                minWidth: '180px',
+                flex: '0 0 auto'
+            }
+        })
+
+        const paperTypeIcon = $({
+            tag: 'i',
+            att: { className: 'fas fa-graduation-cap' },
+            style: { color: '#666', fontSize: '16px' }
+        })
+
+        paperTypeSelect = $({
+            tag: 'select',
+            style: {
+                flex: 1,
+                backgroundColor: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: '#6d6d6dff',
+                fontSize: '14px',
+                cursor: 'pointer',
+                appearance: 'none',
+                WebkitAppearance: 'none'
+            },
+            event: {
+                type: 'change',
+                method: (e) => {
+                    const selectedEventId = eventSelect?.value
+                    const searchTerm = searchInput?.value.trim() || ''
+                    if (selectedEventId) {
+                        loadResearchDataFn(selectedEventId, searchTerm, e.target.value)
+                    }
+                }
+            }
+        })
+
+        paperTypeSelect.appendChild($({ tag: 'option', text: '🎓 Undergraduate', att: { value: 'undergraduate', selected: true } }))
+        paperTypeSelect.appendChild($({ tag: 'option', text: '🎓 Graduate', att: { value: 'graduate' } }))
+
+        paperTypeWrapper.appendChild(paperTypeIcon)
+        paperTypeWrapper.appendChild(paperTypeSelect)
+
         // Event Filter Dropdown
         const eventFilterWrapper = $({
             tag: 'div',
@@ -43,7 +98,7 @@ const openViewResearchesModal = () => {
                 padding: '8px 16px',
                 gap: '10px',
                 minWidth: '260px',
-                flex: '0 0 auto'
+                flex: '1'
             }
         })
 
@@ -88,7 +143,7 @@ const openViewResearchesModal = () => {
                 borderRadius: '8px',
                 padding: '8px 16px',
                 gap: '12px',
-                flex: 1
+                flex: 2
             }
         })
 
@@ -125,8 +180,9 @@ const openViewResearchesModal = () => {
                 method: debounce((e) => {
                     const searchTerm = e.target.value.trim()
                     const selectedEventId = eventSelect.value
+                    const paperType = paperTypeSelect.value
                     if (selectedEventId) {
-                        loadResearchDataFn(selectedEventId, searchTerm)
+                        loadResearchDataFn(selectedEventId, searchTerm, paperType)
                     }
                 }, 500)
             }
@@ -135,6 +191,7 @@ const openViewResearchesModal = () => {
         searchWrapper.appendChild(searchIcon)
         searchWrapper.appendChild(searchInput)
 
+        searchContainer.appendChild(paperTypeWrapper)
         searchContainer.appendChild(eventFilterWrapper)
         searchContainer.appendChild(searchWrapper)
 
@@ -159,7 +216,7 @@ const openViewResearchesModal = () => {
         // Table Header
         const thead = $({ tag: 'thead', style: { position: 'sticky', top: 0, backgroundColor: '#1a1a1a', zIndex: 1 } })
         const headerRow = $({ tag: 'tr', style: { borderBottom: '2px solid #333' } })
-        const columns = ['Event Name', 'Campus', 'Author', 'Title', 'Files']
+        const columns = ['Event Name', 'Campus', 'Author', 'Title', 'Paper Type', 'Files']
 
         columns.forEach(col => {
             headerRow.appendChild($({
@@ -199,7 +256,7 @@ const openViewResearchesModal = () => {
             child: [
                 $({
                     tag: 'td',
-                    att: { colSpan: 5 },
+                    att: { colSpan: 6 },
                     style: { padding: '60px', textAlign: 'center', color: '#666' },
                     child: [
                         $({ tag: 'i', att: { className: iconClass }, style: { fontSize: '40px', display: 'block', marginBottom: '14px' } }),
@@ -260,10 +317,12 @@ const openViewResearchesModal = () => {
     }
 
     // Load event list into the dropdown
-    const loadEventList = async () => {
+    const loadEventList = async (paperType = 'undergraduate') => {
         if (!eventSelect) return
 
         eventSelect.disabled = true
+        eventSelect.innerHTML = ''
+        
         const loadingOption = $({
             tag: 'option',
             text: 'Loading events...',
@@ -274,6 +333,7 @@ const openViewResearchesModal = () => {
         try {
             const formData = new FormData()
             formData.append('getEventList', 'true')
+            formData.append('paper_type', paperType)
 
             const response = await fetch('/eventRequest', {
                 method: 'POST',
@@ -283,26 +343,41 @@ const openViewResearchesModal = () => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
             const data = await response.text().then(text => text ? JSON.parse(text) : {})
-            loadingOption.remove()
+            eventSelect.innerHTML = ''
 
-            // Filter only Student Symposium events
             let events = data.events || data.list || data || []
-            events = events.filter(event => 
-                event.name && 
-                event.name.toLowerCase().includes('student') && 
-                event.name.toLowerCase().includes('symposium')
-            )
+            
+            // Filter events based on paper type
+            events = events.filter(event => {
+                if (!event.name) return false
+                const eventNameLower = event.name.toLowerCase()
+                if (paperType === 'undergraduate') {
+                    return eventNameLower.includes('student') && 
+                           eventNameLower.includes('symposium') && 
+                           !eventNameLower.includes('graduate')
+                } else {
+                    return eventNameLower.includes('graduate') && 
+                           eventNameLower.includes('symposium')
+                }
+            })
 
             if (!Array.isArray(events) || events.length === 0) {
                 const noEventsOption = $({
                     tag: 'option',
-                    text: 'No student symposium events available',
+                    text: `No ${paperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} symposium events available`,
                     att: { value: '', disabled: true }
                 })
                 eventSelect.appendChild(noEventsOption)
-                setTableMessage('fas fa-calendar-times', 'No student symposium events found')
+                setTableMessage('fas fa-calendar-times', `No ${paperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} symposium events found`)
                 return
             }
+
+            const defaultOption = $({
+                tag: 'option',
+                text: `-- Select ${paperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} Symposium Event --`,
+                att: { value: '', disabled: true, selected: true }
+            })
+            eventSelect.appendChild(defaultOption)
 
             events.forEach(ev => {
                 const option = $({
@@ -315,7 +390,7 @@ const openViewResearchesModal = () => {
 
         } catch (err) {
             console.error('Failed to load event list:', err)
-            loadingOption && loadingOption.remove()
+            eventSelect.innerHTML = ''
             const errOption = $({
                 tag: 'option',
                 text: 'Failed to load events',
@@ -329,7 +404,7 @@ const openViewResearchesModal = () => {
     }
 
     // Load research data for viewing
-    const loadResearchData = async (eventId, searchTerm = '') => {
+    const loadResearchData = async (eventId, searchTerm = '', paperType = 'undergraduate') => {
         if (!tableBody) return
 
         tableBody.innerHTML = ''
@@ -339,11 +414,11 @@ const openViewResearchesModal = () => {
             child: [
                 $({
                     tag: 'td',
-                    att: { colSpan: 5 },
+                    att: { colSpan: 6 },
                     style: { padding: '40px', textAlign: 'center', color: '#666' },
                     child: [
                         $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '12px' } }),
-                        $({ tag: 'div', text: searchTerm ? `Searching for "${searchTerm}"...` : 'Loading student research papers...', style: { fontSize: '14px' } })
+                        $({ tag: 'div', text: searchTerm ? `Searching for "${searchTerm}"...` : `Loading ${paperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} research papers...`, style: { fontSize: '14px' } })
                     ]
                 })
             ]
@@ -354,6 +429,7 @@ const openViewResearchesModal = () => {
             const formData = new FormData()
             formData.append('getStudentResearchPapersByEvent', 'true')
             formData.append('eventId', eventId)
+            formData.append('paper_type', paperType)
             if (searchTerm) {
                 formData.append('search', searchTerm)
             }
@@ -408,6 +484,27 @@ const openViewResearchesModal = () => {
                         style: { padding: '16px 12px', color: '#e0e0e0', fontSize: '14px', verticalAlign: 'top' }
                     })
 
+                    // Paper Type cell
+                    const paperTypeCell = $({
+                        tag: 'td',
+                        style: { padding: '16px 12px', verticalAlign: 'top' }
+                    })
+                    
+                    const paperTypeBadge = $({
+                        tag: 'span',
+                        text: research.paper_type === 'undergraduate' ? '🎓 Undergraduate' : '🎓 Graduate',
+                        style: {
+                            backgroundColor: research.paper_type === 'undergraduate' ? '#2196F3' : '#9C27B0',
+                            color: 'white',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                            fontWeight: '500',
+                            display: 'inline-block'
+                        }
+                    })
+                    paperTypeCell.appendChild(paperTypeBadge)
+
                     // Files cell
                     const filesCell = $({
                         tag: 'td',
@@ -438,6 +535,7 @@ const openViewResearchesModal = () => {
                     row.appendChild(campusCell)
                     row.appendChild(authorCell)
                     row.appendChild(titleCell)
+                    row.appendChild(paperTypeCell)
                     row.appendChild(filesCell)
                     tableBody.appendChild(row)
                 })
@@ -449,7 +547,7 @@ const openViewResearchesModal = () => {
                 if (searchTerm) {
                     setTableMessage('fas fa-search', 'No matching results found', `No documents match "${searchTerm}"`)
                 } else {
-                    setTableMessage('fas fa-folder-open', 'No research papers available', 'Student papers will appear here once submitted')
+                    setTableMessage('fas fa-folder-open', `No ${paperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} research papers available`, 'Student papers will appear here once submitted')
                 }
             }
 
@@ -463,7 +561,7 @@ const openViewResearchesModal = () => {
                 child: [
                     $({
                         tag: 'td',
-                        att: { colSpan: 5 },
+                        att: { colSpan: 6 },
                         style: { padding: '40px', textAlign: 'center', color: '#ff6b6b' },
                         child: [
                             $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '32px', display: 'block', marginBottom: '12px' } }),
@@ -477,7 +575,7 @@ const openViewResearchesModal = () => {
                                     type: 'click',
                                     method: () => {
                                         tableBody.innerHTML = ''
-                                        loadResearchData(eventId, searchTerm)
+                                        loadResearchData(eventId, searchTerm, paperType)
                                     }
                                 }
                             })
@@ -499,7 +597,15 @@ const openViewResearchesModal = () => {
                 const selectedId = parseInt(e.target.value)
                 if (!selectedId) return
                 if (searchInput) searchInput.value = ''
-                loadResearchDataFn(selectedId)
+                const paperType = paperTypeSelect?.value || 'undergraduate'
+                loadResearchDataFn(selectedId, '', paperType)
+            })
+        }
+        
+        if (paperTypeSelect) {
+            paperTypeSelect.addEventListener('change', async (e) => {
+                const paperType = e.target.value
+                await loadEventList(paperType)
             })
         }
     }
@@ -519,7 +625,7 @@ const openViewResearchesModal = () => {
 
     // Load events after modal is open
     setTimeout(() => {
-        loadEventList()
+        loadEventList('undergraduate')
     }, 100)
 }
 
@@ -540,6 +646,7 @@ export const ResearchChairSubmission = () => {
 
     let documentsTable
     let uploadModal
+    let currentPaperType = 'undergraduate'
     let formData = {
         eventName: '',
         title: '',
@@ -553,8 +660,9 @@ export const ResearchChairSubmission = () => {
         endorsementFile: null
     }
 
-    // Categories list
-    const categories = ['Social Science', 'Natural/Biological', 'Food', 'Developmental']
+    // Categories list (can be different for graduate)
+    const undergraduateCategories = ['Social Science', 'Natural/Biological', 'Food', 'Developmental']
+    const graduateCategories = ['Social Science', 'Natural/Biological', 'Food', 'Developmental', 'Educational Management', 'Business Administration']
 
     // Campuses list
     const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz']
@@ -770,17 +878,31 @@ export const ResearchChairSubmission = () => {
         })
         actionsCell.appendChild(actionButtons)
 
+        // Paper type badge
+        const paperTypeBadge = $({
+            tag: 'span',
+            text: research.paper_type === 'undergraduate' ? '🎓 Undergraduate' : '🎓 Graduate',
+            style: {
+                backgroundColor: research.paper_type === 'undergraduate' ? '#2196F3' : '#9C27B0',
+                color: 'white',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: '500',
+                display: 'inline-block'
+            }
+        })
+
         const cells = [
             research.eventName || research.event || '—',
             getStatusBadge(research.status),
-            research.paper_trail_no || '—',
             research.title || '—',
             research.category || '—',
             research.presenter || '—',
             research.author || '—',
             (research.coAuthors || []).join(', ') || '—',
             research.campus || '—',
-            research.paper_type === 'undergraduate' ? 'Undergraduate' : 'Graduate',
+            paperTypeBadge,
             createFileList(),
             actionsCell
         ]
@@ -808,9 +930,104 @@ export const ResearchChairSubmission = () => {
         return row
     }
 
+    // Create Paper Type Tabs UI
+    const createPaperTypeTabs = () => {
+        const tabsContainer = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                gap: '4px',
+                backgroundColor: '#1e1e1e',
+                padding: '6px',
+                borderRadius: '12px',
+                marginBottom: '24px',
+                border: '1px solid rgba(255,255,255,0.05)'
+            }
+        })
+
+        const undergraduateTab = $({
+            tag: 'button',
+            style: {
+                flex: 1,
+                padding: '12px 24px',
+                backgroundColor: currentPaperType === 'undergraduate' ? '#2196F3' : 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                color: currentPaperType === 'undergraduate' ? '#fff' : '#888',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px'
+            },
+            child: [
+                $({ tag: 'i', att: { className: 'fas fa-user-graduate' }, style: { fontSize: '16px' } }),
+                $({ tag: 'span', text: 'Undergraduate' })
+            ],
+            event: {
+                type: 'click',
+                method: () => switchPaperType('undergraduate')
+            }
+        })
+
+        const graduateTab = $({
+            tag: 'button',
+            style: {
+                flex: 1,
+                padding: '12px 24px',
+                backgroundColor: currentPaperType === 'graduate' ? '#9C27B0' : 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                color: currentPaperType === 'graduate' ? '#fff' : '#888',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px'
+            },
+            child: [
+                $({ tag: 'i', att: { className: 'fas fa-graduation-cap' }, style: { fontSize: '16px' } }),
+                $({ tag: 'span', text: 'Graduate' })
+            ],
+            event: {
+                type: 'click',
+                method: () => switchPaperType('graduate')
+            }
+        })
+
+        tabsContainer.appendChild(undergraduateTab)
+        tabsContainer.appendChild(graduateTab)
+
+        return { tabsContainer, undergraduateTab, graduateTab }
+    }
+
+    // Switch between paper types
+    const switchPaperType = (type) => {
+        currentPaperType = type
+        
+        // Refresh the entire UI
+        const mainContainer = document.querySelector('.research-chair-main-container')
+        if (mainContainer) {
+            mainContainer.innerHTML = ''
+            const newUI = createResearchChairMain()
+            mainContainer.appendChild(newUI)
+        }
+        
+        // Refresh documents table
+        if (window.refreshDocumentsTable) {
+            window.refreshDocumentsTable()
+        }
+    }
+
     // Open upload modal for student symposium
     const openUploadModal = () => {
-        let titleInput, categorySelect, authorInput, presenterInput, coAuthorInput, coAuthorList, campusSelect, paperTypeSelect
+        let titleInput, categorySelect, authorInput, presenterInput, coAuthorInput, coAuthorList, campusSelect, paperTypeDisplay
         let eventSelect
 
         formData = {
@@ -821,7 +1038,7 @@ export const ResearchChairSubmission = () => {
             presenter: '',
             author: '',
             coAuthors: [],
-            paperType: 'undergraduate',
+            paperType: currentPaperType,
             researchFile: null,
             endorsementFile: null,
         }
@@ -861,7 +1078,7 @@ export const ResearchChairSubmission = () => {
             }
         })
 
-        // Header
+        // Header with paper type badge
         const header = $({
             tag: 'div',
             style: {
@@ -877,10 +1094,28 @@ export const ResearchChairSubmission = () => {
             },
             child: [
                 $({
-                    tag: 'h3',
-                    text: 'Submit Student Symposium Paper',
-                    style: { color: '#fff', margin: 0, fontSize: '20px' },
-                    att: { id: 'modalTitle' }
+                    tag: 'div',
+                    child: [
+                        $({
+                            tag: 'h3',
+                            text: `Submit ${currentPaperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} Symposium Paper`,
+                            style: { color: '#fff', margin: 0, fontSize: '20px' },
+                            att: { id: 'modalTitle' }
+                        }),
+                        $({
+                            tag: 'span',
+                            text: currentPaperType === 'undergraduate' ? '🎓 Undergraduate Level' : '🎓 Graduate Level',
+                            style: {
+                                display: 'inline-block',
+                                backgroundColor: currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0',
+                                color: '#fff',
+                                padding: '4px 12px',
+                                borderRadius: '20px',
+                                fontSize: '11px',
+                                marginTop: '8px'
+                            }
+                        })
+                    ]
                 }),
                 $({
                     tag: 'i',
@@ -948,7 +1183,7 @@ export const ResearchChairSubmission = () => {
             text: 'Submit Paper',
             style: {
                 padding: '10px 28px',
-                backgroundColor: '#4caf50',
+                backgroundColor: currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0',
                 border: 'none',
                 borderRadius: '8px',
                 color: '#fff',
@@ -1094,15 +1329,6 @@ export const ResearchChairSubmission = () => {
                     method: (e) => {
                         const selectedEventName = e.target.value
                         formData.eventName = selectedEventName
-                        
-                        // Auto-set paper type based on event name
-                        if (selectedEventName && selectedEventName.toLowerCase().includes('undergraduate')) {
-                            formData.paperType = 'undergraduate'
-                            if (paperTypeSelect) paperTypeSelect.value = 'undergraduate'
-                        } else if (selectedEventName && selectedEventName.toLowerCase().includes('graduate')) {
-                            formData.paperType = 'graduate'
-                            if (paperTypeSelect) paperTypeSelect.value = 'graduate'
-                        }
                     }
                 },
                 elementHandler: async (el) => {
@@ -1111,13 +1337,14 @@ export const ResearchChairSubmission = () => {
 
                     const defaultOption = $({
                         tag: 'option',
-                        text: '-- Select Student Symposium Event --',
+                        text: `-- Select ${currentPaperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} Symposium Event --`,
                         att: { disabled: true, selected: true, value: '' }
                     })
                     el.appendChild(defaultOption)
 
                     const form = new FormData()
                     form.append('getEvent', 'true')
+                    form.append('paper_type', currentPaperType)
 
                     try {
                         const response = await fetch('/eventRequest', {
@@ -1127,15 +1354,24 @@ export const ResearchChairSubmission = () => {
 
                         if (response.ok) {
                             const data = await response.json()
-                            // Filter only Student Symposium events
-                            const studentSymposiumEvents = data.filter(event =>
-                                event.name &&
-                                event.name.toLowerCase().includes('student') &&
-                                event.name.toLowerCase().includes('symposium')
-                            )
+                            let events = data.events || data.list || data || []
+                            
+                            // Filter events based on paper type
+                            events = events.filter(event => {
+                                if (!event.name) return false
+                                const eventNameLower = event.name.toLowerCase()
+                                if (currentPaperType === 'undergraduate') {
+                                    return eventNameLower.includes('student') && 
+                                           eventNameLower.includes('symposium') && 
+                                           !eventNameLower.includes('graduate')
+                                } else {
+                                    return eventNameLower.includes('graduate') && 
+                                           eventNameLower.includes('symposium')
+                                }
+                            })
 
-                            if (studentSymposiumEvents.length > 0) {
-                                studentSymposiumEvents.forEach(val => {
+                            if (events.length > 0) {
+                                events.forEach(val => {
                                     el.appendChild($({
                                         tag: 'option',
                                         text: val.name,
@@ -1144,8 +1380,8 @@ export const ResearchChairSubmission = () => {
                                     }))
                                 })
                             } else {
-                                // If no specific student symposium events, show all symposium events
-                                const symposiumEvents = data.filter(event =>
+                                // Fallback: show all symposium events
+                                const symposiumEvents = data.filter(event => 
                                     event.name && event.name.toLowerCase().includes('symposium')
                                 )
                                 symposiumEvents.forEach(val => {
@@ -1250,7 +1486,9 @@ export const ResearchChairSubmission = () => {
                     method: (e) => { formData.category = e.target.value }
                 },
                 elementHandler: (el) => {
+                    el.innerHTML = ''
                     el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
+                    const categories = currentPaperType === 'undergraduate' ? undergraduateCategories : graduateCategories
                     categories.forEach(cat => {
                         el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
                     })
@@ -1258,38 +1496,28 @@ export const ResearchChairSubmission = () => {
             })
             categoryField.appendChild(categorySelect)
 
-            // Paper Type field
+            // Paper Type display (read-only)
             const paperTypeField = $({ tag: 'div', style: { marginBottom: '0' } })
-            paperTypeField.appendChild($({ tag: 'label', text: 'Paper Type (Auto-set based on event)', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-            paperTypeSelect = $({
-                tag: 'select',
+            paperTypeField.appendChild($({ tag: 'label', text: 'Paper Type', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            paperTypeDisplay = $({
+                tag: 'div',
                 style: {
                     width: '100%',
                     padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
+                    backgroundColor: currentPaperType === 'undergraduate' ? 'rgba(33, 150, 243, 0.1)' : 'rgba(156, 39, 176, 0.1)',
+                    border: `1px solid ${currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0'}`,
                     borderRadius: '8px',
-                    color: '#fff',
+                    color: currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0',
                     fontSize: '14px',
-                    cursor: 'not-allowed' 
+                    fontWeight: '500'
                 },
-                att: {
-                    disabled: true 
-                },
-                event: {
-                    type: 'change',
-                    method: (e) => { formData.paperType = e.target.value }
-                },
-                elementHandler: (el) => {
-                    el.appendChild($({ tag: 'option', text: 'Undergraduate', att: { value: 'undergraduate', selected: true } }))
-                    el.appendChild($({ tag: 'option', text: 'Graduate', att: { value: 'graduate' } }))
-                }
+                text: currentPaperType === 'undergraduate' ? '🎓 Undergraduate' : '🎓 Graduate'
             })
-            paperTypeField.appendChild(paperTypeSelect)
+            paperTypeField.appendChild(paperTypeDisplay)
 
             // Author field
             const authorField = $({ tag: 'div', style: { marginBottom: '0' } })
-            authorField.appendChild($({ tag: 'label', text: 'Main Author (Student) *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            authorField.appendChild($({ tag: 'label', text: 'Main Author  *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             authorInput = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: 'Enter main author name' },
@@ -1314,7 +1542,7 @@ export const ResearchChairSubmission = () => {
 
             // Presenter field
             const presenterField = $({ tag: 'div', style: { marginBottom: '0' } })
-            presenterField.appendChild($({ tag: 'label', text: 'Presenter (Student) *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            presenterField.appendChild($({ tag: 'label', text: 'Presenter  *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
             presenterInput = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: 'Enter presenter name' },
@@ -1339,7 +1567,7 @@ export const ResearchChairSubmission = () => {
 
             // Co-authors field
             const coAuthorField = $({ tag: 'div', style: { marginBottom: '0' } })
-            coAuthorField.appendChild($({ tag: 'label', text: 'Co-Authors (Students)', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            coAuthorField.appendChild($({ tag: 'label', text: 'Co-Authors ', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
 
             const coAuthorInputGroup = $({
                 tag: 'div',
@@ -1547,16 +1775,22 @@ export const ResearchChairSubmission = () => {
     const createResearchChairMain = () => {
         const container = $({
             tag: 'div',
+            att: { className: 'research-chair-main-container' },
             style: {
-                padding: '24px',
+                padding: '0',
                 backgroundColor: 'transparent',
                 height: '100vh',
+                width: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
                 boxSizing: 'border-box'
             }
         })
+
+        // Paper Type Tabs
+        const { tabsContainer } = createPaperTypeTabs()
+        container.appendChild(tabsContainer)
 
         // Header
         const header = $({
@@ -1574,8 +1808,8 @@ export const ResearchChairSubmission = () => {
         const titleSection = $({
             tag: 'div',
             child: [
-                $({ tag: 'h1', text: 'Student Research Papers', style: { color: '#fff', fontSize: '30px', margin: 0, marginBottom: '8px' } }),
-                $({ tag: 'p', text: 'Submit and track your student research papers for symposium events', style: { color: '#888', fontSize: '14px', margin: 0 } })
+                $({ tag: 'h1', text: currentPaperType === 'undergraduate' ? 'Undergraduate Research Papers' : 'Graduate Research Papers', style: { color: '#fff', fontSize: '30px', margin: 0, marginBottom: '8px' } }),
+                $({ tag: 'p', text: currentPaperType === 'undergraduate' ? 'Submit and track undergraduate student research papers for symposium events' : 'Submit and track graduate student research papers for symposium events', style: { color: '#888', fontSize: '14px', margin: 0 } })
             ]
         })
 
@@ -1590,7 +1824,7 @@ export const ResearchChairSubmission = () => {
         const uploadBtn = $({
             tag: 'button',
             style: {
-                backgroundColor: '#2196F3',
+                backgroundColor: currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0',
                 border: 'none',
                 borderRadius: '10px',
                 padding: '12px 24px',
@@ -1716,7 +1950,7 @@ export const ResearchChairSubmission = () => {
         // Table header
         const thead = $({ tag: 'thead' })
         const headerRow = $({ tag: 'tr', style: { backgroundColor: '#717171', borderBottom: '2px solid #333' } })
-        const columns = ['Event', 'Status', 'Paper Trail No.', 'Title', 'Category', 'Presenter', 'Author', 'Co-Authors', 'Campus', 'Type', 'Attachments', 'Actions']
+        const columns = ['Event', 'Status', 'Title', 'Category', 'Presenter', 'Author', 'Co-Authors', 'Campus', 'Type', 'Attachments', 'Actions']
 
         columns.forEach(col => {
             headerRow.appendChild($({
@@ -1746,6 +1980,7 @@ export const ResearchChairSubmission = () => {
         container.appendChild(tableContainer)
 
         const showEmptyState = () => {
+            tbody.innerHTML = ''
             const emptyRow = $({ tag: 'tr', att: { className: 'empty-state-row' } })
             const emptyCell = $({
                 tag: 'td',
@@ -1753,7 +1988,7 @@ export const ResearchChairSubmission = () => {
                 style: { padding: '60px', textAlign: 'center', color: '#666' }
             })
             emptyCell.appendChild($({ tag: 'i', att: { className: 'fas fa-folder-open' }, style: { fontSize: '48px', display: 'block', marginBottom: '16px' } }))
-            emptyCell.appendChild($({ tag: 'div', text: 'No research papers submitted yet', style: { fontSize: '16px', marginBottom: '8px' } }))
+            emptyCell.appendChild($({ tag: 'div', text: `No ${currentPaperType === 'undergraduate' ? 'undergraduate' : 'graduate'} research papers submitted yet`, style: { fontSize: '16px', marginBottom: '8px' } }))
             emptyCell.appendChild($({ tag: 'div', text: 'Click the "Submit Paper" button to submit your student research paper', style: { fontSize: '14px' } }))
             emptyRow.appendChild(emptyCell)
             tbody.appendChild(emptyRow)
@@ -1769,12 +2004,13 @@ export const ResearchChairSubmission = () => {
                     style: { padding: '60px', textAlign: 'center', color: '#666' }
                 })
                 loadingCell.appendChild($({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '16px' } }))
-                loadingCell.appendChild($({ tag: 'div', text: 'Loading your research papers...', style: { fontSize: '14px' } }))
+                loadingCell.appendChild($({ tag: 'div', text: `Loading ${currentPaperType === 'undergraduate' ? 'undergraduate' : 'graduate'} research papers...`, style: { fontSize: '14px' } }))
                 loadingRow.appendChild(loadingCell)
                 tbody.appendChild(loadingRow)
 
                 const form = new FormData()
                 form.append('getStudentResearchPapers', 'true')
+                form.append('paper_type', currentPaperType)
 
                 const response = await fetch('/uploadResearchChair', {
                     method: 'POST',
@@ -1805,7 +2041,6 @@ export const ResearchChairSubmission = () => {
 
                             const researchObj = {
                                 id: research.id,
-                                paper_trail_no: research.paper_trail_no,
                                 eventName: research.eventName || research.event,
                                 title: research.title,
                                 category: research.category,

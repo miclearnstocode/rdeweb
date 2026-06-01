@@ -75,7 +75,8 @@ function capitalizeFirstLetter($str) {
     return ucwords(strtolower(trim($str)));
 }
 
-function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $campus, $category, $author, $title, $type = 'research', $isEndorsement = false)
+// Enhanced upload function that supports paper type
+function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $campus, $category, $author, $title, $type = 'research', $isEndorsement = false, $paperType = 'undergraduate')
 {
     try {
         if (!file_exists($tempFilePath)) {
@@ -101,9 +102,15 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
         $authorLastName = end($authorParts);
         $authorLastName = cleanFolderNameForDrive($authorLastName);
         
-        // Create folder structure: Event Name -> Campus -> Category
-        // No more "Student Symposium" parent folder
-        $eventNameFolderId = $drive->findOrCreateFolder($cleanEventName, null);
+        // Determine parent folder based on paper type
+        $parentFolderName = ($paperType === 'graduate') ? 'Graduate Symposium' : 'Undergraduate Symposium';
+        $parentFolderId = $drive->findOrCreateFolder($parentFolderName, null);
+        if (!$parentFolderId) {
+            throw new Exception("Failed to create parent folder: $parentFolderName");
+        }
+        
+        // Create folder structure: PaperType -> Event Name -> Campus -> Category
+        $eventNameFolderId = $drive->findOrCreateFolder($cleanEventName, $parentFolderId);
         if (!$eventNameFolderId)
             throw new Exception("Failed to create event folder: $cleanEventName");
         
@@ -115,12 +122,16 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
         if (!$categoryFolderId)
             throw new Exception("Failed to create category folder");
         
-        // Create per-research folder inside Category
-        $titleWords = explode(' ', trim($title));
-        $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
-        $titleKeywords = cleanFolderNameForDrive($titleKeywords);
+        // Create per-research folder inside Category using Author Last Name - Title format
+        $cleanTitleForFolder = preg_replace('/[^\w\s\-]/', '', $title);
+        $cleanTitleForFolder = preg_replace('/\s+/', ' ', $cleanTitleForFolder);
+        $cleanTitleForFolder = trim($cleanTitleForFolder);
+        if (strlen($cleanTitleForFolder) > 60) {
+            $cleanTitleForFolder = substr($cleanTitleForFolder, 0, 57) . '...';
+        }
+        $cleanTitleForFolder = cleanFolderNameForDrive($cleanTitleForFolder);
         
-        $entryFolderName = $authorLastName . ' - ' . $titleKeywords;
+        $entryFolderName = $authorLastName . ' - ' . $cleanTitleForFolder;
         $entryFolderName = cleanFolderNameForDrive($entryFolderName);
         
         $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $categoryFolderId);
@@ -145,7 +156,7 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
             $prefixedFileName = $fileName;
         }
         
-        error_log("Uploading $type file: $prefixedFileName to folder: $entryFolderId");
+        error_log("Uploading $type file for $paperType: $prefixedFileName to folder: $entryFolderId");
         $uploadResult = $drive->uploadFile($tempFilePath, $prefixedFileName, $entryFolderId);
         
         if (!$uploadResult['success'] || empty($uploadResult['id'])) {
@@ -164,6 +175,7 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
             'drive_file_id' => $uploadResult['id'],
             'drive_view_url' => $embedUrl,
             'drive_download_url' => $downloadUrl,
+            'drive_parent_folder_id' => $parentFolderId,
             'drive_event_folder_id' => $eventNameFolderId,
             'drive_campus_folder_id' => $campusFolderId,
             'drive_category_folder_id' => $categoryFolderId,
@@ -180,81 +192,8 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
     }
 }
 
-// Generate a hash for file content to detect identical files
-function generateFileHash($filePath)
-{
-    if (!file_exists($filePath)) {
-        return false;
-    }
-    
-    // Use SHA256 for better collision resistance
-    $handle = fopen($filePath, 'rb');
-    if (!$handle) {
-        return false;
-    }
-    
-    $hashContext = hash_init('sha256');
-    $fileSize = filesize($filePath);
-    
-    if ($fileSize > 2 * 1024 * 1024) { // If file > 2MB
-        // Hash first 1MB
-        $firstChunk = fread($handle, 1024 * 1024);
-        hash_update($hashContext, $firstChunk);
-        
-        // Seek to last 1MB
-        fseek($handle, -1024 * 1024, SEEK_END);
-        $lastChunk = fread($handle, 1024 * 1024);
-        hash_update($hashContext, $lastChunk);
-    } else {
-        // Hash entire file
-        while (!feof($handle)) {
-            $chunk = fread($handle, 8192);
-            hash_update($hashContext, $chunk);
-        }
-    }
-    
-    fclose($handle);
-    return hash_final($hashContext);
-}
-
-function checkDuplicateStudentResearch($con, $title, $author, $eventId, $eventName)
-{
-    $query = "SELECT id, title, author, event, event_id, status 
-              FROM student_research_papers 
-              WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
-              AND TRIM(LOWER(author)) = TRIM(LOWER(?))
-              AND (event_id = ? OR event = ?)
-              LIMIT 1";
-    
-    $stmt = $con->prepare($query);
-    if (!$stmt) {
-        return ['isDuplicate' => false, 'message' => ''];
-    }
-    
-    $stmt->bind_param("ssis", $title, $author, $eventId, $eventName);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $existing = $result->fetch_assoc();
-    $stmt->close();
-    
-    if ($existing) {
-        $statusMsg = '';
-        if ($existing['status'] === 'pending') {
-            $statusMsg = " This submission is still pending review.";
-        } elseif ($existing['status'] === 'rejected') {
-            $statusMsg = " This submission was rejected. Please check your email for feedback before resubmitting.";
-        }
-        
-        return [
-            'isDuplicate' => true, 
-            'message' => "A research paper with the title '{$existing['title']}' and author '{$existing['author']}' already exists for this event." . $statusMsg,
-            'existingRecord' => $existing
-        ];
-    }
-    
-    return ['isDuplicate' => false, 'message' => ''];
-}
-function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author, $title, $type, $isEndorsement, $paperTrailNo = null)
+// Enhanced Paper Trail upload without paper trail number, using Author Last Name - Title format
+function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author, $title, $type, $isEndorsement, $paperType = 'undergraduate')
 {
     try {
         if (!file_exists($tempFilePath)) {
@@ -280,30 +219,38 @@ function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author
         }
         $cleanTitle = cleanFolderNameForDrive($cleanTitle);
 
-        // Student Paper Trail structure: Paper Trail -> Undergrad -> Year -> {paper_trail_no} - {Title}
+        // Student Paper Trail structure: Paper Trail -> {Undergraduate/Graduate} -> Year -> {Author Last Name - Title}
         $paperTrailRootId = $drive->findOrCreateFolder('Paper Trail', null);
         if (!$paperTrailRootId) {
             return ['success' => false, 'error' => "Failed to create Paper Trail root folder"];
         }
 
-        $undergradFolderId = $drive->findOrCreateFolder('Undergraduate Symposium', $paperTrailRootId);
-        if (!$undergradFolderId) {
-            return ['success' => false, 'error' => "Failed to create Undergrad folder"];
+        $subTypeFolderName = ($paperType === 'graduate') ? 'Graduate Symposium' : 'Undergraduate Symposium';
+        $subTypeFolderId = $drive->findOrCreateFolder($subTypeFolderName, $paperTrailRootId);
+        if (!$subTypeFolderId) {
+            return ['success' => false, 'error' => "Failed to create $subTypeFolderName folder"];
         }
 
-        $yearFolderId = $drive->findOrCreateFolder($year, $undergradFolderId);
+        $yearFolderId = $drive->findOrCreateFolder($year, $subTypeFolderId);
         if (!$yearFolderId) {
             return ['success' => false, 'error' => "Failed to create Year folder: $year"];
         }
 
-        // Create research folder: {paper_trail_no} - {title}
-        $researchFolderName = '';
-        if (!empty($paperTrailNo)) {
-            $researchFolderName = $paperTrailNo . ' - ' . $cleanTitle;
-        } else {
-            $researchFolderName = $authorLastName . '_' . preg_replace('/[^a-zA-Z0-9]/', '_', substr($cleanTitle, 0, 30));
-        }
+        // Create research folder: Author Last Name - Title (no paper trail number)
+        $researchFolderName = $authorLastName . ' - ' . $cleanTitle;
         $researchFolderName = cleanFolderNameForDrive($researchFolderName);
+        
+        // Handle duplicate folder names by adding counter if needed
+        $originalFolderName = $researchFolderName;
+        $counter = 1;
+        while (true) {
+            $existingFolder = $drive->findFolderIdByName($researchFolderName, $yearFolderId);
+            if (!$existingFolder) {
+                break;
+            }
+            $researchFolderName = $originalFolderName . ' (' . $counter . ')';
+            $counter++;
+        }
 
         $researchFolderId = $drive->findOrCreateFolder($researchFolderName, $yearFolderId);
         if (!$researchFolderId) {
@@ -339,16 +286,16 @@ function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author
             'drive_view_url' => $embedUrl,
             'drive_download_url' => $downloadUrl,
             'paper_trail_root_id' => $paperTrailRootId,
-            'sub_type_folder_id' => $undergradFolderId,
+            'sub_type_folder_id' => $subTypeFolderId,
             'year_folder_id' => $yearFolderId,
             'research_folder_id' => $researchFolderId,
             'research_folder_name' => $researchFolderName,
             'year' => $year,
-            'submission_type' => 'Undergrad',
+            'submission_type' => $paperType === 'graduate' ? 'Graduate' : 'Undergrad',
             'file_name' => $paperTrailFileName,
-            'paper_trail_no' => $paperTrailNo,
             'author_last_name' => $authorLastName,
-            'file_type' => $type
+            'file_type' => $type,
+            'paper_type' => $paperType
         ];
 
     } catch (Exception $e) {
@@ -357,8 +304,78 @@ function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author
     }
 }
 
-// Upload Student Symposium (Main endpoint for students)
-if (isset($_POST['uploadStudentSymposium'])) {
+function generateFileHash($filePath)
+{
+    if (!file_exists($filePath)) {
+        return false;
+    }
+    
+    $handle = fopen($filePath, 'rb');
+    if (!$handle) {
+        return false;
+    }
+    
+    $hashContext = hash_init('sha256');
+    $fileSize = filesize($filePath);
+    
+    if ($fileSize > 2 * 1024 * 1024) {
+        $firstChunk = fread($handle, 1024 * 1024);
+        hash_update($hashContext, $firstChunk);
+        fseek($handle, -1024 * 1024, SEEK_END);
+        $lastChunk = fread($handle, 1024 * 1024);
+        hash_update($hashContext, $lastChunk);
+    } else {
+        while (!feof($handle)) {
+            $chunk = fread($handle, 8192);
+            hash_update($hashContext, $chunk);
+        }
+    }
+    
+    fclose($handle);
+    return hash_final($hashContext);
+}
+
+function checkDuplicateStudentResearch($con, $title, $author, $eventId, $eventName, $paperType = 'undergraduate')
+{
+    $query = "SELECT id, title, author, event, event_id, status, paper_type 
+              FROM student_research_papers 
+              WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+              AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+              AND (event_id = ? OR event = ?)
+              AND paper_type = ?
+              LIMIT 1";
+    
+    $stmt = $con->prepare($query);
+    if (!$stmt) {
+        return ['isDuplicate' => false, 'message' => ''];
+    }
+    
+    $stmt->bind_param("ssiss", $title, $author, $eventId, $eventName, $paperType);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $existing = $result->fetch_assoc();
+    $stmt->close();
+    
+    if ($existing) {
+        $statusMsg = '';
+        if ($existing['status'] === 'pending') {
+            $statusMsg = " This submission is still pending review.";
+        } elseif ($existing['status'] === 'rejected') {
+            $statusMsg = " This submission was rejected. Please check your email for feedback before resubmitting.";
+        }
+        
+        return [
+            'isDuplicate' => true, 
+            'message' => "A research paper with the title '{$existing['title']}' and author '{$existing['author']}' already exists for this {$paperType} event." . $statusMsg,
+            'existingRecord' => $existing
+        ];
+    }
+    
+    return ['isDuplicate' => false, 'message' => ''];
+}
+
+// ==================== UNDERGRADUATE SUBMISSION ENDPOINT ====================
+if (isset($_POST['uploadUndergraduateSymposium'])) {
     ob_end_clean();
     ob_start();
     error_reporting(E_ALL);
@@ -384,9 +401,8 @@ if (isset($_POST['uploadStudentSymposium'])) {
             $campus = $_POST['campus'] ?? '';
             $presenter = capitalizeFirstLetter($_POST['presenter'] ?? '');
             $coAuthor = $_POST['coAuthor'] ?? '[]';
-            $paperType = $_POST['paper_type'] ?? 'undergraduate';
+            $paperType = 'undergraduate';
             
-            // Get event_id from event_list
             $eventId = null;
             $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
             $eventStmt = $con->prepare($eventIdQuery);
@@ -399,8 +415,7 @@ if (isset($_POST['uploadStudentSymposium'])) {
                 $eventStmt->close();
             }
             
-            // Check for duplicate submission
-            $duplicateCheck = checkDuplicateStudentResearch($con, $title, $author, $eventId, $eventName);
+            $duplicateCheck = checkDuplicateStudentResearch($con, $title, $author, $eventId, $eventName, $paperType);
             if ($duplicateCheck['isDuplicate']) {
                 $response->message = $duplicateCheck['message'];
                 $response->status = false;
@@ -411,7 +426,6 @@ if (isset($_POST['uploadStudentSymposium'])) {
                 exit();
             }
             
-            // Check if event deadline hasn't passed
             $checkQuery = "SELECT COUNT(*) FROM event_list WHERE event_list.name=? AND event_list.dead_line>CURRENT_TIMESTAMP";
             $checkStatement = $con->prepare($checkQuery);
             if (!$checkStatement) {
@@ -431,7 +445,6 @@ if (isset($_POST['uploadStudentSymposium'])) {
                 exit();
             }
             
-            // Validate required files
             if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
                 throw new Exception("Research paper is required");
             }
@@ -440,11 +453,10 @@ if (isset($_POST['uploadStudentSymposium'])) {
                 throw new Exception("Endorsement letter is required");
             }
             
-            // 1. Upload Research File to Google Drive
             $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
             $researchFileName = $_FILES['researchDoc']['name'];
             
-            error_log("Uploading student research: $researchFileName");
+            error_log("Uploading undergraduate research: $researchFileName");
             
             $researchDriveResult = uploadStudentResearchToDrive(
                 $tempResearchPath,
@@ -455,20 +467,16 @@ if (isset($_POST['uploadStudentSymposium'])) {
                 $author,
                 $title,
                 'research',
-                false
+                false,
+                $paperType
             );
             
             if (!$researchDriveResult['success']) {
                 throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
             }
             
-            error_log("Research uploaded successfully: " . $researchDriveResult['drive_file_id']);
-            
-            // 2. Upload Endorsement File to Google Drive
             $tempEndorsementPath = $_FILES['endorsementDoc']['tmp_name'];
             $endorsementFileName = $_FILES['endorsementDoc']['name'];
-            
-            error_log("Uploading student endorsement: $endorsementFileName");
             
             $endorsementDriveResult = uploadStudentResearchToDrive(
                 $tempEndorsementPath,
@@ -479,21 +487,16 @@ if (isset($_POST['uploadStudentSymposium'])) {
                 $author,
                 $title,
                 'endorsement',
-                true
+                true,
+                $paperType
             );
             
             if (!$endorsementDriveResult['success']) {
                 throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
             }
             
-            error_log("Endorsement uploaded successfully: " . $endorsementDriveResult['drive_file_id']);
-            
-            // Generate paper trail number
-            $paperTrailNo = generateStudentPaperTrailNumber($con, $eventId, $campus, $title, $author);
-            
-            // Insert into student_research_papers table
+            // Insert into student_research_papers table (without paper_trail_no)
             $insertQuery = "INSERT INTO student_research_papers (
-                paper_trail_no,
                 senderid,
                 event_id,
                 author,
@@ -505,6 +508,7 @@ if (isset($_POST['uploadStudentSymposium'])) {
                 paper_type,
                 category,
                 campus,
+                drive_parent_folder_id,
                 drive_event_folder_id,
                 drive_category_folder_id,
                 drive_campus_folder_id,
@@ -525,8 +529,7 @@ if (isset($_POST['uploadStudentSymposium'])) {
             $status = 'pending';
             
             $stmt->bind_param(
-                'siisssssssssssssssss',
-                $paperTrailNo,
+                'iissssssssssssssssss',
                 $senderId,
                 $eventId,
                 $author,
@@ -538,6 +541,7 @@ if (isset($_POST['uploadStudentSymposium'])) {
                 $paperType,
                 $category,
                 $campus,
+                $researchDriveResult['drive_parent_folder_id'],
                 $researchDriveResult['drive_event_folder_id'],
                 $researchDriveResult['drive_category_folder_id'],
                 $researchDriveResult['drive_campus_folder_id'],
@@ -557,14 +561,11 @@ if (isset($_POST['uploadStudentSymposium'])) {
             $researchId = $con->insert_id;
             $stmt->close();
             
-            // ========== PAPER TRAIL INTEGRATION ==========
+            // ========== PAPER TRAIL INTEGRATION (without paper trail number) ==========
             $paperTrailResults = [];
             
             // Upload Research File to Paper Trail
             if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK && $researchId) {
-                $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
-                $researchFileName = $_FILES['researchDoc']['name'];
-                
                 $paperTrailResearchResult = uploadStudentToPaperTrail(
                     $tempResearchPath,
                     $researchFileName,
@@ -573,22 +574,16 @@ if (isset($_POST['uploadStudentSymposium'])) {
                     $title,
                     'research',
                     false,
-                    $paperTrailNo
+                    $paperType
                 );
                 
                 if ($paperTrailResearchResult && $paperTrailResearchResult['success']) {
                     $paperTrailResults['research'] = $paperTrailResearchResult;
-                    $response->message .= "\nResearch paper saved to Paper Trail.";
-                } else {
-                    error_log("Paper Trail copy failed for research file: " . ($paperTrailResearchResult['error'] ?? 'Unknown error'));
                 }
             }
             
             // Upload Endorsement File to Paper Trail
             if (isset($_FILES['endorsementDoc']) && $_FILES['endorsementDoc']['error'] === UPLOAD_ERR_OK && $researchId) {
-                $tempEndorsementPath = $_FILES['endorsementDoc']['tmp_name'];
-                $endorsementFileName = $_FILES['endorsementDoc']['name'];
-                
                 $paperTrailEndorsementResult = uploadStudentToPaperTrail(
                     $tempEndorsementPath,
                     $endorsementFileName,
@@ -597,14 +592,11 @@ if (isset($_POST['uploadStudentSymposium'])) {
                     $title,
                     'endorsement',
                     true,
-                    $paperTrailNo
+                    $paperType
                 );
                 
                 if ($paperTrailEndorsementResult && $paperTrailEndorsementResult['success']) {
                     $paperTrailResults['endorsement'] = $paperTrailEndorsementResult;
-                    $response->message .= "\nEndorsement letter saved to Paper Trail.";
-                } else {
-                    error_log("Paper Trail copy failed for endorsement file: " . ($paperTrailEndorsementResult['error'] ?? 'Unknown error'));
                 }
             }
             
@@ -612,7 +604,6 @@ if (isset($_POST['uploadStudentSymposium'])) {
             if ($researchId && !empty($paperTrailResults)) {
                 $paperTrailQuery = "INSERT INTO paper_trail_student (
                     student_researchid, 
-                    paper_trail_no, 
                     submission_type, 
                     year,
                     paper_trail_root_id, 
@@ -624,22 +615,18 @@ if (isset($_POST['uploadStudentSymposium'])) {
                     endorsement_file_view_url,
                     endorsement_file_download_url,
                     created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
                 
                 $paperTrailStmt = $con->prepare($paperTrailQuery);
-                if (!$paperTrailStmt) {
-                    error_log("Failed to prepare paper trail insert: " . $con->error);
-                } else {
+                if ($paperTrailStmt) {
                     $currentYear = date('Y');
                     $submissionType = 'Undergrad';
                     
-                    // Initialize URLs
                     $researchViewUrl = null;
                     $researchDownloadUrl = null;
                     $endorsementViewUrl = null;
                     $endorsementDownloadUrl = null;
                     
-                    // Set URLs based on what was uploaded
                     if (isset($paperTrailResults['research'])) {
                         $researchViewUrl = $paperTrailResults['research']['drive_view_url'];
                         $researchDownloadUrl = $paperTrailResults['research']['drive_download_url'];
@@ -650,7 +637,6 @@ if (isset($_POST['uploadStudentSymposium'])) {
                         $endorsementDownloadUrl = $paperTrailResults['endorsement']['drive_download_url'];
                     }
                     
-                    // Get folder IDs from either research or endorsement result (they should be the same folder)
                     $firstResult = !empty($paperTrailResults['research']) ? $paperTrailResults['research'] : $paperTrailResults['endorsement'];
                     
                     $paperTrailRootId = $firstResult['paper_trail_root_id'] ?? null;
@@ -659,9 +645,8 @@ if (isset($_POST['uploadStudentSymposium'])) {
                     $researchFolderId = $firstResult['research_folder_id'] ?? null;
                     
                     $paperTrailStmt->bind_param(
-                        'isssssssssss',
+                        'issssssssss',
                         $researchId,
-                        $paperTrailNo,
                         $submissionType,
                         $currentYear,
                         $paperTrailRootId,
@@ -674,18 +659,13 @@ if (isset($_POST['uploadStudentSymposium'])) {
                         $endorsementDownloadUrl
                     );
                     
-                    if ($paperTrailStmt->execute()) {
-                        $response->message .= "\nFiles saved to Paper Trail archive.";
-                    } else {
-                        error_log("Failed to save Paper Trail record: " . $paperTrailStmt->error);
-                    }
+                    $paperTrailStmt->execute();
                     $paperTrailStmt->close();
                 }
             }
             // ========== END PAPER TRAIL INTEGRATION ==========
             
-            $response->message = "Student research paper submitted successfully! Paper Trail Number: " . $paperTrailNo . $response->message;
-            $response->paper_trail_no = $paperTrailNo;
+            $response->message = "Undergraduate research paper submitted successfully!";
             $response->research_id = $researchId;
             $response->status = true;
             
@@ -693,7 +673,7 @@ if (isset($_POST['uploadStudentSymposium'])) {
             throw new Exception("Database connection failed");
         }
     } catch (Exception $e) {
-        error_log("Exception in uploadStudentSymposium: " . $e->getMessage());
+        error_log("Exception in uploadUndergraduateSymposium: " . $e->getMessage());
         $response->message = $e->getMessage();
         $response->status = false;
     }
@@ -704,86 +684,317 @@ if (isset($_POST['uploadStudentSymposium'])) {
     exit();
 }
 
-function generateStudentPaperTrailNumber($con, $eventId, $campus, $title, $author)
-{
-    // Campus to code mapping - using full campus names
-    $campusCodes = [
-        'Roxas City Main' => 'Roxas City Main',
-        'Sigma' => 'Sigma',
-        'Dayao' => 'Dayao',
-        'Dumarao' => 'Dumarao',
-        'Burias' => 'Burias',
-        'Mambusao' => 'Mambusao',
-        'Pontevedra' => 'Pontevedra',
-        'Pilar' => 'Pilar',
-        'Tapaz' => 'Tapaz'
-    ];
+// ==================== GRADUATE SUBMISSION ENDPOINT ====================
+if (isset($_POST['uploadGraduateSymposium'])) {
+    ob_end_clean();
+    ob_start();
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
     
-    // Use the full campus name as the code
-    $campusCode = $campusCodes[$campus] ?? str_replace(' ', '_', $campus);
+    $senderId = $_SESSION['userId'];
+    $response = new stdClass();
+    $response->message = '';
+    $response->serverMessage = "";
+    $response->status = false;
+    $response->debug = [];
     
-    // Check if this research already has a paper trail number
-    $checkQuery = "SELECT paper_trail_no FROM student_research_papers 
-                   WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
-                   AND TRIM(LOWER(author)) = TRIM(LOWER(?))
-                   AND paper_trail_no IS NOT NULL 
-                   LIMIT 1";
-    
-    $checkStmt = $con->prepare($checkQuery);
-    if ($checkStmt) {
-        $checkStmt->bind_param("ss", $title, $author);
-        $checkStmt->execute();
-        $checkResult = $checkStmt->get_result();
-        $existing = $checkResult->fetch_assoc();
-        if ($existing && !empty($existing['paper_trail_no'])) {
-            $checkStmt->close();
-            return $existing['paper_trail_no'];
+    try {
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            if ($con->connect_error) {
+                throw new Exception("Database connection failed: " . $con->connect_error);
+            }
+            
+            $eventName = $_POST['eventType'] ?? '';
+            $title = capitalizeFirstLetter($_POST['title'] ?? '');
+            $author = capitalizeFirstLetter($_POST['author'] ?? '');
+            $category = $_POST['category'] ?? '';
+            $campus = $_POST['campus'] ?? '';
+            $presenter = capitalizeFirstLetter($_POST['presenter'] ?? '');
+            $coAuthor = $_POST['coAuthor'] ?? '[]';
+            $paperType = 'graduate';
+            
+            $eventId = null;
+            $eventIdQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
+            $eventStmt = $con->prepare($eventIdQuery);
+            if ($eventStmt) {
+                $eventStmt->bind_param("s", $eventName);
+                $eventStmt->execute();
+                $eventResult = $eventStmt->get_result();
+                $eventRow = $eventResult->fetch_assoc();
+                $eventId = $eventRow ? $eventRow['id'] : null;
+                $eventStmt->close();
+            }
+            
+            $duplicateCheck = checkDuplicateStudentResearch($con, $title, $author, $eventId, $eventName, $paperType);
+            if ($duplicateCheck['isDuplicate']) {
+                $response->message = $duplicateCheck['message'];
+                $response->status = false;
+                
+                ob_clean();
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($response);
+                exit();
+            }
+            
+            $checkQuery = "SELECT COUNT(*) FROM event_list WHERE event_list.name=? AND event_list.dead_line>CURRENT_TIMESTAMP";
+            $checkStatement = $con->prepare($checkQuery);
+            if (!$checkStatement) {
+                throw new Exception("Prepare failed: " . $con->error);
+            }
+            
+            $checkStatement->bind_param("s", $eventName);
+            $checkStatement->execute();
+            $resss = $checkStatement->get_result()->fetch_row();
+            
+            if ($resss[0] == 0) {
+                $response->message = "Sorry, the event has closed for submissions.";
+                $response->status = false;
+                ob_clean();
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($response);
+                exit();
+            }
+            
+            if (!isset($_FILES['researchDoc']) || $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("Research paper is required");
+            }
+            
+            if (!isset($_FILES['endorsementDoc']) || $_FILES['endorsementDoc']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("Endorsement letter is required");
+            }
+            
+            $tempResearchPath = $_FILES['researchDoc']['tmp_name'];
+            $researchFileName = $_FILES['researchDoc']['name'];
+            
+            error_log("Uploading graduate research: $researchFileName");
+            
+            $researchDriveResult = uploadStudentResearchToDrive(
+                $tempResearchPath,
+                $researchFileName,
+                $eventName,
+                $campus,
+                $category,
+                $author,
+                $title,
+                'research',
+                false,
+                $paperType
+            );
+            
+            if (!$researchDriveResult['success']) {
+                throw new Exception("Research upload failed: " . ($researchDriveResult['error'] ?? 'Unknown error'));
+            }
+            
+            $tempEndorsementPath = $_FILES['endorsementDoc']['tmp_name'];
+            $endorsementFileName = $_FILES['endorsementDoc']['name'];
+            
+            $endorsementDriveResult = uploadStudentResearchToDrive(
+                $tempEndorsementPath,
+                $endorsementFileName,
+                $eventName,
+                $campus,
+                $category,
+                $author,
+                $title,
+                'endorsement',
+                true,
+                $paperType
+            );
+            
+            if (!$endorsementDriveResult['success']) {
+                throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
+            }
+            
+            // Insert into student_research_papers table (without paper_trail_no)
+            $insertQuery = "INSERT INTO student_research_papers (
+                senderid,
+                event_id,
+                author,
+                coauthor,
+                presenter,
+                title,
+                event,
+                status,
+                paper_type,
+                category,
+                campus,
+                drive_parent_folder_id,
+                drive_event_folder_id,
+                drive_category_folder_id,
+                drive_campus_folder_id,
+                drive_entry_folder_id,
+                research_file_view_url,
+                research_file_download_url,
+                endorsement_file_view_url,
+                endorsement_download_url,
+                created_at,
+                updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            
+            $stmt = $con->prepare($insertQuery);
+            if (!$stmt) {
+                throw new Exception("Prepare failed: " . $con->error);
+            }
+            
+            $status = 'pending';
+            
+            $stmt->bind_param(
+                'iissssssssssssssssss',
+                $senderId,
+                $eventId,
+                $author,
+                $coAuthor,
+                $presenter,
+                $title,
+                $eventName,
+                $status,
+                $paperType,
+                $category,
+                $campus,
+                $researchDriveResult['drive_parent_folder_id'],
+                $researchDriveResult['drive_event_folder_id'],
+                $researchDriveResult['drive_category_folder_id'],
+                $researchDriveResult['drive_campus_folder_id'],
+                $researchDriveResult['drive_entry_folder_id'],
+                $researchDriveResult['drive_view_url'],
+                $researchDriveResult['drive_download_url'],
+                $endorsementDriveResult['drive_view_url'],
+                $endorsementDriveResult['drive_download_url']
+            );
+            
+            $insertResult = $stmt->execute();
+            
+            if (!$insertResult) {
+                throw new Exception("Database insert failed: " . $stmt->error);
+            }
+            
+            $researchId = $con->insert_id;
+            $stmt->close();
+            
+            // ========== PAPER TRAIL INTEGRATION (without paper trail number) ==========
+            $paperTrailResults = [];
+            
+            // Upload Research File to Paper Trail
+            if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK && $researchId) {
+                $paperTrailResearchResult = uploadStudentToPaperTrail(
+                    $tempResearchPath,
+                    $researchFileName,
+                    $eventName,
+                    $author,
+                    $title,
+                    'research',
+                    false,
+                    $paperType
+                );
+                
+                if ($paperTrailResearchResult && $paperTrailResearchResult['success']) {
+                    $paperTrailResults['research'] = $paperTrailResearchResult;
+                }
+            }
+            
+            // Upload Endorsement File to Paper Trail
+            if (isset($_FILES['endorsementDoc']) && $_FILES['endorsementDoc']['error'] === UPLOAD_ERR_OK && $researchId) {
+                $paperTrailEndorsementResult = uploadStudentToPaperTrail(
+                    $tempEndorsementPath,
+                    $endorsementFileName,
+                    $eventName,
+                    $author,
+                    $title,
+                    'endorsement',
+                    true,
+                    $paperType
+                );
+                
+                if ($paperTrailEndorsementResult && $paperTrailEndorsementResult['success']) {
+                    $paperTrailResults['endorsement'] = $paperTrailEndorsementResult;
+                }
+            }
+            
+            // Save Paper Trail records to paper_trail_student table
+            if ($researchId && !empty($paperTrailResults)) {
+                $paperTrailQuery = "INSERT INTO paper_trail_student (
+                    student_researchid, 
+                    submission_type, 
+                    year,
+                    paper_trail_root_id, 
+                    submission_folder_id, 
+                    year_folder_id,
+                    research_folder_id,
+                    research_file_view_url,
+                    research_file_download_url,
+                    endorsement_file_view_url,
+                    endorsement_file_download_url,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                
+                $paperTrailStmt = $con->prepare($paperTrailQuery);
+                if ($paperTrailStmt) {
+                    $currentYear = date('Y');
+                    $submissionType = 'Graduate';
+                    
+                    $researchViewUrl = null;
+                    $researchDownloadUrl = null;
+                    $endorsementViewUrl = null;
+                    $endorsementDownloadUrl = null;
+                    
+                    if (isset($paperTrailResults['research'])) {
+                        $researchViewUrl = $paperTrailResults['research']['drive_view_url'];
+                        $researchDownloadUrl = $paperTrailResults['research']['drive_download_url'];
+                    }
+                    
+                    if (isset($paperTrailResults['endorsement'])) {
+                        $endorsementViewUrl = $paperTrailResults['endorsement']['drive_view_url'];
+                        $endorsementDownloadUrl = $paperTrailResults['endorsement']['drive_download_url'];
+                    }
+                    
+                    $firstResult = !empty($paperTrailResults['research']) ? $paperTrailResults['research'] : $paperTrailResults['endorsement'];
+                    
+                    $paperTrailRootId = $firstResult['paper_trail_root_id'] ?? null;
+                    $submissionFolderId = $firstResult['sub_type_folder_id'] ?? null;
+                    $yearFolderId = $firstResult['year_folder_id'] ?? null;
+                    $researchFolderId = $firstResult['research_folder_id'] ?? null;
+                    
+                    $paperTrailStmt->bind_param(
+                        'issssssssss',
+                        $researchId,
+                        $submissionType,
+                        $currentYear,
+                        $paperTrailRootId,
+                        $submissionFolderId,
+                        $yearFolderId,
+                        $researchFolderId,
+                        $researchViewUrl,
+                        $researchDownloadUrl,
+                        $endorsementViewUrl,
+                        $endorsementDownloadUrl
+                    );
+                    
+                    $paperTrailStmt->execute();
+                    $paperTrailStmt->close();
+                }
+            }
+            // ========== END PAPER TRAIL INTEGRATION ==========
+            
+            $response->message = "Graduate research paper submitted successfully!";
+            $response->research_id = $researchId;
+            $response->status = true;
+            
+        } else {
+            throw new Exception("Database connection failed");
         }
-        $checkStmt->close();
+    } catch (Exception $e) {
+        error_log("Exception in uploadGraduateSymposium: " . $e->getMessage());
+        $response->message = $e->getMessage();
+        $response->status = false;
     }
     
-    // Get event year
-    $yearQuery = "SELECT YEAR(date) as year FROM event_list WHERE id = ? LIMIT 1";
-    $yearStmt = $con->prepare($yearQuery);
-    if (!$yearStmt) {
-        $eventYear = date('Y');
-    } else {
-        $yearStmt->bind_param("i", $eventId);
-        $yearStmt->execute();
-        $yearResult = $yearStmt->get_result();
-        $yearRow = $yearResult->fetch_assoc();
-        $eventYear = $yearRow['year'] ?? date('Y');
-        $yearStmt->close();
-    }
-    
-    // Get next sequence number for this year and campus
-    // Need to escape the campus name properly for LIKE pattern
-    $escapedCampus = addcslashes($campusCode, '%_');
-    $pattern = $eventYear . '-' . $escapedCampus . '-%';
-    
-    $seqQuery = "SELECT MAX(CAST(SUBSTRING_INDEX(paper_trail_no, '-', -1) AS UNSIGNED)) as max_seq 
-                 FROM student_research_papers 
-                 WHERE paper_trail_no LIKE ?";
-    
-    $seqStmt = $con->prepare($seqQuery);
-    if (!$seqStmt) {
-        $nextSeq = 1;
-    } else {
-        $seqStmt->bind_param("s", $pattern);
-        $seqStmt->execute();
-        $seqResult = $seqStmt->get_result();
-        $seqRow = $seqResult->fetch_assoc();
-        $nextSeq = ($seqRow['max_seq'] ?? 0) + 1;
-        $seqStmt->close();
-    }
-    
-    $formattedSeq = str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
-    $paperTrailNo = $eventYear . '-' . $campusCode . '-' . $formattedSeq;
-    
-    return $paperTrailNo;
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
 }
 
-// Fetch student research papers for the logged-in user
+// ==================== FETCH STUDENT RESEARCH PAPERS (with paper_type filter) ====================
 if (isset($_POST['getStudentResearchPapers'])) {
     $response = new stdClass();
     $response->list = [];
@@ -791,10 +1002,10 @@ if (isset($_POST['getStudentResearchPapers'])) {
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $userId = $_SESSION['userId'] ?? 0;
+        $paperType = $_POST['paper_type'] ?? 'undergraduate';
         
         $query = "SELECT 
                     srp.id,
-                    srp.paper_trail_no,
                     srp.author,
                     srp.coauthor,
                     srp.presenter,
@@ -817,16 +1028,15 @@ if (isset($_POST['getStudentResearchPapers'])) {
                     el.dead_line as event_deadline
                 FROM student_research_papers srp
                 LEFT JOIN event_list el ON srp.event_id = el.id
-                WHERE srp.senderid = ?
+                WHERE srp.senderid = ? AND srp.paper_type = ?
                 ORDER BY srp.created_at DESC";
         
         $stmt = $con->prepare($query);
-        $stmt->bind_param("i", $userId);
+        $stmt->bind_param("is", $userId, $paperType);
         $stmt->execute();
         $result = $stmt->get_result();
         
         while ($row = $result->fetch_assoc()) {
-            // Parse coauthors if present
             $coAuthors = [];
             if (!empty($row['coauthor'])) {
                 try {
@@ -841,7 +1051,6 @@ if (isset($_POST['getStudentResearchPapers'])) {
             
             $researchObj = new stdClass();
             $researchObj->id = $row['id'];
-            $researchObj->paper_trail_no = $row['paper_trail_no'];
             $researchObj->author = $row['author'];
             $researchObj->coAuthors = $coAuthors;
             $researchObj->presenter = $row['presenter'];
@@ -874,7 +1083,167 @@ if (isset($_POST['getStudentResearchPapers'])) {
     exit();
 }
 
-// Delete student research paper
+// ==================== FETCH EVENT LIST (with paper_type filter) ====================
+if (isset($_POST['getEventList'])) {
+    $response = new stdClass();
+    $response->events = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $paperType = $_POST['paper_type'] ?? 'undergraduate';
+        
+        if ($paperType === 'graduate') {
+            $query = "SELECT id, name, date, dead_line FROM event_list 
+                      WHERE LOWER(name) LIKE '%graduate%' 
+                      AND LOWER(name) LIKE '%symposium%'
+                      ORDER BY date DESC";
+        } else {
+            $query = "SELECT id, name, date, dead_line FROM event_list 
+                      WHERE LOWER(name) LIKE '%student%' 
+                      AND LOWER(name) LIKE '%symposium%'
+                      AND LOWER(name) NOT LIKE '%graduate%'
+                      ORDER BY date DESC";
+        }
+        
+        $result = $con->query($query);
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $response->events[] = $row;
+            }
+        }
+        
+        $con->close();
+    }
+    
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// ==================== FETCH EVENTS FOR DROPDOWN ====================
+if (isset($_POST['getEvent'])) {
+    $response = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $paperType = $_POST['paper_type'] ?? 'undergraduate';
+        
+        if ($paperType === 'graduate') {
+            $query = "SELECT id, name FROM event_list 
+                      WHERE LOWER(name) LIKE '%graduate%' 
+                      AND LOWER(name) LIKE '%symposium%'
+                      ORDER BY date DESC";
+        } else {
+            $query = "SELECT id, name FROM event_list 
+                      WHERE LOWER(name) LIKE '%student%' 
+                      AND LOWER(name) LIKE '%symposium%'
+                      AND LOWER(name) NOT LIKE '%graduate%'
+                      ORDER BY date DESC";
+        }
+        
+        $result = $con->query($query);
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $response[] = $row;
+            }
+        }
+        
+        $con->close();
+    }
+    
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// ==================== FETCH STUDENT RESEARCH PAPERS BY EVENT ====================
+if (isset($_POST['getStudentResearchPapersByEvent'])) {
+    $response = new stdClass();
+    $response->list = [];
+    $response->status = true;
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $eventId = $_POST['eventId'] ?? 0;
+        $paperType = $_POST['paper_type'] ?? 'undergraduate';
+        $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
+        
+        $query = "SELECT 
+                    srp.id,
+                    srp.author,
+                    srp.coauthor,
+                    srp.presenter,
+                    srp.title,
+                    srp.event,
+                    srp.event_id,
+                    srp.status,
+                    srp.paper_type,
+                    srp.category,
+                    srp.campus,
+                    srp.research_file_view_url,
+                    srp.research_file_download_url,
+                    srp.endorsement_file_view_url,
+                    srp.endorsement_download_url,
+                    el.name as event_name
+                FROM student_research_papers srp
+                LEFT JOIN event_list el ON srp.event_id = el.id
+                WHERE srp.event_id = ? AND srp.paper_type = ?";
+        
+        $params = [$eventId, $paperType];
+        $types = "is";
+        
+        if (!empty($searchTerm)) {
+            $searchPattern = "%{$searchTerm}%";
+            $query .= " AND (srp.title LIKE ? OR srp.author LIKE ? OR srp.presenter LIKE ? OR srp.coauthor LIKE ? OR srp.campus LIKE ? OR el.name LIKE ?)";
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $types .= "ssssss";
+        }
+        
+        $query .= " ORDER BY srp.created_at DESC";
+        
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            $response->status = false;
+            $response->message = "Prepare failed: " . $con->error;
+        } else {
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            while ($row = $result->fetch_assoc()) {
+                $researchObj = new stdClass();
+                $researchObj->id = $row['id'];
+                $researchObj->author = $row['author'];
+                $researchObj->presenter = $row['presenter'];
+                $researchObj->title = $row['title'];
+                $researchObj->eventName = $row['event'] ?? $row['event_name'];
+                $researchObj->paper_type = $row['paper_type'];
+                $researchObj->category = $row['category'];
+                $researchObj->campus = $row['campus'];
+                $researchObj->researchFile = $row['research_file_view_url'];
+                $researchObj->researchDownloadUrl = $row['research_file_download_url'];
+                $researchObj->endorsementFile = $row['endorsement_file_view_url'];
+                $researchObj->endorsementDownloadUrl = $row['endorsement_download_url'];
+                
+                $response->list[] = $researchObj;
+            }
+            
+            $stmt->close();
+        }
+        
+        $con->close();
+    }
+    
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// ==================== DELETE STUDENT RESEARCH PAPER ====================
 if (isset($_POST['deleteStudentResearch'])) {
     $response = new stdClass();
     $response->status = false;
@@ -884,11 +1253,9 @@ if (isset($_POST['deleteStudentResearch'])) {
     $userId = $_SESSION['userId'] ?? 0;
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Get research paper details including folder IDs
         $getResearchQuery = "SELECT 
                                 srp.status, 
                                 srp.drive_entry_folder_id,
-                                srp.paper_trail_no,
                                 srp.author,
                                 srp.title,
                                 pts.research_folder_id as paper_trail_folder_id
@@ -907,58 +1274,42 @@ if (isset($_POST['deleteStudentResearch'])) {
         } elseif ($research['status'] !== 'pending') {
             $response->message = "Cannot delete research paper that has already been " . $research['status'] . ".";
         } else {
-            // Initialize Google Drive service
-            $driveSuccess = true;
             $driveMessages = [];
             
             if (class_exists('GoogleDriveService')) {
                 try {
                     $drive = new GoogleDriveService();
                     
-                    // 1. Move main research folder to trash (drive_entry_folder_id)
                     if (!empty($research['drive_entry_folder_id'])) {
-                        error_log("Moving main research folder to trash: " . $research['drive_entry_folder_id']);
                         try {
                             $drive->trashFile($research['drive_entry_folder_id']);
                             $driveMessages[] = "Main research folder moved to trash";
-                            error_log("Main research folder moved to trash successfully");
                         } catch (Exception $e) {
-                            $driveSuccess = false;
                             $driveMessages[] = "Failed to move main folder to trash: " . $e->getMessage();
-                            error_log("Failed to move main folder to trash: " . $e->getMessage());
                         }
                     }
                     
-                    // 2. Move Paper Trail folder to trash (research_folder_id)
                     if (!empty($research['paper_trail_folder_id'])) {
-                        error_log("Moving Paper Trail folder to trash: " . $research['paper_trail_folder_id']);
                         try {
                             $drive->trashFile($research['paper_trail_folder_id']);
                             $driveMessages[] = "Paper Trail folder moved to trash";
-                            error_log("Paper Trail folder moved to trash successfully");
                         } catch (Exception $e) {
-                            $driveSuccess = false;
                             $driveMessages[] = "Failed to move Paper Trail folder to trash: " . $e->getMessage();
-                            error_log("Failed to move Paper Trail folder to trash: " . $e->getMessage());
                         }
                     }
                     
                 } catch (Exception $e) {
-                    error_log("Google Drive service error: " . $e->getMessage());
                     $driveMessages[] = "Drive service error: " . $e->getMessage();
                 }
             } else {
-                error_log("GoogleDriveService class not found");
                 $driveMessages[] = "Google Drive service not available";
             }
             
-            // Delete from database
             $deleteQuery = "DELETE FROM student_research_papers WHERE id = ? AND senderid = ?";
             $deleteStmt = $con->prepare($deleteQuery);
             $deleteStmt->bind_param("ii", $researchId, $userId);
             
             if ($deleteStmt->execute()) {
-                // Also delete related paper_trail_student records
                 $deletePaperTrailQuery = "DELETE FROM paper_trail_student WHERE student_researchid = ?";
                 $deletePtStmt = $con->prepare($deletePaperTrailQuery);
                 $deletePtStmt->bind_param("i", $researchId);
@@ -968,7 +1319,6 @@ if (isset($_POST['deleteStudentResearch'])) {
                 $response->status = true;
                 $response->message = "Research paper deleted successfully.";
                 
-                // Add info about Drive trash
                 if (!empty($driveMessages)) {
                     $response->message .= " " . implode("; ", $driveMessages);
                 }
