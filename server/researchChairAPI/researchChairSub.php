@@ -49,20 +49,17 @@ function cleanFolderNameForDrive($name)
     if (empty($name)) {
         return 'Untitled_' . time();
     }
-    
-    // Remove special characters that Google Drive doesn't like
+
     $clean = preg_replace('/[^\w\s\-_.,()&]/', '', $name);
     
-    // Replace multiple spaces with single space
+    $clean = str_replace('/', '-', $clean);
+    
     $clean = preg_replace('/\s+/', ' ', $clean);
     
-    // Trim whitespace
     $clean = trim($clean);
     
-    // Remove trailing periods and commas
     $clean = rtrim($clean, '.,');
     
-    // If too long, truncate (Google Drive has 255 char limit)
     if (strlen($clean) > 200) {
         $clean = substr($clean, 0, 197) . '...';
     }
@@ -75,8 +72,7 @@ function capitalizeFirstLetter($str) {
     return ucwords(strtolower(trim($str)));
 }
 
-// Enhanced upload function that supports paper type
-function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $campus, $category, $author, $title, $type = 'research', $isEndorsement = false, $paperType = 'undergraduate')
+function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $campus, $category, $author, $title, $type = 'research', $isEndorsement = false)
 {
     try {
         if (!file_exists($tempFilePath)) {
@@ -102,15 +98,8 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
         $authorLastName = end($authorParts);
         $authorLastName = cleanFolderNameForDrive($authorLastName);
         
-        // Determine parent folder based on paper type
-        $parentFolderName = ($paperType === 'graduate') ? 'Graduate Symposium' : 'Undergraduate Symposium';
-        $parentFolderId = $drive->findOrCreateFolder($parentFolderName, null);
-        if (!$parentFolderId) {
-            throw new Exception("Failed to create parent folder: $parentFolderName");
-        }
-        
-        // Create folder structure: PaperType -> Event Name -> Campus -> Category
-        $eventNameFolderId = $drive->findOrCreateFolder($cleanEventName, $parentFolderId);
+        // START DIRECTLY WITH EVENT FOLDER - NO PARENT FOLDER
+        $eventNameFolderId = $drive->findOrCreateFolder($cleanEventName, null);
         if (!$eventNameFolderId)
             throw new Exception("Failed to create event folder: $cleanEventName");
         
@@ -156,7 +145,7 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
             $prefixedFileName = $fileName;
         }
         
-        error_log("Uploading $type file for $paperType: $prefixedFileName to folder: $entryFolderId");
+        error_log("Uploading $type file: $prefixedFileName to folder: $entryFolderId");
         $uploadResult = $drive->uploadFile($tempFilePath, $prefixedFileName, $entryFolderId);
         
         if (!$uploadResult['success'] || empty($uploadResult['id'])) {
@@ -175,7 +164,6 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
             'drive_file_id' => $uploadResult['id'],
             'drive_view_url' => $embedUrl,
             'drive_download_url' => $downloadUrl,
-            'drive_parent_folder_id' => $parentFolderId,
             'drive_event_folder_id' => $eventNameFolderId,
             'drive_campus_folder_id' => $campusFolderId,
             'drive_category_folder_id' => $categoryFolderId,
@@ -191,8 +179,6 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
         throw new Exception("Failed to upload $fileName to Google Drive: " . $e->getMessage());
     }
 }
-
-// Enhanced Paper Trail upload without paper trail number, using Author Last Name - Title format
 function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author, $title, $type, $isEndorsement, $paperType = 'undergraduate')
 {
     try {
@@ -219,12 +205,13 @@ function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author
         }
         $cleanTitle = cleanFolderNameForDrive($cleanTitle);
 
-        // Student Paper Trail structure: Paper Trail -> {Undergraduate/Graduate} -> Year -> {Author Last Name - Title}
+        // Paper Trail structure: Paper Trail -> {Undergraduate/Graduate} -> Year
         $paperTrailRootId = $drive->findOrCreateFolder('Paper Trail', null);
         if (!$paperTrailRootId) {
             return ['success' => false, 'error' => "Failed to create Paper Trail root folder"];
         }
 
+        // Keep separation for archive - Undergraduate Symposium or Graduate Symposium
         $subTypeFolderName = ($paperType === 'graduate') ? 'Graduate Symposium' : 'Undergraduate Symposium';
         $subTypeFolderId = $drive->findOrCreateFolder($subTypeFolderName, $paperTrailRootId);
         if (!$subTypeFolderId) {
@@ -236,22 +223,10 @@ function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author
             return ['success' => false, 'error' => "Failed to create Year folder: $year"];
         }
 
-        // Create research folder: Author Last Name - Title (no paper trail number)
+        // Create research folder: Author Last Name - Title (no timestamp needed)
         $researchFolderName = $authorLastName . ' - ' . $cleanTitle;
         $researchFolderName = cleanFolderNameForDrive($researchFolderName);
         
-        // Handle duplicate folder names by adding counter if needed
-        $originalFolderName = $researchFolderName;
-        $counter = 1;
-        while (true) {
-            $existingFolder = $drive->findFolderIdByName($researchFolderName, $yearFolderId);
-            if (!$existingFolder) {
-                break;
-            }
-            $researchFolderName = $originalFolderName . ' (' . $counter . ')';
-            $counter++;
-        }
-
         $researchFolderId = $drive->findOrCreateFolder($researchFolderName, $yearFolderId);
         if (!$researchFolderId) {
             return ['success' => false, 'error' => "Failed to create research folder: $researchFolderName"];
@@ -495,7 +470,6 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
             }
             
-            // Insert into student_research_papers table (without paper_trail_no)
             $insertQuery = "INSERT INTO student_research_papers (
                 senderid,
                 event_id,
@@ -508,7 +482,6 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 paper_type,
                 category,
                 campus,
-                drive_parent_folder_id,
                 drive_event_folder_id,
                 drive_category_folder_id,
                 drive_campus_folder_id,
@@ -519,7 +492,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 endorsement_download_url,
                 created_at,
                 updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             
             $stmt = $con->prepare($insertQuery);
             if (!$stmt) {
@@ -529,7 +502,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
             $status = 'pending';
             
             $stmt->bind_param(
-                'iissssssssssssssssss',
+                'iisssssssssssssssss',
                 $senderId,
                 $eventId,
                 $author,
@@ -541,7 +514,6 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 $paperType,
                 $category,
                 $campus,
-                $researchDriveResult['drive_parent_folder_id'],
                 $researchDriveResult['drive_event_folder_id'],
                 $researchDriveResult['drive_category_folder_id'],
                 $researchDriveResult['drive_campus_folder_id'],
@@ -573,8 +545,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                     $author,
                     $title,
                     'research',
-                    false,
-                    $paperType
+                    false
                 );
                 
                 if ($paperTrailResearchResult && $paperTrailResearchResult['success']) {
@@ -591,8 +562,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                     $author,
                     $title,
                     'endorsement',
-                    true,
-                    $paperType
+                    true
                 );
                 
                 if ($paperTrailEndorsementResult && $paperTrailEndorsementResult['success']) {
@@ -606,7 +576,6 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                     student_researchid, 
                     submission_type, 
                     year,
-                    paper_trail_root_id, 
                     submission_folder_id, 
                     year_folder_id,
                     research_folder_id,
@@ -615,7 +584,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                     endorsement_file_view_url,
                     endorsement_file_download_url,
                     created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
                 
                 $paperTrailStmt = $con->prepare($paperTrailQuery);
                 if ($paperTrailStmt) {
@@ -639,17 +608,15 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                     
                     $firstResult = !empty($paperTrailResults['research']) ? $paperTrailResults['research'] : $paperTrailResults['endorsement'];
                     
-                    $paperTrailRootId = $firstResult['paper_trail_root_id'] ?? null;
                     $submissionFolderId = $firstResult['sub_type_folder_id'] ?? null;
                     $yearFolderId = $firstResult['year_folder_id'] ?? null;
                     $researchFolderId = $firstResult['research_folder_id'] ?? null;
                     
                     $paperTrailStmt->bind_param(
-                        'issssssssss',
+                        'isssssssss',
                         $researchId,
                         $submissionType,
                         $currentYear,
-                        $paperTrailRootId,
                         $submissionFolderId,
                         $yearFolderId,
                         $researchFolderId,
@@ -663,7 +630,6 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                     $paperTrailStmt->close();
                 }
             }
-            // ========== END PAPER TRAIL INTEGRATION ==========
             
             $response->message = "Undergraduate research paper submitted successfully!";
             $response->research_id = $researchId;
@@ -804,8 +770,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
             if (!$endorsementDriveResult['success']) {
                 throw new Exception("Endorsement upload failed: " . ($endorsementDriveResult['error'] ?? 'Unknown error'));
             }
-            
-            // Insert into student_research_papers table (without paper_trail_no)
+
             $insertQuery = "INSERT INTO student_research_papers (
                 senderid,
                 event_id,
@@ -818,7 +783,6 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                 paper_type,
                 category,
                 campus,
-                drive_parent_folder_id,
                 drive_event_folder_id,
                 drive_category_folder_id,
                 drive_campus_folder_id,
@@ -829,7 +793,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                 endorsement_download_url,
                 created_at,
                 updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             
             $stmt = $con->prepare($insertQuery);
             if (!$stmt) {
@@ -839,7 +803,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
             $status = 'pending';
             
             $stmt->bind_param(
-                'iissssssssssssssssss',
+                'iisssssssssssssssss',
                 $senderId,
                 $eventId,
                 $author,
@@ -851,7 +815,6 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                 $paperType,
                 $category,
                 $campus,
-                $researchDriveResult['drive_parent_folder_id'],
                 $researchDriveResult['drive_event_folder_id'],
                 $researchDriveResult['drive_category_folder_id'],
                 $researchDriveResult['drive_campus_folder_id'],
@@ -901,8 +864,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                     $author,
                     $title,
                     'endorsement',
-                    true,
-                    $paperType
+                    true
                 );
                 
                 if ($paperTrailEndorsementResult && $paperTrailEndorsementResult['success']) {
@@ -916,7 +878,6 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                     student_researchid, 
                     submission_type, 
                     year,
-                    paper_trail_root_id, 
                     submission_folder_id, 
                     year_folder_id,
                     research_folder_id,
@@ -925,7 +886,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                     endorsement_file_view_url,
                     endorsement_file_download_url,
                     created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
                 
                 $paperTrailStmt = $con->prepare($paperTrailQuery);
                 if ($paperTrailStmt) {
@@ -949,17 +910,15 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                     
                     $firstResult = !empty($paperTrailResults['research']) ? $paperTrailResults['research'] : $paperTrailResults['endorsement'];
                     
-                    $paperTrailRootId = $firstResult['paper_trail_root_id'] ?? null;
                     $submissionFolderId = $firstResult['sub_type_folder_id'] ?? null;
                     $yearFolderId = $firstResult['year_folder_id'] ?? null;
                     $researchFolderId = $firstResult['research_folder_id'] ?? null;
                     
                     $paperTrailStmt->bind_param(
-                        'issssssssss',
+                        'isssssssss',
                         $researchId,
                         $submissionType,
                         $currentYear,
-                        $paperTrailRootId,
                         $submissionFolderId,
                         $yearFolderId,
                         $researchFolderId,

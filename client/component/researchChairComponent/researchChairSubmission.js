@@ -662,7 +662,7 @@ export const ResearchChairSubmission = () => {
 
     // Categories list (can be different for graduate)
     const undergraduateCategories = ['Social Science', 'Natural/Biological', 'Food', 'Developmental']
-    const graduateCategories = ['Social Science', 'Natural/Biological', 'Food', 'Developmental', 'Educational Management', 'Business Administration']
+    const graduateCategories = ['Social Science', 'Natural/Biological', 'Food and Development']
 
     // Campuses list
     const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz']
@@ -1232,7 +1232,11 @@ export const ResearchChairSubmission = () => {
 
             // Create FormData for submission
             const submitFormData = new FormData()
-            submitFormData.append('uploadStudentSymposium', 'true')
+            if (formData.paperType === 'graduate') {
+                submitFormData.append('uploadGraduateSymposium', 'true')
+            } else {
+                submitFormData.append('uploadUndergraduateSymposium', 'true')
+            }
             submitFormData.append('eventType', formData.eventName)
             submitFormData.append('title', formData.title)
             submitFormData.append('author', formData.author)
