@@ -18,9 +18,8 @@ import {DocumentViewer} from "./component/otherComponent/Document.js";
 
 import {Retrieval} from "./AccountRetrival/retrival.js";
 
+import {ResearchChairPanel} from "./component/researchChair.js";
 
-
-// DEBUG: Log ALL fetch requests
 (function() {
     const originalFetch = window.fetch;
     let requestCount = 0;
@@ -28,12 +27,6 @@ import {Retrieval} from "./AccountRetrival/retrival.js";
     window.fetch = function(...args) {
         const requestId = ++requestCount;
         const [url, options = {}] = args;
-        
-        //console.group(`FETCH #${requestId}: ${options.method || 'GET'} ${url}`);
-        //console.log('Options:', options);
-        //console.log('Time:', new Date().toLocaleTimeString());
-        //console.groupEnd();
-        
         const startTime = Date.now();
         
         return originalFetch.apply(this, args)
@@ -44,26 +37,13 @@ import {Retrieval} from "./AccountRetrival/retrival.js";
                 const clone = response.clone();
                 const contentType = clone.headers.get('content-type') || '';
                 
-                //console.group(`RESPONSE #${requestId}: ${response.status} ${url}`);
-                //console.log('Status:', response.status, response.statusText);
-                //console.log('Content-Type:', contentType);
-                //console.log('Duration:', duration + 'ms');
-                //console.log('URL:', response.url);
-                
                 // Check if it's JSON or HTML
                 clone.text().then(text => {
-                    //console.log('First 100 chars:', text.substring(0, 100));
-                    
-                    if (!contentType.includes('application/json')) {
-                        //console.warn('⚠️ WARNING: Not JSON! Is HTML?', text.startsWith('<!DOCTYPE') || text.startsWith('<html'));
-                    }
                 }).catch(e => console.log('Could not read response text:', e));
                 
-                //console.groupEnd();
                 return response;
             })
             .catch(error => {
-                //console.error(`❌ FETCH ERROR #${requestId}:`, error);
                 throw error;
             });
     };
@@ -123,7 +103,16 @@ const User = () => {
 
 }
 
+const ResearchChair = () => {
 
+    return ($({
+        tag: 'div',
+        child: [
+
+            ResearchChairPanel(),
+        ]
+    }))
+}
 
 const Docs = () => {
     return ($({
@@ -159,11 +148,6 @@ let Render
     }
 
 })(navigator.userAgent || navigator.vendor || window.opera, 'http://detectmobilebrowser.com/mobile');
-
-
-
-
-
 
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -252,6 +236,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 Render = Admin
             } else if (url.split('/')[1] === 'user') {
                 Render = User
+            } else if (url.split('/')[1] === 'research-chair') {
+                Render = ResearchChair
             } else if (url.split('/')[1] === 'evaluator') {
                 Render = Evaluator
             } else if (url.split('/')[1] === 'rdeOffice') {
@@ -269,8 +255,4 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
     })(window.location.href.replace(window.location.origin, ''))
-
-
-
 })
-

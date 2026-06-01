@@ -48,136 +48,12 @@ const LoginPanel = (prop) => {
         }
     }
 
-    const getSubmit = (bot) => {
-
-        /* The above code is listening to the keypress event. If the key pressed is the enter key, it will check if the
-
-        usertype is not undefined. If it is not undefined, it will create a formdata object and append the usertype,
-
-        username, password and the auth type. It will then check the usertype and if it is equal to evaluator, it will
-
-        send a post request to the evaluatorReg route. If it is equal to capsusers or admin, it will send a post request
-
-        to the loginAuth route. If it is equal to rdeoffice, */
-
-        bot.addEventListener('keypress', async (event) => {
-
-            if (event.keyCode === 13) {
-
-                if (usertype !== undefined) {
-
-                    const form = new FormData();
-
-                    form.append('auth', 'login')
-
-                    form.append('userType', usertype.toUpperCase())
-
-                    form.append('username', username)
-
-                    form.append('password', password)
-
-                    let type = usertype.replace(" ", "").toUpperCase()
-
-
-
-                    if (type === 'EVALUATOR') {
-
-                        await fetch('/server/evalReg.php', {
-
-                            method: 'POST',
-
-                            body: form
-
-                        }).then(res => res.json())
-
-                            .then(data => {
-
-                                if (data.status) {
-
-                                    window.location.replace(data.message)
-
-                                } else {
-
-                                    alert(data.message)
-
-                                }
-
-                            })
-
-
-
-                    } else if (type === 'CAPSUUSERS' || type === 'ADMIN') {
-
-                        await fetch('/loginAuth', {
-
-                            method: 'POST',
-
-                            body: form
-
-                        }).then(res => res.json())
-
-                            .then(data => {
-
-                                if (data.status) {
-
-                                    window.location.replace(data.message)
-
-                                } else {
-
-                                    alert(data.message)
-
-                                }
-
-                            })
-
-                    } else if (type==="RDEOFFICE") {
-
-                        await fetch('/server/rdeStaff.php', {
-
-                            method: 'POST',
-
-                            body: form
-
-                        }).then(res => res.json())
-
-                            .then(data => {
-
-                                if (data.status) {
-
-                                    window.location.replace(data.message)
-
-                                } else {
-
-                                    alert(data.message)
-
-                                }
-
-                            })
-
-                    } else {
-
-                        alert('asdkjasldkj')
-
-                    }
-
-                } else {
-
-                    alert("Please select type of user.")
-
-                }
-
-            }
-
-        })
-
-    }
-
     const detectUserType = (username) => {
         if (!username) return null;
         
         const userLower = username.toLowerCase();
         
-        // Detect admin users (could be based on pattern or common admin emails)
+        // Detect admin users
         if (userLower.includes('admin') || userLower.includes('administrator')) {
             return 'ADMIN';
         }
@@ -187,7 +63,7 @@ const LoginPanel = (prop) => {
             return 'CAPSUUSERS';
         }
         
-        // Detect evaluators (could be based on pattern)
+        // Detect evaluators
         if (userLower.includes('eval') || userLower.includes('evaluator')) {
             return 'EVALUATOR';
         }
@@ -197,10 +73,14 @@ const LoginPanel = (prop) => {
             return 'RDEOFFICE';
         }
         
-        return null; // Couldn't detect
+        // Detect Research Chair
+        if (userLower.includes('chair') || userLower.includes('research')) {
+            return 'RESEARCH_CHAIR';
+        }
+        
+        return null;
     }
 
-    // Function to auto-select based on username input
     const autoSelectUserType = (username) => {
         if (!username || !selType) return;
         
@@ -208,7 +88,6 @@ const LoginPanel = (prop) => {
         if (detectedType && selType) {
             selType.value = detectedType;
             
-            // Show a subtle notification that we auto-selected
             if (prop.onAutoDetect) {
                 prop.onAutoDetect(detectedType);
             }
@@ -236,10 +115,10 @@ const LoginPanel = (prop) => {
                     style: {
                         backgroundColor: 'rgba(0,0,0,0.3)',
                         color: '#ddd',
-                        paddingRight: '2.5rem', // Space for icon
+                        paddingRight: '2.5rem',
                         cursor: 'pointer',
                         appearance: 'none',
-                        backgroundImage: 'none' // Remove default arrow
+                        backgroundImage: 'none'
                     },
                     elementHandler: (el) => {
                         selType = el;
@@ -273,6 +152,14 @@ const LoginPanel = (prop) => {
                         }),
                         $({
                             tag: 'option',
+                            text: 'CAPSU Research Chair User',
+                            att: {
+                                value: 'RESEARCH_CHAIR',
+                                className: 'bg-dark'
+                            },
+                        }),
+                        $({
+                            tag: 'option',
                             text: 'Evaluators',
                             att: {
                                 value: 'EVALUATOR',
@@ -286,10 +173,9 @@ const LoginPanel = (prop) => {
                                 value: 'RDEOFFICE',
                                 className: 'bg-dark'
                             },
-                        }),
+                        })
                     ]
                 }),
-                // Dropdown indicator icon
                 $({
                     tag: 'div',
                     att: {
@@ -346,7 +232,6 @@ const LoginPanel = (prop) => {
 
                                 // Auto-detect if no selection made
                                 if (!selType.value && ev.target.username.value) {
-                                    selType.removeAttribute
                                     const detectedType = detectUserType(ev.target.username.value);
                                     if (detectedType) {
                                         selType.value = detectedType;
@@ -366,51 +251,25 @@ const LoginPanel = (prop) => {
                                             }else {
                                                 window.location.replace('/')
                                             }
-
-
                                         })
                                 }else {
                                     let form= new FormData(ev.target)
                                     form.append('auth','login')
+                                    
                                     if (selType.value === 'EVALUATOR') {
-
                                         await fetch('/server/evalReg.php', {
-
                                             method: 'POST',
-
                                             body: form
-
                                         }).then(res => res.json())
-
                                             .then(data => {
-
                                                 if (data.status) {
-
                                                     window.location.replace(data.message)
-
                                                 } else {
-
                                                     alert(data.message)
-
                                                 }
-
                                             })
 
-
-                                    } else if (selType.value === 'CAPSUUSERS' || selType.value === 'ADMIN' || !selType.value) {
-                                        let form= new FormData(ev.target)
-                                        form.append('auth','login')
-                                        
-                                        // Auto-detect user type if not selected
-                                        if (!selType.value) {
-                                            const detectedType = detectUserType(ev.target.username.value);
-                                            if (detectedType) {
-                                                form.append('userType', detectedType);
-                                            } else {
-                                                // Default to CAPSUUSERS if no detection
-                                                form.append('userType', 'CAPSUUSERS');
-                                            }
-                                        }
+                                    } else if (selType.value === 'CAPSUUSERS' || selType.value === 'ADMIN') {
                                         await fetch('/server/authToken.php', {
                                             method: 'POST',
                                             body: form
@@ -423,32 +282,32 @@ const LoginPanel = (prop) => {
                                                 }
                                             })
 
-                                    } else if (selType.value==="RDEOFFICE") {
-                                        let form= new FormData(ev.target)
-                                        form.append('auth','login')
-
-                                        await fetch('/server/rdeStaff.php', {
-
+                                    } else if (selType.value === 'RESEARCH_CHAIR') {
+                                        // Use the research chair auth endpoint
+                                        await fetch('/server/researchChairAuth.php', {
                                             method: 'POST',
-
                                             body: form
-
                                         }).then(res => res.json())
-
                                             .then(data => {
-
                                                 if (data.status) {
-
                                                     window.location.replace(data.message)
-
                                                 } else {
-
                                                     alert(data.message)
-
                                                 }
-
                                             })
 
+                                    } else if (selType.value === "RDEOFFICE") {
+                                        await fetch('/server/rdeStaff.php', {
+                                            method: 'POST',
+                                            body: form
+                                        }).then(res => res.json())
+                                            .then(data => {
+                                                if (data.status) {
+                                                    window.location.replace(data.message)
+                                                } else {
+                                                    alert(data.message)
+                                                }
+                                            })
                                     }
                                 }
                             }
@@ -471,17 +330,14 @@ const LoginPanel = (prop) => {
                                         event:{
                                             type:'input',
                                             method:()=>{
-
                                                 if(UserTypeStat){
                                                     selType.remove()
-
                                                 }else {
                                                     formUserType.appendChild(sel())
                                                 }
                                                 UserTypeStat=!UserTypeStat
                                             }
                                         },
-
                                     }),
                                     $({
                                         tag:'label',
@@ -551,7 +407,7 @@ const LoginPanel = (prop) => {
                                                 if (event.target.value && !selType.value) {
                                                     setTimeout(() => {
                                                         autoSelectUserType(event.target.value);
-                                                    }, 500); // Delay to avoid frequent updates
+                                                    }, 500);
                                                 }
                                             }
                                         },
@@ -619,7 +475,7 @@ const LoginPanel = (prop) => {
                                             backgroundColor:'rgba(0,0,0,0.3)',
                                             color:'#ddd',
                                             border: 'none',
-                                            paddingRight: '40px' // Space for eye icon
+                                            paddingRight: '40px'
                                         }
                                     }),
                                     $({
