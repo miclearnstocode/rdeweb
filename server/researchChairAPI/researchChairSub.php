@@ -91,23 +91,19 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
         $drive = new GoogleDriveService();
         
         $cleanEventName = cleanFolderNameForDrive($eventName);
-        $cleanCampusName = cleanFolderNameForDrive($campus);
         $cleanCategoryName = cleanFolderNameForDrive($category);
         
         $authorParts = explode(' ', trim($author));
         $authorLastName = end($authorParts);
         $authorLastName = cleanFolderNameForDrive($authorLastName);
         
-        // START DIRECTLY WITH EVENT FOLDER - NO PARENT FOLDER
+        // Create folder structure: Event Name -> Category (Campus folder removed)
         $eventNameFolderId = $drive->findOrCreateFolder($cleanEventName, null);
         if (!$eventNameFolderId)
             throw new Exception("Failed to create event folder: $cleanEventName");
         
-        $campusFolderId = $drive->findOrCreateFolder($cleanCampusName, $eventNameFolderId);
-        if (!$campusFolderId)
-            throw new Exception("Failed to create campus folder");
-        
-        $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $campusFolderId);
+        // Category folder directly under Event (no campus folder)
+        $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $eventNameFolderId);
         if (!$categoryFolderId)
             throw new Exception("Failed to create category folder");
         
@@ -165,7 +161,6 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
             'drive_view_url' => $embedUrl,
             'drive_download_url' => $downloadUrl,
             'drive_event_folder_id' => $eventNameFolderId,
-            'drive_campus_folder_id' => $campusFolderId,
             'drive_category_folder_id' => $categoryFolderId,
             'drive_entry_folder_id' => $entryFolderId,
             'entry_folder_name' => $entryFolderName,
@@ -179,7 +174,8 @@ function uploadStudentResearchToDrive($tempFilePath, $fileName, $eventName, $cam
         throw new Exception("Failed to upload $fileName to Google Drive: " . $e->getMessage());
     }
 }
-function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author, $title, $type, $isEndorsement, $paperType = 'undergraduate')
+
+function uploadStudentToPaperTrail($tempFilePath, $fileName, $eventName, $author, $title, $type, $isEndorsement, $paperType)
 {
     try {
         if (!file_exists($tempFilePath)) {
@@ -442,8 +438,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 $author,
                 $title,
                 'research',
-                false,
-                $paperType
+                false
             );
             
             if (!$researchDriveResult['success']) {
@@ -462,8 +457,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 $author,
                 $title,
                 'endorsement',
-                true,
-                $paperType
+                true
             );
             
             if (!$endorsementDriveResult['success']) {
@@ -484,7 +478,6 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 campus,
                 drive_event_folder_id,
                 drive_category_folder_id,
-                drive_campus_folder_id,
                 drive_entry_folder_id,
                 research_file_view_url,
                 research_file_download_url,
@@ -492,7 +485,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 endorsement_download_url,
                 created_at,
                 updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             
             $stmt = $con->prepare($insertQuery);
             if (!$stmt) {
@@ -502,7 +495,7 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
             $status = 'pending';
             
             $stmt->bind_param(
-                'iisssssssssssssssss',
+                'iissssssssssssssss',
                 $senderId,
                 $eventId,
                 $author,
@@ -516,7 +509,6 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                 $campus,
                 $researchDriveResult['drive_event_folder_id'],
                 $researchDriveResult['drive_category_folder_id'],
-                $researchDriveResult['drive_campus_folder_id'],
                 $researchDriveResult['drive_entry_folder_id'],
                 $researchDriveResult['drive_view_url'],
                 $researchDriveResult['drive_download_url'],
@@ -545,7 +537,8 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                     $author,
                     $title,
                     'research',
-                    false
+                    false,
+                    $paperType
                 );
                 
                 if ($paperTrailResearchResult && $paperTrailResearchResult['success']) {
@@ -562,7 +555,8 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
                     $author,
                     $title,
                     'endorsement',
-                    true
+                    true,
+                    $paperType
                 );
                 
                 if ($paperTrailEndorsementResult && $paperTrailEndorsementResult['success']) {
@@ -743,8 +737,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                 $author,
                 $title,
                 'research',
-                false,
-                $paperType
+                false
             );
             
             if (!$researchDriveResult['success']) {
@@ -763,8 +756,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                 $author,
                 $title,
                 'endorsement',
-                true,
-                $paperType
+                true
             );
             
             if (!$endorsementDriveResult['success']) {
@@ -785,7 +777,6 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                 campus,
                 drive_event_folder_id,
                 drive_category_folder_id,
-                drive_campus_folder_id,
                 drive_entry_folder_id,
                 research_file_view_url,
                 research_file_download_url,
@@ -793,7 +784,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                 endorsement_download_url,
                 created_at,
                 updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             
             $stmt = $con->prepare($insertQuery);
             if (!$stmt) {
@@ -803,7 +794,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
             $status = 'pending';
             
             $stmt->bind_param(
-                'iisssssssssssssssss',
+                'iissssssssssssssss',
                 $senderId,
                 $eventId,
                 $author,
@@ -817,7 +808,6 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                 $campus,
                 $researchDriveResult['drive_event_folder_id'],
                 $researchDriveResult['drive_category_folder_id'],
-                $researchDriveResult['drive_campus_folder_id'],
                 $researchDriveResult['drive_entry_folder_id'],
                 $researchDriveResult['drive_view_url'],
                 $researchDriveResult['drive_download_url'],
@@ -864,7 +854,8 @@ if (isset($_POST['uploadGraduateSymposium'])) {
                     $author,
                     $title,
                     'endorsement',
-                    true
+                    true,
+                    $paperType
                 );
                 
                 if ($paperTrailEndorsementResult && $paperTrailEndorsementResult['success']) {
@@ -1041,7 +1032,75 @@ if (isset($_POST['getStudentResearchPapers'])) {
     echo json_encode($response);
     exit();
 }
-
+// ==================== FETCH EVENTS (returns most recent event for each type) ====================
+if (isset($_POST['getEvent'])) {
+    $response = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $paperType = $_POST['paper_type'] ?? 'undergraduate';
+        
+        // Debug log
+        error_log("getEvent called with paper_type: " . $paperType);
+        
+        if ($paperType === 'graduate') {
+            // Look for events with "Graduate" in the name, exclude "Undergraduate"
+            $query = "SELECT id, name, date, dead_line FROM event_list 
+                      WHERE name LIKE '%Graduate%' 
+                      AND name NOT LIKE '%Undergraduate%'
+                      AND (dead_line > NOW() OR dead_line IS NULL)
+                      ORDER BY date DESC
+                      LIMIT 1";
+        } else {
+            // Look for events with "Undergraduate" in the name, exclude "Graduate"
+            $query = "SELECT id, name, date, dead_line FROM event_list 
+                      WHERE name LIKE '%Undergraduate%' 
+                      AND name NOT LIKE '%Graduate%'
+                      AND (dead_line > NOW() OR dead_line IS NULL)
+                      ORDER BY date DESC
+                      LIMIT 1";
+        }
+        
+        error_log("Query: " . $query);
+        
+        $result = $con->query($query);
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                error_log("Found event: " . $row['name']);
+                $response[] = $row;
+            }
+        } else {
+            error_log("No events found for type: " . $paperType);
+            // Fallback - if no specific event found, try without exclusion
+            if ($paperType === 'graduate') {
+                $fallbackQuery = "SELECT id, name, date, dead_line FROM event_list 
+                                  WHERE name LIKE '%Graduate%'
+                                  AND (dead_line > NOW() OR dead_line IS NULL)
+                                  ORDER BY date DESC
+                                  LIMIT 1";
+            } else {
+                $fallbackQuery = "SELECT id, name, date, dead_line FROM event_list 
+                                  WHERE name LIKE '%Undergraduate%'
+                                  AND (dead_line > NOW() OR dead_line IS NULL)
+                                  ORDER BY date DESC
+                                  LIMIT 1";
+            }
+            $fallbackResult = $con->query($fallbackQuery);
+            if ($fallbackResult && $fallbackResult->num_rows > 0) {
+                while ($row = $fallbackResult->fetch_assoc()) {
+                    error_log("Fallback found event: " . $row['name']);
+                    $response[] = $row;
+                }
+            }
+        }
+        
+        $con->close();
+    }
+    
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
 // ==================== FETCH EVENT LIST (with paper_type filter) ====================
 if (isset($_POST['getEventList'])) {
     $response = new stdClass();
@@ -1052,14 +1111,15 @@ if (isset($_POST['getEventList'])) {
         
         if ($paperType === 'graduate') {
             $query = "SELECT id, name, date, dead_line FROM event_list 
-                      WHERE LOWER(name) LIKE '%graduate%' 
-                      AND LOWER(name) LIKE '%symposium%'
+                      WHERE name LIKE '%Graduate%' 
+                      AND name NOT LIKE '%Undergraduate%'
+                      AND (dead_line > NOW() OR dead_line IS NULL)
                       ORDER BY date DESC";
         } else {
             $query = "SELECT id, name, date, dead_line FROM event_list 
-                      WHERE LOWER(name) LIKE '%student%' 
-                      AND LOWER(name) LIKE '%symposium%'
-                      AND LOWER(name) NOT LIKE '%graduate%'
+                      WHERE name LIKE '%Undergraduate%' 
+                      AND name NOT LIKE '%Graduate%'
+                      AND (dead_line > NOW() OR dead_line IS NULL)
                       ORDER BY date DESC";
         }
         
@@ -1078,43 +1138,6 @@ if (isset($_POST['getEventList'])) {
     echo json_encode($response);
     exit();
 }
-
-// ==================== FETCH EVENTS FOR DROPDOWN ====================
-if (isset($_POST['getEvent'])) {
-    $response = [];
-    
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $paperType = $_POST['paper_type'] ?? 'undergraduate';
-        
-        if ($paperType === 'graduate') {
-            $query = "SELECT id, name FROM event_list 
-                      WHERE LOWER(name) LIKE '%graduate%' 
-                      AND LOWER(name) LIKE '%symposium%'
-                      ORDER BY date DESC";
-        } else {
-            $query = "SELECT id, name FROM event_list 
-                      WHERE LOWER(name) LIKE '%student%' 
-                      AND LOWER(name) LIKE '%symposium%'
-                      AND LOWER(name) NOT LIKE '%graduate%'
-                      ORDER BY date DESC";
-        }
-        
-        $result = $con->query($query);
-        
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $response[] = $row;
-            }
-        }
-        
-        $con->close();
-    }
-    
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($response);
-    exit();
-}
-
 // ==================== FETCH STUDENT RESEARCH PAPERS BY EVENT ====================
 if (isset($_POST['getStudentResearchPapersByEvent'])) {
     $response = new stdClass();

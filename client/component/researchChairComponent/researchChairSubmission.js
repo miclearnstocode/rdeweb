@@ -335,7 +335,7 @@ const openViewResearchesModal = () => {
             formData.append('getEventList', 'true')
             formData.append('paper_type', paperType)
 
-            const response = await fetch('/eventRequest', {
+            const response = await fetch('/uploadResearchChair', {
                 method: 'POST',
                 body: formData
             })
@@ -590,7 +590,6 @@ const openViewResearchesModal = () => {
     // Assign functions to outer variables
     loadResearchDataFn = loadResearchData
 
-    // Wire up dropdown change event
     const wireEvents = () => {
         if (eventSelect) {
             eventSelect.addEventListener('change', (e) => {
@@ -623,14 +622,12 @@ const openViewResearchesModal = () => {
         }
     })
 
-    // Load events after modal is open
     setTimeout(() => {
         loadEventList('undergraduate')
     }, 100)
 }
 
 export const ResearchChairSubmission = () => {
-    // Utility to update stats cards
     const updateStatsFromData = (total, pending, approved, rejected) => {
         const statsContainer = document.querySelector('.stats-container')
         if (!statsContainer) return
@@ -660,7 +657,6 @@ export const ResearchChairSubmission = () => {
         endorsementFile: null
     }
 
-    // Categories list (can be different for graduate)
     const undergraduateCategories = ['Social Science', 'Natural/Biological', 'Food', 'Developmental']
     const graduateCategories = ['Social Science', 'Natural/Biological', 'Food and Development']
 
@@ -670,9 +666,9 @@ export const ResearchChairSubmission = () => {
     // Status badge styling
     const getStatusBadge = (status) => {
         const styles = {
-            pending: { bg: '#FF9800', text: 'Pending Review', icon: 'fa-clock' },
-            approved: { bg: '#4CAF50', text: 'Approved', icon: 'fa-check-circle' },
-            rejected: { bg: '#f44336', text: 'Rejected', icon: 'fa-times-circle' }
+            pending: { bg: '#FF9800', text: 'Pending Paper Review', icon: 'fa-clock' },
+            approved: { bg: '#4CAF50', text: 'Paper Approved', icon: 'fa-check-circle' },
+            rejected: { bg: '#f44336', text: 'Paper Rejected', icon: 'fa-times-circle' }
         }
         const normalizedStatus = (status || '').toLowerCase()
         const config = styles[normalizedStatus] || styles.pending
@@ -1314,11 +1310,13 @@ export const ResearchChairSubmission = () => {
                 style: { padding: '0' }
             })
 
-            // Event selection
+            // Event selection - AUTO-SELECTED (no dropdown)
             const eventField = $({ tag: 'div', style: { marginBottom: '20px' } })
             eventField.appendChild($({ tag: 'label', text: 'Event Name *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-            eventSelect = $({
-                tag: 'select',
+            
+            // Display container for event name (read-only)
+            const eventDisplayContainer = $({
+                tag: 'div',
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -1326,87 +1324,111 @@ export const ResearchChairSubmission = () => {
                     border: '1px solid #444',
                     borderRadius: '8px',
                     color: '#fff',
-                    fontSize: '14px'
-                },
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                }
+            })
+            
+            const eventIcon = $({
+                tag: 'i',
+                att: { className: 'fas fa-calendar-alt' },
+                style: { color: '#2196F3', fontSize: '16px' }
+            })
+            
+            const eventNameSpan = $({
+                tag: 'span',
+                text: 'Loading...',
+                att: { id: 'selectedEventName' }
+            })
+            
+            const loadingSpinner = $({
+                tag: 'i',
+                att: { className: 'fas fa-spinner fa-pulse' },
+                style: { color: '#666', fontSize: '14px', marginLeft: '10px' }
+            })
+            
+            eventDisplayContainer.appendChild(eventIcon)
+            eventDisplayContainer.appendChild(eventNameSpan)
+            eventDisplayContainer.appendChild(loadingSpinner)
+            eventField.appendChild(eventDisplayContainer)
+            
+            // Hidden input to store event name
+            const hiddenEventInput = $({
+                tag: 'input',
+                att: { type: 'hidden', id: 'hiddenEventName' },
                 event: {
                     type: 'change',
                     method: (e) => {
-                        const selectedEventName = e.target.value
-                        formData.eventName = selectedEventName
+                        formData.eventName = e.target.value
                     }
-                },
-                elementHandler: async (el) => {
-                    if (!el) return
-                    el.innerHTML = ''
+                }
+            })
+            eventField.appendChild(hiddenEventInput)
+            
+            formBody.appendChild(eventField)
 
-                    const defaultOption = $({
-                        tag: 'option',
-                        text: `-- Select ${currentPaperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} Symposium Event --`,
-                        att: { disabled: true, selected: true, value: '' }
-                    })
-                    el.appendChild(defaultOption)
-
+            // Function to load and auto-select event
+            const loadAndSelectEvent = async () => {
+                try {
+                    // Show loading state
+                    eventNameSpan.innerText = 'Loading event...'
+                    loadingSpinner.style.display = 'inline-block'
+                    
                     const form = new FormData()
                     form.append('getEvent', 'true')
                     form.append('paper_type', currentPaperType)
 
-                    try {
-                        const response = await fetch('/eventRequest', {
-                            method: 'POST',
-                            body: form
-                        })
+                    const response = await fetch('/uploadResearchChair', {
+                        method: 'POST',
+                        body: form
+                    })
 
-                        if (response.ok) {
-                            const data = await response.json()
-                            let events = data.events || data.list || data || []
-                            
-                            // Filter events based on paper type
-                            events = events.filter(event => {
-                                if (!event.name) return false
-                                const eventNameLower = event.name.toLowerCase()
-                                if (currentPaperType === 'undergraduate') {
-                                    return eventNameLower.includes('student') && 
-                                           eventNameLower.includes('symposium') && 
-                                           !eventNameLower.includes('graduate')
-                                } else {
-                                    return eventNameLower.includes('graduate') && 
-                                           eventNameLower.includes('symposium')
-                                }
-                            })
-
-                            if (events.length > 0) {
-                                events.forEach(val => {
-                                    el.appendChild($({
-                                        tag: 'option',
-                                        text: val.name,
-                                        style: { backgroundColor: '#2a2a2a', fontSize: '14px' },
-                                        att: { id: val.id, value: val.name }
-                                    }))
-                                })
-                            } else {
-                                // Fallback: show all symposium events
-                                const symposiumEvents = data.filter(event => 
-                                    event.name && event.name.toLowerCase().includes('symposium')
-                                )
-                                symposiumEvents.forEach(val => {
-                                    el.appendChild($({
-                                        tag: 'option',
-                                        text: val.name,
-                                        style: { backgroundColor: '#2a2a2a', fontSize: '14px' },
-                                        att: { id: val.id, value: val.name }
-                                    }))
-                                })
-                            }
+                    if (response.ok) {
+                        const data = await response.json()
+                        
+                        // API already returns filtered events based on paper_type
+                        // data should be an array of events or empty array
+                        const events = Array.isArray(data) ? data : (data.events || data.list || [])
+                        
+                        if (events.length > 0) {
+                            // Auto-select the first (most recent) event
+                            const selectedEvent = events[0]
+                            formData.eventName = selectedEvent.name
+                            eventNameSpan.innerText = selectedEvent.name
+                            hiddenEventInput.value = selectedEvent.name
                         } else {
-                            console.error('Failed to fetch events:', response.status)
+                            eventNameSpan.innerText = `No ${currentPaperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} symposium events available`
+                            AlertModal({ 
+                                title: 'No Events Found', 
+                                message: `No ${currentPaperType === 'undergraduate' ? 'undergraduate' : 'graduate'} symposium events are currently available for submission.` 
+                            })
                         }
-                    } catch (error) {
-                        console.error('Error fetching events:', error)
+                    } else {
+                        console.error('Failed to fetch events:', response.status)
+                        eventNameSpan.innerText = 'Failed to load event'
+                        AlertModal({ 
+                            title: 'Error', 
+                            message: 'Failed to load event information. Please try again.' 
+                        })
                     }
+                } catch (error) {
+                    console.error('Error fetching events:', error)
+                    eventNameSpan.innerText = 'Error loading event'
+                    AlertModal({ 
+                        title: 'Error', 
+                        message: 'An error occurred while loading event information.' 
+                    })
+                } finally {
+                    loadingSpinner.style.display = 'none'
                 }
-            })
-            eventField.appendChild(eventSelect)
-            formBody.appendChild(eventField)
+            }
+
+            // Load event on page load
+            setTimeout(() => {
+                loadAndSelectEvent()
+            }, 100)
 
             // Two column layout
             const twoColumnLayout = $({
