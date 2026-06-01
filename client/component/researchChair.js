@@ -5,7 +5,7 @@ import { Button } from "./researchChairComponent/supportComponents/researchChair
 import { ResearchChairSubmission } from "./researchChairComponent/researchChairSubmission.js"; 
 import { Error } from "../error.js";
 import { Header } from "./otherComponent/header.js";
-import { Settings } from "./userComponent/script/settings.js";
+import { ResearchChairSettings } from "./researchChairComponent/supportComponents/settings.js";
 
 const tabs = {
     'event-documents-tab': {
@@ -22,7 +22,7 @@ const tabs = {
         urlPattern: '/research-chair/settings',
         label: 'Settings',
         icon: 'fa fa-sliders',
-        page: Settings,
+        page: ResearchChairSettings,
         disabled: false,
         index: 1
     }
@@ -30,10 +30,6 @@ const tabs = {
 
 // Order of tabs for display
 const tabOrder = ['event-documents-tab', 'settings-tab'];
-
-console.log('=== researchChair.js loaded ===');
-console.log('Current URL:', window.location.href);
-console.log('Pathname:', window.location.pathname);
 
 export const ResearchChairPanel = () => {
 
