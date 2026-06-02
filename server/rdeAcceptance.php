@@ -490,3 +490,234 @@ if (isset($_POST['rejectIndorse'])) {
     }
     echo json_encode($response);
 }
+
+// New API endpoint for student research papers (Undergraduate and Graduate) - PENDING ONLY
+if (isset($_POST['incomingStudentResearch'])) {
+    $response = [];
+    $paperType = isset($_POST['paper_type']) ? $_POST['paper_type'] : null; // 'undergraduate' or 'graduate'
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        // Base query for student research papers - PENDING status only
+        $queries = "SELECT 
+            srp.id,
+            srp.senderid,
+            srp.author,
+            srp.coauthor,
+            srp.presenter,
+            srp.title,
+            srp.event,
+            srp.status,
+            srp.paper_type,
+            srp.category,
+            srp.campus,
+            srp.date_started,
+            srp.date_completed,
+            srp.drive_parent_folder_id,
+            srp.drive_event_folder_id,
+            srp.drive_category_folder_id,
+            srp.drive_entry_folder_id,
+            srp.research_file_view_url,
+            srp.research_file_download_url,
+            srp.endorsement_file_view_url,
+            srp.endorsement_download_url,
+            srp.created_at,
+            srp.updated_at,
+            account_detail.usertype as sender_type,
+            account_detail.email as sender_email,
+            account_detail.campus as sender_campus,
+            account_detail.fullname as sender_name
+        FROM student_research_papers srp
+        LEFT JOIN account_detail ON srp.senderid = account_detail.id
+        WHERE srp.status = 'pending'";
+        
+        // Filter by paper type if specified
+        if ($paperType && in_array($paperType, ['undergraduate', 'graduate'])) {
+            $queries .= " AND srp.paper_type = '$paperType'";
+        }
+        
+        // Order by created date (newest first)
+        $queries .= " ORDER BY srp.created_at DESC";
+        
+        $result = $con->query($queries);
+        
+        if ($result && $result->num_rows > 0) {
+            foreach ($result as $val) {
+                $data = new stdClass();
+                $data->id = $val['id'];
+                $data->senderid = $val['senderid'];
+                $data->sender_name = $val['sender_name'];
+                $data->sender_type = $val['sender_type'];
+                $data->sender_email = $val['sender_email'];
+                $data->author = $val['author'];
+                $data->coauthor = $val['coauthor'];
+                $data->presenter = $val['presenter'];
+                $data->title = $val['title'];
+                $data->event = $val['event'];
+                $data->event_name = $val['event']; // For consistency
+                $data->status = $val['status'];
+                $data->paper_type = $val['paper_type'];
+                $data->category = $val['category'];
+                $data->campus = $val['campus'];
+                $data->date_started = $val['date_started'];
+                $data->date_completed = $val['date_completed'];
+                $data->created_at = $val['created_at'];
+                $data->updated_at = $val['updated_at'];
+                
+                // Determine location type
+                if ($val['campus']) {
+                    $data->locationType = 'campus';
+                    $data->location = $val['campus'];
+                } else {
+                    $data->locationType = 'unknown';
+                    $data->location = 'N/A';
+                }
+                
+                // Create research file object (the actual paper)
+                $researchFileObject = new stdClass();
+                $researchFileObject->isGoogleDrive = false;
+                $researchFileObject->hasFile = false;
+                
+                // Check for research file
+                if (!empty($val['research_file_view_url'])) {
+                    $researchFileObject->viewUrl = $val['research_file_view_url'];
+                    $researchFileObject->downloadUrl = $val['research_file_download_url'];
+                    $researchFileObject->fileUrl = !empty($val['research_file_download_url']) 
+                        ? $val['research_file_download_url'] 
+                        : $val['research_file_view_url'];
+                    $researchFileObject->isGoogleDrive = true;
+                    $researchFileObject->hasFile = true;
+                    $researchFileObject->type = 'research_paper';
+                }
+                
+                $data->research_file = $researchFileObject;
+                
+                // Create endorsement file object (letter of endorsement/recommendation)
+                $endorsementFileObject = new stdClass();
+                $endorsementFileObject->isGoogleDrive = false;
+                $endorsementFileObject->hasFile = false;
+                
+                if (!empty($val['endorsement_file_view_url'])) {
+                    $endorsementFileObject->viewUrl = $val['endorsement_file_view_url'];
+                    $endorsementFileObject->downloadUrl = $val['endorsement_download_url'];
+                    $endorsementFileObject->fileUrl = !empty($val['endorsement_download_url']) 
+                        ? $val['endorsement_download_url'] 
+                        : $val['endorsement_file_view_url'];
+                    $endorsementFileObject->isGoogleDrive = true;
+                    $endorsementFileObject->hasFile = true;
+                    $endorsementFileObject->type = 'endorsement_letter';
+                }
+                
+                $data->endorsement_file = $endorsementFileObject;
+                
+                // Add folder IDs for reference
+                $data->drive_folders = [
+                    'parent_folder_id' => $val['drive_parent_folder_id'],
+                    'event_folder_id' => $val['drive_event_folder_id'],
+                    'category_folder_id' => $val['drive_category_folder_id'],
+                    'entry_folder_id' => $val['drive_entry_folder_id']
+                ];
+                
+                $response[] = $data;
+            }
+        }
+    }
+    echo json_encode($response);
+}
+
+// New API endpoint for accepting student research paper
+if (isset($_POST['acceptStudentResearch'])) {
+    $response = ['status' => false, 'message' => ''];
+    
+    $paperId = isset($_POST['paperId']) ? intval($_POST['paperId']) : 0;
+    $campus = isset($_POST['campus']) ? $con->real_escape_string($_POST['campus']) : '';
+    $eventType = isset($_POST['eventType']) ? $con->real_escape_string($_POST['eventType']) : '';
+    
+    if ($paperId <= 0) {
+        $response['message'] = 'Invalid paper ID';
+        echo json_encode($response);
+        exit;
+    }
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        // Update the status to 'approved'
+        $updateQuery = "UPDATE student_research_papers 
+                        SET status = 'approved', updated_at = NOW() 
+                        WHERE id = $paperId AND status = 'pending'";
+        
+        if ($con->query($updateQuery)) {
+            if ($con->affected_rows > 0) {
+                $response['status'] = true;
+                $response['message'] = 'Research paper accepted successfully!';
+            } else {
+                $response['message'] = 'Research paper not found or already processed';
+            }
+        } else {
+            $response['message'] = 'Failed to accept research paper: ' . $con->error;
+        }
+    } else {
+        $response['message'] = 'Database connection failed';
+    }
+    
+    echo json_encode($response);
+}
+
+// New API endpoint for rejecting student research paper
+if (isset($_POST['rejectStudentResearch'])) {
+    $response = ['status' => false, 'message' => ''];
+    
+    $paperId = isset($_POST['paperId']) ? intval($_POST['paperId']) : 0;
+    $reason = isset($_POST['reason']) ? $con->real_escape_string($_POST['reason']) : '';
+    
+    if ($paperId <= 0) {
+        $response['message'] = 'Invalid paper ID';
+        echo json_encode($response);
+        exit;
+    }
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        // Update the status to 'rejected'
+        $updateQuery = "UPDATE student_research_papers 
+                        SET status = 'rejected', updated_at = NOW() 
+                        WHERE id = $paperId AND status = 'pending'";
+        
+        if ($con->query($updateQuery)) {
+            if ($con->affected_rows > 0) {
+                $response['status'] = true;
+                $response['message'] = 'Research paper rejected.' . ($reason ? ' Reason: ' . $reason : '');
+            } else {
+                $response['message'] = 'Research paper not found or already processed';
+            }
+        } else {
+            $response['message'] = 'Failed to reject research paper: ' . $con->error;
+        }
+    } else {
+        $response['message'] = 'Database connection failed';
+    }
+    
+    echo json_encode($response);
+}
+
+// New API endpoint to get specific student research paper by ID
+if (isset($_POST['getStudentResearchById'])) {
+    $response = null;
+    $paperId = isset($_POST['paperId']) ? intval($_POST['paperId']) : 0;
+    
+    if ($paperId > 0 && $con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "SELECT 
+            srp.*,
+            account_detail.usertype as sender_type,
+            account_detail.email as sender_email,
+            account_detail.fullname as sender_name
+        FROM student_research_papers srp
+        LEFT JOIN account_detail ON srp.senderid = account_detail.id
+        WHERE srp.id = $paperId";
+        
+        $result = $con->query($query);
+        
+        if ($result && $result->num_rows > 0) {
+            $response = $result->fetch_assoc();
+        }
+    }
+    
+    echo json_encode($response);
+}

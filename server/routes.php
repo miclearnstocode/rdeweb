@@ -6,6 +6,7 @@ require_once("{$_SERVER['DOCUMENT_ROOT']}/server/router.php");
 post('/loginAuth','server/authToken.php');
 post('/sessionCheck','server/session.php');
 post('/evaluatorReg','server/evalReg.php');
+post('/researchChairAuth','server/researchChairAuth.php');
 post('/rdeStaff','server/rdeStaff.php');
 post('/externalauth','server/visitorAuth.php');
 post('/samp','server/samp.php');
@@ -15,7 +16,7 @@ post('/loader','server/loader.php');
 post('/loadercos','server/loadCos.php');
 post('/deleteUser','server/updates.php');
 post('/uploadResearchFile','server/researchFile.php');
-post('/getresearch','server/researchFile.php');
+post('/getresearch','server/rdeAcceptance.php');
 post('/filesSend','server/file.php');
 post('/inboxFile','server/fileViewer.php');
 post('/approval','server/approval.php');
@@ -75,9 +76,11 @@ post('/participationResearch', 'server/rde/accomplishment/participationExh.php')
 post('/presentationResearch', 'server/rde/accomplishment/presentationRes.php');
 post('/trainingActivitiesResearch', 'server/rde/accomplishment/traiActConductRes.php');
 post('/summaryAccomplish', 'server/rde/accomplishment/summaryAccomplishment.php');
+post('/uploadResearchChair', 'server/researchChairAPI/researchChairSub.php');
+post('/researchChairSettings', 'server/researchChairAPI/settings.php');
 
 // ROOT route
-get('/', 'server/auth.php');  // This handles redirects based on login status
+get('/', 'server/auth.php'); 
 
 // Account routes
 get('/account/Login','/index.html');
@@ -86,6 +89,11 @@ get('/account/Signup','/index.html');
 // Admin routes - ALL admin pages
 get('/admin/addAccount','/index.html');
 get('/admin/$page','/index.html');  // Catch-all for other admin pages
+
+// Research Chair routes
+get('/research-chair/submissions','/index.html');
+get('/research-chair/settings','/index.html');
+get('/research-chair/$page','/index.html');
 
 // User routes
 get('/user/research/resubmit','/index.html'); //resubmit 
@@ -139,5 +147,4 @@ get('/$id/$id2/$id3/$id4/$id5/$id6/$id7','/index.html');
 get('/$id/$id2/$id3/$id4/$id5/$id6/$id7/$id8','/index.html');
 get('/$id/$id2/$id3/$id4/$id5/$id6/$id7/$id8/$id9','/index.html');
 
-// 404 handler - MUST BE LAST
 any('/404','404.html');
