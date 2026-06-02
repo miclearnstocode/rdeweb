@@ -264,10 +264,6 @@ if (isset($_POST['acceptRequest'])) {
             if ($status) {
                 $response->status = true;
 
-                // ============================================
-                // UNCOMMENTED AND FIXED EMAIL SENDING CODE
-                // ============================================
-
                 $from = new stdClass();
                 $from->email = $rdeEmail;
                 $from->password = $emailPassword;
@@ -491,7 +487,6 @@ if (isset($_POST['rejectIndorse'])) {
     echo json_encode($response);
 }
 
-// New API endpoint for student research papers (Undergraduate and Graduate) - PENDING ONLY
 if (isset($_POST['incomingStudentResearch'])) {
     $response = [];
     $paperType = isset($_POST['paper_type']) ? $_POST['paper_type'] : null; // 'undergraduate' or 'graduate'
@@ -620,17 +615,17 @@ if (isset($_POST['incomingStudentResearch'])) {
                 $response[] = $data;
             }
         }
+        $con->close();
     }
     echo json_encode($response);
 }
 
-// New API endpoint for accepting student research paper
 if (isset($_POST['acceptStudentResearch'])) {
     $response = ['status' => false, 'message' => ''];
     
     $paperId = isset($_POST['paperId']) ? intval($_POST['paperId']) : 0;
-    $campus = isset($_POST['campus']) ? $con->real_escape_string($_POST['campus']) : '';
-    $eventType = isset($_POST['eventType']) ? $con->real_escape_string($_POST['eventType']) : '';
+    $campus = isset($_POST['campus']) ? $_POST['campus'] : '';
+    $eventType = isset($_POST['eventType']) ? $_POST['eventType'] : '';
     
     if ($paperId <= 0) {
         $response['message'] = 'Invalid paper ID';
@@ -638,35 +633,46 @@ if (isset($_POST['acceptStudentResearch'])) {
         exit;
     }
     
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Update the status to 'approved'
-        $updateQuery = "UPDATE student_research_papers 
-                        SET status = 'approved', updated_at = NOW() 
-                        WHERE id = $paperId AND status = 'pending'";
-        
-        if ($con->query($updateQuery)) {
-            if ($con->affected_rows > 0) {
-                $response['status'] = true;
-                $response['message'] = 'Research paper accepted successfully!';
-            } else {
-                $response['message'] = 'Research paper not found or already processed';
-            }
-        } else {
-            $response['message'] = 'Failed to accept research paper: ' . $con->error;
-        }
-    } else {
-        $response['message'] = 'Database connection failed';
+    // Create database connection FIRST
+    $con = new mysqli($host, $username, $pass, $dbName);
+    
+    // Check connection
+    if ($con->connect_error) {
+        $response['message'] = 'Database connection failed: ' . $con->connect_error;
+        echo json_encode($response);
+        exit;
     }
     
+    // Escape strings only after connection is established
+    $campus_escaped = $con->real_escape_string($campus);
+    $eventType_escaped = $con->real_escape_string($eventType);
+    
+    // Update the status to 'approved'
+    $updateQuery = "UPDATE student_research_papers 
+                    SET status = 'approved', updated_at = NOW() 
+                    WHERE id = $paperId AND status = 'pending'";
+    
+    if ($con->query($updateQuery)) {
+        if ($con->affected_rows > 0) {
+            $response['status'] = true;
+            $response['message'] = 'Research paper accepted successfully!';
+        } else {
+            $response['message'] = 'Research paper not found or already processed';
+        }
+    } else {
+        $response['message'] = 'Failed to accept research paper: ' . $con->error;
+    }
+    
+    $con->close();
     echo json_encode($response);
 }
 
-// New API endpoint for rejecting student research paper
+
 if (isset($_POST['rejectStudentResearch'])) {
     $response = ['status' => false, 'message' => ''];
     
     $paperId = isset($_POST['paperId']) ? intval($_POST['paperId']) : 0;
-    $reason = isset($_POST['reason']) ? $con->real_escape_string($_POST['reason']) : '';
+    $reason = isset($_POST['reason']) ? $_POST['reason'] : '';
     
     if ($paperId <= 0) {
         $response['message'] = 'Invalid paper ID';
@@ -674,48 +680,62 @@ if (isset($_POST['rejectStudentResearch'])) {
         exit;
     }
     
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Update the status to 'rejected'
-        $updateQuery = "UPDATE student_research_papers 
-                        SET status = 'rejected', updated_at = NOW() 
-                        WHERE id = $paperId AND status = 'pending'";
-        
-        if ($con->query($updateQuery)) {
-            if ($con->affected_rows > 0) {
-                $response['status'] = true;
-                $response['message'] = 'Research paper rejected.' . ($reason ? ' Reason: ' . $reason : '');
-            } else {
-                $response['message'] = 'Research paper not found or already processed';
-            }
-        } else {
-            $response['message'] = 'Failed to reject research paper: ' . $con->error;
-        }
-    } else {
-        $response['message'] = 'Database connection failed';
+    // Create database connection FIRST
+    $con = new mysqli($host, $username, $pass, $dbName);
+    
+    // Check connection
+    if ($con->connect_error) {
+        $response['message'] = 'Database connection failed: ' . $con->connect_error;
+        echo json_encode($response);
+        exit;
     }
     
+    // Escape reason string after connection is established
+    $reason_escaped = $con->real_escape_string($reason);
+    
+    // Update the status to 'rejected'
+    $updateQuery = "UPDATE student_research_papers 
+                    SET status = 'rejected', updated_at = NOW() 
+                    WHERE id = $paperId AND status = 'pending'";
+    
+    if ($con->query($updateQuery)) {
+        if ($con->affected_rows > 0) {
+            $response['status'] = true;
+            $response['message'] = 'Research paper rejected.' . ($reason ? ' Reason: ' . $reason : '');
+        } else {
+            $response['message'] = 'Research paper not found or already processed';
+        }
+    } else {
+        $response['message'] = 'Failed to reject research paper: ' . $con->error;
+    }
+    
+    $con->close();
     echo json_encode($response);
-}
+} 
 
-// New API endpoint to get specific student research paper by ID
 if (isset($_POST['getStudentResearchById'])) {
     $response = null;
     $paperId = isset($_POST['paperId']) ? intval($_POST['paperId']) : 0;
     
-    if ($paperId > 0 && $con = new mysqli($host, $username, $pass, $dbName)) {
-        $query = "SELECT 
-            srp.*,
-            account_detail.usertype as sender_type,
-            account_detail.email as sender_email,
-            account_detail.fullname as sender_name
-        FROM student_research_papers srp
-        LEFT JOIN account_detail ON srp.senderid = account_detail.id
-        WHERE srp.id = $paperId";
+    if ($paperId > 0) {
+        $con = new mysqli($host, $username, $pass, $dbName);
         
-        $result = $con->query($query);
-        
-        if ($result && $result->num_rows > 0) {
-            $response = $result->fetch_assoc();
+        if (!$con->connect_error) {
+            $query = "SELECT 
+                srp.*,
+                account_detail.usertype as sender_type,
+                account_detail.email as sender_email,
+                account_detail.fullname as sender_name
+            FROM student_research_papers srp
+            LEFT JOIN account_detail ON srp.senderid = account_detail.id
+            WHERE srp.id = $paperId";
+            
+            $result = $con->query($query);
+            
+            if ($result && $result->num_rows > 0) {
+                $response = $result->fetch_assoc();
+            }
+            $con->close();
         }
     }
     
