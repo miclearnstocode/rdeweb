@@ -1,5 +1,5 @@
 import {$, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting, CustomModal} from '../lib/lib.js'
-import { showPasswordResetModal } from "./../AccountRetrival/Code.js";
+import { showPasswordResetModal } from "./../AccountRetrival/Code.js"
 
 const LoginPanel = (prop) => {
     let username
@@ -38,42 +38,42 @@ const LoginPanel = (prop) => {
     }
 
     const detectUserType = (username) => {
-        if (!username) return null;
+        if (!username) return null
         
-        const userLower = username.toLowerCase();
+        const userLower = username.toLowerCase()
         
         if (userLower.includes('admin') || userLower.includes('administrator')) {
-            return 'ADMIN';
+            return 'ADMIN'
         }
         
         if (userLower.includes('@capsu.edu.ph')) {
-            return 'CAPSUUSERS';
+            return 'CAPSUUSERS'
         }
         
         if (userLower.includes('eval') || userLower.includes('evaluator')) {
-            return 'EVALUATOR';
+            return 'EVALUATOR'
         }
         
         if (userLower.includes('rde') || userLower.includes('office') || userLower.includes('staff')) {
-            return 'RDEOFFICE';
+            return 'RDEOFFICE'
         }
         
         if (userLower.includes('chair') || userLower.includes('research')) {
-            return 'RESEARCH_CHAIR';
+            return 'RESEARCH_CHAIR'
         }
         
-        return null;
+        return null
     }
 
     const autoSelectUserType = (username) => {
-        if (!username || !selType) return;
+        if (!username || !selType) return
         
-        const detectedType = detectUserType(username);
+        const detectedType = detectUserType(username)
         if (detectedType && selType) {
-            selType.value = detectedType;
+            selType.value = detectedType
             
             if (prop.onAutoDetect) {
-                prop.onAutoDetect(detectedType);
+                prop.onAutoDetect(detectedType)
             }
         }
     }
@@ -111,7 +111,7 @@ const LoginPanel = (prop) => {
                         boxSizing: 'border-box'
                     },
                     elementHandler: (el) => {
-                        selType = el;
+                        selType = el
                     },
                     child: [
                         $({
@@ -217,9 +217,9 @@ const LoginPanel = (prop) => {
                                 ev.preventDefault()
 
                                 if (!selType.value && ev.target.username.value) {
-                                    const detectedType = detectUserType(ev.target.username.value);
+                                    const detectedType = detectUserType(ev.target.username.value)
                                     if (detectedType) {
-                                        selType.value = detectedType;
+                                        selType.value = detectedType
                                     }
                                 }
 
@@ -421,8 +421,8 @@ const LoginPanel = (prop) => {
                                                     method: (event) => {
                                                         if (event.target.value && !selType.value) {
                                                             setTimeout(() => {
-                                                                autoSelectUserType(event.target.value);
-                                                            }, 500);
+                                                                autoSelectUserType(event.target.value)
+                                                            }, 500)
                                                         }
                                                     }
                                                 },
@@ -785,12 +785,12 @@ const Signup = (prop) => {
         const getSelect = (select) => {
             select.appendChild(option({ label: '-- Select Research Center --', placeholder: true }))
             CapsuOffice.forEach(val => {
-                let code = val;
-                const match = val.match(/\(([^)]+)\)/);
+                let code = val
+                const match = val.match(/\(([^)]+)\)/)
                 if (match) {
-                    code = match[1];
+                    code = match[1]
                 } else if (val === "Extension") {
-                    code = "Extension";
+                    code = "Extension"
                 }
                 select.appendChild($({
                     tag: 'option',
@@ -830,7 +830,7 @@ const Signup = (prop) => {
         
         const centerWrapper = $({
             tag: 'div',
-            att: { id: 'center-container', style: 'display: none; width: 100%;' },
+            att: { id: 'center-container', style: 'display: none width: 100%' },
             child: [centerTable]
         })
         form.appendChild(centerWrapper)
@@ -862,7 +862,7 @@ const Signup = (prop) => {
         
         const extensionCampusWrapper = $({
             tag: 'div',
-            att: { id: 'extension-campus-container', style: 'display: none; width: 100%;' },
+            att: { id: 'extension-campus-container', style: 'display: none width: 100%' },
             child: [extensionCampusTable]
         })
         form.appendChild(extensionCampusWrapper)
@@ -894,7 +894,7 @@ const Signup = (prop) => {
         
         const campusWrapper = $({
             tag: 'div',
-            att: { id: 'campus-container', style: 'display: none; width: 100%;' },
+            att: { id: 'campus-container', style: 'display: none width: 100%' },
             child: [campusTable]
         })
         form.appendChild(campusWrapper)
@@ -1082,14 +1082,14 @@ const Signup = (prop) => {
                             }
                         }
                         
-                        if (email === undefined) { alert("E-Mail is missing..!"); return }
-                        if (fullName === undefined) { alert("Full name is missing..!"); return }
-                        if (username === undefined) { alert("Username is missing..!"); return }
-                        if (password === undefined) { alert("Password is missing..!"); return }
-                        if (password.length < 8) { alert("Please provide at least 8 characters password...!"); return }
-                        if (password !== conPass) { alert("Passwords do not match!"); return }
+                        if (email === undefined) { alert("E-Mail is missing..!"); return; }
+                        if (fullName === undefined) { alert("Full name is missing..!"); return; }
+                        if (username === undefined) { alert("Username is missing..!"); return; }
+                        if (password === undefined) { alert("Password is missing..!"); return; }
+                        if (password.length < 8) { alert("Please provide at least 8 characters password...!"); return; }
+                        if (password !== conPass) { alert("Passwords do not match!"); return; }
 
-                        const formData = new FormData();
+                        const formData = new FormData()
                         formData.append('auth', 'signup')
                         
                         if (userRole === 'research_chair') {
@@ -1156,17 +1156,68 @@ const Signup = (prop) => {
 
 const logo = () => {
     return $({
-        tag: 'table',
-        att: { className: 'logoTable' },
-        style: { width: '100%', marginBottom: '1.5rem' },
+        tag: 'div',
+        style: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1rem',
+            marginBottom: '1.5rem',
+            background: 'linear-gradient(135deg, #0a1628, #0d1f3c)',
+            borderRadius: '16px',
+            padding: '1rem',
+            boxShadow: '0 5px 20px rgba(0, 0, 0, 0.2)'
+        },
         child: [
+            // Logo Image
             $({
-                tag: 'tr',
-                child: [$({ att: { className: 'schlName' }, tag: 'td', text: 'CAPIZ STATE UNIVERSITY' })]
+                tag: 'img',
+                att: {
+                    src: '/client/images/cap.png',
+                    alt: 'CAPSU Logo',
+                    style: 'width: 60px height: 60px object-fit: contain'
+                },
+                style: {
+                    width: '60px',
+                    height: '60px',
+                    objectFit: 'contain'
+                }
             }),
+            // Text Container
             $({
-                tag: 'tr',
-                child: [$({ att: { className: 'schlDet' }, tag: 'td', text: 'Center of Academic Excellence Delivering Quality Service to All' })]
+                tag: 'div',
+                style: {
+                    flex: 1,
+                    textAlign: 'center'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        text: 'CAPIZ STATE UNIVERSITY',
+                        style: {
+                            color: '#00aaff',
+                            fontSize: '1.25rem',
+                            fontWeight: '700',
+                            letterSpacing: '1px',
+                            textShadow: '0 2px 5px rgba(0, 150, 255, 0.3)',
+                            padding: '0.25rem 0',
+                            borderBottom: '2px solid rgba(0, 150, 255, 0.5)',
+                            fontFamily: 'Segoe UI, Poppins, system-ui, sans-serif'
+                        }
+                    }),
+                    $({
+                        tag: 'div',
+                        text: 'Center of Academic Excellence Delivering Quality Service to All',
+                        style: {
+                            color: '#88aaff',
+                            fontSize: '0.75rem',
+                            fontWeight: '500',
+                            padding: '0.5rem 0 0.25rem',
+                            fontFamily: 'Segoe UI, system-ui, sans-serif',
+                            letterSpacing: '0.3px'
+                        }
+                    })
+                ]
             })
         ]
     })
@@ -1219,10 +1270,10 @@ export const LoginPage = () => {
                     setupFloatingLabel('userNid', 'usernameLabel')
                     setupFloatingLabel('userPid', 'passwordLabel')
                 }, 100)
-                break;
+                break
             case '/account/Signup?':
                 clsObj.appendChild(Signup())
-                break;
+                break
         }
     }
 
@@ -1325,9 +1376,9 @@ export const LoginPage = () => {
                 event: {
                     type: 'click',
                     method: (e) => {
-                        e.preventDefault();
+                        e.preventDefault()
                         // Open the password reset modal
-                        showPasswordResetModal();
+                        showPasswordResetModal()
                     }
                 }
             })
