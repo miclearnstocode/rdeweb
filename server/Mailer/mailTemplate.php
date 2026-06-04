@@ -95,28 +95,130 @@ function RejectedApproval($correction,$rdeStaff,$url){
 
 function Code($code)
 {
-
     return ("
     <div style='
-    width:100%;
-    border:solid thin black;
-    background-color:rgba(0,0,0,0.1);
-    padding:1rem;
-    boxshadow:-.5vw 1vh .5rem rgba(0,0,0,0.3);
-    user-select:none;
+        max-width: 550px;
+        margin: 0 auto;
+        background: linear-gradient(145deg, #1a2a4a, #0f1f3a);
+        border-radius: 20px;
+        border: 1px solid rgba(0, 150, 255, 0.3);
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     '>
-    <div style='
-    color:deepskyblue;
-    font-size:20px;
-    '>Capiz State University</div>
-    <div style='
-    fontfamily:Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif;
-    font-size:20px;
-    '>Research,Development and Extension</div>
-   
-    <div>RDE Central Office</div>
-    
-    <div style='font-size: 2rem'><b>SECURITY CODE :</b> $code</div>
+        <!-- Header -->
+        <div style='
+            padding: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, #0066ff, #00aaff);
+        '>
+            <h1 style='
+                color: #fff;
+                font-size: 24px;
+                font-weight: 700;
+                margin: 0;
+                letter-spacing: 1px;
+            '>CAPIZ STATE UNIVERSITY</h1>
+            <p style='
+                color: rgba(255,255,255,0.9);
+                font-size: 14px;
+                margin: 8px 0 0 0;
+            '>Research, Development and Extension</p>
+        </div>
+        
+        <!-- Content -->
+        <div style='padding: 35px 30px; background: #0a1628;'>
+            <h2 style='
+                color: #00aaff;
+                font-size: 20px;
+                font-weight: 600;
+                margin: 0 0 10px 0;
+                text-align: center;
+            '>🔐 Password Reset Verification</h2>
+            
+            <p style='
+                color: #88aaff;
+                font-size: 14px;
+                line-height: 1.6;
+                text-align: center;
+                margin: 0 0 30px 0;
+            '>You requested to reset your password. Use the code below to verify your identity.</p>
+            
+            <!-- Code Box -->
+            <div style='
+                background: rgba(0, 150, 255, 0.1);
+                border: 2px dashed #00aaff;
+                border-radius: 12px;
+                padding: 25px;
+                text-align: center;
+                margin-bottom: 25px;
+            '>
+                <div style='
+                    font-size: 48px;
+                    font-weight: 800;
+                    color: #00aaff;
+                    letter-spacing: 10px;
+                    font-family: \"Courier New\", monospace;
+                '>$code</div>
+                <p style='
+                    color: #6688aa;
+                    font-size: 12px;
+                    margin: 15px 0 0 0;
+                '>⏰ This code expires in 10 minutes</p>
+            </div>
+            
+            <!-- Security Tips -->
+            <div style='
+                background: rgba(255, 68, 68, 0.1);
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 25px;
+            '>
+                <div style='
+                    color: #ff8888;
+                    font-size: 14px;
+                    font-weight: 600;
+                    margin-bottom: 12px;
+                '>⚠️ Security Reminders:</div>
+                
+                <ul style='
+                    margin: 0;
+                    padding-left: 20px;
+                    color: #88aaff;
+                    font-size: 13px;
+                    line-height: 1.8;
+                '>
+                    <li>Never share this code with anyone</li>
+                    <li>CAPSU staff will NEVER ask for this code</li>
+                    <li>If you didn't request this, ignore this email</li>
+                    <li>This code is single-use only</li>
+                </ul>
+            </div>
+            
+            <p style='
+                color: #6688aa;
+                font-size: 12px;
+                text-align: center;
+                margin: 0;
+            '>If you have any questions, contact RDE Central Office.</p>
+        </div>
+        
+        <!-- Footer -->
+        <div style='
+            padding: 20px;
+            text-align: center;
+            background: #0d1222;
+            border-top: 1px solid rgba(0, 150, 255, 0.1);
+        '>
+            <p style='
+                color: #6688aa;
+                font-size: 11px;
+                margin: 0;
+            '>
+                This is an automated message from CAPSU RDE System<br>
+                &copy; " . date('Y') . " Capiz State University
+            </p>
+        </div>
     </div>
     ");
 }
