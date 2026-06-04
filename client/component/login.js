@@ -254,7 +254,7 @@ const LoginPanel = (prop) => {
                                                 }
                                             })
                                     } else if (selType.value === 'CAPSUUSERS' || selType.value === 'ADMIN') {
-                                        await fetch('/server/authToken.php', {
+                                        await fetch('/loginAuth', {
                                             method: 'POST',
                                             body: form
                                         }).then(res => res.json())
@@ -658,30 +658,234 @@ const Signup = (prop) => {
         }
     }
 
-    const TableCont = ({label, element}) => {
+    const ModernInput = ({ label, type, id, placeholder, icon, onInput, required = true }) => {
         return $({
-            tag: 'table',
-            att: { className: 'logTable sign' },
-            style: { width: '100%', marginBottom: '1rem' },
+            tag: 'div',
+            style: {
+                marginBottom: '1.25rem',
+                width: '100%'
+            },
             child: [
                 $({
-                    tag: 'tr',
-                    child: [
-                        $({
-                            tag: 'td',
-                            att: { className: 'labelTDSign' },
-                            style: { textAlign: 'left', paddingBottom: '0.5rem' },
-                            text: label
-                        })
-                    ]
+                    tag: 'label',
+                    att: { for: id },
+                    text: label,
+                    style: {
+                        display: 'block',
+                        color: '#88aaff',
+                        fontSize: '0.85rem',
+                        fontWeight: '500',
+                        marginBottom: '0.5rem',
+                        fontFamily: 'Segoe UI, sans-serif'
+                    }
                 }),
                 $({
-                    tag: 'tr',
+                    tag: 'div',
+                    style: {
+                        position: 'relative',
+                        width: '100%'
+                    },
                     child: [
                         $({
-                            tag: 'td',
-                            style: { width: '100%' },
-                            child: [element]
+                            tag: 'span',
+                            style: {
+                                position: 'absolute',
+                                left: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: '#00aaff',
+                                fontSize: '1rem',
+                                zIndex: '2'
+                            },
+                            child: [
+                                $({
+                                    tag: 'i',
+                                    att: { className: icon }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'input',
+                            att: {
+                                type: type,
+                                id: id,
+                                name: id,
+                                placeholder: placeholder,
+                                required: required,
+                                autocomplete: 'off'
+                            },
+                            elementHandler: (el) => {
+                                // Add input event listener directly
+                                el.addEventListener('input', (e) => {
+                                    if (onInput) onInput(e.target.value)
+                                })
+                                // Add focus/blur listeners for styling
+                                el.addEventListener('focus', (e) => {
+                                    e.target.style.borderColor = '#00aaff'
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(0, 150, 255, 0.2)'
+                                })
+                                el.addEventListener('blur', (e) => {
+                                    e.target.style.borderColor = 'rgba(0, 150, 255, 0.2)'
+                                    e.target.style.boxShadow = 'none'
+                                })
+                            },
+                            style: {
+                                width: '100%',
+                                padding: '12px 12px 12px 40px',
+                                backgroundColor: 'rgba(10, 20, 40, 0.8)',
+                                border: '2px solid rgba(0, 150, 255, 0.2)',
+                                borderRadius: '12px',
+                                color: '#fff',
+                                fontSize: '0.95rem',
+                                outline: 'none',
+                                transition: 'all 0.3s ease',
+                                boxSizing: 'border-box'
+                            }
+                        })
+                    ]
+                })
+            ]
+        })
+    }
+
+    const ModernPasswordInput = ({ label, id, placeholder, icon, onInput, required = true }) => {
+        let inputElement = null
+        let isVisible = false
+        
+        return $({
+            tag: 'div',
+            style: {
+                marginBottom: '1.25rem',
+                width: '100%'
+            },
+            child: [
+                $({
+                    tag: 'label',
+                    att: { for: id },
+                    text: label,
+                    style: {
+                        display: 'block',
+                        color: '#88aaff',
+                        fontSize: '0.85rem',
+                        fontWeight: '500',
+                        marginBottom: '0.5rem',
+                        fontFamily: 'Segoe UI, sans-serif'
+                    }
+                }),
+                $({
+                    tag: 'div',
+                    style: {
+                        position: 'relative',
+                        width: '100%'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            style: {
+                                position: 'absolute',
+                                left: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: '#00aaff',
+                                fontSize: '1rem',
+                                zIndex: '2'
+                            },
+                            child: [
+                                $({
+                                    tag: 'i',
+                                    att: { className: icon }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'input',
+                            att: {
+                                type: 'password',
+                                id: id,
+                                name: id,
+                                placeholder: placeholder,
+                                required: required,
+                                autocomplete: 'new-password'
+                            },
+                            elementHandler: (el) => {
+                                inputElement = el
+                                // Add input event listener directly
+                                el.addEventListener('input', (e) => {
+                                    if (onInput) onInput(e.target.value)
+                                })
+                                // Add focus/blur listeners for styling
+                                el.addEventListener('focus', (e) => {
+                                    e.target.style.borderColor = '#00aaff'
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(0, 150, 255, 0.2)'
+                                })
+                                el.addEventListener('blur', (e) => {
+                                    e.target.style.borderColor = 'rgba(0, 150, 255, 0.2)'
+                                    e.target.style.boxShadow = 'none'
+                                })
+                            },
+                            style: {
+                                width: '100%',
+                                padding: '12px 45px 12px 40px',
+                                backgroundColor: 'rgba(10, 20, 40, 0.8)',
+                                border: '2px solid rgba(0, 150, 255, 0.2)',
+                                borderRadius: '12px',
+                                color: '#fff',
+                                fontSize: '0.95rem',
+                                outline: 'none',
+                                transition: 'all 0.3s ease',
+                                boxSizing: 'border-box'
+                            }
+                        }),
+                        $({
+                            tag: 'span',
+                            style: {
+                                position: 'absolute',
+                                right: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                cursor: 'pointer',
+                                color: '#6688aa',
+                                zIndex: '10',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                transition: 'all 0.3s ease'
+                            },
+                            child: [
+                                $({
+                                    tag: 'i',
+                                    att: { className: 'fa-solid fa-eye' }
+                                })
+                            ],
+                            elementHandler: (el) => {
+                                let isVisible = false
+                                const icon = el.querySelector('i')
+                                
+                                el.addEventListener('click', (e) => {
+                                    e.stopPropagation()
+                                    isVisible = !isVisible
+                                    if (inputElement) {
+                                        inputElement.type = isVisible ? 'text' : 'password'
+                                        if (icon) {
+                                            icon.className = isVisible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'
+                                        }
+                                        el.style.color = isVisible ? '#00aaff' : '#6688aa'
+                                    }
+                                })
+                                
+                                el.addEventListener('mouseenter', () => {
+                                    el.style.color = '#00aaff'
+                                    el.style.backgroundColor = 'rgba(0, 150, 255, 0.15)'
+                                })
+                                
+                                el.addEventListener('mouseleave', () => {
+                                    el.style.color = isVisible ? '#00aaff' : '#6688aa'
+                                    el.style.backgroundColor = 'transparent'
+                                })
+                            }
                         })
                     ]
                 })
@@ -721,93 +925,155 @@ const Signup = (prop) => {
             "Sigma", "Sapian", "Tapaz", "Dumarao", "Dayao"
         ]
         
-        const getRoleSelect = (select) => {
-            select.appendChild(option({ label: '-- Select Role --', placeholder: true }))
-            const roles = [
-                { label: 'Research Chair', value: 'research_chair' },
-                { label: 'Research Center Chair', value: 'research_center_chair' }
-            ]
-            roles.forEach(role => {
-                select.appendChild($({
-                    tag: 'option',
-                    text: role.label,
-                    att: { value: role.value }
-                }))
+        // Modern Select Component
+        const ModernSelect = ({ label, id, options, onchange, placeholder }) => {
+            return $({
+                tag: 'div',
+                style: {
+                    marginBottom: '1.25rem',
+                    width: '100%'
+                },
+                child: [
+                    $({
+                        tag: 'label',
+                        att: { for: id },
+                        text: label,
+                        style: {
+                            display: 'block',
+                            color: '#88aaff',
+                            fontSize: '0.85rem',
+                            fontWeight: '500',
+                            marginBottom: '0.5rem',
+                            fontFamily: 'Segoe UI, sans-serif'
+                        }
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            position: 'relative',
+                            width: '100%'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                style: {
+                                    position: 'absolute',
+                                    left: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: '#00aaff',
+                                    fontSize: '1rem',
+                                    zIndex: '2'
+                                }
+                            }),
+                            $({
+                                tag: 'select',
+                                att: { id: id, className: 'selectSign' },
+                                style: {
+                                    width: '100%',
+                                    padding: '12px 12px 12px 40px',
+                                    backgroundColor: 'rgba(10, 20, 40, 0.8)',
+                                    border: '2px solid rgba(0, 150, 255, 0.2)',
+                                    borderRadius: '12px',
+                                    color: '#fff',
+                                    fontSize: '0.95rem',
+                                    outline: 'none',
+                                    cursor: 'pointer',
+                                    appearance: 'none',
+                                    boxSizing: 'border-box',
+                                    height: '52px',
+                                    lineHeight: '1.2'
+                                },
+                                event: {
+                                    type: 'focus',
+                                    method: (e) => {
+                                        e.target.style.borderColor = '#00aaff'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 150, 255, 0.2)'
+                                    }
+                                },
+                                event: {
+                                    type: 'blur',
+                                    method: (e) => {
+                                        e.target.style.borderColor = 'rgba(0, 150, 255, 0.2)'
+                                        e.target.style.boxShadow = 'none'
+                                    }
+                                },
+                                event: {
+                                    type: 'change',
+                                    method: onchange
+                                },
+                                child: options
+                            })
+                        ]
+                    })
+                ]
             })
         }
-
-        form.appendChild(TableCont({
+        
+        // Role Selection
+        const roleOptions = [
+            option({ label: '-- Select Role --', placeholder: true }),
+            option({ label: 'Research Campus Chair', value: 'research_chair' }),
+            option({ label: 'Research Center or Extension Chair', value: 'research_center_chair' })
+        ]
+        
+        form.appendChild(ModernSelect({
             label: 'Register as',
-            element: $({
-                tag: 'select',
-                elementHandler: getRoleSelect,
-                event: {
-                    type: 'change',
-                    method: (event) => {
-                        const selectedRole = event.target.value
-                        get.userRole(selectedRole)
-                        
-                        const campusContainer = document.getElementById('campus-container')
-                        const centerContainer = document.getElementById('center-container')
-                        const extensionCampusContainer = document.getElementById('extension-campus-container')
-                        
-                        if (selectedRole === 'research_chair') {
-                            if (campusContainer) campusContainer.style.display = 'block'
-                            if (centerContainer) centerContainer.style.display = 'none'
-                            if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
-                            get.center(undefined)
-                            const centerSelect = document.getElementById('select-sign')
-                            if (centerSelect) centerSelect.selectedIndex = 0
-                        } else if (selectedRole === 'research_center_chair') {
-                            if (campusContainer) campusContainer.style.display = 'none'
-                            if (centerContainer) centerContainer.style.display = 'block'
-                            get.campus(undefined)
-                            const campusSelect = document.getElementById('select-campus')
-                            if (campusSelect) campusSelect.selectedIndex = 0
-                            const centerSelect = document.getElementById('select-sign')
-                            if (centerSelect && centerSelect.value === 'Extension') {
-                                if (extensionCampusContainer) extensionCampusContainer.style.display = 'block'
-                            } else {
-                                if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
-                            }
-                        } else {
-                            if (campusContainer) campusContainer.style.display = 'none'
-                            if (centerContainer) centerContainer.style.display = 'none'
-                            if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
-                        }
+            id: 'select-role',
+            options: roleOptions,
+            onchange: (event) => {
+                const selectedRole = event.target.value
+                get.userRole(selectedRole)
+                
+                const campusContainer = document.getElementById('campus-container')
+                const centerContainer = document.getElementById('center-container')
+                const extensionCampusContainer = document.getElementById('extension-campus-container')
+                
+                if (selectedRole === 'research_chair') {
+                    if (campusContainer) campusContainer.style.display = 'block'
+                    if (centerContainer) centerContainer.style.display = 'none'
+                    if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
+                    get.center(undefined)
+                } else if (selectedRole === 'research_center_chair') {
+                    if (campusContainer) campusContainer.style.display = 'none'
+                    if (centerContainer) centerContainer.style.display = 'block'
+                    get.campus(undefined)
+                    const centerSelect = document.getElementById('select-sign')
+                    if (centerSelect && centerSelect.value === 'Extension') {
+                        if (extensionCampusContainer) extensionCampusContainer.style.display = 'block'
+                    } else {
+                        if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
                     }
-                },
-                att: { id: 'select-role', className: 'selectSign' },
-                style: { width: '100%', padding: '12px', borderRadius: '12px' }
-            })
+                } else {
+                    if (campusContainer) campusContainer.style.display = 'none'
+                    if (centerContainer) centerContainer.style.display = 'none'
+                    if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
+                }
+            }
         }))
         
-        const getSelect = (select) => {
-            select.appendChild(option({ label: '-- Select Research Center --', placeholder: true }))
-            CapsuOffice.forEach(val => {
-                let code = val
-                const match = val.match(/\(([^)]+)\)/)
-                if (match) {
-                    code = match[1]
-                } else if (val === "Extension") {
-                    code = "Extension"
-                }
-                select.appendChild($({
-                    tag: 'option',
-                    text: val,
-                    att: { value: code }
-                }))
-            })
-        }
-
-        const centerTable = TableCont({
-            label: 'Research Center',
-            element: $({
-                tag: 'select',
-                elementHandler: getSelect,
-                event: {
-                    type: 'change',
-                    method: (event) => {
+        // Research Center Options
+        const centerOptions = [option({ label: '-- Select Research Center or Extension --', placeholder: true })]
+        CapsuOffice.forEach(val => {
+            let code = val
+            const match = val.match(/\(([^)]+)\)/)
+            if (match) {
+                code = match[1]
+            } else if (val === "Extension") {
+                code = "Extension"
+            }
+            centerOptions.push(option({ label: val, value: code }))
+        })
+        
+        const centerWrapper = $({
+            tag: 'div',
+            att: { id: 'center-container', style: 'display: none; width: 100%;' },
+            child: [
+                ModernSelect({
+                    label: 'Research Center',
+                    id: 'select-sign',
+                    options: centerOptions,
+                    onchange: (event) => {
                         const selectedCenter = event.target.value
                         get.center(selectedCenter)
                         const extensionCampusContainer = document.getElementById('extension-campus-container')
@@ -817,330 +1083,244 @@ const Signup = (prop) => {
                             if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
                             if (selectedCenter !== 'Extension') {
                                 get.campus(undefined)
-                                const extensionCampusSelect = document.getElementById('select-extension-campus')
-                                if (extensionCampusSelect) extensionCampusSelect.selectedIndex = 0
                             }
                         }
                     }
-                },
-                att: { id: 'select-sign', className: 'selectSign' },
-                style: { width: '100%', padding: '12px', borderRadius: '12px' }
-            })
-        })
-        
-        const centerWrapper = $({
-            tag: 'div',
-            att: { id: 'center-container', style: 'display: none width: 100%' },
-            child: [centerTable]
+                })
+            ]
         })
         form.appendChild(centerWrapper)
         
-        const getExtensionCampusSelect = (select) => {
-            select.appendChild(option({ label: '-- Select Extension Campus --', placeholder: true }))
-            campuses.forEach(val => {
-                select.appendChild($({
-                    tag: 'option',
-                    text: val,
-                    att: { value: val }
-                }))
-            })
-        }
-        
-        const extensionCampusTable = TableCont({
-            label: 'Extension Campus',
-            element: $({
-                tag: 'select',
-                elementHandler: getExtensionCampusSelect,
-                event: {
-                    type: 'change',
-                    method: (event) => { get.campus(event.target.value) }
-                },
-                att: { id: 'select-extension-campus', className: 'selectSign' },
-                style: { width: '100%', padding: '12px', borderRadius: '12px' }
-            })
+        // Extension Campus Options
+        const extensionOptions = [option({ label: '-- Select Campus --', placeholder: true })]
+        campuses.forEach(val => {
+            extensionOptions.push(option({ label: val, value: val }))
         })
         
         const extensionCampusWrapper = $({
             tag: 'div',
-            att: { id: 'extension-campus-container', style: 'display: none width: 100%' },
-            child: [extensionCampusTable]
+            att: { id: 'extension-campus-container', style: 'display: none; width: 100%;' },
+            child: [
+                ModernSelect({
+                    label: 'Extension Campus',
+                    id: 'select-extension-campus',
+                    options: extensionOptions,
+                    onchange: (event) => { get.campus(event.target.value) }
+                })
+            ]
         })
         form.appendChild(extensionCampusWrapper)
         
-        const getCampusSelect = (select) => {
-            select.appendChild(option({ label: '-- Select Campus --', placeholder: true }))
-            campuses.forEach(val => {
-                select.appendChild($({
-                    tag: 'option',
-                    text: val,
-                    att: { value: val }
-                }))
-            })
-        }
-        
-        const campusTable = TableCont({
-            label: 'Campus',
-            element: $({
-                tag: 'select',
-                elementHandler: getCampusSelect,
-                event: {
-                    type: 'change',
-                    method: (event) => { get.campus(event.target.value) }
-                },
-                att: { id: 'select-campus', className: 'selectSign' },
-                style: { width: '100%', padding: '12px', borderRadius: '12px' }
-            })
+        // Campus Options
+        const campusOptions = [option({ label: '-- Select Campus --', placeholder: true })]
+        campuses.forEach(val => {
+            campusOptions.push(option({ label: val, value: val }))
         })
         
         const campusWrapper = $({
             tag: 'div',
-            att: { id: 'campus-container', style: 'display: none width: 100%' },
-            child: [campusTable]
+            att: { id: 'campus-container', style: 'display: none; width: 100%;' },
+            child: [
+                ModernSelect({
+                    label: 'Campus',
+                    id: 'select-campus',
+                    options: campusOptions,
+                    onchange: (event) => { get.campus(event.target.value) }
+                })
+            ]
         })
         form.appendChild(campusWrapper)
-
-        form.appendChild(TableCont({
-            label: 'Email address',
-            element: $({
-                tag: 'input',
-                att: {
-                    type: 'email',
-                    className: 'signInput',
-                    placeholder: 'xxxx@capsu.edu.ph',
-                    id: 'signup-email',
-                    name: 'email',
-                    autocomplete: 'email'
-                },
-                style: { width: '100%', padding: '12px', borderRadius: '12px', boxSizing: 'border-box' },
-                event: { type: 'input', method: (event) => { get.email(event.target.value) } }
-            })
-        }))
-
-        form.appendChild(TableCont({
-            label: 'Full name',
-            element: $({
-                tag: 'input',
-                att: {
-                    type: 'text',
-                    id: 'signinput-fullname',
-                    name: 'fullname',
-                    className: 'signInput',
-                    placeholder: 'Enter full name',
-                    autocomplete: 'name'
-                },
-                style: { width: '100%', padding: '12px', borderRadius: '12px', boxSizing: 'border-box' },
-                event: { type: 'input', method: (event) => { get.fullName(event.target.value) } }
-            })
-        }))
-
-        form.appendChild(TableCont({
-            label: 'Username',
-            element: $({
-                tag: 'input',
-                att: {
-                    type: 'text',
-                    id: 'signinput-Username',
-                    name: 'username',
-                    className: 'signInput',
-                    placeholder: 'Enter username',
-                    autocomplete: 'username'
-                },
-                style: { width: '100%', padding: '12px', borderRadius: '12px', boxSizing: 'border-box' },
-                event: { type: 'input', method: (event) => { get.username(event.target.value) } },
-                elementHandler: SpecialChar
-            })
-        }))
-
-        form.appendChild(TableCont({
-            label: 'Password',
-            element: $({
-                tag: 'div',
-                att: { className: 'password-container' },
-                style: { position: 'relative', width: '100%' },
-                child: [
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'password',
-                            className: 'signInput password-input',
-                            placeholder: 'Create 8 to 20 characters password',
-                            maxLength: '20',
-                            minLength: '8',
+        
+        // Two column layout for form fields
+        const twoColumnContainer = $({
+            tag: 'div',
+            style: {
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '1rem',
+                marginTop: '0.5rem'
+            },
+            child: [
+                // Left column
+                $({
+                    tag: 'div',
+                    style: { width: '100%' },
+                    child: [
+                        ModernInput({
+                            label: 'Email Address',
+                            type: 'email',
+                            id: 'signup-email',
+                            placeholder: 'xxxx@capsu.edu.ph',
+                            icon: 'fa-solid fa-envelope',
+                            onInput: (val) => get.email(val)
+                        }),
+                        ModernInput({
+                            label: 'Username',
+                            type: 'text',
+                            id: 'signinput-Username',
+                            placeholder: 'Enter username',
+                            icon: 'fa-solid fa-user',
+                            onInput: (val) => get.username(val)
+                        }),
+                        ModernPasswordInput({
+                            label: 'Password',
                             id: 'signup-password',
-                            name: 'password',
-                            autocomplete: 'new-password'
-                        },
-                        style: { width: '100%', padding: '12px 45px 12px 12px', borderRadius: '12px', boxSizing: 'border-box' },
-                        event: { type: 'input', method: (event) => { get.password(event.target.value) } },
-                        elementHandler: SpecialChar
-                    }),
-                    $({
-                        tag: 'span',
-                        att: { className: 'password-toggle', id: 'toggle-password' },
-                        style: {
-                            position: 'absolute',
-                            right: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            cursor: 'pointer',
-                            color: '#6688aa',
-                            zIndex: '10'
-                        },
-                        child: [$({ tag: 'i', att: { className: 'fa-solid fa-eye', id: 'password-eye-icon' } })],
-                        event: { type: 'click', method: () => { togglePasswordVisibility('signup-password', 'password-eye-icon') } }
-                    })
-                ]
-            })
-        }))
-
-        form.appendChild(TableCont({
-            label: 'Re-type Password',
-            element: $({
-                tag: 'div',
-                att: { className: 'password-container' },
-                style: { position: 'relative', width: '100%' },
-                child: [
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'password',
-                            className: 'signInput password-input',
-                            placeholder: 'Re-enter password',
-                            maxLength: '20',
+                            placeholder: 'Create 8 to 20 characters password',
+                            icon: 'fa-solid fa-lock',
+                            onInput: (val) => get.password(val)
+                        })
+                    ]
+                }),
+                // Right column
+                $({
+                    tag: 'div',
+                    style: { width: '100%' },
+                    child: [
+                        ModernInput({
+                            label: 'Full Name',
+                            type: 'text',
+                            id: 'signinput-fullname',
+                            placeholder: 'Enter full name',
+                            icon: 'fa-solid fa-user-circle',
+                            onInput: (val) => get.fullName(val)
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { height: '0.25rem' }
+                        }),
+                        ModernPasswordInput({
+                            label: 'Re-type Password',
                             id: 'signup-confirm-password',
-                            name: 'confirmPassword',
-                            autocomplete: 'new-password'
-                        },
-                        style: { width: '100%', padding: '12px 45px 12px 12px', borderRadius: '12px', boxSizing: 'border-box' },
-                        event: { type: 'input', method: (event) => { get.conPass(event.target.value) } },
-                        elementHandler: SpecialChar
-                    }),
-                    $({
-                        tag: 'span',
-                        att: { className: 'password-toggle', id: 'toggle-confirm-password' },
-                        style: {
-                            position: 'absolute',
-                            right: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            cursor: 'pointer',
-                            color: '#6688aa',
-                            zIndex: '10'
-                        },
-                        child: [$({ tag: 'i', att: { className: 'fa-solid fa-eye', id: 'confirm-password-eye-icon' } })],
-                        event: { type: 'click', method: () => { togglePasswordVisibility('signup-confirm-password', 'confirm-password-eye-icon') } }
-                    })
-                ]
-            })
-        }))
-
-        form.appendChild(TableCont({
-            label: '',
-            element: $({
-                tag: 'input',
-                att: {
-                    type: 'submit',
-                    className: 'submit',
-                    value: 'Submit',
-                    id: 'signup-submit-btn'
-                },
-                style: {
-                    width: '100%',
-                    background: 'linear-gradient(135deg, #0066ff, #00aaff)',
-                    border: 'none',
-                    padding: '12px',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    borderRadius: '40px',
-                    cursor: 'pointer',
-                    color: '#fff',
-                    marginTop: '1rem'
-                },
-                event: {
-                    type: 'click',
-                    method: async (event) => {
-                        event.preventDefault()
-                        
-                        if (userRole === undefined) {
-                            alert("Please select a role (Research Chair or Research Center Chair)..!")
+                            placeholder: 'Re-enter password',
+                            icon: 'fa-solid fa-lock',
+                            onInput: (val) => get.conPass(val)
+                        })
+                    ]
+                })
+            ]
+        })
+        
+        form.appendChild(twoColumnContainer)
+        
+        // Submit Button
+        form.appendChild($({
+            tag: 'button',
+            att: {
+                type: 'submit',
+                id: 'signup-submit-btn'
+            },
+            text: 'Create Account',
+            style: {
+                width: '100%',
+                background: 'linear-gradient(135deg, #0066ff, #00aaff)',
+                border: 'none',
+                padding: '14px 24px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                borderRadius: '40px',
+                cursor: 'pointer',
+                color: '#fff',
+                marginTop: '1.5rem',
+                transition: 'all 0.3s ease'
+            },
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.target.style.transform = 'translateY(-2px)'
+                    e.target.style.boxShadow = '0 5px 15px rgba(0, 100, 255, 0.4)'
+                }
+            },
+            event: {
+                type: 'mouseleave',
+                method: (e) => {
+                    e.target.style.transform = 'translateY(0)'
+                    e.target.style.boxShadow = 'none'
+                }
+            },
+            event: {
+                type: 'click',
+                method: async (event) => {
+                    event.preventDefault()
+                    
+                    if (userRole === undefined) {
+                        alert("Please select a role (Research Chair or Research Center Chair)..!")
+                        return
+                    }
+                    
+                    if (userRole === 'research_chair') {
+                        if (campus === undefined) {
+                            alert("Please select a Campus..!")
                             return
                         }
-                        
-                        if (userRole === 'research_chair') {
-                            if (campus === undefined) {
-                                alert("Please select a Campus..!")
-                                return
-                            }
-                        } else if (userRole === 'research_center_chair') {
-                            if (center === undefined) {
-                                alert("Please select a Research Center..!")
-                                return
-                            }
-                            if (center === 'Extension' && campus === undefined) {
-                                alert("Please select an Extension Campus..!")
-                                return
-                            }
+                    } else if (userRole === 'research_center_chair') {
+                        if (center === undefined) {
+                            alert("Please select a Research Center..!")
+                            return
                         }
-                        
-                        if (email === undefined) { alert("E-Mail is missing..!"); return; }
-                        if (fullName === undefined) { alert("Full name is missing..!"); return; }
-                        if (username === undefined) { alert("Username is missing..!"); return; }
-                        if (password === undefined) { alert("Password is missing..!"); return; }
-                        if (password.length < 8) { alert("Please provide at least 8 characters password...!"); return; }
-                        if (password !== conPass) { alert("Passwords do not match!"); return; }
-
-                        const formData = new FormData()
-                        formData.append('auth', 'signup')
-                        
-                        if (userRole === 'research_chair') {
-                            formData.append('campus', campus.toUpperCase())
-                        } else if (userRole === 'research_center_chair') {
-                            formData.append('cName', center.toUpperCase())
-                            if (center === 'Extension' && campus) {
-                                formData.append('campus', campus.toUpperCase())
-                            }
-                        }
-                        
-                        formData.append('userEmail', email)
-                        formData.append('fullName', fullName)
-                        formData.append('username', username)
-                        formData.append('password', password)
-                        
-                        let loading = Waiting()
-                        document.body.appendChild(loading)
-                        
-                        const remove = () => { loading.remove() }
-
-                        try {
-                            const res = await fetch('/server/authToken.php', {
-                                method: "POST",
-                                body: formData
-                            })
-                            
-                            if (res.ok) {
-                                remove()
-                                const dat = await res.json()
-                                
-                                if (dat.status) {
-                                    document.body.appendChild(ConfirmationAlert(
-                                        "Your account has been successfully created!\nPlease check your email to verify your account.", 
-                                        () => { window.location.replace('/account/Login?') }
-                                    ))
-                                } else {
-                                    document.body.appendChild(ConfirmationAlert(dat.message, () => { window.location.reload() }))
-                                }
-                            } else {
-                                remove()
-                                alert("Server error. Please try again later.")
-                            }
-                        } catch (error) {
-                            remove()
-                            console.error('Signup error:', error)
-                            alert("An error occurred during registration. Please try again.")
+                        if (center === 'Extension' && campus === undefined) {
+                            alert("Please select an Extension Campus..!")
+                            return
                         }
                     }
+                    
+                    if (email === undefined) { alert("E-Mail is missing..!"); return; }
+                    if (fullName === undefined) { alert("Full name is missing..!"); return; }
+                    if (username === undefined) { alert("Username is missing..!"); return; }
+                    if (password === undefined) { alert("Password is missing..!"); return; }
+                    if (password.length < 8) { alert("Please provide at least 8 characters password...!"); return; }
+                    if (password !== conPass) { alert("Passwords do not match!"); return; }
+
+                    const formData = new FormData()
+                    formData.append('auth', 'signup')
+                    
+                    if (userRole === 'research_chair') {
+                        formData.append('campus', campus.toUpperCase())
+                    } else if (userRole === 'research_center_chair') {
+                        formData.append('cName', center.toUpperCase())
+                        if (center === 'Extension' && campus) {
+                            formData.append('campus', campus.toUpperCase())
+                        }
+                    }
+                    
+                    formData.append('userEmail', email)
+                    formData.append('fullName', fullName)
+                    formData.append('username', username)
+                    formData.append('password', password)
+                    
+                    let loading = Waiting()
+                    document.body.appendChild(loading)
+                    
+                    const remove = () => { loading.remove() }
+
+                    try {
+                        const res = await fetch('/loginAuth', {
+                            method: "POST",
+                            body: formData
+                        })
+                        
+                        if (res.ok) {
+                            remove()
+                            const dat = await res.json()
+                            
+                            if (dat.status) {
+                                document.body.appendChild(ConfirmationAlert(
+                                    "Your account has been successfully created!\nPlease check your email to verify your account.", 
+                                    () => { window.location.replace('/account/Login?') }
+                                ))
+                            } else {
+                                document.body.appendChild(ConfirmationAlert(dat.message, () => { window.location.reload() }))
+                            }
+                        } else {
+                            remove()
+                            alert("Server error. Please try again later.")
+                        }
+                    } catch (error) {
+                        remove()
+                        console.error('Signup error:', error)
+                        alert("An error occurred during registration. Please try again.")
+                    }
                 }
-            })
+            }
         }))
         
         container.appendChild(form)
@@ -1149,7 +1329,7 @@ const Signup = (prop) => {
     return $({
         tag: 'div',
         att: { className: 'logInDiv signIn' },
-        style: { width: '100%' },
+        style: { width: '100%', maxWidth: '800px', margin: '0 auto' },
         elementHandler: getContainer
     })
 }
