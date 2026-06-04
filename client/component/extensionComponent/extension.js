@@ -1,11 +1,11 @@
-import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal, AlertModal } from '../../../lib/lib.js'
-import { handleResubmit } from './resubmit.js'
-import { Print } from "../../otherComponent/comment.js"
+import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal, AlertModal } from '../../lib/lib.js'
+import { handleResubmit } from './supportComponents/resubmit.js'
+import { Print } from "./../otherComponent/comment.js"
 import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
 
 
-// View Researches Modal
-const openViewResearchesModal = () => {
+// View Extension Modal
+const openViewExtensionModal = () => {
     let currentModal = null
     let eventSelect, searchInput, tableBody
     let loadResearchDataFn, addResearchToTableFn
@@ -114,7 +114,7 @@ const openViewResearchesModal = () => {
             tag: 'input',
             att: {
                 type: 'text',
-                placeholder: 'Search by event name, campus/center, author, co-author, presenter, or file name...'
+                placeholder: 'Search by event name, campus, author, co-author, presenter, or file name...'
             },
             style: {
                 flex: 1,
@@ -163,7 +163,7 @@ const openViewResearchesModal = () => {
         // Table Header
         const thead = $({ tag: 'thead', style: { position: 'sticky', top: 0, backgroundColor: '#1a1a1a', zIndex: 1 } })
         const headerRow = $({ tag: 'tr', style: { borderBottom: '2px solid #333' } })
-        const columns = ['Event Name', 'Campus/Center', 'Files']
+        const columns = ['Event Name', 'Campus', 'Files']
 
         columns.forEach(col => {
             headerRow.appendChild($({
@@ -383,7 +383,7 @@ const openViewResearchesModal = () => {
                 eventSelect.value = preselect
                 loadResearchDataFn(preselect)
             } else {
-                setTableMessage('fas fa-hand-pointer', 'Select an event above to view its research documents')
+                setTableMessage('fas fa-hand-pointer', 'Select an event above to view its extension documents')
             }
 
         } catch (err) {
@@ -465,7 +465,7 @@ const openViewResearchesModal = () => {
                     style: { padding: '40px', textAlign: 'center', color: '#666' },
                     child: [
                         $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '12px' } }),
-                        $({ tag: 'div', text: searchTerm ? `Searching for "${searchTerm}"...` : 'Loading research documents...', style: { fontSize: '14px' } })
+                        $({ tag: 'div', text: searchTerm ? `Searching for "${searchTerm}"...` : 'Loading extension documents...', style: { fontSize: '14px' } })
                     ]
                 })
             ]
@@ -480,7 +480,7 @@ const openViewResearchesModal = () => {
                 formData.append('search', searchTerm)
             }
 
-            const response = await fetch('/uploadFacultyDocs', {
+            const response = await fetch('/uploadExtensionDocs', {
                 method: 'POST',
                 body: formData
             })
@@ -513,12 +513,12 @@ const openViewResearchesModal = () => {
                 if (searchTerm) {
                     setTableMessage('fas fa-search', 'No matching results found', `No documents match "${searchTerm}"`)
                 } else {
-                    setTableMessage('fas fa-folder-open', 'No research documents available', 'Upload documents to view them here')
+                    setTableMessage('fas fa-folder-open', 'No extension documents available', 'Upload documents to view them here')
                 }
             }
 
         } catch (error) {
-            console.error('Error loading research data:', error)
+            console.error('Error loading extension data:', error)
             loadingRow.remove && loadingRow.remove()
 
             tableBody.innerHTML = ''
@@ -531,7 +531,7 @@ const openViewResearchesModal = () => {
                         style: { padding: '40px', textAlign: 'center', color: '#ff6b6b' },
                         child: [
                             $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '32px', display: 'block', marginBottom: '12px' } }),
-                            $({ tag: 'div', text: 'Failed to load research documents', style: { fontSize: '16px', marginBottom: '8px' } }),
+                            $({ tag: 'div', text: 'Failed to load extension documents', style: { fontSize: '16px', marginBottom: '8px' } }),
                             $({ tag: 'div', text: error.message, style: { fontSize: '12px', opacity: 0.7 } }),
                             $({
                                 tag: 'button',
@@ -574,7 +574,7 @@ const openViewResearchesModal = () => {
     wireEvents()
 
     currentModal = CustomModal({
-        title: 'Research Documents',
+        title: 'Extension Documents',
         content: content,
         size: 'large',
         onClose: () => {
@@ -588,7 +588,7 @@ const openViewResearchesModal = () => {
     }, 100)
 }
 
-export const Research = () => {
+export const Extension = () => {
     // Utility to update stats cards
     const updateStatsFromData = (total, pending, accepted, rejected) => {
         const statsContainer = document.querySelector('.stats-container')
@@ -1159,7 +1159,7 @@ export const Research = () => {
                 form.append('commentRequest', 'true');
                 form.append('docId', doc.id);
 
-                const response = await fetch('/uploadFacultyDocs', {
+                const response = await fetch('/uploadExtensionDocs', {
                     method: 'POST',
                     body: form
                 });
@@ -1716,7 +1716,7 @@ export const Research = () => {
                         formData.append('researchDoc', selectedFile);
 
                         try {
-                            const response = await fetch('/uploadFacultyDocs', {
+                            const response = await fetch('/uploadExtensionDocs', {
                                 method: 'POST',
                                 body: formData
                             });
@@ -1852,7 +1852,7 @@ export const Research = () => {
                     form.append('deleteEndorsement', 'true')
                     form.append('docId', doc.endorsement_id || doc.id)
 
-                    const response = await fetch('/uploadFacultyDocs', {
+                    const response = await fetch('/uploadExtensionDocs', {
                         method: 'POST',
                         body: form
                     })
@@ -2052,7 +2052,7 @@ export const Research = () => {
             child: [
                 $({
                     tag: 'h3',
-                    text: isEdit ? 'Edit Entry' : 'Submit New Entry',
+                    text: isEdit ? 'Edit Entry' : 'Submit New Extension Entry',
                     style: { color: '#fff', margin: 0, fontSize: '20px' },
                     att: { id: 'modalTitle' }
                 }),
@@ -2125,7 +2125,7 @@ export const Research = () => {
 
         const submitBtn = $({
             tag: 'button',
-            text: isEdit ? 'Submit Edited Entry' : 'Submit New Entry',
+            text: isEdit ? 'Submit Edited Entry' : 'Submit Entry',
             style: {
                 padding: '10px 28px',
                 backgroundColor: '#4caf50',
@@ -2225,7 +2225,7 @@ export const Research = () => {
             document.body.appendChild(loading);
 
             try {
-                const response = await fetch('/uploadFacultyDocs', {
+                const response = await fetch('/uploadExtensionDocs', {
                     method: 'POST',
                     body: submitFormData
                 });
@@ -2703,7 +2703,7 @@ export const Research = () => {
                 }
             })
 
-            fileGrid.appendChild(FileUploadField({ label: 'Research Entry File', fieldName: 'researchFile' }))
+            fileGrid.appendChild(FileUploadField({ label: 'Extension Entry File', fieldName: 'researchFile' }))
             fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
 
             fileSection.appendChild(fileGrid)
@@ -2877,8 +2877,8 @@ export const Research = () => {
         const titleSection = $({
             tag: 'div',
             child: [
-                $({ tag: 'h1', text: 'Research Documents', style: { color: '#fff', fontSize: '30px', margin: 0, marginBottom: '8px' } }),
-                $({ tag: 'p', text: 'Manage and track all research submissions of this center', style: { color: '#888', fontSize: '14px', margin: 0 } })
+                $({ tag: 'h1', text: 'Extension Documents', style: { color: '#fff', fontSize: '30px', margin: 0, marginBottom: '8px' } }),
+                $({ tag: 'p', text: 'Manage and track all extension submissions of this campus', style: { color: '#888', fontSize: '14px', margin: 0 } })
             ]
         })
 
@@ -2938,7 +2938,7 @@ export const Research = () => {
             ],
             event: {
                 type: 'click',
-                method: () => openViewResearchesModal()
+                method: () => openViewExtensionModal()
             }
         })
 
@@ -3095,7 +3095,7 @@ export const Research = () => {
                 const form = new FormData()
                 form.append('researchReviewed', 'true')
 
-                const response = await fetch('/uploadFacultyDocs', {
+                const response = await fetch('/uploadExtensionDocs', {
                     method: 'POST',
                     body: form
                 })

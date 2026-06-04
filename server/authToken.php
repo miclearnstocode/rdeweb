@@ -1,4 +1,25 @@
 <?php
+
+// Start session first before anything else
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Force JSON response for API calls
+if (strpos($_SERVER['REQUEST_URI'], '/loginAuth') !== false || 
+    strpos($_SERVER['REQUEST_URI'], '/server/authToken.php') !== false) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type');
+}
+
+// Handle preflight requests
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 // Prevent any accidental output
 ob_start();
 
@@ -17,7 +38,6 @@ if(isset($_POST['auth'])){
     $response=new stdClass();
     $response->status=false;
     $response->message='no';
-    
     if($_POST['auth']==='login'){
         if($_POST['userType']==='ADMIN'){
             if($con=new mysqli($host,$username,$pass,$dbName)){
@@ -68,45 +88,40 @@ if(isset($_POST['auth'])){
         }else{
             $usernames=$_POST['username'];
             $password=$_POST['password'];
-            
             if($con=new mysqli($host,$username,$pass,$dbName)){
-                // Updated query - ALLOW extension accounts with campus values
-                $loginUSer = "SELECT 
-                    capsu_user.id,
-                    capsu_user.username,
-                    capsu_user.password,
-                    account_detail.fullName,
-                    account_detail.center,
-                    account_detail.email,    
-                    account_detail.usertype,
-                    signature.signature_url,
-                    signature.scale,
-                    account_detail.campus
-                FROM account_detail
-                LEFT JOIN capsu_user ON account_detail.id = capsu_user.id
-                LEFT JOIN signature ON account_detail.id = signature.user_id 
-                WHERE capsu_user.username = ? 
-                AND account_detail.center IS NOT NULL 
-                AND account_detail.center != ''
-                AND account_detail.usertype NOT LIKE '%Research Chair%'
-                AND account_detail.usertype NOT LIKE '%research chair%'
-                AND account_detail.usertype NOT LIKE '%RESEARCH CHAIR%'";
+                $loginUSer="SELECT 
+            capsu_user.id,
+            capsu_user.username,
+            capsu_user.password,
+            account_detail.fullName,
+            account_detail.center,
+            account_detail.email,    
+            account_detail.usertype,
+            signature.signature_url,
+            signature.scale 
+        FROM account_detail
+        LEFT JOIN capsu_user ON account_detail.id=capsu_user.id
+        LEFT JOIN signature ON account_detail.id=signature.user_id 
+        WHERE capsu_user.username=? 
+        AND account_detail.center IS NOT NULL 
+        AND account_detail.center != ''
+        AND (account_detail.campus IS NULL OR account_detail.campus = '')
+        AND account_detail.usertype NOT LIKE '%Research Chair%'
+        AND account_detail.usertype NOT LIKE '%research chair%'
+        AND account_detail.usertype NOT LIKE '%RESEARCH CHAIR%'";
                 
                 if($statement=$con->prepare($loginUSer)){
                     $statement->bind_param("s",$usernames);
                     $statement->execute();
                     $statement->store_result();
-                    
                     if($statement->num_rows>0){
-                        $statement->bind_result($id,$userName,$passWord,$fullName,$center,$emailAdd,$userType,$signUrl,$signScale,$campus);
+                        $statement->bind_result($id,$userName,$passWord,$fullName,$center,$emailAdd,$userType,$signUrl,$signScale);
                         $statement->fetch();
-                        
                         if(password_verify($password,$passWord)){
                             $response->message='/user/research/submittedDocs/submittedFiles';
                             $signature= new stdClass();
                             $signature->url=$signUrl;
                             $signature->scale=$signScale;
-                            
                             $_SESSION['isLog']=serialize(new Auth(true,$_POST['userType'],$userName,$center,$id,$userType,$emailAdd,$fullName,json_encode($signature)));
                             $_SESSION['login']=true;
                             $_SESSION['userId']=$id;
@@ -115,44 +130,14 @@ if(isset($_POST['auth'])){
                             $_SESSION['userFulname']=$fullName;
                             $_SESSION['userEsign']=json_encode($signature);
                             $_SESSION['userCenter']=$center;
-                            $_SESSION['userCampus']=$campus; // Store campus for extension accounts
                             $_SESSION['userEmail']=$emailAdd;
                             $_SESSION['userDesignation']=$userType;
-                            
                             $response->status=true;
                         }else{
                             $response->message='Password is incorrect';
                         }
                     }else{
-                        // Check if user exists in capsu_user but might be a Research Chair
-                        $checkResearchChair = "SELECT 
-                            capsu_user.id,
-                            capsu_user.username,
-                            capsu_user.password,
-                            account_detail.fullName,
-                            account_detail.center,
-                            account_detail.email,    
-                            account_detail.usertype
-                        FROM account_detail
-                        LEFT JOIN capsu_user ON account_detail.id = capsu_user.id
-                        WHERE capsu_user.username = ? 
-                        AND (account_detail.usertype LIKE '%Research Chair%' 
-                        OR account_detail.usertype LIKE '%research chair%'
-                        OR account_detail.usertype LIKE '%RESEARCH CHAIR%')";
-                        
-                        if($researchStmt = $con->prepare($checkResearchChair)){
-                            $researchStmt->bind_param("s",$usernames);
-                            $researchStmt->execute();
-                            $researchStmt->store_result();
-                            
-                            if($researchStmt->num_rows > 0){
-                                $response->message = 'This is a Research Chair account. Please use the Research Chair login page.';
-                            } else {
-                                $response->message = 'Invalid credentials or you are not authorized as a Center Director.';
-                            }
-                        } else {
-                            $response->message = 'Invalid credentials or you are not authorized as a Center Director.';
-                        }
+                        $response->message='Invalid credentials or you are not authorized as a Center Director. Please use the Research Chair login if you are a Research Chair.';
                     }
                 }else{
                     $response->message='Something went wrong..!'.$con->error.'00';
@@ -173,7 +158,7 @@ if(isset($_POST['auth'])){
         // Determine the center/campus based on what was sent
         $center = null;
         $campus = null;
-        $isResearchChair = false;
+        $isResearchChair = false; // Flag to know if it's a Research Chair registration
         
         // Check if cName is provided (Research Center Chair)
         if(isset($_POST['cName']) && !empty($_POST['cName'])) {
@@ -186,8 +171,8 @@ if(isset($_POST['auth'])){
         // Check if only campus is provided (Research Chair)
         else if(isset($_POST['campus']) && !empty($_POST['campus'])) {
             $campus = $_POST['campus'];
-            $center = $_POST['campus'];
-            $isResearchChair = true;
+            $center = $_POST['campus']; // Use campus as center for database lookup
+            $isResearchChair = true; // Mark as Research Chair
         }
         else {
             $response->message = "Missing center/campus information!";
@@ -197,18 +182,17 @@ if(isset($_POST['auth'])){
         
         if($con=new mysqli($host,$username,$pass,$dbName)){
             if($isResearchChair) {
-                // For Research Chair registration
-                $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.campus=?";
-                $checkStmt = $con->prepare($checkAccount);
-                $checkStmt->bind_param('ss', $email, $campus);
+                $response->message = "Research Chair registration should be done through the Research Chair signup page.";
+                echo json_encode($response);
+                exit();
             } else {
                 if($campus) {
                     // Extension case: Check by email, center, and campus
-                    $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.center=? AND account_detail.campus=?";
+                    $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.center=? AND (account_detail.campus=? OR account_detail.campus IS NULL) AND account_detail.usertype NOT LIKE '%Research Chair%'";
                     $checkStmt = $con->prepare($checkAccount);
                     $checkStmt->bind_param('sss', $email, $center, $campus);
                 } else {
-                    $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.center=? AND (account_detail.campus IS NULL OR account_detail.campus = '')";
+                    $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.center=? AND (account_detail.campus IS NULL OR account_detail.campus = '') AND account_detail.usertype NOT LIKE '%Research Chair%'";
                     $checkStmt = $con->prepare($checkAccount);
                     $checkStmt->bind_param('ss', $email, $center);
                 }
@@ -218,11 +202,11 @@ if(isset($_POST['auth'])){
             $result = $checkStmt->get_result();
             
             if($result->num_rows > 0){
+                // Email exists in account_detail - GOOD! This is what we want
                 $accountData = $result->fetch_assoc();
                 $accountId = $accountData['id'];
                 $userType = $accountData['usertype'];
-                $actualCenter = $accountData['center'];
-                $actualCampus = $accountData['campus'];
+                $actualCenter = $accountData['center']; // Get the actual center from database
                 
                 // Check if username already exists in capsu_user
                 $userNameCheck = "SELECT COUNT(*) FROM capsu_user WHERE capsu_user.username=?";
@@ -262,8 +246,7 @@ if(isset($_POST['auth'])){
                                 $to->email = $email;
                                 
                                 // Use appropriate center for email
-                                $displayCenter = $actualCampus ? $actualCampus . ' - ' . $actualCenter : $actualCenter;
-                                SendEmail($from, $to, Signup($usernames, $_POST['password'], $displayCenter));
+                                SendEmail($from, $to, Signup($usernames, $_POST['password'], $actualCenter));
                                 
                                 $response->status = true;
                                 $response->message = "/";
@@ -280,6 +263,7 @@ if(isset($_POST['auth'])){
                     $response->message = "Username is not available!";
                 }
             } else {
+                // Email NOT found in account_detail
                 $response->message = "Email address not found for the selected center. Please contact your administrator to create your account first.";
             }
         } else {
@@ -287,12 +271,14 @@ if(isset($_POST['auth'])){
         }
         echo json_encode($response);
     }
+
 }
 
 if(isset($_POST['logout'])){
     session_destroy();
     echo "/account/Login?";
 }
+
 
 ob_end_flush();
 exit();

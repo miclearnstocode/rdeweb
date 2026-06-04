@@ -9,6 +9,7 @@ import {Scanner} from "./component/scanner.js";
 import {DocumentViewer} from "./component/otherComponent/Document.js";
 import {Retrieval} from "./AccountRetrival/retrival.js";
 import {ResearchChairPanel} from "./component/researchChair.js";
+import {ExtensionUserPanel} from "./component/extensionUser.js";
 
 (function() {
     const originalFetch = window.fetch;
@@ -62,6 +63,12 @@ const ResearchChair = () => {
     }))
 }
 
+const ExtensionChair = () => {
+    return ($({
+        tag: 'div',
+        child: [ExtensionUserPanel()]
+    }))
+}
 const Docs = () => {
     return ($({
         tag: 'div',
@@ -188,6 +195,8 @@ window.addEventListener('DOMContentLoaded', async () => {
             Render = User
         } else if (url.split('/')[1] === 'research-chair') {
             Render = ResearchChair
+        } else if (url.split('/')[1] === 'extension-chair') {
+            Render = ExtensionChair
         } else if (url.split('/')[1] === 'evaluator') {
             Render = Evaluator
         } else if (url.split('/')[1] === 'rdeOffice') {

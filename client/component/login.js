@@ -62,6 +62,10 @@ const LoginPanel = (prop) => {
             return 'RESEARCH_CHAIR'
         }
         
+        if (userLower.includes('extension') || userLower.includes('chair')) {
+            return 'EXTENSION_CHAIR'
+        }
+
         return null
     }
 
@@ -124,8 +128,9 @@ const LoginPanel = (prop) => {
                             }
                         }),
                         $({ tag: 'option', text: 'Admin', att: { value: 'ADMIN' } }),
-                        $({ tag: 'option', text: 'CAPSU Center Users', att: { value: 'CAPSUUSERS' } }),
+                        $({ tag: 'option', text: 'CAPSU Center Chair User', att: { value: 'CAPSUUSERS' } }),
                         $({ tag: 'option', text: 'CAPSU Research Chair User', att: { value: 'RESEARCH_CHAIR' } }),
+                        $({ tag: 'option', text: 'CAPSU Extension Chair User', att: { value: 'EXTENSION_CHAIR' } }),
                         $({ tag: 'option', text: 'Evaluators', att: { value: 'EVALUATOR' } }),
                         $({ tag: 'option', text: 'RDE Office', att: { value: 'RDEOFFICE' } })
                     ]
@@ -266,7 +271,7 @@ const LoginPanel = (prop) => {
                                                 }
                                             })
                                     } else if (selType.value === 'RESEARCH_CHAIR') {
-                                        await fetch('/server/researchChairAuth.php', {
+                                        await fetch('/researchChairAuth', {
                                             method: 'POST',
                                             body: form
                                         }).then(res => res.json())
@@ -277,6 +282,20 @@ const LoginPanel = (prop) => {
                                                     alert(data.message)
                                                 }
                                             })
+                                    
+                                    } else if (selType.value === 'EXTENSION_CHAIR') {
+                                        await fetch('/extensionChairAuth', {
+                                            method: 'POST',
+                                            body: form
+                                        }).then(res => res.json())
+                                            .then(data => {
+                                                if (data.status) {
+                                                    window.location.replace(data.message)
+                                                } else {
+                                                    alert(data.message)
+                                                }
+                                            })
+                                    
                                     } else if (selType.value === "RDEOFFICE") {
                                         await fetch('/server/rdeStaff.php', {
                                             method: 'POST',

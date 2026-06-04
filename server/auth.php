@@ -10,35 +10,23 @@ if(!isset($_SESSION['login'])){
     exit();
 }
 
-/*
-
-                           $_SESSION['login']=true;
-
-                            $_SESSION['userId']=$id;
-
-                            $_SESSION['userName']=$userName;
-
-                            $_SESSION['userType']=$_POST['userType'];
-
-                            $_SESSION['userFulname']=$fullName;
-
-                            $_SESSION['userEsign']=json_encode($signature);
-
-                            $_SESSION['userOffice']=$campus;
-
-                            $_SESSION['userEmail']=$emailAdd;
-
-                            $_SESSION['userType']=$userType;
-
- */
-
-/* Checking if the user is logged in. If the user is logged in, it will redirect the user to the appropriate page. */
-
 if(isset($_SESSION['login'])){
 
-   // $session=unserialize($_SESSION['isLog']);
-
     if($_SESSION['login']){
+
+        // Check for Extension Chair first (before other cases)
+        if(isset($_SESSION['isExtensionChair']) && $_SESSION['isExtensionChair'] === true) {
+            ob_clean();
+            header("location:/extension-chair/submittedDocs/submittedFiles");
+            exit();
+        }
+        
+        // Check for Research Chair
+        if(isset($_SESSION['isResearchChair']) && $_SESSION['isResearchChair'] === true) {
+            ob_clean();
+            header("location:/research-chair/submittedDocs/submittedFiles");
+            exit();
+        }
 
         switch ($_SESSION['userType']){
 
@@ -65,15 +53,31 @@ if(isset($_SESSION['login'])){
                 header("location:/researcher");
                 exit();
                 break;
+                
+            case 'EXTENSION':
+                // Extension users (non-chair) go to /extension
+                ob_clean();
+                header("location:/extension");
+                exit();
+                break;
 
             case 'RDEOFFICE':
                 ob_clean();
                 header("location:/rdeOffice/communication");
                 exit();
                 break;
+                
             case 'EXTERNAL':
                 ob_clean();
                 header("location:/external/users/a/b/c/b/c/d/e/v1");
+                exit();
+                break;
+                
+            default:
+                // If no matching case and not Extension/Research Chair, logout
+                ob_clean();
+                session_destroy();
+                header('location:/account/Login?');
                 exit();
                 break;
         }
@@ -83,6 +87,4 @@ if(isset($_SESSION['login'])){
         header('location:/account/Login?');
         exit();
     }
-
 }
-

@@ -7,6 +7,7 @@ post('/loginAuth','server/authToken.php');
 post('/sessionCheck','server/session.php');
 post('/evaluatorReg','server/evalReg.php');
 post('/researchChairAuth','server/researchChairAuth.php');
+post('/extensionChairAuth','server/extensionChairAuth.php');
 post('/rdeStaff','server/rdeStaff.php');
 post('/externalauth','server/visitorAuth.php');
 post('/samp','server/samp.php');
@@ -16,6 +17,8 @@ post('/loader','server/loader.php');
 post('/loadercos','server/loadCos.php');
 post('/deleteUser','server/updates.php');
 post('/uploadResearchFile','server/researchFile.php');
+post('/uploadFacultyDocs', 'server/researchFacultySub.php');
+post('/uploadExtensionDocs','server/extensionChairSub.php');
 post('/getresearch','server/rdeAcceptance.php');
 post('/filesSend','server/file.php');
 post('/inboxFile','server/fileViewer.php');
@@ -89,6 +92,12 @@ get('/account/Signup','/index.html');
 // Admin routes - ALL admin pages
 get('/admin/addAccount','/index.html');
 get('/admin/$page','/index.html');  // Catch-all for other admin pages
+
+//extension chair routes
+// Research Chair routes
+get('/extension-chair/submissions','/index.html');
+get('/extension-chair/settings','/index.html');
+get('/extension-chair/$page','/index.html');
 
 // Research Chair routes
 get('/research-chair/submissions','/index.html');
