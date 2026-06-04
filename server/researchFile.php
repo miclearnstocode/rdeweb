@@ -3526,7 +3526,6 @@ function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $e
     }
 }
 
-// Helper function to clean HTML comments
 function cleanCommentHtml($html)
 {
     if (empty($html)) {
