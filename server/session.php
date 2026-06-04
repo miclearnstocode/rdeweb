@@ -64,7 +64,6 @@ if(isset($_POST['sessionChecker'])){
         $response->redirect = false;
         $response->message = $_SESSION['userType'] ?? '';
         $response->username = $_SESSION['userName'] ?? '';
-        $response->userId = $_SESSION['userId'] ?? '';
     } else {
         $response->status = true;
         $response->redirect = true;

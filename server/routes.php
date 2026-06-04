@@ -114,7 +114,7 @@ get('/user/$page','/index.html');
 
 // Evaluator route
 get('/evaluator','/index.html');
-get('/evaluator/$page','/index.html');  // For evaluator sub-pages
+get('/evaluator/$page','/index.html');
 
 // RDE Office routes
 get('/rdeOffice/communication','/index.html');

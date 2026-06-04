@@ -4,15 +4,10 @@ import { showPasswordResetModal } from "./../AccountRetrival/Code.js"
 const LoginPanel = (prop) => {
     let username
     let password
-    let usertype
     let form
-    let formUserType
     let UserTypeStat = true
     let selType
-
-    const getUserType = (value) => {
-        usertype = value
-    }
+    let isSubmitting = false // Prevent multiple submissions
 
     const getUserName = (value) => {
         username = value
@@ -37,109 +32,119 @@ const LoginPanel = (prop) => {
         }
     }
 
-    const detectUserType = (username) => {
-        if (!username) return null
-        
-        const userLower = username.toLowerCase()
-        
-        if (userLower.includes('admin') || userLower.includes('administrator')) {
-            return 'ADMIN'
-        }
-        
-        if (userLower.includes('@capsu.edu.ph')) {
-            return 'CAPSUUSERS'
-        }
-        
-        if (userLower.includes('eval') || userLower.includes('evaluator')) {
-            return 'EVALUATOR'
-        }
-        
-        if (userLower.includes('rde') || userLower.includes('office') || userLower.includes('staff')) {
-            return 'RDEOFFICE'
-        }
-        
-        if (userLower.includes('chair') || userLower.includes('research')) {
-            return 'RESEARCH_CHAIR'
-        }
-        
-        if (userLower.includes('extension') || userLower.includes('chair')) {
-            return 'EXTENSION_CHAIR'
-        }
 
-        return null
-    }
+    const detectUserTypeAndAuthenticate = async (username, password) => {
+        // Define authentication endpoints in order of priority
+        const authEndpoints = [
+            {
+                name: 'ADMIN/CAPSUUSERS',
+                endpoint: '/loginAuth',
+                checkEndpoint: true,
+                body: (user, pass) => new URLSearchParams({
+                    auth: 'login',
+                    username: user,
+                    password: pass,
+                    userType: ''
+                })
+            },
+            {
+                name: 'RESEARCH_CHAIR',
+                endpoint: '/researchChairAuth',
+                checkEndpoint: true,
+                body: (user, pass) => new URLSearchParams({
+                    auth: 'login',
+                    username: user,
+                    password: pass
+                })
+            },
+            {
+                name: 'EXTENSION_CHAIR',
+                endpoint: '/extensionChairAuth',
+                checkEndpoint: true,
+                body: (user, pass) => new URLSearchParams({
+                    auth: 'login',
+                    username: user,
+                    password: pass
+                })
+            },
+            {
+                name: 'EVALUATOR',
+                endpoint: '/evaluatorReg',
+                checkEndpoint: true,
+                body: (user, pass) => new URLSearchParams({
+                    auth: 'login',
+                    username: user,
+                    password: pass,
+                    userType: 'EVALUATOR'
+                })
+            },
+            {
+                name: 'RDEOFFICE',
+                endpoint: '/rdeStaff',
+                checkEndpoint: true,
+                body: (user, pass) => new URLSearchParams({
+                    auth: 'login',
+                    username: user,
+                    password: pass
+                })
+            },
+            {
+                name: 'EXTERNAL',
+                endpoint: '/externalauth',
+                checkEndpoint: true,
+                body: (user, pass) => new URLSearchParams({
+                    auth: 'login',
+                    username: user,
+                    password: pass
+                })
+            }
+        ]
 
-    const autoSelectUserType = (username) => {
-        if (!username || !selType) return
-        
-        const detectedType = detectUserType(username)
-        if (detectedType && selType) {
-            selType.value = detectedType
-            
-            if (prop.onAutoDetect) {
-                prop.onAutoDetect(detectedType)
+        // Try each endpoint sequentially
+        for (const authConfig of authEndpoints) {
+            try {
+                const formData = authConfig.body(username, password)
+                
+                const response = await fetch(authConfig.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                })
+
+                if (!response.ok) {
+                    console.log(`${authConfig.name} endpoint returned ${response.status}, trying next...`)
+                    continue
+                }
+
+                const data = await response.json()
+                
+                if (data.status === true) {
+                    // Successful authentication
+                    return {
+                        success: true,
+                        endpoint: authConfig.endpoint,
+                        userType: authConfig.name,
+                        redirectUrl: data.message,
+                        rawResponse: data
+                    }
+                }
+                // If status is false but endpoint exists, this user type doesn't match
+                // Continue to next endpoint
+            } catch (error) {
+                console.log(`Error trying ${authConfig.name} endpoint:`, error.message)
+                // Continue to next endpoint
             }
         }
+
+        // No matching endpoint found
+        return {
+            success: false,
+            message: 'Invalid username or password. Please check your credentials.'
+        }
     }
 
-    const sel = () => {
-        return $({
-            tag: 'div',
-            att: {
-                className: 'dropdown-wrapper mb-2'
-            },
-            style: {
-                position: 'relative',
-                width: '100%',
-                marginBottom: '1rem'
-            },
-            child: [
-                $({
-                    tag: 'select',
-                    att: {
-                        className: 'form-select mb-2 text-center',
-                        name: 'userType',
-                        required: true,
-                        id: 'userTypeSelect'
-                    },
-                    style: {
-                        backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                        color: '#fff',
-                        padding: '12px 40px 12px 16px',
-                        cursor: 'pointer',
-                        appearance: 'none',
-                        width: '100%',
-                        border: '2px solid rgba(0, 150, 255, 0.2)',
-                        borderRadius: '12px',
-                        fontSize: '0.9rem',
-                        boxSizing: 'border-box'
-                    },
-                    elementHandler: (el) => {
-                        selType = el
-                    },
-                    child: [
-                        $({
-                            tag: 'option',
-                            text: 'Select User Type',
-                            att: {
-                                disabled: true,
-                                selected: true,
-                                value: ''
-                            }
-                        }),
-                        $({ tag: 'option', text: 'Admin', att: { value: 'ADMIN' } }),
-                        $({ tag: 'option', text: 'CAPSU Center Chair User', att: { value: 'CAPSUUSERS' } }),
-                        $({ tag: 'option', text: 'CAPSU Research Chair User', att: { value: 'RESEARCH_CHAIR' } }),
-                        $({ tag: 'option', text: 'CAPSU Extension Chair User', att: { value: 'EXTENSION_CHAIR' } }),
-                        $({ tag: 'option', text: 'Evaluators', att: { value: 'EVALUATOR' } }),
-                        $({ tag: 'option', text: 'RDE Office', att: { value: 'RDEOFFICE' } })
-                    ]
-                })
-            ]
-        })
-    }
-
-    // Function to setup floating label
     const setupFloatingLabel = (inputId, labelId) => {
         setTimeout(() => {
             const input = document.getElementById(inputId)
@@ -184,7 +189,6 @@ const LoginPanel = (prop) => {
                     }
                 })
                 
-                // Initial check
                 updateLabel()
             }
         }, 100)
@@ -211,7 +215,8 @@ const LoginPanel = (prop) => {
                     $({
                         tag: 'form',
                         att: {
-                            method: 'POST'
+                            method: 'POST',
+                            id: 'loginForm'
                         },
                         style: {
                             width: '100%'
@@ -220,100 +225,56 @@ const LoginPanel = (prop) => {
                             type: 'submit',
                             method: async (ev) => {
                                 ev.preventDefault()
-
-                                if (!selType.value && ev.target.username.value) {
-                                    const detectedType = detectUserType(ev.target.username.value)
-                                    if (detectedType) {
-                                        selType.value = detectedType
-                                    }
+                                
+                                // Prevent multiple submissions
+                                if (isSubmitting) return
+                                isSubmitting = true
+                                
+                                const usernameValue = ev.target.username?.value || ''
+                                const passwordValue = ev.target.password?.value || ''
+                                
+                                if (!usernameValue || !passwordValue) {
+                                    alert('Please enter both username and password')
+                                    isSubmitting = false
+                                    return
                                 }
-
-                                if (selType.value === '') {
-                                    let form = new FormData(ev.target)
-                                    form.append('auth', 'login')
-                                    await fetch('/server/visitorAuth.php', {
-                                        method: 'POST',
-                                        body: form,
-                                    }).then(res => res.json())
-                                        .then(data => {
-                                            if (data.status) {
-                                                window.location.replace(data.message)
-                                            } else {
-                                                window.location.replace('/')
-                                            }
-                                        })
-                                } else {
-                                    let form = new FormData(ev.target)
-                                    form.append('auth', 'login')
+                                
+                                // Show loading indicator
+                                const submitBtn = ev.target.querySelector('.submitLog')
+                                const originalBtnText = submitBtn?.innerHTML || 'Submit'
+                                if (submitBtn) {
+                                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...'
+                                    submitBtn.disabled = true
+                                }
+                                
+                                try {
+                                    // Auto-detect user type and authenticate
+                                    const result = await detectUserTypeAndAuthenticate(usernameValue, passwordValue)
                                     
-                                    if (selType.value === 'EVALUATOR') {
-                                        await fetch('/server/evalReg.php', {
-                                            method: 'POST',
-                                            body: form
-                                        }).then(res => res.json())
-                                            .then(data => {
-                                                if (data.status) {
-                                                    window.location.replace(data.message)
-                                                } else {
-                                                    alert(data.message)
-                                                }
-                                            })
-                                    } else if (selType.value === 'CAPSUUSERS' || selType.value === 'ADMIN') {
-                                        await fetch('/loginAuth', {
-                                            method: 'POST',
-                                            body: form
-                                        }).then(res => res.json())
-                                            .then(data => {
-                                                if (data.status) {
-                                                    window.location.replace(data.message)
-                                                } else {
-                                                    alert(data.message)
-                                                }
-                                            })
-                                    } else if (selType.value === 'RESEARCH_CHAIR') {
-                                        await fetch('/researchChairAuth', {
-                                            method: 'POST',
-                                            body: form
-                                        }).then(res => res.json())
-                                            .then(data => {
-                                                if (data.status) {
-                                                    window.location.replace(data.message)
-                                                } else {
-                                                    alert(data.message)
-                                                }
-                                            })
-                                    
-                                    } else if (selType.value === 'EXTENSION_CHAIR') {
-                                        await fetch('/extensionChairAuth', {
-                                            method: 'POST',
-                                            body: form
-                                        }).then(res => res.json())
-                                            .then(data => {
-                                                if (data.status) {
-                                                    window.location.replace(data.message)
-                                                } else {
-                                                    alert(data.message)
-                                                }
-                                            })
-                                    
-                                    } else if (selType.value === "RDEOFFICE") {
-                                        await fetch('/server/rdeStaff.php', {
-                                            method: 'POST',
-                                            body: form
-                                        }).then(res => res.json())
-                                            .then(data => {
-                                                if (data.status) {
-                                                    window.location.replace(data.message)
-                                                } else {
-                                                    alert(data.message)
-                                                }
-                                            })
+                                    if (result.success) {
+                                        // Redirect to the appropriate dashboard
+                                        window.location.replace(result.redirectUrl)
+                                    } else {
+                                        alert(result.message || 'Authentication failed. Please check your credentials.')
+                                        if (submitBtn) {
+                                            submitBtn.innerHTML = originalBtnText
+                                            submitBtn.disabled = false
+                                        }
                                     }
+                                } catch (error) {
+                                    console.error('Login error:', error)
+                                    alert('An error occurred during login. Please try again.')
+                                    if (submitBtn) {
+                                        submitBtn.innerHTML = originalBtnText
+                                        submitBtn.disabled = false
+                                    }
+                                } finally {
+                                    isSubmitting = false
                                 }
                             }
                         },
                         child: [
-                            // External Users Checkbox
+                            // External Users Checkbox (kept for backward compatibility, but now auto-detection handles it)
                             $({
                                 tag: 'div',
                                 att: {
@@ -338,24 +299,9 @@ const LoginPanel = (prop) => {
                                         style: {
                                             width: '18px',
                                             height: '18px',
-                                            cursor: 'pointer'
-                                        },
-                                        event: {
-                                            type: 'input',
-                                            method: () => {
-                                                if (UserTypeStat) {
-                                                    const selectWrapper = document.querySelector('.dropdown-wrapper')
-                                                    if (selectWrapper) selectWrapper.remove()
-                                                } else {
-                                                    const container = document.querySelector('.logInDiv form > div:nth-child(2)')
-                                                    if (container) {
-                                                        const newSelect = sel()
-                                                        container.appendChild(newSelect)
-                                                    }
-                                                }
-                                                UserTypeStat = !UserTypeStat
-                                            }
-                                        },
+                                            cursor: 'pointer',
+                                            display: 'none' // Hide since auto-detection handles it
+                                        }
                                     }),
                                     $({
                                         tag: 'label',
@@ -368,22 +314,59 @@ const LoginPanel = (prop) => {
                                         text: 'External users?',
                                         style: {
                                             color: '#00aaff',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            display: 'none' // Hide since auto-detection handles it
                                         }
                                     }),
                                 ]
                             }),
-                            // User Type Select Container
+                            // User Type Select Container (hidden - auto-detection)
                             $({
                                 tag: 'div',
-                                elementHandler: (el) => {
-                                    formUserType = el
-                                },
                                 style: {
                                     width: '100%',
-                                    marginBottom: '1rem'
+                                    marginBottom: '1rem',
+                                    display: 'none' // Hide manual user type selection
                                 },
-                                child: [sel()]
+                                child: [
+                                    $({
+                                        tag: 'select',
+                                        att: {
+                                            className: 'form-select mb-2 text-center',
+                                            name: 'userType',
+                                            id: 'userTypeSelect'
+                                        },
+                                        style: {
+                                            backgroundColor: 'rgba(10, 20, 40, 0.8)',
+                                            color: '#fff',
+                                            padding: '12px 40px 12px 16px',
+                                            cursor: 'pointer',
+                                            appearance: 'none',
+                                            width: '100%',
+                                            border: '2px solid rgba(0, 150, 255, 0.2)',
+                                            borderRadius: '12px',
+                                            fontSize: '0.9rem',
+                                            boxSizing: 'border-box'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'option',
+                                                text: 'Select User Type',
+                                                att: {
+                                                    disabled: true,
+                                                    selected: true,
+                                                    value: ''
+                                                }
+                                            }),
+                                            $({ tag: 'option', text: 'Admin', att: { value: 'ADMIN' } }),
+                                            $({ tag: 'option', text: 'CAPSU Center Chair User', att: { value: 'CAPSUUSERS' } }),
+                                            $({ tag: 'option', text: 'CAPSU Research Chair User', att: { value: 'RESEARCH_CHAIR' } }),
+                                            $({ tag: 'option', text: 'CAPSU Extension Chair User', att: { value: 'EXTENSION_CHAIR' } }),
+                                            $({ tag: 'option', text: 'Evaluators', att: { value: 'EVALUATOR' } }),
+                                            $({ tag: 'option', text: 'RDE Office', att: { value: 'RDEOFFICE' } })
+                                        ]
+                                    })
+                                ]
                             }),
                             // Username Field
                             $({
@@ -434,16 +417,6 @@ const LoginPanel = (prop) => {
                                                     placeholder: ' ',
                                                     required: true,
                                                     autocomplete: 'username'
-                                                },
-                                                event: {
-                                                    type: 'input',
-                                                    method: (event) => {
-                                                        if (event.target.value && !selType.value) {
-                                                            setTimeout(() => {
-                                                                autoSelectUserType(event.target.value)
-                                                            }, 500)
-                                                        }
-                                                    }
                                                 },
                                                 style: {
                                                     backgroundColor: 'rgba(10, 20, 40, 0.8)',
@@ -641,6 +614,7 @@ const LoginPanel = (prop) => {
         ]
     })
 }
+
 const Signup = (prop) => {
     let email
     let center
