@@ -1,4 +1,4 @@
-import {$, ConfirmationAlert, Request, SpecialChar, Waiting} from '../../../lib/lib.js'
+import {$, ConfirmationAlert, Request, SpecialChar, Waiting, ConfirmationModal} from '../../../lib/lib.js'
 
 const encodeCenterChair = () => {
     const accountData = {
@@ -305,12 +305,12 @@ const encodeCenterChair = () => {
             userTypeValueSpan.textContent = accountData.userType
             
             // Change color based on whether it's a placeholder or actual role
-            if (accountData.userType) {
-                userTypeValueSpan.style.color = '#ff9800' // Orange for waiting
-                userTypeValueSpan.style.fontWeight = 'normal'
-            } else if (accountData.userType && accountData.userType.includes('Chair')) {
+            if (accountData.userType && accountData.userType.includes('Chair')) {
                 userTypeValueSpan.style.color = '#4CAF50' // Green for valid role
                 userTypeValueSpan.style.fontWeight = 'bold'
+            } else if (accountData.userType) {
+                userTypeValueSpan.style.color = '#ff9800' // Orange for waiting
+                userTypeValueSpan.style.fontWeight = 'normal'
             } else {
                 userTypeValueSpan.style.color = '#cccccc' // Gray for not selected
                 userTypeValueSpan.style.fontWeight = 'normal'
@@ -375,31 +375,44 @@ const encodeCenterChair = () => {
                     
                     // Validation
                     if (accountData.center.trim() === '' || accountData.gmail.trim() === '') {
-                        alert("Please select a center and enter Gmail address!")
+                        ConfirmationModal({
+                            title: 'Validation Error',
+                            message: 'Please select a center and enter Gmail address!',
+                            type: 'error',
+                            confirmText: 'OK'
+                        })
                         return
                     }
                     
                     // Validate campus for Extension
                     if (accountData.center === 'Extension' && (!accountData.campus || accountData.campus.trim() === '')) {
-                        alert("Please select a campus for Extension Chair!")
-                        return
-                    }
-                    
-                    // Validate that user type is valid (not placeholder)
-                    if (accountData.center === 'Extension' && accountData.userType) {
-                        alert("Please select a campus first!")
+                        ConfirmationModal({
+                            title: 'Validation Error',
+                            message: 'Please select a campus for Extension Chair!',
+                            type: 'error',
+                            confirmText: 'OK'
+                        })
                         return
                     }
                     
                     // Validate email format
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
                     if (!emailRegex.test(accountData.gmail)) {
-                        alert("Please enter a valid email address!")
+                        ConfirmationModal({
+                            title: 'Validation Error',
+                            message: 'Please enter a valid email address!',
+                            type: 'error',
+                            confirmText: 'OK'
+                        })
                         return
                     }
                     
                     const load = Waiting()
                     document.body.appendChild(load)
+                    
+                    // Force reflow and give time for DOM update
+                    load.offsetHeight;
+                    await new Promise(resolve => setTimeout(resolve, 50));
                     
                     submitBtn.disabled = true
                     
@@ -410,7 +423,7 @@ const encodeCenterChair = () => {
                         
                         if (accountData.center === 'Extension') {
                             campusValue = accountData.campus
-                            centerValue = accountData.campus // Send campus name as center for Extension
+                            centerValue = accountData.campus
                         }
                         
                         // Prepare form data
@@ -430,21 +443,40 @@ const encodeCenterChair = () => {
                         load.remove()
                         
                         if (data.status) {
-                            setTimeout(() => {
-                                alert(`Successfully registered ${accountData.userType} account!`)
-                                window.location.replace('/account/Login')
-                            }, 100)
+                            ConfirmationModal({
+                                title: 'Success',
+                                message: `Successfully registered ${accountData.userType} account!`,
+                                type: 'success',
+                                confirmText: 'OK',
+                                onConfirm: () => {
+                                    window.location.replace('/account/Login')
+                                }
+                            })
                         } else {
-                            alert(data.message)
-                            submitBtn.disabled = false
-                            validateForm()
+                            ConfirmationModal({
+                                title: 'Registration Failed',
+                                message: data.message || 'Failed to register account',
+                                type: 'error',
+                                confirmText: 'OK',
+                                onConfirm: () => {
+                                    submitBtn.disabled = false
+                                    validateForm()
+                                }
+                            })
                         }
                     } catch (error) {
                         load.remove()
                         console.error('Error:', error)
-                        alert('An error occurred during submission')
-                        submitBtn.disabled = false
-                        validateForm()
+                        ConfirmationModal({
+                            title: 'Error',
+                            message: 'An error occurred during submission',
+                            type: 'error',
+                            confirmText: 'OK',
+                            onConfirm: () => {
+                                submitBtn.disabled = false
+                                validateForm()
+                            }
+                        })
                     }
                 }
             }
@@ -683,25 +715,44 @@ const encodeResearchChair = () => {
                     
                     // Validation
                     if (accountData.campus.trim() === '' || accountData.gmail.trim() === '') {
-                        alert("Please select a campus and enter Gmail address!")
+                        ConfirmationModal({
+                            title: 'Validation Error',
+                            message: 'Please select a campus and enter Gmail address!',
+                            type: 'error',
+                            confirmText: 'OK'
+                        })
                         return
                     }
                     
                     // Validate that user type is valid (not empty)
                     if (!accountData.userType || accountData.userType === '') {
-                        alert("Please select a campus first!")
+                        ConfirmationModal({
+                            title: 'Validation Error',
+                            message: 'Please select a campus first!',
+                            type: 'error',
+                            confirmText: 'OK'
+                        })
                         return
                     }
                     
                     // Validate email format
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
                     if (!emailRegex.test(accountData.gmail)) {
-                        alert("Please enter a valid email address!")
+                        ConfirmationModal({
+                            title: 'Validation Error',
+                            message: 'Please enter a valid email address!',
+                            type: 'error',
+                            confirmText: 'OK'
+                        })
                         return
                     }
                     
                     const load = Waiting()
                     document.body.appendChild(load)
+                    
+                    // Force reflow and give time for DOM update
+                    load.offsetHeight;
+                    await new Promise(resolve => setTimeout(resolve, 50));
                     
                     submitBtn.disabled = true
                     
@@ -723,30 +774,49 @@ const encodeResearchChair = () => {
                         load.remove()
                         
                         if (data.status) {
-                            setTimeout(() => {
-                                alert(`Successfully registered ${accountData.userType} account!`)
-                                // Reset form after successful submission
-                                accountData.campus = ''
-                                accountData.gmail = ''
-                                accountData.userType = ''
-                                const campusSelectEl = document.getElementById('researchChairCampusSelect')
-                                const gmailInputEl = document.getElementById('researchChairGmailInput')
-                                if (campusSelectEl) campusSelectEl.value = ''
-                                if (gmailInputEl) gmailInputEl.value = ''
-                                updateUserTypeDisplay()
-                                validateForm()
-                            }, 100)
+                            ConfirmationModal({
+                                title: 'Success',
+                                message: `Successfully registered ${accountData.userType} account!`,
+                                type: 'success',
+                                confirmText: 'OK',
+                                onConfirm: () => {
+                                    // Reset form after successful submission
+                                    accountData.campus = ''
+                                    accountData.gmail = ''
+                                    accountData.userType = ''
+                                    const campusSelectEl = document.getElementById('researchChairCampusSelect')
+                                    const gmailInputEl = document.getElementById('researchChairGmailInput')
+                                    if (campusSelectEl) campusSelectEl.value = ''
+                                    if (gmailInputEl) gmailInputEl.value = ''
+                                    updateUserTypeDisplay()
+                                    validateForm()
+                                }
+                            })
                         } else {
-                            alert(data.message)
-                            submitBtn.disabled = false
-                            validateForm()
+                            ConfirmationModal({
+                                title: 'Registration Failed',
+                                message: data.message || 'Failed to register account',
+                                type: 'error',
+                                confirmText: 'OK',
+                                onConfirm: () => {
+                                    submitBtn.disabled = false
+                                    validateForm()
+                                }
+                            })
                         }
                     } catch (error) {
                         load.remove()
                         console.error('Error:', error)
-                        alert('An error occurred during submission')
-                        submitBtn.disabled = false
-                        validateForm()
+                        ConfirmationModal({
+                            title: 'Error',
+                            message: 'An error occurred during submission',
+                            type: 'error',
+                            confirmText: 'OK',
+                            onConfirm: () => {
+                                submitBtn.disabled = false
+                                validateForm()
+                            }
+                        })
                     }
                 }
             }
@@ -1147,7 +1217,12 @@ const encodeEvaluator = () => {
                                         elementHandler: (userInput) => {
                                             userInput.addEventListener('keypress', (event) => {
                                                 if (!((event.keyCode >= 65) && (event.keyCode <= 90) || (event.keyCode >= 97) && (event.keyCode <= 122) || (event.keyCode >= 48) && (event.keyCode <= 57))) {
-                                                    alert("Special character is not allowed..!")
+                                                    ConfirmationModal({
+                                                        title: 'Invalid Character',
+                                                        message: 'Special character is not allowed!',
+                                                        type: 'error',
+                                                        confirmText: 'OK'
+                                                    })
                                                     event.returnValue = false
                                                 }
                                             })
@@ -1198,10 +1273,19 @@ const encodeEvaluator = () => {
                                                 }
                                                 
                                                 if (data.password !== data.confirmPass) {
-                                                    alert("Password not match..!")
+                                                    ConfirmationModal({
+                                                        title: 'Validation Error',
+                                                        message: 'Passwords do not match!',
+                                                        type: 'error',
+                                                        confirmText: 'OK'
+                                                    })
                                                     return
                                                 }
                                                 
+                                                const load = Waiting()
+                                                document.body.appendChild(load)
+                                                load.offsetHeight;
+                                                await new Promise(resolve => setTimeout(resolve, 50));
                                                 const form = new FormData();
                                                 form.append('evaluatorRegister', 'true')
                                                 form.append('username', data.username.toUpperCase())
@@ -1211,34 +1295,63 @@ const encodeEvaluator = () => {
                                                 form.append('center', data.center)
                                                 form.append('eventTYpe', data.eventType)
                                                 
-                                                let loading = Waiting()
-                                                document.body.appendChild(loading)
-                                                const remove = () => {
-                                                    loading.remove()
-                                                }
-                                                
                                                 try {
                                                     const res = await fetch('/evaluatorReg', {
                                                         method: 'POST',
                                                         body: form
                                                     })
                                                     
+                                                    load.remove()
+                                                    
                                                     if (res.ok) {
-                                                        remove()
                                                         const dat = await res.json()
                                                         if (dat.status) {
-                                                            document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                                                window.location.reload()
-                                                            }))
+                                                            ConfirmationModal({
+                                                                title: 'Success',
+                                                                message: dat.message || 'Evaluator account successfully registered!',
+                                                                type: 'success',
+                                                                confirmText: 'OK',
+                                                                onConfirm: () => {
+                                                                    window.location.reload()
+                                                                }
+                                                            })
                                                         } else {
-                                                            document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                                                window.location.reload()
-                                                            }))
+                                                            ConfirmationModal({
+                                                                title: 'Registration Failed',
+                                                                message: dat.message || 'Failed to register evaluator',
+                                                                type: 'error',
+                                                                confirmText: 'OK',
+                                                                onConfirm: () => {
+                                                                    submitBtn.disabled = false
+                                                                    validateForm()
+                                                                }
+                                                            })
                                                         }
+                                                    } else {
+                                                        ConfirmationModal({
+                                                            title: 'Error',
+                                                            message: 'Server error occurred',
+                                                            type: 'error',
+                                                            confirmText: 'OK',
+                                                            onConfirm: () => {
+                                                                submitBtn.disabled = false
+                                                                validateForm()
+                                                            }
+                                                        })
                                                     }
                                                 } catch (error) {
-                                                    remove()
+                                                    load.remove()
                                                     console.error('Error:', error)
+                                                    ConfirmationModal({
+                                                        title: 'Error',
+                                                        message: 'An error occurred during submission',
+                                                        type: 'error',
+                                                        confirmText: 'OK',
+                                                        onConfirm: () => {
+                                                            submitBtn.disabled = false
+                                                            validateForm()
+                                                        }
+                                                    })
                                                 }
                                             }
                                         }
@@ -1306,7 +1419,12 @@ const rdeUser = () => {
     const getInput = (inputUser) => {
         inputUser.addEventListener('keypress', (event) => {
             if (event.keyCode === 32) {
-                alert("Invalid Character")
+                ConfirmationModal({
+                    title: 'Invalid Character',
+                    message: 'Space is not allowed!',
+                    type: 'error',
+                    confirmText: 'OK'
+                })
                 return event.returnValue = false
             }
         })
@@ -1360,9 +1478,21 @@ const rdeUser = () => {
                     }
                     
                     if (!data.email.trim() || !data.userName.trim() || !data.password.trim()) {
-                        alert('All fields are required!')
+                        ConfirmationModal({
+                            title: 'Validation Error',
+                            message: 'All fields are required!',
+                            type: 'error',
+                            confirmText: 'OK'
+                        })
                         return
                     }
+                    
+                    const load = Waiting()
+                    document.body.appendChild(load)
+                    
+                    // Force reflow and give time for DOM update
+                    load.offsetHeight;
+                    await new Promise(resolve => setTimeout(resolve, 50));
                     
                     const form = new FormData()
                     form.append('submitStaff', 'true')
@@ -1378,19 +1508,43 @@ const rdeUser = () => {
                             body: form,
                         })
                         const responseData = await res.json()
+                        load.remove()
                         
                         if (responseData.status) {
-                            window.location.reload()
+                            ConfirmationModal({
+                                title: 'Success',
+                                message: 'RDE Staff account successfully registered!',
+                                type: 'success',
+                                confirmText: 'OK',
+                                onConfirm: () => {
+                                    window.location.reload()
+                                }
+                            })
                         } else {
-                            alert(responseData.message)
-                            submitBtn.disabled = false
-                            validateForm()
+                            ConfirmationModal({
+                                title: 'Registration Failed',
+                                message: responseData.message || 'Failed to register staff account',
+                                type: 'error',
+                                confirmText: 'OK',
+                                onConfirm: () => {
+                                    submitBtn.disabled = false
+                                    validateForm()
+                                }
+                            })
                         }
                     } catch (error) {
+                        load.remove()
                         console.error('Error:', error)
-                        alert('An error occurred during submission')
-                        submitBtn.disabled = false
-                        validateForm()
+                        ConfirmationModal({
+                            title: 'Error',
+                            message: 'An error occurred during submission',
+                            type: 'error',
+                            confirmText: 'OK',
+                            onConfirm: () => {
+                                submitBtn.disabled = false
+                                validateForm()
+                            }
+                        })
                     }
                 }
             }

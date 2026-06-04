@@ -1686,7 +1686,7 @@ export const CustomModal = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: '999999',
+            zIndex: '999',
             opacity: '0',
             transform: 'scale(0.98)',
             transition: 'opacity 0.25s ease, transform 0.25s ease'
@@ -1863,10 +1863,42 @@ export const CustomModal = ({
     return { closeModal, modalId }
 }
 
-export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel' }) => {
+export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirmText = 'OK', cancelText = 'Cancel', type = 'info' }) => {
     let modalInstance
 
     const footer = ({ closeModal }) => {
+        // If there's no onCancel provided, only show the confirm button
+        if (!onCancel && type !== 'confirm') {
+            return $({
+                tag: 'div',
+                style: { display: 'flex', gap: '12px', justifyContent: 'center' },
+                child: [
+                    $({
+                        tag: 'button',
+                        text: confirmText,
+                        style: {
+                            padding: '10px 30px',
+                            backgroundColor: getButtonColor(),
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            transition: 'all 0.2s ease'
+                        },
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                closeModal()
+                                if (onConfirm) onConfirm()
+                            }
+                        }
+                    })
+                ]
+            })
+        }
+        
         return $({
             tag: 'div',
             style: { display: 'flex', gap: '12px', justifyContent: 'flex-end' },
@@ -1898,7 +1930,7 @@ export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirm
                     text: confirmText,
                     style: {
                         padding: '8px 24px',
-                        backgroundColor: '#f44336',
+                        backgroundColor: getButtonColor(),
                         border: 'none',
                         borderRadius: '8px',
                         color: '#fff',
@@ -1918,12 +1950,49 @@ export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirm
             ]
         })
     }
+    
+    // Helper function to get button color based on type
+    const getButtonColor = () => {
+        switch(type) {
+            case 'success':
+                return '#4CAF50' // Green
+            case 'error':
+                return '#f44336' // Red
+            case 'warning':
+                return '#ff9800' // Orange
+            case 'confirm':
+                return '#2196F3' // Blue
+            default:
+                return '#4CAF50' // Default green for info/success
+        }
+    }
+    
+    // Helper function to get icon based on type
+    const getIcon = () => {
+        switch(type) {
+            case 'success':
+                return { icon: 'fas fa-check-circle', color: '#4CAF50' }
+            case 'error':
+                return { icon: 'fas fa-times-circle', color: '#f44336' }
+            case 'warning':
+                return { icon: 'fas fa-exclamation-triangle', color: '#ff9800' }
+            case 'confirm':
+                return { icon: 'fas fa-question-circle', color: '#2196F3' }
+            default:
+                return { icon: 'fas fa-info-circle', color: '#4CAF50' }
+        }
+    }
 
+    const iconData = getIcon()
     const content = $({
         tag: 'div',
         style: { textAlign: 'center', padding: '20px 0' },
         child: [
-            $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '48px', color: '#ff9800', marginBottom: '16px', display: 'block' } }),
+            $({ 
+                tag: 'i', 
+                att: { className: iconData.icon }, 
+                style: { fontSize: '48px', color: iconData.color, marginBottom: '16px', display: 'block' } 
+            }),
             $({ tag: 'p', text: message, style: { color: '#ccc', fontSize: '15px', lineHeight: '1.5', margin: 0 } })
         ]
     })

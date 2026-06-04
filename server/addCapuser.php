@@ -26,6 +26,16 @@ if(isset($_POST['registerAccount'])){
         echo json_encode($response);
         exit;
     }
+    $centerToSave = $center;
+    $campusToSave = null;
+    
+    if(strpos($userType, 'Extension Chair') !== false) {
+        $centerToSave = 'Extension';
+        $campusToSave = $campus;
+    } else {
+        $centerToSave = $center;
+        $campusToSave = null;
+    }
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         // Check if email already exists
@@ -36,12 +46,12 @@ if(isset($_POST['registerAccount'])){
         $found = $checkSt->get_result()->fetch_row();
         
         if($found[0] == 0){
-            // Fixed SQL query - removed the dot after usertype and fixed column list
+            // Insert with proper center and campus values
             $queryInsert = "INSERT INTO account_detail (center, email, usertype, campus) VALUES (?, ?, ?, ?)";
             $statement = $con->prepare($queryInsert);
             
-            // Fixed bind_param - "ssss" for 4 string parameters
-            $statement->bind_param("ssss", $center, $email, $userType, $campus);
+            // Bind parameters: center (string), email (string), usertype (string), campus (string or null)
+            $statement->bind_param("ssss", $centerToSave, $email, $userType, $campusToSave);
             $result = $statement->execute();
             
             if($result){
@@ -59,7 +69,7 @@ if(isset($_POST['registerAccount'])){
                     $to->name = $userType;
                     $to->email = $email;
                     
-                    $emailResult = SendEmail($from, $to, AccountCreation($center, $email, $campus));
+                    $emailResult = SendEmail($from, $to, AccountCreation($email, $userType));
                     
                     if($emailResult->status){
                         $response->message = 'New user account was successfully created. Verification email has been sent to ' . $email;

@@ -101,8 +101,15 @@ if(isset($_POST['auth'])){
             signature.scale 
         FROM account_detail
         LEFT JOIN capsu_user ON account_detail.id=capsu_user.id
-        LEFT JOIN signature ON account_detail.id=signature.user_id WHERE capsu_user.username=?";
-                //"SELECT `id`, `email`,`name`, `password`, `office`, `signature`,`fullname` FROM `account` WHERE `username`=?"
+        LEFT JOIN signature ON account_detail.id=signature.user_id 
+        WHERE capsu_user.username=? 
+        AND account_detail.center IS NOT NULL 
+        AND account_detail.center != ''
+        AND (account_detail.campus IS NULL OR account_detail.campus = '')
+        AND account_detail.usertype NOT LIKE '%Research Chair%'
+        AND account_detail.usertype NOT LIKE '%research chair%'
+        AND account_detail.usertype NOT LIKE '%RESEARCH CHAIR%'";
+                
                 if($statement=$con->prepare($loginUSer)){
                     $statement->bind_param("s",$usernames);
                     $statement->execute();
@@ -130,7 +137,7 @@ if(isset($_POST['auth'])){
                             $response->message='Password is incorrect';
                         }
                     }else{
-                        $response->message='Username not found..!';
+                        $response->message='Invalid credentials or you are not authorized as a Center Director. Please use the Research Chair login if you are a Research Chair.';
                     }
                 }else{
                     $response->message='Something went wrong..!'.$con->error.'00';
@@ -177,19 +184,18 @@ if(isset($_POST['auth'])){
             // Different queries based on whether it's Research Chair or Research Center Chair
             if($isResearchChair) {
                 // For Research Chair: Look up by email and campus only
-                $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND (account_detail.campus=? OR account_detail.center=?)";
-                $checkStmt = $con->prepare($checkAccount);
-                $checkStmt->bind_param('sss', $email, $campus, $campus);
+                // This signup should be handled by researchChairAuth.php instead
+                $response->message = "Research Chair registration should be done through the Research Chair signup page.";
+                echo json_encode($response);
+                exit();
             } else {
-                // For Research Center Chair: Look up by email and center
                 if($campus) {
                     // Extension case: Check by email, center, and campus
-                    $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.center=? AND (account_detail.campus=? OR account_detail.campus IS NULL)";
+                    $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.center=? AND (account_detail.campus=? OR account_detail.campus IS NULL) AND account_detail.usertype NOT LIKE '%Research Chair%'";
                     $checkStmt = $con->prepare($checkAccount);
                     $checkStmt->bind_param('sss', $email, $center, $campus);
                 } else {
-                    // Regular Research Center Chair
-                    $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.center=?";
+                    $checkAccount = "SELECT id, usertype, center, campus FROM account_detail WHERE account_detail.email=? AND account_detail.center=? AND (account_detail.campus IS NULL OR account_detail.campus = '') AND account_detail.usertype NOT LIKE '%Research Chair%'";
                     $checkStmt = $con->prepare($checkAccount);
                     $checkStmt->bind_param('ss', $email, $center);
                 }
@@ -199,7 +205,7 @@ if(isset($_POST['auth'])){
             $result = $checkStmt->get_result();
             
             if($result->num_rows > 0){
-                //email exists in account_detail - GOOD! This is what we want
+                // Email exists in account_detail - GOOD! This is what we want
                 $accountData = $result->fetch_assoc();
                 $accountId = $accountData['id'];
                 $userType = $accountData['usertype'];
@@ -242,9 +248,8 @@ if(isset($_POST['auth'])){
                                 $to->name = $fullname;
                                 $to->email = $email;
                                 
-                                // Use appropriate center/campus for email
-                                $displayCenter = $isResearchChair ? $campus : $actualCenter;
-                                SendEmail($from, $to, Signup($usernames, $_POST['password'], $displayCenter));
+                                // Use appropriate center for email
+                                SendEmail($from, $to, Signup($usernames, $_POST['password'], $actualCenter));
                                 
                                 $response->status = true;
                                 $response->message = "/";
@@ -261,12 +266,8 @@ if(isset($_POST['auth'])){
                     $response->message = "Username is not available!";
                 }
             } else {
-                //Email NOT found in account_detail
-                if($isResearchChair) {
-                    $response->message = "Email address not found for the selected campus. Please contact your administrator to create your account first.";
-                } else {
-                    $response->message = "Email address not found in our records. Please contact your administrator to create your account first.";
-                }
+                // Email NOT found in account_detail
+                $response->message = "Email address not found for the selected center. Please contact your administrator to create your account first.";
             }
         } else {
             $response->message = 'Failed to connect to database!';

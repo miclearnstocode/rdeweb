@@ -11,7 +11,7 @@ include_once __DIR__ . '/../Mailer/mailTemplate.php';
 include_once __DIR__ . '/../Mailer/MailSender.php';
 
 if (isset($_POST['codeRequest'])) {
-    $response = new stdClass();
+    $response = new stdClass(); 
     $response->userName = '';
     $response->status = false;
     $response->message = '';
