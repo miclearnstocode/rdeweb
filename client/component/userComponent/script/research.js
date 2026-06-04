@@ -1843,10 +1843,12 @@ export const Research = () => {
     const deleteDocument = (doc) => {
         DeleteConfirmModal('Delete Document', `Are you sure you want to delete "${doc.title}"? This action cannot be undone.`).then(async (confirmed) => {
             if (confirmed) {
+                let loading = null
                 try {
-                    // Show loading indicator
-                    let loading = Waiting()
+                    loading = Waiting()
                     document.body.appendChild(loading)
+                    
+                    await new Promise(resolve => setTimeout(resolve, 50))
 
                     const form = new FormData()
                     form.append('deleteEndorsement', 'true')
@@ -1859,13 +1861,11 @@ export const Research = () => {
 
                     const result = await response.json()
 
-                    // Remove loading indicator
                     if (loading && loading.remove) {
                         loading.remove()
                     }
 
                     if (result.status) {
-                        // Remove from table
                         const rows = documentsTable.querySelectorAll('tr')
                         for (let i = 1; i < rows.length; i++) {
                             if (rows[i].cells[2]?.innerText === doc.title) {
@@ -1873,8 +1873,6 @@ export const Research = () => {
                                 break
                             }
                         }
-
-                        // Update stats after deletion
                         refreshStats()
 
                         // Show success message
@@ -1884,11 +1882,20 @@ export const Research = () => {
                             }
                         }))
                     } else {
-                        alert('Failed to delete: ' + result.message)
+                        AlertModal({ 
+                            title: 'Delete Failed', 
+                            message: result.message || 'Failed to delete document' 
+                        })
                     }
                 } catch (error) {
                     console.error('Delete error:', error)
-                    alert('Error deleting document: ' + error.message)
+                    if (loading && loading.remove) {
+                        loading.remove()
+                    }
+                    AlertModal({ 
+                        title: 'Error', 
+                        message: 'Error deleting document: ' + error.message 
+                    })
                 }
             }
         })
@@ -2847,7 +2854,7 @@ export const Research = () => {
             tag: 'div',
             style: {
                 padding: '24px',
-                backgroundColor: '#121212',
+                backgroundColor: 'transparent',
                 height: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
