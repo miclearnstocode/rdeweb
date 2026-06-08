@@ -105,10 +105,9 @@ class GoogleDriveService {
         
         try {
             error_log("GDrive: Uploading $fileName to folder $folderId");
-            $fileMetadata = new Google_Service_Drive_DriveFile([
-                'name' => $fileName,
-                'parents' => [$folderId]
-            ]);
+            $fileMetadata = new Google_Service_Drive_DriveFile();
+            $fileMetadata->name = $fileName;
+            $fileMetadata->parents = [$folderId];
             
             $content = file_get_contents($filePath);
             
@@ -250,20 +249,6 @@ class GoogleDriveService {
             throw new Exception("Failed to create folder structure: " . $e->getMessage());
         }
     }
-    // Helper method to get drive ID from folder ID (not always needed)
-    private function getDriveId($folderId) {
-        try {
-            $service = $this->service;
-            $file = $service->files->get($folderId, [
-                'fields' => 'driveId',
-                'supportsAllDrives' => true
-            ]);
-            return $file->getDriveId();
-        } catch (Exception $e) {
-            error_log("Could not get drive ID for folder $folderId: " . $e->getMessage());
-            return null;
-        }
-    }
     public function trashFile($fileId) {
         try {
             $service = $this->service;
@@ -306,9 +291,72 @@ class GoogleDriveService {
             throw new Exception("Failed to move file to trash in Google Drive: " . $e->getMessage());
         }
     }
-
     // Keep deleteFile for backward compatibility but use trashFile instead
     public function deleteFile($fileId) {
         return $this->trashFile($fileId);
+    }
+    public function copyFile($sourceFileId, $destinationFolderId, $newFileName = null) {
+        try {
+            $file = new Google_Service_Drive_DriveFile();
+            
+            if ($newFileName) {
+                $file->setName($newFileName);
+            }
+            
+            $file->setParents([$destinationFolderId]);
+            
+            $copiedFile = $this->service->files->copy($sourceFileId, $file);
+            
+            return [
+                'success' => true,
+                'id' => $copiedFile->getId(),
+                'name' => $copiedFile->getName()
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Google Drive copy failed: " . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+    public function listFolders($folderName, $parentFolderId = null) {
+        try {
+            $query = "mimeType='application/vnd.google-apps.folder' and name='{$folderName}' and trashed=false";
+            
+            if ($parentFolderId) {
+                $query .= " and '{$parentFolderId}' in parents";
+            } else {
+                $query .= " and parents in 'root'";
+            }
+            
+            $response = $this->service->files->listFiles([
+                'q' => $query,
+                'fields' => 'files(id, name)'
+            ]);
+            
+            return $response->getFiles();
+            
+        } catch (Exception $e) {
+            error_log("List folders failed: " . $e->getMessage());
+            return [];
+        }
+    }
+    public function createFolder($folderName, $parentFolderId = null) {
+        try {
+            $folder = new Google_Service_Drive_DriveFile();
+            $folder->setName($folderName);
+            $folder->setMimeType('application/vnd.google-apps.folder');
+            
+            if ($parentFolderId) {
+                $folder->setParents([$parentFolderId]);
+            }
+            
+            $createdFolder = $this->service->files->create($folder);
+            
+            return $createdFolder->getId();
+            
+        } catch (Exception $e) {
+            error_log("Create folder failed: " . $e->getMessage());
+            throw $e;
+        }
     }
 }

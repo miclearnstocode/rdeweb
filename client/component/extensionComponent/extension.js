@@ -3051,7 +3051,6 @@ export const Extension = () => {
                     // Clear loading state
                     tbody.innerHTML = ''
 
-                    // The researchReviewed endpoint returns an object with a 'list' property
                     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
                         let totalDocs = 0
                         let pendingCount = 0

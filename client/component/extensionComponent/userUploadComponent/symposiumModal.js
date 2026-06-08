@@ -15,7 +15,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         local_title: '',
         local_campus: '',
         local_category: '',
-        local_center: '',
         local_author: '',
         local_presenter: '',
         local_coAuthors: [],
@@ -34,13 +33,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         university_title: '',
         university_author: '',
         university_category: '',
-        university_center: '',
         university_coauthors: [],
 
         // Symposium fields
         title: '',
         category: '',
-        center: '',
         author: '',
         presenter: '',
         coAuthors: [],
@@ -56,30 +53,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
     let researchFileInput, researchFileNameDisplay
     let endorsementFileInput, endorsementFileNameDisplay
 
-    // Center categories mapping (from existing)
-    const centerCategoryMapping = {
-        "Crop Science Research & Developement Center (CSRDC)": ["Natural / Biological"],
-        "Livestock Research & Development Center (LRDC)": ["Natural / Biological"],
-        "Fisheries Research & Development Center (FRDC)": ["Natural / Biological"],
-        "Food and Industrial Technology Research & Development Center (FITRDC)": ["Food"],
-        "Social Science Research & Development Center (SSRDC)": ["Social Science"],
-        "Machinery and Agricultural Technology Engineering Center (MATEC)": ["Industrial", "Engineering", "Information Technology", "Development", "Agricultural Machinery"],
-        "Coconut Research and Development Center (Coco RDC)": ["Natural / Biological"],
-        "Extension (Extension)": ["Extension"]
+    const categoryToCenters = {
+        "Extension": ["Extension (Extension)"]
     }
-
-    const categoryToCenters = {}
-    Object.entries(centerCategoryMapping).forEach(([center, categories]) => {
-        categories.forEach(category => {
-            if (!categoryToCenters[category]) categoryToCenters[category] = []
-            categoryToCenters[category].push(center)
-        })
-    })
-
-    const categories = [
-        "Social Science", "Natural / Biological", "Food", "Development",
-        "Extension", "Agricultural Machinery", "Industrial", "Engineering", "Information Technology"
-    ]
 
     const createModal = () => {
         const modal = $({
@@ -393,7 +369,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         let certificateFileNameDisplay, certificateFileInput
 
         // Local form field references
-        let localTitleInput, localCampusInput, localCategorySelect, localCenterSelect
+        let localTitleInput, localCampusInput, localCategorySelect
         let localAuthorInput, localPresenterInput, localCoAuthorListContainer
 
         const createLocalFileUploadField = (label, fieldName, onFileSelect) => {
@@ -581,7 +557,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         })
 
         const localTitleSpan = $({ tag: 'span', text: 'Local In-House Review', style: { fontWeight: '600', color: '#fff' } })
-        const localDescSpan = $({ tag: 'div', text: 'Presented at campus/center level', style: { fontSize: '12px', color: '#888', marginTop: '8px', marginLeft: '28px' } })
+        const localDescSpan = $({ tag: 'div', text: 'Presented at campus level', style: { fontSize: '12px', color: '#888', marginTop: '8px', marginLeft: '28px' } })
         const localRadioLabel = $({ tag: 'label', style: { display: 'flex', alignItems: 'center', cursor: 'pointer' }, child: [localRadio, localTitleSpan] })
 
         localContainer.appendChild(localRadioLabel)
@@ -630,7 +606,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                         formData.local_title = ''
                         formData.local_campus = ''
                         formData.local_category = ''
-                        formData.local_center = ''
                         formData.local_author = ''
                         formData.local_presenter = ''
                         formData.local_coAuthors = []
@@ -641,7 +616,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                         if (localTitleInput) localTitleInput.value = ''
                         if (localCampusInput) localCampusInput.value = ''
                         if (localCategorySelect) localCategorySelect.value = ''
-                        if (localCenterSelect) localCenterSelect.innerHTML = ''
                         if (localAuthorInput) localAuthorInput.value = ''
                         if (localPresenterInput) localPresenterInput.value = ''
                         if (localCoAuthorListContainer) localCoAuthorListContainer.innerHTML = ''
@@ -678,7 +652,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             formData.local_title = ''
             formData.local_campus = ''
             formData.local_category = ''
-            formData.local_center = ''
             formData.local_author = ''
             formData.local_presenter = ''
             formData.local_coAuthors = []
@@ -689,7 +662,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             if (localTitleInput) localTitleInput.value = ''
             if (localCampusInput) localCampusInput.value = ''
             if (localCategorySelect) localCategorySelect.value = ''
-            if (localCenterSelect) localCenterSelect.innerHTML = ''
             if (localAuthorInput) localAuthorInput.value = ''
             if (localPresenterInput) localPresenterInput.value = ''
             if (localCoAuthorListContainer) localCoAuthorListContainer.innerHTML = ''
@@ -809,15 +781,21 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localCampusSection.appendChild(localCampusInput)
         leftColumn.appendChild(localCampusSection)
 
-        // Category
+        // Category - Change from dropdown to hidden field
         const localCategorySection = $({ tag: 'div' })
         localCategorySection.appendChild($({
             tag: 'label',
             text: 'Category *',
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
         }))
-        localCategorySelect = $({
-            tag: 'select',
+
+        const categoryHidden = $({
+            tag: 'input',
+            att: { type: 'hidden', value: 'Extension' }
+        })
+        const categoryDisplay = $({
+            tag: 'div',
+            text: 'Extension',
             style: {
                 width: '100%',
                 padding: '10px 12px',
@@ -826,49 +804,16 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 borderRadius: '8px',
                 color: '#fff',
                 fontSize: '14px'
-            },
-            event: {
-                type: 'change',
-                method: (e) => {
-                    formData.local_category = e.target.value
-                    updateLocalCenters(e.target.value)
-                }
-            },
-            elementHandler: (el) => {
-                el.innerHTML = ''
-                el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
-                categories.forEach(cat => {
-                    el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
-                })
             }
         })
-        localCategorySection.appendChild(localCategorySelect)
+
+        localCategorySection.appendChild(categoryHidden)
+        localCategorySection.appendChild(categoryDisplay)
+
+        // Set form data
+        formData.local_category = 'Extension'
         leftColumn.appendChild(localCategorySection)
 
-        // Center
-        const localCenterSection = $({ tag: 'div', style: { gridColumn: '1 / -1' } })
-        localCenterSection.appendChild($({
-            tag: 'label',
-            text: 'Center *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-        }))
-        localCenterSelect = $({
-            tag: 'select',
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'change',
-                method: (e) => { formData.local_center = e.target.value }
-            }
-        })
-        localCenterSection.appendChild(localCenterSelect)
 
         // --- Right Column ---
         const rightColumn = $({ tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '20px' } })
@@ -1051,7 +996,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         rightColumn.appendChild(localCoAuthorSection)
         localGrid.appendChild(leftColumn)
         localGrid.appendChild(rightColumn)
-        localGrid.appendChild(localCenterSection)
         localFieldsContainer.appendChild(localGrid)
 
         // --- File Uploads Section (Full Width) - ONLY Program and Certificate Files ---
@@ -1070,22 +1014,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localFileUploadsGrid.appendChild(createLocalFileUploadField('Certificate File *', 'local_certificateFile', (file) => { formData.local_certificateFile = file }))
 
         localFieldsContainer.appendChild(localFileUploadsGrid)
-
-        // Function to update local centers based on category
-        const updateLocalCenters = (category) => {
-            const centers = categoryToCenters[category] || Object.keys(centerCategoryMapping)
-            if (localCenterSelect) {
-                const currentValue = localCenterSelect.value
-                localCenterSelect.innerHTML = ''
-                localCenterSelect.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
-                centers.forEach(center => {
-                    localCenterSelect.appendChild($({ tag: 'option', text: center, att: { value: center } }))
-                })
-                if (currentValue && centers.includes(currentValue)) {
-                    localCenterSelect.value = currentValue
-                }
-            }
-        }
 
         // ========== UNIVERSITY FIELDS ==========
         const universityFields = $({ tag: 'div', style: { display: 'none' } })
@@ -1238,7 +1166,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             formData.selected_inhouse_id = selected.id
             formData.university_author = selected.author
             formData.university_category = selected.category
-            formData.university_center = selected.center
             formData.university_coauthors = selected.coauthors || []
             formData.selected_university_review = selected
 
@@ -1259,9 +1186,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
             if (selected.category) {
                 selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Category: ${selected.category}` }))
-            }
-            if (selected.center) {
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Center: ${selected.center}` }))
             }
             if (selected.event_name) {
                 selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#888', fontSize: '11px', marginTop: '4px' }, text: `Event: ${selected.event_name}` }))
@@ -1305,7 +1229,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 const formDataReq = new FormData()
                 formDataReq.append('getAcceptedInhouseReviews', 'true')
 
-                const response = await fetch('/uploadResearchFile', {
+                const response = await fetch('/uploadExtensionDocs', {
                     method: 'POST',
                     body: formDataReq
                 })
@@ -1371,10 +1295,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
                 if (!formData.local_category) {
                     ConfirmationAlert('Please select a Category', () => { })
-                    return false
-                }
-                if (!formData.local_center) {
-                    ConfirmationAlert('Please select a Center', () => { })
                     return false
                 }
                 if (!formData.local_author || formData.local_author.trim() === '') {
@@ -1553,37 +1473,15 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         const container = $({ tag: 'div' })
 
         // Store references to fields for dynamic updates
-        let categorySelect, centerSelect, authorInput, presenterInput, coAuthorContainer
+        let categorySelect, authorInput, presenterInput, coAuthorContainer
         let dateStartedField, dateCompletedField
         let campusSelect // Changed from campusField to campusSelect
 
         // Function to auto-fill from selected university in-house review
         const autoFillFromUniversityReview = (selectedReview) => {
             if (!selectedReview) return
-
-            // Auto-fill Category
-            if (selectedReview.category && categorySelect) {
-                const categorySelectEl = categorySelect.querySelector('select')
-                if (categorySelectEl) {
-                    categorySelectEl.value = selectedReview.category
-                    formData.category = selectedReview.category
-                    // Trigger change to update centers
-                    const changeEvent = new Event('change')
-                    categorySelectEl.dispatchEvent(changeEvent)
-                }
-            }
-
-            // Auto-fill Center (need to wait for category change to populate centers)
-            setTimeout(() => {
-                if (selectedReview.center && centerSelect) {
-                    const centerSelectEl = centerSelect.querySelector('select')
-                    if (centerSelectEl) {
-                        centerSelectEl.value = selectedReview.center
-                        formData.center = selectedReview.center
-                    }
-                }
-            }, 100)
-
+            
+            formData.category = 'Extension'
             // Auto-fill Author
             if (selectedReview.author && authorInput) {
                 const authorInputEl = authorInput.querySelector('input')
@@ -1666,26 +1564,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             })
         }
 
-        // Function to update centers based on selected category
-        const updateCenters = (category) => {
-            const centers = categoryToCenters[category] || Object.keys(centerCategoryMapping)
-            const selectEl = centerSelect.querySelector('select')
-            if (selectEl) {
-                const currentValue = selectEl.value
-                selectEl.innerHTML = ''
-                selectEl.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
-                centers.forEach(center => {
-                    selectEl.appendChild($({ tag: 'option', text: center, att: { value: center } }))
-                })
-                if (currentValue && centers.includes(currentValue)) {
-                    selectEl.value = currentValue
-                    formData.center = currentValue
-                } else {
-                    formData.center = ''
-                }
-            }
-        }
-
         // ========== CREATE CAMPUS DROPDOWN (matching Step 1) ==========
         const createCampusDropdown = () => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
@@ -1727,15 +1605,20 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
         // ========== CREATE CATEGORY DROPDOWN ==========
         const createCategoryDropdown = () => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } })
-            container.appendChild($({
+            const categorySection = $({ tag: 'div', style: { marginBottom: '0' } })
+            categorySection.appendChild($({
                 tag: 'label',
                 text: 'Category *',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
             }))
 
-            const select = $({
-                tag: 'select',
+            const categoryHidden = $({
+                tag: 'input',
+                att: { type: 'hidden', value: 'Extension' }
+            })
+            const categoryDisplay = $({
+                tag: 'div',
+                text: 'Extension',
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -1744,62 +1627,15 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     borderRadius: '8px',
                     color: '#fff',
                     fontSize: '14px'
-                },
-                event: {
-                    type: 'change',
-                    method: (e) => {
-                        formData.category = e.target.value
-                        updateCenters(e.target.value)
-                    }
-                },
-                elementHandler: (el) => {
-                    el.innerHTML = ''
-                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
-                    categories.forEach(cat => {
-                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
-                    })
                 }
             })
 
-            container.appendChild(select)
-            return container
+            categorySection.appendChild(categoryHidden)
+            categorySection.appendChild(categoryDisplay)
+            formData.category = 'Extension'
+            return categorySection
         }
 
-        // ========== CREATE CENTER DROPDOWN ==========
-        const createCenterDropdown = () => {
-            const container = $({ tag: 'div', style: { marginBottom: '0' } })
-            container.appendChild($({
-                tag: 'label',
-                text: 'Center *',
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
-            }))
-
-            const select = $({
-                tag: 'select',
-                style: {
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
-                },
-                event: {
-                    type: 'change',
-                    method: (e) => {
-                        formData.center = e.target.value
-                    }
-                },
-                elementHandler: (el) => {
-                    el.innerHTML = ''
-                    el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
-                }
-            })
-
-            container.appendChild(select)
-            return container
-        }
         const createTextField = (label, placeholder, onInput) => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({ 
@@ -1960,8 +1796,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
         // Create all fields
         campusSelect = createCampusDropdown()
-        categorySelect = createCategoryDropdown()
-        centerSelect = createCenterDropdown()
+        const categorySection = createCategoryDropdown()
         authorInput = createTextField('Main Author *', 'Author Name', (value) => { formData.author = value })
         presenterInput = createTextField('Presenter *', 'Presenter name', (value) => { formData.presenter = value })
         coAuthorContainer = createCoAuthorField(updateCoAuthorList)
@@ -1969,8 +1804,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         dateCompletedField = createDateField('Date Completed *', (e) => { formData.date_completed = e.target.value })
 
         twoColumnLayout.appendChild(campusSelect)
-        twoColumnLayout.appendChild(categorySelect)
-        twoColumnLayout.appendChild(centerSelect)
+        twoColumnLayout.appendChild(categorySection)
         twoColumnLayout.appendChild(authorInput)
         twoColumnLayout.appendChild(presenterInput)
         twoColumnLayout.appendChild(coAuthorContainer)
@@ -2009,7 +1843,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
         // Store field references
         container.fields = {
-            campusSelect, categorySelect, centerSelect, authorInput, presenterInput,
+            campusSelect, categorySelect, authorInput, presenterInput,
             dateStartedField, dateCompletedField, researchFileField, endorsementFileField, coAuthorContainer
         }
 
@@ -2023,10 +1857,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
             if (!formData.category) {
                 ConfirmationAlert('Please select a category', () => { })
-                return false
-            }
-            if (!formData.center) {
-                ConfirmationAlert('Please select a center', () => { })
                 return false
             }
             if (!formData.author || formData.author.trim() === '') {
@@ -2348,10 +2178,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 
                 // Local In-House fields
                 symposiumFormData.append('local_title', formData.local_title)
-                symposiumFormData.append('original_title', formData.local_title)  // ← ORIGINAL local title
+                symposiumFormData.append('original_title', formData.local_title)
                 symposiumFormData.append('local_campus', formData.local_campus)
-                symposiumFormData.append('local_category', formData.local_category)
-                symposiumFormData.append('local_center', formData.local_center)
+                symposiumFormData.append('local_category', 'Extension')
                 symposiumFormData.append('local_author', formData.local_author)
                 symposiumFormData.append('local_presenter', formData.local_presenter)
                 symposiumFormData.append('local_coAuthors', JSON.stringify(formData.local_coAuthors || []))
@@ -2373,8 +2202,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
                 
                 // Symposium fields (Step 3)
-                symposiumFormData.append('category', formData.category)
-                symposiumFormData.append('center', formData.center)
+                symposiumFormData.append('category', 'Extension')
                 symposiumFormData.append('author', formData.author)
                 symposiumFormData.append('presenter', formData.presenter)
                 symposiumFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
@@ -2390,7 +2218,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     symposiumFormData.append('endorsementFile', formData.endorsementFile)
                 }
 
-                const response = await fetch('/uploadResearchFile', {
+                const response = await fetch('/uploadExtensionDocs', {
                     method: 'POST',
                     body: symposiumFormData
                 })
@@ -2406,8 +2234,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 if (!result.status) {
                     throw new Error(result.message || 'Symposium submission failed')
                 }
-
-                console.log('Local In-House Symposium submission successful')
 
                 if (loading && loading.remove) loading.remove()
                 
@@ -2442,7 +2268,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 if (selectedReview) {
                     symposiumFormData.append('original_author', selectedReview.author)
                     symposiumFormData.append('original_category', selectedReview.category || '')
-                    symposiumFormData.append('original_center', selectedReview.center || '')
                     symposiumFormData.append('original_coauthors', JSON.stringify(selectedReview.coauthors || []))
                 }
                 
@@ -2456,7 +2281,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 
                 // Symposium fields (Step 3)
                 symposiumFormData.append('category', formData.category)
-                symposiumFormData.append('center', formData.center)
                 symposiumFormData.append('author', formData.author)
                 symposiumFormData.append('presenter', formData.presenter)
                 symposiumFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
@@ -2472,7 +2296,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     symposiumFormData.append('endorsementFile', formData.endorsementFile)
                 }
 
-                const response = await fetch('/uploadResearchFile', {
+                const response = await fetch('/uploadExtensionDocs', {
                     method: 'POST',
                     body: symposiumFormData
                 })
@@ -2527,7 +2351,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             new_title: '',
             title: '',
             category: '',
-            center: '',
             author: '',
             presenter: '',
             coAuthors: [],
@@ -2540,7 +2363,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             selected_inhouse_id: null,
             university_author: '',
             university_category: '',
-            university_center: '',
             university_coauthors: [],
             selected_university_review: null
         }
@@ -2557,11 +2379,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             if (fields.categorySelect) {
                 const categorySelectEl = fields.categorySelect.querySelector('select')
                 if (categorySelectEl) categorySelectEl.value = ''
-            }
-
-            if (fields.centerSelect) {
-                const centerSelectEl = fields.centerSelect.querySelector('select')
-                if (centerSelectEl) centerSelectEl.value = ''
             }
 
             if (fields.authorInput) {
