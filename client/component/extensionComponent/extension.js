@@ -643,32 +643,8 @@ export const Extension = () => {
         date_completed: null
     }
 
-    // Center categories mapping
-    const centerCategoryMapping = {
-        "Crop Science Research & Developement Center (CSRDC)": ["Natural / Biological"],
-        "Livestock Research & Development Center (LRDC)": ["Natural / Biological"],
-        "Fisheries Research & Development Center (FRDC)": ["Natural / Biological"],
-        "Food and Industrial Technology Research & Development Center (FITRDC)": ["Food"],
-        "Social Science Research & Development Center (SSRDC)": ["Social Science"],
-        "Machinery and Agricultural Technology Engineering Center (MATEC)": ["Industrial", "Engineering", "Information Technology", "Development", "Agricultural Machinery"],
-        "Coconut Research and Development Center (Coco RDC)": ["Natural / Biological"],
-        "Extension (Extension)": ["Extension"]
-    }
-
-    // Build reverse mapping
-    const categoryToCenters = {}
-    Object.entries(centerCategoryMapping).forEach(([center, categories]) => {
-        categories.forEach(category => {
-            if (!categoryToCenters[category]) categoryToCenters[category] = []
-            categoryToCenters[category].push(center)
-        })
-    })
-
     // Categories list
-    const categories = [
-        "Social Science", "Natural / Biological", "Food", "Development",
-        "Extension", "Agricultural Machinery", "Industrial", "Engineering", "Information Technology"
-    ]
+    const categories = [ "Extension" ]
 
     // Status badge styling
     const getStatusBadge = (status) => {
@@ -1363,7 +1339,6 @@ export const Extension = () => {
             doc.eventName || '—',
             getStatusBadge(status),
             doc.title || '—',
-            doc.category || '—',
             doc.presenter || '—',
             doc.author || '—',
             (doc.coAuthors || []).join(', ') || '—',
@@ -1976,7 +1951,7 @@ export const Extension = () => {
 
     // Open upload modal
     const openUploadModal = (isEdit = false, editData = null) => {
-        let titleInput, categorySelect, centerSelect, authorInput, presenterInput, coAuthorInput, coAuthorList, campusSelect
+        let titleInput, categorySelect, authorInput, presenterInput, coAuthorInput, coAuthorList, campusSelect
         let eventSelect
         let programFileContainer
         let standardProgramFile
@@ -1989,8 +1964,7 @@ export const Extension = () => {
             eventName: isEdit ? editData?.eventName || '' : '',
             title: isEdit ? editData?.title || '' : '',
             campus: isEdit ? editData?.campus || '' : '',
-            category: isEdit ? editData?.category || '' : '',
-            center: isEdit ? editData?.center || '' : '',
+            category: isEdit ? editData?.category || '' : '',  
             presenter: isEdit ? editData?.presenter || '' : '',
             author: isEdit ? editData?.author || '' : '',
             coAuthors: isEdit ? (Array.isArray(editData?.coAuthors) ? editData.coAuthors : JSON.parse(editData?.coAuthors || '[]')) : [],
@@ -2158,10 +2132,6 @@ export const Extension = () => {
                 alert('Please select a category');
                 return;
             }
-            if (!formData.center) {
-                alert('Please select a center');
-                return;
-            }
             if (!formData.author) {
                 alert('Please enter main author');
                 return;
@@ -2193,7 +2163,6 @@ export const Extension = () => {
             submitFormData.append('title', formData.title);
             submitFormData.append('author', formData.author);
             submitFormData.append('category', formData.category);
-            submitFormData.append('center', formData.center);
             submitFormData.append('campus', formData.campus);
             submitFormData.append('coAuthor', JSON.stringify(formData.coAuthors));
             submitFormData.append('presenter', formData.presenter);
@@ -2451,49 +2420,12 @@ export const Extension = () => {
             })
             campusField.appendChild(campusSelect)
 
-            // Category field
+            // Category field - static text instead of dropdown
             const categoryField = $({ tag: 'div', style: { marginBottom: '0' } })
             categoryField.appendChild($({ tag: 'label', text: 'Category *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-            categorySelect = $({
-                tag: 'select',
-                style: {
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
-                },
-                event: {
-                    type: 'change',
-                    method: (e) => {
-                        formData.category = e.target.value
-                        if (centerSelect) {
-                            const centers = categoryToCenters[e.target.value] || Object.keys(centerCategoryMapping)
-                            centerSelect.innerHTML = ''
-                            centerSelect.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
-                            centers.forEach(center => {
-                                centerSelect.appendChild($({ tag: 'option', text: center, att: { value: center } }))
-                            })
-                        }
-                    }
-                },
-                elementHandler: (el) => {
-                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
-                    categories.forEach(cat => {
-                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
-                    })
-                    if (isEdit && editData?.category) el.value = editData.category
-                }
-            })
-            categoryField.appendChild(categorySelect)
 
-            // Center field
-            const centerField = $({ tag: 'div', style: { marginBottom: '0' } })
-            centerField.appendChild($({ tag: 'label', text: 'Center *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-            centerSelect = $({
-                tag: 'select',
+            const categoryContainer = $({
+                tag: 'div',
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -2501,21 +2433,35 @@ export const Extension = () => {
                     border: '1px solid #444',
                     borderRadius: '8px',
                     color: '#fff',
-                    fontSize: '14px'
-                },
-                event: {
-                    type: 'change',
-                    method: (e) => { formData.center = e.target.value }
-                },
-                elementHandler: (el) => {
-                    el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
-                    Object.keys(centerCategoryMapping).forEach(center => {
-                        el.appendChild($({ tag: 'option', text: center, att: { value: center } }))
-                    })
-                    if (isEdit && editData?.center) el.value = editData.center
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
                 }
             })
-            centerField.appendChild(centerSelect)
+
+            const categoryText = $({
+                tag: 'span',
+                text: 'Extension',
+                style: { color: '#4caf50', fontWeight: '500' }
+            })
+
+            const categoryHidden = $({
+                tag: 'input',
+                att: { type: 'hidden', value: 'Extension (Extension)' }
+            })
+
+            categoryContainer.appendChild(categoryText)
+            categoryContainer.appendChild($({
+                tag: 'i',
+                att: { className: 'fas fa-tag' },
+                style: { color: '#4caf50', fontSize: '14px' }
+            }))
+
+            categoryField.appendChild(categoryContainer)
+            categoryField.appendChild(categoryHidden)
+
+            formData.category = 'Extension (Extension)'
 
             // Author field
             const authorField = $({ tag: 'div', style: { marginBottom: '0' } })
@@ -2675,7 +2621,6 @@ export const Extension = () => {
             twoColumnLayout.appendChild(titleField)
             twoColumnLayout.appendChild(campusField)
             twoColumnLayout.appendChild(categoryField)
-            twoColumnLayout.appendChild(centerField)
             twoColumnLayout.appendChild(authorField)
             twoColumnLayout.appendChild(presenterField)
             twoColumnLayout.appendChild(coAuthorField)
@@ -2853,7 +2798,7 @@ export const Extension = () => {
             style: {
                 padding: '24px',
                 backgroundColor: 'transparent',
-                height: '100vh',
+                height: '110vh',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
@@ -3019,7 +2964,7 @@ export const Extension = () => {
         // Table header
         const thead = $({ tag: 'thead' })
         const headerRow = $({ tag: 'tr', style: { backgroundColor: '#2a2a2a', borderBottom: '2px solid #333' } })
-        const columns = ['Event Name', 'Status', 'Title', 'Category', 'Presenter', 'Author', 'Co-Authors', 'Attachments', 'Actions']
+        const columns = ['Event Name', 'Status', 'Title', 'Presenter', 'Author', 'Co-Authors', 'Attachments', 'Actions']
 
         columns.forEach(col => {
             headerRow.appendChild($({
