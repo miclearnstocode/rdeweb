@@ -294,13 +294,56 @@ export const ResearchMain = () => {
             }))
         }
 
-        // Faculty Research Document Component (keep original functionality)
+        // Faculty Research Document Component
         const docsFaculty = ({ date, eventType, file, research, docId, status, sender, smail, center, campus, locationType }) => {
             let category, titleEntry
+            let programFile = null
+            let certificateFile = null
+            let localInhouseData = null
+            
             research.forEach(val => {
                 category = val.category
                 titleEntry = val.title
+                // Get program and certificate files from local_inhouse data
+                if (val.programFile && val.programFile.hasFile) {
+                    programFile = val.programFile
+                }
+                if (val.certificateFile && val.certificateFile.hasFile) {
+                    certificateFile = val.certificateFile
+                }
+                if (val.document_title) {
+                    localInhouseData = val
+                }
             })
+
+            // Determine if this is Extension (center is null, empty, or 'Extension')
+            const isExtension = !center || center === '' || center === 'Extension (Extension)' || center === 'Extension'
+            
+            // Determine if event is Symposium or In-House Review
+            const isSymposium = eventType && (eventType.toLowerCase().includes('symposium') || eventType.toLowerCase().includes('rde'))
+            const isInHouse = eventType && (eventType.toLowerCase().includes('in-house') || eventType.toLowerCase().includes('in house'))
+            
+            // Determine research file label based on event type and center
+            let researchFileLabel = ''
+            if (isExtension) {
+                // Extension papers
+                if (isSymposium) {
+                    researchFileLabel = 'Extension Paper'
+                } else if (isInHouse) {
+                    researchFileLabel = 'Extension Proposal'
+                } else {
+                    researchFileLabel = 'Extension Document'
+                }
+            } else {
+                // Center papers
+                if (isSymposium) {
+                    researchFileLabel = 'Research Paper'
+                } else if (isInHouse) {
+                    researchFileLabel = 'Research Proposal'
+                } else {
+                    researchFileLabel = 'Research Document'
+                }
+            }
 
             const viewDocs = () => {
                 let frm, viewerPanel
@@ -309,7 +352,7 @@ export const ResearchMain = () => {
                 let fileData = file
                 let driveViewUrl = ''
 
-                // Parse file data (same as original)
+                // Parse file data
                 if (typeof fileData === 'object' && fileData !== null) {
                     if (fileData.drive_view_url) driveViewUrl = fileData.drive_view_url
                     else if (fileData.viewUrl) driveViewUrl = fileData.viewUrl
@@ -339,7 +382,7 @@ export const ResearchMain = () => {
                     driveViewUrl = driveViewUrl.replace(/\\\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com')
                 }
 
-                const object = ({ dataURL, title }) => {
+                const object = ({ dataURL, title, fileType }) => {
                     let object
                     const getObject = (el) => { object = el }
                     return ($({
@@ -364,7 +407,7 @@ export const ResearchMain = () => {
                                         tag: 'div',
                                         style: { margin: 'auto', marginLeft: '2vw', width: '80%', textAlign: 'left', display: 'flex' },
                                         child: [
-                                            $({ tag: 'div', style: { fontFamily: 'monospace', fontSize: '1vw', color: 'deepskyblue', fontWeight: 'bold', margin: 'auto' }, text: 'Title: ' }),
+                                            $({ tag: 'div', style: { fontFamily: 'monospace', fontSize: '1vw', color: 'deepskyblue', fontWeight: 'bold', margin: 'auto' }, text: `${fileType}: ` }),
                                             $({ tag: 'div', text: `"${title}"`, style: { fontFamily: 'monospace', fontSize: '1vw', color: '#bbb', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', margin: 'auto' } })
                                         ]
                                     })
@@ -373,6 +416,42 @@ export const ResearchMain = () => {
                             $({ tag: 'iframe', att: { src: dataURL, type: 'application/pdf', sandbox: 'allow-same-origin allow-scripts allow-popups allow-forms', allow: 'autoplay' }, style: { width: '80%', height: '95%', margin: 'auto', border: 'none' } })
                         ]
                     }))
+                }
+
+                const openDriveFile = (fileData, title, fileType) => {
+                    let embedUrl = ''
+                    if (typeof fileData === 'string') embedUrl = fileData
+                    else if (typeof fileData === 'object' && fileData !== null) {
+                        if (fileData.viewUrl) embedUrl = fileData.viewUrl
+                        else if (fileData.drive_view_url) embedUrl = fileData.drive_view_url
+                        else if (fileData.fileUrl) embedUrl = fileData.fileUrl
+                        else if (fileData.file) embedUrl = fileData.file
+                        else if (fileData.legacyFile) embedUrl = fileData.legacyFile
+                    }
+                    
+                    if (embedUrl && embedUrl.includes && embedUrl.includes('drive.google.com')) {
+                        let fileId = null
+                        const patterns = [
+                            /\/d\/([a-zA-Z0-9_-]+)/,
+                            /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                            /id=([a-zA-Z0-9_-]+)/,
+                            /open\?id=([a-zA-Z0-9_-]+)/,
+                            /([a-zA-Z0-9_-]{25,})/
+                        ]
+                        for (let pattern of patterns) {
+                            const match = embedUrl.match(pattern)
+                            if (match && match[1]) {
+                                fileId = match[1]
+                                break
+                            }
+                        }
+                        if (fileId) {
+                            embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
+                        }
+                    }
+                    
+                    if (embedUrl) mainFrame.appendChild(object({ dataURL: embedUrl, title: title, fileType: fileType }))
+                    else alert('No valid file URL available')
                 }
 
                 const frameView = $({
@@ -454,7 +533,7 @@ export const ResearchMain = () => {
                         ]
                     })
 
-                    const researchBot = ({ id, dataURLResearch, title, category, author, presenter, coAuthor, center, programFile, programDriveViewUrl }) => {
+                    const researchBot = ({ id, dataURLResearch, title, category, author, presenter, coAuthor, center, campus, programFile, certificateFile }) => {
                         const labelDetails = (label, data) => {
                             return ($({
                                 tag: 'div',
@@ -483,26 +562,92 @@ export const ResearchMain = () => {
                             }))
                         }
 
-                        const openDriveFile = (fileData, fileTitle) => {
-                            let embedUrl = ''
-                            if (typeof fileData === 'string') embedUrl = fileData
-                            else if (typeof fileData === 'object' && fileData !== null) {
-                                if (fileData.drive_view_url) embedUrl = fileData.drive_view_url
-                                else if (fileData.viewUrl) embedUrl = fileData.viewUrl
-                                else if (fileData.fileUrl) embedUrl = fileData.fileUrl
-                                else if (fileData.file) embedUrl = fileData.file
-                                else if (fileData.legacyFile) embedUrl = fileData.legacyFile
+                        // Check if this is Extension for this specific research item
+                        const isResearchExtension = !center || center === '' || center === 'Extension (Extension)' || center === 'Extension'
+                        const locationLabel = isResearchExtension ? 'Campus' : 'Center'
+                        const locationValue = isResearchExtension ? (campus || 'N/A') : (center || 'N/A')
+
+                        // Determine button label for this research item
+                        let researchButtonLabel = ''
+                        if (isResearchExtension) {
+                            if (isSymposium) {
+                                researchButtonLabel = 'Extension Paper'
+                            } else if (isInHouse) {
+                                researchButtonLabel = 'Extension Proposal'
+                            } else {
+                                researchButtonLabel = 'Extension Document'
                             }
-                            if (embedUrl && embedUrl.includes && embedUrl.includes('drive.google.com')) {
-                                if (!embedUrl.includes('/preview') && embedUrl.includes('/d/')) {
-                                    const fileIdMatch = embedUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
-                                    if (fileIdMatch && fileIdMatch[1]) embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
-                                } else if (embedUrl.match(/^[a-zA-Z0-9_-]{25,}$/)) {
-                                    embedUrl = `https://drive.google.com/file/d/${embedUrl}/preview`
+                        } else {
+                            if (isSymposium) {
+                                researchButtonLabel = 'Research Paper'
+                            } else if (isInHouse) {
+                                researchButtonLabel = 'Research Proposal'
+                            } else {
+                                researchButtonLabel = 'Research Document'
+                            }
+                        }
+
+                        // Build buttons array for file attachments
+                        const fileButtons = [
+                            $({
+                                tag: 'div',
+                                att: { className: 'botRes', innerHTML: `<span class="fab fa-google-drive" style="margin-right: 0.2vw;"></span> ${researchButtonLabel}` },
+                                style: {
+                                    fontSize: '1vw', fontFamily: 'Segoe UI', width: 'fit-content', fontWeight: 'bold',
+                                    color: 'deepskyblue', cursor: 'pointer', padding: '0.5vh 1vw', userSelect: 'none',
+                                    border: 'solid thin deepskyblue', borderRadius: '0.3vw', backgroundColor: 'rgba(0, 191, 255, 0.1)',
+                                    transition: 'all 0.2s ease'
+                                },
+                                event: {
+                                    type: 'click', method: () => openDriveFile(dataURLResearch, title, researchButtonLabel),
+                                    type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0, 191, 255, 0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' },
+                                    type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0, 191, 255, 0.1)'; e.currentTarget.style.transform = 'translateY(0)' }
                                 }
-                            }
-                            if (embedUrl) mainFrame.appendChild(object({ dataURL: embedUrl, title: fileTitle }))
-                            else alert('No valid file URL available')
+                            })
+                        ]
+
+                        // Program File button if available (always called "Local Program File" for Extension)
+                        if (programFile && programFile.hasFile && programFile.viewUrl) {
+                            const programButtonLabel = isResearchExtension ? 'Local Program File' : 'Program File'
+                            fileButtons.push(
+                                $({
+                                    tag: 'div',
+                                    att: { className: 'botRes', innerHTML: '<span class="fab fa-google-drive" style="margin-right: 0.2vw;"></span> ' + programButtonLabel },
+                                    style: {
+                                        fontSize: '1vw', fontFamily: 'Segoe UI', width: 'fit-content', fontWeight: 'bold',
+                                        color: '#FF9800', cursor: 'pointer', padding: '0.5vh 1vw', userSelect: 'none',
+                                        border: 'solid thin #FF9800', borderRadius: '0.3vw', backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click', method: () => openDriveFile(programFile, `${title} - Program File`, programButtonLabel),
+                                        type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 152, 0, 0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' },
+                                        type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 152, 0, 0.1)'; e.currentTarget.style.transform = 'translateY(0)' }
+                                    }
+                                })
+                            )
+                        }
+
+                        // Certificate File button if available
+                        if (certificateFile && certificateFile.hasFile && certificateFile.viewUrl) {
+                            const certButtonLabel = isResearchExtension ? 'Local Certificate File' : 'Certificate File'
+                            fileButtons.push(
+                                $({
+                                    tag: 'div',
+                                    att: { className: 'botRes', innerHTML: '<span class="fab fa-google-drive" style="margin-right: 0.2vw;"></span> ' + certButtonLabel },
+                                    style: {
+                                        fontSize: '1vw', fontFamily: 'Segoe UI', width: 'fit-content', fontWeight: 'bold',
+                                        color: '#4CAF50', cursor: 'pointer', padding: '0.5vh 1vw', userSelect: 'none',
+                                        border: 'solid thin #4CAF50', borderRadius: '0.3vw', backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click', method: () => openDriveFile(certificateFile, `${title} - Certificate File`, certButtonLabel),
+                                        type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(76, 175, 80, 0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' },
+                                        type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(76, 175, 80, 0.1)'; e.currentTarget.style.transform = 'translateY(0)' }
+                                    }
+                                })
+                            )
                         }
 
                         return ($({
@@ -523,47 +668,19 @@ export const ResearchMain = () => {
                                 labelDetails("Author : ", author),
                                 CoAuthorList(),
                                 labelDetails("Presenter :", presenter),
-                                labelDetails("Center : ", center),
+                                labelDetails(locationLabel + " :", locationValue),
                                 labelDetails("Category : ", category),
                                 $({
                                     tag: 'div',
-                                    style: { display: 'flex', gap: '1vw', marginTop: '1vh', marginBottom: '1vh', marginLeft: '1.2vw' },
-                                    child: [
-                                        $({
-                                            tag: 'div',
-                                            att: { className: 'botRes', innerHTML: '<span class="fa fa-file-pdf-o" style="margin-right: 0.2vw;"></span> Docs entry' },
-                                            style: {
-                                                fontSize: '1vw', fontFamily: 'Segoe UI', width: 'fit-content', fontWeight: 'bold',
-                                                color: 'deepskyblue', cursor: 'pointer', padding: '0.5vh 1vw', userSelect: 'none',
-                                                border: 'solid thin deepskyblue', borderRadius: '0.3vw', backgroundColor: 'rgba(0, 191, 255, 0.1)',
-                                                transition: 'all 0.2s ease'
-                                            },
-                                            event: {
-                                                type: 'click', method: () => openDriveFile(dataURLResearch, title),
-                                                type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0, 191, 255, 0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' },
-                                                type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0, 191, 255, 0.1)'; e.currentTarget.style.transform = 'translateY(0)' }
-                                            }
-                                        }),
-                                        ...(programDriveViewUrl ? [$({
-                                            tag: 'div',
-                                            att: { className: 'botRes', innerHTML: '<span class="fa fa-file-pdf-o" style="margin-right: 0.2vw;"></span> Program File' },
-                                            style: {
-                                                fontSize: '1vw', fontFamily: 'Segoe UI', width: 'fit-content', fontWeight: 'bold',
-                                                color: '#FF9800', cursor: 'pointer', padding: '0.5vh 1vw', userSelect: 'none',
-                                                border: 'solid thin #FF9800', borderRadius: '0.3vw', backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                                                transition: 'all 0.2s ease'
-                                            },
-                                            event: {
-                                                type: 'click', method: () => openDriveFile(programDriveViewUrl, `Program: ${title}`),
-                                                type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 152, 0, 0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' },
-                                                type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 152, 0, 0.1)'; e.currentTarget.style.transform = 'translateY(0)' }
-                                            }
-                                        })] : [])
-                                    ]
+                                    style: { display: 'flex', gap: '1vw', marginTop: '1vh', marginBottom: '1vh', marginLeft: '1.2vw', flexWrap: 'wrap' },
+                                    child: fileButtons
                                 })
                             ]
                         }))
                     }
+
+                    // ... (keep the rest of the DetailsViewer functions: Button, Controller, getClickBot, etc. - same as before)
+                    // I'll include the rest below...
 
                     const Button = ({ Label, Event, isAccept = false }) => {
                         const colors = isAccept 
@@ -816,8 +933,9 @@ export const ResearchMain = () => {
                                 coAuthor: val.coauthor,
                                 presenter: val.presenter,
                                 center: val.center,
+                                campus: val.campus || val.local_campus,
                                 programFile: val.programFile,
-                                programDriveViewUrl: val.program_drive_view_url
+                                certificateFile: val.certificateFile
                             }))
                         })
                         el.appendChild(holder)
@@ -846,22 +964,25 @@ export const ResearchMain = () => {
                 
                 let [datePart, timePart] = date.split(' ')
                 let timeFormat = TimeConvert(timePart.split(":"))
-                const isExtension = !center || center === '' || center === 'Extension (Extension)' || center === 'Extension'
-                let locationLabel = isExtension ? 'Campus: ' : 'Center: '
-                let locationValue = isExtension ? (campus || 'N/A') : (research.length > 0 ? research[0].center : center || 'N/A')
-                                
+                
+                const locationLabel = isExtension ? 'Campus' : 'Center'
+                const locationValue = isExtension ? (campus || 'N/A') : (research.length > 0 ? research[0].center : center || 'N/A')
+                
+                // Build the details list
+                const detailItems = [
+                    details("Title: ", titleEntry),
+                    details("Sender: ", sender),
+                    details("Category: ", category),
+                    details(locationLabel + ": ", locationValue),
+                    details("Event type: ", eventType),
+                    details("Sender email: ", smail),
+                    details("Date Submitted: ", formatDate(datePart) + " at " + timeFormat)
+                ]
+
                 return ($({ 
                     tag: 'div', 
                     style: { margin: 'auto', width: '90%' }, 
-                    child: [
-                        details("Title: ", titleEntry), 
-                        details("Sender: ", sender),
-                        details("Category: ", category),
-                        details(locationLabel, locationValue), 
-                        details("Event type: ", eventType), 
-                        details("Sender email: ", smail), 
-                        details("Date Submitted: ", formatDate(datePart) + " at " + timeFormat)
-                    ] 
+                    child: detailItems
                 }))
             }
 
@@ -882,8 +1003,41 @@ export const ResearchMain = () => {
         const docsStudent = ({ id, title, author, coauthor, presenter, category, campus, event, paper_type, created_at, sender_type, sender_email, research_file, endorsement_file }) => {
             
             const viewStudentDocs = () => {
-                let viewerPanel
+                let frm, viewerPanel
                 const getViewer = (el) => { viewerPanel = el }
+
+                let fileData = research_file
+                let driveViewUrl = ''
+
+                // Parse file data (same as faculty)
+                if (typeof fileData === 'object' && fileData !== null) {
+                    if (fileData.drive_view_url) driveViewUrl = fileData.drive_view_url
+                    else if (fileData.viewUrl) driveViewUrl = fileData.viewUrl
+                    else if (fileData.fileUrl) driveViewUrl = fileData.fileUrl
+                    else if (fileData.file) driveViewUrl = fileData.file
+                    else if (fileData.legacyFile) driveViewUrl = fileData.legacyFile
+                    fileData = fileData
+                } else if (typeof fileData === 'string') {
+                    try {
+                        if (fileData.includes('{') && fileData.includes('}')) {
+                            const parsed = JSON.parse(fileData)
+                            if (parsed.drive_view_url) driveViewUrl = parsed.drive_view_url
+                            else if (parsed.viewUrl) driveViewUrl = parsed.viewUrl
+                            else if (parsed.fileUrl) driveViewUrl = parsed.fileUrl
+                            else if (parsed.file) driveViewUrl = parsed.file
+                            else driveViewUrl = fileData
+                            fileData = parsed
+                        } else {
+                            driveViewUrl = fileData
+                        }
+                    } catch (e) {
+                        driveViewUrl = fileData
+                    }
+                }
+
+                if (typeof driveViewUrl === 'string') {
+                    driveViewUrl = driveViewUrl.replace(/\\\//g, '/').replace('https:/drive.google.com', 'https://drive.google.com')
+                }
 
                 const object = ({ dataURL, title, fileType }) => {
                     let object
@@ -897,8 +1051,23 @@ export const ResearchMain = () => {
                                 tag: 'div',
                                 style: { width: '100%', height: '5%', backgroundColor: '#444', justifyContent: 'center', color: '#bbb', display: 'flex' },
                                 child: [
-                                    $({ tag: 'div', style: { width: 'fit-content', height: 'fit-content', margin: 'auto', display: 'flex', cursor: 'pointer' }, event: { type: 'click', method: () => object.remove() }, child: [$({ tag: 'div', att: { className: 'fa-solid fa-caret-left' }, style: { fontSize: '2vw', margin: 'auto', color: 'deepskyblue' } }), $({ tag: 'div', style: { fontSize: '1.2vw', color: 'deepskyblue', fontFamily: 'arial black,sans-serif', margin: 'auto' }, text: 'Back' })] }),
-                                    $({ tag: 'div', style: { margin: 'auto', marginLeft: '2vw', width: '80%', textAlign: 'left', display: 'flex' }, child: [$({ tag: 'div', style: { fontFamily: 'monospace', fontSize: '1vw', color: 'deepskyblue', fontWeight: 'bold', margin: 'auto' }, text: `${fileType}: ` }), $({ tag: 'div', text: `"${title}"`, style: { fontFamily: 'monospace', fontSize: '1vw', color: '#bbb', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', margin: 'auto' } })] })
+                                    $({
+                                        tag: 'div',
+                                        style: { width: 'fit-content', height: 'fit-content', margin: 'auto', display: 'flex', cursor: 'pointer' },
+                                        event: { type: 'click', method: () => object.remove() },
+                                        child: [
+                                            $({ tag: 'div', att: { className: 'fa-solid fa-caret-left' }, style: { fontSize: '2vw', margin: 'auto', color: 'deepskyblue' } }),
+                                            $({ tag: 'div', style: { fontSize: '1.2vw', color: 'deepskyblue', fontFamily: 'arial black,sans-serif', margin: 'auto' }, text: 'Back' })
+                                        ]
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        style: { margin: 'auto', marginLeft: '2vw', width: '80%', textAlign: 'left', display: 'flex' },
+                                        child: [
+                                            $({ tag: 'div', style: { fontFamily: 'monospace', fontSize: '1vw', color: 'deepskyblue', fontWeight: 'bold', margin: 'auto' }, text: `${fileType}: ` }),
+                                            $({ tag: 'div', text: `"${title}"`, style: { fontFamily: 'monospace', fontSize: '1vw', color: '#bbb', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%', margin: 'auto' } })
+                                        ]
+                                    })
                                 ]
                             }),
                             $({ tag: 'iframe', att: { src: dataURL, type: 'application/pdf', sandbox: 'allow-same-origin allow-scripts allow-popups allow-forms', allow: 'autoplay' }, style: { width: '80%', height: '95%', margin: 'auto', border: 'none' } })
@@ -906,7 +1075,93 @@ export const ResearchMain = () => {
                     }))
                 }
 
-                // Right side panel for endorsement letter viewer (similar to faculty)
+                const openDriveFile = (fileData, title, fileType) => {
+                    let embedUrl = ''
+                    if (typeof fileData === 'string') embedUrl = fileData
+                    else if (typeof fileData === 'object' && fileData !== null) {
+                        if (fileData.viewUrl) embedUrl = fileData.viewUrl
+                        else if (fileData.drive_view_url) embedUrl = fileData.drive_view_url
+                        else if (fileData.fileUrl) embedUrl = fileData.fileUrl
+                        else if (fileData.file) embedUrl = fileData.file
+                        else if (fileData.legacyFile) embedUrl = fileData.legacyFile
+                    }
+                    
+                    if (embedUrl && embedUrl.includes && embedUrl.includes('drive.google.com')) {
+                        let fileId = null
+                        const patterns = [
+                            /\/d\/([a-zA-Z0-9_-]+)/,
+                            /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                            /id=([a-zA-Z0-9_-]+)/,
+                            /open\?id=([a-zA-Z0-9_-]+)/,
+                            /([a-zA-Z0-9_-]{25,})/
+                        ]
+                        for (let pattern of patterns) {
+                            const match = embedUrl.match(pattern)
+                            if (match && match[1]) {
+                                fileId = match[1]
+                                break
+                            }
+                        }
+                        if (fileId) {
+                            embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
+                        }
+                    }
+                    
+                    if (embedUrl) mainFrame.appendChild(object({ dataURL: embedUrl, title: title, fileType: fileType }))
+                    else alert('No valid file URL available')
+                }
+
+                const frameView = $({
+                    tag: 'div',
+                    style: { width: '70%', height: '100%' },
+                    elementHandler: async (el) => {
+                        frm = el
+                        let fileId = null
+
+                        if (driveViewUrl && driveViewUrl.includes('drive.google.com')) {
+                            const patterns = [
+                                /\/d\/([a-zA-Z0-9_-]+)/,
+                                /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                                /id=([a-zA-Z0-9_-]+)/,
+                                /open\?id=([a-zA-Z0-9_-]+)/,
+                                /([a-zA-Z0-9_-]{25,})/
+                            ]
+                            for (let pattern of patterns) {
+                                const match = driveViewUrl.match(pattern)
+                                if (match && match[1]) {
+                                    fileId = match[1]
+                                    break
+                                }
+                            }
+                            if (!fileId && driveViewUrl.includes('/preview')) {
+                                const previewMatch = driveViewUrl.match(/\/([a-zA-Z0-9_-]+)\/preview/)
+                                if (previewMatch) fileId = previewMatch[1]
+                            }
+                        }
+
+                        if (fileId) {
+                            const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`
+                            el.appendChild($({
+                                tag: 'iframe',
+                                att: {
+                                    src: embedUrl,
+                                    type: 'application/pdf',
+                                    sandbox: 'allow-same-origin allow-scripts allow-popups allow-forms',
+                                    allow: 'autoplay'
+                                },
+                                style: { width: '98%', height: '99%', border: 'none', backgroundColor: '#fff' }
+                            }))
+                        } else {
+                            el.appendChild($({
+                                tag: 'div',
+                                style: { width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' },
+                                child: [$({ tag: 'div', text: 'Could not extract Google Drive file ID', style: { fontSize: '1.5vw', color: '#f44' } })]
+                            }))
+                        }
+                    }
+                })
+
+                // Right side panel for endorsement letter viewer (same as faculty)
                 const RightPanel = () => {
                     let endorsementUrl = endorsement_file?.viewUrl || null
                     
@@ -953,17 +1208,14 @@ export const ResearchMain = () => {
                             }))
                         }
                     }
-                    
+                    //header for endorsement letter
                     return ($({
                         tag: 'div',
                         style: { width: '70%', height: '100%', backgroundColor: '#f5f5f5' },
                         child: [
                             $({
                                 tag: 'div',
-                                style: { width: '100%', height: '5%', backgroundColor: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-                                child: [
-                                    $({ tag: 'div', text: 'Endorsement Letter', style: { color: '#fff', fontSize: '1vw', fontWeight: 'bold' } })
-                                ]
+                                style: { width: '100%', height: '5%', backgroundColor: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center' }
                             }),
                             $({
                                 tag: 'div',
@@ -974,288 +1226,360 @@ export const ResearchMain = () => {
                     }))
                 }
 
-                // Button component matching faculty style
-                const Button = ({ Label, Event, isAccept = false }) => {
-                    const colors = isAccept 
-                        ? { bg: 'rgba(76, 175, 80, 0.2)', border: '#4CAF50', hover: 'rgba(76, 175, 80, 0.4)' }
-                        : { bg: 'rgba(244, 67, 54, 0.2)', border: '#f44336', hover: 'rgba(244, 67, 54, 0.4)' }
-                    
-                    return ($({
-                        tag: 'div',
-                        style: {
-                            height: '99%',
-                            width: '49%',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            margin: 'auto',
-                            backgroundColor: colors.bg,
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                        },
-                        att: { className: 'botControllStaff' },
-                        event: {
-                            type: 'click', method: Event,
-                            type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = colors.hover; e.currentTarget.style.transform = 'scale(1.02)' },
-                            type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = colors.bg; e.currentTarget.style.transform = 'scale(1)' }
-                        },
-                        child: [$({ tag: 'div', text: Label, style: { margin: 'auto', fontFamily: 'arial black,sans-serif', color: colors.border, fontSize: '1.1vw' } })]
-                    }))
-                }
-
                 const DetailsViewer = () => {
                     const header = $({
                         tag: 'div',
                         style: { display: 'flex', justifyContent: 'center', height: '5%', width: '100%', backgroundColor: '#666', borderBottom: 'solid thin #999' },
                         child: [
-                            $({ tag: 'div', style: { margin: 'auto', color: 'deepskyblue', display: 'flex', cursor: 'pointer' }, child: [$({ tag: 'div', att: { className: 'fa-solid fa-caret-left' }, style: { fontSize: '1.7vw', margin: 'auto' } }), $({ tag: 'div', text: 'Back', style: { fontFamily: 'Segoe UI', fontSize: '1.5vw', fontWeight: 'bold', margin: 'auto' } })], event: { type: 'click', method: () => viewerPanel.remove() } }),
-                            $({ tag: 'div', text: `${paper_type === 'undergraduate' ? 'Undergraduate' : 'Graduate'} Research Submission`, style: { width: 'fit-content', margin: 'auto', fontFamily: 'arial black,san-serif', fontSize: '1.4vw', color: '#bbb' } })
-                        ]
-                    })
-
-                    const contentPanel = $({
-                        tag: 'div',
-                        style: { width: '100%', height: '65%', overflowY: 'auto', backgroundColor: '#333', padding: '10px' },
-                        child: [
-                            $({ tag: 'div', style: { marginBottom: '10px' }, child: [$({ tag: 'span', text: 'Title: ', style: { color: 'lightblue', fontSize: '1vw' } }), $({ tag: 'span', text: title, style: { color: '#bbb', fontSize: '1vw' } })] }),
-                            $({ tag: 'div', style: { marginBottom: '10px' }, child: [$({ tag: 'span', text: 'Author: ', style: { color: 'lightblue', fontSize: '1vw' } }), $({ tag: 'span', text: author, style: { color: '#bbb', fontSize: '1vw' } })] }),
-                            coauthor && coauthor !== '[]' && coauthor !== 'null' ? $({ tag: 'div', style: { marginBottom: '10px' }, child: [$({ tag: 'span', text: 'Co-author(s): ', style: { color: 'lightblue', fontSize: '1vw' } }), $({ tag: 'span', text: coauthor.replace(/[\[\]"]/g, ''), style: { color: '#bbb', fontSize: '1vw' } })] }) : null,
-                            $({ tag: 'div', style: { marginBottom: '10px' }, child: [$({ tag: 'span', text: 'Presenter: ', style: { color: 'lightblue', fontSize: '1vw' } }), $({ tag: 'span', text: presenter, style: { color: '#bbb', fontSize: '1vw' } })] }),
-                            $({ tag: 'div', style: { marginBottom: '10px' }, child: [$({ tag: 'span', text: 'Category: ', style: { color: 'lightblue', fontSize: '1vw' } }), $({ tag: 'span', text: category, style: { color: '#bbb', fontSize: '1vw' } })] }),
-                            $({ tag: 'div', style: { marginBottom: '10px' }, child: [$({ tag: 'span', text: 'Campus: ', style: { color: 'lightblue', fontSize: '1vw' } }), $({ tag: 'span', text: campus, style: { color: '#bbb', fontSize: '1vw' } })] }),
-                            // View Research Paper Button
-                            research_file && research_file.hasFile ? $({
-                                tag: 'div',
-                                style: { marginTop: '15px', textAlign: 'center' },
-                                child: [
-                                    $({
-                                        tag: 'button',
-                                        style: { 
-                                            padding: '10px 20px', 
-                                            backgroundColor: 'deepskyblue', 
-                                            border: 'none', 
-                                            borderRadius: '5px', 
-                                            cursor: 'pointer', 
-                                            color: '#fff', 
-                                            fontSize: '0.9vw', 
-                                            fontWeight: 'bold',
-                                            transition: 'all 0.2s ease',
-                                            width: '100%'
-                                        },
-                                        child: [$({ tag: 'span', att: { className: 'fa-solid fa-file-pdf' }, style: { marginRight: '8px' } }), $({ tag: 'span', text: 'View Research Paper' })],
-                                        event: { 
-                                            type: 'click', 
-                                            method: () => { 
-                                                if (research_file.viewUrl) {
-                                                    mainFrame.appendChild(object({ dataURL: research_file.viewUrl, title: title, fileType: 'Research Paper' }))
-                                                }
-                                            },
-                                            type2: 'mouseenter', 
-                                            method2: (e) => { e.target.style.backgroundColor = '#0a7cb5' },
-                                            type3: 'mouseleave', 
-                                            method3: (e) => { e.target.style.backgroundColor = 'deepskyblue' }
-                                        }
-                                    })
-                                ]
-                            }) : null
-                        ]
-                    })
-
-                    const showRejectModal = () => {
-                        let rejectReason = ''
-                        
-                        const modalContent = ({ closeModal }) => {
-                            return $({
-                                tag: 'div',
-                                style: { display: 'flex', flexDirection: 'column', gap: '20px' },
-                                child: [
-                                    $({
-                                        tag: 'div',
-                                        style: { display: 'flex', flexDirection: 'column', gap: '8px' },
-                                        child: [
-                                            $({
-                                                tag: 'label',
-                                                text: 'Reason for Rejection',
-                                                style: { color: '#ddd', fontSize: '14px', fontWeight: '500' }
-                                            }),
-                                            $({
-                                                tag: 'textarea',
-                                                att: { placeholder: 'Please provide a detailed reason for rejecting this document...' },
-                                                style: {
-                                                    width: '100%',
-                                                    minHeight: '150px',
-                                                    padding: '12px',
-                                                    backgroundColor: '#2a2a2a',
-                                                    border: '1px solid #444',
-                                                    borderRadius: '8px',
-                                                    color: '#fff',
-                                                    fontSize: '14px',
-                                                    fontFamily: 'monospace',
-                                                    resize: 'vertical',
-                                                    outline: 'none',
-                                                    transition: 'border-color 0.2s ease'
-                                                },
-                                                event: {
-                                                    type: 'input', method: (e) => { rejectReason = e.target.value },
-                                                    type2: 'focus', method2: (e) => { e.target.style.borderColor = 'deepskyblue' },
-                                                    type3: 'blur', method3: (e) => { e.target.style.borderColor = '#444' }
-                                                }
-                                            })
-                                        ]
-                                    })
-                                ]
-                            })
-                        }
-                        
-                        const modalFooter = ({ closeModal }) => {
-                            return $({
-                                tag: 'div',
-                                style: { display: 'flex', gap: '12px', justifyContent: 'flex-end' },
-                                child: [
-                                    $({
-                                        tag: 'button',
-                                        text: 'Cancel',
-                                        style: {
-                                            padding: '10px 24px',
-                                            backgroundColor: '#444',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            color: '#bbb',
-                                            cursor: 'pointer',
-                                            fontSize: '14px',
-                                            transition: 'all 0.2s ease'
-                                        },
-                                        event: {
-                                            type: 'click', method: closeModal,
-                                            type2: 'mouseenter', method2: (e) => { e.target.style.backgroundColor = '#555' },
-                                            type3: 'mouseleave', method3: (e) => { e.target.style.backgroundColor = '#444' }
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'button',
-                                        text: 'Submit Rejection',
-                                        style: {
-                                            padding: '10px 24px',
-                                            backgroundColor: '#f44336',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            color: 'white',
-                                            cursor: 'pointer',
-                                            fontSize: '14px',
-                                            fontWeight: 'bold',
-                                            transition: 'all 0.2s ease'
-                                        },
-                                        event: {
-                                            type: 'click',
-                                            method: async () => {
-                                                if (!rejectReason.trim()) {
-                                                    alert('Please provide a reason for rejection')
-                                                    return
-                                                }
-                                                closeModal()
-                                                
-                                                let loading = Waiting()
-                                                document.body.appendChild(loading)
-                                                const req = new Request('/getresearch')
-                                                req.Post([
-                                                    { name: 'rejectStudentResearch', value: '1' },
-                                                    { name: 'paperId', value: id },
-                                                    { name: 'reason', value: rejectReason }
-                                                ])
-                                                req.Json()
-                                                req.Send().then(data => {
-                                                    loading.remove()
-                                                    if (data.status) {
-                                                        document.body.appendChild(ConfirmationAlert(data.message, () => window.location.reload()))
-                                                    } else {
-                                                        alert(data.message)
-                                                    }
-                                                }).catch(() => loading.remove())
-                                            },
-                                            type2: 'mouseenter', method2: (e) => { e.target.style.backgroundColor = '#d32f2f' },
-                                            type3: 'mouseleave', method3: (e) => { e.target.style.backgroundColor = '#f44336' }
-                                        }
-                                    })
-                                ]
-                            })
-                        }
-                        
-                        CustomModal({
-                            title: 'Reject Document',
-                            size: 'medium',
-                            content: modalContent,
-                            footer: modalFooter,
-                            closeOnOverlayClick: true
-                        })
-                    }
-
-                    const actionButtons = $({
-                        tag: 'div',
-                        style: { width: '100%', height: '20%', position: 'absolute', bottom: '0', backgroundColor: '#1a1a1a', borderTop: '1px solid #444' },
-                        child: [
                             $({
                                 tag: 'div',
-                                style: { width: '100%', height: '50%', display: 'flex', justifyContent: 'center', padding: '10px' },
+                                style: { margin: 'auto', color: 'deepskyblue', display: 'flex', cursor: 'pointer' },
                                 child: [
-                                    Button({ 
-                                        Label: 'ACCEPT', 
-                                        Event: async () => {
-                                            if (confirm("Are you sure you want to accept this research paper?")) {
-                                                let loading = Waiting()
-                                                document.body.appendChild(loading)
-                                                const req = new Request('/getresearch')
-                                                req.Post([
-                                                    { name: 'acceptStudentResearch', value: '1' },
-                                                    { name: 'paperId', value: id },
-                                                    { name: 'campus', value: campus },
-                                                    { name: 'eventType', value: event }
-                                                ])
-                                                req.Json()
-                                                req.Send().then(data => {
-                                                    loading.remove()
-                                                    if (data.status) {
-                                                        showSuccessAndReload("Research paper accepted successfully!")
-                                                    } else {
-                                                        alert(data.message || "Failed to accept research paper")
-                                                    }
-                                                }).catch(() => loading.remove())
-                                            }
-                                        }, 
-                                        isAccept: true 
-                                    }),
-                                    Button({ 
-                                        Label: 'REJECT', 
-                                        Event: () => {
-                                            if (confirm("Are you sure you want to reject this document?")) showRejectModal()
-                                        }, 
-                                        isAccept: false 
-                                    })
-                                ]
+                                    $({ tag: 'div', att: { className: 'fa-solid fa-caret-left' }, style: { fontSize: '1.7vw', margin: 'auto' } }),
+                                    $({ tag: 'div', text: 'Back', style: { fontFamily: 'Segoe UI', fontSize: '1.5vw', fontWeight: 'bold', margin: 'auto' } })
+                                ],
+                                event: { type: 'click', method: () => viewerPanel.remove() }
                             }),
                             $({
                                 tag: 'div',
-                                style: { height: '50%', width: '100%', display: 'flex', justifyContent: 'center' },
-                                child: [
-                                    $({
-                                        tag: 'div',
-                                        att: { className: 'botControllStaff' },
-                                        style: { width: '99%', height: '90%', display: 'flex', justifyContent: 'center', margin: 'auto', cursor: 'pointer', backgroundColor: '#333', borderRadius: '8px', transition: 'all 0.2s ease' },
-                                        event: {
-                                            type: 'click', method: () => viewerPanel.remove(),
-                                            type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = '#444' },
-                                            type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = '#333' }
-                                        },
-                                        child: [$({ tag: 'div', text: 'Close', style: { margin: 'auto', fontFamily: 'arial black,sans-serif', fontSize: '1.4vw', color: 'deepskyblue' } })]
-                                    })
-                                ]
+                                text: 'Endorsement Letter',
+                                style: { width: 'fit-content', margin: 'auto', fontFamily: 'arial black,san-serif', fontSize: '1.4vw', color: '#bbb' }
                             })
                         ]
                     })
 
+                    const researchBot = ({ title, category, author, presenter, coAuthor }) => {
+                        const labelDetails = (label, data) => {
+                            return ($({
+                                tag: 'div',
+                                att: { innerHTML: `<span style="font-family: 'Arial Black',sans-serif; color: lightblue">${label}</span> <span>${data}</span>` },
+                                style: { fontSize: '1vw', fontFamily: 'monospace', color: '#ccc' }
+                            }))
+                        }
+
+                        const CoAuthorList = () => {
+                            let coauthors = []
+                            try {
+                                if (coAuthor && coAuthor !== '[]' && coAuthor !== 'null') {
+                                    coauthors = JSON.parse(coAuthor)
+                                }
+                            } catch (e) {
+                                coauthors = []
+                            }
+                            
+                            if (coauthors.length === 0) return null
+                            
+                            return ($({
+                                tag: 'div',
+                                style: { width: '100%', height: 'fit-content' },
+                                child: [
+                                    $({ tag: 'div', text: "Co-Author :", style: { fontFamily: 'arial black,sans-serif', color: 'lightblue', fontSize: '1vw' } }),
+                                    $({
+                                        tag: 'ul', style: { marginTop: '0' },
+                                        elementHandler: (el) => {
+                                            coauthors.forEach(val => {
+                                                el.appendChild($({ tag: 'li', text: val, style: { color: '#bbb', fontSize: '1vw', fontWeight: 'bolder' } }))
+                                            })
+                                        }
+                                    })
+                                ]
+                            }))
+                        }
+
+                        // Build buttons array (only research paper button since no program/certificate for students)
+                        const fileButtons = [
+                            $({
+                                tag: 'div',
+                                att: { className: 'botRes', innerHTML: '<span class="fab fa-google-drive" style="margin-right: 0.2vw;"></span> Research Paper' },
+                                style: {
+                                    fontSize: '1vw', fontFamily: 'Segoe UI', width: 'fit-content', fontWeight: 'bold',
+                                    color: 'deepskyblue', cursor: 'pointer', padding: '0.5vh 1vw', userSelect: 'none',
+                                    border: 'solid thin deepskyblue', borderRadius: '0.3vw', backgroundColor: 'rgba(0, 191, 255, 0.1)',
+                                    transition: 'all 0.2s ease'
+                                },
+                                event: {
+                                    type: 'click', method: () => openDriveFile(research_file, title, 'Research Paper'),
+                                    type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0, 191, 255, 0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' },
+                                    type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0, 191, 255, 0.1)'; e.currentTarget.style.transform = 'translateY(0)' }
+                                }
+                            })
+                        ]
+
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                width: '95%',
+                                margin: '1vh auto',
+                                padding: '.5rem',
+                                backgroundColor: '#555',
+                                borderRadius: '.5rem',
+                                userSelect: 'text',
+                                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                cursor: 'pointer'
+                            },
+                            att: { className: 'botRes..' },
+                            child: [
+                                labelDetails("Title : ", title),
+                                labelDetails("Author : ", author),
+                                CoAuthorList(),
+                                labelDetails("Presenter :", presenter),
+                                labelDetails("Campus : ", campus),
+                                labelDetails("Category : ", category),
+                                $({
+                                    tag: 'div',
+                                    style: { display: 'flex', gap: '1vw', marginTop: '1vh', marginBottom: '1vh', marginLeft: '1.2vw', flexWrap: 'wrap' },
+                                    child: fileButtons
+                                })
+                            ]
+                        }))
+                    }
+
+                    const Button = ({ Label, Event, isAccept = false }) => {
+                        const colors = isAccept 
+                            ? { bg: 'rgba(76, 175, 80, 0.2)', border: '#4CAF50', hover: 'rgba(76, 175, 80, 0.4)' }
+                            : { bg: 'rgba(244, 67, 54, 0.2)', border: '#f44336', hover: 'rgba(244, 67, 54, 0.4)' }
+                        
+                        return ($({
+                            tag: 'div',
+                            style: {
+                                height: '99%',
+                                width: '49%',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                margin: 'auto',
+                                backgroundColor: colors.bg,
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            },
+                            att: { className: 'botControllStaff' },
+                            event: {
+                                type: 'click', method: Event,
+                                type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = colors.hover; e.currentTarget.style.transform = 'scale(1.02)' },
+                                type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = colors.bg; e.currentTarget.style.transform = 'scale(1)' }
+                            },
+                            child: [$({ tag: 'div', text: Label, style: { margin: 'auto', fontFamily: 'arial black,sans-serif', color: colors.border, fontSize: '1.1vw' } })]
+                        }))
+                    }
+
+                    const Controller = () => {
+                        const showRejectModal = () => {
+                            let rejectReason = ''
+                            
+                            const modalContent = ({ closeModal }) => {
+                                return $({
+                                    tag: 'div',
+                                    style: { display: 'flex', flexDirection: 'column', gap: '20px' },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            style: { display: 'flex', flexDirection: 'column', gap: '8px' },
+                                            child: [
+                                                $({
+                                                    tag: 'label',
+                                                    text: 'Reason for Rejection',
+                                                    style: { color: '#ddd', fontSize: '14px', fontWeight: '500' }
+                                                }),
+                                                $({
+                                                    tag: 'textarea',
+                                                    att: { placeholder: 'Please provide a detailed reason for rejecting this document...' },
+                                                    style: {
+                                                        width: '100%',
+                                                        minHeight: '150px',
+                                                        padding: '12px',
+                                                        backgroundColor: '#2a2a2a',
+                                                        border: '1px solid #444',
+                                                        borderRadius: '8px',
+                                                        color: '#fff',
+                                                        fontSize: '14px',
+                                                        fontFamily: 'monospace',
+                                                        resize: 'vertical',
+                                                        outline: 'none',
+                                                        transition: 'border-color 0.2s ease'
+                                                    },
+                                                    event: {
+                                                        type: 'input', method: (e) => { rejectReason = e.target.value },
+                                                        type2: 'focus', method2: (e) => { e.target.style.borderColor = 'deepskyblue' },
+                                                        type3: 'blur', method3: (e) => { e.target.style.borderColor = '#444' }
+                                                    }
+                                                })
+                                            ]
+                                        })
+                                    ]
+                                })
+                            }
+                            
+                            const modalFooter = ({ closeModal }) => {
+                                return $({
+                                    tag: 'div',
+                                    style: { display: 'flex', gap: '12px', justifyContent: 'flex-end' },
+                                    child: [
+                                        $({
+                                            tag: 'button',
+                                            text: 'Cancel',
+                                            style: {
+                                                padding: '10px 24px',
+                                                backgroundColor: '#444',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                color: '#bbb',
+                                                cursor: 'pointer',
+                                                fontSize: '14px',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            event: {
+                                                type: 'click', method: closeModal,
+                                                type2: 'mouseenter', method2: (e) => { e.target.style.backgroundColor = '#555' },
+                                                type3: 'mouseleave', method3: (e) => { e.target.style.backgroundColor = '#444' }
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'button',
+                                            text: 'Submit Rejection',
+                                            style: {
+                                                padding: '10px 24px',
+                                                backgroundColor: '#f44336',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                color: 'white',
+                                                cursor: 'pointer',
+                                                fontSize: '14px',
+                                                fontWeight: 'bold',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            event: {
+                                                type: 'click',
+                                                method: async () => {
+                                                    if (!rejectReason.trim()) {
+                                                        alert('Please provide a reason for rejection')
+                                                        return
+                                                    }
+                                                    closeModal()
+                                                    
+                                                    let loading = Waiting()
+                                                    document.body.appendChild(loading)
+                                                    const req = new Request('/getresearch')
+                                                    req.Post([
+                                                        { name: 'rejectStudentResearch', value: '1' },
+                                                        { name: 'paperId', value: id },
+                                                        { name: 'reason', value: rejectReason }
+                                                    ])
+                                                    req.Json()
+                                                    req.Send().then(data => {
+                                                        loading.remove()
+                                                        if (data.status) {
+                                                            document.body.appendChild(ConfirmationAlert(data.message, () => window.location.reload()))
+                                                        } else {
+                                                            alert(data.message)
+                                                        }
+                                                    }).catch(() => loading.remove())
+                                                },
+                                                type2: 'mouseenter', method2: (e) => { e.target.style.backgroundColor = '#d32f2f' },
+                                                type3: 'mouseleave', method3: (e) => { e.target.style.backgroundColor = '#f44336' }
+                                            }
+                                        })
+                                    ]
+                                })
+                            }
+                            
+                            CustomModal({
+                                title: 'Reject Document',
+                                size: 'medium',
+                                content: modalContent,
+                                footer: modalFooter,
+                                closeOnOverlayClick: true
+                            })
+                        }
+
+                        return ($({
+                            tag: 'div',
+                            style: { width: '100%', height: '20%', position: 'absolute', bottom: '0', backgroundColor: '#1a1a1a', borderTop: '1px solid #444' },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: { width: '100%', height: '50%', display: 'flex', justifyContent: 'center', padding: '10px' },
+                                    child: [
+                                        Button({ 
+                                            Label: 'ACCEPT', 
+                                            Event: async () => {
+                                                if (confirm("Are you sure you want to accept this research paper?")) {
+                                                    let loading = Waiting()
+                                                    document.body.appendChild(loading)
+                                                    const req = new Request('/getresearch')
+                                                    req.Post([
+                                                        { name: 'acceptStudentResearch', value: '1' },
+                                                        { name: 'paperId', value: id },
+                                                        { name: 'campus', value: campus },
+                                                        { name: 'eventType', value: event }
+                                                    ])
+                                                    req.Json()
+                                                    req.Send().then(data => {
+                                                        loading.remove()
+                                                        if (data.status) {
+                                                            showSuccessAndReload("Research paper accepted successfully!")
+                                                        } else {
+                                                            alert(data.message || "Failed to accept research paper")
+                                                        }
+                                                    }).catch(() => loading.remove())
+                                                }
+                                            }, 
+                                            isAccept: true 
+                                        }),
+                                        Button({ 
+                                            Label: 'REJECT', 
+                                            Event: () => {
+                                                if (confirm("Are you sure you want to reject this document?")) showRejectModal()
+                                            }, 
+                                            isAccept: false 
+                                        })
+                                    ]
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: { height: '50%', width: '100%', display: 'flex', justifyContent: 'center' },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            att: { className: 'botControllStaff' },
+                                            style: { width: '99%', height: '90%', display: 'flex', justifyContent: 'center', margin: 'auto', cursor: 'pointer', backgroundColor: '#333', borderRadius: '8px', transition: 'all 0.2s ease' },
+                                            event: {
+                                                type: 'click', method: () => viewerPanel.remove(),
+                                                type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = '#444' },
+                                                type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = '#333' }
+                                            },
+                                            child: [$({ tag: 'div', text: 'Close', style: { margin: 'auto', fontFamily: 'arial black,sans-serif', fontSize: '1.4vw', color: 'deepskyblue' } })]
+                                        })
+                                    ]
+                                })
+                            ]
+                        }))
+                    }
+
+                    const getClickBot = (el) => {
+                        const holder = $({
+                            tag: 'div',
+                            style: { width: '100%', height: '65%', overflowY: 'auto', backgroundColor: '#333', padding: '10px' }
+                        })
+                        el.appendChild(header)
+                        el.appendChild($({ tag: 'div', text: 'Documents', style: { margin: '1vh auto', fontFamily: 'arial black, sans-serif', fontSize: '1.2vw', color: '#bbb' } }))
+                        el.appendChild($({ tag: 'div', style: { color: '#bbb', fontWeight: 'bold' }, att: { innerHTML: `<span style="font-size:1vw;color:deepskyblue">Entries:</span> 1` } }))
+                        
+                        holder.appendChild(researchBot({
+                            title: title,
+                            category: category,
+                            author: author,
+                            coAuthor: coauthor,
+                            presenter: presenter
+                        }))
+                        
+                        el.appendChild(holder)
+                        el.appendChild(Controller())
+                    }
+
                     return ($({
                         tag: 'div',
-                        style: { width: '29.5%', height: '100%', margin: 'auto', borderRight: 'solid thin #bbb', position: 'relative', display: 'flex', flexDirection: 'column', backgroundColor: '#333' },
-                        child: [header, contentPanel, actionButtons]
+                        style: { width: '29.5%', height: '100%', margin: 'auto', borderRight: 'solid thin #bbb', position: 'relative' },
+                        elementHandler: getClickBot
                     }))
                 }
 
@@ -1271,18 +1595,29 @@ export const ResearchMain = () => {
 
             const leftBox = () => {
                 const details = (label, data) => $({ tag: 'div', style: { width: 'fit-content', marginBottom: '4px' }, child: [$({ tag: 'span', text: label, style: { color: 'lightskyblue', fontSize: '1vw', fontFamily: 'arial black' } }), $({ tag: 'span', text: data, style: { color: '#bbb', fontSize: '1vw', fontFamily: 'arial,sans-serif', marginLeft: '5px' } })] })
-                return ($({
-                    tag: 'div',
-                    style: { margin: 'auto', width: '90%' },
-                    child: [
-                        details("Title: ", title.substring(0, 50) + (title.length > 50 ? '...' : '')), 
-                        details("Sender: ", sender_type), 
-                        details("Category: ", category), 
-                        details("Campus: ", campus), 
-                        details("Event: ", event),
-                        details("Email: ", sender_email || 'N/A'),
-                        details("Date Submitted: ", formatDateTime(created_at))
-                    ]
+                
+                let [datePart, timePart] = created_at.split(' ')
+                let timeFormat = TimeConvert(timePart ? timePart.split(":") : "00:00:00".split(":"))
+                
+                const detailItems = [
+                    details("Title: ", title.substring(0, 50) + (title.length > 50 ? '...' : '')), 
+                    details("Sender: ", sender_type), 
+                    details("Category: ", category), 
+                    details("Campus: ", campus), 
+                    details("Event: ", event),
+                    details("Email: ", sender_email || 'N/A'),
+                    details("Date Submitted: ", formatDate(datePart) + " at " + timeFormat)
+                ]
+                
+                // Add Research Paper indicator if available
+                if (research_file && research_file.hasFile) {
+                    detailItems.push(details("Research Paper: ", "Available"))
+                }
+
+                return ($({ 
+                    tag: 'div', 
+                    style: { margin: 'auto', width: '90%' }, 
+                    child: detailItems
                 }))
             }
 
@@ -1291,7 +1626,11 @@ export const ResearchMain = () => {
                 style: { width: '95%', margin: '.5vw auto', padding: '.3rem', display: 'flex', justifyContent: 'center', border: `solid thin ${paper_type === 'undergraduate' ? '#4CAF50' : '#FF9800'}`, borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.3)', cursor: 'pointer', transition: 'all 0.2s ease' },
                 att: { className: 'studentResearchItem' },
                 child: [icon, leftBox()],
-                event: { type: 'click', method: () => mainFrame.appendChild(viewStudentDocs()), type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)'; e.currentTarget.style.transform = 'translateY(-2px)' }, type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.3)'; e.currentTarget.style.transform = 'translateY(0)' } }
+                event: {
+                    type: 'click', method: () => mainFrame.appendChild(viewStudentDocs()),
+                    type2: 'mouseenter', method2: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)'; e.currentTarget.style.transform = 'translateY(-2px)' },
+                    type3: 'mouseleave', method3: (e) => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.3)'; e.currentTarget.style.transform = 'translateY(0)' }
+                }
             }))
         }
 
