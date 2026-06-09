@@ -70,7 +70,7 @@ if (isset($_POST['incomingEndorsement'])) {
             account_detail.campus 
         FROM endorsement
         LEFT JOIN account_detail ON endorsement.senderid=account_detail.id
-        WHERE `status`='' OR `status` IS NULL";
+        WHERE `status`='' OR `status` IS NULL OR `status`='pending'";
 
         foreach ($con->query($queries) as $val) {
             $data = new stdClass();
@@ -161,9 +161,6 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->coauthor = $v['coauthor'];
                 $research->presenter = $v['presenter'];
                 $research->category = $v['category'];
-
-                // For Extension, we'll use the campus from account_detail
-                // For other centers, we'll use the center from researchfile
                 if ($val['center'] === 'Extension') {
                     $research->displayLocation = $val['campus']; // Use account_detail.campus
                     $research->locationType = 'campus';

@@ -846,10 +846,10 @@ export const ResearchMain = () => {
                 
                 let [datePart, timePart] = date.split(' ')
                 let timeFormat = TimeConvert(timePart.split(":"))
-                
-                let locationLabel = center === 'Extension (Extension)' ? 'Campus: ' : 'Center: '
-                let locationValue = center === 'Extension (Extension)' ? (campus || 'N/A') : (research.length > 0 ? research[0].center : center || 'N/A')
-                
+                const isExtension = !center || center === '' || center === 'Extension (Extension)' || center === 'Extension'
+                let locationLabel = isExtension ? 'Campus: ' : 'Center: '
+                let locationValue = isExtension ? (campus || 'N/A') : (research.length > 0 ? research[0].center : center || 'N/A')
+                                
                 return ($({ 
                     tag: 'div', 
                     style: { margin: 'auto', width: '90%' }, 
