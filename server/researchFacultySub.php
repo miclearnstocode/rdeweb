@@ -3090,7 +3090,7 @@ if (isset($_POST['researchFile'])) {
             FROM researchfile rf
             INNER JOIN endorsement e ON e.id = rf.endorsementid
             INNER JOIN event_list el ON el.id = rf.event_id
-            WHERE e.status = 'accepted'
+            WHERE (e.status = 'accepted' OR rf.status = 'accepted')
             AND rf.event_id = ?";
 
             if ($isNewEvent) {
@@ -3162,7 +3162,7 @@ if (isset($_POST['researchFile'])) {
                         $data->file = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
                         $data->file_type = 'drive';
                         $data->drive_file_id = htmlspecialchars($row['drive_file_id'] ?? '', ENT_QUOTES, 'UTF-8');
-                        $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', ENT_QUOTES, 'UTF-8');
+                        $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', ENT_QUOTES);
                     } elseif (!empty($row['local_file'])) {
                         $data->file = htmlspecialchars($row['local_file'], ENT_QUOTES, 'UTF-8');
                         $data->file_type = 'local';

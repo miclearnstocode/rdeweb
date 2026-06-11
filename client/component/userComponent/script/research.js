@@ -220,6 +220,13 @@ const openViewResearchesModal = () => {
     const createFileTag = (fileInfo, docId, fileType, fileUrl, presenter) => {
         const fileName = fileInfo.title || fileInfo.name || 'Untitled'
 
+        // Determine if this is a Google Drive file or local file
+        const isDriveFile = fileUrl && (fileUrl.includes('drive.google.com') || fileUrl.includes('drive.google.com/file/d/'));
+        
+        // Choose icon based on file type
+        const iconClass = isDriveFile ? 'fab fa-google-drive' : 'fas fa-file-pdf';
+        const iconColor = isDriveFile ? '#0F9D58' : '#f44336';
+
         const tag = $({
             tag: 'div',
             style: {
@@ -234,7 +241,7 @@ const openViewResearchesModal = () => {
                 transition: 'all 0.2s'
             },
             att: {
-                title: `${fileName} | Presenter: ${presenter || 'Not specified'}`
+                title: `${fileName} | Presenter: ${presenter || 'Not specified'} | Type: ${isDriveFile ? 'Google Drive' : 'Local PDF'}`
             },
             event: {
                 type: 'click',
@@ -271,7 +278,8 @@ const openViewResearchesModal = () => {
                                     // Use FileViewerModal instead of window.open
                                     FileViewerModal(embedUrl, fileName, '#ff9800', { showOpenDrive: true })
                                 } else if (fileUrl) {
-                                    FileViewerModal(fileUrl, fileName, '#ff9800', { showOpenDrive: true })
+                                    // For local/campus files that are PDFs
+                                    FileViewerModal(fileUrl, fileName, '#ff9800', { showOpenDrive: false })
                                 } else {
                                     AlertModal({ title: 'Error', message: 'File URL not available' })
                                 }
@@ -310,8 +318,8 @@ const openViewResearchesModal = () => {
             child: [
                 $({
                     tag: 'i',
-                    att: { className: 'fab fa-google-drive' },
-                    style: { color: '#0F9D58', fontSize: '14px' }
+                    att: { className: iconClass },
+                    style: { color: iconColor, fontSize: '14px' }
                 }),
                 $({
                     tag: 'span',
