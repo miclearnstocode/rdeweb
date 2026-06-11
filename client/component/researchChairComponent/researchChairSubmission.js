@@ -268,10 +268,15 @@ const openViewResearchesModal = () => {
         })
         tableBody.appendChild(row)
     }
+    const createFileTag = (fileInfo, docId, fileType, fileUrl, presenter) => {
+        const fileName = fileInfo.title || fileInfo.name || 'Untitled'
 
-    // Create file tag with access control
-    const createFileTag = (fileUrl, fileName, fileType, accentColor) => {
-        if (!fileUrl) return null
+        // Determine if this is a Google Drive file or local file
+        const isDriveFile = fileUrl && (fileUrl.includes('drive.google.com') || fileUrl.includes('drive.google.com/file/d/'));
+        
+        // Choose icon based on file type
+        const iconClass = isDriveFile ? 'fab fa-google-drive' : 'fas fa-file-pdf';
+        const iconColor = isDriveFile ? '#0F9D58' : '#f44336';
 
         const tag = $({
             tag: 'div',
@@ -286,25 +291,94 @@ const openViewResearchesModal = () => {
                 cursor: 'pointer',
                 transition: 'all 0.2s'
             },
+            att: {
+                title: `${fileName} | Presenter: ${presenter || 'Not specified'} | Type: ${isDriveFile ? 'Google Drive' : 'Local PDF'}`
+            },
             event: {
                 type: 'click',
-                method: () => {
-                    FileViewerModal(fileUrl, fileName, accentColor, { showOpenDrive: true })
+                method: async () => {
+                    let loading = Waiting()
+                    document.body.appendChild(loading)
+                    const remove = () => {
+                        if (loading && loading.remove) loading.remove()
+                    }
+
+                    const form = new FormData()
+                    form.append("checkAccess", "true")
+                    form.append("docId", docId)
+
+                    try {
+                        const response = await fetch('/requestDocs', {
+                            method: 'POST',
+                            body: form
+                        })
+
+                        if (response.ok) {
+                            const dat = await response.json()
+                            remove()
+
+                            if (dat.status === 'allowed') {
+                                if (fileUrl && (fileUrl.includes('drive.google.com') || fileUrl.includes('drive.google.com/file/d/'))) {
+                                    let embedUrl = fileUrl
+                                    if (fileUrl.includes('/file/d/')) {
+                                        const fileIdMatch = fileUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
+                                        if (fileIdMatch && fileIdMatch[1]) {
+                                            embedUrl = `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`
+                                        }
+                                    }
+                                    // Use FileViewerModal instead of window.open
+                                    FileViewerModal(embedUrl, fileName, '#ff9800', { showOpenDrive: true })
+                                } else if (fileUrl) {
+                                    // For local/campus files that are PDFs
+                                    FileViewerModal(fileUrl, fileName, '#ff9800', { showOpenDrive: false })
+                                } else {
+                                    AlertModal({ title: 'Error', message: 'File URL not available' })
+                                }
+                            } else if (dat.status === 'requested') {
+                                document.body.appendChild(ConfirmationAlert("Request was sent. Please wait for the response..!", () => {
+                                    window.location.reload()
+                                }))
+                            } else {
+                                setTimeout(() => {
+                                    if (confirm("You don't have permission to open this file.\nDo you want to send a request?")) {
+                                        const req = new Request('/requestDocs')
+                                        const formReq = []
+                                        formReq.push({ name: 'sendRequest', value: 'true' })
+                                        formReq.push({ name: 'docId', value: docId })
+                                        req.Post(formReq)
+                                        req.Json()
+                                        req.Send().then(data => {
+                                            document.body.appendChild(ConfirmationAlert(data.message, () => {
+                                                window.location.reload()
+                                            }))
+                                        })
+                                    }
+                                }, 50)
+                            }
+                        } else {
+                            remove()
+                            AlertModal({ title: 'Error', message: 'Error checking access. Please try again.' })
+                        }
+                    } catch (error) {
+                        remove()
+                        console.error('Error checking access:', error)
+                        AlertModal({ title: 'Error', message: 'Error checking file access. Please try again.' })
+                    }
                 }
             },
             child: [
                 $({
                     tag: 'i',
-                    att: { className: 'fab fa-google-drive' },
-                    style: { color: accentColor, fontSize: '14px' }
+                    att: { className: iconClass },
+                    style: { color: iconColor, fontSize: '14px' }
                 }),
                 $({
                     tag: 'span',
-                    text: fileName.length > 40 ? fileName.substring(0, 37) + '...' : fileName,
+                    text: fileName.length > 50 ? fileName.substring(0, 47) + '...' : fileName,
                     style: {
                         color: '#fff',
                         fontSize: '12px',
-                        maxWidth: '180px',
+                        maxWidth: '200px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
@@ -316,8 +390,7 @@ const openViewResearchesModal = () => {
         return tag
     }
 
-    // Load event list into the dropdown
-    const loadEventList = async (paperType = 'undergraduate') => {
+    const loadEventList = async (paperType = '') => {
         if (!eventSelect) return
 
         eventSelect.disabled = true
@@ -332,7 +405,7 @@ const openViewResearchesModal = () => {
 
         try {
             const formData = new FormData()
-            formData.append('getEventList', 'true')
+            formData.append('getStudentResearchPapersByEvent', 'true')
             formData.append('paper_type', paperType)
 
             const response = await fetch('/uploadResearchChair', {
@@ -342,24 +415,17 @@ const openViewResearchesModal = () => {
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
-            const data = await response.text().then(text => text ? JSON.parse(text) : {})
+            const data = await response.json()
             eventSelect.innerHTML = ''
 
-            let events = data.events || data.list || data || []
-            
-            // Filter events based on paper type
-            events = events.filter(event => {
-                if (!event.name) return false
-                const eventNameLower = event.name.toLowerCase()
-                if (paperType === 'undergraduate') {
-                    return eventNameLower.includes('student') && 
-                           eventNameLower.includes('symposium') && 
-                           !eventNameLower.includes('graduate')
-                } else {
-                    return eventNameLower.includes('graduate') && 
-                           eventNameLower.includes('symposium')
-                }
-            })
+            let events = []
+            if (data.events && Array.isArray(data.events)) {
+                events = data.events
+            } else if (data.list && Array.isArray(data.list)) {
+                events = data.list
+            } else if (Array.isArray(data)) {
+                events = data
+            }
 
             if (!Array.isArray(events) || events.length === 0) {
                 const noEventsOption = $({
@@ -380,16 +446,44 @@ const openViewResearchesModal = () => {
             eventSelect.appendChild(defaultOption)
 
             events.forEach(ev => {
+                let optionText = ev.name
+                if (ev.dead_line) {
+                    const deadlineDate = new Date(ev.dead_line)
+                    const today = new Date()
+                    const isExpired = deadlineDate < today
+                    optionText += isExpired ? ' (Expired)' : ` (Deadline: ${deadlineDate.toLocaleDateString()})`
+                }
+                
                 const option = $({
                     tag: 'option',
-                    text: ev.name,
-                    att: { value: ev.id }
+                    text: optionText,
+                    att: { 
+                        value: ev.id,
+                        'data-deadline': ev.dead_line || '',
+                        'data-expired': ev.dead_line && new Date(ev.dead_line) < new Date() ? 'true' : 'false'
+                    }
                 })
+                
+                if (ev.dead_line && new Date(ev.dead_line) < new Date()) {
+                    option.style.color = '#f44336'
+                }
+                
                 eventSelect.appendChild(option)
             })
 
+            // Auto-select first active event if available
+            const firstActiveEvent = events.find(ev => {
+                if (!ev.dead_line) return true
+                return new Date(ev.dead_line) >= new Date()
+            })
+            
+            if (firstActiveEvent) {
+                eventSelect.value = firstActiveEvent.id
+                const changeEvent = new Event('change')
+                eventSelect.dispatchEvent(changeEvent)
+            }
+
         } catch (err) {
-            console.error('Failed to load event list:', err)
             eventSelect.innerHTML = ''
             const errOption = $({
                 tag: 'option',

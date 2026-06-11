@@ -345,7 +345,6 @@ function checkDuplicateStudentResearch($con, $title, $author, $eventId, $eventNa
     return ['isDuplicate' => false, 'message' => ''];
 }
 
-// ==================== UNDERGRADUATE SUBMISSION ENDPOINT ====================
 if (isset($_POST['uploadUndergraduateSymposium'])) {
     ob_end_clean();
     ob_start();
@@ -644,7 +643,6 @@ if (isset($_POST['uploadUndergraduateSymposium'])) {
     exit();
 }
 
-// ==================== GRADUATE SUBMISSION ENDPOINT ====================
 if (isset($_POST['uploadGraduateSymposium'])) {
     ob_end_clean();
     ob_start();
@@ -944,7 +942,7 @@ if (isset($_POST['uploadGraduateSymposium'])) {
     exit();
 }
 
-// ==================== FETCH STUDENT RESEARCH PAPERS (with paper_type filter) ====================
+
 if (isset($_POST['getStudentResearchPapers'])) {
     $response = new stdClass();
     $response->list = [];
@@ -1032,7 +1030,7 @@ if (isset($_POST['getStudentResearchPapers'])) {
     echo json_encode($response);
     exit();
 }
-// ==================== FETCH EVENTS (returns most recent event for each type) ====================
+
 if (isset($_POST['getEvent'])) {
     $response = [];
     
@@ -1101,7 +1099,7 @@ if (isset($_POST['getEvent'])) {
     echo json_encode($response);
     exit();
 }
-// ==================== FETCH EVENT LIST (with paper_type filter) ====================
+
 if (isset($_POST['getEventList'])) {
     $response = new stdClass();
     $response->events = [];
@@ -1138,10 +1136,11 @@ if (isset($_POST['getEventList'])) {
     echo json_encode($response);
     exit();
 }
-// ==================== FETCH STUDENT RESEARCH PAPERS BY EVENT ====================
+
 if (isset($_POST['getStudentResearchPapersByEvent'])) {
     $response = new stdClass();
     $response->list = [];
+    $response->events = [];
     $response->status = true;
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
@@ -1149,6 +1148,26 @@ if (isset($_POST['getStudentResearchPapersByEvent'])) {
         $paperType = $_POST['paper_type'] ?? 'undergraduate';
         $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
         
+        if ($paperType === 'graduate') {
+            $eventQuery = "SELECT id, name, date, dead_line, status FROM event_list WHERE id = 15";
+        } else {
+            $eventQuery = "SELECT id, name, date, dead_line, status FROM event_list WHERE id = 16";
+        }
+        
+        $eventResult = $con->query($eventQuery);
+        if ($eventResult && $eventResult->num_rows > 0) {
+            while ($row = $eventResult->fetch_assoc()) {
+                $event = new stdClass();
+                $event->id = $row['id'];
+                $event->name = $row['name'];
+                $event->date = $row['date'];
+                $event->dead_line = $row['dead_line'];
+                $event->status = $row['status'];
+                $response->events[] = $event;
+            }
+        }
+        
+        // Get research papers
         $query = "SELECT 
                     srp.id,
                     srp.author,
@@ -1168,10 +1187,10 @@ if (isset($_POST['getStudentResearchPapersByEvent'])) {
                     el.name as event_name
                 FROM student_research_papers srp
                 LEFT JOIN event_list el ON srp.event_id = el.id
-                WHERE srp.event_id = ? AND srp.paper_type = ?";
+                WHERE srp.paper_type = ? AND srp.status = 'accepted' ";
         
-        $params = [$eventId, $paperType];
-        $types = "is";
+        $params = [$paperType];
+        $types = "s";
         
         if (!empty($searchTerm)) {
             $searchPattern = "%{$searchTerm}%";
@@ -1188,10 +1207,7 @@ if (isset($_POST['getStudentResearchPapersByEvent'])) {
         $query .= " ORDER BY srp.created_at DESC";
         
         $stmt = $con->prepare($query);
-        if (!$stmt) {
-            $response->status = false;
-            $response->message = "Prepare failed: " . $con->error;
-        } else {
+        if ($stmt) {
             $stmt->bind_param($types, ...$params);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -1213,7 +1229,6 @@ if (isset($_POST['getStudentResearchPapersByEvent'])) {
                 
                 $response->list[] = $researchObj;
             }
-            
             $stmt->close();
         }
         
@@ -1225,7 +1240,6 @@ if (isset($_POST['getStudentResearchPapersByEvent'])) {
     exit();
 }
 
-// ==================== DELETE STUDENT RESEARCH PAPER ====================
 if (isset($_POST['deleteStudentResearch'])) {
     $response = new stdClass();
     $response->status = false;
