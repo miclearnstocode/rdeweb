@@ -179,7 +179,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
               FROM researchfile rf
               INNER JOIN event_list el ON rf.event_id = el.id
               LEFT JOIN research_monitoring rm ON rf.id = rm.research_id
-              WHERE $whereSql AND rf.is_internally_funded = 1
+              WHERE $whereSql
               ORDER BY rf.id $orderSql
               LIMIT " . ($limit + 1);
 
@@ -343,7 +343,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     }
 
     // Calculate total count of research records matching filters for "X of Y records" display
-    $totalQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id WHERE $baseWhereSql AND rf.is_internally_funded = 1";
+    $totalQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id WHERE $baseWhereSql";
     $totalStmt = $conn->prepare($totalQuery);
     if ($baseTypes) $totalStmt->bind_param($baseTypes, ...$baseParams);
     $totalStmt->execute();
