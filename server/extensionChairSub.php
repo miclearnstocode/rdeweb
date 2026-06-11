@@ -2481,6 +2481,7 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
     echo json_encode($response);
     exit();
 }
+
 //get research files for events
 if (isset($_POST['researchFile'])) {
     while (ob_get_level())
@@ -2539,7 +2540,7 @@ if (isset($_POST['researchFile'])) {
             FROM researchfile rf
             INNER JOIN endorsement e ON e.id = rf.endorsementid
             INNER JOIN event_list el ON el.id = rf.event_id
-            WHERE e.status = 'accepted'
+            WHERE (e.status = 'accepted' OR rf.status = 'accepted')
             AND rf.event_id = ?";
 
             if ($isNewEvent) {
@@ -2561,14 +2562,12 @@ if (isset($_POST['researchFile'])) {
                 )";
             }
 
-            // Add ORDER BY to ensure consistent ordering
             $query .= " ORDER BY el.name, " . ($isNewEvent ? "rf.center" : "rf.campus") . ", rf.title";
 
             $stmt = $con->prepare($query);
             if (!$stmt)
                 throw new Exception('Prepare failed: ' . $con->error);
 
-            // Bind parameters
             if (!empty($searchTerm)) {
                 $searchPattern = '%' . $searchTerm . '%';
                 $stmt->bind_param('issssss', $eventId, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern);
@@ -2611,7 +2610,7 @@ if (isset($_POST['researchFile'])) {
                         $data->file = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
                         $data->file_type = 'drive';
                         $data->drive_file_id = htmlspecialchars($row['drive_file_id'] ?? '', ENT_QUOTES, 'UTF-8');
-                        $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', ENT_QUOTES, 'UTF-8');
+                        $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', ENT_QUOTES);
                     } elseif (!empty($row['local_file'])) {
                         $data->file = htmlspecialchars($row['local_file'], ENT_QUOTES, 'UTF-8');
                         $data->file_type = 'local';
@@ -2626,14 +2625,8 @@ if (isset($_POST['researchFile'])) {
 
                     $groupedResults[$key]['list'][] = $data;
                 }
-
-                // Store the number of rows BEFORE freeing the result
                 $totalRows = $result->num_rows;
-
-                // Now it's safe to free the result
                 $result->free();
-
-                // Convert to indexed array
                 $response->list = array_values($groupedResults);
 
                 // Sort by event name then location
@@ -2651,7 +2644,7 @@ if (isset($_POST['researchFile'])) {
 
             } else {
                 // No data found
-                $response->status = true; // Still true, just empty result
+                $response->status = true;
                 $response->message = empty($searchTerm) ? 'No research documents found for this event' : 'No matching research documents found';
                 $response->list = [];
                 $response->search_term = $searchTerm;
@@ -2678,6 +2671,7 @@ if (isset($_POST['researchFile'])) {
     echo json_encode($response, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
     exit();
 }
+
 //displayed the data in the center table
 if (isset($_POST['researchReviewed'])) {
     $response = new stdClass();

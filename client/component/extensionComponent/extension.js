@@ -216,9 +216,15 @@ const openViewExtensionModal = () => {
         tableBody.appendChild(row)
     }
 
-    // Function to create file tag with access control using FileViewerModal
     const createFileTag = (fileInfo, docId, fileType, fileUrl, presenter) => {
         const fileName = fileInfo.title || fileInfo.name || 'Untitled'
+
+        // Determine if this is a Google Drive file or local file
+        const isDriveFile = fileUrl && (fileUrl.includes('drive.google.com') || fileUrl.includes('drive.google.com/file/d/'));
+        
+        // Choose icon based on file type
+        const iconClass = isDriveFile ? 'fab fa-google-drive' : 'fas fa-file-pdf';
+        const iconColor = isDriveFile ? '#0F9D58' : '#f44336';
 
         const tag = $({
             tag: 'div',
@@ -234,7 +240,7 @@ const openViewExtensionModal = () => {
                 transition: 'all 0.2s'
             },
             att: {
-                title: `${fileName} | Presenter: ${presenter || 'Not specified'}`
+                title: `${fileName} | Presenter: ${presenter || 'Not specified'} | Type: ${isDriveFile ? 'Google Drive' : 'Local PDF'}`
             },
             event: {
                 type: 'click',
@@ -271,7 +277,8 @@ const openViewExtensionModal = () => {
                                     // Use FileViewerModal instead of window.open
                                     FileViewerModal(embedUrl, fileName, '#ff9800', { showOpenDrive: true })
                                 } else if (fileUrl) {
-                                    FileViewerModal(fileUrl, fileName, '#ff9800', { showOpenDrive: true })
+                                    // For local/campus files that are PDFs
+                                    FileViewerModal(fileUrl, fileName, '#ff9800', { showOpenDrive: false })
                                 } else {
                                     AlertModal({ title: 'Error', message: 'File URL not available' })
                                 }
@@ -310,8 +317,8 @@ const openViewExtensionModal = () => {
             child: [
                 $({
                     tag: 'i',
-                    att: { className: 'fab fa-google-drive' },
-                    style: { color: '#0F9D58', fontSize: '14px' }
+                    att: { className: iconClass },
+                    style: { color: iconColor, fontSize: '14px' }
                 }),
                 $({
                     tag: 'span',
@@ -553,11 +560,9 @@ const openViewExtensionModal = () => {
         }
     }
 
-    // Assign functions to outer variables
     loadResearchDataFn = loadResearchData
     addResearchToTableFn = addResearchToTable
 
-    // Wire up dropdown change event
     const wireEvents = () => {
         if (eventSelect) {
             eventSelect.addEventListener('change', (e) => {
@@ -569,12 +574,11 @@ const openViewExtensionModal = () => {
         }
     }
 
-    // Create the modal
     const content = buildContent()
     wireEvents()
 
     currentModal = CustomModal({
-        title: 'Extension Documents',
+        title: 'Extension Documents of Other Campuses',
         content: content,
         size: 'large',
         onClose: () => {
@@ -582,7 +586,6 @@ const openViewExtensionModal = () => {
         }
     })
 
-    // Load events after modal is open
     setTimeout(() => {
         loadEventList()
     }, 100)
@@ -2117,42 +2120,69 @@ export const Extension = () => {
         submitBtn.addEventListener('click', async () => {
             // Validate required fields
             if (!formData.eventName) {
-                alert('Please select an event');
+                AlertModal({ 
+                    title: 'Missing Information', 
+                    message: 'Please select an event' 
+                });
                 return;
             }
             if (!formData.title) {
-                alert('Please enter a document title');
+                AlertModal({ 
+                    title: 'Missing Information', 
+                    message: 'Please enter a document title' 
+                });
                 return;
             }
             if (!formData.campus) {
-                alert('Please select a campus');
+                AlertModal({ 
+                    title: 'Missing Information', 
+                    message: 'Please select a campus' 
+                });
                 return;
             }
             if (!formData.category) {
-                alert('Please select a category');
+                AlertModal({ 
+                    title: 'Missing Information', 
+                    message: 'Please select a category' 
+                });
                 return;
             }
             if (!formData.author) {
-                alert('Please enter main author');
+                AlertModal({ 
+                    title: 'Missing Information', 
+                    message: 'Please enter main author' 
+                });
                 return;
             }
             if (!formData.presenter) {
-                alert('Please enter presenter');
+                AlertModal({ 
+                    title: 'Missing Information', 
+                    message: 'Please enter presenter' 
+                });
                 return;
             }
             if (!formData.researchFile) {
-                alert('Please upload the research file');
+                AlertModal({ 
+                    title: 'Missing File', 
+                    message: 'Please upload the research file' 
+                });
                 return;
             }
             if (!formData.endorsementFile) {
-                alert('Please upload the endorsement letter');
+                AlertModal({ 
+                    title: 'Missing File', 
+                    message: 'Please upload the endorsement letter' 
+                });
                 return;
             }
 
             // Check for In-House event - require program file
             const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
             if (isInHouse && (!formData.programFile || formData.programFile.length === 0)) {
-                alert('Program file is required for In-House Review events');
+                AlertModal({ 
+                    title: 'Missing File', 
+                    message: 'Program file is required for In-House Review events' 
+                });
                 return;
             }
 
@@ -2207,19 +2237,30 @@ export const Extension = () => {
                 if (result.status) {
                     // Close modal
                     modal.remove();
-                    // Show success message
-                    document.body.appendChild(ConfirmationAlert(result.message, () => {
-                        if (window.refreshDocumentsTable) {
-                            window.refreshDocumentsTable();
+                    // Show success message with modern modal
+                    AlertModal({ 
+                        title: 'Success', 
+                        message: result.message || 'Document submitted successfully!',
+                        buttonText: 'OK',
+                        onClose: () => {
+                            if (window.refreshDocumentsTable) {
+                                window.refreshDocumentsTable();
+                            }
                         }
-                    }));
+                    });
                 } else {
-                    document.body.appendChild(ConfirmationAlert('Submission failed: ' + result.message));
+                    AlertModal({ 
+                        title: 'Submission Failed', 
+                        message: result.message || 'Failed to submit document' 
+                    });
                 }
             } catch (error) {
                 if (loading && loading.remove) loading.remove();
                 console.error('Submission error:', error);
-                document.body.appendChild(ConfirmationAlert('Error submitting form: ' + error.message));
+                AlertModal({ 
+                    title: 'Error', 
+                    message: 'Error submitting form: ' + error.message 
+                });
             }
         });
         footer.appendChild(cancelBtn)
@@ -2299,7 +2340,7 @@ export const Extension = () => {
                                         symposiumPlaceholder.style.transform = 'translateX(0)'
                                     }, 50)
 
-                                    // Update header and footer
+                                    
                                     const modalTitle = document.querySelector('#modalTitle')
                                     if (modalTitle) modalTitle.innerText = 'Symposium Submission (In-House Review Required)'
 
@@ -2309,12 +2350,10 @@ export const Extension = () => {
                                 }, 300)
                                 return
                             }
-
-                            // For non-Symposium events, continue with normal form
+                            
                             formData.eventName = selectedEventName
                             formData.eventId = selectedEventId
 
-                            // Show/hide local files section for In-House events only
                             if (localFilesSection) {
                                 localFilesSection.style.display = isInHouse ? 'block' : 'none'
                             }
