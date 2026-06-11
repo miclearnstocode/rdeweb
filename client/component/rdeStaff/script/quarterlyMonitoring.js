@@ -183,7 +183,6 @@ export const QuarterlyMonitoringComponent = () => {
                 formData.append('direction', direction)
             }
 
-            // Add filters
             const effectiveQuarter = quarter || currentQuarter
             const effectiveYear = year || currentYear
             const effectiveCategory = category || (currentCategory === 'All Categories' ? null : currentCategory)

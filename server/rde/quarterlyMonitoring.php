@@ -107,7 +107,6 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     }
 
     if ($center && $center !== 'All' && $center !== 'All Centers') {
-        // Try to extract the code from parentheses, e.g., "Extension (Extension)" -> "Extension"
         $centerCode = $center;
         if (preg_match('/\(([^)]+)\)/', $center, $matches)) {
             $centerCode = $matches[1];
@@ -180,7 +179,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
               FROM researchfile rf
               INNER JOIN event_list el ON rf.event_id = el.id
               LEFT JOIN research_monitoring rm ON rf.id = rm.research_id
-              WHERE $whereSql
+              WHERE $whereSql AND rf.is_internally_funded = 1
               ORDER BY rf.id $orderSql
               LIMIT " . ($limit + 1);
 
@@ -258,8 +257,6 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
 
     $nextCursor = !empty($data) ? $data[count($data) - 1]['id'] : null;
 
-    // Fetch counts for other stats with same filters
-    // Activity Conducted
     $actQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id LEFT JOIN research_monitoring rm ON rf.id = rm.research_id WHERE $baseWhereSql";
     $actStmt = $conn->prepare($actQuery);
     if ($baseTypes) $actStmt->bind_param($baseTypes, ...$baseParams);
@@ -346,7 +343,7 @@ if ($action === 'fetch' || $action === 'search_monitoring') {
     }
 
     // Calculate total count of research records matching filters for "X of Y records" display
-    $totalQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id WHERE $baseWhereSql";
+    $totalQuery = "SELECT COUNT(*) as total FROM researchfile rf INNER JOIN event_list el ON rf.event_id = el.id WHERE $baseWhereSql AND rf.is_internally_funded = 1";
     $totalStmt = $conn->prepare($totalQuery);
     if ($baseTypes) $totalStmt->bind_param($baseTypes, ...$baseParams);
     $totalStmt->execute();
