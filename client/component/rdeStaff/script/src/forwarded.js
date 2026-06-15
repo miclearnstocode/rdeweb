@@ -1,4 +1,4 @@
-import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting } from "../../../../lib/lib.js";
+import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting, CustomModal } from "../../../../lib/lib.js";
 import { Print } from "../../../otherComponent/comment.js";
 import { PrintSummary } from "../../../otherComponent/ReviewTemplate.js";
 import { Route, Router } from "../../../../lib/Router.js";
@@ -7,8 +7,9 @@ import { FinalRanking, RankPerCriteria, ScoreRankAVe } from "./rankAlgo.js";
 import { Summary } from "./Summary.js";
 import { PrintResearch } from "../../../otherComponent/researchSummary.js";
 
-export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
-        let researchBody, endorseBody, serch
+export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the right panel
+        let researchBody, endorseBody, serch, Bod
+
         const ResearchDocs = ({category, center,file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId, mainFrame}) => {
             const resDetails = () => {
                 const details = (label, data) => {
@@ -743,45 +744,7 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                             getHandler: (el) => {
                                 printBody = el
                             }
-                        }),
-                        /*
-
-                        Main({
-
-                            evalName: reviews.evalName,
-
-                            title: title,
-
-                            author: author,
-
-                            campus: '',
-
-                            category: reviews.category,
-
-                            date: '',
-
-                            intro: reviews.intro,
-
-                            abstract: reviews.abstract,
-
-                            objective: reviews.objective,
-
-                            methodology: reviews.methodology,
-
-                            results: reviews.results,
-
-                            recommendation: reviews.recommendation,
-
-                            literature: reviews.literature,
-
-                            other: reviews.other,
-
-
-
                         })
-
-                         */
-
                     ]
 
                 })
@@ -866,19 +829,24 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                 height: 'fit-content',
                 width: 'fit-content',
                 fontFamily: 'arial black,sans-serif',
-                color: '#bbb',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
                 margin: '1vh auto auto',
-                fontSize: '1.2vw'
+                fontSize: '1.2vw',
+                letterSpacing: '1px'
             },
             text: 'Accepted Documents'
         })
         const searchInput = (value) => {
             SearchMethod({
-                nodeList:researchBody.childNodes,
-                textArray:value.target.value.toUpperCase().split(' '),
+                nodeList: researchBody ? researchBody.childNodes : [],
+                textArray: value.target.value.toUpperCase().split(' '),
                 display: 'flex',
             })
         }
+
         const search = ({tools, searchEvent}) => {
             return ($({
                 tag: 'div',
@@ -887,72 +855,60 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                     height: 'fit-content',
                     display: 'flex',
                     position: 'relative',
-                    justifyContent: 'center'
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: '0 20px',
+                    marginBottom: '20px'
                 },
                 elementHandler: (el) => {
-                    el.appendChild($({
+                    // Search container with modern styling
+                    const searchContainer = $({
                         tag: 'div',
                         style: {
-                            height: '4vh',
-                            width: 'fit-content',
-                            margin: '1vh auto auto',
-                            marginLeft: '2vw',
-                            borderBottom: 'solid thin rgba(100,100,100,0.3)',
-                            backgroundColor: 'rgba(0,0,0,0.2)',
-                            padding: '.2rem',
-
-                            borderRadius: '1vw',
-
+                            height: '46px',
+                            width: '100%',
+                            maxWidth: '400px',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #e9ecef',
+                            borderRadius: '12px',
                             display: 'flex',
-
-                            justifyContent: 'center'
-
+                            alignItems: 'center',
+                            padding: '0 16px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                            cursor: 'text'
                         },
-
                         child: [
-
                             $({
-
                                 tag: 'div',
-
                                 style: {
-
-                                    width: 'fit-content',
-
-                                    height: 'fit-content',
-
-                                    margin: 'auto'
-
+                                    width: '100%',
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px'
                                 },
-
                                 child: [
-
                                     $({
-
                                         tag: 'span',
                                         att: {
                                             className: 'fa-solid fa-magnifying-glass',
                                             title: 'Search Event Document'
                                         },
-
                                         style: {
-
-                                            color: 'deepskyblue',
-
-                                            fontSize: '1.5vw'
-
+                                            color: '#adb5bd',
+                                            fontSize: '16px',
+                                            flexShrink: '0',
+                                            transition: 'color 0.2s ease'
                                         }
-
                                     }),
-
                                     $({
-
                                         tag: 'input',
-
                                         att: {
                                             type: 'text',
                                             className: 'searchInput',
-                                            placeholder: 'Search Event Document'
+                                            placeholder: 'Search by title, author, or category...'
                                         },
                                         event: {
                                             type: 'input',
@@ -962,30 +918,99 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                             backgroundColor: 'transparent',
                                             border: 'none',
                                             outline: 'none',
-                                            paddingLeft: '.5vw',
-                                            paddingRight: '.5vw',
-                                            color: '#bbb',
+                                            padding: '0',
+                                            color: '#2c3e50',
                                             height: '100%',
-                                            fontSize: '1.1vw'
+                                            width: '100%',
+                                            fontSize: '14px',
+                                            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                            fontWeight: '400'
                                         },
                                         elementHandler: (el) => {
                                             serch = el
                                         }
+                                    }),
+                                    // Optional clear button (appears when text is entered)
+                                    $({
+                                        tag: 'span',
+                                        att: {
+                                            className: 'fa-solid fa-circle-xmark',
+                                            title: 'Clear search'
+                                        },
+                                        style: {
+                                            color: '#adb5bd',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            display: 'none',
+                                            transition: 'color 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: (e) => {
+                                                e.stopPropagation()
+                                                if (serch) {
+                                                    serch.value = ''
+                                                    // Trigger search event with empty value
+                                                    const inputEvent = new Event('input', { bubbles: true })
+                                                    serch.dispatchEvent(inputEvent)
+                                                }
+                                                e.target.style.display = 'none'
+                                            }
+                                        },
+                                        elementHandler: (clearBtn) => {
+                                            // Show/hide clear button based on input
+                                            if (serch) {
+                                                const originalOnInput = searchEvent
+                                                const newOnInput = (e) => {
+                                                    if (e.target.value.length > 0) {
+                                                        clearBtn.style.display = 'block'
+                                                    } else {
+                                                        clearBtn.style.display = 'none'
+                                                    }
+                                                    if (originalOnInput) originalOnInput(e)
+                                                }
+                                                serch.addEventListener('input', newOnInput)
+                                            }
+                                        }
                                     })
                                 ]
                             })
-                        ]
-                    }))
+                        ],
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                if (serch) serch.focus()
+                            }
+                        }
+                    })
+                    
+                    // Add focus/blur effects with proper event handling
+                    const searchInputField = searchContainer.querySelector('.searchInput')
+                    if (searchInputField) {
+                        searchInputField.addEventListener('focus', () => {
+                            searchContainer.style.borderColor = '#0d6efd'
+                            searchContainer.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)'
+                            const searchIcon = searchContainer.querySelector('.fa-magnifying-glass')
+                            if (searchIcon) searchIcon.style.color = '#0d6efd'
+                        })
+                        
+                        searchInputField.addEventListener('blur', () => {
+                            searchContainer.style.borderColor = '#e9ecef'
+                            searchContainer.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)'
+                            const searchIcon = searchContainer.querySelector('.fa-magnifying-glass')
+                            if (searchIcon) searchIcon.style.color = '#adb5bd'
+                        })
+                    }
+                    
+                    el.appendChild(searchContainer)
+                    
                     if (tools) {
                         el.appendChild(tools)
                     }
-
                 }
-
-
             }))
-
         }
+
         let printerPanel
         const getPrinterPanel = (el) => {
             printerPanel = el
@@ -1011,10 +1036,11 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                     tag: 'div',
                     style: {
                         width: '20%',
-                        height: '100%%',
-                        backgroundColor: '#555',
+                        height: '100%',
+                        backgroundColor: '#f8f9fa',
                         justifyContent: 'center',
-                        display: 'flex'
+                        display: 'flex',
+                        borderRight: '1px solid #e9ecef'
                     },
                     child: [
                         $({
@@ -1029,30 +1055,35 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     tag: 'div',
                                     text: 'Filter',
                                     style: {
-                                        fontFamily: 'arial black,sans-serif',
-                                        fontSize: '1.2vw'
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        color: '#2c3e50',
+                                        marginBottom: '16px'
                                     }
                                 }),
                                 $({
                                     tag: 'div',
                                     style: {
                                         width: '100%',
-                                        height: '5vh',
-                                        margin: 'auto'
+                                        height: '40px',
+                                        margin: 'auto',
+                                        marginBottom: '12px'
                                     },
                                     child: [
                                         $({
                                             tag: 'select',
                                             style: {
                                                 width: '100%',
-                                                backgroundColor: 'transparent',
+                                                backgroundColor: '#ffffff',
                                                 height: '100%',
-                                                fontFamily: '1.1vw',
+                                                fontSize: '14px',
                                                 outline: 'none',
                                                 textAlign: 'center',
-                                                color: '#ddd',
-                                                border: 'solid thin rgba(200,200,200,0.5)',
-                                                borderRadius: '15px'
+                                                color: '#2c3e50',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer'
                                             },
                                             elementHandler: async (el) => {
                                                 el.appendChild($({
@@ -1063,8 +1094,8 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                                         selected: true
                                                     },
                                                     style: {
-                                                        backgroundColor: '#333'
-                                                        
+                                                        backgroundColor: '#ffffff',
+                                                        color: '#6c757d'
                                                     }
                                                 }))
                                                 const req = new Request('/eventRequest')
@@ -1082,11 +1113,10 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                                                 id: val.id
                                                             },
                                                             style: {
-                                                                backgroundColor: '#333',
-                                                                color: '#bbb',
-                                                                height: '4vh',
-                                                                fontSize: '1.1vw'
-                                                                
+                                                                backgroundColor: '#ffffff',
+                                                                color: '#2c3e50',
+                                                                height: '36px',
+                                                                fontSize: '14px'
                                                             }
                                                         }))
                                                     })
@@ -1105,22 +1135,23 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     tag: 'div',
                                     style: {
                                         width: '100%',
-                                        height: '5vh',
-                                        margin: '1vh auto'
+                                        height: '40px',
+                                        margin: '12px auto'
                                     },
                                     child: [
                                         $({
                                             tag: 'select',
                                             style: {
                                                 width: '100%',
-                                                backgroundColor: 'transparent',
+                                                backgroundColor: '#ffffff',
                                                 height: '100%',
-                                                fontFamily: '1.1vw',
+                                                fontSize: '14px',
                                                 outline: 'none',
                                                 textAlign: 'center',
-                                                color: '#ddd',
-                                                border: 'solid thin rgba(200,200,200,0.5)',
-                                                borderRadius: '15px'
+                                                color: '#2c3e50',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer'
                                             },
                                             child: [
                                                 $({
@@ -1129,79 +1160,53 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                                     att: {
                                                         disabled: true,
                                                         selected: true
-                                                    }
+                                                    },
+                                                    style: { backgroundColor: '#ffffff', color: '#6c757d' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Print All Category',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Crop Science Research & Developement Center (CSRDC)',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Livestock Research & Development Center (LRDC)',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Fisheries Research & Development Center (FRDC)',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Food and Industrial Technology Research & Development Center (FIRDC) ',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Social Science Research & Development Center (SSRDC)',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Machinery and Agricultural Technology Engineering Center (MATEC)     ',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Coconut Research and Development Center (Coco RDC)',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                                 $({
                                                     tag: 'option',
                                                     text: 'Extension ',
-                                                    style: {
-                                                        backgroundColor: '#333',
-                                                        fontSize: '1.1vw'
-                                                    }
+                                                    style: { backgroundColor: '#ffffff', fontSize: '14px' }
                                                 }),
                                             ],
                                             event: {
@@ -1217,11 +1222,14 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     tag: 'div',
                                     style: {
                                         width: '100%',
-                                        height: '5vh',
-                                        margin: '2vh auto auto',
+                                        height: '40px',
+                                        margin: '20px auto auto',
                                         display: 'flex',
                                         justifyContent: 'center',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        backgroundColor: '#0d6efd',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s ease'
                                     },
                                     att: {
                                         className: 'printAllReload'
@@ -1234,11 +1242,12 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                                 title: 'Load Request'
                                             },
                                             style: {
-                                                fontSize: '1.3vw',
+                                                fontSize: '14px',
                                                 height: 'fit-content',
                                                 width: 'fit-content',
                                                 margin: 'auto',
-                                                marginLeft: '1vw',
+                                                marginLeft: '8px',
+                                                color: '#ffffff'
                                             }
                                         }),
                                         $({
@@ -1246,9 +1255,12 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                             style: {
                                                 height: 'fit-content',
                                                 width: '100%',
-                                                fontFamily: 'arial  black,sans-serif',
+                                                fontFamily: 'Inter, sans-serif',
                                                 margin: 'auto',
-                                                marginLeft: '1vw',
+                                                marginLeft: '8px',
+                                                color: '#ffffff',
+                                                fontSize: '14px',
+                                                fontWeight: '500'
                                             },
                                             text: 'Load Request'
                                         })
@@ -1266,22 +1278,26 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                             }).then(res => res.json())
                                                 .then(data => {
                                                     print.innerHTML = ''
-                                                    data.forEach(val => {
-                                                        if(val.comments.length > 0){
-                                                            print.appendChild(Print({
-                                                                title: val.title,
-                                                                review: val.comments,
-                                                                category: val.category,
-                                                                campus: val.campus,
-                                                                date: val.date.split(' ')[0],
-                                                                author: val.author,
-                                                                all:true,
-                                                                getHandler: (el) => {
-                                                                    samp = el
-                                                                }
-                                                            }))
-                                                        }
-                                                    })
+                                                    if (data && data.length > 0) {
+                                                        data.forEach(val => {
+                                                            if(val.comments && val.comments.length > 0){
+                                                                print.appendChild(Print({
+                                                                    title: val.title,
+                                                                    review: val.comments,
+                                                                    category: val.category,
+                                                                    campus: val.campus,
+                                                                    date: val.date ? val.date.split(' ')[0] : '',
+                                                                    author: val.author,
+                                                                    all: true,
+                                                                    getHandler: (el) => {
+                                                                        samp = el
+                                                                    }
+                                                                }))
+                                                            }
+                                                        })
+                                                    } else {
+                                                        print.innerHTML = '<div style="text-align:center;padding:40px;color:#6c757d;">No comments found</div>'
+                                                    }
                                                 })
                                         }
                                     }
@@ -1290,11 +1306,14 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     tag: 'div',
                                     style: {
                                         width: '100%',
-                                        height: '5vh',
-                                        margin: ' auto',
+                                        height: '40px',
+                                        margin: '12px auto',
                                         display: 'flex',
                                         justifyContent: 'center',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        backgroundColor: '#28a745',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s ease'
                                     },
                                     att: {
                                         className: 'printAllReload'
@@ -1307,11 +1326,12 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                                 title: 'Print'
                                             },
                                             style: {
-                                                fontSize: '1.3vw',
+                                                fontSize: '14px',
                                                 height: 'fit-content',
                                                 width: 'fit-content',
                                                 margin: 'auto',
-                                                marginLeft: '1vw',
+                                                marginLeft: '8px',
+                                                color: '#ffffff'
                                             }
                                         }),
                                         $({
@@ -1319,9 +1339,12 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                             style: {
                                                 height: 'fit-content',
                                                 width: '100% ',
-                                                fontFamily: 'arial  black,sans-serif',
+                                                fontFamily: 'Inter, sans-serif',
                                                 margin: 'auto',
-                                                marginLeft: '1vw'
+                                                marginLeft: '8px',
+                                                color: '#ffffff',
+                                                fontSize: '14px',
+                                                fontWeight: '500'
                                             },
                                             text: 'Print'
                                         })
@@ -1329,95 +1352,95 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     event: {
                                         type: 'click',
                                         method: () => {
-                                            // Get all the printable content
-                                            let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
-                                            
-                                            // Start building the HTML document
-                                            let htmlContent = `
-                                    <!DOCTYPE html>
-                                    <html>
-                                    <head>
-                                        <title>Print Comments</title>
-                                        <style>
-                                            body {
-                                                margin: 0;
-                                                padding: 0;
-                                                font-family: Arial, sans-serif;
-                                                -webkit-print-color-adjust: exact !important;
-                                                print-color-adjust: exact !important;
-                                                color-adjust: exact !important;
-                                            }
-                                            @page {
-                                                margin: 0;
-                                                size: letter;
-                                            }
-                                            .page-container {
-                                                position: relative;
-                                                width: 100%;
-                                                height: 100vh;
-                                                page-break-after: always;
-                                                page-break-inside: avoid;
-                                            }
-                                            .page-container:last-child {
-                                                page-break-after: auto;
-                                            }
-                                            .page-background {
-                                                position: absolute;
-                                                top: 0;
-                                                left: 0;
-                                                width: 100%;
-                                                height: 100%;
-                                                z-index: 0;
-                                            }
-                                            .page-background img {
-                                                width: 100%;
-                                                height: 100%;
-                                                object-fit: fill;
-                                                display: block;
-                                            }
-                                            .page-content {
-                                                position: absolute;
-                                                top: 95px;
-                                                left: 0.75in;
-                                                right: 0.75in;
-                                                bottom: 93px;
-                                                z-index: 1;
-                                                overflow: visible;
-                                            }
-                                            * {
-                                                box-sizing: border-box;
-                                            }
-                                        </style>
-                                    </head>
-                                    <body>
-                                    `;
-                                            
-                                            // Get all the nodes to print
                                             const nodes = print.childNodes;
+                                            if (!nodes || nodes.length === 0) {
+                                                alert('No content to print. Please load data first.')
+                                                return
+                                            }
                                             
-                                            // Add each document with its own page container and header
+                                            let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
+                                            if (!WinPrint) {
+                                                alert('Popup blocked! Please allow popups for this site.')
+                                                return
+                                            }
+                                            
+                                            let htmlContent = `
+                                                <!DOCTYPE html>
+                                                <html>
+                                                <head>
+                                                    <title>Print Comments</title>
+                                                    <style>
+                                                        body {
+                                                            margin: 0;
+                                                            padding: 0;
+                                                            font-family: Arial, sans-serif;
+                                                            -webkit-print-color-adjust: exact !important;
+                                                            print-color-adjust: exact !important;
+                                                        }
+                                                        @page {
+                                                            margin: 0;
+                                                            size: letter;
+                                                        }
+                                                        .page-container {
+                                                            position: relative;
+                                                            width: 100%;
+                                                            height: 100vh;
+                                                            page-break-after: always;
+                                                            page-break-inside: avoid;
+                                                        }
+                                                        .page-container:last-child {
+                                                            page-break-after: auto;
+                                                        }
+                                                        .page-background {
+                                                            position: absolute;
+                                                            top: 0;
+                                                            left: 0;
+                                                            width: 100%;
+                                                            height: 100%;
+                                                            z-index: 0;
+                                                        }
+                                                        .page-background img {
+                                                            width: 100%;
+                                                            height: 100%;
+                                                            object-fit: fill;
+                                                            display: block;
+                                                        }
+                                                        .page-content {
+                                                            position: absolute;
+                                                            top: 95px;
+                                                            left: 0.75in;
+                                                            right: 0.75in;
+                                                            bottom: 93px;
+                                                            z-index: 1;
+                                                            overflow: visible;
+                                                        }
+                                                        * {
+                                                            box-sizing: border-box;
+                                                        }
+                                                    </style>
+                                                </head>
+                                                <body>
+                                            `;
+                                            
                                             for (let x = 0; x < nodes.length; x++) {
                                                 htmlContent += `
-                                        <div class="page-container">
-                                            <div class="page-background">
-                                                <img src="/client/images/header.png" alt="Header and Footer">
-                                            </div>
-                                            <div class="page-content">
-                                                ${nodes[x].innerHTML}
-                                            </div>
-                                        </div>`;
+                                                    <div class="page-container">
+                                                        <div class="page-background">
+                                                            <img src="/client/images/header.png" alt="Header and Footer">
+                                                        </div>
+                                                        <div class="page-content">
+                                                            ${nodes[x].innerHTML}
+                                                        </div>
+                                                    </div>`;
                                             }
                                             
-                                            // Close HTML document
                                             htmlContent += `
-                                    </body>
-                                    </html>`;
+                                                </body>
+                                                </html>`;
                                             
-                                            // Write to print window
                                             WinPrint.document.write(htmlContent);
                                             WinPrint.document.close();
                                             
-                                            // Wait for images to load, then print
                                             WinPrint.onload = function() {
                                                 setTimeout(() => {
                                                     WinPrint.focus();
@@ -1432,11 +1455,14 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     tag: 'div',
                                     style: {
                                         width: '100%',
-                                        height: '5vh',
-                                        margin: ' auto',
+                                        height: '40px',
+                                        margin: '12px auto',
                                         display: 'flex',
                                         justifyContent: 'center',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        backgroundColor: '#6c757d',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s ease'
                                     },
                                     att: {
                                         className: 'printAllReload'
@@ -1451,17 +1477,21 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                             style: {
                                                 margin: 'auto',
                                                 width: 'fit-content',
-                                                marginLeft: '1vw',
-                                                marginRight: '.3vw'
+                                                marginLeft: '8px',
+                                                marginRight: '8px',
+                                                color: '#ffffff'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             style: {
-                                                fontFamily: 'arial black,sans-serif',
+                                                fontFamily: 'Inter, sans-serif',
                                                 margin: 'auto',
                                                 width: '100%',
-                                                marginLeft: '1vw',
+                                                marginLeft: '8px',
+                                                color: '#ffffff',
+                                                fontSize: '14px',
+                                                fontWeight: '500'
                                             },
                                             text: 'Back'
                                         })
@@ -1469,7 +1499,9 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     event: {
                                         type: 'click',
                                         method: () => {
-                                            printerPanel.remove()
+                                            if (printerPanel && printerPanel.parentNode) {
+                                                printerPanel.parentNode.removeChild(printerPanel)
+                                            }
                                         }
                                     }
                                 })
@@ -1478,78 +1510,59 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                     ]
                 })
                 const right = $({
-
                     tag: 'div',
-
                     style: {
-
                         width: '80%',
-
-                        height: '100%%',
-
-                        backgroundColor: '#333',
-
-                        overflowY: 'auto'
-
+                        height: '100%',
+                        backgroundColor: '#ffffff',
+                        overflowY: 'auto',
+                        padding: '20px'
                     },
-
                     att: {
-
                         className: 'sample'
-
                     },
-
                     elementHandler: getPrintable
-
                 })
 
-
                 return ($({
-
                     tag: 'div',
-
                     style: {
-
-                        width: '100%',
-
-                        height: '100%',
-
-                        backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-
-                        position: 'absolute',
-
+                        width: '90%',
+                        height: '90%',
+                        backgroundColor: '#ffffff',
+                        position: 'fixed',
+                        top: '5%',
+                        left: '5%',
                         display: 'flex',
-
-                        justifyContent: 'center'
-
+                        justifyContent: 'center',
+                        borderRadius: '12px',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                        zIndex: 1000,
+                        overflow: 'hidden'
                     },
-
                     elementHandler: getPrinterPanel,
-
                     child: [
-
                         left,
-
                         right
-
                     ]
-
                 }))
-
             }
+            
             return ($({
                 tag: 'div',
                 style: {
                     position: 'absolute',
-                    right: '2vw',
+                    right: '20px',
                     top: '0',
                     bottom: '0',
                     margin: 'auto',
                     height: 'fit-content',
                     width: 'fit-content',
-                    backgroundColor: '#333',
-                    padding: '.3rem',
-                    borderRadius: '.5vw'
+                    backgroundColor: '#ffffff',
+                    padding: '8px 16px',
+                    borderRadius: '24px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: '1px solid #e9ecef'
                 },
                 elementHandler: (el) => {
                     toolBox = el
@@ -1558,18 +1571,40 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                     $({
                         tag: 'div',
                         style: {
-                            fontSize: '1vw',
+                            fontSize: '14px',
                             cursor: 'pointer',
-                            fontFamily: 'arial black,sans-serif',
-                            color: 'grey'
+                            fontFamily: 'Inter, sans-serif',
+                            color: '#0d6efd',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
                         },
-                        text: 'Print All Comments',
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-print' },
+                                style: { fontSize: '14px' }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: 'Print All Comments'
+                            })
+                        ]
                     })
                 ],
                 event: {
                     type: 'click',
                     method: () => {
-                        mainFrame.appendChild(printPane())
+                        // Fix: Use the correct container to append to
+                        // Try mainFrame first, fallback to document.body
+                        const targetContainer = mainFrame || document.body
+                        if (targetContainer && typeof targetContainer.appendChild === 'function') {
+                            targetContainer.appendChild(printPane())
+                        } else {
+                            console.error('No valid container found for print panel')
+                            document.body.appendChild(printPane())
+                        }
                     }
                 }
             }))
@@ -1597,12 +1632,12 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                         display: 'flex',
                                         width: '100%',
                                         height: 'fit-content',
-                                        borderBottom: '1px solid #444',
+                                        borderBottom: '1px solid #e9ecef',
                                         cursor: 'pointer',
-                                        backgroundColor: '#2a2a2a',
-                                        borderRadius: '5px',
-                                        marginBottom: '2px',
-                                        transition: 'all 0.3s'
+                                        backgroundColor: '#ffffff',
+                                        borderRadius: '0',
+                                        marginBottom: '0',
+                                        transition: 'all 0.2s ease'
                                     },
                                     child: [
                                         // Dropdown icon
@@ -1728,9 +1763,10 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                             tag: 'div',
                             style: {
                                 width: '95%',
-                                marginBottom: '5px',
-                                backgroundColor: '#222',
-                                borderRadius: '3px'
+                                marginBottom: '4px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '6px',
+                                transition: 'all 0.2s ease'
                             },
                             child: [
                                 $({
@@ -1794,15 +1830,20 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                         return ($({
                             tag: 'div',
                             style: {
-                                marginTop: '4vh',
+                                marginTop: '20px',
                                 width: '100%',
                                 textAlign: 'center',
-                                fontSize: '1.1vw',
-                                color: 'deepskyblue',
+                                fontSize: '14px',
+                                color: '#0d6efd',
                                 cursor: 'pointer',
-                                fontFamily: "Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif"
+                                fontFamily: 'Inter, sans-serif',
+                                fontWeight: '500',
+                                padding: '12px',
+                                borderRadius: '8px',
+                                transition: 'all 0.2s ease',
+                                backgroundColor: '#f8f9fa'
                             },
-                            text: 'Print Summary',
+                            text: 'Print Accepted Summary',
                             event: {
                                 type: 'click',
                                 method: () => {
@@ -1853,179 +1894,356 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                             }
                         }))
                     }
-                    // Define the modal creation function OUTSIDE researchEntry
                     const createPrintModal = (eventDetails) => {
-                        // Remove existing modal if any
                         const existingModal = document.getElementById('printResearchModal')
-                        if (existingModal) existingModal.remove()
+                        if (existingModal && existingModal.remove) {
+                            existingModal.remove()
+                        }
+
+                        let modalOverlayElement = null;
                         
-                        // Create modal container
-                        const modalOverlay = document.createElement('div')
-                        modalOverlay.id = 'printResearchModal'
-                        modalOverlay.className = 'research-modal-overlay modal-overlay'
-                        modalOverlay.style.cssText = `
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background-color: rgba(0, 0, 0, 0.7);
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            z-index: 50;
-                        `
+                        const modalOverlay = $({
+                            tag: 'div',
+                            att: { id: 'printResearchModal' },
+                            style: {
+                                position: 'fixed',
+                                top: '0',
+                                left: '0',
+                                width: '100%',
+                                height: '100%',
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                backdropFilter: 'blur(4px)',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                zIndex: '1000'
+                            },
+                            elementHandler: (overlay) => {
+                                modalOverlayElement = overlay;
+                                
+                                overlay.addEventListener('click', (e) => {
+                                    if (e.target === overlay) {
+                                        // Clean up and remove
+                                        if (modalOverlayElement && modalOverlayElement.remove) {
+                                            modalOverlayElement.remove();
+                                        }
+                                    }
+                                });
+                                
+                                const handleEsc = (e) => {
+                                    if (e.key === 'Escape') {
+                                        if (modalOverlayElement && modalOverlayElement.remove) {
+                                            modalOverlayElement.remove();
+                                        }
+                                        document.removeEventListener('keydown', handleEsc);
+                                    }
+                                };
+                                document.addEventListener('keydown', handleEsc);
+                            }
+                        });
                         
                         // Modal content
-                        const modalContent = document.createElement('div');
-                        modalContent.className = 'research-modal-content modal-content';
-                        modalContent.style.cssText = `
-                            background-color: white;
-                            padding: 30px;
-                            border-radius: 8px;
-                            width: 500px;
-                            max-width: 90%;
-                            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                            position: relative;
-                            z-index: 51;
-                        `
+                        const modalContent = $({
+                            tag: 'div',
+                            style: {
+                                backgroundColor: '#ffffff',
+                                borderRadius: '16px',
+                                width: '500px',
+                                maxWidth: '90%',
+                                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }
+                        });
                         
                         // Header
-                        const header = document.createElement('h2');
-                        header.textContent = 'Print Research Entry Summary';
-                        header.style.cssText = `
-                            margin: 0 0 20px 0;
-                            color: #333;
-                            font-size: 20px;
-                            border-bottom: 2px solid #43A5BE;
-                            padding-bottom: 10px;
-                        `
-                        modalContent.appendChild(header)
+                        const header = $({
+                            tag: 'div',
+                            style: {
+                                padding: '20px 24px',
+                                borderBottom: '1px solid #e9ecef',
+                                backgroundColor: '#ffffff'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'h2',
+                                            text: 'Print Research Entry Summary',
+                                            style: {
+                                                margin: '0',
+                                                color: '#1a1a2e',
+                                                fontSize: '18px',
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontWeight: '600'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'button',
+                                            att: {
+                                                'aria-label': 'Close',
+                                                'title': 'Close'
+                                            },
+                                            style: {
+                                                width: '32px',
+                                                height: '32px',
+                                                backgroundColor: 'transparent',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    att: {
+                                                        className: 'fa-solid fa-xmark',
+                                                        'aria-hidden': 'true'
+                                                    },
+                                                    style: {
+                                                        fontSize: '18px',
+                                                        color: '#adb5bd',
+                                                        transition: 'all 0.2s ease'
+                                                    }
+                                                })
+                                            ],
+                                            event: {
+                                                type: 'click',
+                                                method: (e) => {
+                                                    e.stopPropagation();
+                                                    // Properly remove the modal overlay
+                                                    if (modalOverlayElement && modalOverlayElement.remove) {
+                                                        modalOverlayElement.remove();
+                                                    }
+                                                }
+                                            },
+                                            mouseenter: (e) => {
+                                                e.target.style.backgroundColor = '#f8f9fa';
+                                                const icon = e.target.querySelector('.fa-xmark');
+                                                if (icon) icon.style.color = '#dc3545';
+                                            },
+                                            mouseleave: (e) => {
+                                                e.target.style.backgroundColor = 'transparent';
+                                                const icon = e.target.querySelector('.fa-xmark');
+                                                if (icon) icon.style.color = '#adb5bd';
+                                            }
+                                        })
+                                    ]
+                                })
+                            ]
+                        });
                         
-                        // Form fields - with placeholders only, no default values
+                        modalContent.appendChild(header);
+                        
+                        // Body
+                        const body = $({
+                            tag: 'div',
+                            style: {
+                                padding: '24px',
+                                backgroundColor: '#ffffff'
+                            }
+                        });
+                        
+                        // Form fields
                         const fields = [
                             { id: 'dateToBeHeld', label: 'Date to be held:', placeholder: 'e.g., March 2-3, 2026' },
                             { id: 'venue', label: 'Venue:', placeholder: 'e.g., Roxas City Campus, Fuentes Drive, Roxas City, Capiz' },
                             { id: 'pptDeadline', label: 'PPT Deadline:', placeholder: 'e.g., March 01, 2026, 3:00 p.m.' },
                             { id: 'driveLink', label: 'Drive link:', placeholder: 'e.g., https://bit.ly/38thIHR_PPTs' }
-                        ]
+                        ];
                         
                         fields.forEach(field => {
-                            const fieldDiv = document.createElement('div');
-                            fieldDiv.style.cssText = `
-                                margin-bottom: 15px;
-                                width: 100%;
-                            `
+                            const fieldDiv = $({
+                                tag: 'div',
+                                style: {
+                                    marginBottom: '20px',
+                                    width: '100%'
+                                }
+                            });
                             
-                            const label = document.createElement('label');
-                            label.htmlFor = field.id;
-                            label.textContent = field.label;
-                            label.style.cssText = `
-                                display: block;
-                                margin-bottom: 5px;
-                                color: #555;
-                                font-size: 14px;
-                                font-weight: bold;
-                            `
-                            
-                            const input = document.createElement('input');
-                            input.type = 'text';
-                            input.id = field.id;
-                            input.placeholder = field.placeholder; // Set placeholder only
-                            input.value = ''; // Empty value for user to fill
-                            input.style.cssText = `
-                                width: 100%;
-                                padding: 8px;
-                                border: 1px solid #ddd;
-                                border-radius: 4px;
-                                font-size: 14px;
-                                box-sizing: border-box;
-                            `
-                            
+                            const label = $({
+                                tag: 'label',
+                                att: { htmlFor: field.id },
+                                style: {
+                                    display: 'block',
+                                    marginBottom: '8px',
+                                    color: '#495057',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: '500'
+                                },
+                                text: field.label
+                            });
                             fieldDiv.appendChild(label);
+                            
+                            const input = $({
+                                tag: 'input',
+                                att: {
+                                    type: 'text',
+                                    id: field.id,
+                                    placeholder: field.placeholder
+                                },
+                                style: {
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    boxSizing: 'border-box',
+                                    transition: 'all 0.2s ease',
+                                    outline: 'none'
+                                }
+                            });
+                            
+                            // Add focus/blur events
+                            input.addEventListener('focus', () => {
+                                input.style.borderColor = '#0d6efd';
+                                input.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
+                            });
+                            input.addEventListener('blur', () => {
+                                input.style.borderColor = '#dee2e6';
+                                input.style.boxShadow = 'none';
+                            });
+                            
                             fieldDiv.appendChild(input);
-                            modalContent.appendChild(fieldDiv);
-                        })
+                            body.appendChild(fieldDiv);
+                        });
                         
-                        // Button container
-                        const buttonDiv = document.createElement('div');
-                        buttonDiv.style.cssText = `
-                            display: flex;
-                            justify-content: flex-end;
-                            gap: 10px;
-                            margin-top: 20px;
-                        `
+                        // Buttons
+                        const buttonDiv = $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '12px',
+                                marginTop: '24px'
+                            }
+                        });
                         
                         // Cancel button
-                        const cancelBtn = document.createElement('button');
-                        cancelBtn.textContent = 'Cancel';
-                        cancelBtn.style.cssText = `
-                            padding: 8px 16px;
-                            border: none;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            background-color: #f0f0f0;
-                            color: #333;
-                        `
-                        cancelBtn.onmouseover = () => cancelBtn.style.backgroundColor = '#e0e0e0';
-                        cancelBtn.onmouseout = () => cancelBtn.style.backgroundColor = '#f0f0f0';
-                        cancelBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            document.body.removeChild(modalOverlay);
-                        }
+                        const cancelBtn = $({
+                            tag: 'button',
+                            text: 'Cancel',
+                            style: {
+                                padding: '10px 20px',
+                                border: '1px solid #dee2e6',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontFamily: 'Inter, sans-serif',
+                                fontWeight: '500',
+                                backgroundColor: '#ffffff',
+                                color: '#6c757d',
+                                transition: 'all 0.2s ease'
+                            },
+                            event: {
+                                type: 'click',
+                                method: (e) => {
+                                    e.stopPropagation();
+                                    // Properly remove the modal overlay
+                                    if (modalOverlayElement && modalOverlayElement.remove) {
+                                        modalOverlayElement.remove();
+                                    }
+                                }
+                            }
+                        });
                         
-                        // Print button
-                        const printBtn = document.createElement('button');
-                        printBtn.textContent = 'Print'
-                        printBtn.style.cssText = `
-                            padding: 8px 16px;
-                            border: none;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            font-weight: bold;
-                            background-color: #43A5BE;
-                            color: white;
-                        `
-                        printBtn.onmouseover = () => printBtn.style.backgroundColor = '#3597b0';
-                        printBtn.onmouseout = () => printBtn.style.backgroundColor = '#43A5BE';
-                        printBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            
-                            // Get form data - use empty string if user didn't fill
-                            const formData = {
-                                dateToBeHeld: document.getElementById('dateToBeHeld')?.value || '',
-                                venue: document.getElementById('venue')?.value || '',
-                                pptDeadline: document.getElementById('pptDeadline')?.value || '',
-                                driveLink: document.getElementById('driveLink')?.value || ''
-                            }
-                            
-                            // Validate if required fields are filled
-                            if (!formData.dateToBeHeld || !formData.venue || !formData.pptDeadline || !formData.driveLink) {
-                                alert('Please fill in all fields before printing');
-                                return;
-                            }
-                            
-                            // Remove modal
-                            document.body.removeChild(modalOverlay);
-                            
-                            // Call print function
-                            printResearchSummary(eventDetails, formData);
-                        }
+                        // Add hover effects for cancel button
+                        cancelBtn.addEventListener('mouseenter', () => {
+                            cancelBtn.style.backgroundColor = '#f8f9fa';
+                            cancelBtn.style.borderColor = '#ced4da';
+                        });
+                        cancelBtn.addEventListener('mouseleave', () => {
+                            cancelBtn.style.backgroundColor = '#ffffff';
+                            cancelBtn.style.borderColor = '#dee2e6';
+                        });
                         
                         buttonDiv.appendChild(cancelBtn);
-                        buttonDiv.appendChild(printBtn);
-                        modalContent.appendChild(buttonDiv);
                         
+                        // Print button
+                        const printBtn = $({
+                            tag: 'button',
+                            style: {
+                                padding: '10px 24px',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontFamily: 'Inter, sans-serif',
+                                fontWeight: '500',
+                                backgroundColor: '#0d6efd',
+                                color: '#ffffff',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-print' },
+                                    style: { fontSize: '14px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Print'
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: (e) => {
+                                    e.stopPropagation();
+                                    
+                                    const formData = {
+                                        dateToBeHeld: document.getElementById('dateToBeHeld')?.value || '',
+                                        venue: document.getElementById('venue')?.value || '',
+                                        pptDeadline: document.getElementById('pptDeadline')?.value || '',
+                                        driveLink: document.getElementById('driveLink')?.value || ''
+                                    };
+                                    
+                                    if (!formData.dateToBeHeld || !formData.venue || !formData.pptDeadline || !formData.driveLink) {
+                                        alert('Please fill in all fields before printing');
+                                        return;
+                                    }
+                                    
+                                    // Remove modal first
+                                    if (modalOverlayElement && modalOverlayElement.remove) {
+                                        modalOverlayElement.remove();
+                                    }
+                                    
+                                    // Call print function
+                                    printResearchSummary(eventDetails, formData);
+                                }
+                            }
+                        });
+                        
+                        // Add hover effects for print button
+                        printBtn.addEventListener('mouseenter', () => {
+                            printBtn.style.backgroundColor = '#0b5ed7';
+                            printBtn.style.transform = 'translateY(-1px)';
+                        });
+                        printBtn.addEventListener('mouseleave', () => {
+                            printBtn.style.backgroundColor = '#0d6efd';
+                            printBtn.style.transform = 'translateY(0)';
+                        });
+                        
+                        buttonDiv.appendChild(printBtn);
+                        body.appendChild(buttonDiv);
+                        modalContent.appendChild(body);
                         modalOverlay.appendChild(modalContent);
                         
-                        // Close on overlay click
-                        modalOverlay.onclick = (e) => {
-                            if (e.target === modalOverlay) {
-                                document.body.removeChild(modalOverlay);
-                            }
-                        }
+                        // Append to document body
+                        document.body.appendChild(modalOverlay);
                         
                         return modalOverlay;
                     }
@@ -2516,7 +2734,7 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                             alert('Error loading research entries. Please try again.');
                         });
                     };
-                    // Research entry clickable div - this calls the modal
+                    
                     const researchEntry = (eventDetails) => {
                         return ($({
                             tag: 'div',
@@ -2537,40 +2755,72 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                 $({
                                     tag: 'div',
                                     style: {
-                                        padding: '10px 20px',
-                                        backgroundColor: '#2a2a2a',
-                                        border: '1px solid deepskyblue',
-                                        borderRadius: '5px',
-                                        transition: 'all 0.3s',
-                                        ':hover': {
-                                            backgroundColor: '#333',
-                                            transform: 'translateY(-2px)'
-                                        }
+                                        padding: '10px 24px',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #0d6efd',
+                                        borderRadius: '10px',
+                                        transition: 'all 0.2s ease',
+                                        cursor: 'pointer',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        color: '#0d6efd',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
                                     },
-                                    text: 'Print Research Entry Summary',
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: {
+                                                className: 'fa-solid fa-print'
+                                            },
+                                            style: {
+                                                fontSize: '14px'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: 'Print Research Entry Summary'
+                                        })
+                                    ],
                                     event: {
                                         type: 'click',
                                         method: (e) => {
                                             e.stopPropagation();
                                             const modal = createPrintModal(eventDetails);
-                                            document.body.appendChild(modal);
                                         }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = '#0d6efd';
+                                        e.target.style.color = '#ffffff';
+                                        const icon = e.target.querySelector('.fa-print');
+                                        if (icon) icon.style.color = '#ffffff';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = '#ffffff';
+                                        e.target.style.color = '#0d6efd';
+                                        const icon = e.target.querySelector('.fa-print');
+                                        if (icon) icon.style.color = '#0d6efd';
                                     }
                                 }),
-                                
-                                // Print Certificates button (NEW)
+                                // Print Certificates button
                                 $({
                                     tag: 'div',
                                     style: {
-                                        padding: '10px 20px',
-                                        backgroundColor: '#2a2a2a',
-                                        border: '1px solid #FFD700', // Gold color
-                                        borderRadius: '5px',
-                                        transition: 'all 0.3s',
-                                        ':hover': {
-                                            backgroundColor: '#333',
-                                            transform: 'translateY(-2px)'
-                                        }
+                                        padding: '10px 24px',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #ffc107',
+                                        borderRadius: '10px',
+                                        transition: 'all 0.2s ease',
+                                        cursor: 'pointer',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        color: '#ffc107',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
                                     },
                                     child: [
                                         $({
@@ -2579,16 +2829,12 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                                 className: 'fa-solid fa-certificate'
                                             },
                                             style: {
-                                                marginRight: '8px',
-                                                color: '#FFD700'
+                                                fontSize: '14px'
                                             }
                                         }),
                                         $({
                                             tag: 'span',
-                                            text: 'Print Certificates',
-                                            style: {
-                                                color: '#FFD700'
-                                            }
+                                            text: 'Print Presentor Certificates'
                                         })
                                     ],
                                     event: {
@@ -2598,28 +2844,39 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                             const certModal = createCertificateModal(eventDetails);
                                             document.body.appendChild(certModal);
                                         }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = '#ffc107';
+                                        e.target.style.color = '#ffffff';
+                                        const icon = e.target.querySelector('.fa-certificate');
+                                        if (icon) icon.style.color = '#ffffff';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = '#ffffff';
+                                        e.target.style.color = '#ffc107';
+                                        const icon = e.target.querySelector('.fa-certificate');
+                                        if (icon) icon.style.color = '#ffc107';
                                     }
                                 })
                             ]
                         }))
                     }
-                    
                     const SelectEvent = () => {
                         let selVal
                         
                         return ($({
                             tag: 'div',
                             style: {
-                                width: '70%',
-                                marginTop: '1vh',
-                                border: 'solid thin #999',
-                                height: '4vh',
+                                width: '100%',
+                                marginTop: '0',
+                                marginBottom: '24px',
                                 display: 'flex',
-                                margin: 'auto',
-                                padding: '.5vw',
-                                borderRadius: '.5vw',
-                                marginLeft: '2vw',
-                                height: 'auto'
+                                alignItems: 'center',
+                                gap: '16px',
+                                backgroundColor: '#f8f9fa',
+                                padding: '16px 20px',
+                                borderRadius: '12px',
+                                border: '1px solid #e9ecef'
                             },
                             child: [
                                 $({
@@ -2636,14 +2893,18 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                 $({
                                     tag: 'select',
                                     style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        width: '90%',
-                                        height: '100%]',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        width: '100%',
+                                        height: '42px',
                                         outline: 'none',
-                                        color: 'deepskyblue',
+                                        color: '#2c3e50',
                                         textAlign: 'center',
                                         cursor: 'pointer',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '14px',
+                                        padding: '0 16px'
                                     },
                                     elementHandler: (el) => {
                                         selVal = el
@@ -2683,19 +2944,35 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                 $({
                                     tag: "button",
                                     att: {
-                                        className: 'fa-solid fa-rotate',
                                         title: 'Load Event Data'
                                     },
                                     style: {
-                                        color: "deepskyblue",
-                                        fontSize: '1.2vw',
-                                        margin: 'auto',
-                                        marginLeft: '3vw',
-                                        backgroundColor: '#444',
-                                        borderRadius: '.5vw',
+                                        padding: '10px 24px',
+                                        backgroundColor: '#0d6efd',
+                                        color: '#ffffff',
+                                        fontSize: '14px',
+                                        margin: '0',
+                                        borderRadius: '8px',
                                         cursor: 'pointer',
-                                        border: 'solid thin deepskyblue'
+                                        border: 'none',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
                                     },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: {
+                                                className: 'fa-solid fa-arrows-rotate'
+                                            },
+                                            style: {
+                                                fontSize: '14px'
+                                            }
+                                        })
+                                    ],
                                     event: {
                                         type: 'click',
                                         method: () => {
@@ -2754,7 +3031,7 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                                     return
                                                 }
                                                 
-                                                // Add ALL centers (including zeros) - NO FILTERING
+                        
                                                 data.forEach(center => {
                                                     bodCon.appendChild(contain({
                                                         center: center.name,
@@ -2764,7 +3041,6 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                                     }))
                                                 })
                                                 
-                                                // Add print buttons
                                                 bodCon.appendChild(printSummary(eventTypeName))
                                                 bodCon.appendChild(researchEntry(eventTypeName))
                                             }).catch(error => {
@@ -2794,10 +3070,12 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     width: '50%',
                                     height: 'fit-content',
                                     margin: 'auto',
-                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    fontSize: '1vw',
-                                    color: '#999',
-                                    fontWeight: 'bold'
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontSize: '13px',
+                                    color: '#495057',
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px'
                                 },
                                 text: text
                             }))
@@ -2805,26 +3083,26 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                         return ($({
                             tag: 'div',
                             style: {
-                                width: '95%',
-                                margin: 'auto',
-                                marginTop: '2vh',
-                                marginBottom : '2vh',
-                                border: 'solid thin #444',
-                                backgroundColor: '#1e1e1e',
-                                height: '70vh',
-                                borderRadius: '10px',
-                                overflow: 'hidden'
+                                width: '100%',
+                                margin: '0',
+                                border: '1px solid #e9ecef',
+                                backgroundColor: '#ffffff',
+                                height: 'calc(85vh - 200px)',
+                                minHeight: '400px',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                             },
                             child: [
                                 // Header
                                 $({
                                     tag: 'div',
                                     style: {
-                                        height: '40px',
+                                        height: '48px',
                                         width: '100%',
-                                        backgroundColor: '#333',
+                                        backgroundColor: '#f8f9fa',
                                         display: 'flex',
-                                        borderBottom: '2px solid #444'
+                                        borderBottom: '1px solid #e9ecef'
                                     },
                                     child: [
                                         $({
@@ -2858,99 +3136,182 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                     return ($({
                         tag: 'div',
                         style: {
-                            width: '80%',
-                            height: '90%',
-                            position: 'absolute',
-                            left: '10%',
-                            top: '5%',
-                            backgroundColor: '#2a2a2a',
-                            borderRadius: '15px',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                            zIndex: 40
+                            position: 'fixed',
+                            top: '0',
+                            left: '0',
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 99
                         },
-                        elementHandler: (el) => {
-                            panBo = el
+                        elementHandler: (overlay) => {
+                            // Store reference to the overlay for removal
+                            overlay._overlayElement = overlay;
+                            
+                            overlay.addEventListener('click', (e) => {
+                                if (e.target === overlay) {
+                                    overlay.remove();  // Remove the entire overlay
+                                }
+                            });
+                            
+                            // Handle escape key
+                            const handleEsc = (e) => {
+                                if (e.key === 'Escape') {
+                                    overlay.remove();
+                                    document.removeEventListener('keydown', handleEsc);
+                                }
+                            };
+                            document.addEventListener('keydown', handleEsc);
+                            
+                            // Store cleanup function
+                            overlay._cleanup = () => {
+                                document.removeEventListener('keydown', handleEsc);
+                            };
                         },
                         child: [
                             $({
                                 tag: 'div',
                                 style: {
-                                    width: '100%',
-                                    height: '100%',
-                                    position: 'relative',
+                                    width: '90%',
+                                    maxWidth: '900px',
+                                    height: 'auto',
+                                    maxHeight: '80vh',
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
                                     display: 'flex',
-                                    borderRadius: '15px',
+                                    flexDirection: 'column',
                                     overflow: 'hidden'
                                 },
+                                elementHandler: (el) => {
+                                    panBo = el;  // This is now the inner content, not the overlay
+                                },
                                 child: [
-                                    // Close Button
-                                    $({
-                                        tag: 'div',
-                                        att: {
-                                            className: 'fa-solid fa-circle-xmark'
-                                        },
-                                        style: {
-                                            fontSize: '1.8vw',
-                                            color: '#ff4444',
-                                            position: 'absolute',
-                                            right: '15px',
-                                            top: '15px',
-                                            cursor: 'pointer',
-                                            zIndex: 10,
-                                            transition: 'transform 0.3s',
-                                            ':hover': {
-                                                transform: 'scale(1.1)'
-                                            }
-                                        },
-                                        event: {
-                                            type: 'click',
-                                            method: () => {
-                                                panBo.remove()
-                                            }
-                                        }
-                                    }),
-                                    // Main Content
+                                    // Simplified Header
                                     $({
                                         tag: 'div',
                                         style: {
-                                            width: '100%',
-                                            height: '100%',
-                                            backgroundColor: '#222',
-                                            padding: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '16px 20px',
+                                            borderBottom: '1px solid #e9ecef',
+                                            backgroundColor: '#ffffff'
                                         },
                                         child: [
                                             $({
                                                 tag: 'div',
                                                 style: {
-                                                height: 'fit-content',
-                                                width: 'fit-content',
-                                                fontFamily: 'arial black,sans-serif',
-                                                color: '#bbb',
-                                                margin: '1vh auto auto',
-                                                justifyContent: 'space-between',
-                                                fontSize: '1.2vw'
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px'
                                                 },
                                                 child: [
-                                                    // Icon as separate element
                                                     $({
                                                         tag: 'span',
-                                                        att: {
-                                                            className: 'fa-regular fa-chart-bar'
-                                                        },
+                                                        att: { className: 'fa-regular fa-chart-bar' },
                                                         style: {
-                                                            fontSize: '1.8vw',
-                                                            color: 'deepskyblue'
+                                                            fontSize: '20px',
+                                                            color: '#0d6efd'
                                                         }
                                                     }),
-                                                    // Text as separate element
                                                     $({
-                                                        tag: 'span',
-                                                        text: 'Entries Summary By Center'
+                                                        tag: 'h3',
+                                                        text: 'Entries Summary By Center',
+                                                        style: {
+                                                            fontFamily: 'Inter, sans-serif',
+                                                            fontSize: '18px',
+                                                            fontWeight: '600',
+                                                            color: '#1a1a2e',
+                                                            margin: '0'
+                                                        }
                                                     })
                                                 ]
                                             }),
+                                            $({
+                                                tag: 'button',
+                                                att: {
+                                                    'aria-label': 'Close modal',
+                                                    'title': 'Close'
+                                                },
+                                                style: {
+                                                    width: '28px',
+                                                    height: '28px',
+                                                    backgroundColor: 'transparent',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: {
+                                                            className: 'fa-solid fa-xmark',
+                                                            'aria-hidden': 'true'
+                                                        },
+                                                        style: {
+                                                            fontSize: '16px',
+                                                            color: '#adb5bd',
+                                                            transition: 'all 0.2s ease'
+                                                        }
+                                                    })
+                                                ],
+                                                event: {
+                                                    type: 'click',
+                                                    method: () => {
+                                                        // Find and remove the parent overlay
+                                                        const overlayDiv = document.querySelector('#reportModalOverlay');
+                                                        if (overlayDiv) {
+                                                            overlayDiv.remove();
+                                                        } else {
+                                                            // Fallback: find the closest fixed position parent
+                                                            let parent = panBo.parentElement;
+                                                            while (parent) {
+                                                                if (parent.style.position === 'fixed') {
+                                                                    parent.remove();
+                                                                    break;
+                                                                }
+                                                                parent = parent.parentElement;
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                mouseenter: (e) => {
+                                                    e.target.style.backgroundColor = '#f8f9fa';
+                                                    const icon = e.target.querySelector('.fa-xmark');
+                                                    if (icon) icon.style.color = '#dc3545';
+                                                },
+                                                mouseleave: (e) => {
+                                                    e.target.style.backgroundColor = 'transparent';
+                                                    const icon = e.target.querySelector('.fa-xmark');
+                                                    if (icon) icon.style.color = '#adb5bd';
+                                                }
+                                            })
+                                        ]
+                                    }),
+                                    // Body
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            padding: '20px',
+                                            overflowY: 'auto',
+                                            backgroundColor: '#ffffff'
+                                        },
+                                        child: [
                                             SelectEvent(),
-                                            bod()
+                                            $({
+                                                tag: 'div',
+                                                style: { marginTop: '20px' },
+                                                child: [bod()]
+                                            })
                                         ]
                                     })
                                 ]
@@ -2961,56 +3322,100 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                 return ($({
                     tag: 'div',
                     style: {
-                        margin: 'auto',
-                        border: '1px solid #444',
-                        padding: '8px 15px',
-                        borderRadius: '15px',
-                        backgroundColor: '#2a2a2a',
-                        width: 'fit-content',
-                        height: 'fit-content',
-                        marginRight: '3vw',
-                        transition: 'all 0.3s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 18px',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e9ecef',
+                        borderRadius: '10px',
+                        textDecoration: 'none',
+                        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: '#495057',
                         cursor: 'pointer',
-                        ':hover': {
-                            backgroundColor: '#333',
-                            transform: 'translateY(-2px)'
-                        }
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
                     },
                     child: [
                         $({
                             tag: 'button',
                             att: {
-                                className: 'fa-solid fa-chart-pie',
                                 title: 'View Summary by Center'
                             },
                             style: {
-                                fontSize: '1vw',
-                                backgroundColor: 'transparent',
+                                fontSize: '14px',
+                                backgroundColor: '#ffffff',
                                 border: 'none',
                                 outline: 'none',
                                 width: 'fit-content',
                                 height: 'fit-content',
                                 cursor: 'pointer',
-                                color: 'deepskyblue',
+                                color: '#495057',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '8px'
+                                gap: '8px',
+                                padding: '8px 18px',
+                                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease',
+                                borderRadius: '10px'
                             },
                             child: [
                                 $({
                                     tag: 'span',
+                                    att: { className: 'fa-solid fa-chart-pie' },
+                                    style: {
+                                        fontSize: '14px',
+                                        color: '#0d6efd',
+                                        transition: 'color 0.2s ease'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
                                     text: 'Entry Summary',
                                     style: {
-                                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                        fontSize: '0.9vw'
+                                        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                        fontSize: '14px',
+                                        fontWeight: '500'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-chevron-right' },
+                                    style: {
+                                        fontSize: '11px',
+                                        color: '#adb5bd',
+                                        transition: 'transform 0.2s ease, color 0.2s ease',
+                                        marginLeft: '4px'
                                     }
                                 })
                             ],
                             event: {
                                 type: 'click',
                                 method: () => {
-                                    leftPdiv.appendChild(ReportPanel())
+                                    // Check if leftPDiv exists and is a valid DOM element
+                                    if (leftPDiv && typeof leftPDiv.appendChild === 'function') {
+                                        leftPDiv.appendChild(ReportPanel());
+                                    } else if (mainFrame && typeof mainFrame.appendChild === 'function') {
+                                        mainFrame.appendChild(ReportPanel());
+                                    } else {
+                                        document.body.appendChild(ReportPanel());
+                                    }
                                 }
+                            },
+                            mouseenter: (e) => {
+                                e.target.style.backgroundColor = '#f8f9fa';
+                                e.target.style.color = '#0d6efd';
+                                const pieIcon = e.target.querySelector('.fa-chart-pie');
+                                if (pieIcon) pieIcon.style.color = '#0d6efd';
+                            },
+                            mouseleave: (e) => {
+                                e.target.style.backgroundColor = '#ffffff';
+                                e.target.style.color = '#495057';
+                                const pieIcon = e.target.querySelector('.fa-chart-pie');
+                                if (pieIcon) pieIcon.style.color = '#0d6efd';
                             }
                         })
                     ]
@@ -3027,7 +3432,8 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                 return $({
                     tag: 'div',
                     style: {
-                        width: '100%',
+                        width: 'auto',
+                        display: 'inline-flex'
                     },
                     child: [
                         $({
@@ -3036,12 +3442,14 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                 display: 'flex',
                                 width: 'fit-content',
                                 height: 'fit-content',
-                                border: 'solid thin #555',
-                                margin: 'auto',
-                                padding: '.3rem',
-                                marginLeft: '.56vw',
-                                borderRadius: '.5vw',
-                                backgroundColor: 'rgba(0,0,0,0.3)'
+                                border: '1px solid #e9ecef',
+                                margin: '0',
+                                padding: '4px',
+                                borderRadius: '12px',
+                                backgroundColor: '#ffffff',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                                alignItems: 'center',
+                                gap: '4px'
                             },
                             child: [
                                 $({
@@ -3050,25 +3458,29 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                         id: 'eventSelectFilter'
                                     },
                                     style: {
-                                        backgroundColor: 'transparent',
-                                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                        fontSize: '1.1vw',
-                                        border: 'none',
+                                        backgroundColor: '#ffffff',
+                                        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                        fontSize: '14px',
+                                        border: '1px solid #e9ecef',
+                                        borderRadius: '10px',
                                         outline: 'none',
-                                        color: '#bbb',
-                                        width: '17vw',
-                                        height: '3vw',
-                                        textAlign: 'center'
+                                        color: '#2c3e50',
+                                        width: '200px',
+                                        height: '38px',
+                                        textAlign: 'center',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
                                     },
                                     elementHandler: (el) => {
                                         // Add default "All Event" option
                                         el.appendChild($({
                                             tag: 'option',
-                                            text: 'All Event',
-                                            fontSize: '18px',
+                                            text: '📋 All Events',
                                             style: {
-                                                backgroundColor: 'rgba(0,0,0,0.8)',
-                                                color: '#bbb'
+                                                backgroundColor: '#ffffff',
+                                                color: '#2c3e50',
+                                                fontSize: '14px',
+                                                padding: '8px'
                                             },
                                             att: {
                                                 value: '0',
@@ -3086,36 +3498,66 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                         ]);
                                         req.Json();
                                         req.Send().then(data => {
-                                            data.forEach(val => {
-                                                el.appendChild($({
-                                                    tag: 'option',
-                                                    text: val.name,
-                                                    style: {
-                                                        backgroundColor: 'rgba(0,0,0,0.8)',
-                                                        color: '#bbb'
-                                                    },
-                                                    att: {
-                                                        value: val.id
-                                                    }
-                                                }))
-                                            })
+                                            if (data && Array.isArray(data)) {
+                                                data.forEach(val => {
+                                                    el.appendChild($({
+                                                        tag: 'option',
+                                                        text: val.name,
+                                                        style: {
+                                                            backgroundColor: '#ffffff',
+                                                            color: '#2c3e50',
+                                                            fontSize: '14px',
+                                                            padding: '8px'
+                                                        },
+                                                        att: {
+                                                            value: val.id
+                                                        }
+                                                    }))
+                                                })
+                                            }
                                         })
+                                    },
+                                    event: {
+                                        type: 'change',
+                                        method: (e) => {
+                                            // Auto-load when selection changes
+                                            currentPage = 1;
+                                            currentEventId = e.target.value || '0';
+                                            
+                                            // Clear search if it exists
+                                            if (serch && serch.value) {
+                                                serch.value = '';
+                                            }
+                                            
+                                            loadDocuments(currentEventId, 1);
+                                        }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.borderColor = '#0d6efd';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.borderColor = '#e9ecef';
                                     }
                                 }),
                                 $({
                                     tag: 'div',
                                     att: {
                                         className: 'fa-solid fa-arrows-rotate',
-                                        title: 'Refresh Event Documents',
+                                        title: 'Refresh Documents',
                                         id: 'refreshBtn'
                                     },
                                     style: {
-                                        margin: 'auto',
-                                        marginLeft: '2vw',
-                                        marginRight: '1vw',
-                                        fontSize: '2vw',
-                                        color: 'deepskyblue',
-                                        cursor: 'pointer'
+                                        margin: '0',
+                                        fontSize: '14px',
+                                        color: '#6c757d',
+                                        cursor: 'pointer',
+                                        padding: '10px',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: '#f8f9fa'
                                     },
                                     event: {
                                         type: 'click',
@@ -3133,16 +3575,25 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                             
                                             // Get the selected value
                                             currentEventId = eventSelect.value || '0';
-                                            const selectedText = eventSelect.options[eventSelect.selectedIndex].text;
                                             
                                             // Clear search if it exists
-                                            if (typeof search !== 'undefined' && search) {
-                                                search.value = '';
+                                            if (serch && serch.value) {
+                                                serch.value = '';
                                             }
                                             
                                             // Load first page (this will replace any existing content)
                                             loadDocuments(currentEventId, 1);
                                         }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = '#e7f1ff';
+                                        e.target.style.color = '#0d6efd';
+                                        e.target.style.transform = 'rotate(15deg)';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = '#f8f9fa';
+                                        e.target.style.color = '#6c757d';
+                                        e.target.style.transform = 'rotate(0deg)';
                                     }
                                 })
                             ]
@@ -3154,23 +3605,47 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                     if (isLoading) return;
                     
                     isLoading = true;
-                    
-                    // Always show loading indicator since we're replacing content
-                    researchBody.innerHTML = '';
-                    researchBody.appendChild($({
-                        tag: 'div',
-                        att: { id: 'loadingIndicator' },
-                        style: {
-                            textAlign: 'center',
-                            padding: '20px',
-                            color: '#bbb',
-                            fontSize: '1.2vw',
-                            backgroundColor: 'rgba(0,0,0,0.2)',
-                            borderRadius: '5px',
-                            margin: '20px'
-                        },
-                        text: 'Loading documents...'
-                    }));
+
+                    if (researchBody) {
+                        researchBody.innerHTML = '';
+                        researchBody.appendChild($({
+                            tag: 'div',
+                            att: { id: 'loadingIndicator' },
+                            style: {
+                                textAlign: 'center',
+                                padding: '40px',
+                                color: '#6c757d',
+                                fontSize: '14px',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                margin: '20px',
+                                border: '1px solid #f0f0f0',
+                                fontFamily: 'Inter, sans-serif'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '12px'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-spinner fa-pulse' },
+                                            style: { fontSize: '24px', color: '#0d6efd' }
+                                        }),
+                                        $({
+                                            tag: 'div',
+                                            text: 'Loading documents...'
+                                        })
+                                    ]
+                                })
+                            ]
+                        }));
+                    }
                     
                     // Make the request
                     const formData = new FormData();
@@ -3190,13 +3665,14 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                         return response.json();
                     })
                     .then(response => {
-                        
                         // Remove loading indicator
                         const loadingIndicator = document.getElementById('loadingIndicator');
-                        if (loadingIndicator) loadingIndicator.remove();
+                        if (loadingIndicator && loadingIndicator.parentNode) {
+                            loadingIndicator.remove();
+                        }
                         
                         if (response.error) {
-                            showError('Server error: ' + response.error)
+                            showError('Server error: ' + response.error);
                             return;
                         }
                         
@@ -3208,28 +3684,43 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                         const data = response.data;
                         hasMore = response.hasMore;
                         totalDocuments = response.total;
-                        currentPage = page; // Update current page
+                        currentPage = page;
                         
-                        // Clear and show new content (REPLACE, not append)
-                        researchBody.innerHTML = '';
+                        if (researchBody) {
+                            researchBody.innerHTML = '';
+                        }
                         
                         if (data.length === 0) {
                             const eventSelect = document.getElementById('eventSelectFilter');
                             const selectedText = eventSelect ? eventSelect.options[eventSelect.selectedIndex].text : 'Selected event';
                             
-                            researchBody.appendChild($({
-                                tag: 'div',
-                                style: {
-                                    textAlign: 'center',
-                                    padding: '20px',
-                                    color: '#bbb',
-                                    fontSize: '1.2vw',
-                                    backgroundColor: 'rgba(0,0,0,0.2)',
-                                    borderRadius: '5px',
-                                    margin: '20px'
-                                },
-                                text: `No documents found for "${selectedText}"`
-                            }));
+                            if (researchBody) {
+                                researchBody.appendChild($({
+                                    tag: 'div',
+                                    style: {
+                                        textAlign: 'center',
+                                        padding: '60px 20px',
+                                        color: '#6c757d',
+                                        fontSize: '14px',
+                                        backgroundColor: '#ffffff',
+                                        borderRadius: '12px',
+                                        margin: '20px',
+                                        border: '1px solid #f0f0f0',
+                                        fontFamily: 'Inter, sans-serif'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-folder-open' },
+                                            style: { fontSize: '48px', color: '#adb5bd', marginBottom: '16px', display: 'block' }
+                                        }),
+                                        $({
+                                            tag: 'div',
+                                            text: `No documents found for "${selectedText}"`
+                                        })
+                                    ]
+                                }));
+                            }
                         } else {
                             // Show page navigation info
                             const navDiv = $({
@@ -3238,191 +3729,270 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    padding: '10px',
-                                    color: '#4CAF50',
-                                    fontSize: '1vw',
-                                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                                    borderRadius: '5px',
-                                    margin: '10px',
-                                    marginBottom: '20px'
+                                    padding: '12px 16px',
+                                    color: '#0d6efd',
+                                    fontSize: '13px',
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '10px',
+                                    margin: '0 0 16px 0',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: '500'
                                 },
                                 child: [
                                     $({
                                         tag: 'div',
-                                        text: `Page ${page} of ${response.totalPages || '?'}`
+                                        style: { display: 'flex', alignItems: 'center', gap: '8px' },
+                                        child: [
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-chart-simple' }, style: { fontSize: '12px' } }),
+                                            $({ tag: 'span', text: `Page ${page} of ${response.totalPages || '?'}` })
+                                        ]
                                     }),
                                     $({
                                         tag: 'div',
-                                        text: `Total: ${totalDocuments} document(s)`
+                                        style: { display: 'flex', alignItems: 'center', gap: '8px' },
+                                        child: [
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-file-lines' }, style: { fontSize: '12px' } }),
+                                            $({ tag: 'span', text: `Total: ${totalDocuments} document(s)` })
+                                        ]
                                     }),
                                     $({
                                         tag: 'div',
-                                        text: `Showing documents ${((page - 1) * 10) + 1} to ${Math.min(page * 10, totalDocuments)}`
+                                        style: { display: 'flex', alignItems: 'center', gap: '8px', color: '#6c757d' },
+                                        child: [
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-eye' }, style: { fontSize: '12px' } }),
+                                            $({ tag: 'span', text: `Showing ${((page - 1) * 10) + 1} to ${Math.min(page * 10, totalDocuments)}` })
+                                        ]
                                     })
                                 ]
                             });
-                            researchBody.appendChild(navDiv);
                             
-                            // Add documents (only current batch)
-                            data.forEach((val, index) => {
-                                researchBody.appendChild(ResearchDocs({
-                                    category: val.category,
-                                    center: val.center,
-                                    title: val.title,
-                                    author: val.author,
-                                    file: val.file,
-                                    eventTYpe: val.event,
-                                    campus: val.campus,
-                                    deleteRequest: val.deletestate,
-                                    docId: val.id,
-                                    endorseId: val.endorsId,
-                                    mainFrame: mainFrame 
-                                }));
-                            });
-                            
-                            // Add pagination controls
-                            const paginationDiv = $({
-                                tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    gap: '10px',
-                                    margin: '20px auto',
-                                    padding: '10px'
-                                },
-                                child: []
-                            });
-                            
-                            // Previous button
-                            if (page > 1) {
-                                const prevBtn = $({
-                                    tag: 'button',
-                                    style: {
-                                        padding: '10px 20px',
-                                        backgroundColor: 'rgba(0, 100, 255, 0.2)',
-                                        color: 'deepskyblue',
-                                        border: '1px solid deepskyblue',
-                                        borderRadius: '5px',
-                                        fontSize: '1vw',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s'
-                                    },
-                                    text: '← Previous',
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            loadDocuments(currentEventId, page - 1);
-                                        }
-                                    },
-                                    mouseenter: (e) => {
-                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.3)';
-                                    },
-                                    mouseleave: (e) => {
-                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.2)';
-                                    }
+                            if (researchBody) {
+                                researchBody.appendChild(navDiv);
+                                
+                                // Add documents (only current batch)
+                                data.forEach((val, index) => {
+                                    researchBody.appendChild(ResearchDocs({
+                                        category: val.category,
+                                        center: val.center,
+                                        title: val.title,
+                                        author: val.author,
+                                        file: val.file,
+                                        eventTYpe: val.event,
+                                        campus: val.campus,
+                                        deleteRequest: val.deletestate,
+                                        docId: val.id,
+                                        endorseId: val.endorsId,
+                                        mainFrame: mainFrame 
+                                    }));
                                 });
-                                paginationDiv.appendChild(prevBtn);
-                            }
-                            
-                            // Page indicator
-                            const pageIndicator = $({
-                                tag: 'div',
-                                style: {
-                                    padding: '10px 20px',
-                                    color: '#bbb',
-                                    fontSize: '1vw'
-                                },
-                                text: `Page ${page}`
-                            });
-                            paginationDiv.appendChild(pageIndicator);
-                            
-                            // Next button
-                            if (hasMore) {
-                                const nextBtn = $({
-                                    tag: 'button',
-                                    style: {
-                                        padding: '10px 20px',
-                                        backgroundColor: 'rgba(0, 100, 255, 0.2)',
-                                        color: 'deepskyblue',
-                                        border: '1px solid deepskyblue',
-                                        borderRadius: '5px',
-                                        fontSize: '1vw',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s'
-                                    },
-                                    text: 'Next →',
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            loadDocuments(currentEventId, page + 1);
-                                        }
-                                    },
-                                    mouseenter: (e) => {
-                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.3)';
-                                    },
-                                    mouseleave: (e) => {
-                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.2)';
-                                    }
-                                });
-                                paginationDiv.appendChild(nextBtn);
-                            }
-                            
-                            researchBody.appendChild(paginationDiv);
-                            
-                            // Add page number input for direct navigation (optional)
-                            if (response.totalPages > 5) {
-                                const pageNavDiv = $({
+                                
+                                const paginationDiv = $({
                                     tag: 'div',
                                     style: {
                                         display: 'flex',
                                         justifyContent: 'center',
                                         alignItems: 'center',
-                                        gap: '10px',
-                                        marginTop: '10px'
+                                        gap: '12px',
+                                        margin: '24px auto',
+                                        padding: '16px'
                                     },
-                                    child: [
-                                        $({
-                                            tag: 'span',
-                                            style: { color: '#bbb', fontSize: '0.9vw' },
-                                            text: 'Go to page:'
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'number',
-                                                min: '1',
-                                                max: response.totalPages,
-                                                value: page
-                                            },
-                                            style: {
-                                                width: '60px',
-                                                padding: '5px',
-                                                backgroundColor: 'rgba(0,0,0,0.3)',
-                                                color: '#bbb',
-                                                border: '1px solid #555',
-                                                borderRadius: '3px',
-                                                textAlign: 'center'
-                                            },
-                                            event: {
-                                                type: 'change',
-                                                method: (e) => {
-                                                    const goToPage = parseInt(e.target.value);
-                                                    if (goToPage >= 1 && goToPage <= response.totalPages) {
-                                                        loadDocuments(currentEventId, goToPage);
-                                                    } else {
-                                                        e.target.value = page;
-                                                    }
+                                    child: []
+                                });
+                                
+                                // Previous button
+                                if (page > 1) {
+                                    const prevBtn = $({
+                                        tag: 'button',
+                                        style: {
+                                            padding: '8px 20px',
+                                            backgroundColor: '#ffffff',
+                                            color: '#0d6efd',
+                                            border: '1px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontWeight: '500',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        },
+                                        child: [
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-chevron-left' }, style: { fontSize: '11px' } }),
+                                            $({ tag: 'span', text: 'Previous' })
+                                        ],
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                loadDocuments(currentEventId, page - 1);
+                                            }
+                                        },
+                                        mouseenter: (e) => {
+                                            e.target.style.backgroundColor = '#f8f9fa';
+                                            e.target.style.borderColor = '#0d6efd';
+                                        },
+                                        mouseleave: (e) => {
+                                            e.target.style.backgroundColor = '#ffffff';
+                                            e.target.style.borderColor = '#dee2e6';
+                                        }
+                                    });
+                                    paginationDiv.appendChild(prevBtn);
+                                }
+                                
+                                // Page buttons
+                                const totalPages = response.totalPages || 1;
+                                const maxVisible = 5;
+                                let startPage = Math.max(1, page - Math.floor(maxVisible / 2));
+                                let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                                
+                                if (endPage - startPage + 1 < maxVisible) {
+                                    startPage = Math.max(1, endPage - maxVisible + 1);
+                                }
+                                
+                                for (let i = startPage; i <= endPage; i++) {
+                                    const pageBtn = $({
+                                        tag: 'button',
+                                        text: i.toString(),
+                                        style: {
+                                            padding: '8px 14px',
+                                            backgroundColor: i === page ? '#0d6efd' : '#ffffff',
+                                            color: i === page ? '#ffffff' : '#495057',
+                                            border: i === page ? '1px solid #0d6efd' : '1px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontWeight: i === page ? '600' : '400'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                if (i !== page) {
+                                                    loadDocuments(currentEventId, i);
                                                 }
                                             }
-                                        }),
-                                        $({
-                                            tag: 'span',
-                                            style: { color: '#888', fontSize: '0.9vw' },
-                                            text: `of ${response.totalPages}`
-                                        })
-                                    ]
-                                });
-                                researchBody.appendChild(pageNavDiv);
+                                        },
+                                        mouseenter: (e) => {
+                                            if (i !== page) {
+                                                e.target.style.backgroundColor = '#f8f9fa';
+                                                e.target.style.borderColor = '#0d6efd';
+                                            }
+                                        },
+                                        mouseleave: (e) => {
+                                            if (i !== page) {
+                                                e.target.style.backgroundColor = '#ffffff';
+                                                e.target.style.borderColor = '#dee2e6';
+                                            }
+                                        }
+                                    });
+                                    paginationDiv.appendChild(pageBtn);
+                                }
+                                
+                                // Next button
+                                if (hasMore && page < totalPages) {
+                                    const nextBtn = $({
+                                        tag: 'button',
+                                        style: {
+                                            padding: '8px 20px',
+                                            backgroundColor: '#ffffff',
+                                            color: '#0d6efd',
+                                            border: '1px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontWeight: '500',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        },
+                                        child: [
+                                            $({ tag: 'span', text: 'Next' }),
+                                            $({ tag: 'span', att: { className: 'fa-solid fa-chevron-right' }, style: { fontSize: '11px' } })
+                                        ],
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                loadDocuments(currentEventId, page + 1);
+                                            }
+                                        },
+                                        mouseenter: (e) => {
+                                            e.target.style.backgroundColor = '#f8f9fa';
+                                            e.target.style.borderColor = '#0d6efd';
+                                        },
+                                        mouseleave: (e) => {
+                                            e.target.style.backgroundColor = '#ffffff';
+                                            e.target.style.borderColor = '#dee2e6';
+                                        }
+                                    });
+                                    paginationDiv.appendChild(nextBtn);
+                                }
+                                
+                                researchBody.appendChild(paginationDiv);
+                                
+                                // Add page number input for direct navigation (optional)
+                                if (totalPages > 5) {
+                                    const pageNavDiv = $({
+                                        tag: 'div',
+                                        style: {
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            marginTop: '16px',
+                                            padding: '12px',
+                                            backgroundColor: '#f8f9fa',
+                                            borderRadius: '10px'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                style: { color: '#6c757d', fontSize: '13px', fontFamily: 'Inter, sans-serif' },
+                                                text: 'Go to page:'
+                                            }),
+                                            $({
+                                                tag: 'input',
+                                                att: {
+                                                    type: 'number',
+                                                    min: '1',
+                                                    max: totalPages,
+                                                    value: page
+                                                },
+                                                style: {
+                                                    width: '70px',
+                                                    padding: '6px 10px',
+                                                    backgroundColor: '#ffffff',
+                                                    color: '#2c3e50',
+                                                    border: '1px solid #dee2e6',
+                                                    borderRadius: '6px',
+                                                    textAlign: 'center',
+                                                    fontSize: '13px',
+                                                    fontFamily: 'Inter, sans-serif'
+                                                },
+                                                event: {
+                                                    type: 'change',
+                                                    method: (e) => {
+                                                        const goToPage = parseInt(e.target.value);
+                                                        if (goToPage >= 1 && goToPage <= totalPages) {
+                                                            loadDocuments(currentEventId, goToPage);
+                                                        } else {
+                                                            e.target.value = page;
+                                                        }
+                                                    }
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                style: { color: '#adb5bd', fontSize: '13px', fontFamily: 'Inter, sans-serif' },
+                                                text: `of ${totalPages}`
+                                            })
+                                        ]
+                                    });
+                                    researchBody.appendChild(pageNavDiv);
+                                }
                             }
                         }
                         
@@ -3431,11 +4001,13 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                     .catch(error => {
                         // Remove loading indicator
                         const loadingIndicator = document.getElementById('loadingIndicator');
-                        if (loadingIndicator) loadingIndicator.remove();
+                        if (loadingIndicator && loadingIndicator.parentNode) {
+                            loadingIndicator.remove();
+                        }
                         
                         showError('Error: ' + error.message);
                         isLoading = false;
-                    })
+                    });
                 }
                 
                 function showError(message) {
@@ -3445,75 +4017,114 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                             tag: 'div',
                             style: {
                                 textAlign: 'center',
-                                padding: '20px',
-                                color: '#ff4444',
-                                fontSize: '1.2vw'
+                                padding: '60px 20px',
+                                color: '#dc3545',
+                                fontSize: '14px',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                margin: '20px',
+                                border: '1px solid #ffe5e5',
+                                fontFamily: 'Inter, sans-serif'
                             },
-                            text: message
-                        }))
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-circle-exclamation' },
+                                    style: { fontSize: '48px', color: '#dc3545', marginBottom: '16px', display: 'block' }
+                                }),
+                                $({ tag: 'div', text: message })
+                            ]
+                        }));
                     }
                 }
-                
-                // Add scroll event listener for infinite scroll (optional)
-                function setupInfiniteScroll() {
-                    window.addEventListener('scroll', () => {
-                        if (isLoading || !hasMore) return;
-                        
-                        const scrollPosition = window.innerHeight + window.scrollY;
-                        const pageHeight = document.documentElement.scrollHeight;
-                        const threshold = 100; // pixels from bottom
-                        
-                        if (scrollPosition >= pageHeight - threshold) {
-                            currentPage++;
-                            loadDocuments(currentEventId, currentPage);
-                        }
-                    })
-                }
             }
-            const Score=()=>{
-                return($({
-                    tag:'div',
-                    style:{
-                        margin: 'auto',
-                        border: '1px solid #444',
-                        padding: '8px 15px',
-                        borderRadius: '15px',
-                        backgroundColor: '#2a2a2a',
-                        width: 'fit-content',
-                        height: 'fit-content',
-                        marginRight: '1vw',
-                        marginLeft: '1vw',
-                        transition: 'all 0.3s',
-                        cursor: 'pointer',
-                        ':hover': {
-                            backgroundColor: '#333',
-                            transform: 'translateY(-2px)'
-                        }
+            const Score = () => {
+                return ($({
+                    tag: 'div',
+                    style: {
+                        margin: '0',
+                        display: 'inline-flex'
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'a',
-                            att:{
-                                className:'fa-solid fa-ranking-star',
-                                name: 'Score Summary',
-                                title: 'View Score Summary',
-                                href:'/rdeOffice/research/scoreSummary'
+                            tag: 'a',
+                            att: {
+                                href: '/rdeOffice/research/scoreSummary',
+                                title: 'View Score Summary'
                             },
-                            style:{
-                                fontSize: '1vw',
-                                backgroundColor: 'transparent',
-                                border: 'none',
-                                outline: 'none',
-                                width: 'fit-content',
-                                height: 'fit-content',
-                                cursor: 'pointer',
-                                color: 'deepskyblue',
+                            style: {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                textDecoration: 'none'
+                                padding: '8px 18px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '10px',
+                                textDecoration: 'none',
+                                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#495057',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
                             },
-                            text: ' Score Summary'
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-ranking-star' },
+                                    style: {
+                                        fontSize: '14px',
+                                        color: '#ffc107',
+                                        transition: 'color 0.2s ease'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Score Summary'
+                                }),
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-chevron-right' },
+                                    style: {
+                                        fontSize: '11px',
+                                        color: '#adb5bd',
+                                        transition: 'transform 0.2s ease, color 0.2s ease',
+                                        marginLeft: '4px'
+                                    }
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: (e) => {
+                                    // Optional: Add any pre-navigation logic here
+                                    console.log('Navigating to Score Summary');
+                                }
+                            },
+                            mouseenter: (e) => {
+                                e.target.style.backgroundColor = '#f8f9fa';
+                                e.target.style.borderColor = '#0d6efd';
+                                e.target.style.color = '#0d6efd';
+                                const chevron = e.target.querySelector('.fa-chevron-right');
+                                if (chevron) {
+                                    chevron.style.color = '#0d6efd';
+                                    chevron.style.transform = 'translateX(3px)';
+                                }
+                                const starIcon = e.target.querySelector('.fa-ranking-star');
+                                if (starIcon) starIcon.style.color = '#0d6efd';
+                            },
+                            mouseleave: (e) => {
+                                e.target.style.backgroundColor = '#ffffff';
+                                e.target.style.borderColor = '#e9ecef';
+                                e.target.style.color = '#495057';
+                                const chevron = e.target.querySelector('.fa-chevron-right');
+                                if (chevron) {
+                                    chevron.style.color = '#adb5bd';
+                                    chevron.style.transform = 'translateX(0)';
+                                }
+                                const starIcon = e.target.querySelector('.fa-ranking-star');
+                                if (starIcon) starIcon.style.color = '#ffc107';
+                            }
                         })
                     ]
                 }))
@@ -4684,119 +5295,162 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                     resBot = el
                 }
             }
-            const bot = ({label, Method, getEl}) => {
-                return ($({
-                    tag: 'div',
-                    style: {
-                        cursor: 'pointer',
-                        width: 'fit-content',
-                        paddingRight: '1vw',
-                        paddingLeft: '1vw',
-                        display: 'flex',
-                        justifyContent: 'center'
-                    },
-                    elementHandler: getEl,
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                fontFamily: 'arial black,sans-serif',
-                                fontSize: '1vw',
-                                margin: 'auto',
-                            },
-                            text: label
-                        })
-                    ],
-                    event: {
-                        type: 'click',
-                        method: Method
-                    }
-                }))
-            }
-            ButtonsTabs.push({
-                button: bot({
-                    label: "Entry List",
-                    getEl: getBot.getResdoc,
-                    Method: () => {
-                        Bod.innerHTML = ''
-                        Bod.appendChild(search({
-                            tools: tools(),
-                            searchEvent: searchInput
-                        }))
-                        Bod.appendChild($({
-                            tag:'div',
-                            style:{
-                                display:'flex',
-                                width:'100%',
-                                height:'fit-content',
-                                marginTop: '1vh',
-                            },
-                            child:[
-                                Filter(),
-                                Score(),
-                                Report()
-                            ]
-                        }))
-                        Bod.appendChild(ResearchPanel())
-                        resBot.style.backgroundColor = 'rgba(0,0,0,0.1)'
-                        resBot.style.color = 'deepskyblue'
-                        enBot.style.color = '#999'
-                        enBot.style.backgroundColor = 'transparent'
-                    }
-                }),
-            })
-            ButtonsTabs.push({
-                button: bot({
-                    label: "Endorsement", // here were the gdrive view will change
-                    getEl: getBot.getEndorse,
-                    Method: () => {
-                        Bod.innerHTML = ''
-                        Bod.appendChild(search({
-                            searchEvent: (value) => {
-                                let input = value.target.value.toUpperCase().replace(' ', '')
-                                const child = endorseBody.childNodes
-                                for (let x = 0; x < child.length; x++) {
-                                    let chl = child[x].innerText.toUpperCase().replace(' ', '')
-                                    if (!chl.includes(input)) {
-                                        child[x].style.display = 'none'
-                                    } else {
-                                        child[x].style.display = 'block'
-                                    }
-                                    if (input.value === '') {
-                                        child[x].style.display = 'block'
-                                    }
-                                }
-                            }
-                        }))
-                        Bod.appendChild(EndorsementPanel())
-                        enBot.style.backgroundColor = 'rgba(0,0,0,0.1)'
-                        enBot.style.color = 'deepskyblue'
-                        resBot.style.color = '#999'
-                        resBot.style.backgroundColor = 'transparent'
-                    }
-                }),
-            })
-            const Tabs = () => {
-                return ($({
+            // Define tabs array
+            const tabs = [
+                { id: 'entrylist', label: 'Entry List', icon: 'fa-solid fa-file-lines' },
+                { id: 'endorsement', label: 'Endorsement', icon: 'fa-solid fa-pen-to-square' }
+            ]
+
+            // Keep track of current tab
+            let currentTab = 'entrylist'
+
+            // Create tabs container
+            const TabsContainer = () => {
+                return $({
                     tag: 'div',
                     style: {
                         width: '100%',
-                        height: '5%',
-                        backgroundColor: '#444',
+                        height: 'fit-content',
+                        backgroundColor: '#ffffff',
                         display: 'flex',
+                        gap: '12px',
+                        padding: '12px 20px',
+                        borderBottom: '1px solid #e9ecef'
                     },
-                    elementHandler: (el) => {
-                        ButtonsTabs.forEach(val => {
-                            el.appendChild(val.button)
+                    elementHandler: (container) => {
+                        tabs.forEach(tab => {
+                            const tabBtn = $({
+                                tag: 'button',
+                                att: { className: `modern-tab-${tab.id}` },
+                                style: {
+                                    padding: '8px 24px',
+                                    backgroundColor: currentTab === tab.id ? '#0d6efd' : '#ffffff',
+                                    color: currentTab === tab.id ? '#ffffff' : '#6c757d',
+                                    border: `1px solid ${currentTab === tab.id ? '#0d6efd' : '#dee2e6'}`,
+                                    borderRadius: '10px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    fontWeight: currentTab === tab.id ? '600' : '400',
+                                    boxShadow: currentTab === tab.id ? '0 2px 4px rgba(13,110,253,0.2)' : 'none'
+                                },
+                                child: [
+                                    $({ 
+                                        tag: 'span', 
+                                        att: { className: tab.icon }, 
+                                        style: { fontSize: '14px' } 
+                                    }),
+                                    $({ 
+                                        tag: 'span', 
+                                        text: tab.label,
+                                        style: { fontWeight: 'inherit' }
+                                    })
+                                ],
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        currentTab = tab.id
+                                        
+                                        // Update button styles
+                                        tabs.forEach(t => {
+                                            const btn = document.querySelector(`.modern-tab-${t.id}`)
+                                            if (btn) {
+                                                if (t.id === currentTab) {
+                                                    btn.style.backgroundColor = '#0d6efd'
+                                                    btn.style.color = '#ffffff'
+                                                    btn.style.borderColor = '#0d6efd'
+                                                    btn.style.fontWeight = '600'
+                                                    btn.style.boxShadow = '0 2px 4px rgba(13,110,253,0.2)'
+                                                } else {
+                                                    btn.style.backgroundColor = '#ffffff'
+                                                    btn.style.color = '#6c757d'
+                                                    btn.style.borderColor = '#dee2e6'
+                                                    btn.style.fontWeight = '400'
+                                                    btn.style.boxShadow = 'none'
+                                                }
+                                            }
+                                        })
+                                        
+                                        // Check if Bod exists before trying to use it
+                                        if (!Bod) {
+                                            console.warn('Bod container not initialized yet')
+                                            return
+                                        }
+                                        
+                                        // Refresh content based on selected tab
+                                        Bod.innerHTML = ''
+                                        
+                                        if (currentTab === 'entrylist') {
+                                            // Show Entry List content
+                                            Bod.appendChild(search({
+                                                tools: tools(),
+                                                searchEvent: searchInput
+                                            }))
+                                            Bod.appendChild($({
+                                                tag: 'div',
+                                                style: {
+                                                    display: 'flex',
+                                                    width: '100%',
+                                                    height: 'fit-content',
+                                                    marginTop: '12px',
+                                                    gap: '12px',
+                                                    padding: '0 8px'
+                                                },
+                                                child: [
+                                                    Filter(),
+                                                    Score(),
+                                                    Report()
+                                                ]
+                                            }))
+                                            Bod.appendChild(ResearchPanel())
+                                        } else {
+                                            // Show Endorsement content
+                                            Bod.appendChild(search({
+                                                searchEvent: (value) => {
+                                                    if (!endorseBody) return
+                                                    let input = value.target.value.toUpperCase().replace(' ', '')
+                                                    const child = endorseBody.childNodes
+                                                    for (let x = 0; x < child.length; x++) {
+                                                        let chl = child[x].innerText.toUpperCase().replace(' ', '')
+                                                        if (!chl.includes(input)) {
+                                                            child[x].style.display = 'none'
+                                                        } else {
+                                                            child[x].style.display = 'block'
+                                                        }
+                                                        if (input.value === '') {
+                                                            child[x].style.display = 'block'
+                                                        }
+                                                    }
+                                                }
+                                            }))
+                                            Bod.appendChild(EndorsementPanel())
+                                        }
+                                    }
+                                }
+                            })
+                            container.appendChild(tabBtn)
                         })
                     }
-                }))
+                })
+            }
+
+            const Tabs = () => {
+                return TabsContainer()
             }
             return ($({
                 tag: 'div',
                 style: {
-                    height: '95%',
+                    height: '100%',
                     width: '100%',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
                 },
                 child: [
                     Tabs(),
@@ -4804,32 +5458,34 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
                         tag: 'div',
                         style: {
                             width: '100%',
-                            height: '94%',
+                            flex: '1',
+                            overflowY: 'auto',
+                            backgroundColor: '#f8f9fa',
+                            padding: '16px'
                         },
                         elementHandler: (el) => {
                             Bod = el
-                            el.appendChild(search({
+                            Bod.appendChild(search({
                                 tools: tools(),
                                 searchEvent: searchInput
                             }))
-                            el.appendChild($({
-                                tag:'div',
-                                style:{
-                                    display:'flex',
-                                    width:'100%',
-                                    height:'fit-content',
-                                    marginTop: '1vh',
+                            Bod.appendChild($({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    width: '100%',
+                                    height: 'fit-content',
+                                    marginTop: '12px',
+                                    gap: '12px',
+                                    padding: '0 8px'
                                 },
-                                child:[
+                                child: [
                                     Filter(),
                                     Score(),
                                     Report()
                                 ]
                             }))
-                            el.appendChild(ResearchPanel())
-                            resBot.style.backgroundColor = 'rgba(0,0,0,0.1)'
-                            resBot.style.color = 'deepskyblue'
-                            enBot.style.color = '#999'
+                            Bod.appendChild(ResearchPanel())
                         }
                     })
                 ]
@@ -4840,10 +5496,11 @@ export const Forwarded = (mainFrame, leftDiv) => { //position at the right panel
             style: {
                 width: '49.9%',
                 height: '100%',
-                backgroundColor: 'rgba(100,100,100,0.2)',
+                backgroundColor: '#f8f9fa',
                 margin: 'auto',
                 marginRight: '0',
-                position:'relative'
+                position:'relative',
+                borderRadius: '15px',
             },
             child: [
                 label,
