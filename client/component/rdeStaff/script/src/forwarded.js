@@ -13,26 +13,27 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
         const ResearchDocs = ({category, center,file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId, mainFrame}) => {
             const resDetails = () => {
                 const details = (label, data) => {
-                    return ($({
+                    return $({
                         tag: 'div',
                         text: label,
                         style: {
                             width: '100%',
-                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            fontSize: '1vw',
-                            color: 'deepskyblue',
-                            display: 'flex'
+                            fontFamily: 'Inter, sans-serif',
+                            fontSize: '13px',
+                            color: '#6c757d',
+                            display: 'flex',
+                            marginBottom: '8px'
                         },
                         child: [
                             $({
                                 tag: 'div',
                                 text: data,
                                 style: {
-                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif ',
-                                    color: '#ddd',
-                                    fontSize: '1vw',
-                                    marginLeft: '.5vw',
-                                    fontWeight: 'normal',
+                                    fontFamily: 'Inter, sans-serif',
+                                    color: '#2c3e50',
+                                    fontSize: '13px',
+                                    marginLeft: '8px',
+                                    fontWeight: '500',
                                     width: '100%',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
@@ -40,788 +41,723 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                                 }
                             })
                         ]
-                    }))
+                    })
                 }
-                // Get the appropriate file display - handle both formats
-                const displayFile = file ? 
-                    (typeof file === 'string' ? file : 
-                        (file.drive_view_url || file.viewUrl || file.fileUrl || file.legacyFile || 'No file')) 
-                    : 'No file';
 
-                const bot = ({label, event,tooltip}) => {
-                    return ($({
-                        tag: 'div',
+                const actionButtonModern = ({ icon, label, onClick, color }) => {
+                    return $({
+                        tag: 'button',
                         style: {
-                            width: 'fit-content',
-                            paddingRight: '1vw',
-                            paddingLeft: '1vw',
-                            //     fontFamily: 'arial black,sans-serif',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 14px',
+                            backgroundColor: '#ffffff',
+                            border: `1px solid ${color}30`,
+                            borderRadius: '8px',
                             cursor: 'pointer',
-                            fontSize: '1.5vw'
+                            fontFamily: 'Inter, sans-serif',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            color: color,
+                            transition: 'all 0.2s ease'
                         },
-                        att: {
-                            className: `botMe ${label}`,
-                            title:tooltip
-                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: icon },
+                                style: { fontSize: '12px' }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: label
+                            })
+                        ],
                         event: {
                             type: 'click',
-                            method: event
+                            method: onClick
+                        },
+                        mouseenter: (e) => {
+                            e.target.style.backgroundColor = `${color}10`;
+                            e.target.style.borderColor = color;
+                        },
+                        mouseleave: (e) => {
+                            e.target.style.backgroundColor = '#ffffff';
+                            e.target.style.borderColor = `${color}30`;
                         }
-                    }))
+                    })
                 }
-                const getDel = (el) => {
-                    if (deleteRequest !== null) {
-                        el.style.color = 'ghostwhite'
-                    }
-                }
-                let recDelP
-                const getrecDel = (el) => {
-                    recDelP = el
-                }
-                const deletePanel = () => {
-                    const messagePanel = () => {
-                        const Reason = $({
-                            tag: 'textarea',
+
+                return $({
+                    tag: 'div',
+                    style: {
+                        width: '100%',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '12px',
+                        border: '1px solid #e9ecef',
+                        overflow: 'hidden',
+                        transition: 'all 0.2s ease',
+                        marginBottom: '12px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                    },
+                    elementHandler: (card) => {
+                        card.addEventListener('mouseenter', () => {
+                            card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                            card.style.transform = 'translateY(-2px)';
+                        });
+                        card.addEventListener('mouseleave', () => {
+                            card.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+                            card.style.transform = 'translateY(0)';
+                        });
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
                             style: {
-                                height: '40vh',
-                                width: '40vw',
-                                color: '#bbb',
-                                fontSize: '1.2vw',
-                                fontFamily: 'monospace',
-                                backgroundColor: '#333',
-                                border: 'none',
-                                outline: 'none',
-                                resize: 'none',
-                                padding: '.5rem'
+                                padding: '16px',
+                                display: 'flex',
+                                gap: '16px'
                             },
-                            att: {
-                                placeholder: 'Insert text here'
-                            }
-                        })
-                        const Controller = () => {
-                            const Button = ({label, method}) => {
-                                return ($({
+                            child: [
+                                // Left side - PDF Icon with gradient background
+                                $({
                                     tag: 'div',
                                     style: {
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        width: '50%',
-                                        margin: 'auto',
-                                        cursor: 'pointer',
-                                    },
-                                    att: {
-                                        className: 'delRecBot'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: method
+                                        flexShrink: '0'
                                     },
                                     child: [
                                         $({
                                             tag: 'div',
                                             style: {
-                                                margin: 'auto',
-                                                height: 'fit-content',
-                                                width: 'ft-content',
-                                                fontFamily: 'arial black,sans-serif',
-                                                fontSize: '1.3vw',
-                                                color: 'deepskyblue'
+                                                width: '56px',
+                                                height: '56px',
+                                                background: 'linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%)',
+                                                borderRadius: '12px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
                                             },
-                                            text: label
-                                        })
-                                    ]
-                                }))
-                            }
-                            return ($({
-                                tag: 'div',
-                                style: {
-                                    height: '7vh',
-                                    width: '100%',
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    margin: '.5vh auto auto'
-                                },
-                                child: [
-                                    Button({
-                                        label: 'Cancel',
-                                        method: () => {
-                                            recDelP.remove()
-                                        }
-                                    }),
-                                    Button({
-                                        label: 'Submit',
-                                        method: async () => {
-                                            if (confirm("Are you sure you want to permanently delete this file?...")) {
-                                                let loading = Waiting()
-                                                document.body.appendChild(loading)
-                                                const remove = () => {
-                                                    loading.remove()
-                                                }
-                                                const form = new FormData()
-                                                form.append('docId', docId)
-                                                form.append('fileLocation', file)
-                                                form.append('reason', '')
-                                                form.append('title', title)
-                                                form.append('eventName', eventTYpe)
-                                                form.append('campus', campus)
-                                                form.append('grantDeleteResearchRequest', 'true')
-                                                await fetch('/uploadResearchFile', {
-                                                    method: 'POST',
-                                                    body: form
-                                                }).then(res => {
-                                                    if (res.ok) {
-                                                        remove()
-                                                        return res.json()
-                                                    }
-                                                }).then(dat => {
-                                                    if (dat.status) {
-                                                        document.body.appendChild(ConfirmationAlert("Saved successfully...!", () => {
-                                                            window.location.reload()
-                                                        }))
-                                                    } else {
-                                                        alert(dat.message)
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-file-pdf' },
+                                                    style: {
+                                                        fontSize: '28px',
+                                                        color: '#dc3545'
                                                     }
                                                 })
+                                            ]
+                                        })
+                                    ]
+                                }),
+                                
+                                // Right side - Content
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        flex: '1',
+                                        minWidth: '0'
+                                    },
+                                    child: [
+                                        // Title
+                                        $({
+                                            tag: 'h4',
+                                            text: title,
+                                            style: {
+                                                margin: '0 0 8px 0',
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontSize: '16px',
+                                                fontWeight: '600',
+                                                color: '#1a1a2e',
+                                                lineHeight: '1.4'
                                             }
-                                        }
-                                    }),
-                                ]
-                            }))
-                        }
-                        return ($({
-                            tag: 'div',
-                            style: {
-                                width: 'fit-content',
-                                height: 'fit-content',
-                                margin: 'auto',
-                                backgroundColor: '#555',
-                                border: 'solid thin #999',
-                                padding: '.3rem'
-                            },
-                            child: [
-                                Reason,
-                                Controller()
-                            ]
-                        }))
-                    }
-                    return ($({
-                        tag: 'div',
-                        style: {
-                            position: 'absolute',
-                            left: '0',
-                            top: '0',
-                            width: '100%',
-                            height: '100%',
-                            backgroundImage: 'radial-gradient(rgba(100,100,100,0.5),black)',
-                            display: 'flex',
-                            justifyContent: 'center'
-                        },
-                        elementHandler: getrecDel,
-                        child: [
-                            messagePanel()
-                        ]
-                    }))
-                }
-                return ($({
-                    tag: 'div',
-                    style: {
-                        width: '82%',
-                        margin: 'auto',
-                    },
-                    child: [
-                        details("Category : ", category),
-                        details("Center : ", center),
-                        details("Title : ", `" ${title}  "`),
-                        details("Author : ", author),
-                        details("Campus : ", campus),
-                        details("Event : ", eventTYpe),
-                        $({
-                            tag: 'div',
-                            style: {
-                                width: 'fit-content',
-                                height: '100%',
-                                display: 'flex',
-                                marginLeft: 'auto',
-                                marginRight: '0'
-                            },
-                            child: [
-                                bot({
-                                    label: 'fa-solid fa-comment-dots',
-                                    event: () => {
-                                        const form = new FormData()
-                                        form.append('commentRequest', 'true')
-                                        form.append('docId', docId)
-                                        fetch('/uploadResearchFile', {
-                                            method: "POST",
-                                            body: form
-                                        }).then(res => res.json())
-                                            .then(data => {
-                                                // Check if mainFrame exists before using it
-                                                if (mainFrame && typeof mainFrame.appendChild === 'function') {
-                                                    mainFrame.appendChild(comments(data))
-                                                } else {
-                                                    console.error('mainFrame is undefined or not a valid DOM element');
-                                                    // Fallback: append to body or show alert
-                                                    document.body.appendChild(comments(data))
-                                                }
-                                            })
-                                    },
-                                    tooltip:'View Comments'
-                                }),
-                                bot({
-                                    label: 'fa-solid fa-folder-open',
-                                    event: () => {
-                                        // Check if mainFrame exists before using it
-                                        if (mainFrame && typeof mainFrame.appendChild === 'function') {
-                                            mainFrame.appendChild(Viewer())
-                                        } else {
-                                            console.error('mainFrame is undefined or not a valid DOM element');
-                                            // Fallback: append to body or show alert
-                                            document.body.appendChild(Viewer())
-                                        }
-                                    },
-                                    tooltip:'Open File'
-                                }),
-                                bot({
-                                    label: 'fa-solid fa-file-excel',
-                                    event:() => {
-                                        if(confirm("This entry will be transfer for re-evaluation. Do you want to continue?")){
-                                            const req = new Request('/endorsement')
-                                            req.Post([
-                                                {
-                                                    name: 'returnDocs',
-                                                    value: '1'
-                                                },
-                                                {
-                                                    name: 'docId',
-                                                    value: endorseId
-                                                }
-                                            ])
-                                            req.Json()
-                                            req.Send().then(res => {
-                                                if (res.status) {
-                                                    window.location.reload();
-                                                } else {
-                                                    alert(res.message)
-                                                }
-                                            })
-                                        }
-                                    },
-                                    tooltip:'Cancel Docs'
-                                }),
-                            ]
-                        })
-                    ]
-                }))
-            }
-            const Viewer = () => {
-                let viewerMain
-                const getViewer = (el) => {
-                    viewerMain = el
-                }
-                const closeView = $({
-                    tag: 'div',
-                    style: {
-                        width: '80%',
-                        margin: 'auto',
-                        marginTop: '1vh'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            text: ' Close',
-                            att: {
-                                className: 'fa-solid fa-right-from-bracket',
-                            },
-                            style: {
-                                fontSize: '2vw',
-                                cursor: 'pointer',
-                                color: 'deepskyblue'
-                            },
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    viewerMain.remove()
-                                }
-                            }
-                        })
-                    ],
-                })
+                                        }),
+                                        
+                                        // Author and Event row
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '16px',
+                                                flexWrap: 'wrap',
+                                                marginBottom: '12px'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px'
+                                                    },
+                                                    child: [
+                                                        $({ tag: 'span', att: { className: 'fa-regular fa-user' }, style: { fontSize: '12px', color: '#6c757d' } }),
+                                                        $({ tag: 'span', text: author, style: { fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#495057' } })
+                                                    ]
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px'
+                                                    },
+                                                    child: [
+                                                        $({ tag: 'span', att: { className: 'fa-regular fa-calendar' }, style: { fontSize: '12px', color: '#6c757d' } }),
+                                                        $({ tag: 'span', text: eventTYpe, style: { fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#495057' } })
+                                                    ]
+                                                })
+                                            ]
+                                        }),
+                                        
+                                        // Category, Campus, Center chips
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                flexWrap: 'wrap',
+                                                marginBottom: '16px'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    text: category,
+                                                    style: {
+                                                        padding: '4px 10px',
+                                                        backgroundColor: '#e7f1ff',
+                                                        borderRadius: '20px',
+                                                        fontFamily: 'Inter, sans-serif',
+                                                        fontSize: '11px',
+                                                        fontWeight: '500',
+                                                        color: '#0d6efd'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: campus,
+                                                    style: {
+                                                        padding: '4px 10px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        borderRadius: '20px',
+                                                        fontFamily: 'Inter, sans-serif',
+                                                        fontSize: '11px',
+                                                        fontWeight: '500',
+                                                        color: '#6c757d'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: center,
+                                                    style: {
+                                                        padding: '4px 10px',
+                                                        backgroundColor: '#e8f5e9',
+                                                        borderRadius: '20px',
+                                                        fontFamily: 'Inter, sans-serif',
+                                                        fontSize: '11px',
+                                                        fontWeight: '500',
+                                                        color: '#28a745'
+                                                    }
+                                                })
+                                            ]
+                                        }),
+                                        
+                                        // Action Buttons
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                flexWrap: 'wrap'
+                                            },
+                                            child: [
+                                                // Comments
+                                                actionButtonModern({
+                                                    icon: 'fa-regular fa-comment',
+                                                    label: 'Comments',
+                                                    onClick: async () => {
+                                                        try {
+                                                            const form = new FormData()
+                                                            form.append('commentRequest', 'true')
+                                                            form.append('docId', docId)
+                                                            
+                                                            const response = await fetch('/comments', {
+                                                                method: "POST",
+                                                                body: form
+                                                            })
+                                                            
+                                                            if (!response.ok) {
+                                                                throw new Error(`HTTP error! status: ${response.status}`)
+                                                            }
+                                                            
+                                                            const contentType = response.headers.get('content-type')
+                                                            if (!contentType || !contentType.includes('application/json')) {
+                                                                // If not JSON, try to get text or show error
+                                                                const text = await response.text()
+                                                                console.error('Non-JSON response:', text)
+                                                                alert('Server returned an invalid response. Please try again.')
+                                                                return
+                                                            }
+                                                            
+                                                            const data = await response.json()
+                                                            
+                                                            if (data && (Array.isArray(data) || typeof data === 'object')) {
+                                                                const commentsModal = comments(data)
+                                                                if (mainFrame && typeof mainFrame.appendChild === 'function') {
+                                                                    mainFrame.appendChild(commentsModal)
+                                                                } else {
+                                                                    document.body.appendChild(commentsModal)
+                                                                }
+                                                            } else {
+                                                                alert('No comments data available')
+                                                            }
+                                                        } catch (error) {
+                                                            console.error('Error fetching comments:', error)
+                                                            alert('Failed to load comments. Please try again.')
+                                                        }
+                                                    },
+                                                    color: '#0d6efd'
+                                                }),
 
-                // Check if it's a Google Drive URL
-                const isGoogleDriveUrl = file && (file.includes('drive.google.com') || file.includes('/d/'))
-                
-                let frame
-                
-                if (isGoogleDriveUrl) {
-                    // Create a container for the viewer with loading indicator
-                    frame = $({
-                        tag: 'div',
-                        style: {
-                            width: '80%',
-                            height: '90%',
-                            margin: 'auto',
-                            marginTop: '1vh',
-                            position: 'relative',
-                            backgroundColor: '#f5f5f5'
-                        },
-                        elementHandler: (el) => {
-                            // Create the embed URL properly - handle multiple URL formats
-                            let fileId = null;
-                            let embedUrl = file;
-                            
-                            // Try different patterns to extract file ID
-                            const patterns = [
-                                /\/d\/([a-zA-Z0-9_-]+)/,                     // /d/FILE_ID/
-                                /id=([a-zA-Z0-9_-]+)/,                       // id=FILE_ID
-                                /open\?id=([a-zA-Z0-9_-]+)/,                 // open?id=FILE_ID
-                                /\/file\/d\/([a-zA-Z0-9_-]+)/,               // /file/d/FILE_ID/
-                                /([a-zA-Z0-9_-]{25,})/                       // Any long ID (Google Drive IDs are usually long)
-                            ];
-                            
-                            for (let pattern of patterns) {
-                                const match = file.match(pattern);
-                                if (match && match[1]) {
-                                    fileId = match[1];
-                                    break;
-                                }
-                            }
-                            
-                            // If no fileId found in patterns, try to extract from URL path
-                            if (!fileId && file.includes('drive.google.com')) {
-                                const urlParts = file.split('/');
-                                for (let i = 0; i < urlParts.length; i++) {
-                                    if (urlParts[i] === 'd' && urlParts[i + 1]) {
-                                        fileId = urlParts[i + 1];
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (isGoogleDriveUrl) {
-                                // Clean the fileId (remove query parameters if any)
-                                fileId = fileId.split('?')[0].split('&')[0];
-                                embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
-                                
-                                // Add loading indicator
-                                const loadingIndicator = document.createElement('div');
-                                loadingIndicator.innerHTML = `
-                                    <div style="
-                                        position: absolute;
-                                        top: 50%;
-                                        left: 50%;
-                                        transform: translate(-50%, -50%);
-                                        text-align: center;
-                                        color: #666;
-                                        font-family: Arial, sans-serif;
-                                    ">
-                                        <div style="
-                                            font-size: 24px;
-                                            margin-bottom: 10px;
-                                            animation: spin 1s linear infinite;
-                                        ">⏳</div>
-                                        <div>Loading Google Drive document...</div>
-                                        <div style="font-size: 12px; margin-top: 10px; color: #999;">
-                                            If this takes too long, the document may require permission
-                                        </div>
-                                    </div>
-                                `;
-                                el.appendChild(loadingIndicator);
-                                
-                                // Create iframe with proper attributes
-                                const iframe = document.createElement('iframe');
-                                iframe.src = embedUrl;
-                                iframe.style.width = '100%';
-                                iframe.style.height = '100%';
-                                iframe.style.border = 'none';
-                                iframe.style.position = 'absolute';
-                                iframe.style.top = '0';
-                                iframe.style.left = '0';
-                                iframe.allow = 'autoplay; fullscreen';
-                                iframe.allowFullscreen = true;
-                                iframe.referrerPolicy = 'no-referrer';
-                                iframe.title = 'Google Drive Document Viewer';
-                                
-                                
-                                // Add style for spinner animation
-                                const style = document.createElement('style');
-                                style.textContent = `
-                                    @keyframes spin {
-                                        0% { transform: rotate(0deg); }
-                                        100% { transform: rotate(360deg); }
-                                    }
-                                `;
-                                document.head.appendChild(style);
-                                
-                                // Handle successful load
-                                iframe.onload = () => {
-                                    // Remove loading indicator
-                                    if (loadingIndicator.parentNode === el) {
-                                        el.removeChild(loadingIndicator);
-                                    }
-                                    window.addEventListener('message', (event) => {
-                                    })
-                                }
-                                
-                                // Handle load error
-                                iframe.onerror = () => {
-                                    // Remove loading indicator
-                                    if (loadingIndicator.parentNode === el) {
-                                        el.removeChild(loadingIndicator);
-                                    }
-                                    // Show alternative options
-                                    showAlternativeOptions(el, file, fileId);
-                                };
-                                
-                                // Add timeout in case iframe hangs
-                                setTimeout(() => {
-                                    if (loadingIndicator.parentNode === el) {
-                                        el.removeChild(loadingIndicator);
-                                        // Show alternative options
-                                        showAlternativeOptions(el, file, fileId);
-                                    }
-                                }, 10000); // 10 second timeout
-                                
-                                el.appendChild(iframe);
-                                
-                            } else {
-                                el.innerHTML = `
-                                    <div style="
-                                        color: #666; 
-                                        text-align: center;
-                                        padding: 40px;
-                                        font-family: Arial, sans-serif;
-                                    ">
-                                        <h3>Unable to load document</h3>
-                                        <p>Invalid Google Drive URL format.</p>
-                                        <div style="margin: 20px 0;">
-                                            <a href="${file}" 
-                                            target="_blank" 
-                                            style="
-                                                display: inline-block;
-                                                padding: 10px 20px;
-                                                background: deepskyblue;
-                                                color: white;
-                                                text-decoration: none;
-                                                border-radius: 5px;
-                                                margin: 5px;
-                                            ">
-                                                Open in Google Drive
-                                            </a>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                            
-                            // Function to show alternative options
-                            function showAlternativeOptions(containerElement, originalUrl, fileId) {
-                                const directUrl = `https://drive.google.com/uc?id=${fileId}&export=download`;
-                                const viewUrl = `https://drive.google.com/file/d/${fileId}/view`;
-                                
-                                containerElement.innerHTML = `
-                                    <div style="
-                                        color: white; 
-                                        font-family: Arial, sans-serif; 
-                                        padding: 40px;
-                                        text-align: center;
-                                        background: rgba(0,0,0,0.8);
-                                        border-radius: 10px;
-                                        position: absolute;
-                                        top: 50%;
-                                        left: 50%;
-                                        transform: translate(-50%, -50%);
-                                        width: 80%;
-                                        max-width: 500px;
-                                    ">
-                                        <h3>Document Access Required</h3>
-                                        <p>This Google Drive document may require permission to view.</p>
-                                        <div style="margin: 30px 0;">
-                                            <a href="${originalUrl}" 
-                                            target="_blank" 
-                                            style="
-                                                display: block;
-                                                padding: 12px 24px;
-                                                background: deepskyblue;
-                                                color: white;
-                                                text-decoration: none;
-                                                border-radius: 5px;
-                                                margin: 10px;
-                                            ">
-                                                🔗 Open in Google Drive (New Tab)
-                                            </a>
-                                            <a href="${viewUrl}" 
-                                            target="_blank" 
-                                            style="
-                                                display: block;
-                                                padding: 12px 24px;
-                                                background: #4CAF50;
-                                                color: white;
-                                                text-decoration: none;
-                                                border-radius: 5px;
-                                                margin: 10px;
-                                            ">
-                                                👁️ View Document (Alternative)
-                                            </a>
-                                            <a href="${directUrl}" 
-                                            target="_blank" 
-                                            style="
-                                                display: block;
-                                                padding: 12px 24px;
-                                                background: #FF9800;
-                                                color: white;
-                                                text-decoration: none;
-                                                border-radius: 5px;
-                                                margin: 10px;
-                                            ">
-                                                ⬇️ Download Document
-                                            </a>
-                                            <button onclick="location.reload()" 
-                                                    style="
-                                                        padding: 12px 24px;
-                                                        background: #555;
-                                                        color: white;
-                                                        border: none;
-                                                        border-radius: 5px;
-                                                        margin: 10px;
-                                                        cursor: pointer;
-                                                        width: 100%;
-                                                    ">
-                                                🔄 Try Again
-                                            </button>
-                                        </div>
-                                        <p style="font-size: 12px; color: #ccc; margin-top: 20px;">
-                                            <strong>Note:</strong> You may need to:<br>
-                                            1. Sign in with the appropriate Google account<br>
-                                            2. Request access from the document owner<br>
-                                            3. Check your internet connection
-                                        </p>
-                                    </div>
-                                `;
-                            }
-                        }
-                    })
-                } else {
-                    // For local PDF files
-                    frame = $({
-                        tag: 'object',
-                        att: {
-                            className: 'frameViewer',
-                            data: '/' + file,
-                            type: 'application/pdf'
-                        },
-                        style: {
-                            width: '80%',
-                            height: '90%',
-                            margin: 'auto',
-                            marginTop: '1vh'
-                        }
-                    })
-                }
-                
-                return ($({
-                    tag: 'div',
-                    style: {
-                        width: '100%',
-                        height: '100%',
-                        position: 'absolute',
-                        zIndex: '3',
-                        backgroundColor: '#333',
-                        top: '0',
-                        left: '0',
-                        textAlign: 'center'
-                    },
-                    elementHandler: getViewer,
-                    child: [
-                        frame,
-                        closeView,
+                                                // Open File Button
+                                                actionButtonModern({
+                                                    icon: 'fa-regular fa-folder-open',
+                                                    label: 'Open',
+                                                    onClick: () => {
+                                                        // Create content for the modal
+                                                        const createViewerContent = ({ closeModal }) => {
+                                                            const container = $({
+                                                                tag: 'div',
+                                                                style: {
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    minHeight: '500px',
+                                                                    position: 'relative'
+                                                                }
+                                                            });
+                                                            
+                                                            // Check if it's a Google Drive URL
+                                                            const isGoogleDriveUrl = file && (file.includes('drive.google.com') || file.includes('/d/'));
+                                                            
+                                                            if (isGoogleDriveUrl) {
+                                                                // Extract file ID from URL
+                                                                let fileId = null;
+                                                                
+                                                                const patterns = [
+                                                                    /\/d\/([a-zA-Z0-9_-]+)/,
+                                                                    /id=([a-zA-Z0-9_-]+)/,
+                                                                    /open\?id=([a-zA-Z0-9_-]+)/,
+                                                                    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                                                                    /([a-zA-Z0-9_-]{25,})/
+                                                                ];
+                                                                
+                                                                for (let pattern of patterns) {
+                                                                    const match = file.match(pattern);
+                                                                    if (match && match[1]) {
+                                                                        fileId = match[1];
+                                                                        break;
+                                                                    }
+                                                                }
+                                                                
+                                                                if (!fileId && file.includes('drive.google.com')) {
+                                                                    const urlParts = file.split('/');
+                                                                    for (let i = 0; i < urlParts.length; i++) {
+                                                                        if (urlParts[i] === 'd' && urlParts[i + 1]) {
+                                                                            fileId = urlParts[i + 1];
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                }
+                                                                
+                                                                if (fileId) {
+                                                                    fileId = fileId.split('?')[0].split('&')[0];
+                                                                    const embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
+                                                                    
+                                                                    // Add loading indicator
+                                                                    const loadingIndicator = $({
+                                                                        tag: 'div',
+                                                                        style: {
+                                                                            position: 'absolute',
+                                                                            top: '50%',
+                                                                            left: '50%',
+                                                                            transform: 'translate(-50%, -50%)',
+                                                                            textAlign: 'center',
+                                                                            zIndex: 10
+                                                                        },
+                                                                        child: [
+                                                                            $({
+                                                                                tag: 'span',
+                                                                                att: { className: 'fa-solid fa-spinner fa-pulse' },
+                                                                                style: { fontSize: '32px', color: '#0d6efd', marginBottom: '12px', display: 'block' }
+                                                                            }),
+                                                                            $({
+                                                                                tag: 'div',
+                                                                                text: 'Loading document...',
+                                                                                style: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6c757d' }
+                                                                            })
+                                                                        ]
+                                                                    });
+                                                                    container.appendChild(loadingIndicator);
+                                                                    
+                                                                    // Create iframe
+                                                                    const iframe = document.createElement('iframe');
+                                                                    iframe.src = embedUrl;
+                                                                    iframe.style.width = '100%';
+                                                                    iframe.style.height = '100%';
+                                                                    iframe.style.border = 'none';
+                                                                    iframe.style.position = 'absolute';
+                                                                    iframe.style.top = '0';
+                                                                    iframe.style.left = '0';
+                                                                    iframe.allow = 'autoplay; fullscreen';
+                                                                    iframe.allowFullscreen = true;
+                                                                    iframe.referrerPolicy = 'no-referrer';
+                                                                    iframe.title = 'Document Viewer';
+                                                                    
+                                                                    iframe.onload = () => {
+                                                                        if (loadingIndicator && loadingIndicator.remove) {
+                                                                            loadingIndicator.remove();
+                                                                        }
+                                                                    };
+                                                                    
+                                                                    iframe.onerror = () => {
+                                                                        if (loadingIndicator && loadingIndicator.remove) {
+                                                                            loadingIndicator.remove();
+                                                                        }
+                                                                        container.innerHTML = `
+                                                                            <div style="
+                                                                                display: flex;
+                                                                                flex-direction: column;
+                                                                                align-items: center;
+                                                                                justify-content: center;
+                                                                                height: 100%;
+                                                                                text-align: center;
+                                                                                padding: 40px;
+                                                                            ">
+                                                                                <span class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                                                                <h3 style="font-family: Inter, sans-serif; color: #1a1a2e; margin-bottom: 8px;">Unable to load document</h3>
+                                                                                <p style="font-family: Inter, sans-serif; color: #6c757d; margin-bottom: 20px;">The document may require permission or the link may be invalid.</p>
+                                                                                <a href="${file}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; font-family: Inter, sans-serif;">Open in Google Drive</a>
+                                                                            </div>
+                                                                        `;
+                                                                    };
+                                                                    
+                                                                    container.appendChild(iframe);
+                                                                } else {
+                                                                    container.innerHTML = `
+                                                                        <div style="
+                                                                            display: flex;
+                                                                            flex-direction: column;
+                                                                            align-items: center;
+                                                                            justify-content: center;
+                                                                            height: 100%;
+                                                                            text-align: center;
+                                                                            padding: 40px;
+                                                                        ">
+                                                                            <span class="fa-solid fa-link-slash" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                                                            <h3 style="font-family: Inter, sans-serif; color: #1a1a2e; margin-bottom: 8px;">Invalid Document URL</h3>
+                                                                            <p style="font-family: Inter, sans-serif; color: #6c757d;">The document URL could not be parsed.</p>
+                                                                        </div>
+                                                                    `;
+                                                                }
+                                                            } else {
+                                                                // For local PDF files
+                                                                const objectEl = $({
+                                                                    tag: 'object',
+                                                                    att: {
+                                                                        data: '/' + file,
+                                                                        type: 'application/pdf'
+                                                                    },
+                                                                    style: {
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        minHeight: '500px',
+                                                                        border: 'none',
+                                                                        borderRadius: '8px'
+                                                                    },
+                                                                    elementHandler: (obj) => {
+                                                                        obj.onerror = () => {
+                                                                            obj.innerHTML = `
+                                                                                <div style="
+                                                                                    display: flex;
+                                                                                    flex-direction: column;
+                                                                                    align-items: center;
+                                                                                    justify-content: center;
+                                                                                    height: 100%;
+                                                                                    text-align: center;
+                                                                                    padding: 40px;
+                                                                                ">
+                                                                                    <span class="fa-solid fa-file-pdf" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                                                                    <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load PDF</h3>
+                                                                                    <p style="font-family: Inter, sans-serif; color: #6c757d; margin-bottom: 16px;">The PDF file could not be loaded.</p>
+                                                                                    <a href="/${file}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px;">Download PDF</a>
+                                                                                </div>
+                                                                            `;
+                                                                        };
+                                                                    }
+                                                                });
+                                                                container.appendChild(objectEl);
+                                                            }
+                                                            
+                                                            return container;
+                                                        };
+                                                        
+                                                        // Open CustomModal
+                                                        CustomModal({
+                                                            title: 'Document Viewer',
+                                                            size: 'large',
+                                                            content: createViewerContent,
+                                                            showCloseButton: true,
+                                                            closeOnOverlayClick: true,
+                                                            onClose: () => {
+                                                                console.log('Modal closed');
+                                                            }
+                                                        });
+                                                    },
+                                                    color: '#28a745'
+                                                }),
+                                                
+                                                // Cancel Button
+                                                actionButtonModern({
+                                                    icon: 'fa fa-window-close',
+                                                    label: 'Cancel',
+                                                    onClick: () => {
+                                                        if (confirm("This entry will be transferred for re-evaluation. Do you want to continue?")) {
+                                                            const req = new Request('/endorsement')
+                                                            req.Post([
+                                                                { name: 'returnDocs', value: '1' },
+                                                                { name: 'docId', value: endorseId }
+                                                            ])
+                                                            req.Json()
+                                                            req.Send().then(res => {
+                                                                if (res.status) {
+                                                                    window.location.reload();
+                                                                } else {
+                                                                    alert(res.message)
+                                                                }
+                                                            })
+                                                        }
+                                                    },
+                                                    color: '#dc3545'
+                                                })
+                                            ]
+                                        })
+                                    ]
+                                })
+                            ]
+                        })
                     ]
-                }))
+                })
             }
+
             const comments = (Review) => {
                 let comm
                 const getComment = (el) => {
                     comm = el
                 }
                 let printBody
+                
+                // Close modal function
+                const closeModal = () => {
+                    if (comm && comm.remove) {
+                        comm.remove()
+                    }
+                }
+                
+                // Modern Controller with white theme
                 const Controller = () => {
-                    const bot = ({label, eventHandler, style}) => {
-                        return ($({
-                            tag: 'div',
-                            style: style,
-                            event: {
-                                type: 'click',
-                                method: eventHandler
-                            },
-                            att: {
-                                className: 'botPr'
+                    const button = ({ label, icon, onClick, color }) => {
+                        return $({
+                            tag: 'button',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                width: '100%',
+                                padding: '12px 16px',
+                                backgroundColor: color,
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#ffffff',
+                                transition: 'all 0.2s ease',
+                                marginBottom: '8px'
                             },
                             child: [
                                 $({
-                                    tag: 'div',
-                                    text: label,
-                                    style: {
-                                        margin: 'auto',
-                                        width: 'fit-content',
-                                        height: 'fit-content'
-                                    }
+                                    tag: 'span',
+                                    att: { className: icon },
+                                    style: { fontSize: '14px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: label
                                 })
-                            ]
-                        }))
+                            ],
+                            event: {
+                                type: 'click',
+                                method: onClick
+                            },
+                            mouseenter: (e) => {
+                                e.target.style.opacity = '0.9';
+                                e.target.style.transform = 'translateY(-1px)';
+                            },
+                            mouseleave: (e) => {
+                                e.target.style.opacity = '1';
+                                e.target.style.transform = 'translateY(0)';
+                            }
+                        })
                     }
-                    return ($({
+                    
+                    return $({
                         tag: 'div',
                         style: {
-                            backgroundColor: '#555',
-                            width: '10%',
+                            width: '280px',
                             height: '100%',
-                            margin: 'auto',
-                            marginLeft: '0',
-                            position: 'relative'
+                            backgroundColor: '#ffffff',
+                            borderRight: '1px solid #e9ecef',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'flex-end',
+                            padding: '20px'
                         },
                         child: [
-                            bot({
-                                label: 'Printout',
-                                eventHandler: () => {
-                                    const printPage = document.getElementById('commentPDF')
-                                    let WinPrint = window.open('', '', 'toolbar=0,scrollbars=0,status=0');
-                                    WinPrint.document.write('<head><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/review.css"></head>')
-                                    WinPrint.document.write(printPage.innerHTML);
-                                    WinPrint.document.close();
-                                    WinPrint.focus();
-                                    WinPrint.print();
-                                    WinPrint.close();
-                                },
+                            $({
+                                tag: 'div',
                                 style: {
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    position: 'absolute',
-                                    bottom: '5vh',
-                                    top: 'auto',
-                                    height: '5vh',
-                                    backgroundColor: '#444',
-                                    width: '100%',
-                                    cursor: 'pointer'
-                                }
-                            }),
-                            bot({
-                                label: 'CLOSE',
-                                eventHandler: () => {
-                                    comm.remove()
+                                    marginTop: 'auto'
                                 },
-                                style: {
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    position: 'absolute',
-                                    bottom: '0',
-                                    top: 'auto',
-                                    height: '5vh',
-                                    backgroundColor: '#444',
-                                    width: '100%',
-                                    cursor: 'pointer'
-                                },
+                                child: [
+                                    button({
+                                        label: 'Print Comments',
+                                        icon: 'fa-solid fa-print',
+                                        onClick: () => {
+                                            const printPage = document.getElementById('commentPDF')
+                                            if (!printPage || !printPage.innerHTML) {
+                                                alert('No content to print')
+                                                return
+                                            }
+                                            let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
+                                            if (WinPrint) {
+                                                WinPrint.document.write('<html><head><title>Print Comments</title><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/review.css"></head><body>')
+                                                WinPrint.document.write(printPage.innerHTML);
+                                                WinPrint.document.write('</body></html>');
+                                                WinPrint.document.close();
+                                                WinPrint.focus();
+                                                WinPrint.print();
+                                                WinPrint.close();
+                                            } else {
+                                                alert('Popup blocked! Please allow popups for this site.')
+                                            }
+                                        },
+                                        color: '#0d6efd'
+                                    }),
+                                    button({
+                                        label: 'Close',
+                                        icon: 'fa-solid fa-xmark',
+                                        onClick: () => {
+                                            closeModal()
+                                        },
+                                        color: '#6c757d'
+                                    })
+                                ]
                             })
                         ]
-                    }))
+                    })
                 }
+                
+                // Check if Review is valid
+                const isValidReview = Review && (Array.isArray(Review) ? Review.length > 0 : Object.keys(Review).length > 0)
+                
                 const print = $({
                     tag: 'div',
                     style: {
+                        flex: '1',
                         height: '100%',
-                        justifyContent: 'center',
                         display: 'flex',
+                        justifyContent: 'center',
                         width: '100%',
                         overflowY: 'auto',
-                        userSelect: 'text'
+                        userSelect: 'text',
+                        padding: '20px',
+                        backgroundColor: '#f8f9fa'
                     },
                     child: [
                         Print({
-                            title: title,
-                            campus: campus,
-                            author: author,
-                            category: category,
-                            date: '1-21-2022',
-                            review: Review,
+                            title: title || 'Untitled',
+                            campus: campus || 'N/A',
+                            author: author || 'Unknown',
+                            category: category || 'Uncategorized',
+                            date: new Date().toLocaleDateString(),
+                            review: isValidReview ? Review : { error: 'No review data available' },
                             getHandler: (el) => {
                                 printBody = el
                             }
                         })
                     ]
-
                 })
-
-                return ($({
-
+                
+                // Modern modal wrapper
+                return $({
                     tag: 'div',
-
                     style: {
-
-                        position: 'absolute',
-
-                        left: '0',
-
+                        position: 'fixed',
                         top: '0',
-
+                        left: '0',
                         width: '100%',
-
                         height: '100%',
-
-                        backgroundColor: '#333',
-
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex',
                         justifyContent: 'center',
-
-                        display: 'flex'
-
+                        alignItems: 'center',
+                        zIndex: 1000
                     },
-
-                    elementHandler: getComment,
-
-                    child: [
-
-                        Controller(),
-
-                        print
-
-                    ]
-
-                }))
-
-            }
-            return ($({
-                tag: 'div',
-                style: {
-                    display: 'flex',
-                    justifyContent: 'center',
-                    margin: '1vh auto',
-                    width: '94%',
-                    padding: '.5rem',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                },
-                att: {
-                    className: 'resFilist'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        att: {
-                            className: 'fa-solid fa-file-pdf'
-                        },
-                        style: {
-                            margin: 'auto',
-                            fontSize: '3vw',
-                            width: 'fit-content',
-                            height: 'fit-content',
-                            paddingLeft: '1vw',
-                            paddingRight: '1vw',
-                            color: '#555',
-                            textShadow: '-.2vw .2vh .5vw black',
+                    elementHandler: (overlay) => {
+                        getComment(overlay)
+                        // Close when clicking outside
+                        overlay.addEventListener('click', (e) => {
+                            if (e.target === overlay) {
+                                closeModal()
+                            }
+                        })
+                        // Handle escape key
+                        const handleEsc = (e) => {
+                            if (e.key === 'Escape') {
+                                closeModal()
+                                document.removeEventListener('keydown', handleEsc)
+                            }
                         }
-                    }),
-                    resDetails()
-                ]
-            }))
+                        document.addEventListener('keydown', handleEsc)
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '90%',
+                                maxWidth: '1200px',
+                                height: '85vh',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '16px',
+                                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+                                display: 'flex',
+                                overflow: 'hidden'
+                            },
+                            child: [
+                                Controller(),
+                                print
+                            ]
+                        })
+                    ]
+                })
+            }
+            return resDetails()
         }
         const label = $({
             tag: 'div',
@@ -1663,8 +1599,7 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                                                     
                                                     if (dropDownState) {
                                                         eve.target.className = 'fa-solid fa-square-caret-down'
-                                                        
-                                                        // Create categories container
+                                                
                                                         const categoriesDiv = $({
                                                             tag: 'div',
                                                             style: {
@@ -1675,7 +1610,7 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                                                             }
                                                         })
                                                         
-                                                        // Add ALL categories (including zeros)
+                                                        // ALL categories (including zeros)
                                                         categories.forEach(cat => {
                                                             categoriesDiv.appendChild(createCategoryRow({
                                                                 category: cat.name,
@@ -3769,7 +3704,6 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                             if (researchBody) {
                                 researchBody.appendChild(navDiv);
                                 
-                                // Add documents (only current batch)
                                 data.forEach((val, index) => {
                                     researchBody.appendChild(ResearchDocs({
                                         category: val.category,
