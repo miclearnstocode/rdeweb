@@ -2,7 +2,7 @@
 .modern-user-panel {
     display: flex;
     min-height: 100vh;
-    background: linear-gradient(135deg, #003153 0%, #FFFFFF 100%);
+    background-color: ghostwhite;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 

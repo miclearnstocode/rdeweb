@@ -3,7 +3,7 @@ import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, Cus
 // Track current selected paper type
 let currentPaperType = 'undergraduate';
 
-// View Researches Modal (for viewing other campuses' papers)
+// View Researches Modal
 const openViewResearchesModal = () => {
     let currentModal = null
     let eventSelect, searchInput, tableBody, paperTypeSelect
@@ -82,7 +82,7 @@ const openViewResearchesModal = () => {
         })
 
         paperTypeSelect.appendChild($({ tag: 'option', text: '🎓 Undergraduate', att: { value: 'undergraduate', selected: true } }))
-        paperTypeSelect.appendChild($({ tag: 'option', text: '🎓 Graduate', att: { value: 'graduate' } }))
+        paperTypeSelect.appendChild($({ tag: 'option', text: '🎓 Graduate', att: { value: 'graduate' }  }))
 
         paperTypeWrapper.appendChild(paperTypeIcon)
         paperTypeWrapper.appendChild(paperTypeSelect)
@@ -876,11 +876,9 @@ export const ResearchChairSubmission = () => {
         FileViewerModal(fileUrl, fileName, accentColor, { showOpenDrive: true })
     }
 
-    // Create table row
     const createTableRow = (research) => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
 
-        // Create file list display
         const createFileList = () => {
             const container = $({
                 tag: 'div',
@@ -909,7 +907,7 @@ export const ResearchChairSubmission = () => {
                     text: label + ':',
                     style: {
                         minWidth: '100px',
-                        color: '#888',
+                        color: '#252525',
                         fontWeight: '500'
                     }
                 }))
@@ -1002,7 +1000,7 @@ export const ResearchChairSubmission = () => {
                 tag: 'td',
                 style: {
                     padding: '16px 12px',
-                    color: '#e0e0e0',
+                    color: '#3a3a3a',
                     fontSize: '14px',
                     verticalAlign: 'center'
                 }
@@ -1020,18 +1018,18 @@ export const ResearchChairSubmission = () => {
         return row
     }
 
-    // Create Paper Type Tabs UI
     const createPaperTypeTabs = () => {
         const tabsContainer = $({
             tag: 'div',
             style: {
                 display: 'flex',
-                gap: '4px',
-                backgroundColor: '#1e1e1e',
+                gap: '8px',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
                 padding: '6px',
-                borderRadius: '12px',
+                borderRadius: '16px',
                 marginBottom: '24px',
-                border: '1px solid rgba(255,255,255,0.05)'
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             }
         })
 
@@ -1141,12 +1139,12 @@ export const ResearchChairSubmission = () => {
                 left: 0,
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.85)',
+                backgroundColor: 'rgba(0,0,0,0.5)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 101,
-                backdropFilter: 'blur(5px)',
+                backdropFilter: 'blur(4px)',
                 transition: 'all 0.3s ease'
             },
             elementHandler: (el) => { uploadModal = el }
@@ -1155,15 +1153,16 @@ export const ResearchChairSubmission = () => {
         const modalContent = $({
             tag: 'div',
             style: {
-                backgroundColor: '#1a1a1a',
-                borderRadius: '16px',
+                backgroundColor: '#ffffff',
+                borderRadius: '24px',
                 width: '90%',
                 maxWidth: '900px',
                 maxHeight: '85vh',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
-                boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                border: '1px solid #e8ecf0',
                 transition: 'all 0.3s ease'
             }
         })
@@ -1172,14 +1171,14 @@ export const ResearchChairSubmission = () => {
         const header = $({
             tag: 'div',
             style: {
-                padding: '20px 24px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                padding: '20px 28px',
+                borderBottom: '1px solid #e8ecf0',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 position: 'sticky',
                 top: 0,
-                backgroundColor: '#1a1a1a',
+                backgroundColor: '#ffffff',
                 zIndex: 1
             },
             child: [
@@ -1189,7 +1188,7 @@ export const ResearchChairSubmission = () => {
                         $({
                             tag: 'h3',
                             text: `Submit ${currentPaperType === 'undergraduate' ? 'Undergraduate' : 'Graduate'} Symposium Paper`,
-                            style: { color: '#fff', margin: 0, fontSize: '20px' },
+                            style: { color: '#1a2a3a', margin: 0, fontSize: '20px', fontWeight: '600' },
                             att: { id: 'modalTitle' }
                         }),
                         $({
@@ -1197,12 +1196,13 @@ export const ResearchChairSubmission = () => {
                             text: currentPaperType === 'undergraduate' ? '🎓 Undergraduate Level' : '🎓 Graduate Level',
                             style: {
                                 display: 'inline-block',
-                                backgroundColor: currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0',
-                                color: '#fff',
+                                backgroundColor: currentPaperType === 'undergraduate' ? '#E3F2FD' : '#F3E5F5',
+                                color: currentPaperType === 'undergraduate' ? '#1976D2' : '#7B1FA2',
                                 padding: '4px 12px',
                                 borderRadius: '20px',
                                 fontSize: '11px',
-                                marginTop: '8px'
+                                marginTop: '8px',
+                                fontWeight: '500'
                             }
                         })
                     ]
@@ -1210,10 +1210,14 @@ export const ResearchChairSubmission = () => {
                 $({
                     tag: 'i',
                     att: { className: 'fas fa-times' },
-                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
+                    style: { color: '#94a3b8', fontSize: '20px', cursor: 'pointer', transition: 'all 0.2s ease' },
                     event: {
                         type: 'click',
-                        method: () => modal.remove()
+                        method: () => modal.remove(),
+                        type2: 'mouseenter',
+                        method2: (e) => { e.currentTarget.style.color = '#ef4444' },
+                        type3: 'mouseleave',
+                        method3: (e) => { e.currentTarget.style.color = '#94a3b8' }
                     }
                 })
             ]
@@ -1226,7 +1230,7 @@ export const ResearchChairSubmission = () => {
                 flex: 1,
                 overflow: 'auto',
                 transition: 'all 0.3s ease',
-                padding: '24px'
+                padding: '0'
             }
         })
 
@@ -1238,13 +1242,13 @@ export const ResearchChairSubmission = () => {
         const footer = $({
             tag: 'div',
             style: {
-                padding: '16px 24px',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
+                padding: '16px 28px',
+                borderTop: '1px solid #e8ecf0',
                 display: 'flex',
                 gap: '12px',
                 justifyContent: 'flex-end',
                 flexShrink: 0,
-                backgroundColor: '#1a1a1a'
+                backgroundColor: '#ffffff'
             },
             att: { id: 'modalFooter' }
         })
@@ -1254,17 +1258,28 @@ export const ResearchChairSubmission = () => {
             text: 'Cancel',
             style: {
                 padding: '10px 24px',
-                backgroundColor: '#444',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#475569',
                 cursor: 'pointer',
                 fontSize: '14px',
-                fontWeight: '500'
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
             },
             event: {
                 type: 'click',
-                method: () => modal.remove()
+                method: () => modal.remove(),
+                type2: 'mouseenter',
+                method2: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                },
+                type3: 'mouseleave',
+                method3: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                }
             }
         })
 
@@ -1273,16 +1288,29 @@ export const ResearchChairSubmission = () => {
             text: 'Submit Paper',
             style: {
                 padding: '10px 28px',
-                backgroundColor: currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0',
+                backgroundColor: currentPaperType === 'undergraduate' ? '#1976D2' : '#7B1FA2',
                 border: 'none',
-                borderRadius: '8px',
-                color: '#fff',
+                borderRadius: '10px',
+                color: '#ffffff',
                 cursor: 'pointer',
                 fontSize: '14px',
                 fontWeight: '500',
-                display: 'block'
+                display: 'block',
+                transition: 'all 0.2s ease'
             },
-            att: { id: 'submitBtn' }
+            att: { id: 'submitBtn' },
+            event: {
+                type2: 'mouseenter',
+                method2: (e) => { 
+                    e.currentTarget.style.backgroundColor = currentPaperType === 'undergraduate' ? '#1565C0' : '#6A1B9A';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                },
+                type3: 'mouseleave',
+                method3: (e) => { 
+                    e.currentTarget.style.backgroundColor = currentPaperType === 'undergraduate' ? '#1976D2' : '#7B1FA2';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                }
+            }
         })
 
         submitBtn.addEventListener('click', async () => {
@@ -1401,46 +1429,52 @@ export const ResearchChairSubmission = () => {
             // Form body
             const formBody = $({
                 tag: 'div',
-                style: { padding: '0' }
+                style: { padding: '28px' }
             })
 
-            // Event selection - AUTO-SELECTED (no dropdown)
+            // Event selection
             const eventField = $({ tag: 'div', style: { marginBottom: '20px' } })
-            eventField.appendChild($({ tag: 'label', text: 'Event Name *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            eventField.appendChild($({ 
+                tag: 'label', 
+                text: 'Event Name *', 
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
             
             // Display container for event name (read-only)
             const eventDisplayContainer = $({
                 tag: 'div',
                 style: {
                     width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
+                    padding: '12px 16px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '12px',
+                    color: '#1a2a3a',
                     fontSize: '14px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px'
+                    gap: '12px',
+                    transition: 'all 0.2s ease'
                 }
             })
             
             const eventIcon = $({
                 tag: 'i',
                 att: { className: 'fas fa-calendar-alt' },
-                style: { color: '#2196F3', fontSize: '16px' }
+                style: { color: '#1976D2', fontSize: '16px' }
             })
             
             const eventNameSpan = $({
                 tag: 'span',
                 text: 'Loading...',
-                att: { id: 'selectedEventName' }
+                att: { id: 'selectedEventName' },
+                style: { flex: 1, fontWeight: '500' }
             })
             
             const loadingSpinner = $({
                 tag: 'i',
                 att: { className: 'fas fa-spinner fa-pulse' },
-                style: { color: '#666', fontSize: '14px', marginLeft: '10px' }
+                style: { color: '#94a3b8', fontSize: '14px' }
             })
             
             eventDisplayContainer.appendChild(eventIcon)
@@ -1466,7 +1500,6 @@ export const ResearchChairSubmission = () => {
             // Function to load and auto-select event
             const loadAndSelectEvent = async () => {
                 try {
-                    // Show loading state
                     eventNameSpan.innerText = 'Loading event...'
                     loadingSpinner.style.display = 'inline-block'
                     
@@ -1481,13 +1514,9 @@ export const ResearchChairSubmission = () => {
 
                     if (response.ok) {
                         const data = await response.json()
-                        
-                        // API already returns filtered events based on paper_type
-                        // data should be an array of events or empty array
                         const events = Array.isArray(data) ? data : (data.events || data.list || [])
                         
                         if (events.length > 0) {
-                            // Auto-select the first (most recent) event
                             const selectedEvent = events[0]
                             formData.eventName = selectedEvent.name
                             eventNameSpan.innerText = selectedEvent.name
@@ -1519,7 +1548,6 @@ export const ResearchChairSubmission = () => {
                 }
             }
 
-            // Load event on page load
             setTimeout(() => {
                 loadAndSelectEvent()
             }, 100)
@@ -1537,22 +1565,38 @@ export const ResearchChairSubmission = () => {
 
             // Title field
             const titleField = $({ tag: 'div', style: { marginBottom: '0' } })
-            titleField.appendChild($({ tag: 'label', text: 'Research Title *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            titleField.appendChild($({ 
+                tag: 'label', 
+                text: 'Research Title *', 
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
             titleInput = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: 'Enter research title' },
                 style: {
                     width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    padding: '12px 14px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '12px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'input',
+                    type: 'focus',
                     method: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                        e.currentTarget.style.outline = 'none';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'input',
+                    method3: (e) => {
                         formData.title = capitalizeFirstLetter(e.target.value)
                         e.target.value = formData.title
                     }
@@ -1562,26 +1606,41 @@ export const ResearchChairSubmission = () => {
 
             // Campus field
             const campusField = $({ tag: 'div', style: { marginBottom: '0' } })
-            campusField.appendChild($({ tag: 'label', text: 'Campus *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            campusField.appendChild($({ 
+                tag: 'label', 
+                text: 'Campus *', 
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
             campusSelect = $({
                 tag: 'select',
                 style: {
                     width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    padding: '12px 14px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '12px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'change',
-                    method: (e) => { formData.campus = e.target.value }
+                    type: 'mouseenter',
+                    method: (e) => {
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    },
+                    type2: 'mouseleave',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'change',
+                    method3: (e) => { formData.campus = e.target.value }
                 },
                 elementHandler: (el) => {
-                    el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true } }))
+                    el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                     campuses.forEach(campus => {
-                        el.appendChild($({ tag: 'option', text: campus, att: { value: campus } }))
+                        el.appendChild($({ tag: 'option', text: campus, att: { value: campus }, style: { color: '#1a2a3a' } }))
                     })
                 }
             })
@@ -1589,28 +1648,43 @@ export const ResearchChairSubmission = () => {
 
             // Category field
             const categoryField = $({ tag: 'div', style: { marginBottom: '0' } })
-            categoryField.appendChild($({ tag: 'label', text: 'Research Category *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            categoryField.appendChild($({ 
+                tag: 'label', 
+                text: 'Research Category *', 
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
             categorySelect = $({
                 tag: 'select',
                 style: {
                     width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    padding: '12px 14px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '12px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'change',
-                    method: (e) => { formData.category = e.target.value }
+                    type: 'mouseenter',
+                    method: (e) => {
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    },
+                    type2: 'mouseleave',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'change',
+                    method3: (e) => { formData.category = e.target.value }
                 },
                 elementHandler: (el) => {
                     el.innerHTML = ''
-                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
+                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                     const categories = currentPaperType === 'undergraduate' ? undergraduateCategories : graduateCategories
                     categories.forEach(cat => {
-                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
+                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat }, style: { color: '#1a2a3a' } }))
                     })
                 }
             })
@@ -1618,18 +1692,22 @@ export const ResearchChairSubmission = () => {
 
             // Paper Type display (read-only)
             const paperTypeField = $({ tag: 'div', style: { marginBottom: '0' } })
-            paperTypeField.appendChild($({ tag: 'label', text: 'Paper Type', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            paperTypeField.appendChild($({ 
+                tag: 'label', 
+                text: 'Paper Type', 
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
             paperTypeDisplay = $({
                 tag: 'div',
                 style: {
                     width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: currentPaperType === 'undergraduate' ? 'rgba(33, 150, 243, 0.1)' : 'rgba(156, 39, 176, 0.1)',
-                    border: `1px solid ${currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0'}`,
-                    borderRadius: '8px',
-                    color: currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0',
+                    padding: '12px 14px',
+                    backgroundColor: currentPaperType === 'undergraduate' ? '#E3F2FD' : '#F3E5F5',
+                    border: `1px solid ${currentPaperType === 'undergraduate' ? '#1976D2' : '#7B1FA2'}`,
+                    borderRadius: '12px',
+                    color: currentPaperType === 'undergraduate' ? '#1976D2' : '#7B1FA2',
                     fontSize: '14px',
-                    fontWeight: '500'
+                    fontWeight: '600'
                 },
                 text: currentPaperType === 'undergraduate' ? '🎓 Undergraduate' : '🎓 Graduate'
             })
@@ -1637,22 +1715,38 @@ export const ResearchChairSubmission = () => {
 
             // Author field
             const authorField = $({ tag: 'div', style: { marginBottom: '0' } })
-            authorField.appendChild($({ tag: 'label', text: 'Main Author  *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            authorField.appendChild($({ 
+                tag: 'label', 
+                text: 'Main Author *', 
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
             authorInput = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: 'Enter main author name' },
                 style: {
                     width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    padding: '12px 14px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '12px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'input',
+                    type: 'focus',
                     method: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                        e.currentTarget.style.outline = 'none';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'input',
+                    method3: (e) => {
                         formData.author = capitalizeFirstLetter(e.target.value)
                         e.target.value = formData.author
                     }
@@ -1662,22 +1756,38 @@ export const ResearchChairSubmission = () => {
 
             // Presenter field
             const presenterField = $({ tag: 'div', style: { marginBottom: '0' } })
-            presenterField.appendChild($({ tag: 'label', text: 'Presenter  *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            presenterField.appendChild($({ 
+                tag: 'label', 
+                text: 'Presenter *', 
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
             presenterInput = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: 'Enter presenter name' },
                 style: {
                     width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    padding: '12px 14px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '12px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'input',
+                    type: 'focus',
                     method: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                        e.currentTarget.style.outline = 'none';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'input',
+                    method3: (e) => {
                         formData.presenter = capitalizeFirstLetter(e.target.value)
                         e.target.value = formData.presenter
                     }
@@ -1687,7 +1797,11 @@ export const ResearchChairSubmission = () => {
 
             // Co-authors field
             const coAuthorField = $({ tag: 'div', style: { marginBottom: '0' } })
-            coAuthorField.appendChild($({ tag: 'label', text: 'Co-Authors ', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            coAuthorField.appendChild($({ 
+                tag: 'label', 
+                text: 'Co-Authors', 
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
 
             const coAuthorInputGroup = $({
                 tag: 'div',
@@ -1699,16 +1813,28 @@ export const ResearchChairSubmission = () => {
                 att: { type: 'text', placeholder: 'Enter co-author name' },
                 style: {
                     flex: 1,
-                    padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    padding: '12px 14px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '12px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'input',
+                    type: 'focus',
                     method: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                        e.currentTarget.style.outline = 'none';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'input',
+                    method3: (e) => {
                         e.target.value = capitalizeFirstLetter(e.target.value)
                     }
                 }
@@ -1719,12 +1845,14 @@ export const ResearchChairSubmission = () => {
                 text: 'Add',
                 style: {
                     padding: '8px 20px',
-                    backgroundColor: '#2196F3',
+                    backgroundColor: '#1976D2',
                     border: 'none',
-                    borderRadius: '6px',
-                    color: '#fff',
+                    borderRadius: '8px',
+                    color: '#ffffff',
                     cursor: 'pointer',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
                     type: 'click',
@@ -1735,7 +1863,11 @@ export const ResearchChairSubmission = () => {
                             updateCoAuthorList()
                             coAuthorInput.value = ''
                         }
-                    }
+                    },
+                    type2: 'mouseenter',
+                    method2: (e) => { e.currentTarget.style.backgroundColor = '#1565C0' },
+                    type3: 'mouseleave',
+                    method3: (e) => { e.currentTarget.style.backgroundColor = '#1976D2' }
                 }
             })
 
@@ -1753,7 +1885,7 @@ export const ResearchChairSubmission = () => {
                     const tag = $({
                         tag: 'div',
                         style: {
-                            backgroundColor: '#2a2a2a',
+                            backgroundColor: '#E8F5E9',
                             padding: '4px 10px',
                             borderRadius: '20px',
                             display: 'inline-flex',
@@ -1762,17 +1894,21 @@ export const ResearchChairSubmission = () => {
                             fontSize: '12px'
                         },
                         child: [
-                            $({ tag: 'span', text: author, style: { color: '#fff' } }),
+                            $({ tag: 'span', text: author, style: { color: '#2E7D32', fontWeight: '500' } }),
                             $({
                                 tag: 'i',
                                 att: { className: 'fas fa-times' },
-                                style: { color: '#999', fontSize: '10px', cursor: 'pointer' },
+                                style: { color: '#64748b', fontSize: '10px', cursor: 'pointer', transition: 'all 0.2s ease' },
                                 event: {
                                     type: 'click',
                                     method: () => {
                                         formData.coAuthors.splice(idx, 1)
                                         updateCoAuthorList()
-                                    }
+                                    },
+                                    type2: 'mouseenter',
+                                    method2: (e) => { e.currentTarget.style.color = '#ef4444' },
+                                    type3: 'mouseleave',
+                                    method3: (e) => { e.currentTarget.style.color = '#64748b' }
                                 }
                             })
                         ]
@@ -1801,11 +1937,15 @@ export const ResearchChairSubmission = () => {
                 style: {
                     marginTop: '20px',
                     paddingTop: '20px',
-                    borderTop: '1px solid rgba(255,255,255,0.1)'
+                    borderTop: '1px solid #e8ecf0'
                 }
             })
 
-            fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#fff', marginBottom: '16px', fontSize: '16px' } }))
+            fileSection.appendChild($({ 
+                tag: 'h4', 
+                text: 'Attachments', 
+                style: { color: '#1a2a3a', marginBottom: '16px', fontSize: '16px', fontWeight: '600' } 
+            }))
 
             const fileGrid = $({
                 tag: 'div',
@@ -1829,34 +1969,41 @@ export const ResearchChairSubmission = () => {
         // FileUploadField helper
         function FileUploadField({ label, fieldName }) {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
-            container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+            container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            }))
 
             const uploadArea = $({
                 tag: 'div',
                 style: {
-                    border: '2px dashed #444',
-                    borderRadius: '8px',
-                    padding: '20px',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '12px',
+                    padding: '28px',
                     textAlign: 'center',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    backgroundColor: 'rgba(255,255,255,0.05)'
+                    transition: 'all 0.2s ease',
+                    backgroundColor: '#f8fafc'
                 },
                 event: {
                     type: 'click',
-                    method: () => fileInput.click()
+                    method: () => fileInput.click(),
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    }
                 }
             })
 
-            uploadArea.appendChild($({
-                tag: 'i',
-                att: { className: 'fas fa-cloud-upload-alt' },
-                style: { fontSize: '32px', color: '#666', marginBottom: '8px', display: 'block' }
-            }))
-            uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#888', fontSize: '14px' } }))
-            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', style: { color: '#666', fontSize: '12px', marginTop: '4px' } }))
+            uploadArea.appendChild($({ tag: 'i', att: { className: 'fas fa-cloud-upload-alt' }, style: { fontSize: '36px', color: '#1976D2', marginBottom: '12px', display: 'block' } }))
+            uploadArea.appendChild($({ tag: 'div',  text: `Click to upload ${label}`,  style: { color: '#1a2a3a', fontSize: '14px', fontWeight: '500' }  }))
+            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)',  style: { color: '#64748b', fontSize: '12px', marginTop: '6px' } }))
 
-            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '8px', fontSize: '12px', color: '#4caf50', textAlign: 'center' } })
+            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '12px', fontSize: '13px', color: '#2E7D32', textAlign: 'center', fontWeight: '500' } })
 
             const fileInput = $({
                 tag: 'input',
@@ -1877,7 +2024,7 @@ export const ResearchChairSubmission = () => {
                                 return
                             }
                             formData[fieldName] = file
-                            fileNameDisplay.innerText = `✓ Selected: ${file.name}`
+                            fileNameDisplay.innerText = `✓ ${file.name}`
                         }
                     }
                 }
@@ -1928,8 +2075,8 @@ export const ResearchChairSubmission = () => {
         const titleSection = $({
             tag: 'div',
             child: [
-                $({ tag: 'h1', text: currentPaperType === 'undergraduate' ? 'Undergraduate Research Papers' : 'Graduate Research Papers', style: { color: '#fff', fontSize: '30px', margin: 0, marginBottom: '8px' } }),
-                $({ tag: 'p', text: currentPaperType === 'undergraduate' ? 'Submit and track undergraduate student research papers for symposium events' : 'Submit and track graduate student research papers for symposium events', style: { color: '#888', fontSize: '14px', margin: 0 } })
+                $({ tag: 'h1', text: currentPaperType === 'undergraduate' ? 'Undergraduate Research Papers' : 'Graduate Research Papers', style: { color: '#1a2a3a', fontSize: '30px', margin: 0, marginBottom: '8px', fontWeight: '700' } }),
+                $({ tag: 'p', text: currentPaperType === 'undergraduate' ? 'Submit and track undergraduate student research papers for symposium events' : 'Submit and track graduate student research papers for symposium events', style: { color: '#64748b', fontSize: '14px', margin: 0 } })
             ]
         })
 
@@ -1944,44 +2091,58 @@ export const ResearchChairSubmission = () => {
         const uploadBtn = $({
             tag: 'button',
             style: {
-                backgroundColor: currentPaperType === 'undergraduate' ? '#2196F3' : '#9C27B0',
-                border: 'none',
-                borderRadius: '10px',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e8ecf0',
+                borderRadius: '12px',
                 padding: '12px 24px',
-                color: '#fff',
+                color: '#1a2a3a',
                 fontSize: '14px',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s ease',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             },
             child: [
-                $({ tag: 'i', att: { className: 'fas fa-plus' }, style: { fontSize: '14px' } }),
+                $({ tag: 'i', att: { className: 'fas fa-plus' }, style: { fontSize: '14px', color: currentPaperType === 'undergraduate' ? '#1976D2' : '#7B1FA2' } }),
                 $({ tag: 'span', text: 'Submit Paper' })
             ],
             event: {
                 type: 'click',
-                method: () => openUploadModal()
+                method: () => openUploadModal(),
+                type2: 'mouseenter',
+                method2: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                },
+                type3: 'mouseleave',
+                method3: (e) => {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                }
             }
         })
 
         const viewResearchesBtn = $({
             tag: 'button',
             style: {
-                backgroundColor: '#4caf50',
+                backgroundColor: '#1976D2',
                 border: 'none',
-                borderRadius: '10px',
+                borderRadius: '12px',
                 padding: '12px 24px',
-                color: '#fff',
+                color: '#ffffff',
                 fontSize: '14px',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(25, 118, 210, 0.2)'
             },
             child: [
                 $({ tag: 'i', att: { className: 'fas fa-table-list' }, style: { fontSize: '14px' } }),
@@ -1989,7 +2150,19 @@ export const ResearchChairSubmission = () => {
             ],
             event: {
                 type: 'click',
-                method: () => openViewResearchesModal()
+                method: () => openViewResearchesModal(),
+                type2: 'mouseenter',
+                method2: (e) => {
+                    e.currentTarget.style.backgroundColor = '#1565C0';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(25, 118, 210, 0.3)';
+                },
+                type3: 'mouseleave',
+                method3: (e) => {
+                    e.currentTarget.style.backgroundColor = '#1976D2';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(25, 118, 210, 0.2)';
+                }
             }
         })
 
@@ -2021,39 +2194,80 @@ export const ResearchChairSubmission = () => {
             const card = $({
                 tag: 'div',
                 style: {
-                    backgroundColor: '#1e1e1e',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    border: '1px solid rgba(255,255,255,0.05)'
+                    backgroundColor: '#ffffff',
+                    borderRadius: '16px',
+                    padding: '24px 20px',
+                    border: '1px solid #e8ecf0',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer'
+                },
+                event: {
+                    type: 'mouseenter',
+                    method: (e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)';
+                        e.currentTarget.style.borderColor = stat.color;
+                    },
+                    type2: 'mouseleave',
+                    method2: (e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                    }
                 },
                 child: [
                     $({
                         tag: 'div',
-                        style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' },
+                        style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' },
                         child: [
-                            $({ tag: 'span', text: stat.label, style: { color: '#888', fontSize: '14px' } }),
-                            $({ tag: 'i', att: { className: `fas ${stat.icon}` }, style: { color: stat.color, fontSize: '20px' } })
+                            $({ tag: 'span', text: stat.label, style: { color: '#475569', fontSize: '14px', fontWeight: '500' } }),
+                            $({ 
+                                tag: 'div',
+                                style: {
+                                    backgroundColor: `${stat.color}10`,
+                                    borderRadius: '12px',
+                                    padding: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                },
+                                child: [
+                                    $({ tag: 'i', att: { className: `fas ${stat.icon}` }, style: { color: stat.color, fontSize: '20px' } })
+                                ]
+                            })
                         ]
                     }),
                     $({
                         tag: 'div',
                         text: stat.value,
-                        style: { color: '#fff', fontSize: '28px', fontWeight: 'bold' },
+                        style: { color: '#1a2a3a', fontSize: '32px', fontWeight: '700', letterSpacing: '-0.5px' },
                         att: { className: 'stat-value' }
+                    }),
+                    $({
+                        tag: 'div',
+                        style: { marginTop: '12px' },
+                        child: [
+                            $({
+                                tag: 'span',
+                                text: index === 0 ? 'Total submissions' : index === 1 ? 'Awaiting review' : index === 2 ? 'Approved papers' : 'Returned for revision',
+                                style: { color: '#94a3b8', fontSize: '12px', fontWeight: '400' }
+                            })
+                        ]
                     })
                 ]
             })
             statsContainer.appendChild(card)
         })
 
-        // Table container
         const tableContainer = $({
             tag: 'div',
             style: {
-                backgroundColor: '#1e1e1e',
-                borderRadius: '12px',
+                backgroundColor: '#ffffff',
+                borderRadius: '20px',
                 overflow: 'auto',
-                border: '1px solid rgba(255,255,255,0.05)'
+                border: '1px solid #e8ecf0',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             }
         })
 
@@ -2069,7 +2283,7 @@ export const ResearchChairSubmission = () => {
 
         // Table header
         const thead = $({ tag: 'thead' })
-        const headerRow = $({ tag: 'tr', style: { backgroundColor: '#717171', borderBottom: '2px solid #333' } })
+        const headerRow = $({ tag: 'tr', style: {  backgroundColor: '#f8fafc', borderBottom: '1px solid #e8ecf0' }  })
         const columns = ['Event', 'Status', 'Title', 'Category', 'Presenter', 'Author', 'Co-Authors', 'Campus', 'Type', 'Attachments', 'Actions']
 
         columns.forEach(col => {
@@ -2077,12 +2291,14 @@ export const ResearchChairSubmission = () => {
                 tag: 'th',
                 text: col,
                 style: {
-                    padding: '16px 12px',
+                    padding: '18px 16px',
                     textAlign: 'left',
-                    color: '#fff',
+                    color: '#475569',
                     fontSize: '13px',
                     fontWeight: '600',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '0.3px',
+                    textTransform: 'uppercase'
                 }
             }))
         })
@@ -2105,9 +2321,9 @@ export const ResearchChairSubmission = () => {
             const emptyCell = $({
                 tag: 'td',
                 att: { colSpan: columns.length },
-                style: { padding: '60px', textAlign: 'center', color: '#666' }
+                style: { padding: '60px', textAlign: 'center', color: '#94a3b8' }
             })
-            emptyCell.appendChild($({ tag: 'i', att: { className: 'fas fa-folder-open' }, style: { fontSize: '48px', display: 'block', marginBottom: '16px' } }))
+            emptyCell.appendChild($({ tag: 'i', att: { className: 'fas fa-folder-open' }, style: { fontSize: '48px', display: 'block', marginBottom: '16px', color: '#cbd5e1' } }))
             emptyCell.appendChild($({ tag: 'div', text: `No ${currentPaperType === 'undergraduate' ? 'undergraduate' : 'graduate'} research papers submitted yet`, style: { fontSize: '16px', marginBottom: '8px' } }))
             emptyCell.appendChild($({ tag: 'div', text: 'Click the "Submit Paper" button to submit your student research paper', style: { fontSize: '14px' } }))
             emptyRow.appendChild(emptyCell)
@@ -2121,9 +2337,9 @@ export const ResearchChairSubmission = () => {
                 const loadingCell = $({
                     tag: 'td',
                     att: { colSpan: columns.length },
-                    style: { padding: '60px', textAlign: 'center', color: '#666' }
+                    style: { padding: '60px', textAlign: 'center', color: '#64748b' }
                 })
-                loadingCell.appendChild($({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '16px' } }))
+                loadingCell.appendChild($({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '32px', display: 'block', marginBottom: '16px', color: '#1976D2' } }))
                 loadingCell.appendChild($({ tag: 'div', text: `Loading ${currentPaperType === 'undergraduate' ? 'undergraduate' : 'graduate'} research papers...`, style: { fontSize: '14px' } }))
                 loadingRow.appendChild(loadingCell)
                 tbody.appendChild(loadingRow)

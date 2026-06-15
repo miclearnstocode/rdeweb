@@ -115,7 +115,7 @@ export const ResearchChairPanel = () => {
                         tag: 'h3',
                         text: 'Research Chair Panel',
                         style: {
-                            color: '#fff',
+                            color: '#000000',
                             fontSize: '16px',
                             margin: 0
                         }

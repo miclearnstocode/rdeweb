@@ -35,13 +35,16 @@ const userInfo = () => {
                 return ($({
                     tag: 'div',
                     style: {
-                        width: '10%',
-                        height: '100%',
+                        width: '40px',
+                        height: '40px',
                         margin: 'auto',
                         justifyContent: 'center',
+                        alignItems: 'center',
                         display: 'flex',
-                        fontSize: '2vw',
-                        color: 'deepskyblue'
+                        fontSize: '18px',
+                        borderRadius: '10px',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
                     },
                     child: [
                         $({
@@ -49,7 +52,30 @@ const userInfo = () => {
                             att: {
                                 className: 'fa fa-edit pointerUser',
                             },
-                            elementHandler: getBot
+                            style: {
+                                color: '#64748b',
+                                fontSize: '18px',
+                                transition: 'all 0.2s ease'
+                            },
+                            elementHandler: getBot,
+                            event: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    e.currentTarget.style.color = '#1976D2';
+                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                    if (e.currentTarget.parentElement) {
+                                        e.currentTarget.parentElement.style.backgroundColor = '#f1f5f9';
+                                    }
+                                },
+                                type2: 'mouseleave',
+                                method2: (e) => {
+                                    e.currentTarget.style.color = '#64748b';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    if (e.currentTarget.parentElement) {
+                                        e.currentTarget.parentElement.style.backgroundColor = 'transparent';
+                                    }
+                                }
+                            }
                         })
                     ]
                 }))
@@ -70,7 +96,7 @@ const userInfo = () => {
             const Name = $({
                 tag: 'td',
                 style: {
-                    color: 'ghostwhite'
+                    color: '#1a2a3a'
                 },
                 text: data || 'Loading...'
             })
@@ -145,7 +171,6 @@ const userInfo = () => {
             }
         }
         
-        // Edit Modal for Full Name
         const showEditNameModal = () => {
             let currentData = ''
             const modalContent = $({
@@ -159,7 +184,7 @@ const userInfo = () => {
                             $({
                                 tag: 'label',
                                 text: 'Full Name',
-                                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                                style: { display: 'block', color: '#1a2a3a', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
                             }),
                             $({
                                 tag: 'input',
@@ -171,16 +196,27 @@ const userInfo = () => {
                                 style: {
                                     width: '100%',
                                     padding: '12px 14px',
-                                    backgroundColor: '#2a2a2a',
-                                    border: '1px solid #444',
-                                    borderRadius: '8px',
-                                    color: '#fff',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e8ecf0',
+                                    borderRadius: '10px',
+                                    color: '#1a2a3a',
                                     fontSize: '14px',
-                                    outline: 'none'
+                                    outline: 'none',
+                                    transition: 'all 0.2s ease'
                                 },
                                 event: {
-                                    type: 'input',
-                                    method: (el) => { currentData = el.target.value }
+                                    type: 'focus',
+                                    method: (e) => {
+                                        e.currentTarget.style.borderColor = '#1976D2';
+                                        e.currentTarget.style.backgroundColor = '#ffffff';
+                                    },
+                                    type2: 'blur',
+                                    method2: (e) => {
+                                        e.currentTarget.style.borderColor = '#e8ecf0';
+                                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                                    },
+                                    type3: 'input',
+                                    method3: (el) => { currentData = el.target.value }
                                 }
                             })
                         ]
@@ -197,29 +233,44 @@ const userInfo = () => {
                             tag: 'button',
                             text: 'Cancel',
                             style: {
-                                padding: '8px 20px',
-                                backgroundColor: '#444',
-                                border: 'none',
-                                borderRadius: '8px',
-                                color: '#fff',
+                                padding: '10px 24px',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e8ecf0',
+                                borderRadius: '10px',
+                                color: '#475569',
                                 cursor: 'pointer',
                                 fontSize: '14px',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
                             },
-                            event: { type: 'click', method: () => closeModal() }
+                            event: { 
+                                type: 'click', 
+                                method: () => closeModal(),
+                                type2: 'mouseenter',
+                                method2: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                    e.currentTarget.style.borderColor = '#cbd5e1';
+                                },
+                                type3: 'mouseleave',
+                                method3: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                                    e.currentTarget.style.borderColor = '#e8ecf0';
+                                }
+                            }
                         }),
                         $({
                             tag: 'button',
                             text: 'Save',
                             style: {
-                                padding: '8px 24px',
-                                backgroundColor: '#4caf50',
+                                padding: '10px 24px',
+                                backgroundColor: '#1976D2',
                                 border: 'none',
-                                borderRadius: '8px',
-                                color: '#fff',
+                                borderRadius: '10px',
+                                color: '#ffffff',
                                 cursor: 'pointer',
                                 fontSize: '14px',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
                             },
                             event: {
                                 type: 'click',
@@ -248,6 +299,16 @@ const userInfo = () => {
                                         loading.remove()
                                         document.body.appendChild(ConfirmationAlert('Error: ' + error.message))
                                     }
+                                },
+                                type2: 'mouseenter',
+                                method2: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#1565C0';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                },
+                                type3: 'mouseleave',
+                                method3: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#1976D2';
+                                    e.currentTarget.style.transform = 'translateY(0)';
                                 }
                             }
                         })
@@ -262,8 +323,7 @@ const userInfo = () => {
                 size: 'small'
             })
         }
-        
-        // Edit Modal for Designation
+
         const showEditDesignationModal = () => {
             let currentData = ''
             const modalContent = $({
@@ -277,7 +337,7 @@ const userInfo = () => {
                             $({
                                 tag: 'label',
                                 text: 'Designation',
-                                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                                style: { display: 'block', color: '#1a2a3a', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
                             }),
                             $({
                                 tag: 'input',
@@ -289,16 +349,27 @@ const userInfo = () => {
                                 style: {
                                     width: '100%',
                                     padding: '12px 14px',
-                                    backgroundColor: '#2a2a2a',
-                                    border: '1px solid #444',
-                                    borderRadius: '8px',
-                                    color: '#fff',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e8ecf0',
+                                    borderRadius: '10px',
+                                    color: '#1a2a3a',
                                     fontSize: '14px',
-                                    outline: 'none'
+                                    outline: 'none',
+                                    transition: 'all 0.2s ease'
                                 },
                                 event: {
-                                    type: 'input',
-                                    method: (el) => { currentData = el.target.value }
+                                    type: 'focus',
+                                    method: (e) => {
+                                        e.currentTarget.style.borderColor = '#1976D2';
+                                        e.currentTarget.style.backgroundColor = '#ffffff';
+                                    },
+                                    type2: 'blur',
+                                    method2: (e) => {
+                                        e.currentTarget.style.borderColor = '#e8ecf0';
+                                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                                    },
+                                    type3: 'input',
+                                    method3: (el) => { currentData = el.target.value }
                                 }
                             })
                         ]
@@ -315,29 +386,44 @@ const userInfo = () => {
                             tag: 'button',
                             text: 'Cancel',
                             style: {
-                                padding: '8px 20px',
-                                backgroundColor: '#444',
-                                border: 'none',
-                                borderRadius: '8px',
-                                color: '#fff',
+                                padding: '10px 24px',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e8ecf0',
+                                borderRadius: '10px',
+                                color: '#475569',
                                 cursor: 'pointer',
                                 fontSize: '14px',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
                             },
-                            event: { type: 'click', method: () => closeModal() }
+                            event: { 
+                                type: 'click', 
+                                method: () => closeModal(),
+                                type2: 'mouseenter',
+                                method2: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                    e.currentTarget.style.borderColor = '#cbd5e1';
+                                },
+                                type3: 'mouseleave',
+                                method3: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                                    e.currentTarget.style.borderColor = '#e8ecf0';
+                                }
+                            }
                         }),
                         $({
                             tag: 'button',
                             text: 'Save',
                             style: {
-                                padding: '8px 24px',
-                                backgroundColor: '#4caf50',
+                                padding: '10px 24px',
+                                backgroundColor: '#1976D2',
                                 border: 'none',
-                                borderRadius: '8px',
-                                color: '#fff',
+                                borderRadius: '10px',
+                                color: '#ffffff',
                                 cursor: 'pointer',
                                 fontSize: '14px',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
                             },
                             event: {
                                 type: 'click',
@@ -366,6 +452,16 @@ const userInfo = () => {
                                         loading.remove()
                                         document.body.appendChild(ConfirmationAlert('Error: ' + error.message))
                                     }
+                                },
+                                type2: 'mouseenter',
+                                method2: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#1565C0';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                },
+                                type3: 'mouseleave',
+                                method3: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#1976D2';
+                                    e.currentTarget.style.transform = 'translateY(0)';
                                 }
                             }
                         })
@@ -380,8 +476,7 @@ const userInfo = () => {
                 size: 'small'
             })
         }
-        
-        // Edit Modal for Email
+
         const showEditEmailModal = () => {
             let currentData = ''
             const modalContent = $({
@@ -395,7 +490,7 @@ const userInfo = () => {
                             $({
                                 tag: 'label',
                                 text: 'Email Address',
-                                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                                style: { display: 'block', color: '#1a2a3a', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
                             }),
                             $({
                                 tag: 'input',
@@ -407,16 +502,27 @@ const userInfo = () => {
                                 style: {
                                     width: '100%',
                                     padding: '12px 14px',
-                                    backgroundColor: '#2a2a2a',
-                                    border: '1px solid #444',
-                                    borderRadius: '8px',
-                                    color: '#fff',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e8ecf0',
+                                    borderRadius: '10px',
+                                    color: '#1a2a3a',
                                     fontSize: '14px',
-                                    outline: 'none'
+                                    outline: 'none',
+                                    transition: 'all 0.2s ease'
                                 },
                                 event: {
-                                    type: 'input',
-                                    method: (el) => { currentData = el.target.value }
+                                    type: 'focus',
+                                    method: (e) => {
+                                        e.currentTarget.style.borderColor = '#1976D2';
+                                        e.currentTarget.style.backgroundColor = '#ffffff';
+                                    },
+                                    type2: 'blur',
+                                    method2: (e) => {
+                                        e.currentTarget.style.borderColor = '#e8ecf0';
+                                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                                    },
+                                    type3: 'input',
+                                    method3: (el) => { currentData = el.target.value }
                                 }
                             })
                         ]
@@ -433,29 +539,44 @@ const userInfo = () => {
                             tag: 'button',
                             text: 'Cancel',
                             style: {
-                                padding: '8px 20px',
-                                backgroundColor: '#444',
-                                border: 'none',
-                                borderRadius: '8px',
-                                color: '#fff',
+                                padding: '10px 24px',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e8ecf0',
+                                borderRadius: '10px',
+                                color: '#475569',
                                 cursor: 'pointer',
                                 fontSize: '14px',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
                             },
-                            event: { type: 'click', method: () => closeModal() }
+                            event: { 
+                                type: 'click', 
+                                method: () => closeModal(),
+                                type2: 'mouseenter',
+                                method2: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                    e.currentTarget.style.borderColor = '#cbd5e1';
+                                },
+                                type3: 'mouseleave',
+                                method3: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                                    e.currentTarget.style.borderColor = '#e8ecf0';
+                                }
+                            }
                         }),
                         $({
                             tag: 'button',
                             text: 'Save',
                             style: {
-                                padding: '8px 24px',
-                                backgroundColor: '#4caf50',
+                                padding: '10px 24px',
+                                backgroundColor: '#1976D2',
                                 border: 'none',
-                                borderRadius: '8px',
-                                color: '#fff',
+                                borderRadius: '10px',
+                                color: '#ffffff',
                                 cursor: 'pointer',
                                 fontSize: '14px',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
                             },
                             event: {
                                 type: 'click',
@@ -489,6 +610,16 @@ const userInfo = () => {
                                         loading.remove()
                                         document.body.appendChild(ConfirmationAlert('Error: ' + error.message))
                                     }
+                                },
+                                type2: 'mouseenter',
+                                method2: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#1565C0';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                },
+                                type3: 'mouseleave',
+                                method3: (e) => {
+                                    e.currentTarget.style.backgroundColor = '#1976D2';
+                                    e.currentTarget.style.transform = 'translateY(0)';
                                 }
                             }
                         })
@@ -504,7 +635,6 @@ const userInfo = () => {
             })
         }
         
-        // Create and store containers
         const createFullNameContainer = () => {
             const cont = container({
                 child: UserInfo({ data: 'Loading...', label: 'Full Name' }),
@@ -591,7 +721,7 @@ const userInfo = () => {
                             $({
                                 tag: 'td',
                                 text: 'Username',
-                                style: { fontWeight: 'normal', color: '#bbb', fontSize: '1vw', textAlign: 'center' }
+                                style: { fontWeight: 'normal', color: '#0b0b0b', fontSize: '1vw', textAlign: 'center' }
                             })
                         ]
                     })
@@ -616,7 +746,7 @@ const userInfo = () => {
                                 $({
                                     tag: 'label',
                                     text: 'New Username',
-                                    style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                                    style: { display: 'block', color: '#1a2a3a', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
                                 }),
                                 $({
                                     tag: 'input',
@@ -628,16 +758,27 @@ const userInfo = () => {
                                     style: {
                                         width: '100%',
                                         padding: '12px 14px',
-                                        backgroundColor: '#2a2a2a',
-                                        border: '1px solid #444',
-                                        borderRadius: '8px',
-                                        color: '#fff',
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e8ecf0',
+                                        borderRadius: '10px',
+                                        color: '#1a2a3a',
                                         fontSize: '14px',
-                                        outline: 'none'
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease'
                                     },
                                     event: {
-                                        type: 'input',
-                                        method: (el) => { newUsername = el.target.value }
+                                        type: 'focus',
+                                        method: (e) => {
+                                            e.currentTarget.style.borderColor = '#1976D2';
+                                            e.currentTarget.style.backgroundColor = '#ffffff';
+                                        },
+                                        type2: 'blur',
+                                        method2: (e) => {
+                                            e.currentTarget.style.borderColor = '#e8ecf0';
+                                            e.currentTarget.style.backgroundColor = '#f8fafc';
+                                        },
+                                        type3: 'input',
+                                        method3: (el) => { newUsername = el.target.value }
                                     },
                                     elementHandler: SpecialChar
                                 })
@@ -650,7 +791,7 @@ const userInfo = () => {
                                 $({
                                     tag: 'label',
                                     text: 'Password',
-                                    style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                                    style: { display: 'block', color: '#1a2a3a', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
                                 }),
                                 $({
                                     tag: 'input',
@@ -662,16 +803,27 @@ const userInfo = () => {
                                     style: {
                                         width: '100%',
                                         padding: '12px 14px',
-                                        backgroundColor: '#2a2a2a',
-                                        border: '1px solid #444',
-                                        borderRadius: '8px',
-                                        color: '#fff',
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e8ecf0',
+                                        borderRadius: '10px',
+                                        color: '#1a2a3a',
                                         fontSize: '14px',
-                                        outline: 'none'
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease'
                                     },
                                     event: {
-                                        type: 'input',
-                                        method: (el) => { password = el.target.value }
+                                        type: 'focus',
+                                        method: (e) => {
+                                            e.currentTarget.style.borderColor = '#1976D2';
+                                            e.currentTarget.style.backgroundColor = '#ffffff';
+                                        },
+                                        type2: 'blur',
+                                        method2: (e) => {
+                                            e.currentTarget.style.borderColor = '#e8ecf0';
+                                            e.currentTarget.style.backgroundColor = '#f8fafc';
+                                        },
+                                        type3: 'input',
+                                        method3: (el) => { password = el.target.value }
                                     }
                                 })
                             ]
@@ -688,29 +840,44 @@ const userInfo = () => {
                                 tag: 'button',
                                 text: 'Cancel',
                                 style: {
-                                    padding: '8px 20px',
-                                    backgroundColor: '#444',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    color: '#fff',
+                                    padding: '10px 24px',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e8ecf0',
+                                    borderRadius: '10px',
+                                    color: '#475569',
                                     cursor: 'pointer',
                                     fontSize: '14px',
-                                    fontWeight: '500'
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s ease'
                                 },
-                                event: { type: 'click', method: () => closeModal() }
+                                event: { 
+                                    type: 'click', 
+                                    method: () => closeModal(),
+                                    type2: 'mouseenter',
+                                    method2: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                        e.currentTarget.style.borderColor = '#cbd5e1';
+                                    },
+                                    type3: 'mouseleave',
+                                    method3: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                                        e.currentTarget.style.borderColor = '#e8ecf0';
+                                    }
+                                }
                             }),
                             $({
                                 tag: 'button',
                                 text: 'Update Username',
                                 style: {
-                                    padding: '8px 24px',
-                                    backgroundColor: '#2196F3',
+                                    padding: '10px 24px',
+                                    backgroundColor: '#1976D2',
                                     border: 'none',
-                                    borderRadius: '8px',
-                                    color: '#fff',
+                                    borderRadius: '10px',
+                                    color: '#ffffff',
                                     cursor: 'pointer',
                                     fontSize: '14px',
-                                    fontWeight: '500'
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s ease'
                                 },
                                 event: {
                                     type: 'click',
@@ -744,6 +911,16 @@ const userInfo = () => {
                                             loading.remove()
                                             document.body.appendChild(ConfirmationAlert('Error: ' + error.message))
                                         }
+                                    },
+                                    type2: 'mouseenter',
+                                    method2: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#1565C0';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                    },
+                                    type3: 'mouseleave',
+                                    method3: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#1976D2';
+                                        e.currentTarget.style.transform = 'translateY(0)';
                                     }
                                 }
                             })
@@ -776,7 +953,7 @@ const userInfo = () => {
                                 $({
                                     tag: 'label',
                                     text: 'Current Password',
-                                    style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                                    style: { display: 'block', color: '#1a2a3a', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
                                 }),
                                 $({
                                     tag: 'input',
@@ -784,14 +961,28 @@ const userInfo = () => {
                                     style: {
                                         width: '100%',
                                         padding: '12px 14px',
-                                        backgroundColor: '#2a2a2a',
-                                        border: '1px solid #444',
-                                        borderRadius: '8px',
-                                        color: '#fff',
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e8ecf0',
+                                        borderRadius: '10px',
+                                        color: '#1a2a3a',
                                         fontSize: '14px',
-                                        outline: 'none'
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease'
                                     },
-                                    event: { type: 'input', method: (el) => { oldPass = el.target.value } }
+                                    event: { 
+                                        type: 'focus',
+                                        method: (e) => {
+                                            e.currentTarget.style.borderColor = '#1976D2';
+                                            e.currentTarget.style.backgroundColor = '#ffffff';
+                                        },
+                                        type2: 'blur',
+                                        method2: (e) => {
+                                            e.currentTarget.style.borderColor = '#e8ecf0';
+                                            e.currentTarget.style.backgroundColor = '#f8fafc';
+                                        },
+                                        type3: 'input',
+                                        method3: (el) => { oldPass = el.target.value }
+                                    }
                                 })
                             ]
                         }),
@@ -802,22 +993,36 @@ const userInfo = () => {
                                 $({
                                     tag: 'label',
                                     text: 'New Password',
-                                    style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                                    style: { display: 'block', color: '#1a2a3a', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
                                 }),
                                 $({
                                     tag: 'input',
-                                    att: { type: 'password', placeholder: 'Enter new password', maxLength: '20', minLength: '8' },
+                                    att: { type: 'password', placeholder: 'Enter new password (min. 8 characters)', maxLength: '20' },
                                     style: {
                                         width: '100%',
                                         padding: '12px 14px',
-                                        backgroundColor: '#2a2a2a',
-                                        border: '1px solid #444',
-                                        borderRadius: '8px',
-                                        color: '#fff',
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e8ecf0',
+                                        borderRadius: '10px',
+                                        color: '#1a2a3a',
                                         fontSize: '14px',
-                                        outline: 'none'
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease'
                                     },
-                                    event: { type: 'input', method: (el) => { newPass = el.target.value } }
+                                    event: {
+                                        type: 'focus',
+                                        method: (e) => {
+                                            e.currentTarget.style.borderColor = '#1976D2';
+                                            e.currentTarget.style.backgroundColor = '#ffffff';
+                                        },
+                                        type2: 'blur',
+                                        method2: (e) => {
+                                            e.currentTarget.style.borderColor = '#e8ecf0';
+                                            e.currentTarget.style.backgroundColor = '#f8fafc';
+                                        },
+                                        type3: 'input',
+                                        method3: (el) => { newPass = el.target.value }
+                                    }
                                 })
                             ]
                         }),
@@ -828,7 +1033,7 @@ const userInfo = () => {
                                 $({
                                     tag: 'label',
                                     text: 'Confirm New Password',
-                                    style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                                    style: { display: 'block', color: '#1a2a3a', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
                                 }),
                                 $({
                                     tag: 'input',
@@ -836,14 +1041,28 @@ const userInfo = () => {
                                     style: {
                                         width: '100%',
                                         padding: '12px 14px',
-                                        backgroundColor: '#2a2a2a',
-                                        border: '1px solid #444',
-                                        borderRadius: '8px',
-                                        color: '#fff',
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e8ecf0',
+                                        borderRadius: '10px',
+                                        color: '#1a2a3a',
                                         fontSize: '14px',
-                                        outline: 'none'
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease'
                                     },
-                                    event: { type: 'input', method: (el) => { confirmPass = el.target.value } }
+                                    event: {
+                                        type: 'focus',
+                                        method: (e) => {
+                                            e.currentTarget.style.borderColor = '#1976D2';
+                                            e.currentTarget.style.backgroundColor = '#ffffff';
+                                        },
+                                        type2: 'blur',
+                                        method2: (e) => {
+                                            e.currentTarget.style.borderColor = '#e8ecf0';
+                                            e.currentTarget.style.backgroundColor = '#f8fafc';
+                                        },
+                                        type3: 'input',
+                                        method3: (el) => { confirmPass = el.target.value }
+                                    }
                                 })
                             ]
                         })
@@ -859,29 +1078,44 @@ const userInfo = () => {
                                 tag: 'button',
                                 text: 'Cancel',
                                 style: {
-                                    padding: '8px 20px',
-                                    backgroundColor: '#444',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    color: '#fff',
+                                    padding: '10px 24px',
+                                    backgroundColor: '#f8fafc',
+                                    border: '1px solid #e8ecf0',
+                                    borderRadius: '10px',
+                                    color: '#475569',
                                     cursor: 'pointer',
                                     fontSize: '14px',
-                                    fontWeight: '500'
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s ease'
                                 },
-                                event: { type: 'click', method: () => closeModal() }
+                                event: { 
+                                    type: 'click', 
+                                    method: () => closeModal(),
+                                    type2: 'mouseenter',
+                                    method2: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                        e.currentTarget.style.borderColor = '#cbd5e1';
+                                    },
+                                    type3: 'mouseleave',
+                                    method3: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                                        e.currentTarget.style.borderColor = '#e8ecf0';
+                                    }
+                                }
                             }),
                             $({
                                 tag: 'button',
                                 text: 'Update Password',
                                 style: {
-                                    padding: '8px 24px',
-                                    backgroundColor: '#2196F3',
+                                    padding: '10px 24px',
+                                    backgroundColor: '#1976D2',
                                     border: 'none',
-                                    borderRadius: '8px',
-                                    color: '#fff',
+                                    borderRadius: '10px',
+                                    color: '#ffffff',
                                     cursor: 'pointer',
                                     fontSize: '14px',
-                                    fontWeight: '500'
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s ease'
                                 },
                                 event: {
                                     type: 'click',
@@ -920,6 +1154,16 @@ const userInfo = () => {
                                             loading.remove()
                                             document.body.appendChild(ConfirmationAlert('Error: ' + error.message))
                                         }
+                                    },
+                                    type2: 'mouseenter',
+                                    method2: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#1565C0';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                    },
+                                    type3: 'mouseleave',
+                                    method3: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#1976D2';
+                                        e.currentTarget.style.transform = 'translateY(0)';
                                     }
                                 }
                             })
@@ -942,19 +1186,75 @@ const userInfo = () => {
                     $({
                         tag: 'tr',
                         att: { className: 'trBot' },
-                        event: { type: 'click', method: showEditUsernameModal },
+                        event: { 
+                            type: 'click', 
+                            method: showEditUsernameModal,
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                e.currentTarget.style.transform = 'translateX(5px)';
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.currentTarget.style.backgroundColor = '#f8fafc';
+                                e.currentTarget.style.transform = 'translateX(0)';
+                            }
+                        },
                         child: [
-                            $({ tag: 'td', att: { className: 'acBot' }, child: [$({ tag: 'span', att: { className: 'fa-solid fa-user-pen acBotUser' } })] }),
-                            $({ tag: 'td', text: 'Change Username' })
+                            $({ 
+                                tag: 'td', 
+                                att: { className: 'acBot' }, 
+                                style: { width: '50px' },
+                                child: [
+                                    $({ 
+                                        tag: 'span', 
+                                        att: { className: 'fa-solid fa-user-pen' }, 
+                                        style: { color: '#1976D2', fontSize: '18px' }
+                                    })
+                                ] 
+                            }),
+                            $({ 
+                                tag: 'td', 
+                                text: 'Change Username',
+                                style: { color: '#1a2a3a', fontWeight: '500' }
+                            })
                         ]
                     }),
                     $({
                         tag: 'tr',
                         att: { className: 'trBot' },
-                        event: { type: 'click', method: showEditPasswordModal },
+                        event: { 
+                            type: 'click', 
+                            method: showEditPasswordModal,
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                e.currentTarget.style.transform = 'translateX(5px)';
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.currentTarget.style.backgroundColor = '#f8fafc';
+                                e.currentTarget.style.transform = 'translateX(0)';
+                            }
+                        },
                         child: [
-                            $({ tag: 'td', att: { className: 'acBot' }, child: [$({ tag: 'span', att: { className: 'fa-solid fa-key acBotUser' } })] }),
-                            $({ tag: 'td', text: 'Change Password' })
+                            $({ 
+                                tag: 'td', 
+                                att: { className: 'acBot' }, 
+                                style: { width: '50px' },
+                                child: [
+                                    $({ 
+                                        tag: 'span', 
+                                        att: { className: 'fa-solid fa-key' }, 
+                                        style: { color: '#1976D2', fontSize: '18px' }
+                                    })
+                                ] 
+                            }),
+                            $({ 
+                                tag: 'td', 
+                                text: 'Change Password',
+                                style: { color: '#1a2a3a', fontWeight: '500' }
+                            })
                         ]
                     })
                 ]
@@ -1017,7 +1317,7 @@ export const ResearchChairSettings = () => {
             return (TabButton({
                 url: '#',
                 label: 'Research Chair Information',
-                state: true // Always active
+                state: true 
             }))
         },
         page: userInfo,
