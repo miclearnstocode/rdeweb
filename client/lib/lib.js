@@ -1638,7 +1638,7 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
     document.addEventListener('keydown', handleKey)
 }
 
-// Custom Modal Library
+// Custom Modal Library - Modern White Version (Fixed)
 export const CustomModal = ({
     title = 'Modal',
     content = null,
@@ -1681,8 +1681,8 @@ export const CustomModal = ({
             left: '0',
             right: '0',
             bottom: '0',
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1697,7 +1697,7 @@ export const CustomModal = ({
         } : {}
     })
 
-    // Modal container
+    // Modal container - Modern white styling
     const modalContainer = $({
         tag: 'div',
         style: {
@@ -1707,24 +1707,24 @@ export const CustomModal = ({
             maxWidth: selectedSize.maxWidth,
             height: selectedSize.height || 'auto',
             maxHeight: '85vh',
-            backgroundColor: '#1a1a1a',
-            borderRadius: '16px',
+            backgroundColor: '#ffffff',
+            borderRadius: '24px',
             overflow: 'hidden',
-            boxShadow: '0 32px 64px rgba(0,0,0,0.6)',
-            border: '1px solid rgba(255,255,255,0.1)'
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #e8ecf0'
         }
     })
 
-    // Header
+    // Header - Modern white styling
     const headerEl = $({
         tag: 'div',
         style: {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '20px 24px',
-            backgroundColor: '#1a1a1a',
-            borderBottom: '2px solid rgba(255,255,255,0.1)',
+            padding: '20px 28px',
+            backgroundColor: '#ffffff',
+            borderBottom: '1px solid #e8ecf0',
             flexShrink: '0'
         },
         child: [
@@ -1732,64 +1732,74 @@ export const CustomModal = ({
                 tag: 'h3',
                 text: title,
                 style: {
-                    color: '#fff',
+                    color: '#1a2a3a',
                     margin: 0,
                     fontSize: '18px',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    letterSpacing: '-0.2px'
                 }
             }),
             showCloseButton ? $({
                 tag: 'button',
                 style: {
-                    width: '32px',
-                    height: '32px',
+                    width: '36px',
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '8px',
-                    color: '#999',
-                    fontSize: '18px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#94a3b8',
+                    fontSize: '20px',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease'
                 },
                 child: [
-                    $({ tag: 'span', html: '&times', style: { fontSize: '24px', lineHeight: '1' } })
+                    $({ tag: 'span', html: '&times;', style: { fontSize: '22px', lineHeight: '1', fontWeight: '400' } })
                 ],
                 event: {
                     type: 'click',
                     method: closeModal,
                     type2: 'mouseenter',
                     method2: (e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.15)'
-                        e.currentTarget.style.borderColor = '#f44336'
-                        e.currentTarget.style.color = '#f44336'
+                        e.currentTarget.style.backgroundColor = '#fee2e2';
+                        e.currentTarget.style.borderColor = '#fecaca';
+                        e.currentTarget.style.color = '#ef4444';
+                        e.currentTarget.style.transform = 'scale(1.02)';
                     },
                     type3: 'mouseleave',
                     method3: (e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
-                        e.currentTarget.style.color = '#999'
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.color = '#94a3b8';
+                        e.currentTarget.style.transform = 'scale(1)';
                     }
                 }
             }) : null
         ]
     })
 
-    // Content area
+    // Content area - Modern white styling
     const contentArea = $({
         tag: 'div',
         style: {
             flex: '1',
             overflow: 'auto',
-            padding: '24px'
+            padding: '28px',
+            backgroundColor: '#ffffff',
+            color: '#334155'
         }
     })
 
     if (content) {
         if (typeof content === 'function') {
-            contentArea.appendChild(content({ closeModal }))
+            const contentResult = content({ closeModal })
+            if (contentResult && typeof contentResult === 'object' && (contentResult.tagName || contentResult.appendChild)) {
+                contentArea.appendChild(contentResult)
+            } else if (contentResult && typeof contentResult === 'string') {
+                contentArea.innerHTML = contentResult
+            }
         } else if (content.tagName || content.appendChild) {
             contentArea.appendChild(content)
         } else if (typeof content === 'string') {
@@ -1800,44 +1810,44 @@ export const CustomModal = ({
     modalContainer.appendChild(headerEl)
     modalContainer.appendChild(contentArea)
 
-    // Footer
-    if (footer) {
+    // Footer - Modern white styling - FIXED null check
+    if (footer !== null && footer !== undefined) {
         const footerEl = $({
             tag: 'div',
             style: {
-                padding: '16px 24px',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
+                padding: '16px 28px',
+                borderTop: '1px solid #e8ecf0',
                 display: 'flex',
                 justifyContent: 'flex-end',
                 gap: '12px',
-                backgroundColor: '#1a1a1a',
+                backgroundColor: '#ffffff',
                 flexShrink: '0'
             }
         })
 
         if (typeof footer === 'function') {
-            footerEl.appendChild(footer({ closeModal }))
-        } else if (footer.tagName || footer.appendChild) {
-            footerEl.appendChild(footer)
-        } else if (Array.isArray(footer)) {
-            footer.forEach(btn => footerEl.appendChild(btn))
+            const footerResult = footer({ closeModal })
+            if (footerResult && typeof footerResult === 'object' && (footerResult.tagName || footerResult.appendChild)) {
+                footerEl.appendChild(footerResult)
+            } else if (footerResult && typeof footerResult === 'string') {
+                footerEl.innerHTML = footerResult
+            }
+        } else if (footer && typeof footer === 'object') {
+            // Check if it's a DOM element
+            if (footer.tagName || footer.appendChild) {
+                footerEl.appendChild(footer)
+            } 
+            // Check if it's an array
+            else if (Array.isArray(footer)) {
+                footer.forEach(btn => {
+                    if (btn) footerEl.appendChild(btn)
+                })
+            }
+        } else if (typeof footer === 'string') {
+            footerEl.innerHTML = footer
         }
 
         modalContainer.appendChild(footerEl)
-    } else {
-        // Default footer with close button
-        const defaultFooter = $({
-            tag: 'div',
-            style: {
-                padding: '16px 24px',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                backgroundColor: '#1a1a1a',
-                flexShrink: '0'
-            }
-        })
-        modalContainer.appendChild(defaultFooter)
     }
 
     modalOverlay.appendChild(modalContainer)
@@ -1860,7 +1870,7 @@ export const CustomModal = ({
     }
     document.addEventListener('keydown', handleKey)
 
-    return { closeModal, modalId }
+    return { closeModal, modalId, element: modalOverlay }
 }
 
 export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirmText = 'OK', cancelText = 'Cancel', type = 'info' }) => {

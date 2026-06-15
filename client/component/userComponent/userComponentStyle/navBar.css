@@ -1,53 +1,228 @@
-.navBar{
-    width: 15%;
-    margin: 0 auto;
+/* Modern Navigation Bar - White Background Version */
+.navBar.modern-nav-bar {
+    width: 280px;
+    background: #ffffff;
+    border-right: 1px solid #e8ecf0;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
-.navBot{
-    width: 100%;
-    padding-right: .5vw;
-    padding-left: .5vw;
-    border-bottom: solid thin #333;
-    cursor: pointer;
-    height: 8vh;
+
+/* Modern Nav Button Styles */
+.modern-nav-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+    color: #475569 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    position: relative !important;
 }
-.navBot:hover{
-    background-color: rgba(100,100,100,0.2);
-    transition: .3s;
+
+.modern-nav-btn i {
+    color: #64748b !important;
+    font-size: 1.3rem !important;
+    width: 28px !important;
+    text-align: center !important;
+    transition: all 0.2s ease !important;
 }
-.tabsButton{
-    font-family: "Arial Black",sans-serif;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1vw;
-    text-align: left;
-    width: 80%;
+
+.modern-nav-btn span {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    flex: 1 !important;
+    text-align: left !important;
+    letter-spacing: -0.2px !important;
 }
-.tabsIcon{
-    width: 20%;
-    text-align: right;
-    font-size: 1.5vw;
-    color: rgba(255, 255, 255, 0.9);
+
+/* Active Navigation State */
+.modern-nav-btn.active-nav {
+    background: #1976D2 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3) !important;
 }
-.userAnimate{
-    background-image: linear-gradient(to right,#333,grey);
-    border-radius: 0 1vw 1vw 0;
-    animation: tabsAnimate .3s;
-    border-bottom: solid thin deepskyblue;
-    border-left: solid thin deepskyblue;
-    border-top: solid thin deepskyblue;
+
+.modern-nav-btn.active-nav i {
+    color: #ffffff !important;
+}
+
+.modern-nav-btn.active-nav::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 60%;
+    background: #ffffff;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Hover Effects for Non-Active Buttons */
+.modern-nav-btn:not(.active-nav):hover {
+    background: #f8fafc !important;
+    transform: translateX(4px) !important;
+}
+
+.modern-nav-btn:not(.active-nav):hover i {
+    color: #1976D2 !important;
+    transform: scale(1.05) !important;
+}
+
+/* Disabled Tab Styling */
+.modern-nav-btn.disabled-tab {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    filter: grayscale(0.3) !important;
+    pointer-events: none !important;
+    position: relative !important;
+}
+
+.modern-nav-btn.disabled-tab::after {
+    content: '🔒' !important;
+    position: absolute !important;
+    right: 16px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 12px !important;
+    opacity: 0.6 !important;
+}
+
+/* Tooltip for Disabled Tabs */
+.nav-item-wrapper:has(.disabled-tab):hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1e293b;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
     pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
-@keyframes tabsAnimate {
-    from{
-        background-color:transparent;
-        border-radius: 0;
-        border: none;
-        border-bottom: solid thin #333;
+
+/* Scrollbar Styling */
+.navBar.modern-nav-bar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.navBar.modern-nav-bar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.navBar.modern-nav-bar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.navBar.modern-nav-bar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .navBar.modern-nav-bar {
+        width: 260px;
+        padding: 20px 12px;
     }
-    to{
-        background-color: rgba(0,0,0,0.3);
-        border-radius: 0 1vw 1vw 0;
-        border-bottom: solid thin deepskyblue;
-        border-left: solid thin deepskyblue;
-        border-top: solid thin deepskyblue;
+    
+    .modern-nav-btn {
+        padding: 10px 14px !important;
     }
+    
+    .modern-nav-btn i {
+        font-size: 1.2rem !important;
+        width: 24px !important;
+    }
+    
+    .modern-nav-btn span {
+        font-size: 0.85rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .navBar.modern-nav-bar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 16px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        border-right: none;
+        border-bottom: 1px solid #e8ecf0;
+        gap: 8px;
+    }
+    
+    .modern-nav-btn {
+        width: auto !important;
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+    
+    .modern-nav-btn i {
+        width: 20px !important;
+    }
+    
+    .nav-item-wrapper {
+        flex: 1;
+    }
+}
+
+/* Animation for Active Tab */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.modern-nav-btn.active-nav {
+    animation: slideIn 0.3s ease;
+}
+
+/* Logo Section Styling (if needed) */
+.modern-logo {
+    padding: 16px 12px !important;
+    margin-bottom: 24px !important;
+    border-bottom: 1px solid #e8ecf0 !important;
+}
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.capsu-logo {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.modern-logo:hover .capsu-logo {
+    transform: scale(1.05);
 }

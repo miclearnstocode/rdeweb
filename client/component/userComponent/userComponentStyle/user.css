@@ -2,7 +2,7 @@
 .modern-user-panel {
     display: flex;
     min-height: 100vh;
-    background: linear-gradient(135deg, #003153 0%, #FFFFFF 100%);
+    background-color: ghostwhite;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -222,7 +222,7 @@
     flex: 1;
     padding: 2.5rem;
     overflow-y: auto;
-    background: rgba(255, 255, 255, 0.97);
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(20px);
     margin: 1.5rem;
     border-radius: 32px;

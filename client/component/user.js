@@ -100,27 +100,23 @@ export const UserPanel = () => {
         }
     });
 
-    // Also redirect from base /user path to research tab
     if (currentPath === '/user' || currentPath === '/user/') {
         needsRedirect = true;
     }
 
     if (needsRedirect) {
         window.location.replace(redirectUrl);
-        return null; // Return null to prevent rendering
+        return null;
     }
 
-    // Determine active tab based on URL pattern matching
-    let activeTabId = 'research-tab'; // Default to research tab
+    let activeTabId = 'research-tab';
 
-    // Find which tab matches the current URL (only check enabled tabs)
     Object.entries(tabs).forEach(([tabId, tab]) => {
         if (!tab.disabled && currentPath.startsWith(tab.urlPattern)) {
             activeTabId = tabId;
         }
     });
 
-    // DOUBLE CHECK: If somehow activeTabId is a disabled tab, force it to research-tab
     if (tabs[activeTabId]?.disabled) {
         activeTabId = 'research-tab';
     }
@@ -216,11 +212,8 @@ export const UserPanel = () => {
                 nav.appendChild(buttonWrapper);
             });
             
-            // After all buttons are rendered, ensure no duplicate active states
-            // This handles the case where multiple buttons might have gotten active class
             const activeButtons = nav.querySelectorAll('.active-nav');
             if (activeButtons.length > 1) {
-                // Keep only the first one (should be the correct one) and remove others
                 for (let i = 1; i < activeButtons.length; i++) {
                     activeButtons[i].classList.remove('active-nav');
                 }
@@ -229,10 +222,8 @@ export const UserPanel = () => {
         getFrame: (frame) => {
             frame.className = 'modern-frame';
 
-            // Get the active tab by ID - ensure it's not disabled
             let activeTab = tabs[activeTabId];
 
-            // If active tab is disabled, force to research tab
             if (activeTab?.disabled) {
                 activeTabId = 'research-tab';
                 activeTab = tabs['research-tab'];

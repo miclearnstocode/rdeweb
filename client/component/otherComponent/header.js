@@ -108,7 +108,7 @@ export const Header = () => {
                     elementHandler: (el) => {
                         let tip
                         el.addEventListener('mouseenter', function () {
-                            this.style.color = '#4caf50'
+                            this.style.color = '#1976D2'
                             this.style.transform = 'scale(1.1)'
                             this.appendChild($({
                                 tag: 'div',
@@ -118,16 +118,17 @@ export const Header = () => {
                                     top: '45px',
                                     right: '0',
                                     fontSize: '12px',
-                                    backgroundColor: 'rgba(0,0,0,0.9)',
-                                    fontFamily: 'monospace',
+                                    backgroundColor: '#1e293b',
+                                    fontFamily: 'Inter, monospace',
                                     padding: '6px 12px',
                                     color: '#fff',
-                                    borderRadius: '6px',
+                                    borderRadius: '8px',
                                     whiteSpace: 'nowrap',
-                                    border: '1px solid #4caf50',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                    border: '1px solid #1976D2',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                                     zIndex: '99999',
-                                    backdropFilter: 'blur(8px)'
+                                    backdropFilter: 'blur(8px)',
+                                    fontWeight: '500'
                                 },
                                 elementHandler: (e) => {
                                     tip = e
@@ -135,7 +136,7 @@ export const Header = () => {
                             }))
                         })
                         el.addEventListener('mouseleave', function () {
-                            this.style.color = '#bbb'
+                            this.style.color = '#64748b'
                             this.style.transform = 'scale(1)'
                             if (tip && tip.remove) tip.remove()
                         })
@@ -146,7 +147,7 @@ export const Header = () => {
             const getme = (tool) => {
                 holder = tool
                 let chatbox, mmainScan
-                let currentScanner = null // Store reference to scanner modal
+                let currentScanner = null
 
                 const root = window.location.href
                 const qrCodeScanner = () => {
@@ -182,7 +183,7 @@ export const Header = () => {
                                         left: '0',
                                         top: '0',
                                         display: 'flex',
-                                        backgroundColor: 'rgba(0,0,0,0.95)',
+                                        backgroundColor: 'rgba(0,0,0,0.85)',
                                         zIndex: '99999',
                                         backdropFilter: 'blur(8px)'
                                     },
@@ -197,9 +198,9 @@ export const Header = () => {
                                                 width: '80%',
                                                 margin: 'auto',
                                                 position: 'relative',
-                                                borderRadius: '12px',
+                                                borderRadius: '16px',
                                                 overflow: 'hidden',
-                                                boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                                                boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
                                             },
                                             child: [
                                                 $({
@@ -227,7 +228,7 @@ export const Header = () => {
                                                         },
                                                         type2: 'mouseenter',
                                                         method2: (e) => {
-                                                            e.target.style.color = '#f44336'
+                                                            e.target.style.color = '#ef4444'
                                                             e.target.style.transform = 'scale(1.1)'
                                                         },
                                                         type3: 'mouseleave',
@@ -259,7 +260,7 @@ export const Header = () => {
                                 document.body.appendChild(ConfirmationAlert('Error opening document', null, {
                                     title: 'Error',
                                     icon: 'error',
-                                    iconColor: '#f44336'
+                                    iconColor: '#ef4444'
                                 }))
                             })
                         } catch (err) {
@@ -267,7 +268,7 @@ export const Header = () => {
                             document.body.appendChild(ConfirmationAlert('Invalid QR code format', null, {
                                 title: 'Error',
                                 icon: 'error',
-                                iconColor: '#f44336'
+                                iconColor: '#ef4444'
                             }))
                         }
                     }
@@ -288,7 +289,7 @@ export const Header = () => {
                             display: 'flex',
                             justifyContent: 'center',
                             alignItems: 'center',
-                            backgroundColor: 'rgba(0,0,0,0.95)',
+                            backgroundColor: 'rgba(0,0,0,0.85)',
                             backdropFilter: 'blur(8px)',
                             zIndex: '10000'
                         },
@@ -299,20 +300,21 @@ export const Header = () => {
                                     width: '50vw',
                                     maxWidth: '500px',
                                     margin: 'auto',
-                                    backgroundColor: '#1e1e1e',
-                                    borderRadius: '16px',
-                                    padding: '24px',
-                                    boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '20px',
+                                    padding: '28px',
+                                    boxShadow: '0 25px 50px rgba(0,0,0,0.2)'
                                 },
                                 child: [
                                     $({
                                         tag: 'h3',
                                         text: 'Scan QR Code',
                                         style: {
-                                            color: '#fff',
+                                            color: '#1a2a3a',
                                             marginBottom: '20px',
                                             fontSize: '20px',
-                                            textAlign: 'center'
+                                            textAlign: 'center',
+                                            fontWeight: '600'
                                         }
                                     }),
                                     $({
@@ -326,7 +328,7 @@ export const Header = () => {
                                         style: {
                                             width: '100%',
                                             minHeight: '300px',
-                                            color: '#bbb'
+                                            color: '#64748b'
                                         }
                                     }),
                                     $({
@@ -335,14 +337,15 @@ export const Header = () => {
                                         style: {
                                             marginTop: '20px',
                                             padding: '10px 24px',
-                                            backgroundColor: '#f44336',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            color: '#fff',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #e8ecf0',
+                                            borderRadius: '10px',
+                                            color: '#475569',
                                             cursor: 'pointer',
                                             fontSize: '14px',
                                             fontWeight: '500',
-                                            width: '100%'
+                                            width: '100%',
+                                            transition: 'all 0.2s ease'
                                         },
                                         event: {
                                             type: 'click',
@@ -353,6 +356,16 @@ export const Header = () => {
                                                 if (scannerModal && scannerModal.remove) {
                                                     scannerModal.remove()
                                                 }
+                                            },
+                                            type2: 'mouseenter',
+                                            method2: (e) => {
+                                                e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                                e.currentTarget.style.borderColor = '#cbd5e1';
+                                            },
+                                            type3: 'mouseleave',
+                                            method3: (e) => {
+                                                e.currentTarget.style.backgroundColor = '#f8fafc';
+                                                e.currentTarget.style.borderColor = '#e8ecf0';
                                             }
                                         }
                                     })
@@ -395,23 +408,24 @@ export const Header = () => {
                         style: {
                             width: 'fit-content',
                             height: 'fit-content',
-                            backgroundColor: '#1e1e1e',
+                            backgroundColor: '#ffffff',
                             margin: 'auto',
                             display: 'auto',
                             justifyContent: 'center',
-                            padding: '24px',
-                            borderRadius: '16px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                            padding: '28px',
+                            borderRadius: '20px',
+                            border: '1px solid #e8ecf0',
+                            boxShadow: '0 25px 50px rgba(0,0,0,0.15)'
                         },
                         child: [
                             $({
                                 tag: 'h3',
                                 text: 'Submit Suggestion',
                                 style: {
-                                    color: '#fff',
-                                    marginBottom: '16px',
-                                    fontSize: '18px'
+                                    color: '#1a2a3a',
+                                    marginBottom: '20px',
+                                    fontSize: '20px',
+                                    fontWeight: '600'
                                 }
                             }),
                             $({
@@ -429,15 +443,16 @@ export const Header = () => {
                                             width: '50vw',
                                             maxWidth: '500px',
                                             height: '40vh',
-                                            border: '1px solid #444',
-                                            backgroundColor: '#2a2a2a',
+                                            border: '1px solid #e8ecf0',
+                                            backgroundColor: '#f8fafc',
                                             resize: 'none',
                                             outline: 'none',
                                             padding: '12px',
-                                            color: '#e0e0e0',
+                                            color: '#1a2a3a',
                                             fontSize: '14px',
-                                            fontFamily: 'monospace',
-                                            borderRadius: '8px'
+                                            fontFamily: 'Inter, monospace',
+                                            borderRadius: '12px',
+                                            transition: 'all 0.2s ease'
                                         },
                                         att: {
                                             placeholder: 'Insert text here..!',
@@ -445,8 +460,18 @@ export const Header = () => {
                                             name: 'insertText'
                                         },
                                         event: {
-                                            type: 'input',
-                                            method: (ev) => {
+                                            type: 'focus',
+                                            method: (e) => {
+                                                e.currentTarget.style.borderColor = '#1976D2';
+                                                e.currentTarget.style.backgroundColor = '#ffffff';
+                                            },
+                                            type2: 'blur',
+                                            method2: (e) => {
+                                                e.currentTarget.style.borderColor = '#e8ecf0';
+                                                e.currentTarget.style.backgroundColor = '#f8fafc';
+                                            },
+                                            type3: 'input',
+                                            method3: (ev) => {
                                                 inputValue = ev.target.value
                                             }
                                         }
@@ -459,7 +484,7 @@ export const Header = () => {
                                             display: 'flex',
                                             justifyContent: 'center',
                                             gap: '12px',
-                                            marginTop: '16px'
+                                            marginTop: '20px'
                                         },
                                         child: [
                                             button({
@@ -500,7 +525,7 @@ export const Header = () => {
                                                                     document.body.appendChild(ConfirmationAlert(dat.message, null, {
                                                                         title: 'Error',
                                                                         icon: 'error',
-                                                                        iconColor: '#f44336'
+                                                                        iconColor: '#ef4444'
                                                                     }))
                                                                 }
                                                             } catch (err) {
@@ -509,7 +534,7 @@ export const Header = () => {
                                                                 document.body.appendChild(ConfirmationAlert('Error submitting suggestion', null, {
                                                                     title: 'Error',
                                                                     icon: 'error',
-                                                                    iconColor: '#f44336'
+                                                                    iconColor: '#ef4444'
                                                                 }))
                                                             }
                                                         }
@@ -517,7 +542,7 @@ export const Header = () => {
                                                         document.body.appendChild(ConfirmationAlert('Please enter text', null, {
                                                             title: 'Error',
                                                             icon: 'error',
-                                                            iconColor: '#f44336'
+                                                            iconColor: '#ef4444'
                                                         }))
                                                     }
                                                 }
@@ -538,8 +563,8 @@ export const Header = () => {
                             zIndex: '10000',
                             top: '0',
                             left: '0',
-                            backgroundColor: 'rgba(0,0,0,0.85)',
-                            backdropFilter: 'blur(8px)',
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            backdropFilter: 'blur(4px)',
                             display: 'flex',
                             justifyContent: 'center',
                             alignItems: 'center'
@@ -626,7 +651,7 @@ export const Header = () => {
                 margin: 'auto',
                 cursor: 'pointer',
                 fontSize: '1.5vw',
-                color: '#4caf50',
+                color: '#1976D2',
                 display: 'flex',
                 justifyContent: 'center',
                 height: '100%',
@@ -662,7 +687,7 @@ export const Header = () => {
                                 },
                                 style: {
                                     fontSize: '28px',
-                                    color: '#4caf50'
+                                    color: '#1976D2'
                                 }
                             }),
                             $({
@@ -672,7 +697,7 @@ export const Header = () => {
                                     fontSize: '24px',
                                     fontWeight: 'bold',
                                     marginLeft: '10px',
-                                    background: 'linear-gradient(135deg, #4caf50, #81c784)',
+                                    background: 'linear-gradient(135deg, #1976D2, #42a5f5)',
                                     WebkitBackgroundClip: 'text',
                                     backgroundClip: 'text',
                                     color: 'transparent'
@@ -709,7 +734,7 @@ export const Header = () => {
                                 },
                                 style: {
                                     fontSize: '20px',
-                                    color: '#4caf50'
+                                    color: '#1976D2'
                                 }
                             }),
                             $({

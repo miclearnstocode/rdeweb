@@ -1,6 +1,6 @@
 import {$} from '../../../lib/lib.js'
 
-export const Button=({icon,label,eventHandler})=>{
+export const Button = ({icon, label, eventHandler}) => {
     const children = [];
     
     if(icon){
@@ -10,8 +10,8 @@ export const Button=({icon,label,eventHandler})=>{
                 className: `${icon.text} ${icon.class || ''}`.trim(),
             },
             style: {
-                fontSize: '1.5rem',
-                width: '36px',
+                fontSize: '1.3rem',
+                width: '32px',
                 textAlign: 'center'
             }
         }));
@@ -24,8 +24,9 @@ export const Button=({icon,label,eventHandler})=>{
                 className: label.class || ''
             },
             style: {
-                fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                fontSize: '1rem',
+                fontFamily: 'Inter, Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                fontSize: '0.9rem',
+                fontWeight: '500',
                 flex: '1',
                 textAlign: 'left',
                 whiteSpace: 'normal',
@@ -44,31 +45,43 @@ export const Button=({icon,label,eventHandler})=>{
         style: {
             display: 'flex',
             alignItems: 'center',
-            gap: '1rem',
-            padding: '0.8rem 1.2rem',
-            borderRadius: '8px',
+            gap: '12px',
+            padding: '12px 16px',
+            borderRadius: '12px',
             overflow: 'hidden',
             cursor: 'pointer',
             transition: 'all 0.3s ease',
             width: '100%',
             border: 'none',
-            background: 'transparent'
+            background: 'transparent',
+            color: '#475569'
         },
         event: {
             type: 'click',
             method: (e) => {
-                // Remove active class from all buttons
                 const allButtons = document.querySelectorAll('.modern-nav-btn');
                 allButtons.forEach(btn => {
                     btn.classList.remove('active-nav');
                 });
                 
-                // Add active class to clicked button
                 e.currentTarget.classList.add('active-nav');
                 
-                // Call the original event handler
                 if(eventHandler) {
                     eventHandler(e);
+                }
+            },
+            type2: 'mouseenter',
+            method2: (e) => {
+                if (!e.currentTarget.classList.contains('active-nav')) {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                }
+            },
+            type3: 'mouseleave',
+            method3: (e) => {
+                if (!e.currentTarget.classList.contains('active-nav')) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.transform = 'translateX(0)';
                 }
             }
         },
@@ -76,14 +89,14 @@ export const Button=({icon,label,eventHandler})=>{
     }))
 }
 
-export const NavBar=(props)=>{
+export const NavBar = (props) => {
     return ($({
-        tag:'div',
-        externalStyle:'/client/component/userComponent/userComponentStyle/navBar.css',
-        elementHandler:props.getNav,
-        att:{
-            className:'navBar'
+        tag: 'div',
+        externalStyle: '/client/component/userComponent/userComponentStyle/navBar.css',
+        elementHandler: props.getNav,
+        att: {
+            className: 'navBar modern-nav-bar'
         },
-        child:[]
+        child: []
     }))
 }
