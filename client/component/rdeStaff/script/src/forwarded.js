@@ -558,15 +558,12 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                     comm = el
                 }
                 let printBody
-                
-                // Close modal function
                 const closeModal = () => {
                     if (comm && comm.remove) {
                         comm.remove()
                     }
                 }
                 
-                // Modern Controller with white theme
                 const Controller = () => {
                     const button = ({ label, icon, onClick, color }) => {
                         return $({
@@ -672,7 +669,6 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                     })
                 }
                 
-                // Check if Review is valid
                 const isValidReview = Review && (Array.isArray(Review) ? Review.length > 0 : Object.keys(Review).length > 0)
                 
                 const print = $({
@@ -703,7 +699,6 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                     ]
                 })
                 
-                // Modern modal wrapper
                 return $({
                     tag: 'div',
                     style: {
@@ -721,13 +716,13 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                     },
                     elementHandler: (overlay) => {
                         getComment(overlay)
-                        // Close when clicking outside
+                   
                         overlay.addEventListener('click', (e) => {
                             if (e.target === overlay) {
                                 closeModal()
                             }
                         })
-                        // Handle escape key
+                    
                         const handleEsc = (e) => {
                             if (e.key === 'Escape') {
                                 closeModal()
@@ -4070,373 +4065,241 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                 let hasMore = true
                 let totalEndorsements = 0
                 let totalPages = 1
-                const File = ({camp, eventName, date, id, research,resStat}) => {
+                
+                const File = ({camp, eventName, date, id, research, resStat}) => {
                     let dropList, stateDrop = false
-                    const ViewEn = () => {
-                        let main
-                        const innerPanel = (src) => {
-                            const Remove = $({
-                                tag: 'div',
-                                att: {
-                                    className: 'fa-solid fa-circle-xmark'
-                                },
-                                style: {
-                                    fontSize: '3vw',
-                                    color: 'deepskyblue',
-                                    position: 'absolute',
-                                    left: '-5vw',
-                                    top: '0',
-                                    padding: '.5rem',
-                                    borderRadius: '40vw',
-                                    cursor: 'pointer'
-                                },
-                                event: {
-                                    type: 'click',
-                                    method: () => {
-                                        main.remove()
-                                    }
-                                }
-                            })
-
-                            // Check if it's a Google Drive URL - FIXED: use src instead of file
-                            const isGoogleDriveUrl = src && (src.includes('drive.google.com') || src.includes('/d/') || (typeof src === 'object' && src.drive_view_url));
-                            
-                            let fileViewer;
-                            
-                            if (isGoogleDriveUrl) {
-                                // Create a container for the viewer with loading indicator
-                                fileViewer = $({
-                                    tag: 'div',
-                                    style: {
-                                        width: '100%',
-                                        height: '100%',
-                                        margin: 'auto',
-                                        position: 'relative',
-                                        backgroundColor: '#f5f5f5'
-                                    },
-                                    elementHandler: (el) => {
-                                        // Extract the actual file URL from the source
-                                        let fileUrl = src;
-                                        
-                                        // Handle both string URL and object format
-                                        if (typeof src === 'object' && src.drive_view_url) {
-                                            fileUrl = src.drive_view_url;
-                                        } else if (typeof src === 'string' && src.includes('{')) {
-                                            try {
-                                                const parsed = JSON.parse(src);
-                                                if (parsed.drive_view_url) {
-                                                    fileUrl = parsed.drive_view_url;
-                                                }
-                                            } catch (e) {
-                                                console.log("JSON parse error:", e);
-                                            }
-                                        }
-                                        
-                                        // Create the embed URL properly - handle multiple URL formats
-                                        let fileId = null;
-                                        let embedUrl = fileUrl;
-                                        
-                                        //console.log('Google Drive URL:', fileUrl);
-                                        
-                                        // Try different patterns to extract file ID
-                                        const patterns = [
-                                            /\/d\/([a-zA-Z0-9_-]+)/,                     // /d/FILE_ID/
-                                            /id=([a-zA-Z0-9_-]+)/,                       // id=FILE_ID
-                                            /open\?id=([a-zA-Z0-9_-]+)/,                 // open?id=FILE_ID
-                                            /\/file\/d\/([a-zA-Z0-9_-]+)/,               // /file/d/FILE_ID/
-                                            /([a-zA-Z0-9_-]{25,})/                       // Any long ID (Google Drive IDs are usually long)
-                                        ];
-                                        
-                                        for (let pattern of patterns) {
-                                            const match = fileUrl.match(pattern);
-                                            if (match && match[1]) {
-                                                fileId = match[1];
-                                                break;
-                                            }
-                                        }
-                                        
-                                        // If no fileId found in patterns, try to extract from URL path
-                                        if (!fileId && fileUrl.includes('drive.google.com')) {
-                                            const urlParts = fileUrl.split('/');
-                                            for (let i = 0; i < urlParts.length; i++) {
-                                                if (urlParts[i] === 'd' && urlParts[i + 1]) {
-                                                    fileId = urlParts[i + 1];
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        
-                                        if (fileId) {
-                                            // Clean the fileId (remove query parameters if any)
-                                            fileId = fileId.split('?')[0].split('&')[0];
-                                            embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
-                                            
-                                            //console.log('Final Embed URL:', embedUrl);
-                                            
-                                            // Add loading indicator
-                                            const loadingIndicator = document.createElement('div');
-                                            loadingIndicator.innerHTML = `
-                                                <div style="
-                                                    position: absolute;
-                                                    top: 50%;
-                                                    left: 50%;
-                                                    transform: translate(-50%, -50%);
-                                                    text-align: center;
-                                                    color: #666;
-                                                    font-family: Arial, sans-serif;
-                                                ">
-                                                    <div style="
-                                                        font-size: 24px;
-                                                        margin-bottom: 10px;
-                                                        animation: spin 1s linear infinite;
-                                                    ">⏳</div>
-                                                    <div>Loading Google Drive document...</div>
-                                                    <div style="font-size: 12px; margin-top: 10px; color: #999;">
-                                                        If this takes too long, the document may require permission
-                                                    </div>
-                                                </div>
-                                            `;
-                                            el.appendChild(loadingIndicator);
-                                            
-                                            // Add style for spinner animation
-                                            const style = document.createElement('style');
-                                            style.textContent = `
-                                                @keyframes spin {
-                                                    0% { transform: rotate(0deg); }
-                                                    100% { transform: rotate(360deg); }
-                                                }
-                                            `;
-                                            document.head.appendChild(style);
-                                            
-                                            // Create iframe with proper attributes
-                                            const iframe = document.createElement('iframe');
-                                            iframe.src = embedUrl;
-                                            iframe.style.width = '100%';
-                                            iframe.style.height = '100%';
-                                            iframe.style.border = 'none';
-                                            iframe.style.position = 'absolute';
-                                            iframe.style.top = '0';
-                                            iframe.style.left = '0';
-                                            iframe.allow = 'autoplay; fullscreen';
-                                            iframe.allowFullscreen = true;
-                                            iframe.referrerPolicy = 'no-referrer';
-                                            iframe.title = 'Google Drive Document Viewer';
-                                            
-                                            // Handle successful load
-                                            iframe.onload = () => {
-                                                //console.log('Google Drive iframe loaded successfully');
-                                                // Remove loading indicator
-                                                if (loadingIndicator.parentNode === el) {
-                                                    el.removeChild(loadingIndicator);
-                                                }
-                                            };
-                                            
-                                            // Handle load error
-                                            iframe.onerror = () => {
-                                                //console.log('Google Drive iframe failed to load');
-                                                // Remove loading indicator
-                                                if (loadingIndicator.parentNode === el) {
-                                                    el.removeChild(loadingIndicator);
-                                                }
-                                                // Show alternative options
-                                                showAlternativeOptions(el, fileUrl, fileId);
-                                            };
-                                            
-                                            // Add timeout in case iframe hangs
-                                            setTimeout(() => {
-                                                if (loadingIndicator.parentNode === el) {
-                                                    //console.log('Google Drive iframe loading timeout');
-                                                    el.removeChild(loadingIndicator);
-                                                    // Show alternative options
-                                                    showAlternativeOptions(el, fileUrl, fileId);
-                                                }
-                                            }, 10000); // 10 second timeout
-                                            
-                                            el.appendChild(iframe);
-                                            
-                                        } else {
-                                            // Invalid Google Drive URL format
-                                            //console.log('Invalid Google Drive URL format:', fileUrl);
-                                            el.innerHTML = `
-                                                <div style="
-                                                    color: #666; 
-                                                    text-align: center;
-                                                    padding: 40px;
-                                                    font-family: Arial, sans-serif;
-                                                ">
-                                                    <h3>Unable to load document</h3>
-                                                    <p>Invalid Google Drive URL format.</p>
-                                                    <div style="margin: 20px 0;">
-                                                        <a href="${fileUrl}" 
-                                                        target="_blank" 
-                                                        style="
-                                                            display: inline-block;
-                                                            padding: 10px 20px;
-                                                            background: deepskyblue;
-                                                            color: white;
-                                                            text-decoration: none;
-                                                            border-radius: 5px;
-                                                            margin: 5px;
-                                                        ">
-                                                            Open in Google Drive
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            `;
-                                        }
-                                        
-                                        // Function to show alternative options
-                                        function showAlternativeOptions(containerElement, originalUrl, fileId) {
-                                            const directUrl = `https://drive.google.com/uc?id=${fileId}&export=download`;
-                                            const viewUrl = `https://drive.google.com/file/d/${fileId}/view`;
-                                            
-                                            containerElement.innerHTML = `
-                                                <div style="
-                                                    color: white; 
-                                                    font-family: Arial, sans-serif; 
-                                                    padding: 40px;
-                                                    text-align: center;
-                                                    background: rgba(0,0,0,0.8);
-                                                    border-radius: 10px;
-                                                    position: absolute;
-                                                    top: 50%;
-                                                    left: 50%;
-                                                    transform: translate(-50%, -50%);
-                                                    width: 80%;
-                                                    max-width: 500px;
-                                                ">
-                                                    <h3>Document Access Required</h3>
-                                                    <p>This Google Drive document may require permission to view.</p>
-                                                    <div style="margin: 30px 0;">
-                                                        <a href="${originalUrl}" 
-                                                        target="_blank" 
-                                                        style="
-                                                            display: block;
-                                                            padding: 12px 24px;
-                                                            background: deepskyblue;
-                                                            color: white;
-                                                            text-decoration: none;
-                                                            border-radius: 5px;
-                                                            margin: 10px;
-                                                        ">
-                                                            🔗 Open in Google Drive (New Tab)
-                                                        </a>
-                                                        <a href="${viewUrl}" 
-                                                        target="_blank" 
-                                                        style="
-                                                            display: block;
-                                                            padding: 12px 24px;
-                                                            background: #4CAF50;
-                                                            color: white;
-                                                            text-decoration: none;
-                                                            border-radius: 5px;
-                                                            margin: 10px;
-                                                        ">
-                                                            👁️ View Document (Alternative)
-                                                        </a>
-                                                        <a href="${directUrl}" 
-                                                        target="_blank" 
-                                                        style="
-                                                            display: block;
-                                                            padding: 12px 24px;
-                                                            background: #FF9800;
-                                                            color: white;
-                                                            text-decoration: none;
-                                                            border-radius: 5px;
-                                                            margin: 10px;
-                                                        ">
-                                                            ⬇️ Download Document
-                                                        </a>
-                                                        <button onclick="location.reload()" 
-                                                                style="
-                                                                    padding: 12px 24px;
-                                                                    background: #555;
-                                                                    color: white;
-                                                                    border: none;
-                                                                    border-radius: 5px;
-                                                                    margin: 10px;
-                                                                    cursor: pointer;
-                                                                    width: 100%;
-                                                                ">
-                                                            🔄 Try Again
-                                                        </button>
-                                                    </div>
-                                                    <p style="font-size: 12px; color: #ccc; margin-top: 20px;">
-                                                        <strong>Note:</strong> You may need to:<br>
-                                                        1. Sign in with the appropriate Google account<br>
-                                                        2. Request access from the document owner<br>
-                                                        3. Check your internet connection
-                                                    </p>
-                                                </div>
-                                            `;
-                                        }
-                                    }
-                                });
-                                
-                            } else {
-                                // For local PDF files
-                                fileViewer = $({
-                                    tag: 'object',
-                                    style: {
-                                        width: '100%',
-                                        height: '100%'
-                                    },
-                                    att: {
-                                        data: '/' + src,
-                                        type: 'application/pdf'
-                                    }
-                                })
-                            }
-
-                            return ($({
+                    
+                    // Modern open file function using CustomModal
+                    const openFileInModal = (fileUrl) => {
+                        const createViewerContent = () => {
+                            const container = $({
                                 tag: 'div',
                                 style: {
                                     width: '100%',
                                     height: '100%',
-                                    border: 'solid thin grey',
+                                    minHeight: '500px',
                                     position: 'relative'
+                                }
+                            });
+                            
+                            const isGoogleDriveUrl = fileUrl && (fileUrl.includes('drive.google.com') || fileUrl.includes('/d/'));
+                            
+                            if (isGoogleDriveUrl) {
+                                let fileId = null;
+                                const patterns = [
+                                    /\/d\/([a-zA-Z0-9_-]+)/,
+                                    /id=([a-zA-Z0-9_-]+)/,
+                                    /open\?id=([a-zA-Z0-9_-]+)/,
+                                    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                                    /([a-zA-Z0-9_-]{25,})/
+                                ];
+                                
+                                for (let pattern of patterns) {
+                                    const match = fileUrl.match(pattern);
+                                    if (match && match[1]) {
+                                        fileId = match[1];
+                                        break;
+                                    }
+                                }
+                                
+                                if (!fileId && fileUrl.includes('drive.google.com')) {
+                                    const urlParts = fileUrl.split('/');
+                                    for (let i = 0; i < urlParts.length; i++) {
+                                        if (urlParts[i] === 'd' && urlParts[i + 1]) {
+                                            fileId = urlParts[i + 1];
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (fileId) {
+                                    fileId = fileId.split('?')[0].split('&')[0];
+                                    const embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
+                                    
+                                    const loadingIndicator = $({
+                                        tag: 'div',
+                                        style: {
+                                            position: 'absolute',
+                                            top: '50%',
+                                            left: '50%',
+                                            transform: 'translate(-50%, -50%)',
+                                            textAlign: 'center',
+                                            zIndex: 10
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                att: { className: 'fa-solid fa-spinner fa-pulse' },
+                                                style: { fontSize: '32px', color: '#0d6efd', marginBottom: '12px', display: 'block' }
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                text: 'Loading document...',
+                                                style: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6c757d' }
+                                            })
+                                        ]
+                                    });
+                                    container.appendChild(loadingIndicator);
+                                    
+                                    const iframe = document.createElement('iframe');
+                                    iframe.src = embedUrl;
+                                    iframe.style.width = '100%';
+                                    iframe.style.height = '100%';
+                                    iframe.style.border = 'none';
+                                    iframe.style.position = 'absolute';
+                                    iframe.style.top = '0';
+                                    iframe.style.left = '0';
+                                    iframe.allow = 'autoplay; fullscreen';
+                                    iframe.allowFullscreen = true;
+                                    
+                                    iframe.onload = () => loadingIndicator.remove();
+                                    iframe.onerror = () => {
+                                        loadingIndicator.remove();
+                                        container.innerHTML = `
+                                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                                <span class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                                <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load document</h3>
+                                                <a href="${fileUrl}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; margin-top: 16px;">Open in Google Drive</a>
+                                            </div>
+                                        `;
+                                    };
+                                    
+                                    container.appendChild(iframe);
+                                }
+                            } else {
+                                const objectEl = $({
+                                    tag: 'object',
+                                    att: {
+                                        data: '/' + fileUrl,
+                                        type: 'application/pdf'
+                                    },
+                                    style: {
+                                        width: '100%',
+                                        height: '100%',
+                                        minHeight: '500px',
+                                        border: 'none',
+                                        borderRadius: '8px'
+                                    },
+                                    elementHandler: (obj) => {
+                                        obj.onerror = () => {
+                                            obj.innerHTML = `
+                                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                                    <span class="fa-solid fa-file-pdf" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                                    <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load PDF</h3>
+                                                    <a href="/${fileUrl}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; margin-top: 16px;">Download PDF</a>
+                                                </div>
+                                            `;
+                                        };
+                                    }
+                                });
+                                container.appendChild(objectEl);
+                            }
+                            
+                            return container;
+                        };
+                        
+                        CustomModal({
+                            title: 'Document Viewer',
+                            size: 'large',
+                            content: createViewerContent,
+                            showCloseButton: true,
+                            closeOnOverlayClick: true
+                        });
+                    };
+                    
+                    const ViewEn = () => {
+                        let main
+                        
+                        const innerPanel = (src) => {
+                            const closeButton = $({
+                                tag: 'button',
+                                att: {
+                                    'aria-label': 'Close',
+                                    'title': 'Close'
+                                },
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    width: '36px',
+                                    height: '36px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #e9ecef',
+                                    borderRadius: '10px',
+                                    cursor: 'pointer',
+                                    zIndex: 20,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s ease',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                                 },
                                 child: [
-                                    Remove,
-                                    fileViewer
-                                ]
-                            }))
-                        }
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-xmark' },
+                                        style: { fontSize: '20px', color: '#6c757d' }
+                                    })
+                                ],
+                                event: {
+                                    type: 'click',
+                                    method: () => main.remove()
+                                },
+                                mouseenter: (e) => {
+                                    e.target.style.backgroundColor = '#f8f9fa';
+                                    e.target.style.borderColor = '#dee2e6';
+                                    const icon = e.target.querySelector('.fa-xmark');
+                                    if (icon) icon.style.color = '#dc3545';
+                                },
+                                mouseleave: (e) => {
+                                    e.target.style.backgroundColor = '#ffffff';
+                                    e.target.style.borderColor = '#e9ecef';
+                                    const icon = e.target.querySelector('.fa-xmark');
+                                    if (icon) icon.style.color = '#6c757d';
+                                }
+                            });
+                            
+                            // Use the modern modal instead of inline viewer
+                            openFileInModal(src);
+                            return null;
+                        };
+                        
                         const SaveResearch = () => {
-                            return ($({
-                                tag: 'div',
+                            return $({
+                                tag: 'button',
                                 style: {
-                                    width: 'fit-content',
-                                    height: 'fit-content',
-                                    paddingRight: '2vw',
-                                    paddingLeft: '2vw',
-                                    margin: 'auto',
-                                    paddingTop: '1vh',
-                                    paddingBottom: '1vh',
-                                    borderRadius: '1vw',
-                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    fontWeight: 'bolder',
-                                    fontSize: '1.2vw',
-                                    cursor: 'pointer'
+                                    padding: '10px 24px',
+                                    backgroundColor: '#28a745',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
                                 },
-                                att: {
-                                    className: 'saveBotEn'
-                                },
-                                text: 'Save all documents ',
+                                child: [
+                                    $({ tag: 'span', att: { className: 'fa-solid fa-save' }, style: { fontSize: '14px' } }),
+                                    $({ tag: 'span', text: 'Save all documents' })
+                                ],
                                 event: {
                                     type: 'click',
                                     method: () => {
                                         (async function (endorsementId) {
                                             let loading = Waiting()
                                             document.body.appendChild(loading)
-                                            const remove = () => {
-                                                loading.remove()
-                                            }
+                                            const remove = () => loading.remove()
+                                            
                                             const form = new FormData()
                                             form.append('saveResearchPer', 'true')
                                             form.append('endorseId', endorsementId)
                                             form.append('campus', camp)
                                             form.append('eventType', eventName)
+                                            
                                             await fetch('/uploadResearchFile', {
                                                 method: 'POST',
                                                 body: form
@@ -4445,493 +4308,385 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                                                     remove()
                                                     return res.json()
                                                 }
+                                            }).then(dat => {
+                                                if (dat && dat.status) {
+                                                    document.body.appendChild(ConfirmationAlert("Success..!", () => window.location.reload()))
+                                                } else if (dat) {
+                                                    alert(dat.message)
+                                                }
+                                            }).catch(err => {
+                                                remove()
+                                                alert('Error saving documents. Please try again.')
                                             })
-                                                .then(dat => {
-                                                    if (dat && dat.status) {
-                                                        document.body.appendChild(ConfirmationAlert("Success..!", () => {
-                                                            window.location.reload()
-                                                        }))
-                                                    } else if (dat) {
-                                                        alert(dat.message)
-                                                    }
-                                                })
-                                                .catch(err => {
-                                                    remove()
-                                                    //console.error('Error saving research documents:', err)
-                                                    alert('Error saving documents. Please try again. Check console for details.')
-                                                })
                                         })(id)
                                     }
+                                },
+                                mouseenter: (e) => {
+                                    e.target.style.backgroundColor = '#218838';
+                                    e.target.style.transform = 'translateY(-1px)';
+                                },
+                                mouseleave: (e) => {
+                                    e.target.style.backgroundColor = '#28a745';
+                                    e.target.style.transform = 'translateY(0)';
                                 }
-                            }))
+                            })
                         }
+                        
                         const Return = () => {
-
-                            return ($({
-
-                                tag: 'div',
-
+                            return $({
+                                tag: 'button',
                                 style: {
-
-                                    width: 'fit-content',
-
-                                    height: 'fit-content',
-
-                                    paddingRight: '2vw',
-
-                                    paddingLeft: '2vw',
-
-                                    margin: 'auto',
-
-                                    paddingTop: '1vh',
-
-                                    paddingBottom: '1vh',
-
-                                    borderRadius: '1vw',
-
-                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
-                                    fontWeight: 'bolder',
-
-                                    fontSize: '1.2vw',
-
-                                    cursor: 'pointer'
-
+                                    padding: '10px 24px',
+                                    backgroundColor: '#dc3545',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
                                 },
-
-                                att: {
-
-                                    className: 'saveBotEn'
-
-                                },
-
-                                text: 'Return',
-
+                                child: [
+                                    $({ tag: 'span', att: { className: 'fa-solid fa-arrow-left' }, style: { fontSize: '14px' } }),
+                                    $({ tag: 'span', text: 'Return' })
+                                ],
                                 event: {
-
                                     type: 'click',
-
                                     method: () => {
-
                                         const req = new Request('/endorsement')
-
                                         req.Post([
-
-                                            {
-
-                                                name: 'returnDocs',
-
-                                                value: '1'
-
-                                            },
-
-                                            {
-
-                                                name: 'docId',
-
-                                                value: id
-
-                                            }
-
+                                            { name: 'returnDocs', value: '1' },
+                                            { name: 'docId', value: id }
                                         ])
-
                                         req.Json()
-
                                         req.Send().then(res => {
-
                                             if (res.status) {
-
                                                 window.location.reload();
-
                                             } else {
-
                                                 alert(res.message)
-
                                             }
-
                                         })
-
                                     }
-
+                                },
+                                mouseenter: (e) => {
+                                    e.target.style.backgroundColor = '#c82333';
+                                    e.target.style.transform = 'translateY(-1px)';
+                                },
+                                mouseleave: (e) => {
+                                    e.target.style.backgroundColor = '#dc3545';
+                                    e.target.style.transform = 'translateY(0)';
                                 }
-
-                            }))
-
+                            })
                         }
-
-
-                        return ($({
-
-                            tag: 'div',
-
-                            style: {
-
-                                width: '100%',
-
-                                height: '100%',
-
-                                position: 'absolute',
-
-                                backgroundColor: '#333',
-
-                            },
-
-                            elementHandler: (el) => {
-
-                                main = el
-
-                            },
-
-                            child: [
-
-                                $({
-
-                                    tag: 'div',
-
-                                    style: {
-
-                                        width: '80%',
-
-                                        height: '90%',
-
-                                        margin: 'auto',
-
-                                        border: 'solid thin grey',
-
-                                        position: 'relative'
-
-                                    },
-
-                                    elementHandler: async (el) => {
-
-                                        const form = new FormData();
-
-                                        form.append('requestFileEndorse', 'true')
-
-                                        form.append('docId', id)
-
-                                        await fetch('/endorsement', {
-
-                                            method: 'POST',
-
-                                            body: form
-
-                                        }).then(res => res.json())
-
-                                            .then(data => {
-
-                                                el.appendChild(innerPanel(data.res.fileUrl))
-
-                                            })
-
-                                    }
-
-                                }),
-
-                                $({
-
-                                    tag: 'div',
-
-                                    style: {
-
-                                        height: '9.8%',
-
-                                        width: '100%',
-
-                                        display: 'flex',
-
-                                        justifyContent: 'center',
-
-                                    },
-
-                                    child: [
-
-                                        SaveResearch(),
-
-                                        Return()
-
-                                    ]
-
-                                })
-
-                            ],
-
-
-                        }))
-
+                        
+                        // Fetch and open file in modal
+                        const fetchAndOpenFile = async () => {
+                            const form = new FormData();
+                            form.append('requestFileEndorse', 'true');
+                            form.append('docId', id);
+                            
+                            const response = await fetch('/endorsement', {
+                                method: 'POST',
+                                body: form
+                            });
+                            const data = await response.json();
+                            if (data.res && data.res.fileUrl) {
+                                openFileInModal(data.res.fileUrl);
+                            }
+                        };
+                        
+                        fetchAndOpenFile();
+                        return null;
                     }
-
+                    
                     const open = () => {
-                        return ($({
+                        return $({
                             tag: 'button',
                             att: {
-                                className: "fa-solid fa-folder-open"
+                                className: "fa-regular fa-folder-open",
+                                title: "Open Document"
                             },
                             style: {
-                                width: '5%',
-                                margin: 'auto',
+                                width: '36px',
+                                height: '36px',
                                 cursor: 'pointer',
                                 textAlign: 'center',
-                                backgroundColor: 'deepskyblue',
-                                border: 'none',
-                                fontSize: '1vw',
-                                borderRadius: '.2vw'
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '8px',
+                                fontSize: '16px',
+                                color: '#0d6efd',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                             },
                             event: {
-
                                 type: 'click',
-
                                 method: () => {
-
-                                    mainFrame.appendChild(ViewEn())
-
+                                    ViewEn();
                                 }
-
+                            },
+                            mouseenter: (e) => {
+                                e.target.style.backgroundColor = '#f8f9fa';
+                                e.target.style.borderColor = '#0d6efd';
+                            },
+                            mouseleave: (e) => {
+                                e.target.style.backgroundColor = '#ffffff';
+                                e.target.style.borderColor = '#e9ecef';
                             }
-                        }))
+                        })
                     }
+                    
                     const dropDown = () => {
-
                         let lis
-
-                        const ListRes = ({category, author,}) => {
-
-                            return ($({
-                                tag: 'ul',
+                        
+                        const ListRes = () => {
+                            return $({
+                                tag: 'div',
                                 style: {
                                     width: '100%',
-                                    fontFamily: ' Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    color: '#999',
-                                    borderLeft: 'solid thin deepskyblue',
-                                    borderRight: 'solid thin deepskyblue',
-                                    borderBottom: 'solid thin deepskyblue',
-                                    fontSize:'1vw'
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '8px',
+                                    border: '1px solid #e9ecef',
+                                    marginTop: '8px',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                                 },
                                 elementHandler: (el) => {
                                     lis = el
                                     research.forEach(val => {
                                         el.appendChild($({
-                                            tag: "li",
+                                            tag: "div",
                                             style: {
-                                                borderBottom: 'solid thin deepskyblue'
+                                                padding: '12px 16px',
+                                                borderBottom: '1px solid #f0f0f0',
+                                                fontSize: '13px',
+                                                fontFamily: 'Inter, sans-serif',
+                                                color: '#2c3e50'
                                             },
                                             child: [
                                                 $({
                                                     tag: 'div',
-                                                    att: {
-                                                        innerHTML: `<span style="color:deepskyblue">Author:</span> ${val.author}`
-                                                    },
+                                                    style: { marginBottom: '4px' },
+                                                    child: [
+                                                        $({ tag: 'span', text: 'Author: ', style: { fontWeight: '600', color: '#0d6efd' } }),
+                                                        $({ tag: 'span', text: val.author })
+                                                    ]
                                                 }),
                                                 $({
                                                     tag: 'div',
-                                                    att: {
-                                                        innerHTML: `<span style="color:deepskyblue">Category:</span> ${val.category}`
-                                                    },
+                                                    style: { marginBottom: '4px' },
+                                                    child: [
+                                                        $({ tag: 'span', text: 'Category: ', style: { fontWeight: '600', color: '#0d6efd' } }),
+                                                        $({ tag: 'span', text: val.category })
+                                                    ]
                                                 }),
                                                 $({
                                                     tag: 'div',
-                                                    att: {
-                                                        innerHTML: `<span style="color:deepskyblue">Title:</span> ${val.title}`
-                                                    },
+                                                    child: [
+                                                        $({ tag: 'span', text: 'Title: ', style: { fontWeight: '600', color: '#0d6efd' } }),
+                                                        $({ tag: 'span', text: val.title })
+                                                    ]
                                                 })
                                             ]
                                         }))
                                     })
                                 }
-                            }))
+                            })
                         }
-
-                        return ($({
+                        
+                        return $({
                             tag: 'button',
                             att: {
-                                className: 'fa-solid fa-square-caret-down'
+                                className: 'fa-solid fa-chevron-down',
+                                title: 'Toggle Details'
                             },
                             style: {
-                                width: '5%',
-                                margin: 'auto',
+                                width: '36px',
+                                height: '36px',
                                 cursor: 'pointer',
                                 textAlign: 'center',
-                                backgroundColor: 'deepskyblue',
-                                border: 'none',
-                                fontSize: '1vw',
-                                borderRadius: '.2vw'
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                color: '#6c757d',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                             },
                             event: {
                                 type: 'click',
                                 method: (eve) => {
-
                                     stateDrop = !stateDrop
-
                                     if (stateDrop) {
-                                        eve.target.className = 'fa-solid fa-square-caret-up'
-                                        dropList.appendChild(ListRes({}))
+                                        eve.target.className = 'fa-solid fa-chevron-up'
+                                        const listRes = ListRes()
+                                        dropList.appendChild(listRes)
                                     } else {
-                                        dropList.innerHTML = ''
-                                        eve.target.className = 'fa-solid fa-square-caret-down'
-                                        lis.remove()
-
+                                        eve.target.className = 'fa-solid fa-chevron-down'
+                                        if (dropList.firstChild) dropList.removeChild(dropList.firstChild)
                                     }
-
                                 }
+                            },
+                            mouseenter: (e) => {
+                                e.target.style.backgroundColor = '#f8f9fa';
+                                e.target.style.borderColor = '#0d6efd';
+                                e.target.style.color = '#0d6efd';
+                            },
+                            mouseleave: (e) => {
+                                e.target.style.backgroundColor = '#ffffff';
+                                e.target.style.borderColor = '#e9ecef';
+                                e.target.style.color = '#6c757d';
                             }
-
-                        }))
+                        })
                     }
-                    const campus = $({
-
+                    
+                    const campusEl = $({
                         tag: 'div',
-
                         style: {
-
-                            fontSize: '1vw',
-
-                            width: '20%',
-
-                            paddingLeft: '.5vw',
-
-                            paddingRight: '.5vw',
-
-
-                        },
-
-                        text: camp
-
-                    })
-
-                    const eventType = $({
-
-                        tag: 'div',
-
-                        style: {
-
-                            fontSize: '1vw',
-
-                            paddingLeft: '.5vw',
-
-                            paddingRight: '.5vw',
-
-                            width: '48%',
-
+                            fontSize: '13px',
+                            width: '15%',
+                            padding: '0 8px',
+                            fontFamily: 'Inter, sans-serif',
+                            color: '#495057',
                             whiteSpace: 'nowrap',
-
-                            textOverflow: 'ellipsis',
-
-                            overflow: 'hidden'
-
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
                         },
-
-                        text: eventName
-
+                        text: camp
                     })
-
-                    const dateEn = $({
-
+                    
+                    const eventTypeEl = $({
                         tag: 'div',
-
                         style: {
-
-                            fontSize: '1vw',
-
-                            paddingLeft: '.5vw',
-
-                            paddingRight: '.5vw',
-
+                            fontSize: '13px',
+                            padding: '0 8px',
+                            width: '40%',
+                            fontFamily: 'Inter, sans-serif',
+                            color: '#495057',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden'
                         },
-
-                        text: date
-
+                        text: eventName
                     })
-
-                    return ($({
+                    
+                    const dateEn = $({
+                        tag: 'div',
+                        style: {
+                            fontSize: '13px',
+                            padding: '0 8px',
+                            width: '15%',
+                            fontFamily: 'Inter, sans-serif',
+                            color: '#6c757d'
+                        },
+                        text: date
+                    })
+                    
+                    return $({
                         tag: 'div',
                         style: {
                             width: '100%',
-                            height: 'fit-content'
+                            height: 'fit-content',
+                            marginBottom: '12px'
                         },
                         child: [
                             $({
                                 tag: 'div',
                                 style: {
-                                    width: '95%',
+                                    width: '100%',
                                     height: 'fit-content',
-                                    margin: '.5vh auto',
-                                    padding: '.3rem',
+                                    padding: '12px 16px',
                                     display: 'flex',
-                                    fontSize: '1vw',
-                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    position: 'relative',
-                                    cursor: '',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    backgroundColor: resStat * 1 !== 0 ? '#f8f9fa' : '#ffffff',
+                                    border: '1px solid #e9ecef',
+                                    borderRadius: '12px',
+                                    transition: 'all 0.2s ease',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
                                 },
-                                att: {
-                                    className: 'endorsFile'
+                                att: { className: 'endorsFile' },
+                                elementHandler: (el) => {
+                                    el.addEventListener('mouseenter', () => {
+                                        el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                                    });
+                                    el.addEventListener('mouseleave', () => {
+                                        el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+                                    });
                                 },
                                 child: [
                                     dropDown(),
                                     open(),
-                                    campus,
-                                    eventType,
+                                    campusEl,
+                                    eventTypeEl,
                                     dateEn
-                                ],
-                                elementHandler:(ev)=>{
-                                    if(resStat*1!==0){
-                                        ev.style.backgroundColor= '#222'
-                                    }
-                                }
+                                ]
                             }),
                             $({
                                 tag: 'div',
                                 style: {
-                                    width: '80%',
-                                    margin: 'auto',
+                                    width: 'calc(100% - 32px)',
+                                    marginLeft: '32px',
+                                    marginTop: '8px'
                                 },
                                 elementHandler: (el) => {
                                     dropList = el
-                                },
+                                }
                             })
                         ]
-                    }))
+                    })
                 }
+                
                 function loadEndorsements(page) {
                     if (isLoading) return;
                     
                     isLoading = true;
                     currentPage = page;
                     
-                    // ALWAYS clear and show loading - REPLACE, don't append
-                    endorseBody.innerHTML = '';
-                    endorseBody.appendChild($({
-                        tag: 'div',
-                        att: { id: 'loadingIndicator' },
-                        style: {
-                            textAlign: 'center',
-                            padding: '20px',
-                            color: '#bbb',
-                            fontSize: '1.2vw',
-                            backgroundColor: 'rgba(0,0,0,0.2)',
-                            borderRadius: '5px',
-                            margin: '20px'
-                        },
-                        text: 'Loading endorsements...'
-                    }));
+                    if (endorseBody) {
+                        endorseBody.innerHTML = '';
+                        endorseBody.appendChild($({
+                            tag: 'div',
+                            att: { id: 'loadingIndicator' },
+                            style: {
+                                textAlign: 'center',
+                                padding: '60px',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                border: '1px solid #e9ecef'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' },
+                                    child: [
+                                        $({ tag: 'span', att: { className: 'fa-solid fa-spinner fa-pulse' }, style: { fontSize: '32px', color: '#0d6efd' } }),
+                                        $({ tag: 'div', text: 'Loading endorsements...', style: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6c757d' } })
+                                    ]
+                                })
+                            ]
+                        }));
+                    }
                     
-                    // Make paginated request
                     const form = new FormData();
                     form.append('endorsementList', 'true');
                     form.append('page', page);
-                    form.append('limit', 10); // Load exactly 10 per page
+                    form.append('limit', 10);
                     
                     fetch('/endorsement', {
                         method: 'POST',
                         body: form
                     })
+                    .then(response => response.json())
                     .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(response => {
-                        // Remove loading indicator
                         const loadingIndicator = document.getElementById('loadingIndicator');
                         if (loadingIndicator) loadingIndicator.remove();
                         
@@ -4949,235 +4704,220 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                         totalPages = response.totalPages;
                         totalEndorsements = response.total;
                         
-                        // ALWAYS clear and replace content
-                        endorseBody.innerHTML = '';
+                        if (endorseBody) endorseBody.innerHTML = '';
                         
                         if (data.length === 0) {
-                            endorseBody.appendChild($({
-                                tag: 'div',
-                                style: {
-                                    textAlign: 'center',
-                                    padding: '20px',
-                                    color: '#bbb',
-                                    fontSize: '1.2vw',
-                                    backgroundColor: 'rgba(0,0,0,0.2)',
-                                    borderRadius: '5px',
-                                    margin: '20px'
-                                },
-                                text: 'No endorsements found'
-                            }));
+                            if (endorseBody) {
+                                endorseBody.appendChild($({
+                                    tag: 'div',
+                                    style: {
+                                        textAlign: 'center',
+                                        padding: '60px',
+                                        color: '#6c757d',
+                                        fontSize: '14px',
+                                        fontFamily: 'Inter, sans-serif',
+                                        backgroundColor: '#ffffff',
+                                        borderRadius: '12px',
+                                        border: '1px solid #e9ecef'
+                                    },
+                                    child: [
+                                        $({ tag: 'span', att: { className: 'fa-solid fa-inbox' }, style: { fontSize: '48px', color: '#adb5bd', marginBottom: '16px', display: 'block' } }),
+                                        $({ tag: 'div', text: 'No endorsements found' })
+                                    ]
+                                }));
+                            }
                         } else {
-                            // Add page navigation info at the TOP
-                            endorseBody.appendChild($({
-                                tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '10px',
-                                    color: '#4CAF50',
-                                    fontSize: '1vw',
-                                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                                    borderRadius: '5px',
-                                    margin: '10px',
-                                    marginBottom: '20px'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'div',
-                                        text: `Page ${currentPage} of ${totalPages}`
-                                    }),
-                                    $({
-                                        tag: 'div',
-                                        text: `Total: ${totalEndorsements} endorsement(s)`
-                                    }),
-                                    $({
-                                        tag: 'div',
-                                        text: `Showing ${((currentPage - 1) * 10) + 1} to ${Math.min(currentPage * 10, totalEndorsements)}`
-                                    })
-                                ]
-                            }));
-                            
-                            // Add ONLY the current page's endorsements
-                            data.forEach(val => {
-                                if(val.resStat*1===0){
+                            // Page navigation info
+                            if (endorseBody) {
+                                endorseBody.appendChild($({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '12px 16px',
+                                        backgroundColor: '#f8f9fa',
+                                        borderRadius: '10px',
+                                        marginBottom: '20px',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '13px'
+                                    },
+                                    child: [
+                                        $({ tag: 'span', text: `Page ${currentPage} of ${totalPages}`, style: { color: '#0d6efd', fontWeight: '500' } }),
+                                        $({ tag: 'span', text: `Total: ${totalEndorsements} endorsement(s)`, style: { color: '#28a745', fontWeight: '500' } }),
+                                        $({ tag: 'span', text: `Showing ${((currentPage - 1) * 10) + 1} to ${Math.min(currentPage * 10, totalEndorsements)}`, style: { color: '#6c757d' } })
+                                    ]
+                                }));
+                                
+                                data.forEach(val => {
                                     endorseBody.appendChild(File({
                                         camp: val.campus,
                                         eventName: val.event,
-                                        date: val.date.split(' ')[0],
+                                        date: val.date?.split(' ')[0] || '',
                                         id: val.id,
-                                        research: val.research,
+                                        research: val.research || [],
                                         resStat: val.resStat
                                     }));
-                                } else {
-                                    endorseBody.appendChild(File({
-                                        camp: val.campus,
-                                        eventName: val.event,
-                                        date: val.date.split(' ')[0],
-                                        id: val.id,
-                                        research: val.research,
-                                        resStat: val.resStat
-                                    }));
-                                }
-                            });
-                            
-                            // Add pagination controls at the BOTTOM
-                            const paginationDiv = $({
-                                tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    gap: '10px',
-                                    margin: '20px auto',
-                                    padding: '10px'
-                                },
-                                child: []
-                            });
-                            
-                            // Previous button
-                            if (currentPage > 1) {
-                                const prevBtn = $({
-                                    tag: 'button',
-                                    style: {
-                                        padding: '10px 20px',
-                                        backgroundColor: 'rgba(0, 100, 255, 0.2)',
-                                        color: 'deepskyblue',
-                                        border: '1px solid deepskyblue',
-                                        borderRadius: '5px',
-                                        fontSize: '1vw',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s'
-                                    },
-                                    text: '← Previous',
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            loadEndorsements(currentPage - 1);
-                                        }
-                                    },
-                                    mouseenter: (e) => {
-                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.3)';
-                                    },
-                                    mouseleave: (e) => {
-                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.2)';
-                                    }
                                 });
-                                paginationDiv.appendChild(prevBtn);
-                            }
-                            
-                            // Page indicator - with dropdown for quick navigation
-                            const pageSelect = $({
-                                tag: 'select',
-                                style: {
-                                    padding: '8px 15px',
-                                    backgroundColor: 'rgba(0,0,0,0.3)',
-                                    color: '#bbb',
-                                    border: '1px solid #555',
-                                    borderRadius: '3px',
-                                    fontSize: '1vw',
-                                    textAlign: 'center'
-                                },
-                                event: {
-                                    type: 'change',
-                                    method: (e) => {
-                                        const goToPage = parseInt(e.target.value);
-                                        if (goToPage >= 1 && goToPage <= totalPages) {
-                                            loadEndorsements(goToPage);
-                                        }
-                                    }
-                                }
-                            });
-                            
-                            for (let i = 1; i <= totalPages; i++) {
-                                const option = document.createElement('option');
-                                option.value = i;
-                                option.textContent = i;
-                                if (i === currentPage) {
-                                    option.selected = true;
-                                }
-                                pageSelect.appendChild(option);
-                            }
-                            
-                            paginationDiv.appendChild(pageSelect);
-                            
-                            // Next button
-                            if (currentPage < totalPages) {
-                                const nextBtn = $({
-                                    tag: 'button',
+                                
+                                // Pagination controls
+                                const paginationDiv = $({
+                                    tag: 'div',
                                     style: {
-                                        padding: '10px 20px',
-                                        backgroundColor: 'rgba(0, 100, 255, 0.2)',
-                                        color: 'deepskyblue',
-                                        border: '1px solid deepskyblue',
-                                        borderRadius: '5px',
-                                        fontSize: '1vw',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s'
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        margin: '24px auto',
+                                        padding: '16px'
                                     },
-                                    text: 'Next →',
-                                    event: {
-                                        type: 'click',
-                                        method: () => {
-                                            loadEndorsements(currentPage + 1);
-                                        }
-                                    },
-                                    mouseenter: (e) => {
-                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.3)';
-                                    },
-                                    mouseleave: (e) => {
-                                        e.target.style.backgroundColor = 'rgba(0, 100, 255, 0.2)';
-                                    }
+                                    child: []
                                 });
-                                paginationDiv.appendChild(nextBtn);
+                                
+                                if (currentPage > 1) {
+                                    const prevBtn = $({
+                                        tag: 'button',
+                                        style: {
+                                            padding: '8px 20px',
+                                            backgroundColor: '#ffffff',
+                                            color: '#0d6efd',
+                                            border: '1px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontWeight: '500'
+                                        },
+                                        text: '← Previous',
+                                        event: {
+                                            type: 'click',
+                                            method: () => loadEndorsements(currentPage - 1)
+                                        },
+                                        mouseenter: (e) => {
+                                            e.target.style.backgroundColor = '#f8f9fa';
+                                            e.target.style.borderColor = '#0d6efd';
+                                        },
+                                        mouseleave: (e) => {
+                                            e.target.style.backgroundColor = '#ffffff';
+                                            e.target.style.borderColor = '#dee2e6';
+                                        }
+                                    });
+                                    paginationDiv.appendChild(prevBtn);
+                                }
+                                
+                                // Page number buttons
+                                for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                                    const pageBtn = $({
+                                        tag: 'button',
+                                        text: i.toString(),
+                                        style: {
+                                            padding: '8px 14px',
+                                            backgroundColor: i === currentPage ? '#0d6efd' : '#ffffff',
+                                            color: i === currentPage ? '#ffffff' : '#495057',
+                                            border: i === currentPage ? '1px solid #0d6efd' : '1px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontWeight: i === currentPage ? '600' : '400'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                if (i !== currentPage) loadEndorsements(i);
+                                            }
+                                        }
+                                    });
+                                    paginationDiv.appendChild(pageBtn);
+                                }
+                                
+                                if (currentPage < totalPages) {
+                                    const nextBtn = $({
+                                        tag: 'button',
+                                        style: {
+                                            padding: '8px 20px',
+                                            backgroundColor: '#ffffff',
+                                            color: '#0d6efd',
+                                            border: '1px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontWeight: '500'
+                                        },
+                                        text: 'Next →',
+                                        event: {
+                                            type: 'click',
+                                            method: () => loadEndorsements(currentPage + 1)
+                                        },
+                                        mouseenter: (e) => {
+                                            e.target.style.backgroundColor = '#f8f9fa';
+                                            e.target.style.borderColor = '#0d6efd';
+                                        },
+                                        mouseleave: (e) => {
+                                            e.target.style.backgroundColor = '#ffffff';
+                                            e.target.style.borderColor = '#dee2e6';
+                                        }
+                                    });
+                                    paginationDiv.appendChild(nextBtn);
+                                }
+                                
+                                endorseBody.appendChild(paginationDiv);
                             }
-                            
-                            endorseBody.appendChild(paginationDiv);
                         }
                         
                         isLoading = false;
                     })
                     .catch(error => {
-                        //console.error('Error loading endorsements:', error);
-                        
-                        // Remove loading indicator
                         const loadingIndicator = document.getElementById('loadingIndicator');
                         if (loadingIndicator) loadingIndicator.remove();
-                        
                         showEndorsementError('Error: ' + error.message);
                         isLoading = false;
                     });
                 }
                 
                 function showEndorsementError(message) {
-                    endorseBody.innerHTML = '';
-                    endorseBody.appendChild($({
-                        tag: 'div',
-                        style: {
-                            textAlign: 'center',
-                            padding: '20px',
-                            color: '#ff4444',
-                            fontSize: '1.2vw'
-                        },
-                        text: message
-                    }));
+                    if (endorseBody) {
+                        endorseBody.innerHTML = '';
+                        endorseBody.appendChild($({
+                            tag: 'div',
+                            style: {
+                                textAlign: 'center',
+                                padding: '60px',
+                                color: '#dc3545',
+                                fontSize: '14px',
+                                fontFamily: 'Inter, sans-serif',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                border: '1px solid #ffe5e5'
+                            },
+                            child: [
+                                $({ tag: 'span', att: { className: 'fa-solid fa-circle-exclamation' }, style: { fontSize: '48px', color: '#dc3545', marginBottom: '16px', display: 'block' } }),
+                                $({ tag: 'div', text: message })
+                            ]
+                        }));
+                    }
                 }
                 
-                return ($({
+                return $({
                     tag: 'div',
                     style: {
-                        width: '98%',
-                        margin: '1vh auto auto',
-                        height: '92%',
-                        backgroundColor: 'rgb(10,10,10,0.3)',
-                        boxShadow: 'inset .3vw .3vw 2vh .1vh black',
-                        overflowY: 'auto'
+                        width: '100%',
+                        margin: '0',
+                        padding: '0',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '12px',
+                        overflowY: 'auto',
+                        minHeight: '400px'
                     },
                     elementHandler: (el) => {
                         endorseBody = el;
-                        // Load first page
                         loadEndorsements(1);
                     }
-                }))
+                })
             }
             const ResearchPanel = () => {
                 return ($({
@@ -5186,7 +4926,7 @@ export const Forwarded = (mainFrame, leftPDiv = null) => { //position at the rig
                         width: '98%',
                         margin: '1vh auto auto',
                         height: '82%',
-                        backgroundColor: 'rgb(10,10,10,0.3)',
+                        backgroundColor: 'ghostwhite',
                         overflowY: 'auto',
                         boxShadow: 'inset .3vw .3vw 2vh .1vh black',
                     },
