@@ -310,22 +310,21 @@ if(isset($_POST['deleteEvent'])){
     exit();
 }
 
-// Request Event RDE Documents
+// Request Event RDE Documents - FIXED VERSION
 if (isset($_POST['requestEventRDE'])) {
     ob_clean();
     
     $eventId = $_POST['eventId'] ?? '0';
-    $page  = max(1, (int)($_POST['page'] ?? 1));
+    $page = max(1, (int)($_POST['page'] ?? 1));
     $limit = max(1, min(50, (int)($_POST['limit'] ?? 10)));
-    $lastId = isset($_POST['lastId']) ? max(0, (int)$_POST['lastId']) : 0;
+    $offset = ($page - 1) * $limit; // Use OFFSET instead of keyset pagination for simplicity
     
     $res = [
         'data' => [],
         'hasMore' => false,
         'total' => 0,
         'currentPage' => $page,
-        'totalPages' => 0,
-        'lastId' => 0
+        'totalPages' => 0
     ];
 
     try {
@@ -338,14 +337,19 @@ if (isset($_POST['requestEventRDE'])) {
         mysqli_report(MYSQLI_REPORT_OFF);
         $con->set_charset('utf8mb4');
         
-        // COUNT query
+        // FIXED COUNT query - corrected the WHERE clause syntax
         if ($eventId === '0' || $eventId === '') {
             $countSql = "
                 SELECT COUNT(*) as total
                 FROM researchfile
                 INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                WHERE endorsement.status = 'accepted'";
+                WHERE (endorsement.status = 'accepted' OR researchfile.status = 'accepted')";
             $countStmt = $con->prepare($countSql);
+            
+            if (!$countStmt) {
+                throw new Exception('Prepare count failed: ' . $con->error);
+            }
+            
             $countStmt->execute();
         } else {
             $countSql = "
@@ -353,9 +357,14 @@ if (isset($_POST['requestEventRDE'])) {
                 FROM researchfile
                 INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
                 INNER JOIN event_list ON researchfile.event = event_list.name
-                WHERE endorsement.status = 'accepted'
+                WHERE (endorsement.status = 'accepted' OR researchfile.status = 'accepted')
                 AND event_list.id = ?";
             $countStmt = $con->prepare($countSql);
+            
+            if (!$countStmt) {
+                throw new Exception('Prepare count failed: ' . $con->error);
+            }
+            
             $countStmt->bind_param('s', $eventId);
             $countStmt->execute();
         }
@@ -371,172 +380,95 @@ if (isset($_POST['requestEventRDE'])) {
         $res['totalPages'] = $total > 0 ? (int)ceil($total / $limit) : 0;
 
         if ($total > 0) {
-            // Data query with keyset pagination
+            // FIXED DATA query - simplified with OFFSET pagination
             if ($eventId === '0' || $eventId === '') {
-                if ($lastId > 0) {
-                    $sql = "
-                        SELECT
-                            researchfile.id,
-                            researchfile.senderid,
-                            researchfile.author,
-                            researchfile.title,
-                            researchfile.file,
-                            researchfile.drive_view_url,
-                            researchfile.drive_file_id,
-                            researchfile.drive_download_url,
-                            researchfile.status,
-                            researchfile.category,
-                            researchfile.center,
-                            researchfile.deletestate,
-                            endorsement.campus,
-                            endorsement.event,
-                            endorsement.date,
-                            endorsement.id AS endorsId
-                        FROM researchfile
-                        INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                        WHERE endorsement.status = 'accepted'
-                        AND researchfile.id < ?
-                        ORDER BY researchfile.id DESC
-                        LIMIT ?";
-                    $stmt = $con->prepare($sql);
-                    $stmt->bind_param('ii', $lastId, $limit);
-                } else {
-                    $sql = "
-                        SELECT
-                            researchfile.id,
-                            researchfile.senderid,
-                            researchfile.author,
-                            researchfile.title,
-                            researchfile.file,
-                            researchfile.drive_view_url,
-                            researchfile.drive_file_id,
-                            researchfile.drive_download_url,
-                            researchfile.status,
-                            researchfile.category,
-                            researchfile.center,
-                            researchfile.deletestate,
-                            endorsement.campus,
-                            endorsement.event,
-                            endorsement.date,
-                            endorsement.id AS endorsId
-                        FROM researchfile
-                        INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                        WHERE endorsement.status = 'accepted'
-                        ORDER BY researchfile.id DESC
-                        LIMIT ?";
-                    $stmt = $con->prepare($sql);
-                    $stmt->bind_param('i', $limit);
+                // Query for All Events
+                $sql = "
+                    SELECT
+                        researchfile.id,
+                        researchfile.senderid,
+                        researchfile.author,
+                        researchfile.title,
+                        researchfile.file,
+                        researchfile.drive_view_url,
+                        researchfile.drive_file_id,
+                        researchfile.drive_download_url,
+                        researchfile.status,
+                        researchfile.category,
+                        researchfile.center,
+                        endorsement.campus,
+                        endorsement.event,
+                        endorsement.date,
+                        endorsement.id AS endorsId
+                    FROM researchfile
+                    INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                    WHERE (endorsement.status = 'accepted' OR researchfile.status = 'accepted')
+                    ORDER BY researchfile.id DESC
+                    LIMIT ? OFFSET ?";
+                
+                $stmt = $con->prepare($sql);
+                
+                if (!$stmt) {
+                    throw new Exception('Prepare data statement failed: ' . $con->error);
                 }
+                
+                $stmt->bind_param('ii', $limit, $offset);
+                
             } else {
-                if ($lastId > 0) {
-                    $sql = "
-                        SELECT
-                            researchfile.id,
-                            researchfile.senderid,
-                            researchfile.author,
-                            researchfile.title,
-                            researchfile.file,
-                            researchfile.drive_view_url,
-                            researchfile.drive_file_id,
-                            researchfile.drive_download_url,
-                            researchfile.status,
-                            researchfile.category,
-                            researchfile.center,
-                            researchfile.deletestate,
-                            endorsement.campus,
-                            endorsement.event,
-                            endorsement.date,
-                            endorsement.id AS endorsId
-                        FROM researchfile
-                        INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                        INNER JOIN event_list ON researchfile.event = event_list.name
-                        WHERE event_list.id = ?
-                        AND researchfile.id < ?
-                        ORDER BY researchfile.id DESC
-                        LIMIT ?";
-                    $stmt = $con->prepare($sql);
-                    $stmt->bind_param('sii', $eventId, $lastId, $limit);
-                } else {
-                    $sql = "
-                        SELECT
-                            researchfile.id,
-                            researchfile.senderid,
-                            researchfile.author,
-                            researchfile.title,
-                            researchfile.file,
-                            researchfile.drive_view_url,
-                            researchfile.drive_file_id,
-                            researchfile.drive_download_url,
-                            researchfile.status,
-                            researchfile.category,
-                            researchfile.center,
-                            researchfile.deletestate,
-                            endorsement.campus,
-                            endorsement.event,
-                            endorsement.date,
-                            endorsement.id AS endorsId
-                        FROM researchfile
-                        INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                        INNER JOIN event_list ON researchfile.event = event_list.name
-                        WHERE event_list.id = ?
-                        ORDER BY researchfile.id DESC
-                        LIMIT ?";
-                    $stmt = $con->prepare($sql);
-                    $stmt->bind_param('si', $eventId, $limit);
+                // Query for specific event
+                $sql = "
+                    SELECT
+                        researchfile.id,
+                        researchfile.senderid,
+                        researchfile.author,
+                        researchfile.title,
+                        researchfile.file,
+                        researchfile.drive_view_url,
+                        researchfile.drive_file_id,
+                        researchfile.drive_download_url,
+                        researchfile.status,
+                        researchfile.category,
+                        researchfile.center,
+                        endorsement.campus,
+                        endorsement.event,
+                        endorsement.date,
+                        endorsement.id AS endorsId
+                    FROM researchfile
+                    INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
+                    INNER JOIN event_list ON researchfile.event = event_list.name
+                    WHERE (endorsement.status = 'accepted' OR researchfile.status = 'accepted')
+                    AND event_list.id = ?
+                    ORDER BY researchfile.id DESC
+                    LIMIT ? OFFSET ?";
+                
+                $stmt = $con->prepare($sql);
+                
+                if (!$stmt) {
+                    throw new Exception('Prepare data statement failed: ' . $con->error);
                 }
+                
+                $stmt->bind_param('sii', $eventId, $limit, $offset);
             }
 
             $stmt->execute();
             $result = $stmt->get_result();
             
             $data = [];
-            $lastProcessedId = 0;
             
             while ($row = $result->fetch_assoc()) {
+                // Handle file URL - prioritize drive_view_url
                 if (!empty($row['drive_view_url'])) {
                     $row['file'] = $row['drive_view_url'];
                 } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
                     $row['file'] = 'https://drive.google.com/file/d/' . $row['drive_file_id'] . '/preview';
                 }
                 $data[] = $row;
-                $lastProcessedId = $row['id'];
             }
 
-            $res['lastId'] = $lastProcessedId;
             $res['data'] = $data;
-
-            // Check for more records
-            if ($lastProcessedId > 0) {
-                if ($eventId === '0' || $eventId === '') {
-                    $hasMoreSql = "
-                        SELECT 1 
-                        FROM researchfile
-                        INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                        WHERE endorsement.status = 'accepted'
-                        AND researchfile.id < ?
-                        LIMIT 1";
-                    $hasMoreStmt = $con->prepare($hasMoreSql);
-                    $hasMoreStmt->bind_param('i', $lastProcessedId);
-                } else {
-                    $hasMoreSql = "
-                        SELECT 1 
-                        FROM researchfile
-                        INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                        INNER JOIN event_list ON researchfile.event = event_list.name
-                        WHERE event_list.id = ?
-                        AND researchfile.id < ?
-                        LIMIT 1";
-                    $hasMoreStmt = $con->prepare($hasMoreSql);
-                    $hasMoreStmt->bind_param('si', $eventId, $lastProcessedId);
-                }
-                
-                $hasMoreStmt->execute();
-                $hasMoreResult = $hasMoreStmt->get_result();
-                $res['hasMore'] = $hasMoreResult->num_rows > 0;
-                
-                $hasMoreResult->free();
-                $hasMoreStmt->close();
-            }
+            
+            // Check if there are more records
+            $res['hasMore'] = ($page * $limit) < $total;
 
             $result->free();
             $stmt->close();
@@ -546,17 +478,17 @@ if (isset($_POST['requestEventRDE'])) {
 
     } catch (Exception $e) {
         error_log("requestEventRDE Error: " . $e->getMessage());
+        error_log("Error trace: " . $e->getTraceAsString());
         
         ob_clean();
         echo json_encode([
             'error' => true,
-            'message' => 'An error occurred while fetching documents',
+            'message' => $e->getMessage(),
             'data' => [],
             'total' => 0,
             'currentPage' => $page,
             'totalPages' => 0,
-            'hasMore' => false,
-            'lastId' => 0
+            'hasMore' => false
         ]);
         exit;
     }
