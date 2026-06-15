@@ -87,130 +87,72 @@ if(isset($_POST['commentRequest..'])){
 }
 
 if(isset($_POST['commentRequest'])){
-    $filter=$_POST['eventType'];
-    $category=$_POST['category'];
-    $response=[];
-
+    $docId = $_POST['docId'] ?? '';
+    
+    if (empty($docId)) {
+        echo json_encode(['error' => 'Document ID is required']);
+        exit();
+    }
+    
+    $response = [];
+    
     if($con){
-        $query2="SELECT
-        comments.intro,
-        comments.abstract,
-        comments.objective,
-        comments.methodology,
-        comments.results,
-        comments.recommendation,
-        comments.literature,
-        comments.other,
-        comments.isCommented,
-        evaluator.fullname,
-        researchfile.category
+        // Query to get comments for a specific document
+        $query = "SELECT
+            comments.intro,
+            comments.abstract,
+            comments.objective,
+            comments.methodology,
+            comments.results,
+            comments.recommendation,
+            comments.literature,
+            comments.other,
+            comments.isCommented,
+            evaluator.fullname,
+            researchfile.category,
+            researchfile.title,
+            researchfile.author,
+            researchfile.campus
         FROM comments
-        LEFT JOIN evaluator
-        ON evaluator.id=comments.evalid
-        LEFT JOIN researchfile
-        ON researchfile.id=comments.resid
-        WHERE comments.eventType=?  AND comments.resid=?";
-
-        $query=" SELECT
-        comments.intro,
-        comments.abstract,
-        comments.objective,
-        comments.methodology,
-        comments.results,
-        comments.recommendation,
-        comments.literature,
-        comments.other,
-        comments.isCommented,
-        evaluator.fullname,
-        researchfile.category
-        FROM comments
-        LEFT JOIN evaluator
-        ON evaluator.id=comments.evalid
-        LEFT JOIN researchfile
-        ON researchfile.id=comments.resid
-        WHERE researchfile.category=? AND comments.eventType=?  AND comments.resid=?";
-        $state='accepted';
-
-        if($category==='Print All Category'){
-            $statement=$con->prepare("SELECT 
-        researchfile.id,
-        researchfile.author,
-        researchfile.title,
-        researchfile.event,
-        researchfile.category,
-        researchfile.campus,
-        endorsement.date,
-        (SELECT COUNT(*) FROM score_board WHERE score_board.doc_id = researchfile.id AND score_board.isScored = 1) as hasScore,
-        (SELECT COUNT(*) FROM comments WHERE comments.resid = researchfile.id AND comments.isCommented = 1) as hasComment
-        FROM researchfile
-        RIGHT JOIN endorsement
-        ON researchfile.endorsementid=endorsement.id
-        WHERE researchfile.event=? AND endorsement.status=? ");
-            $statement->bind_param("ss",$filter,$state);
-        }else{
-            $statement=$con->prepare("SELECT 
-        researchfile.id,
-        researchfile.author,
-        researchfile.title,
-        researchfile.event,
-        researchfile.category,
-        researchfile.campus,
-        endorsement.date,
-        (SELECT COUNT(*) FROM score_board WHERE score_board.doc_id = researchfile.id AND score_board.isScored = 1) as hasScore,
-        (SELECT COUNT(*) FROM comments WHERE comments.resid = researchfile.id AND comments.isCommented = 1) as hasComment
-        FROM researchfile
-        RIGHT JOIN endorsement
-        ON researchfile.endorsementid=endorsement.id
-        WHERE researchfile.event=? AND endorsement.status=? AND researchfile.category=?");
-            $statement->bind_param("sss",$filter,$state,$category);
-        }
-        $statement->execute();
-        $result=$statement->get_result();
-
-        while ($val=$result->fetch_assoc()){
-
-            $researchDocs=new stdClass();
-            $researchDocs->id=$val['id'];
-            $researchDocs->author=$val['author'];
-            $researchDocs->title=$val['title'];
-            $researchDocs->event=$val['event'];
-            $researchDocs->category=$val['category'];
-            $researchDocs->campus=$val['campus'];
-            $researchDocs->date=$val['date'];
-            $researchDocs->hasScore = $val['hasScore'] > 0;
-            $researchDocs->hasComment = $val['hasComment'] > 0;
-            $researchDocs->comments=[];
-            $docsId=$val['id'];
-            $comState="";
-            if($category==='Print All Category'){
-                $comState=$con->prepare($query2);
-                $comState->bind_param("ss",$filter,$docsId);
-            }else{
-                $comState=$con->prepare($query);
-                $comState->bind_param("sss",$category,$filter,$docsId);
+        LEFT JOIN evaluator ON evaluator.id = comments.evalid
+        LEFT JOIN researchfile ON researchfile.id = comments.resid
+        WHERE comments.resid = ?";
+        
+        $statement = $con->prepare($query);
+        if ($statement) {
+            $statement->bind_param("s", $docId);
+            $statement->execute();
+            $result = $statement->get_result();
+            
+            // Structure the response to match what the frontend expects
+            $commentsList = [];
+            while ($val = $result->fetch_assoc()){
+                $data = new stdClass();
+                $data->intro = $val['intro'] ?? '';
+                $data->abstract = $val['abstract'] ?? '';
+                $data->objective = $val['objective'] ?? '';
+                $data->methodology = $val['methodology'] ?? '';
+                $data->results = $val['results'] ?? '';
+                $data->recommendation = $val['recommendation'] ?? '';
+                $data->literature = $val['literature'] ?? '';
+                $data->other = $val['other'] ?? '';
+                $data->isCommented = $val['isCommented'] ?? 0;
+                $data->fullname = $val['fullname'] ?? 'Unknown Evaluator';
+                $data->category = $val['category'] ?? '';
+                $data->title = $val['title'] ?? '';
+                $data->author = $val['author'] ?? '';
+                $data->campus = $val['campus'] ?? '';
+                $commentsList[] = $data;
             }
-            $comState->execute();
-            $resultInner=$comState->get_result();
-            while ($value=$resultInner->fetch_assoc()){
-                $data=new stdClass();
-                $data->intro=$value['intro'];
-                $data->abstract=$value['abstract'];
-                $data->objective=$value['objective'];
-                $data->methodology=$value['methodology'];
-                $data->results=$value['results'];
-                $data->recommendation=$value['recommendation'];
-                $data->literature=$value['literature'];
-                $data->other=$value['other'];
-                $data->isCommented=$value['isCommented'];
-                $data->evalName=$value['fullname'];
-                $researchDocs->comments[]=$data;
-            }
-
-           $response[]=$researchDocs;
-            $comState->close();
+            
+            // Return in the format expected by the frontend's Print function
+            $response = $commentsList;
+            $statement->close();
         }
     }
-   echo json_encode($response);
+    
+    echo json_encode($response);
+    exit();
 }
 
 if(isset($_POST['reqCommentIndiv2'])){
