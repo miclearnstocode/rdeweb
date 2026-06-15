@@ -138,7 +138,7 @@ export const ExtensionUserPanel = () => {
                                 marginBottom: '16px',
                                 fontSize: '14px',
                                 fontWeight: '600',
-                                color: '#fff',
+                                color: '#000000',
                                 width: '100%'
                             },
                             text: 'Extension Chair Panel'
