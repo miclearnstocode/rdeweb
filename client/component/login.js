@@ -7,7 +7,7 @@ const LoginPanel = (prop) => {
     let form
     let UserTypeStat = true
     let selType
-    let isSubmitting = false // Prevent multiple submissions
+    let isSubmitting = false
 
     const getUserName = (value) => {
         username = value
@@ -32,9 +32,7 @@ const LoginPanel = (prop) => {
         }
     }
 
-
     const detectUserTypeAndAuthenticate = async (username, password) => {
-        // Define authentication endpoints in order of priority
         const authEndpoints = [
             {
                 name: 'ADMIN/CAPSUUSERS',
@@ -100,7 +98,6 @@ const LoginPanel = (prop) => {
             }
         ]
 
-        // Try each endpoint sequentially
         for (const authConfig of authEndpoints) {
             try {
                 const formData = authConfig.body(username, password)
@@ -114,14 +111,12 @@ const LoginPanel = (prop) => {
                 })
 
                 if (!response.ok) {
-                    console.log(`${authConfig.name} endpoint returned ${response.status}, trying next...`)
                     continue
                 }
 
                 const data = await response.json()
                 
                 if (data.status === true) {
-                    // Successful authentication
                     return {
                         success: true,
                         endpoint: authConfig.endpoint,
@@ -130,68 +125,15 @@ const LoginPanel = (prop) => {
                         rawResponse: data
                     }
                 }
-                // If status is false but endpoint exists, this user type doesn't match
-                // Continue to next endpoint
             } catch (error) {
-                console.log(`Error trying ${authConfig.name} endpoint:`, error.message)
-                // Continue to next endpoint
+                continue
             }
         }
 
-        // No matching endpoint found
         return {
             success: false,
             message: 'Invalid username or password. Please check your credentials.'
         }
-    }
-
-    const setupFloatingLabel = (inputId, labelId) => {
-        setTimeout(() => {
-            const input = document.getElementById(inputId)
-            const label = document.getElementById(labelId)
-            
-            if (input && label) {
-                const updateLabel = () => {
-                    if (input.value && input.value !== '') {
-                        label.style.top = '0px'
-                        label.style.transform = 'translateY(-50%)'
-                        label.style.fontSize = '0.7rem'
-                        label.style.color = '#00aaff'
-                        label.style.backgroundColor = '#0a1628'
-                        label.style.padding = '0 4px'
-                    } else {
-                        label.style.top = '50%'
-                        label.style.transform = 'translateY(-50%)'
-                        label.style.fontSize = '0.95rem'
-                        label.style.color = '#6688aa'
-                        label.style.backgroundColor = 'transparent'
-                        label.style.padding = '0 4px'
-                    }
-                }
-                
-                input.addEventListener('input', updateLabel)
-                input.addEventListener('focus', () => {
-                    label.style.top = '0px'
-                    label.style.transform = 'translateY(-50%)'
-                    label.style.fontSize = '0.7rem'
-                    label.style.color = '#00aaff'
-                    label.style.backgroundColor = '#0a1628'
-                    label.style.padding = '0 4px'
-                })
-                input.addEventListener('blur', () => {
-                    if (!input.value) {
-                        label.style.top = '50%'
-                        label.style.transform = 'translateY(-50%)'
-                        label.style.fontSize = '0.95rem'
-                        label.style.color = '#6688aa'
-                        label.style.backgroundColor = 'transparent'
-                        label.style.padding = '0 4px'
-                    }
-                })
-                
-                updateLabel()
-            }
-        }, 100)
     }
 
     return $({
@@ -200,7 +142,10 @@ const LoginPanel = (prop) => {
             className: 'logInDiv'
         },
         style: {
-            width: '100%'
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
         },
         child: [
             $({
@@ -209,7 +154,10 @@ const LoginPanel = (prop) => {
                     className: 'col-md-12'
                 },
                 style: {
-                    width: '100%'
+                    width: '100%',
+                    maxWidth: '400px',
+                    margin: '0 auto',
+                    backgroundColor: 'transparent'
                 },
                 child: [
                     $({
@@ -226,7 +174,6 @@ const LoginPanel = (prop) => {
                             method: async (ev) => {
                                 ev.preventDefault()
                                 
-                                // Prevent multiple submissions
                                 if (isSubmitting) return
                                 isSubmitting = true
                                 
@@ -239,7 +186,6 @@ const LoginPanel = (prop) => {
                                     return
                                 }
                                 
-                                // Show loading indicator
                                 const submitBtn = ev.target.querySelector('.submitLog')
                                 const originalBtnText = submitBtn?.innerHTML || 'Submit'
                                 if (submitBtn) {
@@ -248,11 +194,9 @@ const LoginPanel = (prop) => {
                                 }
                                 
                                 try {
-                                    // Auto-detect user type and authenticate
                                     const result = await detectUserTypeAndAuthenticate(usernameValue, passwordValue)
                                     
                                     if (result.success) {
-                                        // Redirect to the appropriate dashboard
                                         window.location.replace(result.redirectUrl)
                                     } else {
                                         alert(result.message || 'Authentication failed. Please check your credentials.')
@@ -274,122 +218,31 @@ const LoginPanel = (prop) => {
                             }
                         },
                         child: [
-                            // External Users Checkbox (kept for backward compatibility, but now auto-detection handles it)
-                            $({
-                                tag: 'div',
-                                att: {
-                                    className: 'form-check text-start my-2'
-                                },
-                                style: {
-                                    textAlign: 'left',
-                                    marginBottom: '1rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'input',
-                                        att: {
-                                            type: 'checkbox',
-                                            name: 'isExternal',
-                                            className: 'form-check-input',
-                                            id: 'externalId'
-                                        },
-                                        style: {
-                                            width: '18px',
-                                            height: '18px',
-                                            cursor: 'pointer',
-                                            display: 'none' // Hide since auto-detection handles it
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'label',
-                                        att: {
-                                            className: 'form-check-label',
-                                        },
-                                        elementHandler: (el) => {
-                                            el.setAttribute('for', 'externalId')
-                                        },
-                                        text: 'External users?',
-                                        style: {
-                                            color: '#00aaff',
-                                            cursor: 'pointer',
-                                            display: 'none' // Hide since auto-detection handles it
-                                        }
-                                    }),
-                                ]
-                            }),
-                            // User Type Select Container (hidden - auto-detection)
+                            // Username Field - Centered
                             $({
                                 tag: 'div',
                                 style: {
                                     width: '100%',
-                                    marginBottom: '1rem',
-                                    display: 'none' // Hide manual user type selection
-                                },
-                                child: [
-                                    $({
-                                        tag: 'select',
-                                        att: {
-                                            className: 'form-select mb-2 text-center',
-                                            name: 'userType',
-                                            id: 'userTypeSelect'
-                                        },
-                                        style: {
-                                            backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                                            color: '#fff',
-                                            padding: '12px 40px 12px 16px',
-                                            cursor: 'pointer',
-                                            appearance: 'none',
-                                            width: '100%',
-                                            border: '2px solid rgba(0, 150, 255, 0.2)',
-                                            borderRadius: '12px',
-                                            fontSize: '0.9rem',
-                                            boxSizing: 'border-box'
-                                        },
-                                        child: [
-                                            $({
-                                                tag: 'option',
-                                                text: 'Select User Type',
-                                                att: {
-                                                    disabled: true,
-                                                    selected: true,
-                                                    value: ''
-                                                }
-                                            }),
-                                            $({ tag: 'option', text: 'Admin', att: { value: 'ADMIN' } }),
-                                            $({ tag: 'option', text: 'CAPSU Center Chair User', att: { value: 'CAPSUUSERS' } }),
-                                            $({ tag: 'option', text: 'CAPSU Research Chair User', att: { value: 'RESEARCH_CHAIR' } }),
-                                            $({ tag: 'option', text: 'CAPSU Extension Chair User', att: { value: 'EXTENSION_CHAIR' } }),
-                                            $({ tag: 'option', text: 'Evaluators', att: { value: 'EVALUATOR' } }),
-                                            $({ tag: 'option', text: 'RDE Office', att: { value: 'RDEOFFICE' } })
-                                        ]
-                                    })
-                                ]
-                            }),
-                            // Username Field
-                            $({
-                                tag: 'div',
-                                style: {
-                                    width: '100%',
-                                    marginBottom: '1rem',
+                                    marginBottom: '1.25rem',
                                     display: 'flex',
-                                    position: 'relative'
+                                    position: 'relative',
+                                    justifyContent: 'center'
                                 },
                                 child: [
                                     $({
                                         tag: 'span',
                                         style: {
-                                            backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                                            color: '#00aaff',
+                                            backgroundColor: '#f8f9fa',
+                                            color: '#6c757d',
                                             fontSize: '1.2rem',
-                                            border: '2px solid rgba(0, 150, 255, 0.2)',
+                                            border: '1px solid #dee2e6',
                                             borderRight: 'none',
-                                            borderRadius: '12px 0 0 12px',
+                                            borderRadius: '10px 0 0 10px',
                                             padding: '0 15px',
                                             display: 'flex',
-                                            alignItems: 'center'
+                                            alignItems: 'center',
+                                            minWidth: '48px',
+                                            justifyContent: 'center'
                                         },
                                         child: [
                                             $({
@@ -414,70 +267,77 @@ const LoginPanel = (prop) => {
                                                     className: 'form-control',
                                                     name: 'username',
                                                     id: 'userNid',
-                                                    placeholder: ' ',
+                                                    placeholder: 'Username/Email',
                                                     required: true,
                                                     autocomplete: 'username'
                                                 },
                                                 style: {
-                                                    backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                                                    color: '#fff',
-                                                    border: '2px solid rgba(0, 150, 255, 0.2)',
-                                                    borderLeft: 'none',
-                                                    borderRadius: '0 12px 12px 0',
+                                                    backgroundColor: '#ffffff',
+                                                    color: '#2c3e50',
+                                                    border: '1px solid #dee2e6',
+                                                    borderRadius: '0 10px 10px 0',
                                                     height: '52px',
                                                     width: '100%',
                                                     padding: '0 15px',
                                                     fontSize: '0.95rem',
-                                                    boxSizing: 'border-box'
-                                                }
-                                            }),
-                                            $({
-                                                tag: 'label',
-                                                att: {
-                                                    for: 'userNid',
-                                                    id: 'usernameLabel'
+                                                    boxSizing: 'border-box',
+                                                    transition: 'all 0.3s ease',
+                                                    outline: 'none'
                                                 },
-                                                text: 'Username or email address',
-                                                style: {
-                                                    position: 'absolute',
-                                                    left: '15px',
-                                                    top: '50%',
-                                                    transform: 'translateY(-50%)',
-                                                    color: 'transparent',
-                                                    fontSize: '0.95rem',
-                                                    pointerEvents: 'none',
-                                                    transition: 'all 0.2s ease',
-                                                    backgroundColor: 'transparent',
-                                                    padding: '0 4px',
-                                                    zIndex: 5
+                                                event: {
+                                                    type: 'focus',
+                                                    method: (e) => {
+                                                        e.target.style.borderColor = '#0d6efd'
+                                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                                        const icon = e.target.parentElement.parentElement.querySelector('span')
+                                                        if (icon) {
+                                                            icon.style.borderColor = '#0d6efd'
+                                                            icon.style.color = '#0d6efd'
+                                                        }
+                                                    }
+                                                },
+                                                event: {
+                                                    type: 'blur',
+                                                    method: (e) => {
+                                                        e.target.style.borderColor = '#dee2e6'
+                                                        e.target.style.boxShadow = 'none'
+                                                        const icon = e.target.parentElement.parentElement.querySelector('span')
+                                                        if (icon) {
+                                                            icon.style.borderColor = '#dee2e6'
+                                                            icon.style.color = '#6c757d'
+                                                        }
+                                                    }
                                                 }
                                             })
                                         ]
                                     })
                                 ]
                             }),
-                            // Password Field
+                            // Password Field - Centered
                             $({
                                 tag: 'div',
                                 style: {
                                     width: '100%',
-                                    marginBottom: '1rem',
+                                    marginBottom: '1.25rem',
                                     display: 'flex',
-                                    position: 'relative'
+                                    position: 'relative',
+                                    justifyContent: 'center'
                                 },
                                 child: [
                                     $({
                                         tag: 'span',
                                         style: {
-                                            backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                                            color: '#00aaff',
+                                            backgroundColor: '#f8f9fa',
+                                            color: '#6c757d',
                                             fontSize: '1.2rem',
-                                            border: '2px solid rgba(0, 150, 255, 0.2)',
+                                            border: '1px solid #dee2e6',
                                             borderRight: 'none',
-                                            borderRadius: '12px 0 0 12px',
+                                            borderRadius: '10px 0 0 10px',
                                             padding: '0 15px',
                                             display: 'flex',
-                                            alignItems: 'center'
+                                            alignItems: 'center',
+                                            minWidth: '48px',
+                                            justifyContent: 'center'
                                         },
                                         child: [
                                             $({
@@ -502,42 +362,46 @@ const LoginPanel = (prop) => {
                                                     className: 'form-control password-input',
                                                     name: 'password',
                                                     id: 'userPid',
-                                                    placeholder: ' ',
+                                                    placeholder: '*****************',
                                                     required: true,
                                                     autocomplete: 'current-password'
                                                 },
                                                 style: {
-                                                    backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                                                    color: '#fff',
-                                                    border: '2px solid rgba(0, 150, 255, 0.2)',
-                                                    borderLeft: 'none',
-                                                    borderRadius: '0 12px 12px 0',
+                                                    backgroundColor: '#ffffff',
+                                                    color: '#2c3e50',
+                                                    border: '1px solid #dee2e6',
+                                                    borderRadius: '0 10px 10px 0',
                                                     height: '52px',
                                                     width: '100%',
                                                     padding: '0 45px 0 15px',
                                                     fontSize: '0.95rem',
-                                                    boxSizing: 'border-box'
-                                                }
-                                            }),
-                                            $({
-                                                tag: 'label',
-                                                att: {
-                                                    for: 'userPid',
-                                                    id: 'passwordLabel'
+                                                    boxSizing: 'border-box',
+                                                    transition: 'all 0.3s ease',
+                                                    outline: 'none'
                                                 },
-                                                text: 'Password',
-                                                style: {
-                                                    position: 'absolute',
-                                                    left: '15px',
-                                                    top: '50%',
-                                                    transform: 'translateY(-50%)',
-                                                    color: 'transparent',
-                                                    fontSize: '0.95rem',
-                                                    pointerEvents: 'none',
-                                                    transition: 'all 0.2s ease',
-                                                    backgroundColor: 'transparent',
-                                                    padding: '0 4px',
-                                                    zIndex: 5
+                                                event: {
+                                                    type: 'focus',
+                                                    method: (e) => {
+                                                        e.target.style.borderColor = '#0d6efd'
+                                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                                        const icon = e.target.parentElement.parentElement.querySelector('span')
+                                                        if (icon) {
+                                                            icon.style.borderColor = '#0d6efd'
+                                                            icon.style.color = '#0d6efd'
+                                                        }
+                                                    }
+                                                },
+                                                event: {
+                                                    type: 'blur',
+                                                    method: (e) => {
+                                                        e.target.style.borderColor = '#dee2e6'
+                                                        e.target.style.boxShadow = 'none'
+                                                        const icon = e.target.parentElement.parentElement.querySelector('span')
+                                                        if (icon) {
+                                                            icon.style.borderColor = '#dee2e6'
+                                                            icon.style.color = '#6c757d'
+                                                        }
+                                                    }
                                                 }
                                             }),
                                             $({
@@ -552,7 +416,7 @@ const LoginPanel = (prop) => {
                                                     top: '50%',
                                                     transform: 'translateY(-50%)',
                                                     cursor: 'pointer',
-                                                    color: 'transparent',
+                                                    color: '#adb5bd',
                                                     zIndex: '10',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -570,7 +434,8 @@ const LoginPanel = (prop) => {
                                                             id: 'login-password-eye-icon'
                                                         },
                                                         style: {
-                                                            color: '#fbfbfb',
+                                                            color: '#adb5bd',
+                                                            transition: 'all 0.3s ease'
                                                         }
                                                     })
                                                 ],
@@ -579,13 +444,29 @@ const LoginPanel = (prop) => {
                                                     method: () => {
                                                         togglePasswordVisibility('userPid', 'login-password-eye-icon')
                                                     }
+                                                },
+                                                event: {
+                                                    type: 'mouseenter',
+                                                    method: (e) => {
+                                                        e.target.style.color = '#0d6efd'
+                                                        const icon = e.target.querySelector('i')
+                                                        if (icon) icon.style.color = '#0d6efd'
+                                                    }
+                                                },
+                                                event: {
+                                                    type: 'mouseleave',
+                                                    method: (e) => {
+                                                        e.target.style.color = '#adb5bd'
+                                                        const icon = e.target.querySelector('i')
+                                                        if (icon) icon.style.color = '#adb5bd'
+                                                    }
                                                 }
                                             })
                                         ]
                                     })
                                 ]
                             }),
-                            // Submit Button
+                            // Submit Button - Centered
                             $({
                                 tag: 'button',
                                 att: {
@@ -594,18 +475,34 @@ const LoginPanel = (prop) => {
                                 },
                                 style: {
                                     width: '100%',
-                                    background: 'linear-gradient(135deg, #0066ff, #00aaff)',
+                                    background: 'linear-gradient(135deg, #0d6efd, #0a58ca)',
                                     border: 'none',
-                                    padding: '12px 24px',
+                                    padding: '14px 24px',
                                     fontSize: '1rem',
                                     fontWeight: '600',
-                                    borderRadius: '40px',
+                                    borderRadius: '10px',
                                     marginTop: '0.5rem',
                                     cursor: 'pointer',
                                     color: '#fff',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: '0 2px 8px rgba(13, 110, 253, 0.3)',
+                                    textAlign: 'center'
                                 },
-                                text: 'Submit'
+                                text: 'Sign In',
+                                event: {
+                                    type: 'mouseenter',
+                                    method: (e) => {
+                                        e.target.style.transform = 'translateY(-2px)'
+                                        e.target.style.boxShadow = '0 4px 15px rgba(13, 110, 253, 0.4)'
+                                    }
+                                },
+                                event: {
+                                    type: 'mouseleave',
+                                    method: (e) => {
+                                        e.target.style.transform = 'translateY(0)'
+                                        e.target.style.boxShadow = '0 2px 8px rgba(13, 110, 253, 0.3)'
+                                    }
+                                }
                             })
                         ]
                     })
@@ -665,11 +562,11 @@ const Signup = (prop) => {
                     text: label,
                     style: {
                         display: 'block',
-                        color: '#88aaff',
+                        color: '#2c3e50',
                         fontSize: '0.85rem',
-                        fontWeight: '500',
+                        fontWeight: '600',
                         marginBottom: '0.5rem',
-                        fontFamily: 'Segoe UI, sans-serif'
+                        fontFamily: 'Inter, Segoe UI, sans-serif'
                     }
                 }),
                 $({
@@ -686,7 +583,7 @@ const Signup = (prop) => {
                                 left: '12px',
                                 top: '50%',
                                 transform: 'translateY(-50%)',
-                                color: '#00aaff',
+                                color: '#6c757d',
                                 fontSize: '1rem',
                                 zIndex: '2'
                             },
@@ -708,31 +605,39 @@ const Signup = (prop) => {
                                 autocomplete: 'off'
                             },
                             elementHandler: (el) => {
-                                // Add input event listener directly
                                 el.addEventListener('input', (e) => {
                                     if (onInput) onInput(e.target.value)
-                                })
-                                // Add focus/blur listeners for styling
-                                el.addEventListener('focus', (e) => {
-                                    e.target.style.borderColor = '#00aaff'
-                                    e.target.style.boxShadow = '0 0 0 3px rgba(0, 150, 255, 0.2)'
-                                })
-                                el.addEventListener('blur', (e) => {
-                                    e.target.style.borderColor = 'rgba(0, 150, 255, 0.2)'
-                                    e.target.style.boxShadow = 'none'
                                 })
                             },
                             style: {
                                 width: '100%',
                                 padding: '12px 12px 12px 40px',
-                                backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                                border: '2px solid rgba(0, 150, 255, 0.2)',
-                                borderRadius: '12px',
-                                color: '#fff',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #dee2e6',
+                                borderRadius: '10px',
+                                color: '#2c3e50',
                                 fontSize: '0.95rem',
                                 outline: 'none',
                                 transition: 'all 0.3s ease',
                                 boxSizing: 'border-box'
+                            },
+                            event: {
+                                type: 'focus',
+                                method: (e) => {
+                                    e.target.style.borderColor = '#0d6efd'
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                    const icon = e.target.parentElement.querySelector('span')
+                                    if (icon) icon.style.color = '#0d6efd'
+                                }
+                            },
+                            event: {
+                                type: 'blur',
+                                method: (e) => {
+                                    e.target.style.borderColor = '#dee2e6'
+                                    e.target.style.boxShadow = 'none'
+                                    const icon = e.target.parentElement.querySelector('span')
+                                    if (icon) icon.style.color = '#6c757d'
+                                }
                             }
                         })
                     ]
@@ -743,7 +648,6 @@ const Signup = (prop) => {
 
     const ModernPasswordInput = ({ label, id, placeholder, icon, onInput, required = true }) => {
         let inputElement = null
-        let isVisible = false
         
         return $({
             tag: 'div',
@@ -758,11 +662,11 @@ const Signup = (prop) => {
                     text: label,
                     style: {
                         display: 'block',
-                        color: '#88aaff',
+                        color: '#2c3e50',
                         fontSize: '0.85rem',
-                        fontWeight: '500',
+                        fontWeight: '600',
                         marginBottom: '0.5rem',
-                        fontFamily: 'Segoe UI, sans-serif'
+                        fontFamily: 'Inter, Segoe UI, sans-serif'
                     }
                 }),
                 $({
@@ -779,7 +683,7 @@ const Signup = (prop) => {
                                 left: '12px',
                                 top: '50%',
                                 transform: 'translateY(-50%)',
-                                color: '#00aaff',
+                                color: '#6c757d',
                                 fontSize: '1rem',
                                 zIndex: '2'
                             },
@@ -802,31 +706,35 @@ const Signup = (prop) => {
                             },
                             elementHandler: (el) => {
                                 inputElement = el
-                                // Add input event listener directly
                                 el.addEventListener('input', (e) => {
                                     if (onInput) onInput(e.target.value)
-                                })
-                                // Add focus/blur listeners for styling
-                                el.addEventListener('focus', (e) => {
-                                    e.target.style.borderColor = '#00aaff'
-                                    e.target.style.boxShadow = '0 0 0 3px rgba(0, 150, 255, 0.2)'
-                                })
-                                el.addEventListener('blur', (e) => {
-                                    e.target.style.borderColor = 'rgba(0, 150, 255, 0.2)'
-                                    e.target.style.boxShadow = 'none'
                                 })
                             },
                             style: {
                                 width: '100%',
                                 padding: '12px 45px 12px 40px',
-                                backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                                border: '2px solid rgba(0, 150, 255, 0.2)',
-                                borderRadius: '12px',
-                                color: '#fff',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #dee2e6',
+                                borderRadius: '10px',
+                                color: '#2c3e50',
                                 fontSize: '0.95rem',
                                 outline: 'none',
                                 transition: 'all 0.3s ease',
                                 boxSizing: 'border-box'
+                            },
+                            event: {
+                                type: 'focus',
+                                method: (e) => {
+                                    e.target.style.borderColor = '#0d6efd'
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                }
+                            },
+                            event: {
+                                type: 'blur',
+                                method: (e) => {
+                                    e.target.style.borderColor = '#dee2e6'
+                                    e.target.style.boxShadow = 'none'
+                                }
                             }
                         }),
                         $({
@@ -837,7 +745,7 @@ const Signup = (prop) => {
                                 top: '50%',
                                 transform: 'translateY(-50%)',
                                 cursor: 'pointer',
-                                color: '#6688aa',
+                                color: '#adb5bd',
                                 zIndex: '10',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -865,17 +773,17 @@ const Signup = (prop) => {
                                         if (icon) {
                                             icon.className = isVisible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'
                                         }
-                                        el.style.color = isVisible ? '#00aaff' : '#6688aa'
+                                        el.style.color = isVisible ? '#0d6efd' : '#adb5bd'
                                     }
                                 })
                                 
                                 el.addEventListener('mouseenter', () => {
-                                    el.style.color = '#00aaff'
-                                    el.style.backgroundColor = 'rgba(0, 150, 255, 0.15)'
+                                    el.style.color = '#0d6efd'
+                                    el.style.backgroundColor = 'rgba(13, 110, 253, 0.05)'
                                 })
                                 
                                 el.addEventListener('mouseleave', () => {
-                                    el.style.color = isVisible ? '#00aaff' : '#6688aa'
+                                    el.style.color = isVisible ? '#0d6efd' : '#adb5bd'
                                     el.style.backgroundColor = 'transparent'
                                 })
                             }
@@ -900,7 +808,44 @@ const Signup = (prop) => {
                 }
             }
         })
+
+        const infoText = $({
+            tag: 'div',
+            style: {
+                backgroundColor: '#e7f1ff',
+                borderLeft: '4px solid #0d6efd',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                marginBottom: '1.5rem',
+                fontFamily: 'Inter, Segoe UI, sans-serif',
+                fontSize: '0.85rem',
+                color: '#0d5a8a',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+            },
+            child: [
+                $({
+                    tag: 'span',
+                    att: { className: 'fa-solid fa-info-circle' },
+                    style: {
+                        fontSize: '18px',
+                        color: '#0d6efd',
+                        flexShrink: '0'
+                    }
+                }),
+                $({
+                    tag: 'span',
+                    text: 'Sign up is available only for users whose email addresses have been registered by the RDE Office Admin. If you have not received a registration email, please contact the RDE Office.',
+                    style: {
+                        lineHeight: '1.5'
+                    }
+                })
+            ]
+        })
         
+        form.appendChild(infoText)
+
         const option = ({label, placeholder, value}) => {
             const getOpt = (opt) => {
                 if (label) opt.innerText = label
@@ -909,6 +854,8 @@ const Signup = (prop) => {
                     opt.selected = true
                 }
                 if (value) opt.value = value
+                opt.style.color = '#2c3e50'
+                opt.style.backgroundColor = '#ffffff'
             }
             return $({ tag: 'option', elementHandler: getOpt })
         }
@@ -933,11 +880,11 @@ const Signup = (prop) => {
                         text: label,
                         style: {
                             display: 'block',
-                            color: '#88aaff',
+                            color: '#2c3e50',
                             fontSize: '0.85rem',
-                            fontWeight: '500',
+                            fontWeight: '600',
                             marginBottom: '0.5rem',
-                            fontFamily: 'Segoe UI, sans-serif'
+                            fontFamily: 'Inter, Segoe UI, sans-serif'
                         }
                     }),
                     $({
@@ -954,7 +901,7 @@ const Signup = (prop) => {
                                     left: '12px',
                                     top: '50%',
                                     transform: 'translateY(-50%)',
-                                    color: '#00aaff',
+                                    color: '#6c757d',
                                     fontSize: '1rem',
                                     zIndex: '2'
                                 }
@@ -965,29 +912,30 @@ const Signup = (prop) => {
                                 style: {
                                     width: '100%',
                                     padding: '12px 12px 12px 40px',
-                                    backgroundColor: 'rgba(10, 20, 40, 0.8)',
-                                    border: '2px solid rgba(0, 150, 255, 0.2)',
-                                    borderRadius: '12px',
-                                    color: '#fff',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '10px',
+                                    color: '#2c3e50',
                                     fontSize: '0.95rem',
                                     outline: 'none',
                                     cursor: 'pointer',
                                     appearance: 'none',
                                     boxSizing: 'border-box',
                                     height: '52px',
-                                    lineHeight: '1.2'
+                                    lineHeight: '1.2',
+                                    transition: 'all 0.3s ease'
                                 },
                                 event: {
                                     type: 'focus',
                                     method: (e) => {
-                                        e.target.style.borderColor = '#00aaff'
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(0, 150, 255, 0.2)'
+                                        e.target.style.borderColor = '#0d6efd'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
                                     }
                                 },
                                 event: {
                                     type: 'blur',
                                     method: (e) => {
-                                        e.target.style.borderColor = 'rgba(0, 150, 255, 0.2)'
+                                        e.target.style.borderColor = '#dee2e6'
                                         e.target.style.boxShadow = 'none'
                                     }
                                 },
@@ -1003,6 +951,228 @@ const Signup = (prop) => {
             })
         }
         
+        // Modern Input without label (just placeholder)
+        const ModernInput = ({ type, id, placeholder, icon, onInput, required = true }) => {
+            return $({
+                tag: 'div',
+                style: {
+                    marginBottom: '1.25rem',
+                    width: '100%'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            position: 'relative',
+                            width: '100%'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                style: {
+                                    position: 'absolute',
+                                    left: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: '#6c757d',
+                                    fontSize: '1rem',
+                                    zIndex: '2'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'i',
+                                        att: { className: icon }
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'input',
+                                att: {
+                                    type: type,
+                                    id: id,
+                                    name: id,
+                                    placeholder: placeholder,
+                                    required: required,
+                                    autocomplete: 'off'
+                                },
+                                elementHandler: (el) => {
+                                    el.addEventListener('input', (e) => {
+                                        if (onInput) onInput(e.target.value)
+                                    })
+                                },
+                                style: {
+                                    width: '100%',
+                                    padding: '12px 12px 12px 40px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '10px',
+                                    color: '#2c3e50',
+                                    fontSize: '0.95rem',
+                                    outline: 'none',
+                                    transition: 'all 0.3s ease',
+                                    boxSizing: 'border-box'
+                                },
+                                event: {
+                                    type: 'focus',
+                                    method: (e) => {
+                                        e.target.style.borderColor = '#0d6efd'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                        const icon = e.target.parentElement.querySelector('span')
+                                        if (icon) icon.style.color = '#0d6efd'
+                                    }
+                                },
+                                event: {
+                                    type: 'blur',
+                                    method: (e) => {
+                                        e.target.style.borderColor = '#dee2e6'
+                                        e.target.style.boxShadow = 'none'
+                                        const icon = e.target.parentElement.querySelector('span')
+                                        if (icon) icon.style.color = '#6c757d'
+                                    }
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+        }
+
+        // Modern Password Input without label (just placeholder)
+        const ModernPasswordInput = ({ id, placeholder, icon, onInput, required = true }) => {
+            let inputElement = null
+            
+            return $({
+                tag: 'div',
+                style: {
+                    marginBottom: '1.25rem',
+                    width: '100%'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            position: 'relative',
+                            width: '100%'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                style: {
+                                    position: 'absolute',
+                                    left: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: '#6c757d',
+                                    fontSize: '1rem',
+                                    zIndex: '2'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'i',
+                                        att: { className: icon }
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'input',
+                                att: {
+                                    type: 'password',
+                                    id: id,
+                                    name: id,
+                                    placeholder: placeholder,
+                                    required: required,
+                                    autocomplete: 'new-password'
+                                },
+                                elementHandler: (el) => {
+                                    inputElement = el
+                                    el.addEventListener('input', (e) => {
+                                        if (onInput) onInput(e.target.value)
+                                    })
+                                },
+                                style: {
+                                    width: '100%',
+                                    padding: '12px 45px 12px 40px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '10px',
+                                    color: '#2c3e50',
+                                    fontSize: '0.95rem',
+                                    outline: 'none',
+                                    transition: 'all 0.3s ease',
+                                    boxSizing: 'border-box'
+                                },
+                                event: {
+                                    type: 'focus',
+                                    method: (e) => {
+                                        e.target.style.borderColor = '#0d6efd'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                    }
+                                },
+                                event: {
+                                    type: 'blur',
+                                    method: (e) => {
+                                        e.target.style.borderColor = '#dee2e6'
+                                        e.target.style.boxShadow = 'none'
+                                    }
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                style: {
+                                    position: 'absolute',
+                                    right: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    cursor: 'pointer',
+                                    color: '#adb5bd',
+                                    zIndex: '10',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    transition: 'all 0.3s ease'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'i',
+                                        att: { className: 'fa-solid fa-eye' }
+                                    })
+                                ],
+                                elementHandler: (el) => {
+                                    let isVisible = false
+                                    const icon = el.querySelector('i')
+                                    
+                                    el.addEventListener('click', (e) => {
+                                        e.stopPropagation()
+                                        isVisible = !isVisible
+                                        if (inputElement) {
+                                            inputElement.type = isVisible ? 'text' : 'password'
+                                            if (icon) {
+                                                icon.className = isVisible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'
+                                            }
+                                            el.style.color = isVisible ? '#0d6efd' : '#adb5bd'
+                                        }
+                                    })
+                                    
+                                    el.addEventListener('mouseenter', () => {
+                                        el.style.color = '#0d6efd'
+                                        el.style.backgroundColor = 'rgba(13, 110, 253, 0.05)'
+                                    })
+                                    
+                                    el.addEventListener('mouseleave', () => {
+                                        el.style.color = isVisible ? '#0d6efd' : '#adb5bd'
+                                        el.style.backgroundColor = 'transparent'
+                                    })
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+        }
+        
         // Role Selection
         const roleOptions = [
             option({ label: '-- Select Role --', placeholder: true }),
@@ -1011,7 +1181,6 @@ const Signup = (prop) => {
         ]
         
         form.appendChild(ModernSelect({
-            label: 'Register as',
             id: 'select-role',
             options: roleOptions,
             onchange: (event) => {
@@ -1063,7 +1232,6 @@ const Signup = (prop) => {
             att: { id: 'center-container', style: 'display: none; width: 100%;' },
             child: [
                 ModernSelect({
-                    label: 'Research Center',
                     id: 'select-sign',
                     options: centerOptions,
                     onchange: (event) => {
@@ -1095,7 +1263,6 @@ const Signup = (prop) => {
             att: { id: 'extension-campus-container', style: 'display: none; width: 100%;' },
             child: [
                 ModernSelect({
-                    label: 'Extension Campus',
                     id: 'select-extension-campus',
                     options: extensionOptions,
                     onchange: (event) => { get.campus(event.target.value) }
@@ -1115,7 +1282,6 @@ const Signup = (prop) => {
             att: { id: 'campus-container', style: 'display: none; width: 100%;' },
             child: [
                 ModernSelect({
-                    label: 'Campus',
                     id: 'select-campus',
                     options: campusOptions,
                     onchange: (event) => { get.campus(event.target.value) }
@@ -1124,7 +1290,18 @@ const Signup = (prop) => {
         })
         form.appendChild(campusWrapper)
         
-        // Two column layout for form fields
+        // ============ FORM FIELDS (No Labels) ============
+        
+        // 1. Full Name - Full width (above the two columns)
+        form.appendChild(ModernInput({
+            type: 'text',
+            id: 'signinput-fullname',
+            placeholder: 'Full name',
+            icon: 'fa-solid fa-user-circle',
+            onInput: (val) => get.fullName(val)
+        }))
+        
+        // 2. Two column layout for remaining fields
         const twoColumnContainer = $({
             tag: 'div',
             style: {
@@ -1140,27 +1317,18 @@ const Signup = (prop) => {
                     style: { width: '100%' },
                     child: [
                         ModernInput({
-                            label: 'Email Address',
                             type: 'email',
                             id: 'signup-email',
-                            placeholder: 'xxxx@capsu.edu.ph',
+                            placeholder: 'Email Address',
                             icon: 'fa-solid fa-envelope',
                             onInput: (val) => get.email(val)
                         }),
                         ModernInput({
-                            label: 'Username',
                             type: 'text',
                             id: 'signinput-Username',
-                            placeholder: 'Enter username',
+                            placeholder: 'Username',
                             icon: 'fa-solid fa-user',
                             onInput: (val) => get.username(val)
-                        }),
-                        ModernPasswordInput({
-                            label: 'Password',
-                            id: 'signup-password',
-                            placeholder: 'Create 8 to 20 characters password',
-                            icon: 'fa-solid fa-lock',
-                            onInput: (val) => get.password(val)
                         })
                     ]
                 }),
@@ -1169,20 +1337,13 @@ const Signup = (prop) => {
                     tag: 'div',
                     style: { width: '100%' },
                     child: [
-                        ModernInput({
-                            label: 'Full Name',
-                            type: 'text',
-                            id: 'signinput-fullname',
-                            placeholder: 'Enter full name',
-                            icon: 'fa-solid fa-user-circle',
-                            onInput: (val) => get.fullName(val)
-                        }),
-                        $({
-                            tag: 'div',
-                            style: { height: '0.25rem' }
+                        ModernPasswordInput({
+                            id: 'signup-password',
+                            placeholder: 'Password',
+                            icon: 'fa-solid fa-lock',
+                            onInput: (val) => get.password(val)
                         }),
                         ModernPasswordInput({
-                            label: 'Re-type Password',
                             id: 'signup-confirm-password',
                             placeholder: 'Re-enter password',
                             icon: 'fa-solid fa-lock',
@@ -1205,29 +1366,30 @@ const Signup = (prop) => {
             text: 'Create Account',
             style: {
                 width: '100%',
-                background: 'linear-gradient(135deg, #0066ff, #00aaff)',
+                background: 'linear-gradient(135deg, #0d6efd, #0a58ca)',
                 border: 'none',
                 padding: '14px 24px',
                 fontSize: '1rem',
                 fontWeight: '600',
-                borderRadius: '40px',
+                borderRadius: '10px',
                 cursor: 'pointer',
                 color: '#fff',
                 marginTop: '1.5rem',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 8px rgba(13, 110, 253, 0.3)'
             },
             event: {
                 type: 'mouseenter',
                 method: (e) => {
                     e.target.style.transform = 'translateY(-2px)'
-                    e.target.style.boxShadow = '0 5px 15px rgba(0, 100, 255, 0.4)'
+                    e.target.style.boxShadow = '0 4px 15px rgba(13, 110, 253, 0.4)'
                 }
             },
             event: {
                 type: 'mouseleave',
                 method: (e) => {
                     e.target.style.transform = 'translateY(0)'
-                    e.target.style.boxShadow = 'none'
+                    e.target.style.boxShadow = '0 2px 8px rgba(13, 110, 253, 0.3)'
                 }
             },
             event: {
@@ -1335,11 +1497,9 @@ const logo = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '1rem',
-            marginBottom: '1.5rem',
-            background: 'linear-gradient(135deg, #0a1628, #0d1f3c)',
-            borderRadius: '16px',
-            padding: '1rem',
-            boxShadow: '0 5px 20px rgba(0, 0, 0, 0.2)'
+            marginBottom: '2rem',
+            padding: '1.5rem',
+            backgroundColor: 'transparent'
         },
         child: [
             // Logo Image
@@ -1347,12 +1507,11 @@ const logo = () => {
                 tag: 'img',
                 att: {
                     src: '/client/images/cap.png',
-                    alt: 'CAPSU Logo',
-                    style: 'width: 60px height: 60px object-fit: contain'
+                    alt: 'CAPSU Logo'
                 },
                 style: {
-                    width: '60px',
-                    height: '60px',
+                    width: '64px',
+                    height: '64px',
                     objectFit: 'contain'
                 }
             }),
@@ -1368,25 +1527,24 @@ const logo = () => {
                         tag: 'div',
                         text: 'CAPIZ STATE UNIVERSITY',
                         style: {
-                            color: '#00aaff',
+                            color: '#1a2a3a',
                             fontSize: '1.25rem',
                             fontWeight: '700',
                             letterSpacing: '1px',
-                            textShadow: '0 2px 5px rgba(0, 150, 255, 0.3)',
+                            fontFamily: 'Inter, Segoe UI, Poppins, system-ui, sans-serif',
                             padding: '0.25rem 0',
-                            borderBottom: '2px solid rgba(0, 150, 255, 0.5)',
-                            fontFamily: 'Segoe UI, Poppins, system-ui, sans-serif'
+                            borderBottom: '2px solid #0d6efd'
                         }
                     }),
                     $({
                         tag: 'div',
                         text: 'Center of Academic Excellence Delivering Quality Service to All',
                         style: {
-                            color: '#88aaff',
+                            color: '#6c757d',
                             fontSize: '0.75rem',
                             fontWeight: '500',
                             padding: '0.5rem 0 0.25rem',
-                            fontFamily: 'Segoe UI, system-ui, sans-serif',
+                            fontFamily: 'Inter, Segoe UI, system-ui, sans-serif',
                             letterSpacing: '0.3px'
                         }
                     })
@@ -1403,98 +1561,52 @@ export const LoginPage = () => {
     const getBot = (val) => {
         switch (window.location.href.replace(window.location.origin, '')) {
             case '/account/Login?':
-                // Create a clickable link instead of button-like text
                 val.innerHTML = `<a href="/account/Signup?" style="
-                    color: #00aaff;
+                    color: #0d6efd;
                     text-decoration: none;
                     font-size: 0.85rem;
-                    font-family: 'Segoe UI', sans-serif;
-                    font-weight: bold;
+                    font-family: 'Inter', 'Segoe UI', sans-serif;
+                    font-weight: 600;
                     transition: all 0.3s ease;
                     cursor: pointer;
                     display: inline-block;
-                " onmouseover="this.style.color='#22bbff'; this.style.textDecoration='underline';" 
-                onmouseout="this.style.color='#00aaff'; this.style.textDecoration='none';">Create an account?</a>
-                <i style='font-size:0.85rem;color: #88aaff;font-family: Segoe UI, sans-serif;'>( for Capsu Research & Extension user's only )</i>`
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                " onmouseover="this.style.color='#0a58ca'; this.style.backgroundColor='#f8f9fa';" 
+                onmouseout="this.style.color='#0d6efd'; this.style.backgroundColor='transparent';">Create an account</a>
+                <span style='font-size:0.85rem;color: #6c757d;font-family: Inter, Segoe UI, sans-serif;'> (for CAPSU Research & Extension users only)</span>`
                 break;
             case '/account/Signup?':
                 val.innerHTML = `<a href="/account/Login?" style="
-                    color: #00aaff;
+                    color: #0d6efd;
                     text-decoration: none;
                     font-size: 0.85rem;
-                    font-family: 'Segoe UI', sans-serif;
-                    font-weight: bold;
+                    font-family: 'Inter', 'Segoe UI', sans-serif;
+                    font-weight: 600;
                     transition: all 0.3s ease;
                     cursor: pointer;
                     display: inline-block;
-                " onmouseover="this.style.color='#22bbff'; this.style.textDecoration='underline';" 
-                onmouseout="this.style.color='#00aaff'; this.style.textDecoration='none';">Log in</a>`
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                " onmouseover="this.style.color='#0a58ca'; this.style.backgroundColor='#f8f9fa';" 
+                onmouseout="this.style.color='#0d6efd'; this.style.backgroundColor='transparent';">Log in</a>`
                 break;
         }
     }
 
     const getCLS = (cls) => {
         clsObj = cls
+        clsObj.style.backgroundColor = 'transparent'
+        clsObj.style.borderRadius = '16px'
+        clsObj.style.padding = '2rem'
+        
         switch (window.location.href.replace(window.location.origin, '')) {
             case '/account/Login?':
                 clsObj.appendChild(LoginPanel())
-                // Setup floating labels after DOM is ready
-                setTimeout(() => {
-                    setupFloatingLabel('userNid', 'usernameLabel')
-                    setupFloatingLabel('userPid', 'passwordLabel')
-                }, 100)
                 break
             case '/account/Signup?':
                 clsObj.appendChild(Signup())
                 break
-        }
-    }
-
-    // Define setupFloatingLabel function here
-    const setupFloatingLabel = (inputId, labelId) => {
-        const input = document.getElementById(inputId)
-        const label = document.getElementById(labelId)
-        
-        if (input && label) {
-            const updateLabel = () => {
-                if (input.value && input.value !== '') {
-                    label.style.top = '0px'
-                    label.style.transform = 'translateY(-50%)'
-                    label.style.fontSize = '0.7rem'
-                    label.style.color = '#00aaff'
-                    label.style.backgroundColor = '#0a1628'
-                    label.style.padding = '0 4px'
-                } else {
-                    label.style.top = '50%'
-                    label.style.transform = 'translateY(-50%)'
-                    label.style.fontSize = '0.95rem'
-                    label.style.color = '#6688aa'
-                    label.style.backgroundColor = 'transparent'
-                    label.style.padding = '0 4px'
-                }
-            }
-            
-            input.addEventListener('input', updateLabel)
-            input.addEventListener('focus', () => {
-                label.style.top = '0px'
-                label.style.transform = 'translateY(-50%)'
-                label.style.fontSize = '0.7rem'
-                label.style.color = '#00aaff'
-                label.style.backgroundColor = '#0a1628'
-                label.style.padding = '0 4px'
-            })
-            input.addEventListener('blur', () => {
-                if (!input.value) {
-                    label.style.top = '50%'
-                    label.style.transform = 'translateY(-50%)'
-                    label.style.fontSize = '0.95rem'
-                    label.style.color = '#6688aa'
-                    label.style.backgroundColor = 'transparent'
-                    label.style.padding = '0 4px'
-                }
-            })
-            
-            updateLabel()
         }
     }
 
@@ -1505,7 +1617,11 @@ export const LoginPage = () => {
             att: { className: 'butDiv' },
             style: {
                 marginBottom: '2vh',
-                textAlign: 'center'
+                textAlign: 'center',
+                color: '#0d6efd',
+                fontFamily: 'Inter, Segoe UI, sans-serif',
+                fontSize: '0.85rem',
+                fontWeight: '500'
             },
             text: 'Login?',
             event: {
@@ -1526,33 +1642,45 @@ export const LoginPage = () => {
         att: { className: 'LoginPanel' },
         child: [
             logo(),
-            $({ tag: 'div', elementHandler: getCLS, att: { className: "clogOrSig" } }),
+            $({ 
+                tag: 'div', 
+                elementHandler: getCLS, 
+                att: { className: "clogOrSig" }
+            }),
             ChangePanel(),
             $({
                 tag: 'a',
                 style: {
-                    fontFamily: 'Segoe UI, sans-serif',
-                    color: '#00aaff',
+                    fontFamily: 'Inter, Segoe UI, sans-serif',
+                    color: '#0d6efd',
                     fontSize: '0.85rem',
-                    fontWeight: 'bolder',
-                    marginTop: '1.5rem',
-                    borderBottom: 'solid thin #00aaff',
+                    fontWeight: '500',
+                    marginTop: '1rem',
                     width: 'fit-content',
-                    paddingLeft: '0.5rem',
-                    paddingRight: '0.5rem',
                     cursor: 'pointer',
                     textDecoration: 'none',
                     marginLeft: 'auto',
-                    marginRight: 'auto'
+                    marginRight: 'auto',
+                    display: 'block',
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    transition: 'all 0.3s ease'
                 },
                 text: 'Forgot password?',
                 event: {
                     type: 'click',
                     method: (e) => {
                         e.preventDefault()
-                        // Open the password reset modal
                         showPasswordResetModal()
                     }
+                },
+                mouseenter: (e) => {
+                    e.target.style.backgroundColor = '#f8f9fa'
+                    e.target.style.color = '#0a58ca'
+                },
+                mouseleave: (e) => {
+                    e.target.style.backgroundColor = 'transparent'
+                    e.target.style.color = '#0d6efd'
                 }
             })
         ]
