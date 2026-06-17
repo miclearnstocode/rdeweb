@@ -19,7 +19,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE en.status = 'accepted' OR e.status = 1");
+                WHERE (en.status = 'accepted' OR e.status = 1)");
             $data['totalAccepted'] = (int)($r->fetch_assoc()['total'] ?? 0);
 
             // 2. Proposed (with valid event_id)
@@ -70,12 +70,15 @@ class DashboardAPI {
                 }
             }
 
-            // 9. Research by campus (accepted/active)
+            // 9. Research by Campus
             $r = $this->con->query("SELECT rf.campus, COUNT(DISTINCT rf.id) as count
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) AND rf.campus IS NOT NULL AND rf.campus != ''
+                WHERE (en.status = 'accepted' OR rf.status = 'accepted') 
+                    AND rf.campus IS NOT NULL 
+                    AND rf.campus NOT LIKE '%Center%'
+                    AND rf.campus != '' 
                 GROUP BY rf.campus
                 ORDER BY count DESC
                 LIMIT 10");
@@ -86,12 +89,32 @@ class DashboardAPI {
                 }
             }
 
-            // 10. Research by category (accepted/active)
+            // 10. Research by Center
+            $r = $this->con->query("SELECT rf.center, COUNT(DISTINCT rf.id) as count
+                FROM researchfile rf
+                LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                LEFT JOIN event_list e ON rf.event_id = e.id
+                WHERE (en.status = 'accepted' OR rf.status = 'accepted') 
+                    AND rf.center IS NOT NULL 
+                    AND rf.center != 'Extension (Extension)'
+                GROUP BY rf.center  
+                ORDER BY count DESC
+                LIMIT 10");
+            $data['byCenter'] = [];
+            if ($r) {
+                while ($row = $r->fetch_assoc()) {
+                    $data['byCenter'][] = ['center' => $row['center'], 'count' => (int)$row['count']];
+                }
+            }
+
+            // 11. Research by Category
             $r = $this->con->query("SELECT rf.category, COUNT(DISTINCT rf.id) as count
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) AND rf.category IS NOT NULL AND rf.category != ''
+                WHERE (en.status = 'accepted' OR e.status = 1) 
+                    AND rf.category IS NOT NULL 
+                    AND rf.category != ''
                 GROUP BY rf.category
                 ORDER BY count DESC");
             $data['byCategory'] = [];
@@ -101,7 +124,7 @@ class DashboardAPI {
                 }
             }
 
-            // 11. Research trend by year
+            // 12. Research trend by year
             $r = $this->con->query("SELECT YEAR(COALESCE(e.date, en.date)) as year, COUNT(DISTINCT rf.id) as count
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
@@ -115,6 +138,68 @@ class DashboardAPI {
                     $data['byYear'][] = ['year' => $row['year'], 'count' => (int)$row['count']];
                 }
             }
+
+            // 13. Extension research
+            $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
+                FROM researchfile rf
+                LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                LEFT JOIN event_list e ON rf.event_id = e.id
+                WHERE (en.status = 'accepted' OR e.status = 1) 
+                    AND  rf.center = 'Extension (Extension)'");
+            $data['extension'] = (int)($r->fetch_assoc()['total'] ?? 0);
+                        
+            // Get ALL campuses total per year (sum of ALL campuses)
+            $campusByYearQuery = "SELECT YEAR(COALESCE(e.date, en.date)) as year, COUNT(DISTINCT rf.id) as total
+                FROM researchfile rf
+                LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                LEFT JOIN event_list e ON rf.event_id = e.id
+                WHERE (en.status = 'accepted' OR e.status = 1) 
+                    AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
+                    AND rf.campus IS NOT NULL 
+                    AND rf.campus != '' 
+                    AND rf.campus != 'Extension'
+                GROUP BY YEAR(COALESCE(e.date, en.date))
+                ORDER BY year ASC";
+
+            $campusResult = $this->con->query($campusByYearQuery);
+            $campusMap = [];
+            while ($row = $campusResult->fetch_assoc()) {
+                $campusMap[$row['year']] = (int)$row['total'];
+            }
+
+            // Get ALL centers total per year (sum of ALL centers)
+            $centerByYearQuery = "SELECT YEAR(COALESCE(e.date, en.date)) as year, COUNT(DISTINCT rf.id) as total
+                FROM researchfile rf
+                LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                LEFT JOIN event_list e ON rf.event_id = e.id
+                WHERE (en.status = 'accepted' OR e.status = 1) 
+                    AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
+                    AND rf.center IS NOT NULL 
+                    AND rf.center != '' 
+                    AND rf.center != 'Extension'
+                GROUP BY YEAR(COALESCE(e.date, en.date))
+                ORDER BY year ASC";
+
+            $centerResult = $this->con->query($centerByYearQuery);
+            $centerMap = [];
+            while ($row = $centerResult->fetch_assoc()) {
+                $centerMap[$row['year']] = (int)$row['total'];
+            }
+
+            // Combine into single array with ALL years
+            $allYears = array_unique(array_merge(array_keys($campusMap), array_keys($centerMap)));
+            sort($allYears);
+
+            $campusCenterByYear = []; // <-- THIS WAS MISSING
+            foreach ($allYears as $year) {
+                $campusCenterByYear[] = [
+                    'year' => (string)$year,
+                    'campus' => $campusMap[$year] ?? 0,
+                    'center' => $centerMap[$year] ?? 0
+                ];
+            }
+
+            $data['campusCenterByYear'] = $campusCenterByYear; // <-- NOW THIS WILL WORK
 
             echo json_encode(['success' => true, 'data' => $data]);
         } catch (Exception $e) {
