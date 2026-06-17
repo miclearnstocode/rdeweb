@@ -161,6 +161,38 @@ const LoginPanel = (prop) => {
                 },
                 child: [
                     $({
+                        tag: 'div',
+                        style: {
+                            textAlign: 'center',
+                            marginBottom: '2rem',
+                            width: '100%'
+                        },
+                        child: [
+                            $({
+                                tag: 'h2',
+                                style: {
+                                    color: '#2c3e50',
+                                    fontSize: '1.75rem',
+                                    fontWeight: '700',
+                                    marginBottom: '0.5rem',
+                                    fontFamily: 'Inter, Segoe UI, sans-serif',
+                                    letterSpacing: '-0.5px'
+                                },
+                                text: 'Welcome Back, Researcher & Extensionist!'
+                            }),
+                            $({
+                                tag: 'p',
+                                style: {
+                                    color: '#6c757d',
+                                    fontSize: '0.95rem',
+                                    marginTop: '0',
+                                    fontFamily: 'Inter, Segoe UI, sans-serif'
+                                },
+                                text: 'Sign in to access your dashboard'
+                            })
+                        ]
+                    }),
+                    $({
                         tag: 'form',
                         att: {
                             method: 'POST',
@@ -284,30 +316,33 @@ const LoginPanel = (prop) => {
                                                     transition: 'all 0.3s ease',
                                                     outline: 'none'
                                                 },
-                                                event: {
-                                                    type: 'focus',
-                                                    method: (e) => {
-                                                        e.target.style.borderColor = '#0d6efd'
-                                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
-                                                        const icon = e.target.parentElement.parentElement.querySelector('span')
-                                                        if (icon) {
-                                                            icon.style.borderColor = '#0d6efd'
-                                                            icon.style.color = '#0d6efd'
+                                                // FIXED: Changed from separate event objects to array
+                                                event: [
+                                                    {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#0d6efd'
+                                                            e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                                            const icon = e.target.parentElement.parentElement.querySelector('span')
+                                                            if (icon) {
+                                                                icon.style.borderColor = '#0d6efd'
+                                                                icon.style.color = '#0d6efd'
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        type: 'blur',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#dee2e6'
+                                                            e.target.style.boxShadow = 'none'
+                                                            const icon = e.target.parentElement.parentElement.querySelector('span')
+                                                            if (icon) {
+                                                                icon.style.borderColor = '#dee2e6'
+                                                                icon.style.color = '#6c757d'
+                                                            }
                                                         }
                                                     }
-                                                },
-                                                event: {
-                                                    type: 'blur',
-                                                    method: (e) => {
-                                                        e.target.style.borderColor = '#dee2e6'
-                                                        e.target.style.boxShadow = 'none'
-                                                        const icon = e.target.parentElement.parentElement.querySelector('span')
-                                                        if (icon) {
-                                                            icon.style.borderColor = '#dee2e6'
-                                                            icon.style.color = '#6c757d'
-                                                        }
-                                                    }
-                                                }
+                                                ]
                                             })
                                         ]
                                     })
@@ -379,30 +414,32 @@ const LoginPanel = (prop) => {
                                                     transition: 'all 0.3s ease',
                                                     outline: 'none'
                                                 },
-                                                event: {
-                                                    type: 'focus',
-                                                    method: (e) => {
-                                                        e.target.style.borderColor = '#0d6efd'
-                                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
-                                                        const icon = e.target.parentElement.parentElement.querySelector('span')
-                                                        if (icon) {
-                                                            icon.style.borderColor = '#0d6efd'
-                                                            icon.style.color = '#0d6efd'
+                                                event: [
+                                                    {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#0d6efd'
+                                                            e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                                            const icon = e.target.parentElement.parentElement.querySelector('span')
+                                                            if (icon) {
+                                                                icon.style.borderColor = '#0d6efd'
+                                                                icon.style.color = '#0d6efd'
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        type: 'blur',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#dee2e6'
+                                                            e.target.style.boxShadow = 'none'
+                                                            const icon = e.target.parentElement.parentElement.querySelector('span')
+                                                            if (icon) {
+                                                                icon.style.borderColor = '#dee2e6'
+                                                                icon.style.color = '#6c757d'
+                                                            }
                                                         }
                                                     }
-                                                },
-                                                event: {
-                                                    type: 'blur',
-                                                    method: (e) => {
-                                                        e.target.style.borderColor = '#dee2e6'
-                                                        e.target.style.boxShadow = 'none'
-                                                        const icon = e.target.parentElement.parentElement.querySelector('span')
-                                                        if (icon) {
-                                                            icon.style.borderColor = '#dee2e6'
-                                                            icon.style.color = '#6c757d'
-                                                        }
-                                                    }
-                                                }
+                                                ]
                                             }),
                                             $({
                                                 tag: 'span',
@@ -439,28 +476,43 @@ const LoginPanel = (prop) => {
                                                         }
                                                     })
                                                 ],
-                                                event: {
-                                                    type: 'click',
-                                                    method: () => {
-                                                        togglePasswordVisibility('userPid', 'login-password-eye-icon')
+                                                event: [
+                                                    {
+                                                        type: 'click',
+                                                        method: (e) => {
+                                                            e.stopPropagation();
+                                                            e.preventDefault();
+                                                            const input = document.getElementById('userPid');
+                                                            const icon = document.getElementById('login-password-eye-icon');
+                                                            
+                                                            if (input && icon) {
+                                                                if (input.type === 'password') {
+                                                                    input.type = 'text';
+                                                                    icon.className = 'fa-solid fa-eye-slash';
+                                                                } else {
+                                                                    input.type = 'password';
+                                                                    icon.className = 'fa-solid fa-eye';
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        type: 'mouseenter',
+                                                        method: (e) => {
+                                                            e.target.style.color = '#0d6efd';
+                                                            const icon = e.target.querySelector('i');
+                                                            if (icon) icon.style.color = '#0d6efd';
+                                                        }
+                                                    },
+                                                    {
+                                                        type: 'mouseleave',
+                                                        method: (e) => {
+                                                            e.target.style.color = '#adb5bd';
+                                                            const icon = e.target.querySelector('i');
+                                                            if (icon) icon.style.color = '#adb5bd';
+                                                        }
                                                     }
-                                                },
-                                                event: {
-                                                    type: 'mouseenter',
-                                                    method: (e) => {
-                                                        e.target.style.color = '#0d6efd'
-                                                        const icon = e.target.querySelector('i')
-                                                        if (icon) icon.style.color = '#0d6efd'
-                                                    }
-                                                },
-                                                event: {
-                                                    type: 'mouseleave',
-                                                    method: (e) => {
-                                                        e.target.style.color = '#adb5bd'
-                                                        const icon = e.target.querySelector('i')
-                                                        if (icon) icon.style.color = '#adb5bd'
-                                                    }
-                                                }
+                                                ]
                                             })
                                         ]
                                     })
@@ -489,20 +541,22 @@ const LoginPanel = (prop) => {
                                     textAlign: 'center'
                                 },
                                 text: 'Sign In',
-                                event: {
-                                    type: 'mouseenter',
-                                    method: (e) => {
-                                        e.target.style.transform = 'translateY(-2px)'
-                                        e.target.style.boxShadow = '0 4px 15px rgba(13, 110, 253, 0.4)'
+                                event: [
+                                    {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            e.target.style.transform = 'translateY(-2px)'
+                                            e.target.style.boxShadow = '0 4px 15px rgba(13, 110, 253, 0.4)'
+                                        }
+                                    },
+                                    {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            e.target.style.transform = 'translateY(0)'
+                                            e.target.style.boxShadow = '0 2px 8px rgba(13, 110, 253, 0.3)'
+                                        }
                                     }
-                                },
-                                event: {
-                                    type: 'mouseleave',
-                                    method: (e) => {
-                                        e.target.style.transform = 'translateY(0)'
-                                        e.target.style.boxShadow = '0 2px 8px rgba(13, 110, 253, 0.3)'
-                                    }
-                                }
+                                ]
                             })
                         ]
                     })
@@ -1497,8 +1551,8 @@ const logo = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '1rem',
-            marginBottom: '2rem',
-            padding: '1.5rem',
+            marginBottom: '0.5rem', 
+            padding: '0.5rem 0', 
             backgroundColor: 'transparent'
         },
         child: [
