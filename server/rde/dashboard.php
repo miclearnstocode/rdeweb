@@ -79,9 +79,8 @@ class DashboardAPI {
                 $data['inHouseReview'] = 0;
             }
 
-            // 4. Symposium (only for default view)
+            // 4. Symposium
             if ($filter === 'symposium') {
-                // When filtering by symposium, show the total count
                 $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
                     FROM researchfile rf
                     LEFT JOIN endorsement en ON rf.endorsementid = en.id
@@ -90,7 +89,6 @@ class DashboardAPI {
                         AND (rf.event LIKE '%Symposium%' OR (e.name LIKE '%Symposium%' AND rf.event_id != 0))");
                 $data['symposium'] = (int)($r->fetch_assoc()['total'] ?? 0);
             } else if ($filter === null || $filter === '') {
-                // Default view - show total symposium count
                 $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
                     FROM researchfile rf
                     LEFT JOIN endorsement en ON rf.endorsementid = en.id
@@ -99,7 +97,6 @@ class DashboardAPI {
                         AND (rf.event LIKE '%Symposium%' OR (e.name LIKE '%Symposium%' AND rf.event_id != 0))");
                 $data['symposium'] = (int)($r->fetch_assoc()['total'] ?? 0);
             } else {
-                // Other filters - symposium count should be 0 (or filtered count if applicable)
                 $data['symposium'] = 0;
             }
 
@@ -127,7 +124,7 @@ class DashboardAPI {
                 }
             }
 
-            // 9. Research by Campus
+            // 9. Research by Campus - EXCLUDE Extension
             $r = $this->con->query("SELECT rf.campus, COUNT(DISTINCT rf.id) as count
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
@@ -136,6 +133,8 @@ class DashboardAPI {
                     AND rf.campus IS NOT NULL 
                     AND rf.campus NOT LIKE '%Center%'
                     AND rf.campus != '' 
+                    AND rf.campus != 'Extension'
+                    AND rf.campus != 'Extension (Extension)'
                 GROUP BY rf.campus
                 ORDER BY count DESC
                 LIMIT 10");
@@ -225,17 +224,17 @@ class DashboardAPI {
                     $data['extensionByCampus'][] = ['campus' => $row['campus'], 'count' => (int)$row['count']];
                 }
             }
-                        
-            // Campus vs Center by Year
+
             $campusByYearQuery = "SELECT YEAR(COALESCE(e.date, en.date)) as year, COUNT(DISTINCT rf.id) as total
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition
+                WHERE (en.status = 'accepted' OR e.status = 1)
                     AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                     AND rf.campus IS NOT NULL 
                     AND rf.campus != '' 
                     AND rf.campus != 'Extension'
+                    AND rf.campus != 'Extension (Extension)'
                 GROUP BY YEAR(COALESCE(e.date, en.date))
                 ORDER BY year ASC";
 
@@ -249,11 +248,12 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition
+                WHERE (en.status = 'accepted' OR e.status = 1)
                     AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                     AND rf.center IS NOT NULL 
                     AND rf.center != '' 
                     AND rf.center != 'Extension'
+                    AND rf.center != 'Extension (Extension)'
                 GROUP BY YEAR(COALESCE(e.date, en.date))
                 ORDER BY year ASC";
 
