@@ -91,8 +91,8 @@ export const ResearchMain = () => {
                     style: {
                         padding: '8px 20px',
                         backgroundColor: currentTab === tab.id ? 'deepskyblue' : 'transparent',
-                        color: currentTab === tab.id ? '#fff' : '#bbb',
-                        border: `1px solid ${currentTab === tab.id ? 'deepskyblue' : '#555'}`,
+                        color: currentTab === tab.id ? '#fff' : '#666',
+                        border: `1px solid ${currentTab === tab.id ? 'deepskyblue' : '#e0e0e0'}`,
                         borderRadius: '8px',
                         cursor: 'pointer',
                         fontSize: '0.9vw',
@@ -120,8 +120,8 @@ export const ResearchMain = () => {
                                         btn.style.borderColor = 'deepskyblue'
                                     } else {
                                         btn.style.backgroundColor = 'transparent'
-                                        btn.style.color = '#bbb'
-                                        btn.style.borderColor = '#555'
+                                        btn.style.color = '#666'
+                                        btn.style.borderColor = '#e0e0e0'
                                     }
                                 }
                             })
@@ -610,7 +610,6 @@ export const ResearchMain = () => {
             };
 
             const viewDocs = () => {
-                // Details Panel (Left side - 70%)
                 const DetailsPanel = () => {
                     const researchBot = ({ dataURLResearch, title, category, author, coAuthor, presenter, center, campus, programFile, certificateFile }) => {
                         const labelDetails = (label, data) => {
@@ -1004,12 +1003,58 @@ export const ResearchMain = () => {
 
                 // Right Panel (30%) - Contains document file buttons
                 const RightPanel = () => {
+                    // Helper function to extract file URL from various formats
+                    const extractFileUrl = (fileData) => {
+                        if (!fileData) return null;
+                        
+                        // If it's a string, return it
+                        if (typeof fileData === 'string') return fileData;
+                        
+                        // If it's an object
+                        if (typeof fileData === 'object') {
+                            // Check for drive_view_url first (primary for research proposals)
+                            if (fileData.driveViewUrl) return fileData.driveViewUrl;
+                            if (fileData.drive_view_url) return fileData.drive_view_url;
+                            if (fileData.viewUrl) return fileData.viewUrl;
+                            if (fileData.fileUrl) return fileData.fileUrl;
+                            if (fileData.driveDownloadUrl) return fileData.driveDownloadUrl;
+                            if (fileData.downloadUrl) return fileData.downloadUrl;
+                            if (fileData.file) return fileData.file;
+                            if (fileData.legacyFile) return fileData.legacyFile;
+                        }
+                        
+                        return null;
+                    };
+
+                    // Check if a file has a valid viewable URL
+                    const hasViewableFile = (fileData) => {
+                        if (!fileData) return false;
+                        
+                        // If it's an object with hasFile property
+                        if (typeof fileData === 'object' && fileData.hasFile !== undefined) {
+                            return fileData.hasFile === true;
+                        }
+                        
+                        // Check if we can extract a URL
+                        const url = extractFileUrl(fileData);
+                        return url !== null && url !== '';
+                    };
+
+                    // Get the research file from the first research entry
+                    const researchFile = research.length > 0 ? research[0].file : null;
+                    
+                    // Get program and certificate files
+                    const programFileData = research.length > 0 ? research[0].programFile : null;
+                    const certificateFileData = research.length > 0 ? research[0].certificateFile : null;
+
                     // Common action button style
-                    const actionButton = ({ icon, label, onClick, color, description }) => {
+                    const actionButton = ({ icon, label, onClick, color, description, disabled = false }) => {
                         return $({
                             tag: 'div',
                             style: {
-                                marginBottom: '24px'
+                                marginBottom: '24px',
+                                opacity: disabled ? '0.5' : '1',
+                                pointerEvents: disabled ? 'none' : 'auto'
                             },
                             child: [
                                 $({
@@ -1038,7 +1083,20 @@ export const ResearchMain = () => {
                                                 color: '#1a1a2e',
                                                 margin: '0'
                                             }
-                                        })
+                                        }),
+                                        // Add a small indicator if file is missing
+                                        ...(disabled ? [
+                                            $({
+                                                tag: 'span',
+                                                text: '(No file)',
+                                                style: {
+                                                    fontFamily: 'Inter, sans-serif',
+                                                    fontSize: '11px',
+                                                    color: '#dc3545',
+                                                    fontWeight: '400'
+                                                }
+                                            })
+                                        ] : [])
                                     ]
                                 }),
                                 $({
@@ -1060,11 +1118,11 @@ export const ResearchMain = () => {
                                         backgroundColor: '#ffffff',
                                         border: `1px solid ${color}`,
                                         borderRadius: '10px',
-                                        cursor: 'pointer',
+                                        cursor: disabled ? 'not-allowed' : 'pointer',
                                         fontFamily: 'Inter, sans-serif',
                                         fontSize: '14px',
                                         fontWeight: '500',
-                                        color: color,
+                                        color: disabled ? '#adb5bd' : color,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -1072,21 +1130,21 @@ export const ResearchMain = () => {
                                         transition: 'all 0.2s ease'
                                     },
                                     child: [
-                                        $({ tag: 'span', att: { className: 'fa-regular fa-eye' }, style: { fontSize: '14px' } }),
-                                        $({ tag: 'span', text: `View ${label}` })
+                                        $({ tag: 'span', att: { className: disabled ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye' }, style: { fontSize: '14px' } }),
+                                        $({ tag: 'span', text: disabled ? `${label} Unavailable` : `View ${label}` })
                                     ],
                                     event: {
                                         type: 'click',
-                                        method: onClick
+                                        method: disabled ? () => alert(`${label} file is not available.`) : onClick
                                     },
-                                    mouseenter: (e) => {
+                                    mouseenter: !disabled ? (e) => {
                                         e.target.style.backgroundColor = `${color}10`;
                                         e.target.style.transform = 'translateY(-2px)';
-                                    },
-                                    mouseleave: (e) => {
+                                    } : null,
+                                    mouseleave: !disabled ? (e) => {
                                         e.target.style.backgroundColor = '#ffffff';
                                         e.target.style.transform = 'translateY(0)';
-                                    }
+                                    } : null
                                 })
                             ]
                         })
@@ -1125,6 +1183,12 @@ export const ResearchMain = () => {
                     // Endorsement Letter description
                     const endorsementDescription = 'The faculty endorsement letter confirming the validity of this research submission and recommending it for review.';
 
+                    // Check if files exist
+                    const hasResearchFile = hasViewableFile(researchFile);
+                    const hasProgramFile = hasViewableFile(programFileData);
+                    const hasCertificateFile = hasViewableFile(certificateFileData);
+                    const hasEndorsementFile = hasViewableFile(file);
+
                     return $({
                         tag: 'div',
                         style: { 
@@ -1149,38 +1213,49 @@ export const ResearchMain = () => {
                                         label: 'Endorsement Letter',
                                         description: endorsementDescription,
                                         onClick: () => openFileInModal(file, titleEntry || research[0]?.title || 'Document', 'Endorsement Letter'),
-                                        color: '#0d6efd'
+                                        color: '#0d6efd',
+                                        disabled: !hasEndorsementFile
                                     }),
                                     
-                                    // Research Document Button
+                                    // Research Document Button - FIX: Use researchFile (the actual research proposal/paper)
                                     actionButton({
                                         icon: researchIcon,
                                         label: researchLabel,
                                         description: researchDescription,
-                                        onClick: () => openFileInModal(file, titleEntry || research[0]?.title || 'Document', researchLabel),
-                                        color: researchColor
+                                        onClick: () => {
+                                            if (hasResearchFile) {
+                                                // Use the research file from the first research entry
+                                                openFileInModal(researchFile, titleEntry || research[0]?.title || 'Document', researchLabel);
+                                            } else {
+                                                alert(`${researchLabel} file is not available.`);
+                                            }
+                                        },
+                                        color: researchColor,
+                                        disabled: !hasResearchFile
                                     }),
                                     
                                     // Program File Button (if available)
-                                    ...(programFile && programFile.hasFile && programFile.viewUrl ? [actionButton({
+                                    ...(programFileData ? [actionButton({
                                         icon: 'fa-solid fa-file-alt',
                                         label: isExtension ? 'Local Program File' : 'Program File',
                                         description: isExtension 
                                             ? 'The local program document associated with this extension submission.' 
                                             : 'The program file document associated with this research submission.',
-                                        onClick: () => openFileInModal(programFile, titleEntry || research[0]?.title || 'Program File', isExtension ? 'Local Program File' : 'Program File'),
-                                        color: '#fd7e14'
+                                        onClick: () => openFileInModal(programFileData, titleEntry || research[0]?.title || 'Program File', isExtension ? 'Local Program File' : 'Program File'),
+                                        color: '#fd7e14',
+                                        disabled: !hasProgramFile
                                     })] : []),
                                     
                                     // Certificate File Button (if available)
-                                    ...(certificateFile && certificateFile.hasFile && certificateFile.viewUrl ? [actionButton({
+                                    ...(certificateFileData ? [actionButton({
                                         icon: 'fa-solid fa-certificate',
                                         label: isExtension ? 'Local Certificate File' : 'Certificate File',
                                         description: isExtension 
                                             ? 'The certificate document associated with this extension submission.' 
                                             : 'The certificate document associated with this research submission.',
-                                        onClick: () => openFileInModal(certificateFile, titleEntry || research[0]?.title || 'Certificate File', isExtension ? 'Local Certificate File' : 'Certificate File'),
-                                        color: '#28a745'
+                                        onClick: () => openFileInModal(certificateFileData, titleEntry || research[0]?.title || 'Certificate File', isExtension ? 'Local Certificate File' : 'Certificate File'),
+                                        color: '#28a745',
+                                        disabled: !hasCertificateFile
                                     })] : [])
                                 ]
                             })
@@ -1214,7 +1289,7 @@ export const ResearchMain = () => {
 
             const icon = $({ 
                 tag: 'div', 
-                att: { className: 'fa-solid fa-file-pdf' }, 
+                att: { className: 'fa-solid fa-chalkboard-user' }, 
                 style: { 
                     fontSize: '28px', 
                     margin: 'auto', 
@@ -1343,7 +1418,7 @@ export const ResearchMain = () => {
                 }
             })
         }
-        // Student Research Document Component (for both undergraduate and graduate)
+        // Student Research Document
         const docsStudent = ({ id, title, author, coauthor, presenter, category, campus, event, paper_type, created_at, sender_type, sender_email, research_file, endorsement_file }) => {
             
             const formatDate = (dateStr) => {
@@ -1359,19 +1434,15 @@ export const ResearchMain = () => {
                 return formatDate(datePart) + " at " + timeFormat;
             };
 
-            // Modern file viewer using CustomModal
             const openFileInModal = (fileData, title, fileType) => {
-                // Extract URL from file data object if needed
                 let fileUrl = '';
                 
-                // Handle different file data formats
                 if (typeof fileData === 'object' && fileData !== null) {
                     fileUrl = fileData.drive_view_url || fileData.viewUrl || fileData.fileUrl || fileData.file || fileData.legacyFile || '';
                 } else if (typeof fileData === 'string') {
                     fileUrl = fileData;
                 }
                 
-                // If no valid URL found
                 if (!fileUrl) {
                     alert(`No ${fileType} file available`);
                     return;
@@ -1541,7 +1612,7 @@ export const ResearchMain = () => {
                                         fontWeight: '600',
                                         color: '#0d6efd',
                                         fontSize: '13px',
-                                        minWidth: '100px'
+                                        minWidth: '120px'
                                     }
                                 }),
                                 $({
@@ -1587,14 +1658,14 @@ export const ResearchMain = () => {
                                         fontWeight: '600',
                                         color: '#0d6efd',
                                         fontSize: '13px',
-                                        minWidth: '100px',
+                                        minWidth: '120px',
                                         display: 'block',
                                         marginBottom: '8px'
                                     }
                                 }),
                                 $({
                                     tag: 'div',
-                                    style: { marginLeft: '100px' },
+                                    style: { marginLeft: '120px' },
                                     elementHandler: (el) => {
                                         coauthors.forEach(val => {
                                             el.appendChild($({
@@ -1845,11 +1916,15 @@ export const ResearchMain = () => {
                             }
                         })
                         
-                        // Document Information Section
                         holder.appendChild($({
                             tag: 'div',
                             style: {
-                                marginBottom: '20px'
+                                width: '100%',
+                                padding: '20px',
+                                marginBottom: '16px',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                border: '1px solid #e9ecef'
                             },
                             child: [
                                 labelDetails("Title", title),
@@ -1857,10 +1932,7 @@ export const ResearchMain = () => {
                                 CoAuthorList(),
                                 labelDetails("Presenter", presenter),
                                 labelDetails("Campus", campus),
-                                labelDetails("Category", category),
-                                labelDetails("Submission Date", formatDateTime(created_at)),
-                                labelDetails("Sender Type", sender_type),
-                                labelDetails("Email", sender_email || 'N/A')
+                                labelDetails("Category", category)
                             ]
                         }))
                         
@@ -1882,173 +1954,152 @@ export const ResearchMain = () => {
                     })
                 }
 
-                // Right Panel (30%) - Contains Endorsement Letter and Research Paper buttons
                 const RightPanel = () => {
-                    let endorsementUrl = endorsement_file?.viewUrl || null
-                    
-                    const openEndorsementInModal = () => {
-                        let endorsementUrl = endorsement_file?.viewUrl || endorsement_file?.drive_view_url || endorsement_file?.fileUrl || endorsement_file;
+                 
+                    const extractFileUrl = (fileData) => {
+                        if (!fileData) return null;
                         
-                        if (endorsementUrl) {
-                            // Extract URL if it's an object
-                            let fileUrl = '';
-                            if (typeof endorsementUrl === 'object' && endorsementUrl !== null) {
-                                fileUrl = endorsementUrl.drive_view_url || endorsementUrl.viewUrl || endorsementUrl.fileUrl || endorsementUrl.file || '';
-                            } else if (typeof endorsementUrl === 'string') {
-                                fileUrl = endorsementUrl;
-                            }
-                            
-                            if (fileUrl) {
-                                const createEndorsementContent = () => {
-                                    const container = $({
-                                        tag: 'div',
-                                        style: {
-                                            width: '100%',
-                                            height: '100%',
-                                            minHeight: '500px',
-                                            position: 'relative'
-                                        }
-                                    });
-                                    
-                                    let fileId = null;
-                                    let embedUrl = fileUrl;
-                                    
-                                    if (fileUrl.includes('drive.google.com')) {
-                                        const patterns = [
-                                            /\/d\/([a-zA-Z0-9_-]+)/,
-                                            /\/file\/d\/([a-zA-Z0-9_-]+)/,
-                                            /id=([a-zA-Z0-9_-]+)/,
-                                            /open\?id=([a-zA-Z0-9_-]+)/,
-                                            /([a-zA-Z0-9_-]{25,})/
-                                        ];
-                                        for (let pattern of patterns) {
-                                            const match = fileUrl.match(pattern);
-                                            if (match && match[1]) {
-                                                fileId = match[1];
-                                                break;
-                                            }
-                                        }
-                                        if (fileId) {
-                                            embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-                                        }
-                                    }
-                                    
-                                    const loadingIndicator = $({
-                                        tag: 'div',
-                                        style: {
-                                            position: 'absolute',
-                                            top: '50%',
-                                            left: '50%',
-                                            transform: 'translate(-50%, -50%)',
-                                            textAlign: 'center',
-                                            zIndex: 10
-                                        },
-                                        child: [
-                                            $({
-                                                tag: 'span',
-                                                att: { className: 'fa-solid fa-spinner fa-pulse' },
-                                                style: { fontSize: '32px', color: '#0d6efd', marginBottom: '12px', display: 'block' }
-                                            }),
-                                            $({
-                                                tag: 'div',
-                                                text: 'Loading Endorsement Letter...',
-                                                style: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6c757d' }
-                                            })
-                                        ]
-                                    });
-                                    container.appendChild(loadingIndicator);
-                                    
-                                    const iframe = document.createElement('iframe');
-                                    iframe.src = embedUrl;
-                                    iframe.style.width = '100%';
-                                    iframe.style.height = '100%';
-                                    iframe.style.border = 'none';
-                                    iframe.style.position = 'absolute';
-                                    iframe.style.top = '0';
-                                    iframe.style.left = '0';
-                                    iframe.allow = 'autoplay; fullscreen';
-                                    iframe.allowFullscreen = true;
-                                    
-                                    iframe.onload = () => loadingIndicator.remove();
-                                    iframe.onerror = () => {
-                                        loadingIndicator.remove();
-                                        container.innerHTML = `
-                                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
-                                                <span class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
-                                                <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load Endorsement Letter</h3>
-                                                <a href="${fileUrl}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; margin-top: 16px;">Open in Google Drive</a>
-                                            </div>
-                                        `;
-                                    };
-                                    
-                                    container.appendChild(iframe);
-                                    return container;
-                                };
-                                
-                                CustomModal({
-                                    title: 'Endorsement Letter',
-                                    size: 'large',
-                                    content: createEndorsementContent,
-                                    showCloseButton: true,
-                                    closeOnOverlayClick: true
-                                });
-                            } else {
-                                alert('No valid endorsement letter URL found');
-                            }
-                        } else {
-                            alert('No endorsement letter available');
+                      
+                        if (typeof fileData === 'string') return fileData;
+                        if (typeof fileData === 'object') {
+                            if (fileData.driveViewUrl) return fileData.driveViewUrl;
+                            if (fileData.drive_view_url) return fileData.drive_view_url;
+                            if (fileData.viewUrl) return fileData.viewUrl;
+                            if (fileData.fileUrl) return fileData.fileUrl;
+                            if (fileData.driveDownloadUrl) return fileData.driveDownloadUrl;
+                            if (fileData.downloadUrl) return fileData.downloadUrl;
+                            if (fileData.file) return fileData.file;
+                            if (fileData.legacyFile) return fileData.legacyFile;
                         }
+                        
+                        return null;
                     };
 
-                    const openResearchPaperInModal = () => {
-                        if (research_file) {
-                            openFileInModal(research_file, title, 'Research Paper');
-                        } else {
-                            alert('No research paper available');
+
+                    const hasViewableFile = (fileData) => {
+                        if (!fileData) return false;
+                        
+
+                        if (typeof fileData === 'object' && fileData.hasFile !== undefined) {
+                            return fileData.hasFile === true;
                         }
+
+                        const url = extractFileUrl(fileData);
+                        return url !== null && url !== '';
                     };
 
-                    // Common button style
-                    const actionButton = ({ icon, label, onClick, color }) => {
+                    const actionButton = ({ icon, label, onClick, color, description, disabled = false }) => {
                         return $({
-                            tag: 'button',
+                            tag: 'div',
                             style: {
-                                width: '100%',
-                                padding: '12px 20px',
-                                backgroundColor: '#ffffff',
-                                border: `1px solid ${color}`,
-                                borderRadius: '10px',
-                                cursor: 'pointer',
-                                fontFamily: 'Inter, sans-serif',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                color: color,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '10px',
-                                transition: 'all 0.2s ease',
-                                marginBottom: '16px'
+                                marginBottom: '24px',
+                                opacity: disabled ? '0.5' : '1',
+                                pointerEvents: disabled ? 'none' : 'auto'
                             },
                             child: [
-                                $({ tag: 'span', att: { className: icon }, style: { fontSize: '16px' } }),
-                                $({ tag: 'span', text: label })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: onClick
-                            },
-                            mouseenter: (e) => {
-                                e.target.style.backgroundColor = `${color}10`;
-                                e.target.style.transform = 'translateY(-2px)';
-                            },
-                            mouseleave: (e) => {
-                                e.target.style.backgroundColor = '#ffffff';
-                                e.target.style.transform = 'translateY(0)';
-                            }
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        marginBottom: '12px',
+                                        paddingBottom: '12px',
+                                        borderBottom: '1px solid #e9ecef'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: icon },
+                                            style: { fontSize: '18px', color: color }
+                                        }),
+                                        $({
+                                            tag: 'h4',
+                                            text: label,
+                                            style: {
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontSize: '15px',
+                                                fontWeight: '600',
+                                                color: '#1a1a2e',
+                                                margin: '0'
+                                            }
+                                        }),
+                                        // Add a small indicator if file is missing
+                                        ...(disabled ? [
+                                            $({
+                                                tag: 'span',
+                                                text: '(No file)',
+                                                style: {
+                                                    fontFamily: 'Inter, sans-serif',
+                                                    fontSize: '11px',
+                                                    color: '#dc3545',
+                                                    fontWeight: '400'
+                                                }
+                                            })
+                                        ] : [])
+                                    ]
+                                }),
+                                $({
+                                    tag: 'p',
+                                    text: description,
+                                    style: {
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '13px',
+                                        color: '#6c757d',
+                                        margin: '0 0 16px 0',
+                                        lineHeight: '1.5'
+                                    }
+                                }),
+                                $({
+                                    tag: 'button',
+                                    style: {
+                                        width: '100%',
+                                        padding: '12px 20px',
+                                        backgroundColor: '#ffffff',
+                                        border: `1px solid ${color}`,
+                                        borderRadius: '10px',
+                                        cursor: disabled ? 'not-allowed' : 'pointer',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        color: disabled ? '#adb5bd' : color,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '10px',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    child: [
+                                        $({ tag: 'span', att: { className: disabled ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye' }, style: { fontSize: '14px' } }),
+                                        $({ tag: 'span', text: disabled ? `${label} Unavailable` : `View ${label}` })
+                                    ],
+                                    event: {
+                                        type: 'click',
+                                        method: disabled ? () => alert(`${label} file is not available.`) : onClick
+                                    },
+                                    mouseenter: !disabled ? (e) => {
+                                        e.target.style.backgroundColor = `${color}10`;
+                                        e.target.style.transform = 'translateY(-2px)';
+                                    } : null,
+                                    mouseleave: !disabled ? (e) => {
+                                        e.target.style.backgroundColor = '#ffffff';
+                                        e.target.style.transform = 'translateY(0)';
+                                    } : null
+                                })
+                            ]
                         })
                     };
-                    
+
+                    // Check if files exist
+                    const hasResearchFile = hasViewableFile(research_file);
+                    const hasEndorsementFile = hasViewableFile(endorsement_file);
+
+                    // Endorsement Letter description
+                    const endorsementDescription = 'Faculty endorsement letter confirming the validity of this research submission and recommending it for review.';
+
+                    // Research Paper description
+                    const researchDescription = 'The complete research paper document submitted for review and evaluation.';
+
                     return $({
                         tag: 'div',
                         style: { 
@@ -2067,116 +2118,36 @@ export const ResearchMain = () => {
                                     padding: '24px 20px'
                                 },
                                 child: [
-                                    // Endorsement Letter Section
-                                    $({
-                                        tag: 'div',
-                                        style: {
-                                            marginBottom: '24px'
+                                    // Endorsement Letter Button
+                                    actionButton({
+                                        icon: 'fa-regular fa-file-pdf',
+                                        label: 'Endorsement Letter',
+                                        description: endorsementDescription,
+                                        onClick: () => {
+                                            if (hasEndorsementFile) {
+                                                openFileInModal(endorsement_file, title, 'Endorsement Letter');
+                                            } else {
+                                                alert('Endorsement Letter file is not available.');
+                                            }
                                         },
-                                        child: [
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '10px',
-                                                    marginBottom: '12px',
-                                                    paddingBottom: '12px',
-                                                    borderBottom: '1px solid #e9ecef'
-                                                },
-                                                child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: { className: 'fa-regular fa-file-pdf' },
-                                                        style: { fontSize: '18px', color: '#dc3545' }
-                                                    }),
-                                                    $({
-                                                        tag: 'h4',
-                                                        text: 'Endorsement Letter',
-                                                        style: {
-                                                            fontFamily: 'Inter, sans-serif',
-                                                            fontSize: '15px',
-                                                            fontWeight: '600',
-                                                            color: '#1a1a2e',
-                                                            margin: '0'
-                                                        }
-                                                    })
-                                                ]
-                                            }),
-                                            $({
-                                                tag: 'p',
-                                                text: 'Faculty endorsement letter confirming the validity of this research submission.',
-                                                style: {
-                                                    fontFamily: 'Inter, sans-serif',
-                                                    fontSize: '13px',
-                                                    color: '#6c757d',
-                                                    margin: '0 0 16px 0',
-                                                    lineHeight: '1.5'
-                                                }
-                                            }),
-                                            actionButton({
-                                                icon: 'fa-regular fa-eye',
-                                                label: 'View Endorsement Letter',
-                                                onClick: openEndorsementInModal,
-                                                color: '#0d6efd'
-                                            })
-                                        ]
+                                        color: '#0d6efd',
+                                        disabled: !hasEndorsementFile
                                     }),
                                     
-                                    // Research Paper Section
-                                    $({
-                                        tag: 'div',
-                                        style: {
-                                            marginBottom: '24px'
+                                    // Research Paper Button
+                                    actionButton({
+                                        icon: 'fa-solid fa-file-pdf',
+                                        label: 'Research Paper',
+                                        description: researchDescription,
+                                        onClick: () => {
+                                            if (hasResearchFile) {
+                                                openFileInModal(research_file, title, 'Research Paper');
+                                            } else {
+                                                alert('Research Paper file is not available.');
+                                            }
                                         },
-                                        child: [
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '10px',
-                                                    marginBottom: '12px',
-                                                    paddingBottom: '12px',
-                                                    borderBottom: '1px solid #e9ecef'
-                                                },
-                                                child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: { className: 'fa-solid fa-file-pdf' },
-                                                        style: { fontSize: '18px', color: '#28a745' }
-                                                    }),
-                                                    $({
-                                                        tag: 'h4',
-                                                        text: 'Research Paper',
-                                                        style: {
-                                                            fontFamily: 'Inter, sans-serif',
-                                                            fontSize: '15px',
-                                                            fontWeight: '600',
-                                                            color: '#1a1a2e',
-                                                            margin: '0'
-                                                        }
-                                                    })
-                                                ]
-                                            }),
-                                            $({
-                                                tag: 'p',
-                                                text: 'The complete research paper document submitted for review and evaluation.',
-                                                style: {
-                                                    fontFamily: 'Inter, sans-serif',
-                                                    fontSize: '13px',
-                                                    color: '#6c757d',
-                                                    margin: '0 0 16px 0',
-                                                    lineHeight: '1.5'
-                                                }
-                                            }),
-                                            actionButton({
-                                                icon: 'fa-regular fa-file-lines',
-                                                label: 'View Research Paper',
-                                                onClick: openResearchPaperInModal,
-                                                color: '#28a745'
-                                            })
-                                        ]
+                                        color: '#28a745',
+                                        disabled: !hasResearchFile
                                     })
                                 ]
                             })
@@ -2186,7 +2157,7 @@ export const ResearchMain = () => {
 
                 // Open modal using CustomModal
                 CustomModal({
-                    title: `Research Document Review - ${paper_type === 'undergraduate' ? 'Undergraduate' : 'Graduate'}`,
+                    title: `Research Document Review - ${event}`,
                     size: 'full',
                     content: ({ closeModal }) => {
                         return $({
@@ -2208,7 +2179,6 @@ export const ResearchMain = () => {
                 });
             };
 
-            // Card icon based on paper type
             const icon = $({ 
                 tag: 'div', 
                 att: { 
@@ -2264,8 +2234,8 @@ export const ResearchMain = () => {
                     details("Sender Type", sender_type), 
                     details("Category", category), 
                     details("Campus", campus), 
-                    details("Event", event),
-                    details("Email", sender_email || 'N/A'),
+                    details("Event Type", event),
+                    details("Sender Email", sender_email || 'N/A'),
                     details("Date Submitted", formatDate(created_at))
                 ]
                 
