@@ -153,7 +153,7 @@ const Body = () => {
             style: {
                 padding: '24px 16px',
                 marginBottom: '20px',
-                borderBottom: '1px solid rgba(76, 175, 80, 0.2)',
+                borderBottom: '1px solid #e8e8e8',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -190,12 +190,11 @@ const Body = () => {
                 width: '280px',
                 margin: '0',
                 height: '100%',
-                background: 'transparent',
-                backdropFilter: 'blur(10px)',
+                background: '#ffffff',
                 display: 'flex',
                 flexDirection: 'column',
-                boxShadow: '2px 0 12px rgba(0,0,0,0.08)',
-                borderRight: '1px solid rgba(0,0,0,0.05)'
+                boxShadow: '2px 0 12px rgba(0,0,0,0.06)',
+                borderRight: '1px solid #e8e8e8'
             },
             child: [
                 logoSection,
@@ -205,7 +204,8 @@ const Body = () => {
                         flex: 1,
                         overflowY: 'auto',
                         overflowX: 'hidden',
-                        padding: '8px 0'
+                        padding: '8px 0',
+                        background: '#ffffff'
                     },
                     elementHandler: (el) => {
                         const style = document.createElement('style');
