@@ -92,14 +92,15 @@ if (isset($_POST['incomingEndorsement'])) {
                 $data->locationType = 'center';
             }
 
-            // Handle file URL with backward compatibility
+            // Handle file URL with backward compatibility - ENDORSEMENT LETTER
             $legacyFile = $val['file'];
             $driveFileId = $val['drive_file_id'];
             $driveViewUrl = $val['drive_view_url'];
             $driveDownloadUrl = $val['drive_download_url'];
 
-            // Create a unified file object
+            // Create a unified file object for ENDORSEMENT LETTER
             $fileObject = new stdClass();
+            $fileObject->hasFile = false;
 
             // Check if we have Google Drive URLs
             $hasGoogleDrive = !empty($driveFileId) || !empty($driveViewUrl) || !empty($driveDownloadUrl);
@@ -111,6 +112,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 $fileObject->driveViewUrl = $driveViewUrl;
                 $fileObject->driveDownloadUrl = $driveDownloadUrl;
                 $fileObject->isGoogleDrive = true;
+                $fileObject->hasFile = !empty($driveViewUrl) || !empty($driveDownloadUrl);
             }
 
             if (!empty($legacyFile)) {
@@ -119,6 +121,7 @@ if (isset($_POST['incomingEndorsement'])) {
                     $fileObject->fileUrl = $legacyFile;
                     $fileObject->viewUrl = $legacyFile;
                     $fileObject->isGoogleDrive = false;
+                    $fileObject->hasFile = true;
                 }
             }
 
@@ -186,33 +189,46 @@ if (isset($_POST['incomingEndorsement'])) {
                     $research->locationType = 'center';
                 }
 
-                // Handle research file
+                // ===== FIX: Handle RESEARCH PROPOSAL/PAPER file =====
                 $researchLegacyFile = $v['legacy_file'];
                 $researchDriveViewUrl = $v['drive_view_url'];
                 $researchDriveFileId = $v['drive_file_id'];
                 $researchDriveDownloadUrl = $v['drive_download_url'];
 
                 $researchFileObject = new stdClass();
+                $researchFileObject->hasFile = false;
                 $hasResearchGoogleDrive = !empty($researchDriveFileId) || !empty($researchDriveViewUrl) || !empty($researchDriveDownloadUrl);
 
                 if ($hasResearchGoogleDrive) {
-                    $researchFileObject->fileUrl = !empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl :
-                        (!empty($researchDriveViewUrl) ? $researchDriveViewUrl : '');
-                    $researchFileObject->viewUrl = !empty($researchDriveViewUrl) ? $researchDriveViewUrl :
-                        (!empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : '');
-                    $researchFileObject->driveFileId = $researchDriveFileId;
+                    // PRIMARY: Use drive_view_url for viewing the research proposal
                     $researchFileObject->driveViewUrl = $researchDriveViewUrl;
+                    $researchFileObject->driveFileId = $researchDriveFileId;
                     $researchFileObject->driveDownloadUrl = $researchDriveDownloadUrl;
+                    
+                    // Set viewUrl - PRIORITIZE drive_view_url (this is the research proposal)
+                    $researchFileObject->viewUrl = !empty($researchDriveViewUrl) ? $researchDriveViewUrl : 
+                        (!empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : '');
+                    
+                    // Set fileUrl - use download URL if available, fallback to view URL
+                    $researchFileObject->fileUrl = !empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : 
+                        (!empty($researchDriveViewUrl) ? $researchDriveViewUrl : '');
+                    
                     $researchFileObject->isGoogleDrive = true;
+                    $researchFileObject->hasFile = !empty($researchDriveViewUrl) || !empty($researchDriveDownloadUrl);
                 }
 
-                if (!empty($researchLegacyFile)) {
+                // If no Google Drive but legacy file exists (fallback)
+                if (!empty($researchLegacyFile) && !$hasResearchGoogleDrive) {
                     $researchFileObject->legacyFile = $researchLegacyFile;
-                    if (!$hasResearchGoogleDrive) {
-                        $researchFileObject->fileUrl = $researchLegacyFile;
-                        $researchFileObject->viewUrl = $researchLegacyFile;
-                        $researchFileObject->isGoogleDrive = false;
-                    }
+                    $researchFileObject->fileUrl = $researchLegacyFile;
+                    $researchFileObject->viewUrl = $researchLegacyFile;
+                    $researchFileObject->isGoogleDrive = false;
+                    $researchFileObject->hasFile = true;
+                }
+
+                // If still no file, set hasFile to false
+                if (empty($researchFileObject->viewUrl) && empty($researchFileObject->fileUrl)) {
+                    $researchFileObject->hasFile = false;
                 }
 
                 $research->file = $researchFileObject;
