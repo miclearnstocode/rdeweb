@@ -4,15 +4,113 @@ export const RdeDashboard = () => {
     let dashData = null;
     let statsRow;
     let chartsArea;
+    let currentFilter = null;
+    let filterButtons = [];
 
     const COLORS = ['#00bcd4', '#4caf50', '#ff9800', '#e91e63', '#9c27b0',
         '#2196f3', '#009688', '#ff5722', '#ffeb3b', '#607d8b'];
 
-    // ─── fetch ────────────────────────────────────────────────────────────────
+    const createFilterUI = () => {
+        const filterContainer = $({
+            tag: 'div', style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 20px',
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
+                border: '1px solid #e8e8e8',
+                marginBottom: '16px',
+                flexWrap: 'wrap'
+            }, child: []
+        });
+
+        // Label
+        const label = $({
+            tag: 'span',
+            text: 'Filter:',
+            style: {
+                color: '#555',
+                fontSize: '12px',
+                fontWeight: '600',
+                marginRight: '4px'
+            }
+        });
+        filterContainer.appendChild(label);
+
+        // Filter buttons
+        const filters = [
+            { id: null, label: 'All Research' },
+            { id: 'extension', label: '🌱 Extension' },
+            { id: 'inhouse', label: '📋 In-House Review' },
+            { id: 'symposium', label: '🎤 Symposium' },
+            { id: 'undergraduate', label: '🎓 Undergraduate' },
+            { id: 'graduate', label: '👨‍🎓 Graduate' }
+        ];
+
+        filters.forEach(filter => {
+            const btn = $({
+                tag: 'button',
+                text: filter.label,
+                style: {
+                    padding: '6px 14px',
+                    backgroundColor: currentFilter === filter.id ? '#4caf50' : 'transparent',
+                    color: currentFilter === filter.id ? '#ffffff' : '#555',
+                    border: `1px solid ${currentFilter === filter.id ? '#4caf50' : '#e0e0e0'}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: currentFilter === filter.id ? '600' : '400',
+                    fontFamily: 'Segoe UI, sans-serif',
+                    transition: 'all 0.3s ease',
+                    whiteSpace: 'nowrap'
+                },
+                event: {
+                    type: 'click',
+                    method: () => {
+                        currentFilter = filter.id;
+                        // Update button styles
+                        filterButtons.forEach(btn => {
+                            btn.style.backgroundColor = 'transparent';
+                            btn.style.color = '#555';
+                            btn.style.borderColor = '#e0e0e0';
+                            btn.style.fontWeight = '400';
+                        });
+                        btn.style.backgroundColor = '#4caf50';
+                        btn.style.color = '#ffffff';
+                        btn.style.borderColor = '#4caf50';
+                        btn.style.fontWeight = '600';
+                        // Refetch data with filter
+                        fetchData();
+                    }
+                },
+                mouseenter: (e) => {
+                    if (currentFilter !== filter.id) {
+                        e.target.style.borderColor = '#4caf50';
+                        e.target.style.backgroundColor = 'rgba(76,175,80,0.05)';
+                    }
+                },
+                mouseleave: (e) => {
+                    if (currentFilter !== filter.id) {
+                        e.target.style.borderColor = '#e0e0e0';
+                        e.target.style.backgroundColor = 'transparent';
+                    }
+                }
+            });
+            filterButtons.push(btn);
+            filterContainer.appendChild(btn);
+        });
+
+        return filterContainer;
+    };
+
     const fetchData = async () => {
         try {
             const fd = new FormData();
             fd.append('action', 'stats');
+            if (currentFilter) {
+                fd.append('filter', currentFilter);
+            }
             const res = await fetch('/dashboard', { method: 'POST', body: fd });
             const json = await res.json();
             if (json.success) {
@@ -25,7 +123,6 @@ export const RdeDashboard = () => {
         }
     };
 
-    // ─── Stat card ────────────────────────────────────────────────────────────
     const statCard = (label, value, icon, color, sub) => {
         return $({
             tag: 'div',
@@ -225,7 +322,6 @@ export const RdeDashboard = () => {
         });
     };
 
-    // ─── Line chart with smooth curves (reduced size) ────────────────────────────
     const lineChart = (title, items, labelKey) => {
         const max = Math.max(...items.map(i => i.count), 1);
         const min = Math.min(...items.map(i => i.count), 0);
@@ -682,8 +778,12 @@ export const RdeDashboard = () => {
         });
     };
 
-    const campusBarChart = (title, items, labelKey) => {
-        const max = Math.max(...items.map(i => i.count), 1);
+    const campusBarChart = (title, items, labelKey, extensionData) => {
+        let isExtensionView = false;
+        let campusData = items || [];
+        let extData = extensionData || [];
+
+        const max = Math.max(...campusData.map(i => i.count), 1);
 
         const getDisplayName = (name) => {
             if (!name) return '';
@@ -693,78 +793,121 @@ export const RdeDashboard = () => {
             return name;
         };
 
-        const bars = items.map((item, idx) => {
-            const pct = Math.round((item.count / max) * 100);
-            const color = COLORS[idx % COLORS.length];
-            const fullName = item[labelKey] || '';
-            const displayName = getDisplayName(fullName);
+        const renderBars = (data) => {
+            if (!data || data.length === 0) {
+                return [$({
+                    tag: 'div', style: {
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: '100%',
+                        padding: '20px 0',
+                        color: '#999',
+                        fontSize: '12px'
+                    }, text: 'No data available'
+                })];
+            }
 
-            return $({
-                tag: 'div', style: { 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    flex: '1', 
-                    minWidth: '50px', 
-                    maxWidth: '90px',
-                    gap: '4px' 
-                }, child: [
-                    $({ 
-                        tag: 'span', 
-                        text: String(item.count), 
-                        style: { 
-                            color: '#555', 
-                            fontSize: '11px', 
-                            fontWeight: '700' 
-                        } 
-                    }),
-                    $({
-                        tag: 'div', style: { 
-                            width: '100%', 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            justifyContent: 'flex-end', 
-                            height: '120px' 
-                        }, child: [
-                            $({
-                                tag: 'div', style: {
-                                    width: '100%', 
-                                    height: `${pct}%`, 
-                                    minHeight: '4px',
-                                    background: `linear-gradient(180deg,${color} 0%,${color}77 100%)`,
-                                    borderRadius: '4px 4px 0 0',
-                                    boxShadow: `0 -2px 8px ${color}22`,
-                                    transition: 'height 0.6s ease'
-                                }
-                            })
-                        ]
-                    }),
-                    $({ 
-                        tag: 'span', 
-                        text: displayName, 
-                        style: { 
-                            color: '#999', 
-                            fontSize: '9px', 
-                            textAlign: 'center', 
-                            fontWeight: '500',
-                            maxWidth: '80px', 
-                            lineHeight: '1.2',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'normal',
-                            wordBreak: 'break-word'
-                        } 
-                    })
-                ]
+            const maxVal = Math.max(...data.map(i => i.count), 1);
+            
+            return data.map((item, idx) => {
+                const pct = Math.round((item.count / maxVal) * 100);
+                const color = COLORS[idx % COLORS.length];
+                const fullName = item[labelKey] || '';
+                const displayName = getDisplayName(fullName);
+
+                return $({
+                    tag: 'div', style: { 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        flex: '1', 
+                        minWidth: '50px', 
+                        maxWidth: '90px',
+                        gap: '4px' 
+                    }, child: [
+                        $({ 
+                            tag: 'span', 
+                            text: String(item.count), 
+                            style: { 
+                                color: '#555', 
+                                fontSize: '11px', 
+                                fontWeight: '700' 
+                            } 
+                        }),
+                        $({
+                            tag: 'div', style: { 
+                                width: '100%', 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                justifyContent: 'flex-end', 
+                                height: '120px' 
+                            }, child: [
+                                $({
+                                    tag: 'div', style: {
+                                        width: '100%', 
+                                        height: `${pct}%`, 
+                                        minHeight: '4px',
+                                        background: `linear-gradient(180deg,${color} 0%,${color}77 100%)`,
+                                        borderRadius: '4px 4px 0 0',
+                                        boxShadow: `0 -2px 8px ${color}22`,
+                                        transition: 'height 0.6s ease'
+                                    }
+                                })
+                            ]
+                        }),
+                        $({ 
+                            tag: 'span', 
+                            text: displayName, 
+                            style: { 
+                                color: '#999', 
+                                fontSize: '9px', 
+                                textAlign: 'center', 
+                                fontWeight: '500',
+                                maxWidth: '80px', 
+                                lineHeight: '1.2',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'normal',
+                                wordBreak: 'break-word'
+                            } 
+                        })
+                    ]
+                });
             });
-        });
+        };
 
-        return $({
+        // Create the chart container
+        const chartContainer = $({
             tag: 'div', style: {
                 background: '#ffffff', borderRadius: '12px', padding: '12px 14px',
                 border: '1px solid #e8e8e8', flex: '1',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                cursor: extData && extData.length > 0 ? 'pointer' : 'default',
+                transition: 'all 0.3s ease'
+            },
+            mouseenter: (e) => {
+                if (extData && extData.length > 0) {
+                    e.currentTarget.style.borderColor = '#4caf50';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                }
+            },
+            mouseleave: (e) => {
+                if (extData && extData.length > 0) {
+                    e.currentTarget.style.borderColor = '#e8e8e8';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                }
+            }
+        });
+
+        // Title with toggle indicator
+        const titleContainer = $({
+            tag: 'div', style: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px'
             }, child: [
                 $({ 
                     tag: 'span', 
@@ -772,24 +915,83 @@ export const RdeDashboard = () => {
                     style: { 
                         color: '#555', 
                         fontSize: '12px', 
-                        fontWeight: '600', 
-                        display: 'block', 
-                        marginBottom: '12px' 
+                        fontWeight: '600' 
                     } 
                 }),
                 $({ 
-                    tag: 'div', 
+                    tag: 'span', 
+                    text: extData && extData.length > 0 ? 'Click to toggle' : '', 
                     style: { 
-                        display: 'flex', 
-                        gap: '4px', 
-                        alignItems: 'flex-end', 
-                        flexWrap: 'wrap',
-                        justifyContent: 'center'
-                    }, 
-                    child: bars 
+                        color: '#aaa', 
+                        fontSize: '9px', 
+                        fontWeight: '400',
+                        fontStyle: 'italic'
+                    } 
                 })
             ]
         });
+
+        // Bars container
+        const barsContainer = $({
+            tag: 'div', style: { 
+                display: 'flex', 
+                gap: '4px', 
+                alignItems: 'flex-end', 
+                flexWrap: 'wrap',
+                justifyContent: 'center'
+            }
+        });
+
+        // Initial render
+        const currentBars = renderBars(campusData);
+        currentBars.forEach(bar => barsContainer.appendChild(bar));
+
+        chartContainer.appendChild(titleContainer);
+        chartContainer.appendChild(barsContainer);
+
+        // Only add toggle if extension data exists
+        if (extData && extData.length > 0) {
+            // Toggle click handler
+            chartContainer.addEventListener('click', () => {
+                if (!isExtensionView) {
+                    // Switch to Extension view
+                    if (extData && extData.length > 0) {
+                        isExtensionView = true;
+                        barsContainer.innerHTML = '';
+                        const extBars = renderBars(extData);
+                        extBars.forEach(bar => barsContainer.appendChild(bar));
+                        
+                        // Update title
+                        const titleSpan = titleContainer.childNodes[0];
+                        const toggleSpan = titleContainer.childNodes[1];
+                        titleSpan.textContent = '🌱 Extension by Campus';
+                        toggleSpan.textContent = 'Click to return';
+                        
+                        // Add visual feedback
+                        chartContainer.style.borderColor = '#ff9800';
+                        chartContainer.style.boxShadow = '0 4px 12px rgba(255,152,0,0.2)';
+                    }
+                } else {
+                    // Switch back to Campus view
+                    isExtensionView = false;
+                    barsContainer.innerHTML = '';
+                    const campusBars = renderBars(campusData);
+                    campusBars.forEach(bar => barsContainer.appendChild(bar));
+                    
+                    // Update title
+                    const titleSpan = titleContainer.childNodes[0];
+                    const toggleSpan = titleContainer.childNodes[1];
+                    titleSpan.textContent = title;
+                    toggleSpan.textContent = 'Click to toggle';
+                    
+                    // Reset visual feedback
+                    chartContainer.style.borderColor = '#e8e8e8';
+                    chartContainer.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                }
+            });
+        }
+
+        return chartContainer;
     };
 
     const centerBarChart = (title, items, labelKey) => {
@@ -912,7 +1114,6 @@ export const RdeDashboard = () => {
         });
     };
 
-    // ─── Donut chart (SVG) ────────────────────────────────────────────────────
     const donutChart = (title, items, labelKey) => {
         const total = items.reduce((s, i) => s + i.count, 0) || 1;
         const R = 58, cx = 75, cy = 75, strokeW = 26;
@@ -995,7 +1196,6 @@ export const RdeDashboard = () => {
         });
     };
 
-    // ─── Render stats cards ───────────────────────────────────────────────────
     const renderStats = () => {
         if (!statsRow || !dashData) return;
         statsRow.innerHTML = '';
@@ -1017,39 +1217,116 @@ export const RdeDashboard = () => {
         });
     };
 
-
-
     const renderCharts = () => {
         if (!chartsArea || !dashData) return;
         chartsArea.innerHTML = '';
         const d = dashData;
 
+        // Get dynamic titles based on filter
+        const getLineChartTitle = () => {
+            switch (currentFilter) {
+                case 'extension': return '🌱 Extension Trend per Year';
+                case 'inhouse': return '📋 Research Proposal Trend per Year';
+                case 'symposium': return '🎤 Research Paper Trend per Year';
+                case 'undergraduate': return '🎓 Undergraduate Research Trend per Year';
+                case 'graduate': return '👨‍🎓 Graduate Research Trend per Year';
+                default: return '📈 Research per Year';
+            }
+        };
+
+        const getCampusTitle = () => {
+            switch (currentFilter) {
+                case 'extension': return '🌱 Extension by Campus';
+                case 'inhouse': return '📋 Research Proposal by Campus';
+                case 'symposium': return '🎤 Research Paper by Campus';
+                case 'undergraduate': return '🎓 Undergraduate Research by Campus';
+                case 'graduate': return '👨‍🎓 Graduate Research by Campus';
+                default: return '🏫 Research by Campus';
+            }
+        };
+
+        const getCenterTitle = () => {
+            switch (currentFilter) {
+                case 'extension': return '🏢 Research by Center';
+                case 'inhouse': return '🏢 Research by Center';
+                case 'symposium': return '🏢 Research by Center';
+                case 'undergraduate': return '🏢 Research by Center';
+                case 'graduate': return '🏢 Research by Center';
+                default: return '🏢 Research by Center';
+            }
+        };
+
+        const getCampusCenterTitle = () => {
+            switch (currentFilter) {
+                case 'extension': return '📊 Extension: Campus vs Center by Year';
+                case 'inhouse': return '📊 Research Proposal: Campus vs Center by Year';
+                case 'symposium': return '📊 Research Paper: Campus vs Center by Year';
+                case 'undergraduate': return '📊 Undergraduate: Campus vs Center by Year';
+                case 'graduate': return '📊 Graduate: Campus vs Center by Year';
+                default: return '📊 Campus vs Center by Year';
+            }
+        };
+
+        const getCategoryTitle = () => {
+            switch (currentFilter) {
+                case 'extension': return '🗂️ Extension by Category';
+                case 'inhouse': return '🗂️ Research Proposal by Category';
+                case 'symposium': return '🗂️ Research Paper by Category';
+                case 'undergraduate': return '🗂️ Undergraduate Research by Category';
+                case 'graduate': return '🗂️ Graduate Research by Category';
+                default: return '🗂️ Research by Category';
+            }
+        };
+
         // Row 1: Year trend (Line Chart) + Campus (Bar Chart)
         const row1 = $({ tag: 'div', style: { display: 'flex', gap: '16px', flexWrap: 'wrap' } });
-        if (d.byYear?.length) row1.appendChild(lineChart('📈 Research per Year', d.byYear, 'year'));
-        if (d.byCampus?.length) row1.appendChild(campusBarChart('🏫 Research by Campus', d.byCampus, 'campus'));
+        if (d.byYear?.length) row1.appendChild(lineChart(getLineChartTitle(), d.byYear, 'year'));
+        if (d.byCampus?.length) {
+            // Pass extension data only when filter is 'extension'
+            const extData = currentFilter === 'extension' ? d.extensionByCampus : null;
+            row1.appendChild(campusBarChart(getCampusTitle(), d.byCampus, 'campus', extData));
+        }
         chartsArea.appendChild(row1);
 
         // Row 1b: Center data (Bar Chart) + Campus vs Center Multi-Line Chart
         const row1b = $({ tag: 'div', style: { display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' } });
-        if (d.byCenter?.length) row1b.appendChild(centerBarChart('🏢 Research by Center', d.byCenter, 'center'));
+        
+        // ALWAYS show Research by Center - regardless of filter
+        if (d.byCenter && d.byCenter.length > 0) {
+            row1b.appendChild(centerBarChart(getCenterTitle(), d.byCenter, 'center'));
+        } else {
+            // Show a message if no center data
+            row1b.appendChild($({
+                tag: 'div', style: {
+                    background: '#ffffff', borderRadius: '14px', padding: '18px 20px',
+                    border: '1px solid #e8e8e8', flex: '1',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                    minHeight: '200px',
+                    color: '#999',
+                    fontSize: '13px'
+                }, child: [
+                    $({ tag: 'span', text: 'No center data available' })
+                ]
+            }));
+        }
         
         if (d.campusCenterByYear && d.campusCenterByYear.length > 0) {
-            row1b.appendChild(multiLineChart('📊 Campus vs Center by Year', d.campusCenterByYear));
+            row1b.appendChild(multiLineChart(getCampusCenterTitle(), d.campusCenterByYear));
         }
         chartsArea.appendChild(row1b);
 
-        // Row 2: Category donut + Utilization donut
+        // Row 2: Category donut (exclude Utilization Types)
         const row2 = $({ tag: 'div', style: { display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' } });
-        if (d.byCategory?.length) row2.appendChild(donutChart('🗂️ Research by Category', d.byCategory.slice(0, 8), 'category'));
-        if (d.utilization?.length) row2.appendChild(donutChart('🔄 Utilization Types', d.utilization, 'type'));
+        if (d.byCategory?.length) {
+            row2.appendChild(donutChart(getCategoryTitle(), d.byCategory.slice(0, 8), 'category'));
+        }
         chartsArea.appendChild(row2);
     };
 
     const getStatsRow = (el) => {
         statsRow = el;
     };
-
 
     const getChartsArea = (el) => {
         chartsArea = el;
@@ -1111,12 +1388,15 @@ export const RdeDashboard = () => {
                 }
             }),
 
+            // ── Filter UI ──
+            createFilterUI(),
+
             // ── Charts ──
             $({
                 tag: 'div', 
                 elementHandler: getChartsArea, 
                 style: {
-                    padding: '20px 26px', 
+                    padding: '0 26px 20px 26px', 
                     display: 'flex', 
                     flexDirection: 'column',
                     backgroundColor: '#f5f7fa'

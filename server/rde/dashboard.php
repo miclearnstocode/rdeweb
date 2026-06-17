@@ -10,41 +10,98 @@ class DashboardAPI {
         $this->con = $con;
     }
 
-    public function fetchStats() {
+    private function getFilterCondition($filter) {
+        switch ($filter) {
+            case 'extension':
+                return "AND (rf.center = 'Extension (Extension)' OR rf.category = 'Extension')";
+            case 'inhouse':
+                return "AND (rf.event LIKE '%In-House%' OR e.name LIKE '%In-House%')";
+            case 'symposium':
+                return "AND (rf.event LIKE '%Symposium%' OR e.name LIKE '%Symposium%')";
+            case 'undergraduate':
+                return "AND rf.paper_type = 'undergraduate'";
+            case 'graduate':
+                return "AND rf.paper_type = 'graduate'";
+            default:
+                return "";
+        }
+    }
+
+    private function getFilterLabel($filter) {
+        switch ($filter) {
+            case 'extension':
+                return 'Extension';
+            case 'inhouse':
+                return 'In-House Review';
+            case 'symposium':
+                return 'Symposium';
+            case 'undergraduate':
+                return 'Undergraduate';
+            case 'graduate':
+                return 'Graduate';
+            default:
+                return 'Research';
+        }
+    }
+
+    public function fetchStats($filter = null) {
         try {
             $data = [];
+            $filterCondition = $this->getFilterCondition($filter);
+            $filterLabel = $this->getFilterLabel($filter);
 
-            // 1. Total accepted/active research (unique titles)
+            // 1. Total accepted/active research
             $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1)");
+                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition");
             $data['totalAccepted'] = (int)($r->fetch_assoc()['total'] ?? 0);
 
-            // 2. Proposed (with valid event_id)
+            // 2. Proposed
             $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) AND rf.event_id IS NOT NULL AND rf.event_id != 0");
+                WHERE (en.status = 'accepted' OR e.status = 1) AND rf.event_id IS NOT NULL AND rf.event_id != 0 $filterCondition");
             $data['totalProposed'] = (int)($r->fetch_assoc()['total'] ?? 0);
 
             // 3. In-House Reviews
-            $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
-                FROM researchfile rf
-                LEFT JOIN endorsement en ON rf.endorsementid = en.id
-                LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) AND (rf.event LIKE '%In-House%' OR (e.name LIKE '%In-House%' AND rf.event_id != 0))");
-            $data['inHouseReview'] = (int)($r->fetch_assoc()['total'] ?? 0);
+            if ($filter === null || $filter === '') {
+                $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
+                    FROM researchfile rf
+                    LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                    LEFT JOIN event_list e ON rf.event_id = e.id
+                    WHERE (en.status = 'accepted' OR e.status = 1 OR rf.status = 'accepted') AND (rf.event LIKE '%In-House%' OR (e.name LIKE '%In-House%' AND rf.event_id != 0))
+                    AND is_internally_funded = 1");
+                $data['inHouseReview'] = (int)($r->fetch_assoc()['total'] ?? 0);
+            } else {
+                $data['inHouseReview'] = 0;
+            }
 
-            // 4. Symposium
-            $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
-                FROM researchfile rf
-                LEFT JOIN endorsement en ON rf.endorsementid = en.id
-                LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) AND (rf.event LIKE '%Symposium%' OR (e.name LIKE '%Symposium%' AND rf.event_id != 0))");
-            $data['symposium'] = (int)($r->fetch_assoc()['total'] ?? 0);
+            // 4. Symposium (only for default view)
+            if ($filter === 'symposium') {
+                // When filtering by symposium, show the total count
+                $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
+                    FROM researchfile rf
+                    LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                    LEFT JOIN event_list e ON rf.event_id = e.id
+                    WHERE (en.status = 'accepted' OR e.status = 1) 
+                        AND (rf.event LIKE '%Symposium%' OR (e.name LIKE '%Symposium%' AND rf.event_id != 0))");
+                $data['symposium'] = (int)($r->fetch_assoc()['total'] ?? 0);
+            } else if ($filter === null || $filter === '') {
+                // Default view - show total symposium count
+                $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
+                    FROM researchfile rf
+                    LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                    LEFT JOIN event_list e ON rf.event_id = e.id
+                    WHERE (en.status = 'accepted' OR e.status = 1) 
+                        AND (rf.event LIKE '%Symposium%' OR (e.name LIKE '%Symposium%' AND rf.event_id != 0))");
+                $data['symposium'] = (int)($r->fetch_assoc()['total'] ?? 0);
+            } else {
+                // Other filters - symposium count should be 0 (or filtered count if applicable)
+                $data['symposium'] = 0;
+            }
 
             // 5. Presented research count
             $r = $this->con->query("SELECT COUNT(DISTINCT research_id) as total FROM presentation_research");
@@ -75,7 +132,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR rf.status = 'accepted') 
+                WHERE (en.status = 'accepted' OR rf.status = 'accepted') $filterCondition
                     AND rf.campus IS NOT NULL 
                     AND rf.campus NOT LIKE '%Center%'
                     AND rf.campus != '' 
@@ -94,7 +151,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR rf.status = 'accepted') 
+                WHERE (en.status = 'accepted' OR rf.status = 'accepted') $filterCondition
                     AND rf.center IS NOT NULL 
                     AND rf.center != 'Extension (Extension)'
                 GROUP BY rf.center  
@@ -112,7 +169,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) 
+                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition
                     AND rf.category IS NOT NULL 
                     AND rf.category != ''
                 GROUP BY rf.category
@@ -129,7 +186,8 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
+                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition 
+                    AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                 GROUP BY YEAR(COALESCE(e.date, en.date))
                 ORDER BY year ASC");
             $data['byYear'] = [];
@@ -139,21 +197,41 @@ class DashboardAPI {
                 }
             }
 
-            // 13. Extension research
+            // 13. Extension research (TOTAL count)
             $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) 
-                    AND  rf.center = 'Extension (Extension)'");
+                WHERE (en.status = 'accepted' OR rf.status = 'accepted') 
+                    AND (rf.center = 'Extension (Extension)' OR rf.category = 'Extension')");
             $data['extension'] = (int)($r->fetch_assoc()['total'] ?? 0);
+
+            // 14. Extension by Campus (breakdown by campus)
+            $r = $this->con->query("SELECT rf.campus, COUNT(DISTINCT rf.id) as count
+                FROM researchfile rf
+                LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                LEFT JOIN event_list e ON rf.event_id = e.id
+                WHERE (en.status = 'accepted' OR rf.status = 'accepted') 
+                    AND (rf.center = 'Extension (Extension)' OR rf.category = 'Extension')
+                    AND rf.campus IS NOT NULL 
+                    AND rf.campus != ''
+                    AND rf.campus != 'Extension'
+                GROUP BY rf.campus
+                ORDER BY count DESC
+                LIMIT 10");
+            $data['extensionByCampus'] = [];
+            if ($r) {
+                while ($row = $r->fetch_assoc()) {
+                    $data['extensionByCampus'][] = ['campus' => $row['campus'], 'count' => (int)$row['count']];
+                }
+            }
                         
-            // Get ALL campuses total per year (sum of ALL campuses)
+            // Campus vs Center by Year
             $campusByYearQuery = "SELECT YEAR(COALESCE(e.date, en.date)) as year, COUNT(DISTINCT rf.id) as total
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) 
+                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition
                     AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                     AND rf.campus IS NOT NULL 
                     AND rf.campus != '' 
@@ -167,12 +245,11 @@ class DashboardAPI {
                 $campusMap[$row['year']] = (int)$row['total'];
             }
 
-            // Get ALL centers total per year (sum of ALL centers)
             $centerByYearQuery = "SELECT YEAR(COALESCE(e.date, en.date)) as year, COUNT(DISTINCT rf.id) as total
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) 
+                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition
                     AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                     AND rf.center IS NOT NULL 
                     AND rf.center != '' 
@@ -186,11 +263,10 @@ class DashboardAPI {
                 $centerMap[$row['year']] = (int)$row['total'];
             }
 
-            // Combine into single array with ALL years
             $allYears = array_unique(array_merge(array_keys($campusMap), array_keys($centerMap)));
             sort($allYears);
 
-            $campusCenterByYear = []; // <-- THIS WAS MISSING
+            $campusCenterByYear = [];
             foreach ($allYears as $year) {
                 $campusCenterByYear[] = [
                     'year' => (string)$year,
@@ -199,7 +275,8 @@ class DashboardAPI {
                 ];
             }
 
-            $data['campusCenterByYear'] = $campusCenterByYear; // <-- NOW THIS WILL WORK
+            $data['campusCenterByYear'] = $campusCenterByYear;
+            $data['currentFilter'] = $filterLabel;
 
             echo json_encode(['success' => true, 'data' => $data]);
         } catch (Exception $e) {
@@ -210,10 +287,11 @@ class DashboardAPI {
 
 $api = new DashboardAPI($conn);
 $action = $_POST['action'] ?? 'stats';
+$filter = $_POST['filter'] ?? null;
 
 switch ($action) {
     case 'stats':
-        $api->fetchStats();
+        $api->fetchStats($filter);
         break;
     default:
         echo json_encode(['success' => false, 'message' => 'Invalid action']);
