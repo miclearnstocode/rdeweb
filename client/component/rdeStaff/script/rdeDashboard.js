@@ -610,14 +610,16 @@ export const RdeDashboard = () => {
             });
         }
 
+        const researchData = dashData?.campusCenterByYear || data;
+
         const campusColor = '#2196f3';
         const centerColor = '#ff9800';
         const padding = 30;
         const chartWidth = 500;
         const chartHeight = 150;
 
-        const max = Math.max(...data.map(d => Math.max(d.campus || 0, d.center || 0)), 1);
-        const xStep = (chartWidth - padding * 2) / ((data.length - 1) || 1);
+        const max = Math.max(...researchData.map(d => Math.max(d.campus || 0, d.center || 0)), 1);
+        const xStep = (chartWidth - padding * 2) / ((researchData.length - 1) || 1);
         const xAt = (i) => padding + i * xStep;
         const yAt = (v) => chartHeight - padding - (v / max) * (chartHeight - padding * 2);
 
@@ -662,7 +664,7 @@ export const RdeDashboard = () => {
         };
 
         const drawSeries = (key, color, label) => {
-            const points = data.map((d, i) => ({ x: xAt(i), y: yAt(d[key] || 0), val: d[key] || 0 }));
+            const points = researchData.map((d, i) => ({ x: xAt(i), y: yAt(d[key] || 0), val: d[key] || 0 }));
             
             // Generate smooth curve points
             const smoothPts = points.length >= 2 ? catmullRomSpline(points) : points;
@@ -735,7 +737,7 @@ export const RdeDashboard = () => {
         drawSeries('center', centerColor, 'Center');
 
         // year labels
-        data.forEach((d, i) => {
+        researchData.forEach((d, i) => {
             const text = document.createElementNS(svgNS, 'text');
             text.setAttribute('x', xAt(i));
             text.setAttribute('y', chartHeight + 5);
@@ -1246,25 +1248,13 @@ export const RdeDashboard = () => {
         };
 
         const getCenterTitle = () => {
-            switch (currentFilter) {
-                case 'extension': return '🏢 Research by Center';
-                case 'inhouse': return '🏢 Research by Center';
-                case 'symposium': return '🏢 Research by Center';
-                case 'undergraduate': return '🏢 Research by Center';
-                case 'graduate': return '🏢 Research by Center';
-                default: return '🏢 Research by Center';
-            }
+            // Always show "Research by Center" - title never changes
+            return '🏢 Research by Center';
         };
 
         const getCampusCenterTitle = () => {
-            switch (currentFilter) {
-                case 'extension': return '📊 Extension: Campus vs Center by Year';
-                case 'inhouse': return '📊 Research Proposal: Campus vs Center by Year';
-                case 'symposium': return '📊 Research Paper: Campus vs Center by Year';
-                case 'undergraduate': return '📊 Undergraduate: Campus vs Center by Year';
-                case 'graduate': return '📊 Graduate: Campus vs Center by Year';
-                default: return '📊 Campus vs Center by Year';
-            }
+            // Always show "Campus vs Center by Year" - title never changes
+            return '📊 Campus vs Center by Year';
         };
 
         const getCategoryTitle = () => {
@@ -1291,11 +1281,9 @@ export const RdeDashboard = () => {
         // Row 1b: Center data (Bar Chart) + Campus vs Center Multi-Line Chart
         const row1b = $({ tag: 'div', style: { display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' } });
         
-        // ALWAYS show Research by Center - regardless of filter
         if (d.byCenter && d.byCenter.length > 0) {
             row1b.appendChild(centerBarChart(getCenterTitle(), d.byCenter, 'center'));
         } else {
-            // Show a message if no center data
             row1b.appendChild($({
                 tag: 'div', style: {
                     background: '#ffffff', borderRadius: '14px', padding: '18px 20px',
@@ -1312,15 +1300,16 @@ export const RdeDashboard = () => {
         }
         
         if (d.campusCenterByYear && d.campusCenterByYear.length > 0) {
-            row1b.appendChild(multiLineChart(getCampusCenterTitle(), d.campusCenterByYear));
+            row1b.appendChild(multiLineChart('Research: Campus vs Center by Year', d.campusCenterByYear));
         }
         chartsArea.appendChild(row1b);
 
-        // Row 2: Category donut (exclude Utilization Types)
+        // Row 2: Category donut
         const row2 = $({ tag: 'div', style: { display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' } });
         if (d.byCategory?.length) {
             row2.appendChild(donutChart(getCategoryTitle(), d.byCategory.slice(0, 8), 'category'));
         }
+        if (d.utilization?.length) row2.appendChild(donutChart('🔄 Utilization Types', d.utilization, 'type'));
         chartsArea.appendChild(row2);
     };
 
