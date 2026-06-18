@@ -34,14 +34,11 @@ class CompletedResearchAPI {
     private function parseAuthorsAndFaculty($author, $coauthor) {
         $allResearchers = [];
         
-        // Add main author if exists
         if (!empty($author) && $author !== 'NULL' && $author !== null) {
             $allResearchers[] = trim($author);
         }
         
-        // Add co-authors if they exist
         if (!empty($coauthor) && $coauthor !== 'NULL' && $coauthor !== null) {
-            // Check if coauthor is a JSON array
             if (is_string($coauthor) && (strpos($coauthor, '[') === 0 || strpos($coauthor, '{') === 0)) {
                 $coauthors = json_decode($coauthor, true);
                 if (is_array($coauthors)) {
@@ -52,7 +49,6 @@ class CompletedResearchAPI {
                     }
                 }
             } else if (!empty($coauthor)) {
-                // Handle comma-separated list
                 $coauthorList = explode(',', $coauthor);
                 foreach ($coauthorList as $co) {
                     $co = trim($co);
@@ -63,16 +59,13 @@ class CompletedResearchAPI {
             }
         }
         
-        // Remove duplicates and re-index
         $allResearchers = array_values(array_unique($allResearchers));
         
-        // Build faculty_researchers string without modifying the original array
         $facultyResearchers = '';
         if (count($allResearchers) > 0) {
             if (count($allResearchers) === 1) {
                 $facultyResearchers = $allResearchers[0];
             } else {
-                // Create a copy for manipulation
                 $temp = $allResearchers;
                 $last = array_pop($temp);
                 $facultyResearchers = implode(', ', $temp) . ' & ' . $last;
@@ -113,8 +106,6 @@ class CompletedResearchAPI {
         if (empty($researchIds)) return [];
         
         $positions = [];
-        if (empty($researchIds)) return $positions;
-
         $ids = implode(',', array_map('intval', $researchIds));
         $query = "SELECT * FROM academic_position WHERE research_id IN ($ids)";
         $result = $this->con->query($query);
@@ -138,9 +129,6 @@ class CompletedResearchAPI {
             $events = $this->getEvents();
             $symposiumIds = array_keys($events);
             
-            // For "Completed", we fetch all accepted research.
-            // We join other tables to get their specific milestones.
-            // Since one research can have multiple entries in those tables, we use subqueries or take the latest.
             $filters = [
                 'event_id' => $_POST['event_id'] ?? null,
                 'center' => $_POST['center'] ?? null,
@@ -151,7 +139,6 @@ class CompletedResearchAPI {
 
             $whereClauses = ["e.status = 'accepted'"];
             
-            // Use dynamic symposium IDs for initial filtering
             if (!empty($symposiumIds)) {
                 $idsList = implode(',', array_map('intval', $symposiumIds));
                 $whereClauses[] = "(rf.event_id IN ($idsList) OR LOWER(rf.event) LIKE '%symposium%')";
@@ -197,6 +184,8 @@ class CompletedResearchAPI {
 
             $whereSql = implode(" AND ", $whereClauses);
 
+            // FIX: Use MAX() or MIN() aggregation functions for columns from joined tables
+            // to satisfy ONLY_FULL_GROUP_BY mode
             $query = "SELECT 
                         rf.id,
                         rf.senderid,
@@ -215,51 +204,49 @@ class CompletedResearchAPI {
                         e.date as endorsement_date,
                         YEAR(e.date) as endorsement_year,
                         
-                        -- Presentation info (taking one)
-                        pr.date_completed as dateCompletedVal,
-                        pr.forum_title as forumTitleVal,
-                        pr.venue as venueVal,
-                        pr.forum_type as forumTypeVal,
-                        pr.presentation_date as presentationDateVal,
+                        -- Use MAX() to get one value per group
+                        MAX(pr.date_completed) as dateCompletedVal,
+                        MAX(pr.forum_title) as forumTitleVal,
+                        MAX(pr.venue) as venueVal,
+                        MAX(pr.forum_type) as forumTypeVal,
+                        MAX(pr.presentation_date) as presentationDateVal,
                         
-                        -- Publication info (taking one)
-                        pub.published_title as publishedTitleVal,
-                        pub.publication_date as publicationDateVal,
-                        pub.journal_title as journalTitleVal,
-                        pub.volume as volumeVal,
-                        pub.issue as issueVal,
-                        pub.issn as issnVal,
-                        pub.index_type as indexTypeVal,
+                        MAX(pub.published_title) as publishedTitleVal,
+                        MAX(pub.publication_date) as publicationDateVal,
+                        MAX(pub.journal_title) as journalTitleVal,
+                        MAX(pub.volume) as volumeVal,
+                        MAX(pub.issue) as issueVal,
+                        MAX(pub.issn) as issnVal,
+                        MAX(pub.index_type) as indexTypeVal,
                         
-                        -- Utilization info (taking one)
-                        util.utilizationType as utilizationTypeVal,
-                        util.dateConducted as dateConductedVal,
-                        util.traineesCount as traineesCountVal,
-                        util.supportDocsMetadata as supportDocs2Val,
+                        MAX(util.utilizationType) as utilizationTypeVal,
+                        MAX(util.dateConducted) as dateConductedVal,
+                        MAX(util.traineesCount) as traineesCountVal,
+                        MAX(util.supportDocsMetadata) as supportDocs2Val,
 
-                        -- Patent Product info (from patent, utility_model, industrial_design)
-                        COALESCE(p.technologyName, um.technologyNameUM, idesign.idTitle) as productNameVal,
-                        COALESCE(p.registrationNumber, um.registrationNumber, idesign.registrationNumber) as registrationNumberVal,
-                        COALESCE(p.applicationNumber, um.applicationNumberUM, idesign.applicationNumber) as applicationNumberVal,
-                        COALESCE(p.benefitingIndustry, um.benefitingIndustryUM) as benefitingIndustryVal,
-                        p.patentFormURL as patentFormURL,
-                        p.abstractURL as patentAbstractURL,
-                        p.claimsURL as patentClaimsURL,
-                        p.technicalDescriptionURL as patentTechnicalDescriptionURL,
-                        p.technicalDrawingURL as patentTechnicalDrawingURL,
-                        p.photoTechnologyURL as patentPhotoTechnologyURL,
-                        um.patentFormURLUM as patentFormURLUM,
-                        um.abstractURLUM as patentAbstractURLUM,
-                        um.claimsURLUM as patentClaimsURLUM,
-                        um.technicalDescriptionURLUM as patentTechnicalDescriptionURLUM,
-                        um.technicalDrawingURLUM as patentTechnicalDrawingURLUM,
-                        um.photoTechnologyURLUM as patentPhotoTechnologyURLUM,
-                        idesign.applicationFormURL as idFormURL,
-                        idesign.abstractURL as idAbstractURL,
-                        idesign.claimsURL as idClaimsURL,
-                        idesign.technicalDescriptionURL as idTechnicalDescriptionURL,
-                        idesign.technicalDrawingURL as idTechnicalDrawingURL,
-                        idesign.photoTechnologyURL as idPhotoTechnologyURL
+                        -- For patent/utility/design, also use MAX
+                        MAX(COALESCE(p.technologyName, um.technologyNameUM, idesign.idTitle)) as productNameVal,
+                        MAX(COALESCE(p.registrationNumber, um.registrationNumber, idesign.registrationNumber)) as registrationNumberVal,
+                        MAX(COALESCE(p.applicationNumber, um.applicationNumberUM, idesign.applicationNumber)) as applicationNumberVal,
+                        MAX(COALESCE(p.benefitingIndustry, um.benefitingIndustryUM)) as benefitingIndustryVal,
+                        MAX(p.patentFormURL) as patentFormURL,
+                        MAX(p.abstractURL) as patentAbstractURL,
+                        MAX(p.claimsURL) as patentClaimsURL,
+                        MAX(p.technicalDescriptionURL) as patentTechnicalDescriptionURL,
+                        MAX(p.technicalDrawingURL) as patentTechnicalDrawingURL,
+                        MAX(p.photoTechnologyURL) as patentPhotoTechnologyURL,
+                        MAX(um.patentFormURLUM) as patentFormURLUM,
+                        MAX(um.abstractURLUM) as patentAbstractURLUM,
+                        MAX(um.claimsURLUM) as patentClaimsURLUM,
+                        MAX(um.technicalDescriptionURLUM) as patentTechnicalDescriptionURLUM,
+                        MAX(um.technicalDrawingURLUM) as patentTechnicalDrawingURLUM,
+                        MAX(um.photoTechnologyURLUM) as patentPhotoTechnologyURLUM,
+                        MAX(idesign.applicationFormURL) as idFormURL,
+                        MAX(idesign.abstractURL) as idAbstractURL,
+                        MAX(idesign.claimsURL) as idClaimsURL,
+                        MAX(idesign.technicalDescriptionURL) as idTechnicalDescriptionURL,
+                        MAX(idesign.technicalDrawingURL) as idTechnicalDrawingURL,
+                        MAX(idesign.photoTechnologyURL) as idPhotoTechnologyURL
                         
                     FROM endorsement e
                     INNER JOIN researchfile rf ON e.id = rf.endorsementid
@@ -419,7 +406,7 @@ class CompletedResearchAPI {
                         })($row),
                         'benefitingIndustry' => $row['benefitingIndustryVal'] ?? '—',
                         'supportDocs1' => !empty($supportDocs) ? json_encode($supportDocs) : '—',
-                        'programTitle' => $row['programTitleVal'] ?? '—',
+                        'programTitle' => $row['utilizationTypeVal'] ?? '—',  // Fixed: Use utilizationTypeVal
                         'dateConducted' => $formatDate($row['dateConductedVal']),
                         'traineesCount' => $row['traineesCountVal'] ?? '—',
                         'supportDocs2' => $utilLinks
