@@ -17,21 +17,6 @@ const LoginPanel = (prop) => {
         password = value
     }
 
-    const togglePasswordVisibility = (inputId, iconId) => {
-        const input = document.getElementById(inputId)
-        const icon = document.getElementById(iconId)
-        
-        if (input && icon) {
-            if (input.type === 'password') {
-                input.type = 'text'
-                icon.className = 'fa-solid fa-eye-slash'
-            } else {
-                input.type = 'password'
-                icon.className = 'fa-solid fa-eye'
-            }
-        }
-    }
-
     const detectUserTypeAndAuthenticate = async (username, password) => {
         const authEndpoints = [
             {
@@ -316,7 +301,6 @@ const LoginPanel = (prop) => {
                                                     transition: 'all 0.3s ease',
                                                     outline: 'none'
                                                 },
-                                                // FIXED: Changed from separate event objects to array
                                                 event: [
                                                     {
                                                         type: 'focus',
@@ -348,7 +332,7 @@ const LoginPanel = (prop) => {
                                     })
                                 ]
                             }),
-                            // Password Field - Centered
+                            // Password Field - Centered (SIMPLIFIED FIX)
                             $({
                                 tag: 'div',
                                 style: {
@@ -441,6 +425,7 @@ const LoginPanel = (prop) => {
                                                     }
                                                 ]
                                             }),
+                                            // SIMPLIFIED: Password toggle with basic click handler
                                             $({
                                                 tag: 'span',
                                                 att: {
@@ -461,7 +446,8 @@ const LoginPanel = (prop) => {
                                                     width: '32px',
                                                     height: '32px',
                                                     borderRadius: '50%',
-                                                    transition: 'all 0.3s ease'
+                                                    transition: 'all 0.3s ease',
+                                                    background: 'transparent'
                                                 },
                                                 child: [
                                                     $({
@@ -472,47 +458,34 @@ const LoginPanel = (prop) => {
                                                         },
                                                         style: {
                                                             color: '#adb5bd',
-                                                            transition: 'all 0.3s ease'
+                                                            transition: 'all 0.3s ease',
+                                                            pointerEvents: 'none' // This prevents the icon from blocking clicks
                                                         }
                                                     })
                                                 ],
-                                                event: [
-                                                    {
-                                                        type: 'click',
-                                                        method: (e) => {
-                                                            e.stopPropagation();
-                                                            e.preventDefault();
-                                                            const input = document.getElementById('userPid');
-                                                            const icon = document.getElementById('login-password-eye-icon');
-                                                            
-                                                            if (input && icon) {
-                                                                if (input.type === 'password') {
-                                                                    input.type = 'text';
-                                                                    icon.className = 'fa-solid fa-eye-slash';
-                                                                } else {
-                                                                    input.type = 'password';
-                                                                    icon.className = 'fa-solid fa-eye';
-                                                                }
+                                                // SIMPLE: One event handler for click
+                                                event: {
+                                                    type: 'click',
+                                                    method: function(e) {
+                                                        e.stopPropagation()
+                                                        const input = document.getElementById('userPid')
+                                                        const icon = document.getElementById('login-password-eye-icon')
+                                                        
+                                                        if (input && icon) {
+                                                            if (input.type === 'password') {
+                                                                input.type = 'text'
+                                                                icon.className = 'fa-solid fa-eye-slash'
+                                                                icon.style.color = '#0d6efd'
+                                                                this.style.color = '#0d6efd'
+                                                            } else {
+                                                                input.type = 'password'
+                                                                icon.className = 'fa-solid fa-eye'
+                                                                icon.style.color = '#adb5bd'
+                                                                this.style.color = '#adb5bd'
                                                             }
                                                         }
-                                                    },
-                                                    {
-                                                        type: 'mouseenter',
-                                                        method: (e) => {
-                                                            e.target.style.color = '#0d6efd';
-                                                            const icon = e.target.querySelector('i');
-                                                            if (icon) icon.style.color = '#0d6efd';
-                                                        }
-                                                    },
-                                                    {
-                                                        type: 'mouseleave',
-                                                        method: (e) => {
-                                                            e.target.style.color = '#adb5bd';
-                                                            const icon = e.target.querySelector('i');
-                                                            if (icon) icon.style.color = '#adb5bd';
-                                                        }
                                                     }
-                                                ]
+                                                }
                                             })
                                         ]
                                     })
