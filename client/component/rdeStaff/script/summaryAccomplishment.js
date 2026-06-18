@@ -25,7 +25,7 @@ export const SummaryAccomplishment = () => {
     let loadingElement = null
     let isLoading = false
 
-    // Statistics cards data
+
     const statsCards = [
         {
             key: 'ongoingResearch',
@@ -107,7 +107,6 @@ export const SummaryAccomplishment = () => {
 
     ]
 
-    // Campus filter options
     const campusOptions = [
         { value: 'all', label: 'All Campuses' },
         { value: 'Tapaz', label: 'Tapaz' },
@@ -134,7 +133,6 @@ export const SummaryAccomplishment = () => {
         { value: 'Extension', label: 'Extension' }
     ]
 
-    // Show loading
     const showLoading = () => {
         if (!loadingElement) {
             loadingElement = Waiting()
@@ -142,7 +140,6 @@ export const SummaryAccomplishment = () => {
         }
     }
 
-    // Hide loading
     const hideLoading = () => {
         if (loadingElement) {
             loadingElement.remove()
@@ -150,7 +147,6 @@ export const SummaryAccomplishment = () => {
         }
     }
 
-    // Fetch summary data from API
     const fetchSummaryData = async () => {
         if (isLoading) return
 
@@ -158,6 +154,7 @@ export const SummaryAccomplishment = () => {
         showLoading()
 
         try {
+            // Fetch main summary data from /monitor
             const formData = new FormData()
             formData.append('action', 'fetch')
 
@@ -168,6 +165,37 @@ export const SummaryAccomplishment = () => {
 
             const result = await response.json()
 
+            // Fetch training count from summaryAccomplishment API
+            let trainingCount = 0
+            try {
+                const trainingFormData = new FormData()
+                trainingFormData.append('action', 'trainingConducted')
+
+                // Apply current filters to the training count
+                if (activeFilters.campus !== 'all') {
+                    trainingFormData.append('type', 'campus')
+                    trainingFormData.append('location', activeFilters.campus)
+                } else if (activeFilters.center !== 'all') {
+                    trainingFormData.append('type', 'center')
+                    trainingFormData.append('location', activeFilters.center)
+                } else {
+                    trainingFormData.append('type', 'All')
+                }
+
+                const trainingResponse = await fetch('/summaryAccomplish', {
+                    method: 'POST',
+                    body: trainingFormData
+                })
+
+                const trainingResult = await trainingResponse.json()
+
+                if (trainingResult.status && trainingResult.data) {
+                    trainingCount = trainingResult.data.count || 0
+                }
+            } catch (trainingError) {
+                console.error('Error fetching training count:', trainingError)
+            }
+
             if (result.success && result.summary) {
                 const stats = {}
                 // Set default 0 for all stat keys
@@ -175,11 +203,23 @@ export const SummaryAccomplishment = () => {
                 // Map the backend summary values to the card keys
                 stats.ongoingResearch = result.summary.totalOngoing ?? 0
                 stats.completedResearch = result.summary.completed ?? 0
+                // Use the training count from the dedicated API
+                stats.conductedResearch = trainingCount
+                stats.trainingsAttended = result.summary.trainingsAttended ?? 0
+                stats.igpResearch = result.summary.igpResearch ?? 0
+                stats.participationResearch = result.summary.participationResearch ?? 0
+                stats.facilitiesImprovement = result.summary.facilitiesImprovement ?? 0
+                stats.facultyPresentation = result.summary.facultyPresentation ?? 0
+                stats.publicationResearch = result.summary.publicationResearch ?? 0
+                stats.citationsResearch = result.summary.citationsResearch ?? 0
+                stats.ipAssets = result.summary.ipAssets ?? 0
                 updateStatsCards(stats)
             } else {
-                // On failure, render cards with zeros
+                // On failure, render cards with zeros but try to show training count
                 const zeroStats = {}
-                statsCards.forEach(card => { zeroStats[card.key] = 0 })
+                statsCards.forEach(card => {
+                    zeroStats[card.key] = card.key === 'conductedResearch' ? trainingCount : 0
+                })
                 updateStatsCards(zeroStats)
             }
         } catch (error) {
@@ -194,7 +234,6 @@ export const SummaryAccomplishment = () => {
         }
     }
 
-    // Update statistics cards with data
     const updateStatsCards = (stats) => {
         const statsContainer = document.querySelector('.summary-stats-container')
         if (!statsContainer) return
@@ -393,7 +432,6 @@ export const SummaryAccomplishment = () => {
         })
     }
 
-    // Open detail modal for a statistics category
     const openDetailModal = (stat) => {
         if (modalElement) {
             modalElement.remove()
@@ -1788,19 +1826,18 @@ export const SummaryAccomplishment = () => {
         }, 10)
     }
 
-    // Get modal content based on stat type
     const getModalContent = (stat) => {
         return $({
             tag: 'div',
             att: { className: 'summary-modal-box' },
             style: {
-                backgroundColor: '#1e1e1e',
+                backgroundColor: '#ffffff',
                 width: '90%',
                 maxWidth: '800px',
                 maxHeight: '85vh',
-                borderRadius: '20px',
-                border: '1px solid #333',
-                boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                borderRadius: '16px',
+                border: '1px solid #e9ecef',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
@@ -1812,12 +1849,13 @@ export const SummaryAccomplishment = () => {
                 $({
                     tag: 'div',
                     style: {
-                        padding: '24px',
-                        borderBottom: `2px solid ${stat.color}40`,
+                        padding: '24px 28px',
+                        borderBottom: `2px solid ${stat.color}25`,
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        background: `linear-gradient(135deg, ${stat.color}10 0%, transparent 100%)`
+                        background: `linear-gradient(135deg, ${stat.color}06 0%, transparent 100%)`,
+                        borderRadius: '16px 16px 0 0'
                     },
                     child: [
                         $({
@@ -1834,10 +1872,11 @@ export const SummaryAccomplishment = () => {
                                         width: '44px',
                                         height: '44px',
                                         borderRadius: '12px',
-                                        backgroundColor: `${stat.color}20`,
+                                        backgroundColor: `${stat.color}15`,
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center'
+                                        justifyContent: 'center',
+                                        border: `1px solid ${stat.color}20`
                                     },
                                     child: [
                                         $({
@@ -1851,7 +1890,7 @@ export const SummaryAccomplishment = () => {
                                     tag: 'h3',
                                     text: stat.label,
                                     style: {
-                                        color: '#fff',
+                                        color: '#212529',
                                         fontSize: '20px',
                                         fontWeight: '600',
                                         margin: '0'
@@ -1863,7 +1902,7 @@ export const SummaryAccomplishment = () => {
                             tag: 'span',
                             att: { className: 'fa-solid fa-times' },
                             style: {
-                                color: '#888',
+                                color: '#6c757d',
                                 cursor: 'pointer',
                                 fontSize: '20px',
                                 padding: '8px',
@@ -1872,16 +1911,20 @@ export const SummaryAccomplishment = () => {
                             },
                             event: {
                                 type: 'click',
-                                method: closeModal,
-                                type2: 'mouseenter',
-                                method2: (e) => {
-                                    e.target.style.backgroundColor = '#333'
-                                    e.target.style.color = '#fff'
-                                },
-                                type3: 'mouseleave',
-                                method3: (e) => {
+                                method: closeModal
+                            },
+                            event2: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    e.target.style.backgroundColor = '#f8f9fa'
+                                    e.target.style.color = '#212529'
+                                }
+                            },
+                            event3: {
+                                type: 'mouseleave',
+                                method: (e) => {
                                     e.target.style.backgroundColor = 'transparent'
-                                    e.target.style.color = '#888'
+                                    e.target.style.color = '#6c757d'
                                 }
                             }
                         })
@@ -1891,12 +1934,13 @@ export const SummaryAccomplishment = () => {
                 $({
                     tag: 'div',
                     style: {
-                        padding: '24px',
+                        padding: '28px',
                         overflow: 'auto',
-                        flex: '1'
+                        flex: '1',
+                        backgroundColor: '#fafbfc'
                     },
                     child: [
-                        // Placeholder content
+                        // Content
                         $({
                             tag: 'div',
                             style: {
@@ -1912,20 +1956,21 @@ export const SummaryAccomplishment = () => {
                                     tag: 'span',
                                     att: { className: `fa-solid ${stat.icon}` },
                                     style: {
-                                        fontSize: '48px',
+                                        fontSize: '56px',
                                         color: stat.color,
                                         marginBottom: '20px',
-                                        opacity: '0.5'
+                                        opacity: '0.3'
                                     }
                                 }),
                                 $({
                                     tag: 'p',
                                     text: `Detailed view for "${stat.label}" will be implemented here.`,
                                     style: {
-                                        color: '#aaa',
+                                        color: '#495057',
                                         fontSize: '16px',
                                         lineHeight: '1.6',
-                                        marginBottom: '10px'
+                                        marginBottom: '10px',
+                                        maxWidth: '500px'
                                     }
                                 }),
                                 $({
@@ -1950,10 +1995,12 @@ export const SummaryAccomplishment = () => {
                 $({
                     tag: 'div',
                     style: {
-                        padding: '16px 24px',
-                        borderTop: '1px solid #333',
+                        padding: '16px 28px',
+                        borderTop: '1px solid #e9ecef',
                         display: 'flex',
-                        justifyContent: 'flex-end'
+                        justifyContent: 'flex-end',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '0 0 16px 16px'
                     },
                     child: [
                         $({
@@ -1961,24 +2008,33 @@ export const SummaryAccomplishment = () => {
                             text: 'Close',
                             style: {
                                 padding: '10px 24px',
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '10px',
-                                color: '#fff',
+                                backgroundColor: 'transparent',
+                                border: '1px solid #dee2e6',
+                                borderRadius: '8px',
+                                color: '#495057',
                                 fontSize: '14px',
+                                fontWeight: '500',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease'
                             },
                             event: {
                                 type: 'click',
-                                method: closeModal,
-                                type2: 'mouseenter',
-                                method2: (e) => {
-                                    e.target.style.backgroundColor = '#444'
-                                },
-                                type3: 'mouseleave',
-                                method3: (e) => {
-                                    e.target.style.backgroundColor = '#333'
+                                method: closeModal
+                            },
+                            event2: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    e.target.style.backgroundColor = '#f8f9fa'
+                                    e.target.style.borderColor = '#0d6efd'
+                                    e.target.style.color = '#212529'
+                                }
+                            },
+                            event3: {
+                                type: 'mouseleave',
+                                method: (e) => {
+                                    e.target.style.backgroundColor = 'transparent'
+                                    e.target.style.borderColor = '#dee2e6'
+                                    e.target.style.color = '#495057'
                                 }
                             }
                         })
@@ -1988,7 +2044,6 @@ export const SummaryAccomplishment = () => {
         })
     }
 
-    // Create filter badge
     const createFilterBadge = (label, value, color) => {
         return $({
             tag: 'span',
@@ -2017,7 +2072,6 @@ export const SummaryAccomplishment = () => {
         })
     }
 
-    // Close modal
     const closeModal = () => {
         if (modalElement) {
             modalElement.style.opacity = '0'
@@ -2035,36 +2089,12 @@ export const SummaryAccomplishment = () => {
         }
     }
 
-    // Apply filters
+
     const applyFilters = () => {
-        // Recalculate stats based on filters
-        const filteredStats = {}
-        statsCards.forEach(card => {
-            filteredStats[card.key] = 0
-        })
-
-        if (accomplishmentData.length > 0) {
-            // Filter data based on active filters
-            const filtered = accomplishmentData.filter(item => {
-                const campusMatch = activeFilters.campus === 'all' || item.campus === activeFilters.campus
-                const centerMatch = activeFilters.center === 'all' || item.center === activeFilters.center
-                const categoryMatch = activeFilters.category === 'all' || item.category === activeFilters.category
-                return campusMatch && centerMatch && categoryMatch
-            })
-
-            // Count stats from filtered data
-            filtered.forEach(item => {
-                if (item.statKey && filteredStats[item.statKey] !== undefined) {
-                    filteredStats[item.statKey]++
-                }
-            })
-        }
-
-        updateStatsCards(filteredStats)
         updateFilterBadges()
+        fetchSummaryData()
     }
 
-    // Update filter badges
     const updateFilterBadges = () => {
         const badgesContainer = document.querySelector('.active-filters-container')
         if (!badgesContainer) return
@@ -2080,48 +2110,40 @@ export const SummaryAccomplishment = () => {
         }
     }
 
-    // Filter by campus
     const filterByCampus = (campus) => {
         activeFilters.campus = campus
         applyFilters()
     }
 
-    // Filter by center
     const filterByCenter = (center) => {
         activeFilters.center = center
         applyFilters()
     }
 
-    // Update table with data
     const updateTableWithData = () => {
         if (!tableBody) return
-        // Table implementation can be added later if needed
     }
 
-    // Show empty state
     const showEmptyState = () => {
-        // Handle empty state if needed
     }
 
-    // Reference getters
     const getMainContainer = (el) => {
         mainContainer = el
     }
 
-    // Create filter section
     const FilterSection = () => {
         return $({
             tag: 'div',
+            att: { className: 'summary-filter-section' },
             style: {
                 padding: '16px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #333',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e9ecef',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px'
             },
             child: [
-                // Filter row
                 $({
                     tag: 'div',
                     style: {
@@ -2131,15 +2153,10 @@ export const SummaryAccomplishment = () => {
                         alignItems: 'center'
                     },
                     child: [
-                        // Campus filter
                         createFilterSelect('Campus', campusOptions, activeFilters.campus, filterByCampus),
-
-                        // Center filter
                         createFilterSelect('Center', centerOptions, activeFilters.center, filterByCenter),
-
                     ]
                 }),
-                // Active filters display
                 $({
                     tag: 'div',
                     att: { className: 'active-filters-container' },
@@ -2154,7 +2171,6 @@ export const SummaryAccomplishment = () => {
         })
     }
 
-    // Create filter select component
     const createFilterSelect = (label, options, currentValue, onChange) => {
         const selectId = `filter-${label.toLowerCase().replace(/\s+/g, '-')}`
 
@@ -2171,7 +2187,7 @@ export const SummaryAccomplishment = () => {
                     att: { for: selectId },
                     text: `${label}:`,
                     style: {
-                        color: '#888',
+                        color: '#495057',
                         fontSize: '13px',
                         fontWeight: '500',
                         whiteSpace: 'nowrap'
@@ -2181,16 +2197,16 @@ export const SummaryAccomplishment = () => {
                     tag: 'select',
                     att: { id: selectId },
                     style: {
-                        backgroundColor: '#333',
-                        border: '1px solid #444',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #dee2e6',
                         borderRadius: '8px',
                         padding: '8px 32px 8px 12px',
-                        color: '#fff',
+                        color: '#212529',
                         fontSize: '13px',
                         outline: 'none',
                         cursor: 'pointer',
                         appearance: 'none',
-                        backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                        backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23495057\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
                         backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'right 8px center',
                         backgroundSize: '14px',
@@ -2200,22 +2216,36 @@ export const SummaryAccomplishment = () => {
                     child: options.map(opt =>
                         $({
                             tag: 'option',
-                            att: { value: opt.value, selected: opt.value === currentValue },
-                            text: opt.label
+                            att: { 
+                                value: opt.value, 
+                                selected: opt.value === currentValue 
+                            },
+                            text: opt.label,
+                            style: {
+                                backgroundColor: '#ffffff',
+                                color: '#212529',
+                                padding: '8px'
+                            }
                         })
                     ),
                     event: {
                         type: 'change',
-                        method: (e) => onChange(e.target.value),
-                        type2: 'focus',
-                        method2: (e) => {
-                            e.target.style.borderColor = 'deepskyblue'
-                            e.target.style.backgroundColor = '#3d3d3d'
-                        },
-                        type3: 'blur',
-                        method3: (e) => {
-                            e.target.style.borderColor = '#444'
-                            e.target.style.backgroundColor = '#333'
+                        method: (e) => onChange(e.target.value)
+                    },
+                    event2: {
+                        type: 'focus',
+                        method: (e) => {
+                            e.target.style.borderColor = '#0d6efd'
+                            e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                            e.target.style.backgroundColor = '#ffffff'
+                        }
+                    },
+                    event3: {
+                        type: 'blur',
+                        method: (e) => {
+                            e.target.style.borderColor = '#dee2e6'
+                            e.target.style.boxShadow = 'none'
+                            e.target.style.backgroundColor = '#ffffff'
                         }
                     }
                 })
@@ -2223,14 +2253,14 @@ export const SummaryAccomplishment = () => {
         })
     }
 
-    // Create header section
     const HeaderSection = () => {
         return $({
             tag: 'div',
+            att: { className: 'summary-header-section' },
             style: {
                 padding: '20px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #333',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e9ecef',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -2252,7 +2282,7 @@ export const SummaryAccomplishment = () => {
                                 width: '40px',
                                 height: '40px',
                                 borderRadius: '10px',
-                                background: 'linear-gradient(135deg, deepskyblue 0%, #0066cc 100%)',
+                                background: 'linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
@@ -2272,7 +2302,7 @@ export const SummaryAccomplishment = () => {
                                     tag: 'h2',
                                     text: 'Summary of Accomplishment',
                                     style: {
-                                        color: '#fff',
+                                        color: '#212529',
                                         fontSize: '22px',
                                         fontWeight: '600',
                                         margin: '0',
@@ -2283,7 +2313,7 @@ export const SummaryAccomplishment = () => {
                                     tag: 'p',
                                     text: 'Research, Development and Extension Accomplishment Overview',
                                     style: {
-                                        color: '#888',
+                                        color: '#6c757d',
                                         fontSize: '13px',
                                         margin: '2px 0 0 0'
                                     }
@@ -2301,12 +2331,13 @@ export const SummaryAccomplishment = () => {
                     child: [
                         $({
                             tag: 'button',
+                            att: { className: 'summary-export-btn' },
                             style: {
                                 padding: '8px 16px',
                                 backgroundColor: 'transparent',
-                                border: '1px solid #444',
+                                border: '1px solid #dee2e6',
                                 borderRadius: '8px',
-                                color: '#aaa',
+                                color: '#495057',
                                 fontSize: '13px',
                                 cursor: 'pointer',
                                 display: 'flex',
@@ -2325,35 +2356,26 @@ export const SummaryAccomplishment = () => {
                             event: {
                                 type: 'click',
                                 method: () => {
-                                    // TODO: Implement export functionality
                                     console.log('Export report clicked')
-                                },
-                                type2: 'mouseenter',
-                                method2: (e) => {
-                                    e.target.style.backgroundColor = '#333'
-                                    e.target.style.borderColor = '#666'
-                                },
-                                type3: 'mouseleave',
-                                method3: (e) => {
-                                    e.target.style.backgroundColor = 'transparent'
-                                    e.target.style.borderColor = '#444'
                                 }
                             }
                         }),
                         $({
                             tag: 'button',
+                            att: { className: 'summary-refresh-btn' },
                             style: {
                                 padding: '8px 16px',
-                                backgroundColor: 'deepskyblue',
+                                backgroundColor: '#0d6efd',
                                 border: 'none',
                                 borderRadius: '8px',
-                                color: '#fff',
+                                color: '#ffffff',
                                 fontSize: '13px',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 2px 8px rgba(13, 110, 253, 0.3)'
                             },
                             child: [
                                 $({
@@ -2367,16 +2389,6 @@ export const SummaryAccomplishment = () => {
                                 type: 'click',
                                 method: () => {
                                     fetchSummaryData()
-                                },
-                                type2: 'mouseenter',
-                                method2: (e) => {
-                                    e.target.style.backgroundColor = '#00a6d1'
-                                    e.target.style.transform = 'translateY(-1px)'
-                                },
-                                type3: 'mouseleave',
-                                method3: (e) => {
-                                    e.target.style.backgroundColor = 'deepskyblue'
-                                    e.target.style.transform = 'translateY(0)'
                                 }
                             }
                         })
@@ -2386,7 +2398,6 @@ export const SummaryAccomplishment = () => {
         })
     }
 
-    // Create stats grid
     const StatsGrid = () => {
         return $({
             tag: 'div',
@@ -2409,20 +2420,17 @@ export const SummaryAccomplishment = () => {
         })
     }
 
-    // Initialize and fetch data
     const initialize = () => {
-        // Fetch initial data
         fetchSummaryData()
     }
 
-    // Return main container
     const summaryContainer = $({
         tag: 'div',
         att: { className: 'summary-accomplishment-container' },
         style: {
             width: '100%',
             height: '100%',
-            backgroundColor: '#1a1a1a',
+            backgroundColor: '#f8f9fa',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -2437,13 +2445,11 @@ export const SummaryAccomplishment = () => {
         ]
     })
 
-    // Initialize after DOM is ready
     setTimeout(initialize, 100)
 
     return summaryContainer
 }
 
-// Export utility functions
 export const getSummaryStats = (data) => {
     return {
         ongoingResearch: data.filter(item => item.status === 'ongoing').length,

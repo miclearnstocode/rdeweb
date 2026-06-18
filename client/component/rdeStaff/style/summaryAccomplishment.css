@@ -1,7 +1,6 @@
-/* summaryAccomplishment.css */
+/* summaryAccomplishment.css - Modern White Theme */
 
 .summary-accomplishment-container {
-    /* Smooth scrolling */
     scroll-behavior: smooth;
 }
 
@@ -11,7 +10,7 @@
 }
 
 .summary-stat-card:hover .stat-value {
-    color: #fff;
+    color: var(--stat-color, #0d6efd) !important;
 }
 
 .summary-stat-card:hover .fa-arrow-right {
@@ -25,7 +24,6 @@
         opacity: 0;
         transform: scale(0.95) translateY(20px);
     }
-
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -37,49 +35,46 @@
         opacity: 1;
         transform: scale(1) translateY(0);
     }
-
     to {
         opacity: 0;
         transform: scale(0.95) translateY(20px);
     }
 }
 
-/* Custom scrollbar for stats grid */
+/* Custom scrollbar for stats grid - WHITE THEME */
 .summary-stats-container::-webkit-scrollbar {
     width: 6px;
 }
 
 .summary-stats-container::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: #f1f3f5;
 }
 
 .summary-stats-container::-webkit-scrollbar-thumb {
-    background: #333;
+    background: #ced4da;
     border-radius: 3px;
 }
 
 .summary-stats-container::-webkit-scrollbar-thumb:hover {
-    background: #444;
+    background: #adb5bd;
 }
 
-/* Filter select styling */
+/* Filter select styling - WHITE THEME */
 select:focus-visible {
-    outline: 2px solid deepskyblue;
+    outline: 2px solid #0d6efd;
     outline-offset: 2px;
 }
 
 /* Stat card hover pulse effect */
 @keyframes cardPulse {
     0% {
-        box-shadow: 0 0 0 0 rgba(0, 191, 255, 0.4);
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.2);
     }
-
     70% {
-        box-shadow: 0 0 0 10px rgba(0, 191, 255, 0);
+        box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
     }
-
     100% {
-        box-shadow: 0 0 0 0 rgba(0, 191, 255, 0);
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
     }
 }
 
@@ -88,7 +83,6 @@ select:focus-visible {
     .summary-stats-container {
         grid-template-columns: 1fr !important;
     }
-
     .summary-stat-card {
         min-height: 100px;
     }
@@ -110,28 +104,317 @@ select:focus-visible {
         opacity: 0;
         transform: translateY(-10px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-/* Modal scrollbar */
+/* Modal scrollbar - WHITE THEME */
 .summary-modal-box::-webkit-scrollbar {
     width: 8px;
 }
 
 .summary-modal-box::-webkit-scrollbar-track {
-    background: #1e1e1e;
+    background: #f1f3f5;
     border-radius: 4px;
 }
 
 .summary-modal-box::-webkit-scrollbar-thumb {
-    background: #444;
+    background: #ced4da;
     border-radius: 4px;
 }
 
 .summary-modal-box::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: #adb5bd;
+}
+
+/* ========== ADDITIONAL WHITE THEME STYLES ========== */
+
+/* Stat card base styles */
+.summary-stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e9ecef !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Stat card hover - WHITE THEME */
+.summary-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+    border-color: var(--stat-color, #0d6efd) !important;
+    background: #fafbfc !important;
+}
+
+/* Stat card overlay on hover */
+.summary-stat-card .stat-overlay {
+    opacity: 0 !important;
+    transition: opacity 0.3s ease;
+}
+
+.summary-stat-card:hover .stat-overlay {
+    opacity: 0.04 !important;
+}
+
+/* Stat value text - WHITE THEME */
+.summary-stat-card .stat-value {
+    color: #212529 !important;
+    transition: color 0.3s ease;
+}
+
+.summary-stat-card:hover .stat-value {
+    color: var(--stat-color, #0d6efd) !important;
+}
+
+/* Stat label text - WHITE THEME */
+.summary-stat-card .stat-label {
+    color: #6c757d !important;
+    transition: color 0.3s ease;
+}
+
+.summary-stat-card:hover .stat-label {
+    color: #212529 !important;
+}
+
+/* Stat icon container - WHITE THEME */
+.summary-stat-card .stat-icon-container {
+    transition: all 0.3s ease;
+}
+
+.summary-stat-card:hover .stat-icon-container {
+    transform: scale(1.1);
+}
+
+/* Filter section - WHITE THEME */
+.summary-filter-section {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+/* Filter labels - WHITE THEME */
+.summary-filter-label {
+    color: #495057 !important;
+}
+
+/* Filter select - WHITE THEME */
+.summary-filter-select {
+    background: #ffffff !important;
+    border: 1px solid #dee2e6 !important;
+    color: #212529 !important;
+}
+
+.summary-filter-select:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1) !important;
+}
+
+/* Filter select options - WHITE THEME */
+.summary-filter-select option {
+    background: #ffffff !important;
+    color: #212529 !important;
+}
+
+/* Header section - WHITE THEME */
+.summary-header-section {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+.summary-header-title {
+    color: #212529 !important;
+}
+
+.summary-header-subtitle {
+    color: #6c757d !important;
+}
+
+/* Export button - WHITE THEME */
+.summary-export-btn {
+    background: transparent !important;
+    border: 1px solid #dee2e6 !important;
+    color: #495057 !important;
+}
+
+.summary-export-btn:hover {
+    background: #f8f9fa !important;
+    border-color: #0d6efd !important;
+    color: #212529 !important;
+}
+
+/* Refresh button - WHITE THEME */
+.summary-refresh-btn {
+    background: #0d6efd !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+.summary-refresh-btn:hover {
+    background: #0b5ed7 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+}
+
+/* Filter badges - WHITE THEME */
+.summary-filter-badge {
+    background: rgba(13, 110, 253, 0.08) !important;
+    border: 1px solid rgba(13, 110, 253, 0.15) !important;
+    color: #212529 !important;
+}
+
+.summary-filter-badge .badge-label {
+    color: #6c757d !important;
+}
+
+.summary-filter-badge .badge-value {
+    color: #0d6efd !important;
+    font-weight: 500;
+}
+
+/* Modal overlay - WHITE THEME */
+.summary-detail-modal-overlay {
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(4px);
+}
+
+/* Modal box - WHITE THEME */
+.summary-modal-box {
+    background: #ffffff !important;
+    border: 1px solid #e9ecef !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Modal header - WHITE THEME */
+.summary-modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+.summary-modal-header h3 {
+    color: #212529 !important;
+}
+
+.summary-modal-close {
+    color: #6c757d !important;
+}
+
+.summary-modal-close:hover {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+/* Modal body - WHITE THEME */
+.summary-modal-body {
+    color: #212529 !important;
+}
+
+.summary-modal-body p {
+    color: #495057 !important;
+}
+
+/* Modal footer - WHITE THEME */
+.summary-modal-footer {
+    border-top: 1px solid #e9ecef !important;
+}
+
+.summary-modal-footer .modal-close-btn {
+    background: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    color: #495057 !important;
+}
+
+.summary-modal-footer .modal-close-btn:hover {
+    background: #e9ecef !important;
+    border-color: #0d6efd !important;
+    color: #212529 !important;
+}
+
+.active-filters-container {
+    min-height: 28px;
+}
+
+/* Select dropdown arrow color fix - WHITE THEME */
+select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    background-size: 14px !important;
+}
+
+/* Card pulse animation on active state */
+.summary-stat-card:active {
+    animation: cardPulse 0.5s ease;
+}
+
+/* Print styles */
+@media print {
+    .summary-stat-card {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+    }
+    
+    .summary-export-btn,
+    .summary-refresh-btn {
+        display: none !important;
+    }
+}
+/* Export button hover */
+.summary-export-btn:hover {
+    background-color: #f8f9fa !important;
+    border-color: #0d6efd !important;
+    color: #212529 !important;
+}
+
+/* Refresh button hover */
+.summary-refresh-btn:hover {
+    background-color: #0b5ed7 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4) !important;
+}
+/* Filter section - WHITE THEME */
+.summary-filter-section {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e9ecef !important;
+}
+
+/* Filter labels - WHITE THEME */
+.summary-filter-label {
+    color: #495057 !important;
+}
+
+/* Filter select - WHITE THEME */
+.summary-filter-select {
+    background: #ffffff !important;
+    border: 1px solid #dee2e6 !important;
+    color: #212529 !important;
+}
+
+.summary-filter-select:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1) !important;
+}
+
+/* Filter badges - WHITE THEME */
+.summary-filter-badge {
+    background: rgba(13, 110, 253, 0.08) !important;
+    border: 1px solid rgba(13, 110, 253, 0.15) !important;
+    color: #212529 !important;
+}
+
+.summary-filter-badge .badge-label {
+    color: #6c757d !important;
+}
+
+.summary-filter-badge .badge-value {
+    color: #0d6efd !important;
+    font-weight: 500;
+}
+
+.summary-filter-badge .badge-remove {
+    color: #6c757d !important;
+    cursor: pointer;
+}
+
+.summary-filter-badge .badge-remove:hover {
+    color: #dc3545 !important;
 }
