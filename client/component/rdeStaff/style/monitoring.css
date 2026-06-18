@@ -1,0 +1,109 @@
+/* Stats Cards Container */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 20px 24px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Base stat card styles */
+.stats-cards .stat-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* On-Going card hover */
+.stats-cards .stat-card-ongoing:hover {
+    transform: translateY(-4px);
+    border-color: #0d6efd !important;
+    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.15) !important;
+    background-color: #f8f9fa !important;
+}
+
+.stats-cards .stat-card-ongoing:hover > div:first-child {
+    opacity: 1 !important;
+}
+
+.stats-cards .stat-card-ongoing:hover > div:nth-child(2) {
+    background-color: rgba(13, 110, 253, 0.20) !important;
+    border-color: rgba(13, 110, 253, 0.30) !important;
+    transform: scale(1.1);
+}
+
+.stats-cards .stat-card-ongoing:hover > div:nth-child(2) span {
+    transform: scale(1.15) rotate(5deg);
+}
+
+.stats-cards .stat-card-ongoing:hover .stat-value {
+    color: #0d6efd !important;
+}
+
+.stats-cards .stat-card-ongoing:hover .stat-label {
+    color: #495057 !important;
+}
+
+/* Completed card hover */
+.stats-cards .stat-card-completed:hover {
+    transform: translateY(-4px);
+    border-color: #28a745 !important;
+    box-shadow: 0 8px 24px rgba(40, 167, 69, 0.15) !important;
+    background-color: #f8f9fa !important;
+}
+
+.stats-cards .stat-card-completed:hover > div:first-child {
+    opacity: 1 !important;
+}
+
+.stats-cards .stat-card-completed:hover > div:nth-child(2) {
+    background-color: rgba(40, 167, 69, 0.20) !important;
+    border-color: rgba(40, 167, 69, 0.30) !important;
+    transform: scale(1.1);
+}
+
+.stats-cards .stat-card-completed:hover > div:nth-child(2) span {
+    transform: scale(1.15) rotate(5deg);
+}
+
+.stats-cards .stat-card-completed:hover .stat-value {
+    color: #28a745 !important;
+}
+
+.stats-cards .stat-card-completed:hover .stat-label {
+    color: #495057 !important;
+}
+
+/* Generic stat card hover (for dynamic cards) */
+.stats-cards .stat-card:hover {
+    transform: translateY(-4px);
+    background-color: #fafbfc !important;
+}
+
+.stats-cards .stat-card:hover .card-glow {
+    opacity: 1 !important;
+}
+
+.stats-cards .stat-card:hover .stat-icon-container {
+    transform: scale(1.1);
+    background-color: rgba(var(--rgb), 0.20) !important;
+    border-color: rgba(var(--rgb), 0.30) !important;
+}
+
+.stats-cards .stat-card:hover .stat-icon-container span {
+    transform: scale(1.15) rotate(5deg);
+}
+
+.stats-cards .stat-card:hover .stat-value {
+    color: var(--icon-color) !important;
+}
+
+.stats-cards .stat-card:hover .stat-label {
+    color: #495057 !important;
+}
+
+/* Clickable cursor for cards with onClick */
+.stats-cards .stat-card[style*="cursor: pointer"]:hover {
+    cursor: pointer;
+}

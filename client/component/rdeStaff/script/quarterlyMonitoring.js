@@ -36,7 +36,6 @@ export const QuarterlyMonitoringComponent = () => {
         activityConducted: 0
     }
 
-    // Quarter options
     const quarters = [
         { value: 'Q1', label: 'Q1 (Jan-Mar)' },
         { value: 'Q2', label: 'Q2 (Apr-Jun)' },
@@ -44,10 +43,8 @@ export const QuarterlyMonitoringComponent = () => {
         { value: 'Q4', label: 'Q4 (Oct-Dec)' }
     ]
 
-    // Year options
     let years = ['2023', '2024', '2025', '2026']
 
-    // Fetch available years from database
     const fetchAvailableYears = async () => {
         try {
             const formData = new FormData()
@@ -84,7 +81,6 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Category options
     const categories = [
         'All Categories',
         'Social Science',
@@ -98,7 +94,6 @@ export const QuarterlyMonitoringComponent = () => {
         'Information Technology'
     ]
 
-    // Center options
     const centers = [
         'All Centers',
         'Crop Science Research & Developement Center (CSRDC)',
@@ -111,7 +106,6 @@ export const QuarterlyMonitoringComponent = () => {
         'Extension (Extension)'
     ]
 
-    // Campus options
     const campuses = [
         'All Campuses',
         'Roxas City Main',
@@ -125,8 +119,6 @@ export const QuarterlyMonitoringComponent = () => {
         'Dumarao'
     ]
 
-
-    // Show loading
     const showLoading = () => {
         if (!loadingElement) {
             loadingElement = Waiting()
@@ -134,7 +126,6 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Hide loading
     const hideLoading = () => {
         if (loadingElement) {
             loadingElement.remove()
@@ -142,7 +133,6 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Fetch monitoring data
     const fetchMonitoringData = async (cursor = null, direction = 'next', search = null, category = null, quarter = null, year = null, center = null, campus = null) => {
         if (isLoading) return
 
@@ -241,7 +231,6 @@ export const QuarterlyMonitoringComponent = () => {
                         hasMore = result.pagination?.has_more || false
                     }
 
-                    // Update stats - include both summary and ongoing/completed
                     if (result.summary) {
                         currentStats = {
                             ...currentStats,
@@ -302,7 +291,6 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Handle scroll for infinite loading
     const handleScroll = () => {
         if (!scrollContainer || isLoading) return
 
@@ -318,11 +306,9 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Update statistics - Updated to handle both stat cards
     const updateStats = () => {
         if (!mainContainer) return
 
-        // Update the 5 main stat cards (publications, presentations, assets, collaborations, activityConducted)
         const statValues = mainContainer.querySelectorAll('.stat-value')
         if (statValues.length >= 5) {
             statValues[0].textContent = currentStats.publications || 0
@@ -332,14 +318,12 @@ export const QuarterlyMonitoringComponent = () => {
             statValues[4].textContent = currentStats.activityConducted || 0
         }
 
-        // Update the ongoing and completed stat cards (using IDs)
         const ongoingEl = document.getElementById('ongoing-stat-value')
         const completedEl = document.getElementById('completed-stat-value')
         if (ongoingEl) ongoingEl.textContent = currentStats.totalOngoing ?? 0
         if (completedEl) completedEl.textContent = currentStats.completed ?? 0
     }
 
-    // Update record count
     const updateRecordCount = () => {
         if (!mainContainer) return
         const recordCount = mainContainer.querySelector('.record-count')
@@ -348,7 +332,6 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Update table with data
     const updateTableWithData = () => {
         if (!tableBody) return
 
@@ -364,108 +347,171 @@ export const QuarterlyMonitoringComponent = () => {
         })
     }
 
-    // Show empty state
     const showEmptyState = () => {
         if (!tableBody) return
 
         tableBody.innerHTML = ''
 
+        // Get the actual column count from the table header
+        const headerRow = document.querySelector('.monitoring-container thead tr')
+        let columnCount = 12 // Default fallback
+        
+        if (headerRow) {
+            const headerCells = headerRow.querySelectorAll('th')
+            if (headerCells.length > 0) {
+                columnCount = headerCells.length
+            }
+        }
+
         const emptyState = $({
-            tag: 'div',
-            att: { className: 'empty-state' },
+            tag: 'tr',
             style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '350px',
-                width: '100%',
-                color: '#888',
-                fontFamily: 'Segoe UI, sans-serif'
+                backgroundColor: '#ffffff'
             },
             child: [
                 $({
-                    tag: 'div',
+                    tag: 'td',
+                    att: { colSpan: columnCount },
                     style: {
-                        position: 'relative',
-                        width: '120px',
-                        height: '120px',
-                        marginBottom: '24px',
-                        position: 'absolute',
-                        left: '60%',
-                        top: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        padding: '0',
+                        border: 'none',
+                        backgroundColor: '#ffffff',
+                        textAlign: 'center',
+                        verticalAlign: 'middle',
+                        height: '400px'
                     },
                     child: [
                         $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-chart-line' },
+                            tag: 'div',
+                            att: { className: 'empty-state' },
                             style: {
-                                fontSize: '80px',
-                                color: 'deepskyblue',
-                                opacity: 0.3,
-                                position: 'absolute',
-                                left: '0',
-                                top: '0'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-clipboard-list' },
-                            style: {
-                                fontSize: '50px',
-                                color: '#4caf50',
-                                opacity: 0.4,
-                                position: 'absolute',
-                                right: '-10px',
-                                bottom: '-10px'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-chart-simple' },
-                            style: {
-                                fontSize: '40px',
-                                color: '#ff9800',
-                                opacity: 0.4,
-                                position: 'absolute',
-                                left: '-15px',
-                                bottom: '0'
-                            }
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%',
+                                color: '#6c757d',
+                                fontFamily: 'Segoe UI, sans-serif'
+                            },
+                            child: [
+                                // Icon container with multiple icons
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        position: 'relative',
+                                        width: '120px',
+                                        height: '120px',
+                                        marginBottom: '24px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-chart-line' },
+                                            style: {
+                                                fontSize: '80px',
+                                                color: '#0d6efd',
+                                                opacity: 0.15,
+                                                position: 'absolute',
+                                                left: '0',
+                                                top: '0'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-clipboard-list' },
+                                            style: {
+                                                fontSize: '50px',
+                                                color: '#28a745',
+                                                opacity: 0.2,
+                                                position: 'absolute',
+                                                right: '-10px',
+                                                bottom: '-10px'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-chart-simple' },
+                                            style: {
+                                                fontSize: '40px',
+                                                color: '#fd7e14',
+                                                opacity: 0.2,
+                                                position: 'absolute',
+                                                left: '-15px',
+                                                bottom: '0'
+                                            }
+                                        })
+                                    ]
+                                }),
+                                // Title
+                                $({
+                                    tag: 'div',
+                                    text: 'No Monitoring Data Found',
+                                    style: {
+                                        fontSize: '24px',
+                                        marginBottom: '12px',
+                                        fontWeight: '600',
+                                        color: '#212529',
+                                        letterSpacing: '0.5px'
+                                    }
+                                }),
+                                // Subtitle
+                                $({
+                                    tag: 'div',
+                                    text: 'Click the Actions to edit project monitoring details',
+                                    style: {
+                                        fontSize: '14px',
+                                        color: '#6c757d',
+                                        textAlign: 'center',
+                                        maxWidth: '500px',
+                                        lineHeight: '1.6'
+                                    }
+                                }),
+                                // Helpful tips
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '20px',
+                                        display: 'flex',
+                                        gap: '8px',
+                                        flexWrap: 'wrap',
+                                        justifyContent: 'center'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            style: {
+                                                display: 'inline-block',
+                                                padding: '4px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '20px',
+                                                fontSize: '12px',
+                                                color: '#6c757d'
+                                            },
+                                            text: '💡 Tip: Try adjusting your filters'
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            style: {
+                                                display: 'inline-block',
+                                                padding: '4px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '20px',
+                                                fontSize: '12px',
+                                                color: '#6c757d'
+                                            },
+                                            text: '📋 Select a different quarter or year'
+                                        })
+                                    ]
+                                })
+                            ]
                         })
                     ]
-                }),
-                $({
-                    tag: 'div',
-                    text: 'No Monitoring Data Found',
-                    style: {
-                        fontSize: '24px',
-                        marginBottom: '12px',
-                        fontWeight: '600',
-                        color: '#fff',
-                        letterSpacing: '0.5px',
-                        position: 'absolute',
-                        left: '60%',
-                        top: '70%',
-                        transform: 'translate(-50%, -50%)'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'Click the Actions to edit project monitoring details',
-                    style: {
-                        fontSize: '14px',
-                        opacity: 0.7,
-                        marginBottom: '30px',
-                        textAlign: 'center',
-                        position: 'absolute',
-                        left: '60%',
-                        top: '75%',
-                        transform: 'translate(-50%, -50%)'
-                    }
                 })
             ]
         })
@@ -473,13 +519,11 @@ export const QuarterlyMonitoringComponent = () => {
         tableBody.appendChild(emptyState)
     }
 
-    // Get quarter data for a specific quarter
     const getQuarterData = (item, quarter) => {
         const quartersMap = item.quarters || {}
         return quartersMap[quarter.toLowerCase()] || {}
     }
 
-    // Format date to words (e.g., April 30, 2026)
     const formatDate = (dateString) => {
         if (!dateString || dateString === '—' || dateString === '0000-00-00') return '—'
         try {
@@ -495,7 +539,6 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Create data row - SIMPLE VERSION
     const createDataRow = (item, rowNumber) => {
         const cells = []
 
@@ -516,15 +559,16 @@ export const QuarterlyMonitoringComponent = () => {
                     tag: 'td',
                     style: {
                         padding: '12px 8px',
-                        fontSize: '12px',
-                        color: '#ddd',
-                        border: '1px solid #444',
+                        fontSize: '13px',
+                        color: '#212529',
+                        border: '1px solid #f1f3f5',
                         whiteSpace: 'normal',
                         wordBreak: 'break-word',
                         fontFamily: 'Segoe UI, sans-serif',
-                        lineHeight: '1.4',
+                        lineHeight: '1.5',
                         verticalAlign: 'top',
-                        textAlign: align
+                        textAlign: align,
+                        backgroundColor: '#ffffff'
                     },
                     text: value
                 })
@@ -547,15 +591,16 @@ export const QuarterlyMonitoringComponent = () => {
                 let value = '—'
                 let cellStyle = {
                     padding: '12px 8px',
-                    fontSize: '12px',
-                    color: '#ddd',
-                    border: '1px solid #444',
+                    fontSize: '13px',
+                    color: '#212529',
+                    border: '1px solid #f1f3f5',
                     whiteSpace: 'normal',
                     wordBreak: 'break-word',
                     fontFamily: 'Segoe UI, sans-serif',
-                    lineHeight: '1.4',
+                    lineHeight: '1.5',
                     verticalAlign: 'top',
-                    textAlign: field.align
+                    textAlign: field.align,
+                    backgroundColor: '#ffffff'
                 }
 
                 if (field.key === 'completion') {
@@ -563,32 +608,32 @@ export const QuarterlyMonitoringComponent = () => {
                     if (quarterData.completion) {
                         const completion = parseFloat(quarterData.completion)
                         if (completion >= 80) {
-                            cellStyle.backgroundColor = 'rgba(76, 175, 80, 0.15)'
-                            cellStyle.color = '#4caf50'
-                            cellStyle.fontWeight = '500'
+                            cellStyle.backgroundColor = '#e8f5e9'
+                            cellStyle.color = '#2e7d32'
+                            cellStyle.fontWeight = '600'
                         } else if (completion >= 50) {
-                            cellStyle.backgroundColor = 'rgba(255, 152, 0, 0.15)'
-                            cellStyle.color = '#ff9800'
+                            cellStyle.backgroundColor = '#fff3e0'
+                            cellStyle.color = '#e65100'
                         } else if (completion >= 25) {
-                            cellStyle.backgroundColor = 'rgba(233, 30, 99, 0.15)'
-                            cellStyle.color = '#e91e63'
+                            cellStyle.backgroundColor = '#fce4ec'
+                            cellStyle.color = '#c62828'
                         } else if (completion > 0) {
-                            cellStyle.backgroundColor = 'rgba(158, 158, 158, 0.15)'
-                            cellStyle.color = '#aaa'
+                            cellStyle.backgroundColor = '#f5f5f5'
+                            cellStyle.color = '#6c757d'
                         }
                     }
                 } else if (field.key === 'status') {
                     value = quarterData.status || '—'
                     if (quarterData.status) {
                         const statusColors = {
-                            'Completed': '#4caf50',
-                            'On Track': 'deepskyblue',
-                            'Delayed': '#e91e63',
-                            'Not Started': '#aaa',
-                            'On Hold': '#ff9800'
+                            'Completed': '#2e7d32',
+                            'On Track': '#0d6efd',
+                            'Delayed': '#c62828',
+                            'Not Started': '#6c757d',
+                            'On Hold': '#e65100'
                         }
-                        cellStyle.color = statusColors[quarterData.status] || '#ddd'
-                        cellStyle.fontWeight = '500'
+                        cellStyle.color = statusColors[quarterData.status] || '#212529'
+                        cellStyle.fontWeight = '600'
                     }
                 } else if (field.key === 'remarks') {
                     value = quarterData.remarks || '—'
@@ -600,29 +645,99 @@ export const QuarterlyMonitoringComponent = () => {
             })
         })
 
+        // Actions cell
+        cells.push(
+            $({
+                tag: 'td',
+                style: {
+                    padding: '12px 8px',
+                    textAlign: 'center',
+                    border: '1px solid #f1f3f5',
+                    verticalAlign: 'middle',
+                    backgroundColor: '#ffffff'
+                },
+                child: [createActionButtons(item)]
+            })
+        )
+
+        // Remarks / Official Completion button cell
+        cells.push(
+            $({
+                tag: 'td',
+                style: {
+                    padding: '12px 8px',
+                    textAlign: 'center',
+                    border: '1px solid #f1f3f5',
+                    verticalAlign: 'middle',
+                    backgroundColor: '#ffffff'
+                },
+                child: [
+                    $({
+                        tag: 'button',
+                        text: item.readyForSymposium ? 'Ready for Official Completion' : 'Mark as Ready',
+                        style: {
+                            padding: '6px 12px',
+                            backgroundColor: item.readyForSymposium ? '#28a745' : 'transparent',
+                            border: item.readyForSymposium ? 'none' : '1px solid #28a745',
+                            borderRadius: '6px',
+                            color: item.readyForSymposium ? '#ffffff' : '#28a745',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                        },
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                e.stopPropagation()
+                                markReadyForSymposium(item)
+                            }
+                        },
+                        event2: {
+                            type: 'mouseenter',
+                            method: (e) => {
+                                if (!item.readyForSymposium) {
+                                    e.target.style.backgroundColor = '#28a745'
+                                    e.target.style.color = '#ffffff'
+                                }
+                            }
+                        },
+                        event3: {
+                            type: 'mouseleave',
+                            method: (e) => {
+                                if (!item.readyForSymposium) {
+                                    e.target.style.backgroundColor = 'transparent'
+                                    e.target.style.color = '#28a745'
+                                }
+                            }
+                        }
+                    })
+                ]
+            })
+        )
+
         return $({
             tag: 'tr',
             style: {
-                backgroundColor: '#2d2d2d',
+                backgroundColor: '#ffffff',
                 transition: 'all 0.2s ease'
             },
             child: cells,
             event: {
                 type: 'mouseenter',
                 method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#333'
+                    e.currentTarget.style.backgroundColor = '#f8f9fa'
                 }
             },
             event2: {
                 type: 'mouseleave',
                 method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#2d2d2d'
+                    e.currentTarget.style.backgroundColor = '#ffffff'
                 }
             }
         })
     }
 
-    // Create action buttons
     const createActionButtons = (item) => {
         return $({
             tag: 'div',
@@ -636,12 +751,18 @@ export const QuarterlyMonitoringComponent = () => {
                     tag: 'span',
                     att: { className: 'fa-solid fa-pen' },
                     style: {
-                        color: '#ffb347',
+                        color: '#6c757d',
                         cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        transition: 'all 0.2s ease'
+                        padding: '8px',
+                        borderRadius: '50%',
+                        fontSize: '16px',
+                        transition: 'all 0.2s ease',
+                        backgroundColor: 'transparent',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     },
                     title: 'Edit',
                     event: {
@@ -650,13 +771,28 @@ export const QuarterlyMonitoringComponent = () => {
                             e.stopPropagation()
                             openEditModal(item)
                         }
+                    },
+                    event2: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.target.style.backgroundColor = '#f8f9fa'
+                            e.target.style.color = '#0d6efd'
+                            e.target.style.border = '1px solid #dee2e6'
+                        }
+                    },
+                    event3: {
+                        type: 'mouseleave',
+                        method: (e) => {
+                            e.target.style.backgroundColor = 'transparent'
+                            e.target.style.color = '#6c757d'
+                            e.target.style.border = 'none'
+                        }
                     }
                 })
             ]
         })
     }
 
-    // Mark ready for symposium
     const markReadyForSymposium = async (item) => {
         try {
             showLoading()
@@ -687,12 +823,10 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Open edit modal
     const openEditModal = (item) => {
         renderModal(item)
     }
 
-    // Close modal
     const closeModal = () => {
         if (modalElement) {
             modalElement.remove()
@@ -700,7 +834,6 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Render modal
     const renderModal = (item) => {
         if (modalElement) {
             modalElement.remove()
@@ -717,40 +850,42 @@ export const QuarterlyMonitoringComponent = () => {
                 left: '0',
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: '1000',
-                fontFamily: 'Segoe UI, sans-serif'
+                fontFamily: 'Segoe UI, sans-serif',
+                backdropFilter: 'blur(4px)'
             },
             child: [
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '12px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '16px',
                         width: '700px',
                         maxWidth: '95%',
                         maxHeight: '90%',
                         overflow: 'auto',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                        border: '1px solid #444'
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                        border: '1px solid #e9ecef'
                     },
                     child: [
                         // Modal header
                         $({
                             tag: 'div',
                             style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid #444',
+                                padding: '24px 28px',
+                                borderBottom: '1px solid #e9ecef',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 position: 'sticky',
                                 top: '0',
-                                backgroundColor: '#2d2d2d',
-                                zIndex: '1'
+                                backgroundColor: '#ffffff',
+                                zIndex: '1',
+                                borderRadius: '16px 16px 0 0'
                             },
                             child: [
                                 $({
@@ -759,8 +894,8 @@ export const QuarterlyMonitoringComponent = () => {
                                     style: {
                                         margin: '0',
                                         fontSize: '18px',
-                                        fontWeight: '500',
-                                        color: '#fff'
+                                        fontWeight: '600',
+                                        color: '#212529'
                                     }
                                 }),
                                 $({
@@ -768,25 +903,23 @@ export const QuarterlyMonitoringComponent = () => {
                                     att: { className: 'fa-solid fa-times' },
                                     style: {
                                         fontSize: '20px',
-                                        color: '#888',
+                                        color: '#6c757d',
                                         cursor: 'pointer',
                                         padding: '8px',
-                                        borderRadius: '4px',
+                                        borderRadius: '8px',
                                         transition: 'all 0.2s ease'
                                     },
                                     event: {
                                         type: 'click',
                                         method: closeModal
                                     },
-                                    // Hover effect for close button
-                                    externalStyle: null,
                                     elementHandler: (el) => {
                                         el.addEventListener('mouseenter', () => {
-                                            el.style.color = '#fff';
-                                            el.style.backgroundColor = '#3a3a3a';
+                                            el.style.color = '#212529';
+                                            el.style.backgroundColor = '#f8f9fa';
                                         });
                                         el.addEventListener('mouseleave', () => {
-                                            el.style.color = '#888';
+                                            el.style.color = '#6c757d';
                                             el.style.backgroundColor = 'transparent';
                                         });
                                     }
@@ -798,7 +931,7 @@ export const QuarterlyMonitoringComponent = () => {
                             tag: 'form',
                             att: { id: 'monitoring-form' },
                             style: {
-                                padding: '24px'
+                                padding: '28px'
                             },
                             child: [
                                 // Hidden fields
@@ -837,10 +970,10 @@ export const QuarterlyMonitoringComponent = () => {
                                             text: 'Project Title',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#495057',
                                                 fontSize: '13px',
-                                                fontWeight: '500'
+                                                fontWeight: '600'
                                             }
                                         }),
                                         $({
@@ -852,13 +985,14 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#2a2a2a',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#aaa',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '8px',
+                                                color: '#495057',
                                                 fontSize: '14px',
-                                                outline: 'none'
+                                                outline: 'none',
+                                                cursor: 'default'
                                             }
                                         })
                                     ]
@@ -874,10 +1008,10 @@ export const QuarterlyMonitoringComponent = () => {
                                             text: 'Researchers',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#495057',
                                                 fontSize: '13px',
-                                                fontWeight: '500'
+                                                fontWeight: '600'
                                             }
                                         }),
                                         $({
@@ -889,246 +1023,265 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#2a2a2a',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#aaa',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Start Date
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Start Date',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'date',
-                                                name: 'startDate',
-                                                value: item.startDate || ''
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '8px',
+                                                color: '#495057',
                                                 fontSize: '14px',
                                                 outline: 'none',
-                                                transition: 'all 0.2s ease'
-                                            },
-                                            elementHandler: (el) => {
-                                                el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = 'deepskyblue';
-                                                });
-                                                el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444';
-                                                });
+                                                cursor: 'default'
                                             }
                                         })
                                     ]
                                 }),
 
-                                // Fund Source
+                                // Two-column layout for Start Date and Fund Source
                                 $({
                                     tag: 'div',
-                                    style: { marginBottom: '20px' },
+                                    style: {
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 1fr',
+                                        gap: '16px',
+                                        marginBottom: '20px'
+                                    },
                                     child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Fund Source',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '10px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
+                                        // Start Date
                                         $({
                                             tag: 'div',
-                                            style: {
-                                                display: 'flex',
-                                                gap: '20px',
-                                                marginBottom: '12px',
-                                                flexWrap: 'wrap'
-                                            },
-                                            child: ['Campus', 'University', 'Others'].map(type => {
-                                                const isOthers = type === 'Others'
-                                                const currentValue = item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
-                                                const isChecked = isOthers
-                                                    ? (currentValue && currentValue !== 'Campus' && currentValue !== 'University')
-                                                    : (currentValue === type)
-
-                                                return $({
+                                            child: [
+                                                $({
                                                     tag: 'label',
+                                                    text: 'Start Date',
                                                     style: {
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px',
-                                                        color: '#fff',
-                                                        fontSize: '14px',
-                                                        cursor: 'pointer',
-                                                        padding: '8px 12px',
-                                                        borderRadius: '6px',
-                                                        transition: 'all 0.2s ease',
-                                                        backgroundColor: isChecked ? 'rgba(0, 191, 255, 0.2)' : 'transparent'
+                                                        display: 'block',
+                                                        marginBottom: '6px',
+                                                        color: '#495057',
+                                                        fontSize: '13px',
+                                                        fontWeight: '600'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'input',
+                                                    att: {
+                                                        type: 'date',
+                                                        name: 'startDate',
+                                                        value: item.startDate || ''
                                                     },
-                                                    child: [
-                                                        $({
-                                                            tag: 'div',
-                                                            style: {
-                                                                width: '18px',
-                                                                height: '18px',
-                                                                borderRadius: '50%',
-                                                                border: `2px solid ${isChecked ? 'deepskyblue' : '#666'}`,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                transition: 'all 0.2s ease'
-                                                            },
-                                                            child: isChecked ? [
-                                                                $({
-                                                                    tag: 'div',
-                                                                    style: {
-                                                                        width: '10px',
-                                                                        height: '10px',
-                                                                        borderRadius: '50%',
-                                                                        backgroundColor: 'deepskyblue'
-                                                                    }
-                                                                })
-                                                            ] : []
-                                                        }),
-                                                        $({ tag: 'span', text: type }),
-                                                        $({
-                                                            tag: 'input',
-                                                            att: {
-                                                                type: 'radio',
-                                                                name: 'fundSourceType',
-                                                                value: type,
-                                                                checked: isChecked,
-                                                                style: 'display: none'
-                                                            },
-                                                            event: {
-                                                                type: 'change',
-                                                                method: (e) => {
-                                                                    const othersInput = document.getElementById('fund-source-others')
-                                                                    const hiddenInput = document.getElementById('fund-source-hidden')
-                                                                    // Update radio button visual styling
-                                                                    const allLabels = document.querySelectorAll('#monitoring-form label[style*="cursor: pointer"]')
-                                                                    allLabels.forEach(label => {
-                                                                        label.style.backgroundColor = 'transparent'
-                                                                        const radioDiv = label.querySelector('div:first-child')
-                                                                        if (radioDiv) {
-                                                                            radioDiv.style.borderColor = '#666'
-                                                                            const innerDot = radioDiv.querySelector('div')
-                                                                            if (innerDot) innerDot.remove()
-                                                                        }
-                                                                    })
-                                                                    // Style the selected radio
-                                                                    const parentLabel = e.target.closest('label')
-                                                                    if (parentLabel) {
-                                                                        parentLabel.style.backgroundColor = 'rgba(0, 191, 255, 0.2)'
-                                                                        const radioDiv = parentLabel.querySelector('div:first-child')
-                                                                        if (radioDiv) {
-                                                                            radioDiv.style.borderColor = 'deepskyblue'
-                                                                            if (!radioDiv.querySelector('div')) {
-                                                                                const dot = document.createElement('div')
-                                                                                dot.style.cssText = 'width: 10px; height: 10px; border-radius: 50%; background-color: deepskyblue;'
-                                                                                radioDiv.appendChild(dot)
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    if (e.target.value === 'Others') {
-                                                                        othersInput.style.display = 'block'
-                                                                        hiddenInput.value = othersInput.value
-                                                                    } else {
-                                                                        othersInput.style.display = 'none'
-                                                                        hiddenInput.value = e.target.value
-                                                                    }
-                                                                }
-                                                            }
-                                                        })
-                                                    ],
+                                                    style: {
+                                                        width: '100%',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#ffffff',
+                                                        border: '1px solid #dee2e6',
+                                                        borderRadius: '8px',
+                                                        color: '#212529',
+                                                        fontSize: '14px',
+                                                        outline: 'none',
+                                                        transition: 'all 0.2s ease'
+                                                    },
                                                     elementHandler: (el) => {
-                                                        el.addEventListener('mouseenter', () => {
-                                                            if (!el.querySelector('input').checked) {
-                                                                el.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                                                            }
+                                                        el.addEventListener('focus', () => {
+                                                            el.style.borderColor = '#0d6efd';
+                                                            el.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)';
                                                         });
-                                                        el.addEventListener('mouseleave', () => {
-                                                            if (!el.querySelector('input').checked) {
-                                                                el.style.backgroundColor = 'transparent';
-                                                            }
+                                                        el.addEventListener('blur', () => {
+                                                            el.style.borderColor = '#dee2e6';
+                                                            el.style.boxShadow = 'none';
                                                         });
                                                     }
                                                 })
-                                            })
+                                            ]
                                         }),
-                                        // Hidden input to hold the actual value sent to server
+                                        // Fund Source
                                         $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'hidden',
-                                                id: 'fund-source-hidden',
-                                                name: 'fundSource',
-                                                value: item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
-                                            }
-                                        }),
-                                        // Conditional text input for "Others"
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                id: 'fund-source-others',
-                                                type: 'text',
-                                                placeholder: 'Please specify...',
-                                                value: (item.fundSource && item.fundSource !== '—' && item.fundSource !== 'Campus' && item.fundSource !== 'University') ? item.fundSource : ''
-                                            },
-                                            style: {
-                                                display: (item.fundSource && item.fundSource !== '—' && item.fundSource !== 'Campus' && item.fundSource !== 'University') ? 'block' : 'none',
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                marginTop: '5px',
-                                                transition: 'all 0.2s ease'
-                                            },
-                                            event: {
-                                                type: 'input',
-                                                method: (e) => {
-                                                    document.getElementById('fund-source-hidden').value = e.target.value
-                                                }
-                                            },
-                                            elementHandler: (el) => {
-                                                el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = 'deepskyblue';
-                                                });
-                                                el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444';
-                                                });
-                                            }
+                                            tag: 'div',
+                                            child: [
+                                                $({
+                                                    tag: 'label',
+                                                    text: 'Fund Source',
+                                                    style: {
+                                                        display: 'block',
+                                                        marginBottom: '6px',
+                                                        color: '#495057',
+                                                        fontSize: '13px',
+                                                        fontWeight: '600'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        display: 'flex',
+                                                        gap: '12px',
+                                                        marginBottom: '8px',
+                                                        flexWrap: 'wrap'
+                                                    },
+                                                    child: ['Campus', 'University', 'Others'].map(type => {
+                                                        const isOthers = type === 'Others'
+                                                        const currentValue = item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
+                                                        const isChecked = isOthers
+                                                            ? (currentValue && currentValue !== 'Campus' && currentValue !== 'University')
+                                                            : (currentValue === type)
+
+                                                        return $({
+                                                            tag: 'label',
+                                                            style: {
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                color: '#212529',
+                                                                fontSize: '14px',
+                                                                cursor: 'pointer',
+                                                                padding: '6px 12px',
+                                                                borderRadius: '6px',
+                                                                transition: 'all 0.2s ease',
+                                                                backgroundColor: isChecked ? 'rgba(13, 110, 253, 0.1)' : 'transparent',
+                                                                border: isChecked ? '1px solid #0d6efd' : '1px solid transparent'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        width: '18px',
+                                                                        height: '18px',
+                                                                        borderRadius: '50%',
+                                                                        border: `2px solid ${isChecked ? '#0d6efd' : '#ced4da'}`,
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        transition: 'all 0.2s ease'
+                                                                    },
+                                                                    child: isChecked ? [
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            style: {
+                                                                                width: '10px',
+                                                                                height: '10px',
+                                                                                borderRadius: '50%',
+                                                                                backgroundColor: '#0d6efd'
+                                                                            }
+                                                                        })
+                                                                    ] : []
+                                                                }),
+                                                                $({ tag: 'span', text: type }),
+                                                                $({
+                                                                    tag: 'input',
+                                                                    att: {
+                                                                        type: 'radio',
+                                                                        name: 'fundSourceType',
+                                                                        value: type,
+                                                                        checked: isChecked,
+                                                                        style: 'display: none'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'change',
+                                                                        method: (e) => {
+                                                                            const othersInput = document.getElementById('fund-source-others')
+                                                                            const hiddenInput = document.getElementById('fund-source-hidden')
+                                                                            // Update radio button visual styling
+                                                                            const allLabels = document.querySelectorAll('#monitoring-form label[style*="cursor: pointer"]')
+                                                                            allLabels.forEach(label => {
+                                                                                label.style.backgroundColor = 'transparent'
+                                                                                label.style.border = '1px solid transparent'
+                                                                                const radioDiv = label.querySelector('div:first-child')
+                                                                                if (radioDiv) {
+                                                                                    radioDiv.style.borderColor = '#ced4da'
+                                                                                    const innerDot = radioDiv.querySelector('div')
+                                                                                    if (innerDot) innerDot.remove()
+                                                                                }
+                                                                            })
+                                                                            // Style the selected radio
+                                                                            const parentLabel = e.target.closest('label')
+                                                                            if (parentLabel) {
+                                                                                parentLabel.style.backgroundColor = 'rgba(13, 110, 253, 0.1)'
+                                                                                parentLabel.style.border = '1px solid #0d6efd'
+                                                                                const radioDiv = parentLabel.querySelector('div:first-child')
+                                                                                if (radioDiv) {
+                                                                                    radioDiv.style.borderColor = '#0d6efd'
+                                                                                    if (!radioDiv.querySelector('div')) {
+                                                                                        const dot = document.createElement('div')
+                                                                                        dot.style.cssText = 'width: 10px; height: 10px; border-radius: 50%; background-color: #0d6efd;'
+                                                                                        radioDiv.appendChild(dot)
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                            if (e.target.value === 'Others') {
+                                                                                othersInput.style.display = 'block'
+                                                                                hiddenInput.value = othersInput.value
+                                                                            } else {
+                                                                                othersInput.style.display = 'none'
+                                                                                hiddenInput.value = e.target.value
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                })
+                                                            ],
+                                                            elementHandler: (el) => {
+                                                                el.addEventListener('mouseenter', () => {
+                                                                    if (!el.querySelector('input').checked) {
+                                                                        el.style.backgroundColor = '#f8f9fa';
+                                                                        el.style.border = '1px solid #dee2e6';
+                                                                    }
+                                                                });
+                                                                el.addEventListener('mouseleave', () => {
+                                                                    if (!el.querySelector('input').checked) {
+                                                                        el.style.backgroundColor = 'transparent';
+                                                                        el.style.border = '1px solid transparent';
+                                                                    }
+                                                                });
+                                                            }
+                                                        })
+                                                    })
+                                                }),
+                                                // Hidden input to hold the actual value sent to server
+                                                $({
+                                                    tag: 'input',
+                                                    att: {
+                                                        type: 'hidden',
+                                                        id: 'fund-source-hidden',
+                                                        name: 'fundSource',
+                                                        value: item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
+                                                    }
+                                                }),
+                                                // Conditional text input for "Others"
+                                                $({
+                                                    tag: 'input',
+                                                    att: {
+                                                        id: 'fund-source-others',
+                                                        type: 'text',
+                                                        placeholder: 'Please specify...',
+                                                        value: (item.fundSource && item.fundSource !== '—' && item.fundSource !== 'Campus' && item.fundSource !== 'University') ? item.fundSource : ''
+                                                    },
+                                                    style: {
+                                                        display: (item.fundSource && item.fundSource !== '—' && item.fundSource !== 'Campus' && item.fundSource !== 'University') ? 'block' : 'none',
+                                                        width: '100%',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#ffffff',
+                                                        border: '1px solid #dee2e6',
+                                                        borderRadius: '8px',
+                                                        color: '#212529',
+                                                        fontSize: '14px',
+                                                        outline: 'none',
+                                                        marginTop: '8px',
+                                                        transition: 'all 0.2s ease'
+                                                    },
+                                                    event: {
+                                                        type: 'input',
+                                                        method: (e) => {
+                                                            document.getElementById('fund-source-hidden').value = e.target.value
+                                                        }
+                                                    },
+                                                    elementHandler: (el) => {
+                                                        el.addEventListener('focus', () => {
+                                                            el.style.borderColor = '#0d6efd';
+                                                            el.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)';
+                                                        });
+                                                        el.addEventListener('blur', () => {
+                                                            el.style.borderColor = '#dee2e6';
+                                                            el.style.boxShadow = 'none';
+                                                        });
+                                                    }
+                                                })
+                                            ]
                                         })
                                     ]
                                 }),
@@ -1143,10 +1296,10 @@ export const QuarterlyMonitoringComponent = () => {
                                             text: 'Location',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#495057',
                                                 fontSize: '13px',
-                                                fontWeight: '500'
+                                                fontWeight: '600'
                                             }
                                         }),
                                         $({
@@ -1159,126 +1312,141 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '8px',
+                                                color: '#212529',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 transition: 'all 0.2s ease'
                                             },
                                             elementHandler: (el) => {
-                                                el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = 'deepskyblue';
+                                                el.addEventListener('focus', () => {
+                                                    el.style.borderColor = '#0d6efd';
+                                                    el.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)';
                                                 });
-                                                el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444';
+                                                el.addEventListener('blur', () => {
+                                                    el.style.borderColor = '#dee2e6';
+                                                    el.style.boxShadow = 'none';
                                                 });
                                             }
                                         })
                                     ]
                                 }),
 
-                                // % of Completion
+                                // Two-column layout for Completion and Status
                                 $({
                                     tag: 'div',
-                                    style: { marginBottom: '20px' },
+                                    style: {
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 1fr',
+                                        gap: '16px',
+                                        marginBottom: '20px'
+                                    },
                                     child: [
+                                        // % of Completion
                                         $({
-                                            tag: 'label',
-                                            text: '% of Completion',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'number',
-                                                name: 'completion',
-                                                step: '0.01',
-                                                min: '0',
-                                                max: '100',
-                                                placeholder: '0.00',
-                                                value: currentQData.completion || ''
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                transition: 'all 0.2s ease'
-                                            },
-                                            elementHandler: (el) => {
-                                                el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = 'deepskyblue';
-                                                });
-                                                el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444';
-                                                });
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Status
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Status',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'select',
-                                            att: {
-                                                name: 'status'
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease'
-                                            },
+                                            tag: 'div',
                                             child: [
-                                                $({ tag: 'option', att: { value: '' }, text: '-- Select Status --' }),
-                                                $({ tag: 'option', att: { value: 'Not Started' }, text: 'Not Started' }),
-                                                $({ tag: 'option', att: { value: 'On Track' }, text: 'On Track' }),
-                                                $({ tag: 'option', att: { value: 'Delayed' }, text: 'Delayed' }),
-                                                $({ tag: 'option', att: { value: 'On Hold' }, text: 'On Hold' }),
-                                                $({ tag: 'option', att: { value: 'Completed' }, text: 'Completed' })
-                                            ],
-                                            elementHandler: (el) => {
-                                                el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = 'deepskyblue';
-                                                });
-                                                el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444';
-                                                });
-                                            }
+                                                $({
+                                                    tag: 'label',
+                                                    text: '% of Completion',
+                                                    style: {
+                                                        display: 'block',
+                                                        marginBottom: '6px',
+                                                        color: '#495057',
+                                                        fontSize: '13px',
+                                                        fontWeight: '600'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'input',
+                                                    att: {
+                                                        type: 'number',
+                                                        name: 'completion',
+                                                        step: '0.01',
+                                                        min: '0',
+                                                        max: '100',
+                                                        placeholder: '0.00',
+                                                        value: currentQData.completion || ''
+                                                    },
+                                                    style: {
+                                                        width: '100%',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#ffffff',
+                                                        border: '1px solid #dee2e6',
+                                                        borderRadius: '8px',
+                                                        color: '#212529',
+                                                        fontSize: '14px',
+                                                        outline: 'none',
+                                                        transition: 'all 0.2s ease'
+                                                    },
+                                                    elementHandler: (el) => {
+                                                        el.addEventListener('focus', () => {
+                                                            el.style.borderColor = '#0d6efd';
+                                                            el.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)';
+                                                        });
+                                                        el.addEventListener('blur', () => {
+                                                            el.style.borderColor = '#dee2e6';
+                                                            el.style.boxShadow = 'none';
+                                                        });
+                                                    }
+                                                })
+                                            ]
+                                        }),
+                                        // Status
+                                        $({
+                                            tag: 'div',
+                                            child: [
+                                                $({
+                                                    tag: 'label',
+                                                    text: 'Status',
+                                                    style: {
+                                                        display: 'block',
+                                                        marginBottom: '6px',
+                                                        color: '#495057',
+                                                        fontSize: '13px',
+                                                        fontWeight: '600'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'select',
+                                                    att: {
+                                                        name: 'status'
+                                                    },
+                                                    style: {
+                                                        width: '100%',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#ffffff',
+                                                        border: '1px solid #dee2e6',
+                                                        borderRadius: '8px',
+                                                        color: '#212529',
+                                                        fontSize: '14px',
+                                                        outline: 'none',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease'
+                                                    },
+                                                    child: [
+                                                        $({ tag: 'option', att: { value: '' }, text: '-- Select Status --' }),
+                                                        $({ tag: 'option', att: { value: 'Not Started' }, text: 'Not Started' }),
+                                                        $({ tag: 'option', att: { value: 'On Track' }, text: 'On Track' }),
+                                                        $({ tag: 'option', att: { value: 'Delayed' }, text: 'Delayed' }),
+                                                        $({ tag: 'option', att: { value: 'On Hold' }, text: 'On Hold' }),
+                                                        $({ tag: 'option', att: { value: 'Completed' }, text: 'Completed' })
+                                                    ],
+                                                    elementHandler: (el) => {
+                                                        el.addEventListener('focus', () => {
+                                                            el.style.borderColor = '#0d6efd';
+                                                            el.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)';
+                                                        });
+                                                        el.addEventListener('blur', () => {
+                                                            el.style.borderColor = '#dee2e6';
+                                                            el.style.boxShadow = 'none';
+                                                        });
+                                                    }
+                                                })
+                                            ]
                                         })
                                     ]
                                 }),
@@ -1293,10 +1461,10 @@ export const QuarterlyMonitoringComponent = () => {
                                             text: 'Remarks (Problems Encountered)',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#495057',
                                                 fontSize: '13px',
-                                                fontWeight: '500'
+                                                fontWeight: '600'
                                             }
                                         }),
                                         $({
@@ -1308,11 +1476,11 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '8px',
+                                                color: '#212529',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
@@ -1321,11 +1489,13 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             text: currentQData.remarks || '',
                                             elementHandler: (el) => {
-                                                el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = 'deepskyblue';
+                                                el.addEventListener('focus', () => {
+                                                    el.style.borderColor = '#0d6efd';
+                                                    el.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)';
                                                 });
-                                                el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444';
+                                                el.addEventListener('blur', () => {
+                                                    el.style.borderColor = '#dee2e6';
+                                                    el.style.boxShadow = 'none';
                                                 });
                                             }
                                         })
@@ -1342,10 +1512,10 @@ export const QuarterlyMonitoringComponent = () => {
                                             text: 'Preventive/Corrective Measures',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#495057',
                                                 fontSize: '13px',
-                                                fontWeight: '500'
+                                                fontWeight: '600'
                                             }
                                         }),
                                         $({
@@ -1357,11 +1527,11 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#ffffff',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '8px',
+                                                color: '#212529',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
@@ -1370,11 +1540,13 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             text: currentQData.measures || '',
                                             elementHandler: (el) => {
-                                                el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = 'deepskyblue';
+                                                el.addEventListener('focus', () => {
+                                                    el.style.borderColor = '#0d6efd';
+                                                    el.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)';
                                                 });
-                                                el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444';
+                                                el.addEventListener('blur', () => {
+                                                    el.style.borderColor = '#dee2e6';
+                                                    el.style.boxShadow = 'none';
                                                 });
                                             }
                                         })
@@ -1389,7 +1561,7 @@ export const QuarterlyMonitoringComponent = () => {
                                         justifyContent: 'flex-end',
                                         gap: '12px',
                                         marginTop: '24px',
-                                        borderTop: '1px solid #444',
+                                        borderTop: '1px solid #e9ecef',
                                         paddingTop: '20px'
                                     },
                                     child: [
@@ -1400,10 +1572,11 @@ export const QuarterlyMonitoringComponent = () => {
                                             style: {
                                                 padding: '10px 24px',
                                                 backgroundColor: 'transparent',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#aaa',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '8px',
+                                                color: '#6c757d',
                                                 fontSize: '14px',
+                                                fontWeight: '500',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.2s ease'
                                             },
@@ -1413,13 +1586,13 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             elementHandler: (el) => {
                                                 el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = 'deepskyblue';
-                                                    el.style.color = 'deepskyblue';
-                                                    el.style.backgroundColor = 'rgba(0, 191, 255, 0.05)';
+                                                    el.style.borderColor = '#0d6efd';
+                                                    el.style.color = '#0d6efd';
+                                                    el.style.backgroundColor = '#f8f9fa';
                                                 });
                                                 el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444';
-                                                    el.style.color = '#aaa';
+                                                    el.style.borderColor = '#dee2e6';
+                                                    el.style.color = '#6c757d';
                                                     el.style.backgroundColor = 'transparent';
                                                 });
                                             }
@@ -1429,14 +1602,16 @@ export const QuarterlyMonitoringComponent = () => {
                                             att: { type: 'button' },
                                             text: 'Save Changes',
                                             style: {
-                                                padding: '10px 24px',
-                                                backgroundColor: 'deepskyblue',
+                                                padding: '10px 28px',
+                                                backgroundColor: '#0d6efd',
                                                 border: 'none',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                borderRadius: '8px',
+                                                color: '#ffffff',
                                                 fontSize: '14px',
+                                                fontWeight: '500',
                                                 cursor: 'pointer',
-                                                transition: 'all 0.2s ease'
+                                                transition: 'all 0.2s ease',
+                                                boxShadow: '0 2px 8px rgba(13, 110, 253, 0.3)'
                                             },
                                             event: {
                                                 type: 'click',
@@ -1444,14 +1619,14 @@ export const QuarterlyMonitoringComponent = () => {
                                             },
                                             elementHandler: (el) => {
                                                 el.addEventListener('mouseenter', () => {
-                                                    el.style.backgroundColor = '#00bfff';
-                                                    el.style.transform = 'translateY(-1px)';
-                                                    el.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+                                                    el.style.backgroundColor = '#0b5ed7';
+                                                    el.style.transform = 'translateY(-2px)';
+                                                    el.style.boxShadow = '0 4px 15px rgba(13, 110, 253, 0.4)';
                                                 });
                                                 el.addEventListener('mouseleave', () => {
-                                                    el.style.backgroundColor = 'deepskyblue';
+                                                    el.style.backgroundColor = '#0d6efd';
                                                     el.style.transform = 'translateY(0)';
-                                                    el.style.boxShadow = 'none';
+                                                    el.style.boxShadow = '0 2px 8px rgba(13, 110, 253, 0.3)';
                                                 });
                                             }
                                         })
@@ -1475,7 +1650,6 @@ export const QuarterlyMonitoringComponent = () => {
         }, 100)
     }
 
-    // Save monitoring data
     const saveMonitoringData = async () => {
         const form = document.getElementById('monitoring-form')
         const formData = new FormData(form)
@@ -1505,7 +1679,6 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Refresh data
     const refreshData = async () => {
         monitoringData = []
         filteredData = []
@@ -1517,7 +1690,6 @@ export const QuarterlyMonitoringComponent = () => {
         await fetchMonitoringData(null, 'next', null, category, currentQuarter, currentYear, center, campus)
     }
 
-    // Update filter buttons styles
     const updateFilterButtons = (activeFilter) => {
         const filterButtons = document.querySelectorAll('.filter-btn')
 
@@ -1536,7 +1708,6 @@ export const QuarterlyMonitoringComponent = () => {
         })
     }
 
-    // Update quarter buttons styles
     const updateQuarterButtons = (activeQuarter) => {
         const quarterButtons = document.querySelectorAll('.quarter-btn')
         quarterButtons.forEach(button => {
@@ -1552,8 +1723,7 @@ export const QuarterlyMonitoringComponent = () => {
             }
         })
     }
-
-    // Filter bar component
+    
     const FilterBar = () => {
         return $({
             tag: 'div',
@@ -1563,8 +1733,8 @@ export const QuarterlyMonitoringComponent = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '16px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e9ecef',
                 flexWrap: 'wrap',
                 gap: '15px'
             },
@@ -1589,13 +1759,13 @@ export const QuarterlyMonitoringComponent = () => {
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-chart-line' },
-                                    style: { color: 'deepskyblue', fontSize: '22px' }
+                                    style: { color: '#0d6efd', fontSize: '22px' }
                                 }),
                                 $({
                                     tag: 'h2',
                                     text: 'Quarterly Monitoring',
                                     style: {
-                                        color: '#fff',
+                                        color: '#212529',
                                         fontFamily: 'Segoe UI, sans-serif',
                                         fontSize: '22px',
                                         fontWeight: '600',
@@ -1607,13 +1777,13 @@ export const QuarterlyMonitoringComponent = () => {
                                     tag: 'span',
                                     att: { className: 'record-count' },
                                     style: {
-                                        backgroundColor: '#333',
-                                        color: '#aaa',
+                                        backgroundColor: '#f1f3f5',
+                                        color: '#6c757d',
                                         padding: '4px 10px',
                                         borderRadius: '20px',
                                         fontSize: '12px',
                                         fontFamily: 'monospace',
-                                        border: '1px solid #444'
+                                        border: '1px solid #dee2e6'
                                     },
                                     text: '0 of 0 records'
                                 })
@@ -1625,13 +1795,12 @@ export const QuarterlyMonitoringComponent = () => {
                             style: {
                                 display: 'flex',
                                 gap: '12px',
-                                backgroundColor: '#333',
+                                backgroundColor: '#f8f9fa',
                                 padding: '4px 12px',
                                 borderRadius: '12px',
-                                border: '1px solid #444'
+                                border: '1px solid #dee2e6'
                             },
                             child: [
-
                                 $({
                                     tag: 'select',
                                     att: { className: 'year-select' },
@@ -1640,7 +1809,7 @@ export const QuarterlyMonitoringComponent = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none'
@@ -1669,7 +1838,7 @@ export const QuarterlyMonitoringComponent = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
@@ -1689,7 +1858,6 @@ export const QuarterlyMonitoringComponent = () => {
                                             const selectedCenter = e.target.value
                                             currentCenter = selectedCenter
 
-                                            // Mapping for UI highlight
                                             const centerToCategory = {
                                                 "Crop Science Research & Developement Center (CSRDC)": "Natural / Biological",
                                                 "Livestock Research & Development Center (LRDC)": "Natural / Biological",
@@ -1701,7 +1869,6 @@ export const QuarterlyMonitoringComponent = () => {
                                                 "Extension (Extension)": "Extension"
                                             }
 
-                                            // Update category active state based on center
                                             if (selectedCenter === 'All Centers') {
                                                 currentCategory = 'All Categories'
                                             } else if (centerToCategory[selectedCenter]) {
@@ -1723,7 +1890,7 @@ export const QuarterlyMonitoringComponent = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
@@ -1753,10 +1920,10 @@ export const QuarterlyMonitoringComponent = () => {
                             style: {
                                 display: 'flex',
                                 gap: '8px',
-                                backgroundColor: '#333',
+                                backgroundColor: '#f1f3f5',
                                 padding: '4px',
                                 borderRadius: '12px',
-                                border: '1px solid #444'
+                                border: '1px solid #dee2e6'
                             },
                             child: categories.map(cat =>
                                 $({
@@ -1764,11 +1931,11 @@ export const QuarterlyMonitoringComponent = () => {
                                     att: { className: 'filter-btn', 'data-filter': cat },
                                     text: cat,
                                     style: {
-                                        backgroundColor: cat === currentCategory ? 'deepskyblue' : 'transparent',
+                                        backgroundColor: cat === currentCategory ? '#0d6efd' : 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 16px',
-                                        color: cat === currentCategory ? '#fff' : '#aaa',
+                                        color: cat === currentCategory ? '#ffffff' : '#495057',
                                         fontSize: '12px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
@@ -1782,6 +1949,24 @@ export const QuarterlyMonitoringComponent = () => {
                                             currentCategory = cat
                                             await refreshData()
                                             updateFilterButtons(cat)
+                                        }
+                                    },
+                                    event2: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            if (cat !== currentCategory) {
+                                                e.target.style.backgroundColor = '#e9ecef'
+                                                e.target.style.color = '#212529'
+                                            }
+                                        }
+                                    },
+                                    event3: {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            if (cat !== currentCategory) {
+                                                e.target.style.backgroundColor = 'transparent'
+                                                e.target.style.color = '#495057'
+                                            }
                                         }
                                     }
                                 })
@@ -1804,7 +1989,7 @@ export const QuarterlyMonitoringComponent = () => {
                             style: {
                                 position: 'absolute',
                                 left: '14px',
-                                color: '#666',
+                                color: '#6c757d',
                                 fontSize: '14px',
                                 zIndex: '1'
                             }
@@ -1817,17 +2002,31 @@ export const QuarterlyMonitoringComponent = () => {
                                 className: 'monitoring-search-input'
                             },
                             style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #dee2e6',
                                 borderRadius: '30px',
                                 padding: '10px 16px 10px 42px',
-                                color: '#fff',
+                                color: '#212529',
                                 fontSize: '14px',
                                 width: '260px',
                                 outline: 'none',
                                 transition: 'all 0.3s ease'
                             },
                             event: {
+                                type: 'focus',
+                                method: (e) => {
+                                    e.target.style.borderColor = '#0d6efd'
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                }
+                            },
+                            event2: {
+                                type: 'blur',
+                                method: (e) => {
+                                    e.target.style.borderColor = '#dee2e6'
+                                    e.target.style.boxShadow = 'none'
+                                }
+                            },
+                            event3: {
                                 type: 'input',
                                 method: debounce(async (e) => {
                                     const term = e.target.value.trim()
@@ -1861,10 +2060,10 @@ export const QuarterlyMonitoringComponent = () => {
                     style: {
                         display: 'flex',
                         gap: '8px',
-                        backgroundColor: '#333',
+                        backgroundColor: '#f1f3f5',
                         padding: '4px',
                         borderRadius: '12px',
-                        border: '1px solid #444'
+                        border: '1px solid #dee2e6'
                     },
                     child: quarters.map(q =>
                         $({
@@ -1872,11 +2071,11 @@ export const QuarterlyMonitoringComponent = () => {
                             att: { className: 'quarter-btn' },
                             text: q.value,
                             style: {
-                                backgroundColor: q.value === currentQuarter ? 'deepskyblue' : 'transparent',
+                                backgroundColor: q.value === currentQuarter ? '#0d6efd' : 'transparent',
                                 border: 'none',
                                 borderRadius: '8px',
                                 padding: '8px 16px',
-                                color: q.value === currentQuarter ? '#fff' : '#aaa',
+                                color: q.value === currentQuarter ? '#ffffff' : '#495057',
                                 fontSize: '12px',
                                 fontWeight: '500',
                                 cursor: 'pointer',
@@ -1890,7 +2089,24 @@ export const QuarterlyMonitoringComponent = () => {
                                     currentQuarter = q.value
                                     await refreshData()
                                     updateQuarterButtons(q.value)
-
+                                }
+                            },
+                            event2: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    if (q.value !== currentQuarter) {
+                                        e.target.style.backgroundColor = '#e9ecef'
+                                        e.target.style.color = '#212529'
+                                    }
+                                }
+                            },
+                            event3: {
+                                type: 'mouseleave',
+                                method: (e) => {
+                                    if (q.value !== currentQuarter) {
+                                        e.target.style.backgroundColor = 'transparent'
+                                        e.target.style.color = '#495057'
+                                    }
                                 }
                             }
                         })
@@ -1900,15 +2116,12 @@ export const QuarterlyMonitoringComponent = () => {
         })
     }
 
-    // Statistics cards - Combined: 5 main stats + Ongoing & Completed
     const StatsCards = () => {
-        // Helper function to convert hex color to RGB
         const hexToRgb = (hex) => {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '255, 255, 255';
         };
 
-        // Helper function to open a component in a modal
         const openComponentModal = (title, ComponentFn) => {
             const modal = $({
                 tag: 'div',
@@ -1918,27 +2131,27 @@ export const QuarterlyMonitoringComponent = () => {
                     left: '0',
                     width: '100%',
                     height: '100%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
                     zIndex: '5000',
                     fontFamily: 'Segoe UI, sans-serif',
-                    backdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(4px)'
                 },
                 child: [
                     $({
                         tag: 'div',
                         style: {
-                            backgroundColor: '#1a1a1a',
-                            borderRadius: '20px',
+                            backgroundColor: '#ffffff',
+                            borderRadius: '16px',
                             width: '95vw',
                             height: '92vh',
                             display: 'flex',
                             flexDirection: 'column',
                             overflow: 'hidden',
-                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-                            border: '1px solid #333'
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                            border: '1px solid #e9ecef'
                         },
                         child: [
                             // Header
@@ -1946,11 +2159,11 @@ export const QuarterlyMonitoringComponent = () => {
                                 tag: 'div',
                                 style: {
                                     padding: '18px 28px',
-                                    borderBottom: '1px solid #333',
+                                    borderBottom: '1px solid #e9ecef',
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    backgroundColor: '#222'
+                                    backgroundColor: '#ffffff'
                                 },
                                 child: [
                                     $({
@@ -1960,16 +2173,16 @@ export const QuarterlyMonitoringComponent = () => {
                                             margin: '0',
                                             fontSize: '22px',
                                             fontWeight: '600',
-                                            color: '#fff',
+                                            color: '#212529',
                                             letterSpacing: '-0.5px'
                                         }
                                     }),
                                     $({
                                         tag: 'button',
                                         style: {
-                                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                            backgroundColor: 'transparent',
                                             border: 'none',
-                                            color: '#aaa',
+                                            color: '#6c757d',
                                             width: '36px',
                                             height: '36px',
                                             borderRadius: '50%',
@@ -1983,20 +2196,6 @@ export const QuarterlyMonitoringComponent = () => {
                                         event: {
                                             type: 'click',
                                             method: () => modal.remove()
-                                        },
-                                        event2: {
-                                            type: 'mouseenter',
-                                            method: (e) => {
-                                                e.currentTarget.style.backgroundColor = 'rgba(244, 67, 54, 0.2)'
-                                                e.currentTarget.style.color = '#f44336'
-                                            }
-                                        },
-                                        event3: {
-                                            type: 'mouseleave',
-                                            method: (e) => {
-                                                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'
-                                                e.currentTarget.style.color = '#aaa'
-                                            }
                                         }
                                     })
                                 ]
@@ -2007,7 +2206,7 @@ export const QuarterlyMonitoringComponent = () => {
                                 style: {
                                     flex: '1',
                                     overflow: 'hidden',
-                                    backgroundColor: '#2a2a2a'
+                                    backgroundColor: '#f8f9fa'
                                 },
                                 child: [ComponentFn()]
                             })
@@ -2019,26 +2218,30 @@ export const QuarterlyMonitoringComponent = () => {
             document.body.appendChild(modal)
         }
 
-        // Helper function to create a stat card with hover effects
+        // Helper function to create a stat card with CSS hover effects
         const createStatCard = (iconClass, iconColor, label, onClick = null, value = '0', id = null) => {
-            // Convert color to RGB values for rgba manipulation
             const rgbValues = hexToRgb(iconColor);
 
             const card = $({
                 tag: 'div',
-                att: { className: 'stat-card' },
+                att: { 
+                    className: 'stat-card',
+                    'data-icon-color': iconColor,
+                    'data-rgb': rgbValues
+                },
                 style: {
-                    backgroundColor: '#2d2d2d',
-                    borderRadius: '16px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
                     padding: '18px 22px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
-                    border: '1px solid #444',
+                    border: '1px solid #e9ecef',
                     cursor: onClick ? 'pointer' : 'default',
                     transition: 'all 0.3s ease',
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
                 },
                 child: [
                     // Background glow effect
@@ -2051,7 +2254,7 @@ export const QuarterlyMonitoringComponent = () => {
                             left: '0',
                             width: '100%',
                             height: '100%',
-                            background: `radial-gradient(circle at 70% 30%, rgba(${rgbValues}, 0.08) 0%, transparent 70%)`,
+                            background: `radial-gradient(circle at 70% 30%, rgba(${rgbValues}, 0.06) 0%, transparent 70%)`,
                             opacity: '0',
                             transition: 'opacity 0.3s ease',
                             pointerEvents: 'none'
@@ -2064,12 +2267,12 @@ export const QuarterlyMonitoringComponent = () => {
                         style: {
                             width: '54px',
                             height: '54px',
-                            borderRadius: '16px',
-                            backgroundColor: `rgba(${rgbValues}, 0.15)`,
+                            borderRadius: '12px',
+                            backgroundColor: `rgba(${rgbValues}, 0.10)`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            border: `1px solid rgba(${rgbValues}, 0.3)`,
+                            border: `1px solid rgba(${rgbValues}, 0.15)`,
                             transition: 'all 0.3s ease',
                             flexShrink: '0'
                         },
@@ -2102,7 +2305,7 @@ export const QuarterlyMonitoringComponent = () => {
                                 style: {
                                     fontSize: '32px',
                                     fontWeight: '700',
-                                    color: '#fff',
+                                    color: '#212529',
                                     lineHeight: '1.2',
                                     transition: 'color 0.3s ease'
                                 }
@@ -2113,7 +2316,7 @@ export const QuarterlyMonitoringComponent = () => {
                                 text: label,
                                 style: {
                                     fontSize: '13px',
-                                    color: '#aaa',
+                                    color: '#6c757d',
                                     fontWeight: '500',
                                     transition: 'color 0.3s ease',
                                     whiteSpace: 'nowrap',
@@ -2130,63 +2333,6 @@ export const QuarterlyMonitoringComponent = () => {
                 card.addEventListener('click', onClick);
             }
 
-            // Add hover effects only if clickable or always for visual feedback
-            card.addEventListener('mouseenter', function (e) {
-                card.style.transform = 'translateY(-4px)';
-                card.style.borderColor = iconColor;
-                card.style.boxShadow = `0 8px 24px rgba(${rgbValues}, 0.15)`;
-                card.style.backgroundColor = '#363636';
-
-                const glow = card.querySelector('.card-glow');
-                if (glow) glow.style.opacity = '1';
-
-                const iconContainer = card.querySelector('.stat-icon-container');
-                if (iconContainer) {
-                    iconContainer.style.transform = 'scale(1.1)';
-                    iconContainer.style.backgroundColor = `rgba(${rgbValues}, 0.25)`;
-                    iconContainer.style.borderColor = `rgba(${rgbValues}, 0.5)`;
-
-                    const icon = iconContainer.querySelector('span');
-                    if (icon) {
-                        icon.style.transform = 'scale(1.15) rotate(5deg)';
-                    }
-                }
-
-                const statValue = card.querySelector('.stat-value');
-                if (statValue) statValue.style.color = iconColor;
-
-                const statLabel = card.querySelector('.stat-label');
-                if (statLabel) statLabel.style.color = '#ccc';
-            });
-
-            card.addEventListener('mouseleave', function (e) {
-                card.style.transform = 'translateY(0)';
-                card.style.borderColor = '#444';
-                card.style.boxShadow = 'none';
-                card.style.backgroundColor = '#2d2d2d';
-
-                const glow = card.querySelector('.card-glow');
-                if (glow) glow.style.opacity = '0';
-
-                const iconContainer = card.querySelector('.stat-icon-container');
-                if (iconContainer) {
-                    iconContainer.style.transform = 'scale(1)';
-                    iconContainer.style.backgroundColor = `rgba(${rgbValues}, 0.15)`;
-                    iconContainer.style.borderColor = `rgba(${rgbValues}, 0.3)`;
-
-                    const icon = iconContainer.querySelector('span');
-                    if (icon) {
-                        icon.style.transform = 'scale(1) rotate(0deg)';
-                    }
-                }
-
-                const statValue = card.querySelector('.stat-value');
-                if (statValue) statValue.style.color = '#fff';
-
-                const statLabel = card.querySelector('.stat-label');
-                if (statLabel) statLabel.style.color = '#aaa';
-            });
-
             return card;
         };
 
@@ -2198,40 +2344,63 @@ export const QuarterlyMonitoringComponent = () => {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444'
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e9ecef'
             },
             child: [
                 // Total On-Going Projects
                 $({
                     tag: 'div',
+                    att: { className: 'stat-card stat-card-ongoing' },
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '16px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '12px',
                         padding: '18px 22px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e9ecef',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'default',
+                        position: 'relative',
+                        overflow: 'hidden'
                     },
                     child: [
+                        // Glow effect
+                        $({
+                            tag: 'div',
+                            style: {
+                                position: 'absolute',
+                                top: '0',
+                                left: '0',
+                                width: '100%',
+                                height: '100%',
+                                background: 'radial-gradient(circle at 70% 30%, rgba(13, 110, 253, 0.06) 0%, transparent 70%)',
+                                opacity: '0',
+                                transition: 'opacity 0.3s ease',
+                                pointerEvents: 'none'
+                            }
+                        }),
                         $({
                             tag: 'div',
                             style: {
                                 width: '54px',
                                 height: '54px',
-                                borderRadius: '16px',
-                                backgroundColor: 'rgba(0, 191, 255, 0.15)',
+                                borderRadius: '12px',
+                                backgroundColor: 'rgba(13, 110, 253, 0.10)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(0, 191, 255, 0.3)'
+                                border: '1px solid rgba(13, 110, 253, 0.15)',
+                                transition: 'all 0.3s ease',
+                                flexShrink: '0'
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-diagram-project' },
-                                    style: { color: 'deepskyblue', fontSize: '26px' }
+                                    style: { color: '#0d6efd', fontSize: '26px', transition: 'all 0.3s ease' }
                                 })
                             ]
                         }),
@@ -2246,8 +2415,9 @@ export const QuarterlyMonitoringComponent = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
-                                        lineHeight: '1.2'
+                                        color: '#212529',
+                                        lineHeight: '1.2',
+                                        transition: 'color 0.3s ease'
                                     }
                                 }),
                                 $({
@@ -2255,8 +2425,9 @@ export const QuarterlyMonitoringComponent = () => {
                                     text: 'On-Going',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
-                                        fontWeight: '500'
+                                        color: '#6c757d',
+                                        fontWeight: '500',
+                                        transition: 'color 0.3s ease'
                                     }
                                 })
                             ]
@@ -2266,33 +2437,56 @@ export const QuarterlyMonitoringComponent = () => {
                 // Completed Research
                 $({
                     tag: 'div',
+                    att: { className: 'stat-card stat-card-completed' },
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '16px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '12px',
                         padding: '18px 22px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e9ecef',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'default',
+                        position: 'relative',
+                        overflow: 'hidden'
                     },
                     child: [
+                        // Glow effect
+                        $({
+                            tag: 'div',
+                            style: {
+                                position: 'absolute',
+                                top: '0',
+                                left: '0',
+                                width: '100%',
+                                height: '100%',
+                                background: 'radial-gradient(circle at 70% 30%, rgba(40, 167, 69, 0.06) 0%, transparent 70%)',
+                                opacity: '0',
+                                transition: 'opacity 0.3s ease',
+                                pointerEvents: 'none'
+                            }
+                        }),
                         $({
                             tag: 'div',
                             style: {
                                 width: '54px',
                                 height: '54px',
-                                borderRadius: '16px',
-                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                                borderRadius: '12px',
+                                backgroundColor: 'rgba(40, 167, 69, 0.10)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(76, 175, 80, 0.3)'
+                                border: '1px solid rgba(40, 167, 69, 0.15)',
+                                transition: 'all 0.3s ease',
+                                flexShrink: '0'
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-check-circle' },
-                                    style: { color: '#4caf50', fontSize: '26px' }
+                                    style: { color: '#28a745', fontSize: '26px', transition: 'all 0.3s ease' }
                                 })
                             ]
                         }),
@@ -2307,8 +2501,9 @@ export const QuarterlyMonitoringComponent = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
-                                        lineHeight: '1.2'
+                                        color: '#212529',
+                                        lineHeight: '1.2',
+                                        transition: 'color 0.3s ease'
                                     }
                                 }),
                                 $({
@@ -2316,8 +2511,9 @@ export const QuarterlyMonitoringComponent = () => {
                                     text: 'Completed',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
-                                        fontWeight: '500'
+                                        color: '#6c757d',
+                                        fontWeight: '500',
+                                        transition: 'color 0.3s ease'
                                     }
                                 })
                             ]
@@ -2325,39 +2521,32 @@ export const QuarterlyMonitoringComponent = () => {
                     ]
                 }),
                 // Publications
-                createStatCard('fa-solid fa-book-open', '#ff9800', 'Publications', () => openComponentModal('Publications', Publication), currentStats.publications || 0),
-
+                createStatCard('fa-solid fa-book-open', '#fd7e14', 'Publications', () => openComponentModal('Publications', Publication), currentStats.publications || 0),
                 // Presentations
-                createStatCard('fa-solid fa-chalkboard-user', '#e91e63', 'Presentations', () => openComponentModal('Presentations', PresentationResearch), currentStats.presentations || 0),
-
+                createStatCard('fa-solid fa-chalkboard-user', '#dc3545', 'Presentations', () => openComponentModal('Presentations', PresentationResearch), currentStats.presentations || 0),
                 // IP Assets
-                createStatCard('fa-solid fa-trophy', '#9c27b0', 'IP Assets', () => openComponentModal('IP Assets', PatentUM), currentStats.assets || 0),
-
+                createStatCard('fa-solid fa-trophy', '#6f42c1', 'IP Assets', () => openComponentModal('IP Assets', PatentUM), currentStats.assets || 0),
                 // Collaborations
-                createStatCard('fa-solid fa-handshake', '#009688', 'Collaborations', null, currentStats.collaborations || 0),
-
+                createStatCard('fa-solid fa-handshake', '#20c997', 'Collaborations', null, currentStats.collaborations || 0),
                 // Research Activity Conducted
-                createStatCard('fa-solid fa-flask', '#3f51b5', 'Research Activity Conducted', null, currentStats.activityConducted || 0)
+                createStatCard('fa-solid fa-flask', '#4e5b9c', 'Research Activity Conducted', null, currentStats.activityConducted || 0)
             ]
-        });
-    };
-
-    // Main table component
+        })
+    }
+  
     const DataTable = () => {
-        // Create colgroup
         const colgroup = $({ tag: 'colgroup' })
 
-        // 6 fixed columns
         const fixedWidths = ['50px', '280px', '160px', '90px', '110px', '120px']
         fixedWidths.forEach(w => {
             colgroup.appendChild($({ tag: 'col', style: { width: w } }))
         })
 
-        // 1 quarter × 4 sub-columns = 4 columns
         const subWidths = ['100px', '160px', '220px', '220px']
         subWidths.forEach(w => {
             colgroup.appendChild($({ tag: 'col', style: { width: w } }))
         })
+        
         return $({
             tag: 'div',
             style: {
@@ -2365,7 +2554,7 @@ export const QuarterlyMonitoringComponent = () => {
                 height: 'calc(100% - 280px)',
                 overflowX: 'auto',
                 overflowY: 'auto',
-                backgroundColor: '#2a2a2a',
+                backgroundColor: '#ffffff',  // Change this line from '#2a2a2a' to '#ffffff'
                 position: 'relative'
             },
             elementHandler: (el) => {
@@ -2398,40 +2587,45 @@ export const QuarterlyMonitoringComponent = () => {
     }
 
     const TableHeader = () => {
-        // ROW 1 - Single row header
         const row1 = $({ tag: 'tr' })
 
-        // All table headers
         const fixedHeaders = [
             'NO.',
-            'PROGRAM/PROJECT/STUDY TITLE\n(under each program, indicate project components, & under each project, indicate study components)',
+            'PROGRAM/PROJECT/STUDY TITLE',
             'RESEARCHER/S',
             'START DATE',
             'FUND SOURCE',
             'LOCATION',
             '% of Completion',
-            'Status of the program/project/study',
-            'Remarks (Problems Encountered)',
-            'Preventive/Corrective Measures to address problems'
+            'Status',
+            'Remarks',
+            'Measures',
+            'Actions',
+            'Mark As'
         ]
 
         fixedHeaders.forEach(header => {
-            const isCenter = ['NO.', '% of Completion', 'Status of the program/project/study'].includes(header)
+            const isCenter = ['NO.', '% of Completion', 'Status'].includes(header)
 
             const th = $({
                 tag: 'th',
                 text: header,
                 style: {
-                    padding: '14px 8px',
+                    padding: '12px 8px',
                     textAlign: isCenter ? 'center' : 'left',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fontWeight: '600',
-                    color: '#fff',
-                    backgroundColor: '#2d2d2d',
-                    border: '1px solid #444',
+                    color: '#495057',
+                    backgroundColor: '#f8f9fa',
+                    borderBottom: '2px solid #dee2e6',
                     whiteSpace: 'normal',
                     wordBreak: 'break-word',
-                    verticalAlign: 'middle'
+                    verticalAlign: 'middle',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    position: 'sticky',
+                    top: '0',
+                    zIndex: '10'
                 }
             })
             row1.appendChild(th)
@@ -2443,7 +2637,6 @@ export const QuarterlyMonitoringComponent = () => {
         })
     }
 
-    // Show notification
     const showNotification = (message, type = 'info') => {
         const notification = $({
             tag: 'div',
@@ -2472,7 +2665,6 @@ export const QuarterlyMonitoringComponent = () => {
         }, 3000)
     }
 
-    // Debounce helper
     function debounce(func, wait) {
         let timeout
         return function executedFunction(...args) {
@@ -2485,14 +2677,14 @@ export const QuarterlyMonitoringComponent = () => {
         }
     }
 
-    // Main container
     return $({
         tag: 'div',
         att: { className: 'monitoring-container' },
+        externalStyle: '/client/component/rdeStaff/style/monitoring.css',
         style: {
             width: '100%',
             height: '100%',
-            backgroundColor: '#2a2a2a',
+            backgroundColor: '#ffffff',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
