@@ -4,15 +4,13 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
-// Force JSON response for API calls
-if (strpos($_SERVER['REQUEST_URI'], '/loginAuth') !== false || 
-    strpos($_SERVER['REQUEST_URI'], '/server/authToken.php') !== false) {
+if (isset($_POST['auth']) || strpos($_SERVER['REQUEST_URI'], '/loginAuth') !== false) {
     header('Content-Type: application/json; charset=utf-8');
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type');
 }
+
+error_reporting(0); 
+ini_set('display_errors', 0); 
+ini_set('log_errors', 1); 
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
