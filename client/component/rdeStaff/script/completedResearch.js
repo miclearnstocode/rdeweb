@@ -31,7 +31,7 @@ export const CompletedResearch = () => {
         categories: []
     };
 
-    // Index types with their colors (matched with publication module)
+    // Index types with their colors
     const indexTypes = [
         { value: 'refereed', label: 'Refereed', color: '#ffffff', bgColor: '#2a2a2a' },
         { value: 'scopus', label: 'Scopus', color: '#000000', bgColor: '#ffd700' },
@@ -50,7 +50,6 @@ export const CompletedResearch = () => {
         'Dumarao'
     ];
 
-    // Header columns based on structure provided by user
     const columns = [
         { field: 'paperTrailNo', header: 'PAPER TRAIL NO.', width: '80px' },
         { field: 'campus', header: 'CAMPUS/CENTER', width: '100px' },
@@ -186,23 +185,63 @@ export const CompletedResearch = () => {
 
     const showEmptyState = (el) => {
         const emptyState = $({
-            tag: 'div',
-            att: { className: 'empty-state' },
-            style: {
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', height: '200px', width: '100%',
-                color: '#888', fontFamily: 'Segoe UI, sans-serif'
-            },
+            tag: 'tr',
+            style: { backgroundColor: '#ffffff' },
             child: [
                 $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-folder-open' },
-                    style: { fontSize: '48px', marginBottom: '16px', opacity: 0.5 }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'No completed research records found',
-                    style: { fontSize: '16px', marginBottom: '8px' }
+                    tag: 'td',
+                    att: { colSpan: columns.length },
+                    style: {
+                        padding: '60px 20px',
+                        border: 'none',
+                        backgroundColor: '#ffffff'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            att: { className: 'empty-state' },
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '200px',
+                                width: '100%',
+                                color: '#6c757d',
+                                fontFamily: 'Segoe UI, sans-serif'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-folder-open' },
+                                    style: {
+                                        fontSize: '48px',
+                                        marginBottom: '16px',
+                                        opacity: 0.3,
+                                        color: '#0d6efd'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'No completed research records found',
+                                    style: {
+                                        fontSize: '18px',
+                                        marginBottom: '8px',
+                                        color: '#212529',
+                                        fontWeight: '500'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'Adjust your filters or try a different search term',
+                                    style: {
+                                        fontSize: '14px',
+                                        color: '#6c757d'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
                 })
             ]
         });
@@ -210,15 +249,47 @@ export const CompletedResearch = () => {
     };
 
     const SearchBar = () => {
+        const filterSelectStyle = {
+            backgroundColor: '#ffffff',
+            border: '1px solid #dee2e6',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            color: '#212529',
+            fontSize: '13px',
+            outline: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+        };
+
         const searchInput = $({
             tag: 'input',
             att: { type: 'text', placeholder: 'Search for research title', className: 'research-search-input' },
             style: {
-                backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid #444',
-                borderRadius: '20px', padding: '8px 16px', color: '#fff',
-                fontSize: '14px', width: '250px', outline: 'none', transition: 'all 0.3s ease'
+                backgroundColor: '#ffffff',
+                border: '1px solid #dee2e6',
+                borderRadius: '20px',
+                padding: '8px 16px',
+                color: '#212529',
+                fontSize: '14px',
+                width: '250px',
+                outline: 'none',
+                transition: 'all 0.3s ease'
             },
             event: {
+                type: 'focus',
+                method: (e) => {
+                    e.target.style.borderColor = '#0d6efd';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)';
+                }
+            },
+            event2: {
+                type: 'blur',
+                method: (e) => {
+                    e.target.style.borderColor = '#dee2e6';
+                    e.target.style.boxShadow = 'none';
+                }
+            },
+            event3: {
                 type: 'input',
                 method: debounce((e) => {
                     filters.search = e.target.value;
@@ -226,17 +297,6 @@ export const CompletedResearch = () => {
                 }, 400)
             }
         });
-
-        const filterSelectStyle = {
-            backgroundColor: '#333',
-            border: '1px solid #444',
-            borderRadius: '8px',
-            padding: '8px 12px',
-            color: '#ddd',
-            fontSize: '13px',
-            outline: 'none',
-            cursor: 'pointer'
-        };
 
         const eventFilter = $({
             tag: 'select',
@@ -300,22 +360,58 @@ export const CompletedResearch = () => {
         return $({
             tag: 'div',
             style: {
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '16px 24px', backgroundColor: '#2a2a2a', borderBottom: '1px solid #444'
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '16px 24px',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e9ecef',
+                flexWrap: 'wrap',
+                gap: '12px'
             },
             child: [
                 $({
                     tag: 'div',
                     style: { display: 'flex', alignItems: 'center', gap: '12px' },
                     child: [
-                        $({ tag: 'span', att: { className: 'fa-solid fa-table' }, style: { color: 'deepskyblue', fontSize: '20px' } }),
-                        $({ tag: 'h2', text: 'Completed Research', style: { color: '#fff', fontSize: '20px', fontWeight: '500', margin: '0' } }),
-                        $({ tag: 'span', att: { className: 'research-count' }, style: { backgroundColor: '#444', color: '#ddd', padding: '2px 8px', borderRadius: '12px', fontSize: '12px' }, text: '0 records' })
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-table' },
+                            style: { color: '#0d6efd', fontSize: '20px' }
+                        }),
+                        $({
+                            tag: 'h2',
+                            text: 'Completed Research',
+                            style: {
+                                color: '#212529',
+                                fontSize: '20px',
+                                fontWeight: '600',
+                                margin: '0'
+                            }
+                        }),
+                        $({
+                            tag: 'span',
+                            att: { className: 'research-count' },
+                            style: {
+                                backgroundColor: '#f1f3f5',
+                                color: '#6c757d',
+                                padding: '2px 10px',
+                                borderRadius: '12px',
+                                fontSize: '12px',
+                                border: '1px solid #dee2e6'
+                            },
+                            text: '0 records'
+                        })
                     ]
                 }),
                 $({
                     tag: 'div',
-                    style: { display: 'flex', gap: '10px', alignItems: 'center' },
+                    style: {
+                        display: 'flex',
+                        gap: '10px',
+                        alignItems: 'center',
+                        flexWrap: 'wrap'
+                    },
                     child: [
                         eventFilter,
                         centerFilter,
@@ -333,16 +429,34 @@ export const CompletedResearch = () => {
             return $({
                 tag: 'th',
                 style: {
-                    padding: '12px 8px', textAlign: 'left', fontSize: '12px', fontWeight: '600',
-                    color: '#bbb', backgroundColor: '#333', borderBottom: '2px solid #444',
-                    whiteSpace: 'nowrap', minWidth: col.width, position: 'sticky', top: '0', zIndex: '10',
-                    fontFamily: 'Segoe UI, sans-serif', textTransform: 'uppercase', letterSpacing: '0.5px'
+                    padding: '12px 8px',
+                    textAlign: 'left',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: '#495057',
+                    backgroundColor: '#f8f9fa',
+                    borderBottom: '2px solid #dee2e6',
+                    whiteSpace: 'nowrap',
+                    minWidth: col.width,
+                    position: 'sticky',
+                    top: '0',
+                    zIndex: '10',
+                    fontFamily: 'Segoe UI, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                 },
                 child: [$({ tag: 'span', text: col.header })]
             });
         });
 
-        return $({ tag: 'thead', child: [$({ tag: 'tr', style: { backgroundColor: '#333' }, child: headerCells })] });
+        return $({
+            tag: 'thead',
+            child: [$({
+                tag: 'tr',
+                style: { backgroundColor: '#f8f9fa' },
+                child: headerCells
+            })]
+        });
     };
 
     const createIndexBadge = (indexType) => {
@@ -351,8 +465,8 @@ export const CompletedResearch = () => {
 
         const indexConfig = indexTypes.find(i => i.value === val) || {
             label: indexType,
-            bgColor: '#2d2d2d',
-            color: '#ffffff'
+            bgColor: '#e9ecef',
+            color: '#212529'
         };
 
         return $({
@@ -366,8 +480,8 @@ export const CompletedResearch = () => {
                 display: 'inline-block',
                 backgroundColor: indexConfig.bgColor,
                 color: indexConfig.color,
-                border: !indexTypes.some(i => i.value === val) ? '1px solid #444' : 'none',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                border: !indexTypes.some(i => i.value === val) ? '1px solid #dee2e6' : 'none',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             },
             text: indexConfig.label
         });
@@ -379,8 +493,9 @@ export const CompletedResearch = () => {
             tag: 'div',
             att: { className: 'completed-research-file-viewer' },
             style: {
-                position: 'fixed', inset: '0', backgroundColor: 'rgba(0,0,0,0.88)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: '9999', padding: '20px'
+                position: 'fixed', inset: '0', backgroundColor: 'rgba(0,0,0,0.7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: '9999', padding: '20px',
+                backdropFilter: 'blur(4px)'
             },
             event: {
                 type: 'click',
@@ -392,41 +507,84 @@ export const CompletedResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        width: '90vw', maxWidth: '1040px', minWidth: '720px', maxHeight: '80vh', minHeight: '660px', height: 'auto', backgroundColor: '#111',
-                        border: '1px solid #333', borderRadius: '16px', overflow: 'hidden', display: 'flex',
-                        flexDirection: 'column', boxSizing: 'border-box'
+                        width: '90vw', maxWidth: '1040px', minWidth: '720px', maxHeight: '80vh', minHeight: '660px', height: 'auto',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e9ecef', borderRadius: '16px', overflow: 'hidden',
+                        display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '14px 18px', backgroundColor: '#171717', borderBottom: '1px solid #333'
+                                padding: '14px 18px', backgroundColor: '#f8f9fa',
+                                borderBottom: '1px solid #e9ecef'
                             },
                             child: [
-                                $({ tag: 'div', text: label, style: { color: '#fff', fontSize: '14px', fontWeight: '600' } }),
+                                $({
+                                    tag: 'div',
+                                    text: label,
+                                    style: {
+                                        color: '#212529',
+                                        fontSize: '14px',
+                                        fontWeight: '600'
+                                    }
+                                }),
                                 $({
                                     tag: 'button',
                                     text: 'Close',
                                     style: {
-                                        backgroundColor: 'transparent', border: '1px solid #444',
-                                        borderRadius: '12px', color: '#ddd', padding: '8px 14px', cursor: 'pointer'
+                                        backgroundColor: 'transparent',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        color: '#6c757d',
+                                        padding: '8px 16px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
                                     },
                                     event: {
                                         type: 'click',
                                         method: () => document.body.removeChild(overlay)
+                                    },
+                                    event2: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = '#f8f9fa';
+                                            e.target.style.borderColor = '#0d6efd';
+                                            e.target.style.color = '#212529';
+                                        }
+                                    },
+                                    event3: {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = 'transparent';
+                                            e.target.style.borderColor = '#dee2e6';
+                                            e.target.style.color = '#6c757d';
+                                        }
                                     }
                                 })
                             ]
                         }),
                         $({
                             tag: 'div',
-                            style: { flex: '1 1 auto', minHeight: '520px', height: 'calc(80vh - 72px)', overflow: 'hidden', backgroundColor: '#000' },
+                            style: {
+                                flex: '1 1 auto',
+                                minHeight: '520px',
+                                height: 'calc(80vh - 72px)',
+                                overflow: 'hidden',
+                                backgroundColor: '#f8f9fa'
+                            },
                             child: isImage ? [
                                 $({
                                     tag: 'img',
                                     att: { src: url, alt: label },
-                                    style: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' }
+                                    style: {
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'contain',
+                                        display: 'block'
+                                    }
                                 })
                             ] : [
                                 $({
@@ -478,11 +636,15 @@ export const CompletedResearch = () => {
                         att: { type: 'button', title: item.name },
                         style: {
                             width: '36px', height: '36px', display: 'inline-flex', alignItems: 'center',
-                            justifyContent: 'center', color: '#00bcd4', backgroundColor: 'rgba(0,188,212,0.08)',
-                            border: '1px solid rgba(0,188,212,0.2)', borderRadius: '50%', cursor: 'pointer',
-                            padding: '0', transition: 'transform 0.15s ease'
+                            justifyContent: 'center', color: '#0d6efd', backgroundColor: 'rgba(13,110,253,0.08)',
+                            border: '1px solid rgba(13,110,253,0.2)', borderRadius: '50%', cursor: 'pointer',
+                            padding: '0', transition: 'all 0.2s ease'
                         },
-                        child: [$({ tag: 'span', att: { className: 'fa-solid fa-file-lines' }, style: { color: '#00bcd4', fontSize: '16px' } })],
+                        child: [$({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-file-lines' },
+                            style: { color: '#0d6efd', fontSize: '16px' }
+                        })],
                         event: {
                             type: 'click',
                             method: (e) => {
@@ -492,11 +654,17 @@ export const CompletedResearch = () => {
                         },
                         event2: {
                             type: 'mouseenter',
-                            method: (e) => e.currentTarget.style.transform = 'scale(1.05)'
+                            method: (e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(13,110,253,0.15)';
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                            }
                         },
                         event3: {
                             type: 'mouseleave',
-                            method: (e) => e.currentTarget.style.transform = 'scale(1)'
+                            method: (e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(13,110,253,0.08)';
+                                e.currentTarget.style.transform = 'scale(1)';
+                            }
                         }
                     }))
                 });
@@ -516,7 +684,8 @@ export const CompletedResearch = () => {
                         style: {
                             display: 'block',
                             whiteSpace: 'nowrap',
-                            padding: '1px 0'
+                            padding: '1px 0',
+                            color: '#212529'
                         },
                         text: val || '—'
                     }))
@@ -525,16 +694,22 @@ export const CompletedResearch = () => {
                 content = (rawValue === '—' || !rawValue) ? '—' : rawValue;
             }
 
+            const cellStyle = {
+                padding: '12px 8px',
+                fontSize: '13px',
+                color: '#212529',
+                borderBottom: '1px solid #f1f3f5',
+                whiteSpace: isWrappingField ? 'normal' : 'nowrap',
+                wordBreak: isUrlField ? 'break-all' : (isWrappingField ? 'break-word' : 'normal'),
+                fontFamily: 'Segoe UI, sans-serif',
+                verticalAlign: 'top',
+                maxWidth: col.width,
+                backgroundColor: '#ffffff'
+            };
+
             return $({
                 tag: 'td',
-                style: {
-                    padding: '12px 8px', fontSize: '13px', color: '#ddd',
-                    borderBottom: '1px solid #444',
-                    whiteSpace: isWrappingField ? 'normal' : 'nowrap',
-                    wordBreak: isUrlField ? 'break-all' : (isWrappingField ? 'break-word' : 'normal'),
-                    fontFamily: 'Segoe UI, sans-serif', verticalAlign: 'top',
-                    maxWidth: col.width
-                },
+                style: cellStyle,
                 child: typeof content === 'object' ? [content] : [],
                 text: typeof content === 'string' ? content : ''
             });
@@ -542,8 +717,24 @@ export const CompletedResearch = () => {
 
         return $({
             tag: 'tr',
-            style: { cursor: 'pointer' },
-            child: cells
+            style: {
+                backgroundColor: '#ffffff',
+                transition: 'background 0.2s ease',
+                cursor: 'pointer'
+            },
+            child: cells,
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f8f9fa';
+                }
+            },
+            event2: {
+                type: 'mouseleave',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                }
+            }
         });
     };
 
@@ -551,13 +742,21 @@ export const CompletedResearch = () => {
         return $({
             tag: 'div',
             style: {
-                width: '100%', height: 'calc(100% - 73px)', overflow: 'auto',
-                backgroundColor: '#2a2a2a', position: 'relative'
+                width: '100%',
+                height: 'calc(100% - 73px)',
+                overflow: 'auto',
+                backgroundColor: '#ffffff',
+                position: 'relative'
             },
             child: [
                 $({
                     tag: 'table',
-                    style: { width: '100%', borderCollapse: 'separate', borderSpacing: '0', minWidth: 'max-content' },
+                    style: {
+                        width: '100%',
+                        borderCollapse: 'separate',
+                        borderSpacing: '0',
+                        minWidth: 'max-content'
+                    },
                     child: [TableHeader(), $({ tag: 'tbody', elementHandler: getTableBody })]
                 })
             ]
@@ -566,7 +765,15 @@ export const CompletedResearch = () => {
 
     return $({
         tag: 'div',
-        style: { width: '100%', height: '100%', backgroundColor: '#2a2a2a', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+        att: { className: 'completed-research-container' },
+        style: {
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#f8f9fa',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+        },
         elementHandler: getMainContainer,
         child: [SearchBar(), DataTable()]
     });
