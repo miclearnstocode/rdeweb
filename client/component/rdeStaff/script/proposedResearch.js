@@ -27,7 +27,6 @@ export const ProposedResearch = () => {
         thisYear: 0
     }
 
-    // Columns for proposed research
     const columns = [
         { field: 'year', header: 'YEAR', width: '70px' },
         { field: 'paperTrailNo', header: 'PAPER TRAIL NO.', width: '100px' },
@@ -69,7 +68,7 @@ export const ProposedResearch = () => {
             return []
         }
     }
-    // Show loading
+
     const showLoading = () => {
         if (!loadingElement) {
             loadingElement = Waiting()
@@ -77,7 +76,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Hide loading
     const hideLoading = () => {
         if (loadingElement) {
             loadingElement.remove()
@@ -85,7 +83,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Show loading indicator at bottom
     const showBottomLoading = () => {
         if (!tableBody) return
 
@@ -104,7 +101,6 @@ export const ProposedResearch = () => {
         tableBody.appendChild(loadingRow)
     }
 
-    // Remove bottom loading indicator
     const removeBottomLoading = () => {
         const loadingRow = document.getElementById('loading-row')
         if (loadingRow) {
@@ -112,7 +108,7 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Fetch data
+
     const fetchProposedResearch = async (cursor = null) => {
         if (isLoading || (!cursor && !hasMore && researchData.length > 0)) return
 
@@ -195,7 +191,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Apply current filters to data
     const applyFilters = () => {
         // Start with all research data
         let filtered = [...researchData]
@@ -213,20 +208,21 @@ export const ProposedResearch = () => {
                 const symposiumStatus = item.symposiumUniversity?.toLowerCase() || ''
                 const filterValue = activeStatusFilter.toLowerCase()
 
-                // Map filter values to their corresponding display strings
+                // Map filter values to their corresponding display strings (from API)
                 const statusMap = {
-                    'revision_pending': ['pending revision'],
-                    'revision_submitted': ['revised submitted'],
-                    'revision_accepted': ['revision accepted'],
-                    'revision_rejected': ['revision rejected']
+                    'revision_pending': 'Pending Paper Revision',
+                    'revision_submitted': 'Revision Paper Submitted',
+                    'revision_accepted': 'Accepted Paper Revision',
+                    'revision_rejected': 'Paper Revision Rejected'
                 }
 
-                const matchingStatuses = statusMap[filterValue] || []
-                const isMatch = matchingStatuses.some(status =>
-                    inhouseStatus.includes(status) || symposiumStatus.includes(status)
-                )
+                // Get the display string for this status
+                const targetStatus = statusMap[filterValue] || filterValue
+                const targetStatusLower = targetStatus.toLowerCase()
 
-                return isMatch
+                // Check if either field contains this status
+                return inhouseStatus.includes(targetStatusLower) ||
+                    symposiumStatus.includes(targetStatusLower)
             })
         }
 
@@ -239,30 +235,27 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Handle scroll for infinite loading
     const handleScroll = () => {
         if (!scrollContainer || isLoading || !hasMore) return
 
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-        const threshold = 200 // Load more when 200px from bottom
+        const threshold = 200
 
         if (scrollHeight - scrollTop - clientHeight < threshold) {
             fetchProposedResearch(nextCursor)
         }
     }
-    // Open revision modal
+
     const openRevisionModal = async (item) => {
         currentRevisionItem = item
         showLoading()
 
-        // Fetch comments for this research paper using the full event name to match database
         revisionComments = await fetchRevisionComments(item.id, item.eventName)
 
         hideLoading()
         renderRevisionModal()
     }
 
-    // Close revision modal
     const closeRevisionModal = () => {
         if (revisionModalElement) {
             revisionModalElement.remove()
@@ -272,7 +265,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Handle accept revision
     const handleAcceptRevision = async () => {
         if (!currentRevisionItem) return
 
@@ -312,7 +304,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Handle reject revision
     const handleRejectRevision = async () => {
         if (!currentRevisionItem) return
 
@@ -356,7 +347,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Format comment text for display
     const formatCommentText = (label, text) => {
         if (!text || text.trim() === '') return null
 
@@ -364,10 +354,10 @@ export const ProposedResearch = () => {
             tag: 'div',
             style: {
                 marginBottom: '12px',
-                padding: '10px',
-                backgroundColor: '#333',
-                borderRadius: '6px',
-                border: '1px solid #444'
+                padding: '12px',
+                backgroundColor: '#ffffff',
+                borderRadius: '8px',
+                border: '1px solid #e9ecef'
             },
             child: [
                 $({
@@ -375,19 +365,20 @@ export const ProposedResearch = () => {
                     text: label,
                     style: {
                         fontWeight: '600',
-                        color: 'deepskyblue',
+                        color: '#0d6efd',
                         marginBottom: '4px',
-                        fontSize: '12px',
-                        textTransform: 'uppercase'
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
                     }
                 }),
                 $({
                     tag: 'div',
                     text: text,
                     style: {
-                        color: '#ddd',
+                        color: '#212529',
                         fontSize: '13px',
-                        lineHeight: '1.5',
+                        lineHeight: '1.6',
                         whiteSpace: 'pre-wrap'
                     }
                 })
@@ -395,7 +386,6 @@ export const ProposedResearch = () => {
         })
     }
 
-    // Render revision modal with file viewer and comments
     const renderRevisionModal = () => {
         if (revisionModalElement) {
             revisionModalElement.remove()
@@ -418,7 +408,7 @@ export const ProposedResearch = () => {
                     style: {
                         marginBottom: '16px',
                         paddingBottom: '16px',
-                        borderBottom: index < revisionComments.length - 1 ? '1px solid #444' : 'none'
+                        borderBottom: index < revisionComments.length - 1 ? '1px solid #e9ecef' : 'none'
                     },
                     child: [
                         $({
@@ -426,7 +416,7 @@ export const ProposedResearch = () => {
                             text: `Evaluator: ${comment.evaluator_name || 'Unknown'}`,
                             style: {
                                 fontWeight: '600',
-                                color: '#ffb347',
+                                color: '#0d6efd',
                                 marginBottom: '8px',
                                 fontSize: '13px'
                             }
@@ -470,7 +460,7 @@ export const ProposedResearch = () => {
                     tag: 'div',
                     text: 'No evaluator comments available.',
                     style: {
-                        color: '#888',
+                        color: '#6c757d',
                         fontStyle: 'italic',
                         padding: '20px',
                         textAlign: 'center'
@@ -487,12 +477,13 @@ export const ProposedResearch = () => {
                 left: '0',
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: '1000',
-                fontFamily: 'Segoe UI, sans-serif'
+                fontFamily: 'Segoe UI, sans-serif',
+                backdropFilter: 'blur(4px)'
             },
             event: {
                 type: 'click',
@@ -506,14 +497,14 @@ export const ProposedResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '12px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '16px',
                         width: '95%',
                         maxWidth: '1400px',
                         maxHeight: '90%',
                         overflow: 'auto',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                        border: '1px solid #444',
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                        border: '1px solid #e9ecef',
                         display: 'flex',
                         flexDirection: 'column'
                     },
@@ -522,15 +513,16 @@ export const ProposedResearch = () => {
                         $({
                             tag: 'div',
                             style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid #444',
+                                padding: '24px 28px',
+                                borderBottom: '1px solid #e9ecef',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 position: 'sticky',
                                 top: '0',
-                                backgroundColor: '#2d2d2d',
-                                zIndex: '1'
+                                backgroundColor: '#ffffff',
+                                zIndex: '1',
+                                borderRadius: '16px 16px 0 0'
                             },
                             child: [
                                 $({
@@ -539,8 +531,8 @@ export const ProposedResearch = () => {
                                     style: {
                                         margin: '0',
                                         fontSize: '20px',
-                                        fontWeight: '500',
-                                        color: '#fff'
+                                        fontWeight: '600',
+                                        color: '#212529'
                                     }
                                 }),
                                 $({
@@ -548,15 +540,29 @@ export const ProposedResearch = () => {
                                     att: { className: 'fa-solid fa-times' },
                                     style: {
                                         fontSize: '20px',
-                                        color: '#888',
+                                        color: '#6c757d',
                                         cursor: 'pointer',
                                         padding: '8px',
-                                        borderRadius: '4px',
+                                        borderRadius: '8px',
                                         transition: 'all 0.2s ease'
                                     },
                                     event: {
                                         type: 'click',
                                         method: closeRevisionModal
+                                    },
+                                    event2: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = '#f8f9fa'
+                                            e.target.style.color = '#212529'
+                                        }
+                                    },
+                                    event3: {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
+                                            e.target.style.color = '#6c757d'
+                                        }
                                     }
                                 })
                             ]
@@ -577,8 +583,8 @@ export const ProposedResearch = () => {
                                     tag: 'div',
                                     style: {
                                         flex: '1',
-                                        padding: '20px',
-                                        borderRight: '1px solid #444',
+                                        padding: '24px',
+                                        borderRight: '1px solid #e9ecef',
                                         display: 'flex',
                                         flexDirection: 'column'
                                     },
@@ -588,9 +594,10 @@ export const ProposedResearch = () => {
                                             tag: 'div',
                                             style: {
                                                 marginBottom: '16px',
-                                                padding: '12px',
-                                                backgroundColor: '#333',
-                                                borderRadius: '8px'
+                                                padding: '16px',
+                                                backgroundColor: '#f8f9fa',
+                                                borderRadius: '12px',
+                                                border: '1px solid #e9ecef'
                                             },
                                             child: [
                                                 $({
@@ -598,7 +605,7 @@ export const ProposedResearch = () => {
                                                     text: item.title || 'No Title',
                                                     style: {
                                                         fontWeight: '600',
-                                                        color: '#fff',
+                                                        color: '#212529',
                                                         fontSize: '15px',
                                                         marginBottom: '8px'
                                                     }
@@ -606,16 +613,16 @@ export const ProposedResearch = () => {
                                                 $({
                                                     tag: 'div',
                                                     text: `Event: ${item.eventName || 'N/A'}`,
-                                                    style: { color: '#aaa', fontSize: '12px', marginBottom: '4px' }
+                                                    style: { color: '#6c757d', fontSize: '13px', marginBottom: '4px' }
                                                 }),
                                                 $({
                                                     tag: 'div',
                                                     text: `Status: ${item.revision_status_display || 'Pending'}`,
                                                     style: {
-                                                        color: item.revision_status === 'revision_accepted' ? '#4caf50' :
-                                                            item.revision_status === 'revision_rejected' ? '#f44336' :
-                                                                item.revision_status === 'revision_submitted' ? '#2196f3' : '#ff9800',
-                                                        fontSize: '12px',
+                                                        color: item.revision_status === 'revision_accepted' ? '#2e7d32' :
+                                                            item.revision_status === 'revision_rejected' ? '#c62828' :
+                                                                item.revision_status === 'revision_submitted' ? '#0d47a1' : '#e65100',
+                                                        fontSize: '13px',
                                                         fontWeight: '600'
                                                     }
                                                 })
@@ -634,9 +641,10 @@ export const ProposedResearch = () => {
                                                 },
                                                 style: {
                                                     flex: '1',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid #444',
-                                                    minHeight: '400px'
+                                                    borderRadius: '12px',
+                                                    border: '1px solid #e9ecef',
+                                                    minHeight: '400px',
+                                                    backgroundColor: '#f8f9fa'
                                                 }
                                             }) :
                                             $({
@@ -646,11 +654,12 @@ export const ProposedResearch = () => {
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    color: '#888',
+                                                    color: '#6c757d',
                                                     fontSize: '16px',
-                                                    backgroundColor: '#333',
-                                                    borderRadius: '8px',
-                                                    minHeight: '400px'
+                                                    backgroundColor: '#f8f9fa',
+                                                    borderRadius: '12px',
+                                                    minHeight: '400px',
+                                                    border: '2px dashed #dee2e6'
                                                 },
                                                 child: [
                                                     $({
@@ -659,13 +668,13 @@ export const ProposedResearch = () => {
                                                         child: [
                                                             $({
                                                                 tag: 'span',
-                                                                att: { className: 'fa-solid fa-file-pdf' },
-                                                                style: { fontSize: '48px', marginBottom: '16px', display: 'block', color: '#666' }
+                                                                att: { className: 'fab fa-google-drive' },
+                                                                style: { fontSize: '48px', marginBottom: '16px', display: 'block', color: '#adb5bd' }
                                                             }),
                                                             $({
                                                                 tag: 'div',
                                                                 text: 'No revised file available',
-                                                                style: { color: '#aaa' }
+                                                                style: { color: '#6c757d' }
                                                             })
                                                         ]
                                                     })
@@ -680,10 +689,11 @@ export const ProposedResearch = () => {
                                     style: {
                                         width: '400px',
                                         minWidth: '350px',
-                                        padding: '20px',
+                                        padding: '24px',
                                         overflow: 'auto',
                                         display: 'flex',
-                                        flexDirection: 'column'
+                                        flexDirection: 'column',
+                                        backgroundColor: '#f8f9fa'
                                     },
                                     child: [
                                         $({
@@ -691,11 +701,11 @@ export const ProposedResearch = () => {
                                             text: 'Evaluator Comments',
                                             style: {
                                                 margin: '0 0 16px 0',
-                                                color: '#fff',
+                                                color: '#212529',
                                                 fontSize: '16px',
-                                                fontWeight: '500',
+                                                fontWeight: '600',
                                                 paddingBottom: '12px',
-                                                borderBottom: '1px solid #444'
+                                                borderBottom: '2px solid #e9ecef'
                                             }
                                         }),
                                         $({
@@ -712,12 +722,13 @@ export const ProposedResearch = () => {
                         $({
                             tag: 'div',
                             style: {
-                                padding: '16px 24px',
-                                borderTop: '1px solid #444',
+                                padding: '20px 28px',
+                                borderTop: '1px solid #e9ecef',
                                 display: 'flex',
                                 justifyContent: 'flex-end',
                                 gap: '12px',
-                                backgroundColor: '#2d2d2d'
+                                backgroundColor: '#ffffff',
+                                borderRadius: '0 0 16px 16px'
                             },
                             child: [
                                 $({
@@ -726,15 +737,33 @@ export const ProposedResearch = () => {
                                     style: {
                                         padding: '10px 24px',
                                         backgroundColor: 'transparent',
-                                        border: '1px solid #444',
-                                        borderRadius: '6px',
-                                        color: '#aaa',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        color: '#6c757d',
                                         fontSize: '14px',
-                                        cursor: 'pointer'
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
                                     },
                                     event: {
                                         type: 'click',
                                         method: closeRevisionModal
+                                    },
+                                    event2: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = '#f8f9fa'
+                                            e.target.style.borderColor = '#0d6efd'
+                                            e.target.style.color = '#212529'
+                                        }
+                                    },
+                                    event3: {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
+                                            e.target.style.borderColor = '#dee2e6'
+                                            e.target.style.color = '#6c757d'
+                                        }
                                     }
                                 }),
                                 ...(canAcceptReject ? [
@@ -745,15 +774,33 @@ export const ProposedResearch = () => {
                                             padding: '10px 24px',
                                             backgroundColor: '#dc3545',
                                             border: 'none',
-                                            borderRadius: '6px',
+                                            borderRadius: '8px',
                                             color: '#fff',
                                             fontSize: '14px',
                                             cursor: 'pointer',
-                                            fontWeight: '500'
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease',
+                                            boxShadow: '0 2px 8px rgba(220, 53, 69, 0.3)'
                                         },
                                         event: {
                                             type: 'click',
                                             method: handleRejectRevision
+                                        },
+                                        event2: {
+                                            type: 'mouseenter',
+                                            method: (e) => {
+                                                e.target.style.backgroundColor = '#c82333'
+                                                e.target.style.transform = 'translateY(-2px)'
+                                                e.target.style.boxShadow = '0 4px 15px rgba(220, 53, 69, 0.4)'
+                                            }
+                                        },
+                                        event3: {
+                                            type: 'mouseleave',
+                                            method: (e) => {
+                                                e.target.style.backgroundColor = '#dc3545'
+                                                e.target.style.transform = 'translateY(0)'
+                                                e.target.style.boxShadow = '0 2px 8px rgba(220, 53, 69, 0.3)'
+                                            }
                                         }
                                     }),
                                     $({
@@ -763,15 +810,33 @@ export const ProposedResearch = () => {
                                             padding: '10px 24px',
                                             backgroundColor: '#28a745',
                                             border: 'none',
-                                            borderRadius: '6px',
+                                            borderRadius: '8px',
                                             color: '#fff',
                                             fontSize: '14px',
                                             cursor: 'pointer',
-                                            fontWeight: '500'
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease',
+                                            boxShadow: '0 2px 8px rgba(40, 167, 69, 0.3)'
                                         },
                                         event: {
                                             type: 'click',
                                             method: handleAcceptRevision
+                                        },
+                                        event2: {
+                                            type: 'mouseenter',
+                                            method: (e) => {
+                                                e.target.style.backgroundColor = '#218838'
+                                                e.target.style.transform = 'translateY(-2px)'
+                                                e.target.style.boxShadow = '0 4px 15px rgba(40, 167, 69, 0.4)'
+                                            }
+                                        },
+                                        event3: {
+                                            type: 'mouseleave',
+                                            method: (e) => {
+                                                e.target.style.backgroundColor = '#28a745'
+                                                e.target.style.transform = 'translateY(0)'
+                                                e.target.style.boxShadow = '0 2px 8px rgba(40, 167, 69, 0.3)'
+                                            }
                                         }
                                     })
                                 ] : [
@@ -781,9 +846,13 @@ export const ProposedResearch = () => {
                                         text: `Status: ${item.revision_status_display || 'Pending'}`,
                                         style: {
                                             padding: '10px 24px',
-                                            color: item.revision_status === 'revision_accepted' ? '#4caf50' : '#ff9800',
+                                            color: item.revision_status === 'revision_accepted' ? '#2e7d32' : 
+                                                item.revision_status === 'revision_rejected' ? '#c62828' : '#e65100',
                                             fontSize: '14px',
-                                            fontWeight: '500'
+                                            fontWeight: '600',
+                                            backgroundColor: '#f8f9fa',
+                                            borderRadius: '8px',
+                                            border: '1px solid #e9ecef'
                                         }
                                     })
                                 ])
@@ -797,7 +866,6 @@ export const ProposedResearch = () => {
         document.body.appendChild(revisionModalElement)
     }
 
-    // Update table with filtered data
     const updateTableWithData = () => {
         if (!tableBody) return
 
@@ -824,14 +892,12 @@ export const ProposedResearch = () => {
         updateLoadedCount()
     }
 
-    // Update loaded count
     const updateLoadedCount = () => {
         if (window.updateFilterCount) {
             window.updateFilterCount()
         }
     }
 
-    // Format faculty researcher to display each on new line with proper wrapping
     const formatFacultyResearcher = (facultyResearcher) => {
         if (!facultyResearcher || facultyResearcher === '—') return '—'
 
@@ -884,7 +950,6 @@ export const ProposedResearch = () => {
         })
     }
 
-    // Open edit modal
     const openEditModal = async (item) => {
         currentEditItem = item
         showLoading()
@@ -965,7 +1030,6 @@ export const ProposedResearch = () => {
         renderModal()
     }
 
-    // Close modal
     const closeModal = () => {
         if (modalElement) {
             modalElement.remove()
@@ -975,7 +1039,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Save changes
     const saveChanges = async () => {
         if (!currentEditItem) return
 
@@ -1047,7 +1110,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Render modal (same as before)
     const renderModal = () => {
         if (modalElement) {
             modalElement.remove()
@@ -1061,40 +1123,42 @@ export const ProposedResearch = () => {
                 left: '0',
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: '1000',
-                fontFamily: 'Segoe UI, sans-serif'
+                fontFamily: 'Segoe UI, sans-serif',
+                backdropFilter: 'blur(4px)'
             },
             child: [
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '12px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '16px',
                         width: '900px',
                         maxWidth: '95%',
                         maxHeight: '90%',
                         overflow: 'auto',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                        border: '1px solid #444'
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                        border: '1px solid #e9ecef'
                     },
                     child: [
                         // Modal header
                         $({
                             tag: 'div',
                             style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid #444',
+                                padding: '24px 28px',
+                                borderBottom: '1px solid #e9ecef',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 position: 'sticky',
                                 top: '0',
-                                backgroundColor: '#2d2d2d',
-                                zIndex: '1'
+                                backgroundColor: '#ffffff',
+                                zIndex: '1',
+                                borderRadius: '16px 16px 0 0'
                             },
                             child: [
                                 $({
@@ -1103,8 +1167,8 @@ export const ProposedResearch = () => {
                                     style: {
                                         margin: '0',
                                         fontSize: '20px',
-                                        fontWeight: '500',
-                                        color: '#fff'
+                                        fontWeight: '600',
+                                        color: '#212529'
                                     }
                                 }),
                                 $({
@@ -1112,10 +1176,10 @@ export const ProposedResearch = () => {
                                     att: { className: 'fa-solid fa-times' },
                                     style: {
                                         fontSize: '20px',
-                                        color: '#888',
+                                        color: '#6c757d',
                                         cursor: 'pointer',
                                         padding: '8px',
-                                        borderRadius: '4px',
+                                        borderRadius: '8px',
                                         transition: 'all 0.2s ease'
                                     },
                                     event: {
@@ -1125,15 +1189,15 @@ export const ProposedResearch = () => {
                                     event2: {
                                         type: 'mouseenter',
                                         method: (e) => {
-                                            e.target.style.backgroundColor = '#444'
-                                            e.target.style.color = '#fff'
+                                            e.target.style.backgroundColor = '#f8f9fa'
+                                            e.target.style.color = '#212529'
                                         }
                                     },
                                     event3: {
                                         type: 'mouseleave',
                                         method: (e) => {
                                             e.target.style.backgroundColor = 'transparent'
-                                            e.target.style.color = '#888'
+                                            e.target.style.color = '#6c757d'
                                         }
                                     }
                                 })
@@ -1144,27 +1208,31 @@ export const ProposedResearch = () => {
                         $({
                             tag: 'div',
                             style: {
-                                padding: '16px 24px',
-                                backgroundColor: '#333',
-                                borderBottom: '1px solid #444'
+                                padding: '20px 28px',
+                                backgroundColor: '#f8f9fa',
+                                borderBottom: '1px solid #e9ecef'
                             },
                             child: [
                                 $({
                                     tag: 'div',
                                     style: {
-                                        fontSize: '14px',
-                                        color: '#aaa',
-                                        marginBottom: '4px'
+                                        fontSize: '13px',
+                                        color: '#6c757d',
+                                        marginBottom: '6px',
+                                        fontWeight: '500',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
                                     },
-                                    text: 'Research Title:'
+                                    text: 'Research Title'
                                 }),
                                 $({
                                     tag: 'div',
                                     style: {
                                         fontSize: '16px',
-                                        color: '#fff',
+                                        color: '#212529',
                                         fontWeight: '500',
-                                        wordBreak: 'break-word'
+                                        wordBreak: 'break-word',
+                                        lineHeight: '1.5'
                                     },
                                     text: currentEditItem?.title || ''
                                 })
@@ -1175,7 +1243,7 @@ export const ProposedResearch = () => {
                         $({
                             tag: 'div',
                             style: {
-                                padding: '20px 24px'
+                                padding: '24px 28px'
                             },
                             child: [
                                 $({
@@ -1184,13 +1252,14 @@ export const ProposedResearch = () => {
                                         display: 'grid',
                                         gridTemplateColumns: '250px 180px 180px 100px',
                                         gap: '12px',
-                                        padding: '10px 0',
-                                        borderBottom: '1px solid #444',
-                                        marginBottom: '10px',
+                                        padding: '12px 0',
+                                        borderBottom: '2px solid #e9ecef',
+                                        marginBottom: '12px',
                                         fontWeight: '600',
                                         fontSize: '12px',
-                                        color: '#aaa',
-                                        textTransform: 'uppercase'
+                                        color: '#6c757d',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
                                     },
                                     child: [
                                         $({ tag: 'div', text: 'Faculty Name' }),
@@ -1211,12 +1280,29 @@ export const ProposedResearch = () => {
                                         gridTemplateColumns: '250px 180px 180px 100px',
                                         gap: '12px',
                                         marginBottom: '10px',
-                                        alignItems: 'center'
+                                        alignItems: 'center',
+                                        padding: '8px 0',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s ease'
+                                    })
+
+                                    // Hover effect for row
+                                    rowDiv.addEventListener('mouseenter', () => {
+                                        rowDiv.style.backgroundColor = '#f8f9fa'
+                                        rowDiv.style.padding = '8px 12px'
+                                        rowDiv.style.marginLeft = '-12px'
+                                        rowDiv.style.marginRight = '-12px'
+                                    })
+                                    rowDiv.addEventListener('mouseleave', () => {
+                                        rowDiv.style.backgroundColor = 'transparent'
+                                        rowDiv.style.padding = '8px 0'
+                                        rowDiv.style.marginLeft = '0'
+                                        rowDiv.style.marginRight = '0'
                                     })
 
                                     // Create and append children
                                     const nameDiv = document.createElement('div')
-                                    nameDiv.style.cssText = 'color: #ddd; font-size: 14px; word-break: break-word;'
+                                    nameDiv.style.cssText = 'color: #212529; font-size: 14px; word-break: break-word; font-weight: 500;'
                                     nameDiv.textContent = faculty.faculty_name
 
                                     const academicInput = document.createElement('input')
@@ -1225,23 +1311,25 @@ export const ProposedResearch = () => {
                                     academicInput.placeholder = 'e.g., Professor 1'
                                     academicInput.value = faculty.academic_rank || ''
                                     Object.assign(academicInput.style, {
-                                        padding: '8px 10px',
-                                        backgroundColor: '#333',
-                                        border: '1px solid #444',
-                                        borderRadius: '6px',
-                                        color: '#fff',
+                                        padding: '8px 12px',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         outline: 'none',
                                         transition: 'all 0.2s ease',
                                         width: '100%'
                                     })
                                     academicInput.addEventListener('focus', (e) => {
-                                        e.target.style.borderColor = 'deepskyblue'
-                                        e.target.style.backgroundColor = '#3d3d3d'
+                                        e.target.style.borderColor = '#0d6efd'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                        e.target.style.backgroundColor = '#ffffff'
                                     })
                                     academicInput.addEventListener('blur', (e) => {
-                                        e.target.style.borderColor = '#444'
-                                        e.target.style.backgroundColor = '#333'
+                                        e.target.style.borderColor = '#dee2e6'
+                                        e.target.style.boxShadow = 'none'
+                                        e.target.style.backgroundColor = '#ffffff'
                                     })
 
                                     const nonAcademicInput = document.createElement('input')
@@ -1250,23 +1338,25 @@ export const ProposedResearch = () => {
                                     nonAcademicInput.placeholder = 'e.g., Admin Staff'
                                     nonAcademicInput.value = faculty.non_academic_rank || ''
                                     Object.assign(nonAcademicInput.style, {
-                                        padding: '8px 10px',
-                                        backgroundColor: '#333',
-                                        border: '1px solid #444',
-                                        borderRadius: '6px',
-                                        color: '#fff',
+                                        padding: '8px 12px',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         outline: 'none',
                                         transition: 'all 0.2s ease',
                                         width: '100%'
                                     })
                                     nonAcademicInput.addEventListener('focus', (e) => {
-                                        e.target.style.borderColor = 'deepskyblue'
-                                        e.target.style.backgroundColor = '#3d3d3d'
+                                        e.target.style.borderColor = '#0d6efd'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                        e.target.style.backgroundColor = '#ffffff'
                                     })
                                     nonAcademicInput.addEventListener('blur', (e) => {
-                                        e.target.style.borderColor = '#444'
-                                        e.target.style.backgroundColor = '#333'
+                                        e.target.style.borderColor = '#dee2e6'
+                                        e.target.style.boxShadow = 'none'
+                                        e.target.style.backgroundColor = '#ffffff'
                                     })
 
                                     const jobOrderInput = document.createElement('input')
@@ -1275,23 +1365,25 @@ export const ProposedResearch = () => {
                                     jobOrderInput.placeholder = 'e.g., JO-001'
                                     jobOrderInput.value = faculty.job_order || ''
                                     Object.assign(jobOrderInput.style, {
-                                        padding: '8px 10px',
-                                        backgroundColor: '#333',
-                                        border: '1px solid #444',
-                                        borderRadius: '6px',
-                                        color: '#fff',
+                                        padding: '8px 12px',
+                                        backgroundColor: '#ffffff',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         outline: 'none',
                                         transition: 'all 0.2s ease',
                                         width: '100%'
                                     })
                                     jobOrderInput.addEventListener('focus', (e) => {
-                                        e.target.style.borderColor = 'deepskyblue'
-                                        e.target.style.backgroundColor = '#3d3d3d'
+                                        e.target.style.borderColor = '#0d6efd'
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                        e.target.style.backgroundColor = '#ffffff'
                                     })
                                     jobOrderInput.addEventListener('blur', (e) => {
-                                        e.target.style.borderColor = '#444'
-                                        e.target.style.backgroundColor = '#333'
+                                        e.target.style.borderColor = '#dee2e6'
+                                        e.target.style.boxShadow = 'none'
+                                        e.target.style.backgroundColor = '#ffffff'
                                     })
 
                                     rowDiv.appendChild(nameDiv)
@@ -1308,14 +1400,15 @@ export const ProposedResearch = () => {
                         $({
                             tag: 'div',
                             style: {
-                                padding: '20px 24px',
-                                borderTop: '1px solid #444',
+                                padding: '20px 28px',
+                                borderTop: '1px solid #e9ecef',
                                 display: 'flex',
                                 justifyContent: 'flex-end',
                                 gap: '12px',
                                 position: 'sticky',
                                 bottom: '0',
-                                backgroundColor: '#2d2d2d'
+                                backgroundColor: '#ffffff',
+                                borderRadius: '0 0 16px 16px'
                             },
                             child: [
                                 $({
@@ -1324,9 +1417,9 @@ export const ProposedResearch = () => {
                                     style: {
                                         padding: '10px 24px',
                                         backgroundColor: 'transparent',
-                                        border: '1px solid #444',
-                                        borderRadius: '6px',
-                                        color: '#aaa',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        color: '#6c757d',
                                         fontSize: '14px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
@@ -1339,15 +1432,17 @@ export const ProposedResearch = () => {
                                     event2: {
                                         type: 'mouseenter',
                                         method: (e) => {
-                                            e.target.style.backgroundColor = '#333'
-                                            e.target.style.borderColor = '#666'
+                                            e.target.style.backgroundColor = '#f8f9fa'
+                                            e.target.style.borderColor = '#0d6efd'
+                                            e.target.style.color = '#212529'
                                         }
                                     },
                                     event3: {
                                         type: 'mouseleave',
                                         method: (e) => {
                                             e.target.style.backgroundColor = 'transparent'
-                                            e.target.style.borderColor = '#444'
+                                            e.target.style.borderColor = '#dee2e6'
+                                            e.target.style.color = '#6c757d'
                                         }
                                     }
                                 }),
@@ -1355,15 +1450,16 @@ export const ProposedResearch = () => {
                                     tag: 'button',
                                     text: 'Save Changes',
                                     style: {
-                                        padding: '10px 24px',
-                                        backgroundColor: 'deepskyblue',
+                                        padding: '10px 28px',
+                                        backgroundColor: '#0d6efd',
                                         border: 'none',
-                                        borderRadius: '6px',
-                                        color: '#fff',
+                                        borderRadius: '8px',
+                                        color: '#ffffff',
                                         fontSize: '14px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 2px 8px rgba(13, 110, 253, 0.3)'
                                     },
                                     event: {
                                         type: 'click',
@@ -1372,17 +1468,17 @@ export const ProposedResearch = () => {
                                     event2: {
                                         type: 'mouseenter',
                                         method: (e) => {
-                                            e.target.style.backgroundColor = '#00a6d1'
+                                            e.target.style.backgroundColor = '#0b5ed7'
                                             e.target.style.transform = 'translateY(-2px)'
-                                            e.target.style.boxShadow = '0 5px 15px rgba(0, 191, 255, 0.3)'
+                                            e.target.style.boxShadow = '0 4px 15px rgba(13, 110, 253, 0.4)'
                                         }
                                     },
                                     event3: {
                                         type: 'mouseleave',
                                         method: (e) => {
-                                            e.target.style.backgroundColor = 'deepskyblue'
+                                            e.target.style.backgroundColor = '#0d6efd'
                                             e.target.style.transform = 'translateY(0)'
-                                            e.target.style.boxShadow = 'none'
+                                            e.target.style.boxShadow = '0 2px 8px rgba(13, 110, 253, 0.3)'
                                         }
                                     }
                                 })
@@ -1396,7 +1492,6 @@ export const ProposedResearch = () => {
         document.body.appendChild(modalElement)
     }
 
-    // Create action buttons
     const createActionButtons = (item) => {
         return $({
             tag: 'div',
@@ -1442,15 +1537,14 @@ export const ProposedResearch = () => {
         })
     }
 
-    // Create a data row
     const createDataRow = (item) => {
         const cells = columns.map(col => {
             let cellContent = item[col.field] || '—'
             let cellStyle = {
                 padding: '14px 8px',
                 fontSize: '13px',
-                color: '#ddd',
-                borderBottom: '1px solid #444',
+                color: '#2d3436', 
+                borderBottom: '1px solid #f1f3f5',  
                 whiteSpace: 'normal',
                 wordBreak: 'break-word',
                 wordWrap: 'break-word',
@@ -1477,7 +1571,6 @@ export const ProposedResearch = () => {
                 })
             }
 
-            // For academic rank, non-academic rank, and job order columns
             if (['academicRank', 'nonAcademicRank', 'jobOrder'].includes(col.field)) {
                 return $({
                     tag: 'td',
@@ -1544,27 +1637,15 @@ export const ProposedResearch = () => {
 
         return $({
             tag: 'tr',
+            att: { className: 'data-row' },
             style: {
-                backgroundColor: '#2d2d2d',
+                backgroundColor: '#ffffff',
                 transition: 'all 0.2s ease'
             },
-            child: cells,
-            event: {
-                type: 'mouseenter',
-                method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#333'
-                }
-            },
-            event2: {
-                type: 'mouseleave',
-                method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#2d2d2d'
-                }
-            }
+            child: cells
         })
     }
 
-    // Format authors to display each on new line with proper wrapping
     const formatAuthors = (allResearchers) => {
         if (!allResearchers || allResearchers.length === 0) return '—'
 
@@ -1597,19 +1678,19 @@ export const ProposedResearch = () => {
 
     const createStatusCell = (status, type, item, baseStyle) => {
         let color = type === 'inhouse' ? '#ffb347' : '#7ccf7c'
-        let bgColor = type === 'inhouse' ? '#3a2d1a' : '#1a3a2d'
+        let bgColor = type === 'inhouse' ? '#fff8e1' : '#e8f5e9'
 
         // Determine status color based on revision status
         const revisionStatus = item.revision_status || 'revision_pending'
         if (revisionStatus === 'revision_accepted') {
-            color = '#4caf50'
-            bgColor = '#1a3a2d'
+            color = '#2e7d32'
+            bgColor = '#e8f5e9'
         } else if (revisionStatus === 'revision_rejected') {
-            color = '#f44336'
-            bgColor = '#2d1a1a'
+            color = '#c62828'
+            bgColor = '#ffebee'
         } else if (revisionStatus === 'revision_submitted') {
-            color = '#2196f3'
-            bgColor = '#1a2a3a'
+            color = '#0d47a1'
+            bgColor = '#e3f2fd'
         }
 
         let displayText = status || '—'
@@ -1661,7 +1742,6 @@ export const ProposedResearch = () => {
         })
     }
 
-    // Update statistics cards
     const updateStatsCards = () => {
         const statsContainer = document.querySelector('.stats-cards-container')
         if (!statsContainer) return
@@ -1679,7 +1759,7 @@ export const ProposedResearch = () => {
             const statCard = $({
                 tag: 'div',
                 style: {
-                    backgroundColor: '#333',
+                    backgroundColor: '#ffffff',
                     borderRadius: '12px',
                     padding: '16px 20px',
                     display: 'flex',
@@ -1687,7 +1767,7 @@ export const ProposedResearch = () => {
                     gap: '15px',
                     flex: '1',
                     minWidth: '160px',
-                    border: '1px solid #444',
+                    border: '1px solid #ececec',
                     transition: 'transform 0.2s ease'
                 },
                 child: [
@@ -1720,7 +1800,7 @@ export const ProposedResearch = () => {
                                 style: {
                                     fontSize: '28px',
                                     fontWeight: '600',
-                                    color: '#fff',
+                                    color: '#272727',
                                     lineHeight: '1.2'
                                 }
                             }),
@@ -1729,7 +1809,7 @@ export const ProposedResearch = () => {
                                 text: stat.label,
                                 style: {
                                     fontSize: '12px',
-                                    color: '#aaa',
+                                    color: '#636e72',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px'
                                 }
@@ -1743,7 +1823,6 @@ export const ProposedResearch = () => {
         })
     }
 
-    // Show empty state
     const showEmptyState = () => {
         if (!tableBody) return
 
@@ -1780,7 +1859,7 @@ export const ProposedResearch = () => {
                         fontSize: '20px',
                         marginBottom: '12px',
                         fontWeight: '500',
-                        color: '#fff'
+                        color: '#444444'
                     }
                 }),
                 $({
@@ -1800,7 +1879,6 @@ export const ProposedResearch = () => {
         tableBody.appendChild(emptyState)
     }
 
-    // Filter functions with highlighting
     const filterByType = (type) => {
         activeFilter = type
         applyFilters()
@@ -1835,7 +1913,6 @@ export const ProposedResearch = () => {
         }
     }
 
-    // Update filter button styles based on active filter
     const updateFilterButtons = () => {
         const filterContainer = document.querySelector('.filter-buttons-container')
         if (!filterContainer) return
@@ -1865,15 +1942,11 @@ export const ProposedResearch = () => {
 
     const getScrollContainer = (el) => {
         scrollContainer = el
-        // Add scroll event listener
         scrollContainer.addEventListener('scroll', handleScroll)
-        // Fetch data when scroll container is ready
         fetchProposedResearch()
     }
 
-    // Filter and search bar
     const FilterBar = () => {
-        // Create a reference to the count span
         let countSpan
 
         const updateCount = () => {
@@ -1882,7 +1955,6 @@ export const ProposedResearch = () => {
             }
         }
 
-        // Expose updateCount to parent scope
         window.updateFilterCount = updateCount
 
         return $({
@@ -1892,8 +1964,8 @@ export const ProposedResearch = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '16px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e9ecef',
                 flexWrap: 'wrap',
                 gap: '15px'
             },
@@ -1924,7 +1996,7 @@ export const ProposedResearch = () => {
                                     tag: 'h2',
                                     text: 'Proposed Research',
                                     style: {
-                                        color: '#fff',
+                                        color: '#1e1e1e',
                                         fontFamily: 'Segoe UI, sans-serif',
                                         fontSize: '20px',
                                         fontWeight: '500',
@@ -1939,7 +2011,7 @@ export const ProposedResearch = () => {
                             style: {
                                 display: 'flex',
                                 gap: '10px',
-                                backgroundColor: '#333',
+                                backgroundColor: '#f1f3f5',
                                 padding: '4px',
                                 borderRadius: '8px'
                             },
@@ -1948,7 +2020,7 @@ export const ProposedResearch = () => {
                                     tag: 'button',
                                     text: 'All',
                                     style: {
-                                        backgroundColor: 'deepskyblue',
+                                        backgroundColor: '#0d6efd',
                                         border: 'none',
                                         borderRadius: '6px',
                                         padding: '6px 16px',
@@ -1971,7 +2043,7 @@ export const ProposedResearch = () => {
                                         border: 'none',
                                         borderRadius: '6px',
                                         padding: '6px 16px',
-                                        color: '#aaa',
+                                        color: '#495057',
                                         fontSize: '13px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
@@ -1990,7 +2062,7 @@ export const ProposedResearch = () => {
                                         border: 'none',
                                         borderRadius: '6px',
                                         padding: '6px 16px',
-                                        color: '#aaa',
+                                        color: '#495057',
                                         fontSize: '13px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
@@ -2008,7 +2080,7 @@ export const ProposedResearch = () => {
                             att: { className: 'loaded-count' },
                             style: {
                                 fontSize: '12px',
-                                color: '#888',
+                                color: '#495057',
                                 marginLeft: '10px'
                             },
                             text: `Showing 0 of 0 records`, // Initial text
@@ -2052,11 +2124,11 @@ export const ProposedResearch = () => {
                                         className: 'research-search-input'
                                     },
                                     style: {
-                                        backgroundColor: '#333',
-                                        border: '1px solid #444',
+                                        backgroundColor: '#ffffff', 
+                                        border: '1px solid #dee2e6',   
                                         borderRadius: '20px',
                                         padding: '10px 16px 10px 40px',
-                                        color: '#fff',
+                                        color: '#2d3436',   
                                         fontSize: '14px',
                                         width: '250px',
                                         outline: 'none',
@@ -2074,16 +2146,16 @@ export const ProposedResearch = () => {
                         $({
                             tag: 'select',
                             style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
+                                backgroundColor: '#ffffff',  // Change from '#333'
+                                border: '1px solid #dee2e6',  // Change from '#444'
                                 borderRadius: '20px',
                                 padding: '10px 32px 10px 16px',
-                                color: '#fff',
+                                color: '#2d3436',  // Change from '#fff'
                                 fontSize: '14px',
                                 outline: 'none',
                                 cursor: 'pointer',
                                 appearance: 'none',
-                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23495057\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
                                 backgroundRepeat: 'no-repeat',
                                 backgroundPosition: 'right 10px center',
                                 backgroundSize: '16px',
@@ -2091,10 +2163,10 @@ export const ProposedResearch = () => {
                             },
                             child: [
                                 $({ tag: 'option', att: { value: '' }, text: 'All Status' }),
-                                $({ tag: 'option', att: { value: 'revision_pending' }, text: 'Revision Pending' }),
-                                $({ tag: 'option', att: { value: 'revision_submitted' }, text: 'Revision Submitted' }),
-                                $({ tag: 'option', att: { value: 'revision_accepted' }, text: 'Revision Accepted' }),
-                                $({ tag: 'option', att: { value: 'revision_rejected' }, text: 'Revision Rejected' })
+                                $({ tag: 'option', att: { value: 'revision_pending' }, text: 'Pending Paper Revision' }),
+                                $({ tag: 'option', att: { value: 'revision_submitted' }, text: 'Revision Paper Submitted' }),
+                                $({ tag: 'option', att: { value: 'revision_accepted' }, text: 'Accepted Paper Revision' }),
+                                $({ tag: 'option', att: { value: 'revision_rejected' }, text: 'Paper Revision Rejected' })
                             ],
                             event: {
                                 type: 'change',
@@ -2109,23 +2181,26 @@ export const ProposedResearch = () => {
         })
     }
 
-    // Statistics cards
     const StatsCards = () => {
         return $({
             tag: 'div',
             att: { className: 'stats-cards-container' },
             style: {
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '16px',
-                padding: '20px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444'
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
+                padding: '16px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px',
+                flex: '1',
+                minWidth: '160px',
+                border: '1px solid #e9ecef', 
+                transition: 'transform 0.2s ease',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
             }
         })
     }
 
-    // Table header component
     const TableHeader = () => {
         const headerCells = columns.map(col => {
             let backgroundColor = '#2d2d2d'
@@ -2146,9 +2221,9 @@ export const ProposedResearch = () => {
                     textAlign: 'left',
                     fontSize: '11px',
                     fontWeight: '600',
-                    color: textColor,
-                    backgroundColor: backgroundColor,
-                    borderBottom: col.field.includes('inhouse') || col.field.includes('symposium') ? '2px solid #666' : '2px solid #444',
+                    color: '#495057',  
+                    backgroundColor: '#f8f9fa', 
+                    borderBottom: col.field.includes('inhouse') || col.field.includes('symposium') ? '2px solid #e9ecef' : '2px solid #dee2e6',
                     whiteSpace: 'nowrap',
                     minWidth: col.width,
                     position: 'sticky',
@@ -2198,7 +2273,6 @@ export const ProposedResearch = () => {
         })
     }
 
-    // Main table component
     const DataTable = () => {
         return $({
             tag: 'div',
@@ -2206,7 +2280,7 @@ export const ProposedResearch = () => {
                 width: '100%',
                 height: 'calc(100% - 220px)',
                 overflow: 'auto',
-                backgroundColor: '#2a2a2a',
+                backgroundColor: '#ffffff',
                 position: 'relative'
             },
             elementHandler: getScrollContainer,
@@ -2237,7 +2311,7 @@ export const ProposedResearch = () => {
         style: {
             width: '100%',
             height: '100%',
-            backgroundColor: '#2a2a2a',
+            backgroundColor: '#f8f9fa',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -2253,7 +2327,6 @@ export const ProposedResearch = () => {
     })
 }
 
-// Utility functions for later use
 export const formatProposedDate = (date) => {
     if (!date) return '—'
     const d = new Date(date)
