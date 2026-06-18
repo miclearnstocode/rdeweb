@@ -4,7 +4,6 @@ export const onGoingResearch = () => {
     let mainContainer
     let tableBody
     let scrollContainer
-    let modalElement = null
     let loadingElement = null
     let monitoringData = []
     let filteredData = []
@@ -335,108 +334,172 @@ export const onGoingResearch = () => {
         })
     }
 
-    // Show empty state
+
     const showEmptyState = () => {
         if (!tableBody) return
 
         tableBody.innerHTML = ''
 
+        // Get the actual column count from the table header
+        const headerRow = document.querySelector('.summary-accomplishment-container thead tr')
+        let columnCount = 12 // Default fallback
+        
+        if (headerRow) {
+            const headerCells = headerRow.querySelectorAll('th')
+            if (headerCells.length > 0) {
+                columnCount = headerCells.length
+            }
+        }
+
         const emptyState = $({
-            tag: 'div',
-            att: { className: 'empty-state' },
+            tag: 'tr',
             style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '350px',
-                width: '100%',
-                color: '#888',
-                fontFamily: 'Segoe UI, sans-serif'
+                backgroundColor: '#ffffff'
             },
             child: [
                 $({
-                    tag: 'div',
+                    tag: 'td',
+                    att: { colSpan: columnCount },
                     style: {
-                        position: 'relative',
-                        width: '120px',
-                        height: '120px',
-                        marginBottom: '24px',
-                        position: 'absolute',
-                        left: '60%',
-                        top: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        padding: '0',
+                        border: 'none',
+                        backgroundColor: '#ffffff',
+                        textAlign: 'center',
+                        verticalAlign: 'middle',
+                        height: '400px'
                     },
                     child: [
                         $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-chart-line' },
+                            tag: 'div',
+                            att: { className: 'empty-state' },
                             style: {
-                                fontSize: '80px',
-                                color: 'deepskyblue',
-                                opacity: 0.3,
-                                position: 'absolute',
-                                left: '0',
-                                top: '0'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-clipboard-list' },
-                            style: {
-                                fontSize: '50px',
-                                color: '#4caf50',
-                                opacity: 0.4,
-                                position: 'absolute',
-                                right: '-10px',
-                                bottom: '-10px'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-chart-simple' },
-                            style: {
-                                fontSize: '40px',
-                                color: '#ff9800',
-                                opacity: 0.4,
-                                position: 'absolute',
-                                left: '-15px',
-                                bottom: '0'
-                            }
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%',
+                                color: '#6c757d',
+                                fontFamily: 'Segoe UI, sans-serif'
+                            },
+                            child: [
+                                // Icon container with multiple icons
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        position: 'relative',
+                                        width: '120px',
+                                        height: '120px',
+                                        marginBottom: '24px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-chart-line' },
+                                            style: {
+                                                fontSize: '80px',
+                                                color: '#0d6efd',
+                                                opacity: 0.15,
+                                                position: 'absolute',
+                                                left: '0',
+                                                top: '0'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-clipboard-list' },
+                                            style: {
+                                                fontSize: '50px',
+                                                color: '#28a745',
+                                                opacity: 0.2,
+                                                position: 'absolute',
+                                                right: '-10px',
+                                                bottom: '-10px'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-chart-simple' },
+                                            style: {
+                                                fontSize: '40px',
+                                                color: '#fd7e14',
+                                                opacity: 0.2,
+                                                position: 'absolute',
+                                                left: '-15px',
+                                                bottom: '0'
+                                            }
+                                        })
+                                    ]
+                                }),
+                                // Title
+                                $({
+                                    tag: 'div',
+                                    text: 'No Monitoring Data Found',
+                                    style: {
+                                        fontSize: '24px',
+                                        marginBottom: '12px',
+                                        fontWeight: '600',
+                                        color: '#212529',
+                                        letterSpacing: '0.5px'
+                                    }
+                                }),
+                                // Subtitle
+                                $({
+                                    tag: 'div',
+                                    text: 'Click the Actions to edit project monitoring details',
+                                    style: {
+                                        fontSize: '14px',
+                                        color: '#6c757d',
+                                        textAlign: 'center',
+                                        maxWidth: '500px',
+                                        lineHeight: '1.6'
+                                    }
+                                }),
+                                // Helpful tips
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '20px',
+                                        display: 'flex',
+                                        gap: '8px',
+                                        flexWrap: 'wrap',
+                                        justifyContent: 'center'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            style: {
+                                                display: 'inline-block',
+                                                padding: '4px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '20px',
+                                                fontSize: '12px',
+                                                color: '#6c757d'
+                                            },
+                                            text: '💡 Tip: Try adjusting your filters'
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            style: {
+                                                display: 'inline-block',
+                                                padding: '4px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '20px',
+                                                fontSize: '12px',
+                                                color: '#6c757d'
+                                            },
+                                            text: '📋 Select a different quarter or year'
+                                        })
+                                    ]
+                                })
+                            ]
                         })
                     ]
-                }),
-                $({
-                    tag: 'div',
-                    text: 'No Monitoring Data Found',
-                    style: {
-                        fontSize: '24px',
-                        marginBottom: '12px',
-                        fontWeight: '600',
-                        color: '#fff',
-                        letterSpacing: '0.5px',
-                        position: 'absolute',
-                        left: '60%',
-                        top: '70%',
-                        transform: 'translate(-50%, -50%)'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'Click the Actions to edit project monitoring details',
-                    style: {
-                        fontSize: '14px',
-                        opacity: 0.7,
-                        marginBottom: '30px',
-                        textAlign: 'center',
-                        position: 'absolute',
-                        left: '60%',
-                        top: '75%',
-                        transform: 'translate(-50%, -50%)'
-                    }
                 })
             ]
         })
@@ -444,13 +507,11 @@ export const onGoingResearch = () => {
         tableBody.appendChild(emptyState)
     }
 
-    // Get quarter data for a specific quarter
     const getQuarterData = (item, quarter) => {
         const quartersMap = item.quarters || {}
         return quartersMap[quarter.toLowerCase()] || {}
     }
 
-    // Format date to words (e.g., April 30, 2026)
     const formatDate = (dateString) => {
         if (!dateString || dateString === '—' || dateString === '0000-00-00') return '—'
         try {
@@ -466,7 +527,6 @@ export const onGoingResearch = () => {
         }
     }
 
-    // Create data row - SIMPLE VERSION
     const createDataRow = (item, rowNumber) => {
         const cells = []
 
@@ -487,15 +547,16 @@ export const onGoingResearch = () => {
                     tag: 'td',
                     style: {
                         padding: '12px 8px',
-                        fontSize: '12px',
-                        color: '#ddd',
-                        border: '1px solid #444',
+                        fontSize: '13px',
+                        color: '#212529',
+                        border: '1px solid #f1f3f5',
                         whiteSpace: 'normal',
                         wordBreak: 'break-word',
                         fontFamily: 'Segoe UI, sans-serif',
-                        lineHeight: '1.4',
+                        lineHeight: '1.5',
                         verticalAlign: 'top',
-                        textAlign: align
+                        textAlign: align,
+                        backgroundColor: '#ffffff'
                     },
                     text: value
                 })
@@ -518,48 +579,49 @@ export const onGoingResearch = () => {
                 let value = '—'
                 let cellStyle = {
                     padding: '12px 8px',
-                    fontSize: '12px',
-                    color: '#ddd',
-                    border: '1px solid #444',
+                    fontSize: '13px',
+                    color: '#212529',
+                    border: '1px solid #f1f3f5',
                     whiteSpace: 'normal',
                     wordBreak: 'break-word',
                     fontFamily: 'Segoe UI, sans-serif',
-                    lineHeight: '1.4',
+                    lineHeight: '1.5',
                     verticalAlign: 'top',
-                    textAlign: field.align
+                    textAlign: field.align,
+                    backgroundColor: '#ffffff'
                 }
 
                 if (field.key === 'completion') {
                     value = quarterData.completion ? `${quarterData.completion}%` : '—'
                     if (quarterData.completion) {
-                        const completion = parseInt(quarterData.completion)
+                        const completion = parseFloat(quarterData.completion)
                         if (completion >= 80) {
-                            cellStyle.backgroundColor = 'rgba(76, 175, 80, 0.15)'
-                            cellStyle.color = '#4caf50'
-                            cellStyle.fontWeight = '500'
+                            cellStyle.backgroundColor = '#e8f5e9'
+                            cellStyle.color = '#2e7d32'
+                            cellStyle.fontWeight = '600'
                         } else if (completion >= 50) {
-                            cellStyle.backgroundColor = 'rgba(255, 152, 0, 0.15)'
-                            cellStyle.color = '#ff9800'
+                            cellStyle.backgroundColor = '#fff3e0'
+                            cellStyle.color = '#e65100'
                         } else if (completion >= 25) {
-                            cellStyle.backgroundColor = 'rgba(233, 30, 99, 0.15)'
-                            cellStyle.color = '#e91e63'
+                            cellStyle.backgroundColor = '#fce4ec'
+                            cellStyle.color = '#c62828'
                         } else if (completion > 0) {
-                            cellStyle.backgroundColor = 'rgba(158, 158, 158, 0.15)'
-                            cellStyle.color = '#aaa'
+                            cellStyle.backgroundColor = '#f5f5f5'
+                            cellStyle.color = '#6c757d'
                         }
                     }
                 } else if (field.key === 'status') {
                     value = quarterData.status || '—'
                     if (quarterData.status) {
                         const statusColors = {
-                            'Completed': '#4caf50',
-                            'On Track': 'deepskyblue',
-                            'Delayed': '#e91e63',
-                            'Not Started': '#aaa',
-                            'On Hold': '#ff9800'
+                            'Completed': '#2e7d32',
+                            'On Track': '#0d6efd',
+                            'Delayed': '#c62828',
+                            'Not Started': '#6c757d',
+                            'On Hold': '#e65100'
                         }
-                        cellStyle.color = statusColors[quarterData.status] || '#ddd'
-                        cellStyle.fontWeight = '500'
+                        cellStyle.color = statusColors[quarterData.status] || '#212529'
+                        cellStyle.fontWeight = '600'
                     }
                 } else if (field.key === 'remarks') {
                     value = quarterData.remarks || '—'
@@ -573,666 +635,15 @@ export const onGoingResearch = () => {
 
         return $({
             tag: 'tr',
+            att: { className: 'data-row' },
             style: {
-                backgroundColor: '#2d2d2d',
+                backgroundColor: '#ffffff',
                 transition: 'all 0.2s ease'
             },
-            child: cells,
-            event: {
-                type: 'mouseenter',
-                method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#333'
-                }
-            },
-            event2: {
-                type: 'mouseleave',
-                method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#2d2d2d'
-                }
-            }
+            child: cells
         })
     }
 
-    // Create action buttons
-    const createActionButtons = (item) => {
-        return $({
-            tag: 'div',
-            style: {
-                display: 'flex',
-                gap: '8px',
-                justifyContent: 'center'
-            },
-            child: [
-                $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-pen' },
-                    style: {
-                        color: '#ffb347',
-                        cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        transition: 'all 0.2s ease'
-                    },
-                    title: 'Edit',
-                    event: {
-                        type: 'click',
-                        method: (e) => {
-                            e.stopPropagation()
-                            openEditModal(item)
-                        }
-                    }
-                })
-            ]
-        })
-    }
-
-    // Mark ready for symposium
-    const markReadyForSymposium = async (item) => {
-        try {
-            showLoading()
-            const formData = new FormData()
-            formData.append('action', 'markReadyForSymposium')
-            formData.append('projectId', item.id)
-            formData.append('isReady', !item.readyForSymposium)
-
-            const response = await fetch('/ongoingresearch', {
-                method: 'POST',
-                body: formData
-            })
-
-            const result = await response.json()
-
-            if (result.success) {
-                // Refresh data
-                await refreshData()
-                showNotification('Symposium status updated', 'success')
-            } else {
-                showNotification('Failed to update symposium status', 'error')
-            }
-        } catch (error) {
-            console.error('Error updating symposium status:', error)
-            showNotification('Error connecting to server', 'error')
-        } finally {
-            hideLoading()
-        }
-    }
-
-    // Open edit modal
-    const openEditModal = (item) => {
-        renderModal(item)
-    }
-
-    // Close modal
-    const closeModal = () => {
-        if (modalElement) {
-            modalElement.remove()
-            modalElement = null
-        }
-    }
-
-    // Render modal
-    const renderModal = (item) => {
-        if (modalElement) {
-            modalElement.remove()
-        }
-
-        // Get current quarter data
-        const currentQData = getQuarterData(item, currentQuarter)
-
-        modalElement = $({
-            tag: 'div',
-            style: {
-                position: 'fixed',
-                top: '0',
-                left: '0',
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: '1000',
-                fontFamily: 'Segoe UI, sans-serif'
-            },
-            child: [
-                $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '12px',
-                        width: '700px',
-                        maxWidth: '95%',
-                        maxHeight: '90%',
-                        overflow: 'auto',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                        border: '1px solid #444'
-                    },
-                    child: [
-                        // Modal header
-                        $({
-                            tag: 'div',
-                            style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid #444',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                position: 'sticky',
-                                top: '0',
-                                backgroundColor: '#2d2d2d',
-                                zIndex: '1'
-                            },
-                            child: [
-                                $({
-                                    tag: 'h2',
-                                    text: `Edit Quarterly Report - ${currentQuarter} ${currentYear}`,
-                                    style: {
-                                        margin: '0',
-                                        fontSize: '18px',
-                                        fontWeight: '500',
-                                        color: '#fff'
-                                    }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-times' },
-                                    style: {
-                                        fontSize: '20px',
-                                        color: '#888',
-                                        cursor: 'pointer',
-                                        padding: '8px',
-                                        borderRadius: '4px',
-                                        transition: 'all 0.2s ease'
-                                    },
-                                    event: {
-                                        type: 'click',
-                                        method: closeModal
-                                    }
-                                })
-                            ]
-                        }),
-                        // Modal body
-                        $({
-                            tag: 'form',
-                            att: { id: 'monitoring-form' },
-                            style: {
-                                padding: '24px'
-                            },
-                            child: [
-                                // Hidden fields
-                                $({
-                                    tag: 'input',
-                                    att: {
-                                        type: 'hidden',
-                                        name: 'project_id',
-                                        value: item.id || ''
-                                    }
-                                }),
-                                $({
-                                    tag: 'input',
-                                    att: {
-                                        type: 'hidden',
-                                        name: 'quarter',
-                                        value: currentQuarter
-                                    }
-                                }),
-                                $({
-                                    tag: 'input',
-                                    att: {
-                                        type: 'hidden',
-                                        name: 'year',
-                                        value: currentYear
-                                    }
-                                }),
-
-                                // Project Title (readonly)
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Project Title',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'text',
-                                                value: item.title || '',
-                                                readonly: true
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#2a2a2a',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#aaa',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Researchers (readonly)
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Researchers',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'text',
-                                                value: item.researchers || '',
-                                                readonly: true
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#2a2a2a',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#aaa',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Start Date
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Start Date',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'date',
-                                                name: 'startDate',
-                                                value: item.startDate || ''
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Fund Source
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Fund Source',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'text',
-                                                name: 'fundSource',
-                                                placeholder: 'Enter funding source...',
-                                                value: item.fundSource && item.fundSource !== '—' ? item.fundSource : ''
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Location
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Location',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'text',
-                                                name: 'location',
-                                                placeholder: 'Enter location...',
-                                                value: item.location && item.location !== '—' ? item.location : ''
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // % of Completion
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: '% of Completion',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'input',
-                                            att: {
-                                                type: 'number',
-                                                name: 'completion',
-                                                placeholder: 'Enter percentage (0-100)',
-                                                value: currentQData.completion || ''
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            }
-                                        })
-                                    ]
-                                }),
-
-                                // Status
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Status',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'select',
-                                            att: {
-                                                name: 'status'
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none'
-                                            },
-                                            child: [
-                                                $({ tag: 'option', att: { value: '' }, text: '-- Select Status --' }),
-                                                $({ tag: 'option', att: { value: 'Not Started' }, text: 'Not Started' }),
-                                                $({ tag: 'option', att: { value: 'On Track' }, text: 'On Track' }),
-                                                $({ tag: 'option', att: { value: 'Delayed' }, text: 'Delayed' }),
-                                                $({ tag: 'option', att: { value: 'On Hold' }, text: 'On Hold' }),
-                                                $({ tag: 'option', att: { value: 'Completed' }, text: 'Completed' })
-                                            ]
-                                        })
-                                    ]
-                                }),
-
-                                // Remarks (Problems Encountered)
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Remarks (Problems Encountered)',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'textarea',
-                                            att: {
-                                                name: 'remarks',
-                                                placeholder: 'Enter any problems encountered...',
-                                                rows: '3'
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                resize: 'vertical',
-                                                fontFamily: 'inherit'
-                                            },
-                                            text: currentQData.remarks || ''
-                                        })
-                                    ]
-                                }),
-
-                                // Preventive/Corrective Measures
-                                $({
-                                    tag: 'div',
-                                    style: { marginBottom: '20px' },
-                                    child: [
-                                        $({
-                                            tag: 'label',
-                                            text: 'Preventive/Corrective Measures',
-                                            style: {
-                                                display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'textarea',
-                                            att: {
-                                                name: 'measures',
-                                                placeholder: 'Enter preventive or corrective measures...',
-                                                rows: '3'
-                                            },
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                outline: 'none',
-                                                resize: 'vertical',
-                                                fontFamily: 'inherit'
-                                            },
-                                            text: currentQData.measures || ''
-                                        })
-                                    ]
-                                }),
-
-                                // Modal footer
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        display: 'flex',
-                                        justifyContent: 'flex-end',
-                                        gap: '12px',
-                                        marginTop: '24px',
-                                        borderTop: '1px solid #444',
-                                        paddingTop: '20px'
-                                    },
-                                    child: [
-                                        $({
-                                            tag: 'button',
-                                            att: { type: 'button' },
-                                            text: 'Cancel',
-                                            style: {
-                                                padding: '10px 24px',
-                                                backgroundColor: 'transparent',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#aaa',
-                                                fontSize: '14px',
-                                                cursor: 'pointer'
-                                            },
-                                            event: {
-                                                type: 'click',
-                                                method: closeModal
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'button',
-                                            att: { type: 'button' },
-                                            text: 'Save Changes',
-                                            style: {
-                                                padding: '10px 24px',
-                                                backgroundColor: 'deepskyblue',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                color: '#fff',
-                                                fontSize: '14px',
-                                                cursor: 'pointer'
-                                            },
-                                            event: {
-                                                type: 'click',
-                                                method: saveMonitoringData
-                                            }
-                                        })
-                                    ]
-                                })
-                            ]
-                        })
-                    ]
-                })
-            ]
-        })
-
-        document.body.appendChild(modalElement)
-
-        // Set status select value
-        setTimeout(() => {
-            const statusSelect = document.querySelector('select[name="status"]')
-            if (statusSelect && currentQData.status) {
-                statusSelect.value = currentQData.status
-            }
-        }, 100)
-    }
-
-    // Save monitoring data
-    const saveMonitoringData = async () => {
-        const form = document.getElementById('monitoring-form')
-        const formData = new FormData(form)
-        formData.append('action', 'save')
-
-        showLoading()
-        try {
-            const response = await fetch('/ongoingresearch', {
-                method: 'POST',
-                body: formData
-            })
-
-            const result = await response.json()
-
-            if (result.success) {
-                closeModal()
-                showNotification('Monitoring data saved successfully', 'success')
-                await refreshData()
-            } else {
-                showNotification('Error saving monitoring data', 'error')
-            }
-        } catch (error) {
-            console.error('Error saving monitoring data:', error)
-            showNotification('Error connecting to server', 'error')
-        } finally {
-            hideLoading()
-        }
-    }
-
-    // Refresh data
     const refreshData = async () => {
         monitoringData = []
         filteredData = []
@@ -1244,7 +655,6 @@ export const onGoingResearch = () => {
         await fetchMonitoringData(null, 'next', null, category, currentQuarter, currentYear, center, campus)
     }
 
-    // Update filter buttons styles
     const updateFilterButtons = (activeFilter) => {
         const filterButtons = document.querySelectorAll('.filter-btn')
 
@@ -1263,7 +673,6 @@ export const onGoingResearch = () => {
         })
     }
 
-    // Update quarter buttons styles
     const updateQuarterButtons = (activeQuarter) => {
         const quarterButtons = document.querySelectorAll('.quarter-btn')
         quarterButtons.forEach(button => {
@@ -1280,7 +689,6 @@ export const onGoingResearch = () => {
         })
     }
 
-    // Filter bar component
     const FilterBar = () => {
         return $({
             tag: 'div',
@@ -1290,8 +698,8 @@ export const onGoingResearch = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '16px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e9ecef',
                 flexWrap: 'wrap',
                 gap: '15px'
             },
@@ -1316,13 +724,13 @@ export const onGoingResearch = () => {
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-chart-line' },
-                                    style: { color: 'deepskyblue', fontSize: '22px' }
+                                    style: { color: '#0d6efd', fontSize: '22px' }
                                 }),
                                 $({
                                     tag: 'h2',
                                     text: 'Internally Funded Research Monitoring - On-going',
                                     style: {
-                                        color: '#fff',
+                                        color: '#212529',
                                         fontFamily: 'Segoe UI, sans-serif',
                                         fontSize: '22px',
                                         fontWeight: '600',
@@ -1334,13 +742,13 @@ export const onGoingResearch = () => {
                                     tag: 'span',
                                     att: { className: 'record-count' },
                                     style: {
-                                        backgroundColor: '#333',
-                                        color: '#aaa',
+                                        backgroundColor: '#f1f3f5',
+                                        color: '#6c757d',
                                         padding: '4px 10px',
                                         borderRadius: '20px',
                                         fontSize: '12px',
                                         fontFamily: 'monospace',
-                                        border: '1px solid #444'
+                                        border: '1px solid #dee2e6'
                                     },
                                     text: '0 of 0 records'
                                 })
@@ -1351,14 +759,13 @@ export const onGoingResearch = () => {
                             tag: 'div',
                             style: {
                                 display: 'flex',
-                                gap: '12px',
-                                backgroundColor: '#333',
+                                gap: '16px',
+                                backgroundColor: '#f8f9fa',
                                 padding: '4px 12px',
                                 borderRadius: '12px',
-                                border: '1px solid #444'
+                                border: '1px solid #dee2e6'
                             },
                             child: [
-
                                 $({
                                     tag: 'select',
                                     att: { className: 'year-select' },
@@ -1366,11 +773,14 @@ export const onGoingResearch = () => {
                                         backgroundColor: 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        padding: '8px 24px 8px 12px',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         cursor: 'pointer',
-                                        outline: 'none'
+                                        outline: 'none',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none'
                                     },
                                     child: years.map(y =>
                                         $({
@@ -1396,11 +806,14 @@ export const onGoingResearch = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '200px'
+                                        maxWidth: '200px',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none'
                                     },
                                     child: centers.map(c =>
                                         $({
@@ -1416,7 +829,6 @@ export const onGoingResearch = () => {
                                             const selectedCenter = e.target.value
                                             currentCenter = selectedCenter
 
-                                            // Mapping for UI highlight
                                             const centerToCategory = {
                                                 "Crop Science Research & Developement Center (CSRDC)": "Natural / Biological",
                                                 "Livestock Research & Development Center (LRDC)": "Natural / Biological",
@@ -1428,7 +840,6 @@ export const onGoingResearch = () => {
                                                 "Extension (Extension)": "Extension"
                                             }
 
-                                            // Update category active state based on center
                                             if (selectedCenter === 'All Centers') {
                                                 currentCategory = 'All Categories'
                                             } else if (centerToCategory[selectedCenter]) {
@@ -1450,11 +861,14 @@ export const onGoingResearch = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#212529',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '150px'
+                                        maxWidth: '150px',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none'
                                     },
                                     child: campuses.map(c =>
                                         $({
@@ -1480,10 +894,10 @@ export const onGoingResearch = () => {
                             style: {
                                 display: 'flex',
                                 gap: '8px',
-                                backgroundColor: '#333',
+                                backgroundColor: '#f1f3f5',
                                 padding: '4px',
                                 borderRadius: '12px',
-                                border: '1px solid #444'
+                                border: '1px solid #dee2e6'
                             },
                             child: categories.map(cat =>
                                 $({
@@ -1491,11 +905,11 @@ export const onGoingResearch = () => {
                                     att: { className: 'filter-btn', 'data-filter': cat },
                                     text: cat,
                                     style: {
-                                        backgroundColor: cat === currentCategory ? 'deepskyblue' : 'transparent',
+                                        backgroundColor: cat === currentCategory ? '#0d6efd' : 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 16px',
-                                        color: cat === currentCategory ? '#fff' : '#aaa',
+                                        color: cat === currentCategory ? '#ffffff' : '#495057',
                                         fontSize: '12px',
                                         fontWeight: '500',
                                         cursor: 'pointer',
@@ -1510,13 +924,31 @@ export const onGoingResearch = () => {
                                             await refreshData()
                                             updateFilterButtons(cat)
                                         }
+                                    },
+                                    event2: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            if (cat !== currentCategory) {
+                                                e.target.style.backgroundColor = '#e9ecef'
+                                                e.target.style.color = '#212529'
+                                            }
+                                        }
+                                    },
+                                    event3: {
+                                        type: 'mouseleave',
+                                        method: (e) => {
+                                            if (cat !== currentCategory) {
+                                                e.target.style.backgroundColor = 'transparent'
+                                                e.target.style.color = '#495057'
+                                            }
+                                        }
                                     }
                                 })
                             )
                         })
                     ]
                 }),
-                // Search input only
+                // Search input
                 $({
                     tag: 'div',
                     style: {
@@ -1531,7 +963,7 @@ export const onGoingResearch = () => {
                             style: {
                                 position: 'absolute',
                                 left: '14px',
-                                color: '#666',
+                                color: '#6c757d',
                                 fontSize: '14px',
                                 zIndex: '1'
                             }
@@ -1544,17 +976,31 @@ export const onGoingResearch = () => {
                                 className: 'monitoring-search-input'
                             },
                             style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #dee2e6',
                                 borderRadius: '30px',
                                 padding: '10px 16px 10px 42px',
-                                color: '#fff',
+                                color: '#212529',
                                 fontSize: '14px',
                                 width: '260px',
                                 outline: 'none',
                                 transition: 'all 0.3s ease'
                             },
                             event: {
+                                type: 'focus',
+                                method: (e) => {
+                                    e.target.style.borderColor = '#0d6efd'
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
+                                }
+                            },
+                            event2: {
+                                type: 'blur',
+                                method: (e) => {
+                                    e.target.style.borderColor = '#dee2e6'
+                                    e.target.style.boxShadow = 'none'
+                                }
+                            },
+                            event3: {
                                 type: 'input',
                                 method: debounce(async (e) => {
                                     const term = e.target.value.trim()
@@ -1588,10 +1034,10 @@ export const onGoingResearch = () => {
                     style: {
                         display: 'flex',
                         gap: '8px',
-                        backgroundColor: '#333',
+                        backgroundColor: '#f1f3f5',
                         padding: '4px',
                         borderRadius: '12px',
-                        border: '1px solid #444'
+                        border: '1px solid #dee2e6'
                     },
                     child: quarters.map(q =>
                         $({
@@ -1599,11 +1045,11 @@ export const onGoingResearch = () => {
                             att: { className: 'quarter-btn' },
                             text: q.value,
                             style: {
-                                backgroundColor: q.value === currentQuarter ? 'deepskyblue' : 'transparent',
+                                backgroundColor: q.value === currentQuarter ? '#0d6efd' : 'transparent',
                                 border: 'none',
                                 borderRadius: '8px',
                                 padding: '8px 16px',
-                                color: q.value === currentQuarter ? '#fff' : '#aaa',
+                                color: q.value === currentQuarter ? '#ffffff' : '#495057',
                                 fontSize: '12px',
                                 fontWeight: '500',
                                 cursor: 'pointer',
@@ -1617,7 +1063,24 @@ export const onGoingResearch = () => {
                                     currentQuarter = q.value
                                     await refreshData()
                                     updateQuarterButtons(q.value)
-
+                                }
+                            },
+                            event2: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    if (q.value !== currentQuarter) {
+                                        e.target.style.backgroundColor = '#e9ecef'
+                                        e.target.style.color = '#212529'
+                                    }
+                                }
+                            },
+                            event3: {
+                                type: 'mouseleave',
+                                method: (e) => {
+                                    if (q.value !== currentQuarter) {
+                                        e.target.style.backgroundColor = 'transparent'
+                                        e.target.style.color = '#495057'
+                                    }
                                 }
                             }
                         })
@@ -1627,7 +1090,6 @@ export const onGoingResearch = () => {
         })
     }
 
-    // Statistics cards
     const StatsCards = () => {
         return $({
             tag: 'div',
@@ -1637,21 +1099,25 @@ export const onGoingResearch = () => {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444'
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e9ecef'
             },
             child: [
                 // Total On-Going Projects
                 $({
                     tag: 'div',
+                    att: { className: 'stat-card-ongoing' },  // ← ADD THIS CLASS
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '16px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '12px',
                         padding: '18px 22px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e9ecef',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'default'
                     },
                     child: [
                         $({
@@ -1659,18 +1125,19 @@ export const onGoingResearch = () => {
                             style: {
                                 width: '54px',
                                 height: '54px',
-                                borderRadius: '16px',
-                                backgroundColor: 'rgba(0, 191, 255, 0.15)',
+                                borderRadius: '12px',
+                                backgroundColor: 'rgba(13, 110, 253, 0.10)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(0, 191, 255, 0.3)'
+                                border: '1px solid rgba(13, 110, 253, 0.15)',
+                                transition: 'all 0.3s ease'
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-diagram-project' },
-                                    style: { color: 'deepskyblue', fontSize: '26px' }
+                                    style: { color: '#0d6efd', fontSize: '26px', transition: 'all 0.3s ease' }
                                 })
                             ]
                         }),
@@ -1685,8 +1152,9 @@ export const onGoingResearch = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
-                                        lineHeight: '1.2'
+                                        color: '#212529',
+                                        lineHeight: '1.2',
+                                        transition: 'color 0.3s ease'
                                     }
                                 }),
                                 $({
@@ -1694,8 +1162,9 @@ export const onGoingResearch = () => {
                                     text: 'On-Going',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
-                                        fontWeight: '500'
+                                        color: '#6c757d',
+                                        fontWeight: '500',
+                                        transition: 'color 0.3s ease'
                                     }
                                 })
                             ]
@@ -1705,14 +1174,18 @@ export const onGoingResearch = () => {
                 // Completed Research
                 $({
                     tag: 'div',
+                    att: { className: 'stat-card-completed' },  // ← ADD THIS CLASS
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '16px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '12px',
                         padding: '18px 22px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e9ecef',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'default'
                     },
                     child: [
                         $({
@@ -1720,18 +1193,19 @@ export const onGoingResearch = () => {
                             style: {
                                 width: '54px',
                                 height: '54px',
-                                borderRadius: '16px',
-                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                                borderRadius: '12px',
+                                backgroundColor: 'rgba(40, 167, 69, 0.10)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(76, 175, 80, 0.3)'
+                                border: '1px solid rgba(40, 167, 69, 0.15)',
+                                transition: 'all 0.3s ease'
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-check-circle' },
-                                    style: { color: '#4caf50', fontSize: '26px' }
+                                    style: { color: '#28a745', fontSize: '26px', transition: 'all 0.3s ease' }
                                 })
                             ]
                         }),
@@ -1746,8 +1220,9 @@ export const onGoingResearch = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
-                                        lineHeight: '1.2'
+                                        color: '#212529',
+                                        lineHeight: '1.2',
+                                        transition: 'color 0.3s ease'
                                     }
                                 }),
                                 $({
@@ -1755,8 +1230,9 @@ export const onGoingResearch = () => {
                                     text: 'Completed',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
-                                        fontWeight: '500'
+                                        color: '#6c757d',
+                                        fontWeight: '500',
+                                        transition: 'color 0.3s ease'
                                     }
                                 })
                             ]
@@ -1767,23 +1243,17 @@ export const onGoingResearch = () => {
         })
     }
 
-    // Main table component
     const DataTable = () => {
-        // Create colgroup
         const colgroup = $({ tag: 'colgroup' })
-
-        // 6 fixed columns
         const fixedWidths = ['50px', '280px', '160px', '90px', '110px', '120px']
         fixedWidths.forEach(w => {
             colgroup.appendChild($({ tag: 'col', style: { width: w } }))
         })
-
-        // 1 quarter × 4 sub-columns = 4 columns
         const subWidths = ['100px', '160px', '220px', '220px']
         subWidths.forEach(w => {
             colgroup.appendChild($({ tag: 'col', style: { width: w } }))
         })
-
+        
         return $({
             tag: 'div',
             style: {
@@ -1791,7 +1261,7 @@ export const onGoingResearch = () => {
                 height: 'calc(100% - 280px)',
                 overflowX: 'auto',
                 overflowY: 'auto',
-                backgroundColor: '#2a2a2a',
+                backgroundColor: '#ffffff',
                 position: 'relative'
             },
             elementHandler: (el) => {
@@ -1824,40 +1294,43 @@ export const onGoingResearch = () => {
     }
 
     const TableHeader = () => {
-        // ROW 1 - Single row header
         const row1 = $({ tag: 'tr' })
 
-        // All table headers
         const fixedHeaders = [
             'NO.',
-            'PROGRAM/PROJECT/STUDY TITLE\n(under each program, indicate project components, & under each project, indicate study components)',
+            'PROGRAM/PROJECT/STUDY TITLE',
             'RESEARCHER/S',
             'START DATE',
             'FUND SOURCE',
             'LOCATION',
             '% of Completion',
-            'Status of the program/project/study',
-            'Remarks (Problems Encountered)',
-            'Preventive/Corrective Measures to address problems'
+            'Status',
+            'Remarks',
+            'Measures'
         ]
 
         fixedHeaders.forEach(header => {
-            const isCenter = ['NO.', '% of Completion', 'Status of the program/project/study'].includes(header)
+            const isCenter = ['NO.', '% of Completion', 'Status'].includes(header)
 
             const th = $({
                 tag: 'th',
                 text: header,
                 style: {
-                    padding: '14px 8px',
+                    padding: '12px 8px',
                     textAlign: isCenter ? 'center' : 'left',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fontWeight: '600',
-                    color: '#fff',
-                    backgroundColor: '#2d2d2d',
-                    border: '1px solid #444',
+                    color: '#495057',
+                    backgroundColor: '#f8f9fa',
+                    borderBottom: '2px solid #dee2e6',
                     whiteSpace: 'normal',
                     wordBreak: 'break-word',
-                    verticalAlign: 'middle'
+                    verticalAlign: 'middle',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    position: 'sticky',
+                    top: '0',
+                    zIndex: '10'
                 }
             })
             row1.appendChild(th)
@@ -1911,10 +1384,10 @@ export const onGoingResearch = () => {
         }
     }
 
-    // Main container
     return $({
         tag: 'div',
         att: { className: 'monitoring-container' },
+        externalStyle: '/client/component/rdeStaff/style/accomplishment.css',
         style: {
             width: '100%',
             height: '100%',
