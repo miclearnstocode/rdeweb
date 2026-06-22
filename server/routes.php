@@ -2,7 +2,6 @@
 require_once("{$_SERVER['DOCUMENT_ROOT']}/server/router.php");
 
 // ========== API ROUTES (POST) ==========
-// These handle form submissions, AJAX requests
 post('/loginAuth','server/authToken.php');
 post('/sessionCheck','server/session.php');
 post('/evaluatorReg','server/evalReg.php');
@@ -18,7 +17,7 @@ post('/loadercos','server/loadCos.php');
 post('/deleteUser','server/updates.php');
 post('/uploadResearchFile','server/researchFile.php');
 post('/uploadFacultyDocs', 'server/researchFacultySub.php');
-post('/uploadExtensionDocs','server/extensionChairSub.php');
+post('/uploadExtensionDocs','server/extensionAPI/extensionChairSub.php');
 post('/getresearch','server/rdeAcceptance.php');
 post('/filesSend','server/file.php');
 post('/inboxFile','server/fileViewer.php');
