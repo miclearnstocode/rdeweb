@@ -1638,7 +1638,6 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
     document.addEventListener('keydown', handleKey)
 }
 
-// Custom Modal Library - Modern White Version (Fixed)
 export const CustomModal = ({
     title = 'Modal',
     content = null,
