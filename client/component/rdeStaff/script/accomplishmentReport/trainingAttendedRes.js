@@ -16,6 +16,7 @@ export const trainingsAttended = () => {
     let nextCursor = null
     let totalCount = 0
     let initialLoadDone = false
+    let attendees = []
 
     // Stats state
     let currentStats = {
@@ -63,15 +64,12 @@ export const trainingsAttended = () => {
         'Local'
     ]
 
-    // Show loading
     const showLoading = () => {
         if (!loadingElement) {
             loadingElement = Waiting()
             document.body.appendChild(loadingElement)
         }
     }
-
-    // Hide loading
     const hideLoading = () => {
         if (loadingElement) {
             loadingElement.remove()
@@ -79,7 +77,6 @@ export const trainingsAttended = () => {
         }
     }
 
-    // Fetch attended training data
     const fetchAttendedData = async (cursor = null) => {
         if (isLoading) return
 
@@ -116,7 +113,7 @@ export const trainingsAttended = () => {
                 formData.append('category', currentCategory)
             }
 
-            const response = await fetch('/trainingActivitiesResearch', {
+            const response = await fetch('/attendedResearch', {  // Updated endpoint
                 method: 'POST',
                 body: formData
             })
@@ -125,23 +122,7 @@ export const trainingsAttended = () => {
                 throw new Error(`HTTP error! status: ${response.status}`)
             }
 
-            const text = await response.text()
-
-            if (!text || text.trim() === '') {
-                console.warn('Empty response from server')
-                if (!cursor) {
-                    showEmptyState()
-                }
-                return
-            }
-
-            let result
-            try {
-                result = JSON.parse(text)
-            } catch (e) {
-                console.error('Failed to parse JSON:', text.substring(0, 200))
-                throw new Error('Invalid JSON response from server')
-            }
+            const result = await response.json()
 
             if (result.success) {
                 const newData = result.data || []
@@ -154,8 +135,15 @@ export const trainingsAttended = () => {
 
                     // Update stats
                     if (result.summary) {
-                        currentStats = result.summary
-                        totalCount = result.summary.totalTrainings
+                        currentStats = {
+                            totalTrainings: result.summary.totalTrainings || 0,
+                            totalAttendees: result.summary.totalAttendees || 0,
+                            institutional: result.summary.institutional || 0,
+                            national: result.summary.national || 0,
+                            regional: result.summary.regional || 0,
+                            local: result.summary.local || 0
+                        }
+                        totalCount = result.summary.totalTrainings || 0
                         updateStats()
                     }
                 } else {
@@ -167,11 +155,13 @@ export const trainingsAttended = () => {
 
                 applyCategoryFilter()
                 updateRecordCount()
+                updateTableWithData()
             } else {
                 console.error('Server returned error:', result.message)
                 if (!cursor) {
                     showEmptyState()
                 }
+                showNotification(result.message || 'Failed to load data', 'error')
             }
         } catch (error) {
             console.error('Error fetching attended data:', error)
@@ -185,7 +175,6 @@ export const trainingsAttended = () => {
         }
     }
 
-    // Apply category filter locally
     const applyCategoryFilter = () => {
         if (currentCategory === 'All Categories') {
             filteredData = [...attendedData]
@@ -195,7 +184,6 @@ export const trainingsAttended = () => {
         updateTableWithData()
     }
 
-    // Handle scroll for infinite loading
     const handleScroll = () => {
         if (!scrollContainer || isLoading || !hasMore) return
 
@@ -206,7 +194,6 @@ export const trainingsAttended = () => {
         }
     }
 
-    // Update statistics
     const updateStats = () => {
         const statTotalTrainings = document.querySelector('.stat-total-trainings')
         const statTotalAttendees = document.querySelector('.stat-total-attendees')
@@ -223,15 +210,12 @@ export const trainingsAttended = () => {
         if (statLocal) statLocal.textContent = currentStats.local
     }
 
-    // Update record count
     const updateRecordCount = () => {
         const recordCount = document.querySelector('.record-count')
         if (recordCount) {
             recordCount.textContent = `${filteredData.length} of ${totalCount} records`
         }
     }
-
-    // Update table with data
     const updateTableWithData = () => {
         if (!tableBody) return
 
@@ -247,54 +231,85 @@ export const trainingsAttended = () => {
         })
     }
 
-    // Show empty state
     const showEmptyState = () => {
         if (!tableBody) return
 
         tableBody.innerHTML = ''
 
+        // Get the actual column count from the table header
+        const headerRow = document.querySelector('.training-attended-container thead tr')
+        let columnCount = 1 // Default fallback
+        
+        if (headerRow) {
+            const headerCells = headerRow.querySelectorAll('th')
+            if (headerCells.length > 0) {
+                columnCount = headerCells.length
+            }
+        }
+
         const emptyState = $({
-            tag: 'div',
-            att: { className: 'empty-state' },
+            tag: 'tr',
             style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '350px',
-                width: '100%',
-                color: '#888',
-                fontFamily: 'Segoe UI, sans-serif',
-                gridColumn: '1 / -1'
+                backgroundColor: '#ffffff'
             },
             child: [
                 $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-user-graduate' },
+                    tag: 'td',
+                    att: { colSpan: columnCount },
                     style: {
-                        fontSize: '64px',
-                        marginBottom: '20px',
-                        opacity: 0.3,
-                        color: '#9c27b0'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'No Training/Seminar Attended Records Found',
-                    style: {
-                        fontSize: '20px',
-                        marginBottom: '12px',
-                        fontWeight: '500',
-                        color: '#fff'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'Click "Add Training/Seminar" to add attended training records',
-                    style: {
-                        fontSize: '14px',
-                        opacity: 0.7
-                    }
+                        padding: '0',
+                        border: 'none',
+                        backgroundColor: '#ffffff',
+                        textAlign: 'center',
+                        verticalAlign: 'middle',
+                        height: '400px'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            att: { className: 'empty-state' },
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%',
+                                color: '#6c757d',
+                                fontFamily: 'Segoe UI, sans-serif'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-user-graduate' },
+                                    style: {
+                                        fontSize: '64px',
+                                        marginBottom: '20px',
+                                        opacity: 0.2,
+                                        color: '#6f42c1'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'No Training/Seminar Attended Records Found',
+                                    style: {
+                                        fontSize: '20px',
+                                        marginBottom: '12px',
+                                        fontWeight: '600',
+                                        color: '#212529'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'Click "Add Training/Seminar" to add attended training records',
+                                    style: {
+                                        fontSize: '14px',
+                                        color: '#6c757d'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
                 })
             ]
         })
@@ -302,7 +317,6 @@ export const trainingsAttended = () => {
         tableBody.appendChild(emptyState)
     }
 
-    // Format date
     const formatDate = (dateString) => {
         if (!dateString || dateString === '—' || dateString === '0000-00-00') return '—'
         try {
@@ -318,7 +332,6 @@ export const trainingsAttended = () => {
         }
     }
 
-    // Render attendees list
     const renderAttendees = (attendees) => {
         if (!attendees || attendees === '—') return '—'
 
@@ -342,7 +355,8 @@ export const trainingsAttended = () => {
             style: {
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '4px'
+                gap: '4px',
+                padding: '4px 0'
             },
             child: attendeeList.map((attendee, idx) => {
                 const name = typeof attendee === 'string' ? attendee : attendee.name || 'Unknown'
@@ -351,20 +365,20 @@ export const trainingsAttended = () => {
                 return $({
                     tag: 'div',
                     style: {
-                        padding: '6px 8px',
-                        backgroundColor: idx % 2 === 0 ? 'rgba(156, 39, 176, 0.08)' : 'transparent',
-                        borderRadius: '4px',
-                        borderBottom: '1px solid #444'
+                        padding: '6px 10px',
+                        backgroundColor: idx % 2 === 0 ? 'rgba(111, 66, 193, 0.06)' : 'transparent',
+                        borderRadius: '6px',
+                        borderBottom: idx < attendeeList.length - 1 ? '1px solid #f1f3f5' : 'none'
                     },
                     child: [
                         $({
                             tag: 'div',
                             text: name,
                             style: {
-                                color: '#ddd',
+                                color: '#212529',
                                 fontWeight: '500',
-                                fontSize: '12px',
-                                lineHeight: '1.4'
+                                fontSize: '13px',
+                                lineHeight: '1.5'
                             }
                         }),
                         ...(position ? [
@@ -372,10 +386,10 @@ export const trainingsAttended = () => {
                                 tag: 'div',
                                 text: position,
                                 style: {
-                                    color: '#888',
-                                    fontSize: '11px',
+                                    color: '#6c757d',
+                                    fontSize: '12px',
                                     fontStyle: 'italic',
-                                    lineHeight: '1.3',
+                                    lineHeight: '1.4',
                                     marginTop: '2px'
                                 }
                             })
@@ -386,109 +400,243 @@ export const trainingsAttended = () => {
         })
     }
 
-    // Render paper trail links
-    const renderLinks = (links) => {
-        if (!links || links === '—' || (Array.isArray(links) && links.length === 0)) {
-            return '—'
-        }
-
-        let linkArray = []
-        try {
-            if (typeof links === 'string') {
-                linkArray = JSON.parse(links)
-            } else if (Array.isArray(links)) {
-                linkArray = links
+    const renderDocumentLinks = (item) => {
+        const documents = [
+            {
+                type: 'Memorandum to Attend',
+                fileId: item.memorandum_drive_file_id,
+                viewUrl: item.memorandum_drive_view_url,
+                icon: 'fa-file-pdf',
+                color: '#dc3545',
+                bgColor: 'rgba(220, 53, 69, 0.06)'
+            },
+            {
+                type: 'Invitation',
+                fileId: item.invitation_drive_file_id,
+                viewUrl: item.invitation_drive_view_url,
+                icon: 'fa-file-pdf',
+                color: '#fd7e14',
+                bgColor: 'rgba(253, 126, 20, 0.06)'
+            },
+            {
+                type: 'Certificate',
+                fileId: item.certificate_drive_file_id,
+                viewUrl: item.certificate_drive_view_url,
+                icon: 'fa-file-pdf',
+                color: '#28a745',
+                bgColor: 'rgba(40, 167, 69, 0.06)'
+            },
+            {
+                type: 'Program',
+                fileId: item.program_drive_file_id,
+                viewUrl: item.program_drive_view_url,
+                icon: 'fa-file-pdf',
+                color: '#0d6efd',
+                bgColor: 'rgba(13, 110, 253, 0.06)'
             }
-        } catch (e) {
-            return links
-        }
+        ]
 
-        if (linkArray.length === 0) return '—'
+        const uploadedDocs = documents.filter(doc => doc.viewUrl || doc.fileId)
+
+        if (uploadedDocs.length === 0) {
+            return $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '24px',
+                    color: '#6c757d',
+                    fontSize: '13px',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '8px',
+                    border: '1px dashed #dee2e6'
+                },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-regular fa-file' },
+                        style: { marginRight: '10px', fontSize: '16px', color: '#adb5bd' }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: 'No documents uploaded'
+                    })
+                ]
+            })
+        }
 
         return $({
             tag: 'div',
             style: {
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '6px'
+                gap: '8px',
+                padding: '4px 0'
             },
-            child: linkArray.map((link, idx) => {
-                const url = typeof link === 'string' ? link : link.url || link
-                const label = typeof link === 'string' ? `Document ${idx + 1}` : (link.label || `Document ${idx + 1}`)
+            child: uploadedDocs.map(doc => {
+                const fileUrl = doc.viewUrl || `https://drive.google.com/file/d/${doc.fileId}/preview`
 
                 return $({
                     tag: 'a',
                     att: {
-                        href: url,
+                        href: fileUrl,
                         target: '_blank',
                         rel: 'noopener noreferrer'
                     },
-                    text: label,
                     style: {
-                        color: '#9c27b0',
-                        textDecoration: 'none',
-                        fontSize: '12px',
-                        wordBreak: 'break-all',
-                        padding: '6px 10px',
-                        backgroundColor: 'rgba(156, 39, 176, 0.1)',
-                        borderRadius: '6px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        border: '1px solid rgba(156, 39, 176, 0.2)',
-                        transition: 'all 0.2s ease'
+                        gap: '12px',
+                        padding: '10px 14px',
+                        backgroundColor: doc.bgColor,
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        border: `1px solid ${doc.color}20`,
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
                     },
                     event: {
                         type: 'mouseenter',
                         method: (e) => {
-                            e.target.style.backgroundColor = 'rgba(156, 39, 176, 0.2)'
-                            e.target.style.borderColor = 'rgba(156, 39, 176, 0.4)'
-                        },
-                        type2: 'mouseleave',
-                        method2: (e) => {
-                            e.target.style.backgroundColor = 'rgba(156, 39, 176, 0.1)'
-                            e.target.style.borderColor = 'rgba(156, 39, 176, 0.2)'
+                            e.currentTarget.style.transform = 'translateX(4px)'
+                            e.currentTarget.style.backgroundColor = `${doc.color}12`
+                            e.currentTarget.style.borderColor = `${doc.color}40`
+                            e.currentTarget.style.boxShadow = `0 2px 8px ${doc.color}15`
+                        }
+                    },
+                    event2: {
+                        type: 'mouseleave',
+                        method: (e) => {
+                            e.currentTarget.style.transform = 'translateX(0)'
+                            e.currentTarget.style.backgroundColor = doc.bgColor
+                            e.currentTarget.style.borderColor = `${doc.color}20`
+                            e.currentTarget.style.boxShadow = 'none'
                         }
                     },
                     child: [
                         $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-external-link-alt' },
-                            style: { fontSize: '10px', opacity: 0.7 }
+                            tag: 'div',
+                            style: {
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '8px',
+                                backgroundColor: `${doc.color}15`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: '0'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: `fa-solid ${doc.icon}` },
+                                    style: { color: doc.color, fontSize: '17px' }
+                                })
+                            ]
                         }),
-                        $({ tag: 'span', text: label })
+                        $({
+                            tag: 'div',
+                            style: { flex: '1', minWidth: '0' },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    text: doc.type,
+                                    style: {
+                                        color: '#212529',
+                                        fontSize: '13px',
+                                        fontWeight: '500'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'View Document →',
+                                    style: {
+                                        color: doc.color,
+                                        fontSize: '11px',
+                                        marginTop: '2px',
+                                        opacity: '0.8',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-arrow-up-right-from-square' },
+                            style: {
+                                color: doc.color,
+                                fontSize: '12px',
+                                opacity: '0.5',
+                                transition: 'opacity 0.2s ease'
+                            },
+                            event: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    e.target.style.opacity = '1'
+                                }
+                            },
+                            event2: {
+                                type: 'mouseleave',
+                                method: (e) => {
+                                    e.target.style.opacity = '0.5'
+                                }
+                            }
+                        })
                     ]
                 })
             })
         })
     }
 
-    // Render category badge
     const renderCategoryBadge = (category) => {
         if (!category || category === '—') return '—'
 
         const categoryColors = {
-            'Institutional': { bg: 'rgba(33, 150, 243, 0.15)', color: '#2196f3', border: 'rgba(33, 150, 243, 0.3)' },
-            'National': { bg: 'rgba(76, 175, 80, 0.15)', color: '#4caf50', border: 'rgba(76, 175, 80, 0.3)' },
-            'Regional': { bg: 'rgba(255, 152, 0, 0.15)', color: '#ff9800', border: 'rgba(255, 152, 0, 0.3)' },
-            'Local': { bg: 'rgba(156, 39, 176, 0.15)', color: '#9c27b0', border: 'rgba(156, 39, 176, 0.3)' }
+            'Institutional': { bg: 'rgba(13, 110, 253, 0.08)', color: '#0d6efd', border: 'rgba(13, 110, 253, 0.2)' },
+            'National': { bg: 'rgba(40, 167, 69, 0.08)', color: '#28a745', border: 'rgba(40, 167, 69, 0.2)' },
+            'Regional': { bg: 'rgba(253, 126, 20, 0.08)', color: '#fd7e14', border: 'rgba(253, 126, 20, 0.2)' },
+            'Local': { bg: 'rgba(111, 66, 193, 0.08)', color: '#6f42c1', border: 'rgba(111, 66, 193, 0.2)' },
+            'International': { bg: 'rgba(220, 53, 69, 0.08)', color: '#dc3545', border: 'rgba(220, 53, 69, 0.2)' },
+            'University': { bg: 'rgba(32, 201, 151, 0.08)', color: '#20c997', border: 'rgba(32, 201, 151, 0.2)' },
+            'Extension': { bg: 'rgba(255, 193, 7, 0.08)', color: '#d39e00', border: 'rgba(255, 193, 7, 0.2)' }
         }
 
-        const colors = categoryColors[category] || { bg: 'rgba(158, 158, 158, 0.15)', color: '#9e9e9e', border: 'rgba(158, 158, 158, 0.3)' }
+        const colors = categoryColors[category] || { 
+            bg: 'rgba(108, 117, 125, 0.08)', 
+            color: '#6c757d', 
+            border: 'rgba(108, 117, 125, 0.2)' 
+        }
 
         return $({
             tag: 'span',
             text: category,
             style: {
                 display: 'inline-block',
-                padding: '4px 12px',
+                padding: '4px 14px',
                 borderRadius: '20px',
                 fontSize: '11px',
                 fontWeight: '600',
                 backgroundColor: colors.bg,
                 color: colors.color,
                 border: `1px solid ${colors.border}`,
-                letterSpacing: '0.5px'
+                letterSpacing: '0.3px',
+                textTransform: 'uppercase',
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.target.style.transform = 'scale(1.05)'
+                    e.target.style.boxShadow = `0 2px 8px ${colors.color}25`
+                }
+            },
+            event2: {
+                type: 'mouseleave',
+                method: (e) => {
+                    e.target.style.transform = 'scale(1)'
+                    e.target.style.boxShadow = 'none'
+                }
             }
         })
     }
@@ -608,11 +756,11 @@ export const trainingsAttended = () => {
                     verticalAlign: 'top',
                     lineHeight: '1.4'
                 },
-                text: item.sponsoringAgency || '—'
+                text: item.sponsoring_agency || '—'
             })
         )
 
-        // Paper Trail Links
+        // Paper Trail Links - Updated to use renderDocumentLinks
         cells.push(
             $({
                 tag: 'td',
@@ -622,7 +770,7 @@ export const trainingsAttended = () => {
                     verticalAlign: 'top',
                     maxWidth: '250px'
                 },
-                child: [safeRender(renderLinks(item.paperTrailLinks))]
+                child: [safeRender(renderDocumentLinks(item))]
             })
         )
 
@@ -742,7 +890,7 @@ export const trainingsAttended = () => {
             formData.append('action', 'delete_attended')
             formData.append('id', item.id)
 
-            const response = await fetch('/trainingActivitiesResearch', {
+            const response = await fetch('/attendedResearch', {  // Updated endpoint
                 method: 'POST',
                 body: formData
             })
@@ -753,7 +901,7 @@ export const trainingsAttended = () => {
                 showNotification('Training/Seminar record deleted successfully', 'success')
                 await refreshData()
             } else {
-                showNotification('Failed to delete training/seminar record', 'error')
+                showNotification(result.message || 'Failed to delete training/seminar record', 'error')
             }
         } catch (error) {
             console.error('Error deleting training:', error)
@@ -771,19 +919,6 @@ export const trainingsAttended = () => {
 
         const isEditing = item !== null
 
-        // Paper trail links state
-        let paperTrailLinks = []
-        if (isEditing && item.paperTrailLinks) {
-            try {
-                paperTrailLinks = typeof item.paperTrailLinks === 'string' ? JSON.parse(item.paperTrailLinks) : item.paperTrailLinks
-                if (!Array.isArray(paperTrailLinks)) paperTrailLinks = []
-            } catch (e) {
-                paperTrailLinks = []
-            }
-        }
-
-        // Attendees state
-        let attendees = []
         if (isEditing && item.attendees) {
             try {
                 attendees = typeof item.attendees === 'string' ? JSON.parse(item.attendees) : item.attendees
@@ -792,111 +927,10 @@ export const trainingsAttended = () => {
                 attendees = []
             }
         }
-
-        // Containers for dynamic fields
-        let linksContainer
-        let attendeesContainer
-
-        // Function to add a new paper trail link
-        const addLinkField = (url = '', label = '') => {
-            const linkIndex = paperTrailLinks.length
-            paperTrailLinks.push({ url, label })
-
-            const linkRow = $({
-                tag: 'div',
-                att: { className: 'link-row', 'data-link-index': linkIndex },
-                style: {
-                    display: 'flex',
-                    gap: '8px',
-                    marginBottom: '8px',
-                    alignItems: 'center'
-                },
-                child: [
-                    $({
-                        tag: 'select',
-                        att: { className: 'link-label-select' },
-                        style: {
-                            flex: '1',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none',
-                            cursor: 'pointer'
-                        },
-                        child: [
-                            $({ tag: 'option', att: { value: '' }, text: '-- Document Type --' }),
-                            $({ tag: 'option', att: { value: 'Memorandum to Attend', selected: label === 'Memorandum to Attend' }, text: 'Memorandum to Attend' }),
-                            $({ tag: 'option', att: { value: 'Invitation', selected: label === 'Invitation' }, text: 'Invitation' }),
-                            $({ tag: 'option', att: { value: 'Certificate', selected: label === 'Certificate' }, text: 'Certificate' }),
-                            $({ tag: 'option', att: { value: 'Program', selected: label === 'Program' }, text: 'Program' }),
-                            $({ tag: 'option', att: { value: 'Other', selected: label === 'Other' }, text: 'Other' })
-                        ],
-                        event: {
-                            type: 'change',
-                            method: (e) => {
-                                if (paperTrailLinks[linkIndex]) {
-                                    paperTrailLinks[linkIndex].label = e.target.value
-                                }
-                            }
-                        }
-                    }),
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'url',
-                            placeholder: 'https://...',
-                            value: url,
-                            className: 'link-url-input'
-                        },
-                        style: {
-                            flex: '2',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
-                        },
-                        event: {
-                            type: 'input',
-                            method: (e) => {
-                                if (paperTrailLinks[linkIndex]) {
-                                    paperTrailLinks[linkIndex].url = e.target.value
-                                }
-                            }
-                        }
-                    }),
-                    $({
-                        tag: 'button',
-                        att: { type: 'button' },
-                        text: '×',
-                        style: {
-                            padding: '8px 12px',
-                            backgroundColor: '#f44336',
-                            border: 'none',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '16px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold'
-                        },
-                        event: {
-                            type: 'click',
-                            method: () => {
-                                paperTrailLinks.splice(linkIndex, 1)
-                                linkRow.remove()
-                            }
-                        }
-                    })
-                ]
-            })
-
-            return linkRow
+        if (attendees.length === 0) {
+            attendees = [{ name: '', position: '' }]
         }
+        let attendeesContainer
 
         // Function to add an attendee field
         const addAttendeeField = (name = '', position = '') => {
@@ -1010,14 +1044,6 @@ export const trainingsAttended = () => {
                 zIndex: '1000',
                 fontFamily: 'Segoe UI, sans-serif'
             },
-            event: {
-                type: 'click',
-                method: (e) => {
-                    if (e.target === e.currentTarget) {
-                        closeModal()
-                    }
-                }
-            },
             child: [
                 $({
                     tag: 'div',
@@ -1088,7 +1114,7 @@ export const trainingsAttended = () => {
                         // Modal body
                         $({
                             tag: 'form',
-                            att: { id: 'attended-training-form' },
+                            att: { id: 'attended-training-form', enctype: 'multipart/form-data' },
                             style: {
                                 padding: '24px'
                             },
@@ -1228,13 +1254,10 @@ export const trainingsAttended = () => {
                                             },
                                             elementHandler: (el) => {
                                                 attendeesContainer = el
-                                                if (isEditing && attendees.length > 0) {
-                                                    attendees.forEach(attendee => {
-                                                        attendeesContainer.appendChild(
-                                                            addAttendeeField(attendee.name, attendee.position)
-                                                        )
-                                                    })
-                                                }
+                                                // Populate existing attendees
+                                                attendees.forEach(attendee => {
+                                                    attendeesContainer.appendChild(addAttendeeField(attendee.name, attendee.position))
+                                                })
                                             }
                                         })
                                     ]
@@ -1453,86 +1476,49 @@ export const trainingsAttended = () => {
                                     ]
                                 }),
 
-                                // Paper Trail Links section
+                                // Paper Trail Documents section with modern file upload
                                 $({
                                     tag: 'div',
                                     style: { marginBottom: '20px' },
                                     child: [
                                         $({
-                                            tag: 'div',
+                                            tag: 'label',
                                             style: {
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: '8px'
+                                                display: 'block',
+                                                marginBottom: '12px',
+                                                color: '#aaa',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
                                             },
                                             child: [
                                                 $({
-                                                    tag: 'label',
-                                                    text: 'Link of the Paper Trail (Memorandum to attend, Invitation, Certificate, & Program)',
-                                                    style: {
-                                                        color: '#aaa',
-                                                        fontSize: '13px',
-                                                        fontWeight: '500',
-                                                        flex: '1'
-                                                    }
+                                                    tag: 'span',
+                                                    text: 'Paper Trail Documents',
+                                                    style: { display: 'block', marginBottom: '4px' }
                                                 }),
                                                 $({
-                                                    tag: 'button',
-                                                    att: { type: 'button' },
-                                                    text: '+ Add Paper Trail',
-                                                    style: {
-                                                        padding: '6px 14px',
-                                                        backgroundColor: '#2196f3',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
-                                                        fontSize: '12px',
-                                                        cursor: 'pointer',
-                                                        fontWeight: '500',
-                                                        transition: 'all 0.2s ease',
-                                                        whiteSpace: 'nowrap'
-                                                    },
-                                                    event: {
-                                                        type: 'click',
-                                                        method: () => {
-                                                            const newRow = addLinkField()
-                                                            linksContainer.appendChild(newRow)
-                                                        },
-                                                        type2: 'mouseenter',
-                                                        method2: (e) => {
-                                                            e.target.style.backgroundColor = '#1976d2'
-                                                        },
-                                                        type3: 'mouseleave',
-                                                        method3: (e) => {
-                                                            e.target.style.backgroundColor = '#2196f3'
-                                                        }
-                                                    }
+                                                    tag: 'span',
+                                                    text: 'Upload supporting documents (PDF format only)',
+                                                    style: { fontSize: '11px', color: '#666', fontWeight: 'normal' }
                                                 })
                                             ]
                                         }),
                                         $({
                                             tag: 'div',
-                                            att: { id: 'links-container' },
                                             style: {
-                                                backgroundColor: '#2a2a2a',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #444',
-                                                minHeight: '50px'
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                                                gap: '16px'
                                             },
-                                            elementHandler: (el) => {
-                                                linksContainer = el
-                                                if (isEditing && paperTrailLinks.length > 0) {
-                                                    paperTrailLinks.forEach(link => {
-                                                        linksContainer.appendChild(addLinkField(link.url, link.label))
-                                                    })
-                                                }
-                                            }
+                                            child: [
+                                                createModernFileUpload('Memorandum to Attend', 'memorandum_file', '📋', isEditing ? item.memorandum_file : null),
+                                                createModernFileUpload('Invitation', 'invitation_file', '📧', isEditing ? item.invitation_file : null),
+                                                createModernFileUpload('Certificate', 'certificate_file', '🏆', isEditing ? item.certificate_file : null),
+                                                createModernFileUpload('Program', 'program_file', '📅', isEditing ? item.program_file : null)
+                                            ]
                                         })
                                     ]
                                 }),
-
                                 // Modal footer
                                 $({
                                     tag: 'div',
@@ -1640,6 +1626,410 @@ export const trainingsAttended = () => {
         }, 100)
     }
 
+    const createModernFileUpload = (label, fieldName, icon, existingFile = null) => {
+        let fileInputRef = null
+        let fileInfoContainer = null
+        let currentFile = null
+
+        const container = $({
+            tag: 'div',
+            style: {
+                position: 'relative',
+                backgroundColor: '#1e1e1e',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid #333',
+                transition: 'all 0.3s ease'
+            }
+        })
+
+        // Header with icon and label
+        const header = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '12px'
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px'
+                    },
+                    text: icon
+                }),
+                $({
+                    tag: 'span',
+                    text: label,
+                    style: {
+                        color: '#ddd',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        flex: '1'
+                    }
+                }),
+                $({
+                    tag: 'span',
+                    att: { className: 'fa-solid fa-file-pdf' },
+                    style: {
+                        color: '#f44336',
+                        fontSize: '14px',
+                        opacity: '0.6'
+                    }
+                })
+            ]
+        })
+
+        // File input
+        const fileInput = $({
+            tag: 'input',
+            att: {
+                type: 'file',
+                name: fieldName,
+                accept: '.pdf',
+                id: `${fieldName}-input`
+            },
+            style: {
+                display: 'none'
+            },
+            event: {
+                type: 'change',
+                method: (e) => {
+                    if (e.target.files && e.target.files[0]) {
+                        handleFileSelect(e.target.files[0])
+                    }
+                }
+            }
+        })
+
+        // File info container
+        fileInfoContainer = $({
+            tag: 'div',
+            style: {
+                marginTop: '12px'
+            }
+        })
+
+        // Handle file selection
+        const handleFileSelect = (file) => {
+            if (file.type !== 'application/pdf') {
+                showNotification('Please upload only PDF files', 'error')
+                if (fileInputRef) fileInputRef.value = ''
+                return
+            }
+
+            currentFile = file
+            updateFileDisplay(file)
+        }
+
+        // Update file display
+        const updateFileDisplay = (file) => {
+            const fileSize = (file.size / 1024).toFixed(2)
+            const fileName = file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name
+
+            fileInfoContainer.innerHTML = ''
+
+            const fileCard = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px',
+                    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(156, 39, 176, 0.2)',
+                    animation: 'fadeIn 0.3s ease'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '36px',
+                            height: '36px',
+                            backgroundColor: '#f44336',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontSize: '16px'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-file-pdf' }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            flex: '1',
+                            minWidth: '0'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                text: fileName,
+                                style: {
+                                    color: '#fff',
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }
+                            }),
+                            $({
+                                tag: 'div',
+                                text: `${fileSize} KB • PDF`,
+                                style: {
+                                    color: '#888',
+                                    fontSize: '10px',
+                                    marginTop: '2px'
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'button',
+                        att: { type: 'button' },
+                        style: {
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            color: '#f44336',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            transition: 'all 0.2s ease'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-times' },
+                                style: { fontSize: '12px' }
+                            })
+                        ],
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                e.stopPropagation()
+                                currentFile = null
+                                if (fileInputRef) fileInputRef.value = ''
+                                fileInfoContainer.innerHTML = ''
+
+                                // Show upload prompt again
+                                const uploadPrompt = createUploadPrompt()
+                                fileInfoContainer.appendChild(uploadPrompt)
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(244, 67, 54, 0.1)'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent'
+                            }
+                        }
+                    })
+                ]
+            })
+
+            fileInfoContainer.appendChild(fileCard)
+        }
+
+        // Create upload prompt
+        const createUploadPrompt = () => {
+            return $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '20px',
+                    border: '2px dashed #444',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    backgroundColor: 'transparent'
+                },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-solid fa-cloud-upload-alt' },
+                        style: {
+                            fontSize: '24px',
+                            color: '#666',
+                            marginBottom: '4px'
+                        }
+                    }),
+                    $({
+                        tag: 'div',
+                        text: 'Click or drag PDF here',
+                        style: {
+                            color: '#888',
+                            fontSize: '11px'
+                        }
+                    }),
+                    $({
+                        tag: 'div',
+                        text: 'Max file size: 10MB',
+                        style: {
+                            color: '#555',
+                            fontSize: '9px'
+                        }
+                    })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => {
+                        if (fileInputRef) fileInputRef.click()
+                    }
+                }
+            })
+        }
+
+        // Build the component
+        container.appendChild(header)
+        container.appendChild(fileInput)
+        container.appendChild(fileInfoContainer)
+
+        // Store reference
+        fileInputRef = fileInput
+
+        // Initialize based on existing file
+        if (existingFile && (existingFile.drive_view_url || existingFile.drive_file_id)) {
+            const fileInfo = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(76, 175, 80, 0.2)'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '36px',
+                            height: '36px',
+                            backgroundColor: '#4caf50',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontSize: '16px'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-check' }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: { flex: '1' },
+                        child: [
+                            $({
+                                tag: 'div',
+                                text: existingFile.file_name || `${label} uploaded`,
+                                style: {
+                                    color: '#fff',
+                                    fontSize: '12px',
+                                    fontWeight: '500'
+                                }
+                            }),
+                            $({
+                                tag: 'div',
+                                text: 'Previously uploaded',
+                                style: {
+                                    color: '#888',
+                                    fontSize: '10px',
+                                    marginTop: '2px'
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'a',
+                        att: {
+                            href: existingFile.drive_view_url || `https://drive.google.com/file/d/${existingFile.drive_file_id}/preview`,
+                            target: '_blank'
+                        },
+                        style: {
+                            color: '#2196f3',
+                            marginRight: '8px'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-eye' },
+                                style: { fontSize: '12px' }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-solid fa-check-circle' },
+                        style: { color: '#4caf50', fontSize: '14px' }
+                    })
+                ]
+            })
+            fileInfoContainer.appendChild(fileInfo)
+
+            // Add replace note
+            const replaceNote = $({
+                tag: 'div',
+                style: {
+                    marginTop: '8px',
+                    fontSize: '10px',
+                    color: '#ff9800',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    padding: '4px'
+                },
+                text: 'Click to replace file',
+                event: {
+                    type: 'click',
+                    method: () => {
+                        if (fileInputRef) fileInputRef.click()
+                    },
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.target.style.textDecoration = 'underline'
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.target.style.textDecoration = 'none'
+                    }
+                }
+            })
+            fileInfoContainer.appendChild(replaceNote)
+        } else {
+            // Show upload prompt for new files
+            const uploadPrompt = createUploadPrompt()
+            fileInfoContainer.appendChild(uploadPrompt)
+        }
+
+        return container
+    }
     // Toggle location select between campus and center
     const toggleLocationSelect = (type, selectedValue = '') => {
         const container = document.getElementById('location-select-container')
@@ -1713,19 +2103,21 @@ export const trainingsAttended = () => {
         )
     }
 
-    // Save training data
+    // Save training data with file uploads
     const saveTrainingData = async (isEditing) => {
         const form = document.getElementById('attended-training-form')
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_attended' : 'add_attended')
 
-        // Add dynamic arrays as JSON
-        formData.append('attendees', JSON.stringify(attendees))
-        formData.append('paperTrailLinks', JSON.stringify(paperTrailLinks))
+        if (typeof attendees !== 'undefined') {
+            formData.append('attendees', JSON.stringify(attendees))
+        } else if (window.currentAttendees) {
+            formData.append('attendees', JSON.stringify(window.currentAttendees))
+        }
 
         showLoading()
         try {
-            const response = await fetch('/trainingActivitiesResearch', {
+            const response = await fetch('/attendedResearch', {  // Updated endpoint
                 method: 'POST',
                 body: formData
             })
