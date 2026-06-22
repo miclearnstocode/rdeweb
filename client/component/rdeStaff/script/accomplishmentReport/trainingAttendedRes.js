@@ -3202,8 +3202,8 @@ export const trainingsAttended = () => {
         return $({
             tag: 'div',
             style: {
-                width: '100%',
-                height: 'calc(100% - 320px)',
+                width: 'calc(100% - 48px)', 
+                height: 'calc(100% - 340px)',
                 overflow: 'auto',
                 backgroundColor: '#ffffff',
                 position: 'relative',

@@ -110,7 +110,7 @@ export const facilitiesImprovement = () => {
                 formData.append('fundingType', currentFundingType)
             }
 
-            const response = await fetch('/api/facilities-improvement', {
+            const response = await fetch('/facilitiesImprovement', {
                 method: 'POST',
                 body: formData
             })

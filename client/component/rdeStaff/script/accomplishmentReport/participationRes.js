@@ -3773,7 +3773,7 @@ export const participationResearch = () => {
 
     const TableHeader = () => {
         const headers = [
-            { key: 'NO.', align: 'center', width: '50px' },
+            { key: 'NO.', align: 'center', width: '70px' },
             { key: 'Title of Activity', align: 'left', width: '200px' },
             { key: 'Product/Technology\nExhibited', align: 'left', width: '180px' },
             { key: 'In-charge', align: 'left', width: '150px' },
@@ -3904,8 +3904,8 @@ export const participationResearch = () => {
         return $({
             tag: 'div',
             style: {
-                width: '100%',
-                height: 'calc(100% - 340px)',
+                width: 'calc(100% - 48px)', 
+                height: '100%',
                 overflow: 'auto',
                 backgroundColor: '#ffffff',
                 position: 'relative',

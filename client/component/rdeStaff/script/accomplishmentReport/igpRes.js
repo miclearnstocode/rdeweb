@@ -2573,7 +2573,7 @@ export const igpResearch = () => {
             { key: 'Income generated\nfor the 2nd Qtr', align: 'right', width: '120px' },
             { key: 'Income generated\nfor the 3rd Qtr', align: 'right', width: '120px' },
             { key: 'Income generated\nfor the 4th Qtr', align: 'right', width: '120px' },
-            { key: 'ACTIONS', align: 'center', width: '100px' }
+            { key: 'ACTIONS', align: 'center', width: '120px' }
         ]
 
         const row = $({ tag: 'tr' })
@@ -2690,7 +2690,7 @@ export const igpResearch = () => {
         return $({
             tag: 'div',
             style: {
-                width: '100%',
+                width: 'calc(100% - 48px)', 
                 height: 'calc(100% - 340px)',
                 overflow: 'auto',
                 backgroundColor: '#ffffff',

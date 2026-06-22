@@ -1,0 +1,381 @@
+/* conducted.css - Modern White Theme */
+
+.trainingActivitiesResearch-container {
+    background-color: #f8f9fa;
+}
+
+/* Custom scrollbar */
+.trainingActivitiesResearch-container ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.trainingActivitiesResearch-container ::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 3px;
+}
+
+.trainingActivitiesResearch-container ::-webkit-scrollbar-thumb {
+    background: #ced4da;
+    border-radius: 3px;
+}
+
+.trainingActivitiesResearch-container ::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
+}
+
+/* Stats Cards - White Theme */
+.trainingActivitiesResearch-container .stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 20px 24px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.trainingActivitiesResearch-container .stats-cards > div {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.trainingActivitiesResearch-container .stats-cards > div:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    background-color: #f8f9fa;
+}
+
+.trainingActivitiesResearch-container .stats-cards .stat-value {
+    color: #212529;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    transition: color 0.3s ease;
+}
+
+.trainingActivitiesResearch-container .stats-cards .stat-label {
+    color: #6c757d;
+    font-size: 13px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.trainingActivitiesResearch-container .stats-cards > div:hover .stat-value {
+    color: var(--stat-color, #0d6efd);
+}
+
+.trainingActivitiesResearch-container .stats-cards > div:hover .stat-label {
+    color: #212529;
+}
+
+/* Filter Bar - White Theme */
+.trainingActivitiesResearch-container .filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e9ecef;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.trainingActivitiesResearch-container .filter-bar h2 {
+    color: #212529;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.trainingActivitiesResearch-container .filter-bar .fa-chalkboard-teacher {
+    color: #fd7e14 !important;
+}
+
+.trainingActivitiesResearch-container .filter-bar .record-count {
+    background-color: #f1f3f5;
+    color: #6c757d;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: monospace;
+    border: 1px solid #dee2e6;
+}
+
+.trainingActivitiesResearch-container .filter-bar .filter-container {
+    display: flex;
+    gap: 12px;
+    background-color: #f8f9fa;
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+}
+
+.trainingActivitiesResearch-container .filter-bar select {
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #212529;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.trainingActivitiesResearch-container .filter-bar select:focus {
+    border: 1px solid #0d6efd;
+    border-radius: 8px;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.trainingActivitiesResearch-container .filter-bar select:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Add Training Button - White Theme */
+.trainingActivitiesResearch-container .add-training-btn {
+    padding: 10px 20px;
+    background-color: #0d6efd;
+    border: none;
+    border-radius: 25px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+}
+
+.trainingActivitiesResearch-container .add-training-btn:hover {
+    background-color: #0b5ed7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+}
+
+/* Table - White Theme */
+.trainingActivitiesResearch-container .data-table-wrapper {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e9ecef;
+}
+
+.trainingActivitiesResearch-container thead th {
+    background-color: #f8f9fa !important;
+    color: #495057 !important;
+    border: 1px solid #dee2e6 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 8px !important;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.trainingActivitiesResearch-container tbody td {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 1px solid #f1f3f5 !important;
+    padding: 12px 8px !important;
+    font-size: 13px !important;
+    vertical-align: top !important;
+    line-height: 1.5 !important;
+}
+
+.trainingActivitiesResearch-container tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.trainingActivitiesResearch-container tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+.trainingActivitiesResearch-container tbody tr:nth-child(even) td {
+    background-color: #fafbfc !important;
+}
+
+.trainingActivitiesResearch-container tbody tr:nth-child(even):hover td {
+    background-color: #f1f3f5 !important;
+}
+
+.trainingActivitiesResearch-container tbody tr:nth-child(odd):hover td {
+    background-color: #f8f9fa !important;
+}
+
+/* Action Buttons */
+.trainingActivitiesResearch-container .action-btn {
+    color: #6c757d;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    background-color: transparent;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trainingActivitiesResearch-container .action-btn:hover {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.trainingActivitiesResearch-container .action-btn.edit:hover {
+    color: #0d6efd;
+}
+
+.trainingActivitiesResearch-container .action-btn.delete:hover {
+    background-color: #fff5f5;
+    color: #dc3545;
+    border: 1px solid #fcc;
+}
+
+/* Empty State - White Theme */
+.trainingActivitiesResearch-container .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #6c757d;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.trainingActivitiesResearch-container .empty-state .fa-chalkboard-teacher {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.2;
+    color: #fd7e14;
+}
+
+.trainingActivitiesResearch-container .empty-state .empty-title {
+    font-size: 20px;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.trainingActivitiesResearch-container .empty-state .empty-subtitle {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* Resource Persons & Participants */
+.trainingActivitiesResearch-container .resource-person-item {
+    padding: 6px 8px;
+    background-color: rgba(255, 152, 0, 0.06);
+    border-radius: 6px;
+    border-bottom: 1px solid #f1f3f5;
+    transition: background-color 0.2s ease;
+}
+
+.trainingActivitiesResearch-container .resource-person-item:hover {
+    background-color: rgba(255, 152, 0, 0.12);
+}
+
+.trainingActivitiesResearch-container .participant-item {
+    padding: 6px 8px;
+    background-color: rgba(111, 66, 193, 0.06);
+    border-radius: 6px;
+    border-bottom: 1px solid #f1f3f5;
+    transition: background-color 0.2s ease;
+}
+
+.trainingActivitiesResearch-container .participant-item:hover {
+    background-color: rgba(111, 66, 193, 0.12);
+}
+
+/* Notification - White Theme */
+.trainingActivitiesResearch-container .notification {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 16px 24px;
+    border-radius: 12px;
+    background-color: #ffffff;
+    color: #212529;
+    font-size: 14px;
+    z-index: 1040;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--border-color, #0d6efd);
+    border-left: 4px solid var(--border-color, #0d6efd);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 400px;
+    animation: slideIn 0.3s ease;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .trainingActivitiesResearch-container .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .trainingActivitiesResearch-container .filter-bar .filter-container {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .trainingActivitiesResearch-container .stats-cards {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .trainingActivitiesResearch-container .filter-bar h2 {
+        font-size: 18px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .trainingActivitiesResearch-container .stats-cards,
+    .trainingActivitiesResearch-container .filter-bar {
+        display: none !important;
+    }
+}
