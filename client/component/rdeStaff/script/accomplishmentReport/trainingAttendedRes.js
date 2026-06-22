@@ -366,7 +366,7 @@ export const trainingsAttended = () => {
                                         type: 'click',
                                         method: (e) => {
                                             e.stopPropagation()
-                                            openTrainingModal()
+                                            openAddModal()
                                         },
                                         type2: 'mouseenter',
                                         method2: (e) => {
