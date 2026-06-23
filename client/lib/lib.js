@@ -2086,3 +2086,560 @@ export const LoadingModal = ({ title = 'Loading...', message = 'Please wait...' 
         footer: null
     })
 }
+
+export const DragDropUpload = ({
+    label = 'Upload File',
+    accept = '.pdf,.jpg,.jpeg,.png,.gif,.webp',
+    multiple = false,
+    required = false,
+    currentFiles = [],
+    onFileSelect = null,
+    onFileRemove = null,
+    onFileView = null, 
+    maxSizeMB = 10,
+    description = null,
+    showPreview = true,
+    className = '',
+    id = 'file-upload-' + Date.now()
+}) => {
+    // Generate unique IDs
+    const inputId = 'file-input-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+    const dropZoneId = 'drop-zone-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+    const previewId = 'preview-container-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+    const fileCountId = 'file-count-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+
+    let fileList = [...currentFiles];
+    let containerElement = null;
+    let dropZoneElement = null;
+    let previewContainer = null;
+    let fileCountElement = null;
+
+    // Determine if file is image
+    const isImageFile = (file) => {
+        if (typeof file === 'string') {
+            return /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(file);
+        }
+        return file.type && file.type.startsWith('image/');
+    };
+
+    // Determine file icon
+    const getFileIcon = (file) => {
+        const name = typeof file === 'string' ? file : file.name;
+        if (/\.(pdf)$/i.test(name)) return 'fa-file-pdf';
+        if (/\.(doc|docx)$/i.test(name)) return 'fa-file-word';
+        if (/\.(xls|xlsx)$/i.test(name)) return 'fa-file-excel';
+        if (/\.(ppt|pptx)$/i.test(name)) return 'fa-file-powerpoint';
+        if (/\.(zip|rar|7z)$/i.test(name)) return 'fa-file-archive';
+        if (/\.(mp4|avi|mov|wmv)$/i.test(name)) return 'fa-file-video';
+        if (/\.(mp3|wav|aac)$/i.test(name)) return 'fa-file-audio';
+        if (/\.(txt|log|md)$/i.test(name)) return 'fa-file-lines';
+        if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(name)) return 'fa-file-image';
+        return 'fa-file';
+    };
+
+    // Get file color
+    const getFileColor = (file) => {
+        const name = typeof file === 'string' ? file : file.name;
+        if (/\.(pdf)$/i.test(name)) return '#ea4335';
+        if (/\.(doc|docx)$/i.test(name)) return '#4285f4';
+        if (/\.(xls|xlsx)$/i.test(name)) return '#0f9d58';
+        if (/\.(ppt|pptx)$/i.test(name)) return '#ff6d00';
+        if (/\.(zip|rar|7z)$/i.test(name)) return '#795548';
+        if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(name)) return '#34a853';
+        return '#64748b';
+    };
+
+    // Format file size
+    const formatSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    // Update file count
+    const updateFileCount = () => {
+        if (fileCountElement) {
+            fileCountElement.textContent = `${fileList.length} file${fileList.length !== 1 ? 's' : ''}`;
+        }
+    };
+
+    // Open file viewer with CustomModal
+    const openFileViewer = (file, fileName) => {
+        // Use the provided onFileView callback if available
+        if (onFileView && typeof onFileView === 'function') {
+            onFileView(file);
+            return;
+        }
+    };
+
+    // Render preview items
+    const renderPreviews = () => {
+        if (!previewContainer) return;
+        previewContainer.innerHTML = '';
+
+        if (fileList.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.style.cssText = `
+                text-align: center;
+                padding: 20px;
+                color: #94a3b8;
+                font-size: 13px;
+            `;
+            emptyMsg.textContent = 'No files uploaded yet';
+            previewContainer.appendChild(emptyMsg);
+            updateFileCount();
+            return;
+        }
+
+        fileList.forEach((file, index) => {
+            const isImage = isImageFile(file);
+            const fileName = typeof file === 'string' ? file.split('/').pop() : file.name;
+            const fileSize = typeof file === 'string' ? 0 : file.size;
+            const fileIcon = getFileIcon(file);
+            const fileColor = getFileColor(file);
+            
+            // Determine the URL for viewing
+            let fileUrl = typeof file === 'string' ? file : URL.createObjectURL(file);
+
+            const previewItem = document.createElement('div');
+            previewItem.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 14px;
+                background: #f8fafc;
+                border-radius: 10px;
+                border: 1px solid #e8ecf0;
+                transition: all 0.2s ease;
+                position: relative;
+                cursor: pointer;
+            `;
+
+            // Thumbnail / Icon
+            const thumb = document.createElement('div');
+            thumb.style.cssText = `
+                width: 44px;
+                height: 44px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                background: ${isImage ? 'transparent' : `${fileColor}15`};
+                overflow: hidden;
+            `;
+
+            if (isImage) {
+                const img = document.createElement('img');
+                const src = typeof file === 'string' ? file : URL.createObjectURL(file);
+                img.src = src;
+                img.style.cssText = `
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 8px;
+                `;
+                img.alt = fileName;
+                thumb.appendChild(img);
+            } else {
+                const icon = document.createElement('i');
+                icon.className = `fa-solid ${fileIcon}`;
+                icon.style.cssText = `
+                    font-size: 22px;
+                    color: ${fileColor};
+                `;
+                thumb.appendChild(icon);
+            }
+
+            // File info
+            const info = document.createElement('div');
+            info.style.cssText = `
+                flex: 1;
+                min-width: 0;
+            `;
+
+            const nameEl = document.createElement('div');
+            nameEl.style.cssText = `
+                font-size: 13px;
+                font-weight: 500;
+                color: #1a2a3a;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            `;
+            nameEl.textContent = fileName;
+
+            const sizeEl = document.createElement('div');
+            sizeEl.style.cssText = `
+                font-size: 11px;
+                color: #94a3b8;
+                margin-top: 2px;
+            `;
+            sizeEl.textContent = fileSize ? formatSize(fileSize) : '';
+
+            info.appendChild(nameEl);
+            info.appendChild(sizeEl);
+
+            // Eye icon for preview
+            const previewBtn = document.createElement('button');
+            previewBtn.style.cssText = `
+                width: 32px;
+                height: 32px;
+                border: none;
+                border-radius: 50%;
+                background: transparent;
+                color: #94a3b8;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            `;
+            const previewIcon = document.createElement('i');
+            previewIcon.className = 'fa-solid fa-eye';
+            previewIcon.style.cssText = 'font-size: 14px;';
+            previewBtn.appendChild(previewIcon);
+
+            previewBtn.addEventListener('mouseenter', () => {
+                previewBtn.style.backgroundColor = '#e8f0fe';
+                previewBtn.style.color = '#1a73e8';
+            });
+            previewBtn.addEventListener('mouseleave', () => {
+                previewBtn.style.backgroundColor = 'transparent';
+                previewBtn.style.color = '#94a3b8';
+            });
+
+            previewBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openFileViewer(file, fileName);
+            });
+
+            // Remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.style.cssText = `
+                width: 28px;
+                height: 28px;
+                border: none;
+                border-radius: 50%;
+                background: transparent;
+                color: #94a3b8;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            `;
+            const removeIcon = document.createElement('i');
+            removeIcon.className = 'fa-solid fa-xmark';
+            removeIcon.style.cssText = 'font-size: 16px;';
+            removeBtn.appendChild(removeIcon);
+
+            removeBtn.addEventListener('mouseenter', () => {
+                removeBtn.style.backgroundColor = '#fee2e2';
+                removeBtn.style.color = '#ef4444';
+            });
+            removeBtn.addEventListener('mouseleave', () => {
+                removeBtn.style.backgroundColor = 'transparent';
+                removeBtn.style.color = '#94a3b8';
+            });
+
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileList.splice(index, 1);
+                renderPreviews();
+                updateFileCount();
+                if (onFileRemove) onFileRemove(file, index, fileList);
+            });
+
+            previewItem.appendChild(thumb);
+            previewItem.appendChild(info);
+            previewItem.appendChild(previewBtn);
+            previewItem.appendChild(removeBtn);
+
+            // Make the whole item clickable (except buttons)
+            previewItem.addEventListener('click', (e) => {
+                // Don't trigger if click is on a button
+                if (e.target.closest('button')) return;
+                openFileViewer(file, fileName);
+            });
+
+            // Hover effect
+            previewItem.addEventListener('mouseenter', () => {
+                previewItem.style.borderColor = '#cbd5e1';
+                previewItem.style.backgroundColor = '#f1f5f9';
+            });
+            previewItem.addEventListener('mouseleave', () => {
+                previewItem.style.borderColor = '#e8ecf0';
+                previewItem.style.backgroundColor = '#f8fafc';
+            });
+
+            previewContainer.appendChild(previewItem);
+        });
+
+        updateFileCount();
+    };
+
+    // Handle file selection
+    const handleFiles = (files) => {
+        const validFiles = [];
+        const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+        for (const file of files) {
+            // Check size
+            if (file.size > maxSizeBytes) {
+                // Show notification if available
+                if (window.showNotification) {
+                    window.showNotification(`File "${file.name}" exceeds ${maxSizeMB}MB limit`, 'error');
+                } else {
+                    alert(`File "${file.name}" exceeds ${maxSizeMB}MB limit`);
+                }
+                continue;
+            }
+            validFiles.push(file);
+        }
+
+        if (validFiles.length === 0) return;
+
+        if (multiple) {
+            fileList = [...fileList, ...validFiles];
+        } else {
+            fileList = validFiles;
+        }
+
+        renderPreviews();
+        updateFileCount();
+
+        if (onFileSelect) {
+            onFileSelect(validFiles, fileList);
+        }
+    };
+
+    // Create the container
+    const container = $({
+        tag: 'div',
+        att: { id: id, className: `drag-drop-upload ${className}` },
+        style: {
+            width: '100%',
+            fontFamily: 'Segoe UI, system-ui, sans-serif'
+        },
+        elementHandler: (el) => {
+            containerElement = el;
+        },
+        child: [
+            // Label
+            label ? $({
+                tag: 'label',
+                text: label,
+                style: {
+                    display: 'block',
+                    marginBottom: '8px',
+                    color: '#475569',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    letterSpacing: '0.3px'
+                }
+            }) : null,
+
+            // Drop Zone
+            $({
+                tag: 'div',
+                att: { id: dropZoneId },
+                style: {
+                    border: '2px dashed #d1d5db',
+                    borderRadius: '12px',
+                    padding: '28px 20px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    backgroundColor: '#fafbfc',
+                    position: 'relative',
+                    minHeight: '100px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                },
+                elementHandler: (el) => {
+                    dropZoneElement = el;
+                },
+                child: [
+                    // Hidden file input
+                    $({
+                        tag: 'input',
+                        att: {
+                            type: 'file',
+                            id: inputId,
+                            accept: accept,
+                            multiple: multiple,
+                            required: required
+                        },
+                        style: { display: 'none' },
+                        event: {
+                            type: 'change',
+                            method: (e) => {
+                                const files = Array.from(e.target.files);
+                                if (files.length > 0) {
+                                    handleFiles(files);
+                                }
+                                e.target.value = '';
+                            }
+                        }
+                    }),
+
+                    // Upload icon
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-solid fa-cloud-arrow-up' },
+                        style: {
+                            fontSize: '36px',
+                            color: '#94a3b8',
+                            marginBottom: '4px'
+                        }
+                    }),
+
+                    // Main text
+                    $({
+                        tag: 'div',
+                        text: description || 'Drag & drop files here or click to browse',
+                        style: {
+                            fontSize: '14px',
+                            color: '#475569',
+                            fontWeight: '500'
+                        }
+                    }),
+
+                    // Supported formats
+                    $({
+                        tag: 'div',
+                        text: `Supported: ${accept.replace(/\*/g, '').replace(/\./g, '').toUpperCase()}`,
+                        style: {
+                            fontSize: '12px',
+                            color: '#94a3b8'
+                        }
+                    }),
+
+                    // File count badge
+                    $({
+                        tag: 'div',
+                        style: {
+                            marginTop: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-paperclip' },
+                                style: { fontSize: '12px', color: '#94a3b8' }
+                            }),
+                            $({
+                                tag: 'span',
+                                att: { id: fileCountId },
+                                text: `${fileList.length} file${fileList.length !== 1 ? 's' : ''}`,
+                                style: {
+                                    fontSize: '12px',
+                                    color: '#94a3b8',
+                                    fontWeight: '500'
+                                },
+                                elementHandler: (el) => {
+                                    fileCountElement = el;
+                                }
+                            })
+                        ]
+                    })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => {
+                        const input = document.getElementById(inputId);
+                        if (input) input.click();
+                    },
+                    type2: 'dragover',
+                    method2: (e) => {
+                        e.preventDefault();
+                        if (dropZoneElement) {
+                            dropZoneElement.style.borderColor = '#3b82f6';
+                            dropZoneElement.style.backgroundColor = '#eff6ff';
+                            dropZoneElement.style.transform = 'scale(1.01)';
+                            dropZoneElement.style.boxShadow = '0 4px 20px rgba(59, 130, 246, 0.1)';
+                        }
+                    },
+                    type3: 'dragleave',
+                    method3: (e) => {
+                        e.preventDefault();
+                        if (dropZoneElement) {
+                            dropZoneElement.style.borderColor = '#d1d5db';
+                            dropZoneElement.style.backgroundColor = '#fafbfc';
+                            dropZoneElement.style.transform = 'scale(1)';
+                            dropZoneElement.style.boxShadow = 'none';
+                        }
+                    },
+                    type4: 'drop',
+                    method4: (e) => {
+                        e.preventDefault();
+                        if (dropZoneElement) {
+                            dropZoneElement.style.borderColor = '#d1d5db';
+                            dropZoneElement.style.backgroundColor = '#fafbfc';
+                            dropZoneElement.style.transform = 'scale(1)';
+                            dropZoneElement.style.boxShadow = 'none';
+                        }
+
+                        const files = Array.from(e.dataTransfer.files);
+                        if (files.length > 0) {
+                            handleFiles(files);
+                        }
+                    }
+                }
+            }),
+
+            // Preview container
+            showPreview ? $({
+                tag: 'div',
+                att: { id: previewId },
+                style: {
+                    marginTop: '14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    paddingRight: '4px'
+                },
+                elementHandler: (el) => {
+                    previewContainer = el;
+                    setTimeout(renderPreviews, 0);
+                }
+            }) : null
+        ]
+    });
+
+    // Public API
+    return {
+        element: container,
+        getFiles: () => [...fileList],
+        setFiles: (files) => {
+            fileList = files || [];
+            renderPreviews();
+            updateFileCount();
+        },
+        clearFiles: () => {
+            fileList = [];
+            renderPreviews();
+            updateFileCount();
+        },
+        removeFile: (index) => {
+            if (index >= 0 && index < fileList.length) {
+                fileList.splice(index, 1);
+                renderPreviews();
+                updateFileCount();
+            }
+        },
+        renderPreviews
+    };
+};
