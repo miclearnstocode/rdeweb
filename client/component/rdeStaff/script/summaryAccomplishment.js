@@ -1,15 +1,15 @@
 import { $, Waiting } from "../../../lib/lib.js";
 import { onGoingResearch } from "./accomplishmentReport/onGoingRes.js";
-import { completedResearch } from "./accomplishmentReport/completedRes.js"
-import { conductedResearch } from "./accomplishmentReport/conductedRes.js"
-import { trainingsAttended } from "./accomplishmentReport/trainingAttendedRes.js"
-import { igpResearch } from "./accomplishmentReport/igpRes.js"
-import { participationResearch } from "./accomplishmentReport/participationRes.js"
-import { facilitiesImprovement } from "./accomplishmentReport/facilitiesImprovement.js"
-import { facultyPresentation } from "./accomplishmentReport/presentationsRes.js"
-import { publicationResearch } from "./accomplishmentReport/publicationRes.js"
-import { citationsResearch } from "./accomplishmentReport/citationsRes.js"
-import { PatentUM } from "./patentUM.js";
+import { completedResearch } from "./accomplishmentReport/completedRes.js";
+import { conductedResearch } from "./accomplishmentReport/conductedRes.js";
+import { trainingsAttended } from "./accomplishmentReport/trainingAttendedRes.js";
+import { igpResearch } from "./accomplishmentReport/igpRes.js";
+import { participationResearch } from "./accomplishmentReport/participationRes.js";
+import { facilitiesImprovement } from "./accomplishmentReport/facilitiesImprovement.js";
+import { facultyPresentation } from "./accomplishmentReport/presentationsRes.js";
+import { publicationResearch } from "./accomplishmentReport/publicationRes.js";
+import { citationsResearch } from "./accomplishmentReport/citationsRes.js";
+import { PatentUM } from "./accomplishmentReport/ipAssets.js";
 
 export const SummaryAccomplishment = () => {
     let mainContainer
