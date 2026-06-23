@@ -77,6 +77,7 @@ post('/IGPResearchProjects', 'server/rde/accomplishment/igpResProj.php');
 post('/participationResearch', 'server/rde/accomplishment/participationExh.php');
 post('/presentationResearch', 'server/rde/accomplishment/presentationRes.php');
 post('/trainingActivitiesResearch', 'server/rde/accomplishment/traiActConductRes.php');
+post('/publication', 'server/rde/accomplishment/publicationsRes.php');
 post('/summaryAccomplish', 'server/rde/accomplishment/summaryAccomplishment.php');
 post('/uploadResearchChair', 'server/researchChairAPI/researchChairSub.php');
 post('/researchChairSettings', 'server/researchChairAPI/settings.php');

@@ -18,7 +18,6 @@ export const publicationResearch = () => {
     let totalCount = 0
     let initialLoadDone = false
 
-    // Stats state
     let currentStats = {
         totalPublications: 0,
         totalAuthors: 0,
@@ -30,7 +29,6 @@ export const publicationResearch = () => {
         wosIndexed: 0
     }
 
-    // Campus options
     const campuses = [
         'All Campuses',
         'Roxas City Main',
@@ -44,7 +42,6 @@ export const publicationResearch = () => {
         'Dayao'
     ]
 
-    // Center options
     const centers = [
         'All Centers',
         'Crop Science Research & Development Center (CSRDC)',
@@ -57,21 +54,18 @@ export const publicationResearch = () => {
         'Extension'
     ]
 
-    // Publication type options
     const publicationTypes = [
         'All Types',
         'National',
         'International'
     ]
 
-    // Referee status options
     const refereeStatuses = [
         'All Status',
         'Refereed',
         'Non-refereed'
     ]
 
-    // Indexing body options
     const indexingBodies = [
         'None',
         'Scopus',
@@ -86,7 +80,6 @@ export const publicationResearch = () => {
         'Others'
     ]
 
-    // Show loading
     const showLoading = () => {
         if (!loadingElement) {
             loadingElement = Waiting()
@@ -94,7 +87,6 @@ export const publicationResearch = () => {
         }
     }
 
-    // Hide loading
     const hideLoading = () => {
         if (loadingElement) {
             loadingElement.remove()
@@ -102,7 +94,6 @@ export const publicationResearch = () => {
         }
     }
 
-    // Fetch publication data
     const fetchPublicationData = async (cursor = null) => {
         if (isLoading) return
 
@@ -142,7 +133,7 @@ export const publicationResearch = () => {
                 formData.append('refereeStatus', currentRefereeStatus)
             }
 
-            const response = await fetch('/api/publication-research', {
+            const response = await fetch('/publication', {
                 method: 'POST',
                 body: formData
             })
@@ -211,7 +202,6 @@ export const publicationResearch = () => {
         }
     }
 
-    // Apply local filters
     const applyLocalFilters = () => {
         let filtered = [...publicationData]
 
@@ -226,7 +216,6 @@ export const publicationResearch = () => {
         updateTableWithData()
     }
 
-    // Handle scroll for infinite loading
     const handleScroll = () => {
         if (!scrollContainer || isLoading || !hasMore) return
 
@@ -237,7 +226,6 @@ export const publicationResearch = () => {
         }
     }
 
-    // Update statistics
     const updateStats = () => {
         const statTotalPublications = document.querySelector('.stat-total-publications')
         const statTotalAuthors = document.querySelector('.stat-total-authors')
@@ -258,7 +246,6 @@ export const publicationResearch = () => {
         if (statWos) statWos.textContent = currentStats.wosIndexed
     }
 
-    // Update record count
     const updateRecordCount = () => {
         const recordCount = document.querySelector('.record-count')
         if (recordCount) {
@@ -266,7 +253,6 @@ export const publicationResearch = () => {
         }
     }
 
-    // Update table with data
     const updateTableWithData = () => {
         if (!tableBody) return
 
@@ -282,64 +268,87 @@ export const publicationResearch = () => {
         })
     }
 
-    // Show empty state
     const showEmptyState = () => {
         if (!tableBody) return
 
         tableBody.innerHTML = ''
 
-        const emptyState = $({
-            tag: 'div',
-            att: { className: 'empty-state' },
+        // Create a single row that spans all columns
+        const emptyRow = $({
+            tag: 'tr',
             style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: '20%',
-                marginLeft: '100%',
-                height: '350px',
-                width: '100%',
-                color: '#888',
-                fontFamily: 'Segoe UI, sans-serif',
-                gridColumn: '1 / -1'
+                width: '100%'
             },
             child: [
                 $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-book-open' },
+                    tag: 'td',
+                    att: {
+                        colSpan: 16 // Match the number of columns in your table
+                    },
                     style: {
-                        fontSize: '64px',
-                        marginBottom: '20px',
-                        opacity: 0.3,
-                        color: '#2196f3'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'No Published Articles Found',
-                    style: {
-                        fontSize: '20px',
-                        marginBottom: '12px',
-                        fontWeight: '500',
-                        color: '#fff'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'Click "Add Publication" to add published research articles',
-                    style: {
-                        fontSize: '14px',
-                        opacity: 0.7
-                    }
+                        padding: '0',
+                        border: 'none',
+                        backgroundColor: 'transparent'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            att: { className: 'empty-state' },
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '400px',
+                                width: '100%',
+                                color: '#333',
+                                fontFamily: 'Segoe UI, sans-serif',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
+                                padding: '40px 20px',
+                                boxSizing: 'border-box',
+                                margin: '0 auto'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-book-open' },
+                                    style: {
+                                        fontSize: '64px',
+                                        marginBottom: '20px',
+                                        opacity: 0.3,
+                                        color: '#2196f3'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'No Published Articles Found',
+                                    style: {
+                                        fontSize: '20px',
+                                        marginBottom: '12px',
+                                        fontWeight: '500',
+                                        color: '#1a1a1a'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'Click "Add Publication" to add published research articles',
+                                    style: {
+                                        fontSize: '14px',
+                                        opacity: 0.6,
+                                        color: '#666'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
                 })
             ]
         })
 
-        tableBody.appendChild(emptyState)
+        tableBody.appendChild(emptyRow)
     }
-
-    // Format date
     const formatDate = (dateString) => {
         if (!dateString || dateString === '—' || dateString === '0000-00-00') return '—'
         try {
@@ -355,13 +364,24 @@ export const publicationResearch = () => {
         }
     }
 
-    // Render publication type badge
     const renderPublicationTypeBadge = (type) => {
         if (!type || type === '—') return '—'
 
         const colors = type === 'International'
-            ? { bg: 'rgba(233, 30, 99, 0.15)', color: '#e91e63', border: 'rgba(233, 30, 99, 0.3)', icon: 'fa-globe' }
-            : { bg: 'rgba(33, 150, 243, 0.15)', color: '#2196f3', border: 'rgba(33, 150, 243, 0.3)', icon: 'fa-flag' }
+            ? { 
+                bg: '#fce4ec', 
+                color: '#c62828', 
+                border: '#ef9a9a', 
+                icon: 'fa-globe',
+                shadow: 'rgba(198, 40, 40, 0.08)'
+            }
+            : { 
+                bg: '#e3f2fd', 
+                color: '#0d47a1', 
+                border: '#90caf9', 
+                icon: 'fa-flag',
+                shadow: 'rgba(13, 71, 161, 0.08)'
+            }
 
         return $({
             tag: 'span',
@@ -369,7 +389,7 @@ export const publicationResearch = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '5px 14px',
+                padding: '6px 16px',
                 borderRadius: '20px',
                 fontSize: '11px',
                 fontWeight: '600',
@@ -377,73 +397,146 @@ export const publicationResearch = () => {
                 color: colors.color,
                 border: `1px solid ${colors.border}`,
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
+                boxShadow: `0 2px 4px ${colors.shadow}`,
+                transition: 'all 0.2s ease',
+                cursor: 'default',
+                backdropFilter: 'blur(4px)'
             },
             child: [
                 $({
                     tag: 'span',
                     att: { className: `fa-solid ${colors.icon}` },
-                    style: { fontSize: '10px' }
+                    style: { 
+                        fontSize: '10px',
+                        opacity: 0.7
+                    }
                 }),
                 $({ tag: 'span', text: type })
             ]
         })
     }
 
-    // Render referee status badge
     const renderRefereeBadge = (status) => {
         if (!status || status === '—') return '—'
 
         const colors = status === 'Refereed'
-            ? { bg: 'rgba(76, 175, 80, 0.15)', color: '#4caf50', border: 'rgba(76, 175, 80, 0.3)' }
-            : { bg: 'rgba(255, 152, 0, 0.15)', color: '#ff9800', border: 'rgba(255, 152, 0, 0.3)' }
+            ? { 
+                bg: '#e8f5e9', 
+                color: '#1b5e20', 
+                border: '#a5d6a7',
+                shadow: 'rgba(27, 94, 32, 0.08)',
+                icon: 'fa-check-circle'
+            }
+            : { 
+                bg: '#fff3e0', 
+                color: '#bf360c', 
+                border: '#ffcc80',
+                shadow: 'rgba(191, 54, 12, 0.08)',
+                icon: 'fa-clock'
+            }
 
         return $({
             tag: 'span',
             style: {
-                display: 'inline-block',
-                padding: '4px 10px',
-                borderRadius: '12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 14px',
+                borderRadius: '20px',
                 fontSize: '10px',
                 fontWeight: '600',
                 backgroundColor: colors.bg,
                 color: colors.color,
                 border: `1px solid ${colors.border}`,
-                textTransform: 'uppercase'
+                textTransform: 'uppercase',
+                letterSpacing: '0.3px',
+                boxShadow: `0 2px 4px ${colors.shadow}`,
+                transition: 'all 0.2s ease',
+                cursor: 'default'
             },
-            text: status
+            child: [
+                $({
+                    tag: 'span',
+                    att: { className: `fa-solid ${colors.icon}` },
+                    style: { 
+                        fontSize: '10px',
+                        opacity: 0.7
+                    }
+                }),
+                $({ tag: 'span', text: status })
+            ]
         })
     }
 
-    // Render indexing body badge
     const renderIndexingBadge = (indexing) => {
         if (!indexing || indexing === '—' || indexing === 'None') return '—'
 
         const indexingColors = {
-            'Scopus': { bg: 'rgba(255, 152, 0, 0.15)', color: '#ff9800', border: 'rgba(255, 152, 0, 0.3)' },
-            'Web of Science (WOS)': { bg: 'rgba(33, 150, 243, 0.15)', color: '#2196f3', border: 'rgba(33, 150, 243, 0.3)' },
-            'Scopus & WOS': { bg: 'rgba(156, 39, 176, 0.15)', color: '#9c27b0', border: 'rgba(156, 39, 176, 0.3)' }
+            'Scopus': { 
+                bg: '#fff3e0', 
+                color: '#e65100', 
+                border: '#ffcc80',
+                shadow: 'rgba(230, 81, 0, 0.08)',
+                icon: 'fa-graduation-cap'
+            },
+            'Web of Science (WOS)': { 
+                bg: '#e3f2fd', 
+                color: '#0d47a1', 
+                border: '#90caf9',
+                shadow: 'rgba(13, 71, 161, 0.08)',
+                icon: 'fa-globe-americas'
+            },
+            'Scopus & WOS': { 
+                bg: '#f3e5f5', 
+                color: '#4a148c', 
+                border: '#ce93d8',
+                shadow: 'rgba(74, 20, 140, 0.08)',
+                icon: 'fa-star'
+            }
         }
 
-        const colors = indexingColors[indexing] || { bg: 'rgba(96, 125, 139, 0.15)', color: '#607d8b', border: 'rgba(96, 125, 139, 0.3)' }
+        const colors = indexingColors[indexing] || { 
+            bg: '#f5f5f5', 
+            color: '#424242', 
+            border: '#bdbdbd',
+            shadow: 'rgba(66, 66, 66, 0.06)',
+            icon: 'fa-circle'
+        }
 
         return $({
             tag: 'span',
             style: {
-                display: 'inline-block',
-                padding: '4px 10px',
-                borderRadius: '12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 14px',
+                borderRadius: '20px',
                 fontSize: '10px',
                 fontWeight: '600',
                 backgroundColor: colors.bg,
                 color: colors.color,
-                border: `1px solid ${colors.border}`
+                border: `1px solid ${colors.border}`,
+                textTransform: 'uppercase',
+                letterSpacing: '0.3px',
+                boxShadow: `0 2px 4px ${colors.shadow}`,
+                transition: 'all 0.2s ease',
+                cursor: 'default'
             },
-            text: indexing
+            child: [
+                $({
+                    tag: 'span',
+                    att: { className: `fa-solid ${colors.icon}` },
+                    style: { 
+                        fontSize: '10px',
+                        opacity: 0.7
+                    }
+                }),
+                $({ tag: 'span', text: indexing })
+            ]
         })
     }
 
-    // Render authors list
     const renderAuthors = (authors) => {
         if (!authors || authors === '—') return '—'
 
@@ -467,60 +560,91 @@ export const publicationResearch = () => {
             style: {
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '4px'
+                gap: '3px',
+                padding: '2px 0'
             },
             child: authorList.map((author, idx) => {
                 const name = typeof author === 'string' ? author : author.name || 'Unknown'
+                
+                // Check if this is the first author (corresponding author indicator)
+                const isCorresponding = idx === 0 && authorList.length > 1
 
                 return $({
                     tag: 'div',
                     style: {
-                        padding: '4px 8px',
-                        backgroundColor: idx % 2 === 0 ? 'rgba(33, 150, 243, 0.05)' : 'transparent',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        color: '#ddd',
-                        lineHeight: '1.4'
+                        padding: '4px 10px',
+                        backgroundColor: idx % 2 === 0 ? '#f8faff' : 'transparent',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        color: '#1a1a1a',
+                        lineHeight: '1.5',
+                        fontWeight: isCorresponding ? '600' : '400',
+                        borderLeft: isCorresponding ? '3px solid #2196f3' : '3px solid transparent',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
                     },
-                    text: name
+                    child: [
+                        $({
+                            tag: 'span',
+                            text: name
+                        }),
+                        isCorresponding && $({
+                            tag: 'span',
+                            style: {
+                                fontSize: '9px',
+                                color: '#2196f3',
+                                backgroundColor: '#e3f2fd',
+                                padding: '2px 8px',
+                                borderRadius: '10px',
+                                fontWeight: '500',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                            },
+                            text: 'Corresponding'
+                        })
+                    ]
                 })
             })
         })
     }
 
-    // Render DOI as link
     const renderDOI = (doi) => {
         if (!doi || doi === '—') return '—'
-
+        
         return $({
             tag: 'a',
             att: {
-                href: doi.startsWith('http') ? doi : `https://doi.org/${doi}`,
+                href: `https://doi.org/${doi}`,
                 target: '_blank',
                 rel: 'noopener noreferrer'
             },
-            text: doi,
             style: {
-                color: '#2196f3',
+                color: '#1a73e8',
                 textDecoration: 'none',
                 fontSize: '11px',
                 wordBreak: 'break-all',
-                fontFamily: 'monospace'
+                padding: '4px 8px',
+                backgroundColor: '#e8f0fe',
+                borderRadius: '4px',
+                display: 'inline-block',
+                transition: 'all 0.2s ease'
             },
+            text: doi,
             event: {
                 type: 'mouseenter',
                 method: (e) => {
-                    e.target.style.textDecoration = 'underline'
+                    e.target.style.backgroundColor = '#d2e3fc'
                 },
                 type2: 'mouseleave',
                 method2: (e) => {
-                    e.target.style.textDecoration = 'none'
+                    e.target.style.backgroundColor = '#e8f0fe'
                 }
             }
         })
     }
 
-    // Render links
     const renderLinks = (links, type = 'default') => {
         if (!links || links === '—' || (Array.isArray(links) && links.length === 0)) {
             return '—'
@@ -596,7 +720,657 @@ export const publicationResearch = () => {
         })
     }
 
-    // Create data row
+    const renderPaperTrailLinks = (paperTrailData) => {
+        if (!paperTrailData || paperTrailData === '—') return '—'
+
+        let paperTrail = {}
+        try {
+            if (typeof paperTrailData === 'string') {
+                paperTrail = JSON.parse(paperTrailData)
+            } else if (typeof paperTrailData === 'object') {
+                paperTrail = paperTrailData
+            } else {
+                return '—'
+            }
+        } catch (e) {
+            return '—'
+        }
+
+        const hasCertificate = paperTrail.certificate && paperTrail.certificate.length > 0
+        const hasProgram = paperTrail.program && paperTrail.program.length > 0
+        const hasPhotos = paperTrail.photos && paperTrail.photos.length > 0
+
+        if (!hasCertificate && !hasProgram && !hasPhotos) return '—'
+
+        return $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                padding: '4px 0'
+            },
+            child: [
+                // Certificate Section - PDF files
+                hasCertificate && $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#f1f8fe',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        borderLeft: '3px solid #1a73e8'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginBottom: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-certificate' },
+                                    style: { color: '#1a73e8', fontSize: '14px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Certificate/Completion',
+                                    style: { 
+                                        fontSize: '12px', 
+                                        fontWeight: '600', 
+                                        color: '#1a73e8',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: `(${paperTrail.certificate.length})`,
+                                    style: { 
+                                        fontSize: '10px', 
+                                        color: '#1a73e8',
+                                        backgroundColor: '#e3f2fd',
+                                        padding: '2px 8px',
+                                        borderRadius: '10px',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px'
+                            },
+                            child: paperTrail.certificate.map((file, index) => {
+                                // Check if it's a file object or string
+                                const fileName = typeof file === 'object' ? file.name || `Certificate_${index + 1}.pdf` : `Certificate_${index + 1}.pdf`
+                                const filePath = typeof file === 'object' ? file.path || file : file
+                                
+                                return $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '6px 10px',
+                                        backgroundColor: '#ffffff',
+                                        borderRadius: '6px',
+                                        border: '1px solid #e3f2fd',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-file-pdf' },
+                                            style: { 
+                                                color: '#d32f2f', 
+                                                fontSize: '16px',
+                                                flexShrink: 0
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'a',
+                                            att: {
+                                                href: filePath,
+                                                target: '_blank',
+                                                rel: 'noopener noreferrer',
+                                                download: fileName
+                                            },
+                                            style: {
+                                                color: '#1565c0',
+                                                textDecoration: 'none',
+                                                fontSize: '12px',
+                                                fontWeight: '500',
+                                                flex: 1,
+                                                wordBreak: 'break-all',
+                                                transition: 'color 0.2s ease'
+                                            },
+                                            text: fileName,
+                                            event: {
+                                                type: 'mouseenter',
+                                                method: (e) => {
+                                                    e.target.style.color = '#0d47a1'
+                                                    e.target.style.textDecoration = 'underline'
+                                                },
+                                                type2: 'mouseleave',
+                                                method2: (e) => {
+                                                    e.target.style.color = '#1565c0'
+                                                    e.target.style.textDecoration = 'none'
+                                                }
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-download' },
+                                            style: {
+                                                color: '#1a73e8',
+                                                fontSize: '12px',
+                                                cursor: 'pointer',
+                                                opacity: 0.6,
+                                                transition: 'opacity 0.2s ease',
+                                                padding: '4px'
+                                            },
+                                            title: 'Download file',
+                                            event: {
+                                                type: 'click',
+                                                method: (e) => {
+                                                    e.stopPropagation()
+                                                    // Trigger download
+                                                    const link = document.createElement('a')
+                                                    link.href = filePath
+                                                    link.download = fileName
+                                                    document.body.appendChild(link)
+                                                    link.click()
+                                                    document.body.removeChild(link)
+                                                },
+                                                type2: 'mouseenter',
+                                                method2: (e) => {
+                                                    e.target.style.opacity = '1'
+                                                },
+                                                type3: 'mouseleave',
+                                                method3: (e) => {
+                                                    e.target.style.opacity = '0.6'
+                                                }
+                                            }
+                                        })
+                                    ]
+                                })
+                            })
+                        })
+                    ]
+                }),
+
+                // Program Section - PDF files
+                hasProgram && $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#fef3e0',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        borderLeft: '3px solid #f57c00'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginBottom: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-file-alt' },
+                                    style: { color: '#f57c00', fontSize: '14px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Program Document',
+                                    style: { 
+                                        fontSize: '12px', 
+                                        fontWeight: '600', 
+                                        color: '#f57c00',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: `(${paperTrail.program.length})`,
+                                    style: { 
+                                        fontSize: '10px', 
+                                        color: '#f57c00',
+                                        backgroundColor: '#fff3e0',
+                                        padding: '2px 8px',
+                                        borderRadius: '10px',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px'
+                            },
+                            child: paperTrail.program.map((file, index) => {
+                                const fileName = typeof file === 'object' ? file.name || `Program_${index + 1}.pdf` : `Program_${index + 1}.pdf`
+                                const filePath = typeof file === 'object' ? file.path || file : file
+                                
+                                return $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '6px 10px',
+                                        backgroundColor: '#ffffff',
+                                        borderRadius: '6px',
+                                        border: '1px solid #fff3e0',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-file-pdf' },
+                                            style: { 
+                                                color: '#d32f2f', 
+                                                fontSize: '16px',
+                                                flexShrink: 0
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'a',
+                                            att: {
+                                                href: filePath,
+                                                target: '_blank',
+                                                rel: 'noopener noreferrer',
+                                                download: fileName
+                                            },
+                                            style: {
+                                                color: '#e65100',
+                                                textDecoration: 'none',
+                                                fontSize: '12px',
+                                                fontWeight: '500',
+                                                flex: 1,
+                                                wordBreak: 'break-all',
+                                                transition: 'color 0.2s ease'
+                                            },
+                                            text: fileName,
+                                            event: {
+                                                type: 'mouseenter',
+                                                method: (e) => {
+                                                    e.target.style.color = '#bf360c'
+                                                    e.target.style.textDecoration = 'underline'
+                                                },
+                                                type2: 'mouseleave',
+                                                method2: (e) => {
+                                                    e.target.style.color = '#e65100'
+                                                    e.target.style.textDecoration = 'none'
+                                                }
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-download' },
+                                            style: {
+                                                color: '#f57c00',
+                                                fontSize: '12px',
+                                                cursor: 'pointer',
+                                                opacity: 0.6,
+                                                transition: 'opacity 0.2s ease',
+                                                padding: '4px'
+                                            },
+                                            title: 'Download file',
+                                            event: {
+                                                type: 'click',
+                                                method: (e) => {
+                                                    e.stopPropagation()
+                                                    const link = document.createElement('a')
+                                                    link.href = filePath
+                                                    link.download = fileName
+                                                    document.body.appendChild(link)
+                                                    link.click()
+                                                    document.body.removeChild(link)
+                                                },
+                                                type2: 'mouseenter',
+                                                method2: (e) => {
+                                                    e.target.style.opacity = '1'
+                                                },
+                                                type3: 'mouseleave',
+                                                method3: (e) => {
+                                                    e.target.style.opacity = '0.6'
+                                                }
+                                            }
+                                        })
+                                    ]
+                                })
+                            })
+                        })
+                    ]
+                }),
+
+                // Photos Section - Image files (JPEG, JPG, PNG)
+                hasPhotos && $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#e8f5e9',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        borderLeft: '3px solid #43a047'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginBottom: '10px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-images' },
+                                    style: { color: '#43a047', fontSize: '14px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Event Photos',
+                                    style: { 
+                                        fontSize: '12px', 
+                                        fontWeight: '600', 
+                                        color: '#43a047',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: `(${paperTrail.photos.length})`,
+                                    style: { 
+                                        fontSize: '10px', 
+                                        color: '#43a047',
+                                        backgroundColor: '#c8e6c9',
+                                        padding: '2px 8px',
+                                        borderRadius: '10px',
+                                        fontWeight: '500'
+                                    }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                                gap: '8px',
+                                maxHeight: '250px',
+                                overflowY: 'auto',
+                                padding: '2px'
+                            },
+                            child: paperTrail.photos.map((photo, index) => {
+                                const photoName = typeof photo === 'object' ? photo.name || `Photo_${index + 1}` : `Photo_${index + 1}`
+                                const photoPath = typeof photo === 'object' ? photo.path || photo : photo
+                                
+                                return $({
+                                    tag: 'div',
+                                    style: {
+                                        position: 'relative',
+                                        borderRadius: '8px',
+                                        overflow: 'hidden',
+                                        aspectRatio: '1/1',
+                                        backgroundColor: '#f5f5f5',
+                                        border: '2px solid #e0e0e0',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'img',
+                                            att: {
+                                                src: photoPath,
+                                                alt: `Event photo ${index + 1}`,
+                                                loading: 'lazy'
+                                            },
+                                            style: {
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                transition: 'transform 0.3s ease'
+                                            },
+                                            event: {
+                                                type: 'error',
+                                                method: (e) => {
+                                                    // Fallback if image fails to load
+                                                    e.target.style.display = 'none'
+                                                    const parent = e.target.parentElement
+                                                    const fallback = document.createElement('div')
+                                                    fallback.style.cssText = `
+                                                        display: flex;
+                                                        align-items: center;
+                                                        justify-content: center;
+                                                        width: 100%;
+                                                        height: 100%;
+                                                        background: #f5f5f5;
+                                                        color: #9e9e9e;
+                                                        font-size: 24px;
+                                                    `
+                                                    fallback.innerHTML = '<i class="fa-solid fa-image"></i>'
+                                                    parent.appendChild(fallback)
+                                                }
+                                            }
+                                        }),
+                                        // Overlay with photo info
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                position: 'absolute',
+                                                bottom: '0',
+                                                left: '0',
+                                                right: '0',
+                                                backgroundColor: 'rgba(0,0,0,0.6)',
+                                                padding: '4px 6px',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                opacity: '0',
+                                                transition: 'opacity 0.2s ease'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    style: {
+                                                        color: '#fff',
+                                                        fontSize: '8px',
+                                                        opacity: 0.8,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        maxWidth: '60px'
+                                                    },
+                                                    text: photoName.length > 15 ? photoName.substring(0, 12) + '...' : photoName
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-expand' },
+                                                    style: { 
+                                                        color: '#fff', 
+                                                        fontSize: '10px',
+                                                        cursor: 'pointer'
+                                                    },
+                                                    title: 'View full size'
+                                                })
+                                            ]
+                                        }),
+                                        // Download button overlay (top-right)
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-download' },
+                                            style: {
+                                                position: 'absolute',
+                                                top: '4px',
+                                                right: '4px',
+                                                color: '#fff',
+                                                fontSize: '10px',
+                                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                                padding: '4px',
+                                                borderRadius: '4px',
+                                                opacity: '0',
+                                                transition: 'opacity 0.2s ease',
+                                                cursor: 'pointer'
+                                            },
+                                            title: 'Download photo',
+                                            event: {
+                                                type: 'click',
+                                                method: (e) => {
+                                                    e.stopPropagation()
+                                                    const link = document.createElement('a')
+                                                    link.href = photoPath
+                                                    link.download = photoName
+                                                    document.body.appendChild(link)
+                                                    link.click()
+                                                    document.body.removeChild(link)
+                                                }
+                                            }
+                                        })
+                                    ],
+                                    event: {
+                                        type: 'mouseenter',
+                                        method: (e) => {
+                                            e.currentTarget.style.borderColor = '#43a047'
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(67, 160, 71, 0.2)'
+                                            e.currentTarget.style.transform = 'scale(1.02)'
+                                            // Show overlays
+                                            const overlays = e.currentTarget.querySelectorAll('div:last-child, span:last-child')
+                                            overlays.forEach(el => el.style.opacity = '1')
+                                        },
+                                        type2: 'mouseleave',
+                                        method2: (e) => {
+                                            e.currentTarget.style.borderColor = '#e0e0e0'
+                                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'
+                                            e.currentTarget.style.transform = 'scale(1)'
+                                            const overlays = e.currentTarget.querySelectorAll('div:last-child, span:last-child')
+                                            overlays.forEach(el => el.style.opacity = '0')
+                                        },
+                                        type3: 'click',
+                                        method3: (e) => {
+                                            // Open photo in lightbox/modal
+                                            openPhotoViewer(photoPath, photoName)
+                                        }
+                                    }
+                                })
+                            })
+                        })
+                    ]
+                })
+            ]
+        })
+    }
+
+    // Photo Viewer Modal
+    const openPhotoViewer = (photoPath, photoName) => {
+        // Create modal overlay
+        const modal = document.createElement('div')
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+            padding: 20px;
+        `
+        
+        // Close button
+        const closeBtn = document.createElement('button')
+        closeBtn.style.cssText = `
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            z-index: 10001;
+        `
+        closeBtn.innerHTML = '✕'
+        closeBtn.onmouseenter = () => closeBtn.style.transform = 'scale(1.2)'
+        closeBtn.onmouseleave = () => closeBtn.style.transform = 'scale(1)'
+        closeBtn.onclick = () => document.body.removeChild(modal)
+        
+        // Image container
+        const imgContainer = document.createElement('div')
+        imgContainer.style.cssText = `
+            max-width: 90vw;
+            max-height: 85vh;
+            position: relative;
+        `
+        
+        const img = document.createElement('img')
+        img.src = photoPath
+        img.alt = photoName || 'Event photo'
+        img.style.cssText = `
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        `
+        
+        // Photo info
+        const info = document.createElement('div')
+        info.style.cssText = `
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            font-family: 'Segoe UI', sans-serif;
+        `
+        info.textContent = photoName || 'Event Photo'
+        
+        imgContainer.appendChild(img)
+        imgContainer.appendChild(info)
+        modal.appendChild(closeBtn)
+        modal.appendChild(imgContainer)
+        
+        // Click outside to close
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal)
+            }
+        }
+        
+        // Escape key to close
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.body.contains(modal)) {
+                document.body.removeChild(modal)
+            }
+        })
+        
+        document.body.appendChild(modal)
+    }
+
     const createDataRow = (item, rowNumber) => {
         const cells = []
 
@@ -608,10 +1382,11 @@ export const publicationResearch = () => {
                     padding: '12px 8px',
                     textAlign: 'center',
                     fontSize: '12px',
-                    color: '#888',
-                    border: '1px solid #444',
+                    color: '#5f6368',
+                    border: '1px solid #e0e0e0',
                     fontFamily: 'monospace',
-                    verticalAlign: 'top'
+                    verticalAlign: 'top',
+                    backgroundColor: '#fafafa'
                 },
                 text: rowNumber.toString()
             })
@@ -624,12 +1399,13 @@ export const publicationResearch = () => {
                 style: {
                     padding: '12px 8px',
                     fontSize: '13px',
-                    color: '#ddd',
-                    border: '1px solid #444',
+                    color: '#1a1a1a',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
                     fontWeight: '500',
                     lineHeight: '1.4',
-                    minWidth: '250px'
+                    minWidth: '250px',
+                    backgroundColor: '#ffffff'
                 },
                 text: item.title || '—'
             })
@@ -641,9 +1417,10 @@ export const publicationResearch = () => {
                 tag: 'td',
                 style: {
                     padding: '8px',
-                    border: '1px solid #444',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    minWidth: '180px'
+                    minWidth: '180px',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderAuthors(item.authors)]
             })
@@ -656,12 +1433,13 @@ export const publicationResearch = () => {
                 style: {
                     padding: '12px 8px',
                     fontSize: '12px',
-                    color: '#ddd',
-                    border: '1px solid #444',
+                    color: '#1a1a1a',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
                     fontStyle: 'italic',
                     lineHeight: '1.4',
-                    minWidth: '180px'
+                    minWidth: '180px',
+                    backgroundColor: '#ffffff'
                 },
                 text: item.journalName || '—'
             })
@@ -675,10 +1453,11 @@ export const publicationResearch = () => {
                     padding: '12px 8px',
                     textAlign: 'center',
                     fontSize: '11px',
-                    color: '#bbb',
-                    border: '1px solid #444',
+                    color: '#5f6368',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    fontFamily: 'monospace'
+                    fontFamily: 'monospace',
+                    backgroundColor: '#ffffff'
                 },
                 text: item.issn || '—'
             })
@@ -692,10 +1471,11 @@ export const publicationResearch = () => {
                     padding: '12px 8px',
                     textAlign: 'center',
                     fontSize: '11px',
-                    color: '#bbb',
-                    border: '1px solid #444',
+                    color: '#5f6368',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    fontFamily: 'monospace'
+                    fontFamily: 'monospace',
+                    backgroundColor: '#ffffff'
                 },
                 text: item.volumeIssue || '—'
             })
@@ -709,9 +1489,10 @@ export const publicationResearch = () => {
                     padding: '12px 8px',
                     textAlign: 'center',
                     fontSize: '12px',
-                    color: '#ddd',
-                    border: '1px solid #444',
-                    verticalAlign: 'top'
+                    color: '#1a1a1a',
+                    border: '1px solid #e0e0e0',
+                    verticalAlign: 'top',
+                    backgroundColor: '#ffffff'
                 },
                 text: item.pages || '—'
             })
@@ -725,10 +1506,11 @@ export const publicationResearch = () => {
                     padding: '12px 8px',
                     textAlign: 'center',
                     fontSize: '12px',
-                    color: '#ddd',
-                    border: '1px solid #444',
+                    color: '#1a1a1a',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    backgroundColor: '#ffffff'
                 },
                 text: formatDate(item.publicationDate)
             })
@@ -740,9 +1522,10 @@ export const publicationResearch = () => {
                 tag: 'td',
                 style: {
                     padding: '8px',
-                    border: '1px solid #444',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    maxWidth: '150px'
+                    maxWidth: '150px',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderDOI(item.doi)]
             })
@@ -755,8 +1538,9 @@ export const publicationResearch = () => {
                 style: {
                     padding: '12px 8px',
                     textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'top'
+                    border: '1px solid #e0e0e0',
+                    verticalAlign: 'top',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderPublicationTypeBadge(item.publicationType)]
             })
@@ -769,8 +1553,9 @@ export const publicationResearch = () => {
                 style: {
                     padding: '12px 8px',
                     textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'top'
+                    border: '1px solid #e0e0e0',
+                    verticalAlign: 'top',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderRefereeBadge(item.refereeStatus)]
             })
@@ -783,8 +1568,9 @@ export const publicationResearch = () => {
                 style: {
                     padding: '12px 8px',
                     textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'top'
+                    border: '1px solid #e0e0e0',
+                    verticalAlign: 'top',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderIndexingBadge(item.indexingBody)]
             })
@@ -796,26 +1582,27 @@ export const publicationResearch = () => {
                 tag: 'td',
                 style: {
                     padding: '8px',
-                    border: '1px solid #444',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    maxWidth: '200px'
+                    maxWidth: '200px',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderLinks(item.websiteLinks, 'website')]
             })
         )
 
-        // Link of Paper Trail Folder
+        // Link of Paper Trail Folder - Updated with categories
         cells.push(
             $({
                 tag: 'td',
                 style: {
                     padding: '8px',
-                    border: '1px solid #444',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
                     maxWidth: '250px',
-                    backgroundColor: 'rgba(255, 152, 0, 0.03)'
+                    backgroundColor: '#fafffe'
                 },
-                child: [renderLinks(item.paperTrailLinks, 'paperTrail')]
+                child: [renderPaperTrailLinks(item.paperTrailLinks)]
             })
         )
 
@@ -826,12 +1613,13 @@ export const publicationResearch = () => {
                 style: {
                     padding: '12px 8px',
                     fontSize: '12px',
-                    color: '#bbb',
-                    border: '1px solid #444',
+                    color: '#5f6368',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
                     fontStyle: 'italic',
                     lineHeight: '1.4',
-                    minWidth: '150px'
+                    minWidth: '150px',
+                    backgroundColor: '#ffffff'
                 },
                 text: item.remarks || '—'
             })
@@ -844,8 +1632,9 @@ export const publicationResearch = () => {
                 style: {
                     padding: '12px 8px',
                     textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'middle'
+                    border: '1px solid #e0e0e0',
+                    verticalAlign: 'middle',
+                    backgroundColor: '#fafafa'
                 },
                 child: [createActionButtons(item)]
             })
@@ -854,24 +1643,23 @@ export const publicationResearch = () => {
         return $({
             tag: 'tr',
             style: {
-                backgroundColor: '#2d2d2d',
+                backgroundColor: '#ffffff',
                 transition: 'all 0.2s ease'
             },
             child: cells,
             event: {
                 type: 'mouseenter',
                 method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#333'
+                    e.currentTarget.style.backgroundColor = '#f8f9fa'
                 },
                 type2: 'mouseleave',
                 method2: (e) => {
-                    e.currentTarget.style.backgroundColor = '#2d2d2d'
+                    e.currentTarget.style.backgroundColor = '#ffffff'
                 }
             }
         })
     }
 
-    // Create action buttons
     const createActionButtons = (item) => {
         return $({
             tag: 'div',
@@ -885,12 +1673,13 @@ export const publicationResearch = () => {
                     tag: 'span',
                     att: { className: 'fa-solid fa-pen' },
                     style: {
-                        color: '#ffb347',
+                        color: '#1a73e8',
                         cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
                         fontSize: '14px',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        backgroundColor: '#e8f0fe'
                     },
                     title: 'Edit',
                     event: {
@@ -898,6 +1687,14 @@ export const publicationResearch = () => {
                         method: (e) => {
                             e.stopPropagation()
                             openEditModal(item)
+                        },
+                        type2: 'mouseenter',
+                        method2: (e) => {
+                            e.currentTarget.style.backgroundColor = '#d2e3fc'
+                        },
+                        type3: 'mouseleave',
+                        method3: (e) => {
+                            e.currentTarget.style.backgroundColor = '#e8f0fe'
                         }
                     }
                 }),
@@ -905,12 +1702,13 @@ export const publicationResearch = () => {
                     tag: 'span',
                     att: { className: 'fa-solid fa-trash' },
                     style: {
-                        color: '#f44336',
+                        color: '#d93025',
                         cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
                         fontSize: '14px',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        backgroundColor: '#fce8e6'
                     },
                     title: 'Delete',
                     event: {
@@ -918,6 +1716,14 @@ export const publicationResearch = () => {
                         method: (e) => {
                             e.stopPropagation()
                             deletePublication(item)
+                        },
+                        type2: 'mouseenter',
+                        method2: (e) => {
+                            e.currentTarget.style.backgroundColor = '#fad2cf'
+                        },
+                        type3: 'mouseleave',
+                        method3: (e) => {
+                            e.currentTarget.style.backgroundColor = '#fce8e6'
                         }
                     }
                 })
@@ -925,7 +1731,6 @@ export const publicationResearch = () => {
         })
     }
 
-    // Open modal for adding/editing
     const openAddModal = () => {
         renderModal(null)
     }
@@ -934,7 +1739,6 @@ export const publicationResearch = () => {
         renderModal(item)
     }
 
-    // Close modal
     const closeModal = () => {
         if (modalElement) {
             modalElement.remove()
@@ -942,7 +1746,6 @@ export const publicationResearch = () => {
         }
     }
 
-    // Delete publication
     const deletePublication = async (item) => {
         const confirmed = confirm('Are you sure you want to delete this publication record?')
         if (!confirmed) return
@@ -974,7 +1777,6 @@ export const publicationResearch = () => {
         }
     }
 
-    // Render modal for add/edit
     const renderModal = (item = null) => {
         if (modalElement) {
             modalElement.remove()
@@ -1004,23 +1806,55 @@ export const publicationResearch = () => {
             }
         }
 
-        // Paper trail links state
-        let paperTrailLinks = []
+        // Paper trail files state - Now storing actual File objects and existing file paths
+        let paperTrailFiles = {
+            certificates: [], // Will store { file: File, name: string, path: string (if existing) }
+            programs: [],     // Will store { file: File, name: string, path: string (if existing) }
+            photos: []        // Will store { file: File, name: string, path: string (if existing) }
+        }
+        
         if (isEditing && item.paperTrailLinks) {
             try {
-                paperTrailLinks = typeof item.paperTrailLinks === 'string' ? JSON.parse(item.paperTrailLinks) : item.paperTrailLinks
-                if (!Array.isArray(paperTrailLinks)) paperTrailLinks = []
+                const parsed = typeof item.paperTrailLinks === 'string' ? JSON.parse(item.paperTrailLinks) : item.paperTrailLinks
+                if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    // Convert existing files to display objects
+                    if (parsed.certificates && Array.isArray(parsed.certificates)) {
+                        paperTrailFiles.certificates = parsed.certificates.map(path => ({
+                            file: null,
+                            name: path.split('/').pop() || 'Certificate.pdf',
+                            path: path,
+                            isExisting: true
+                        }))
+                    }
+                    if (parsed.programs && Array.isArray(parsed.programs)) {
+                        paperTrailFiles.programs = parsed.programs.map(path => ({
+                            file: null,
+                            name: path.split('/').pop() || 'Program.pdf',
+                            path: path,
+                            isExisting: true
+                        }))
+                    }
+                    if (parsed.photos && Array.isArray(parsed.photos)) {
+                        paperTrailFiles.photos = parsed.photos.map(path => ({
+                            file: null,
+                            name: path.split('/').pop() || 'Photo.jpg',
+                            path: path,
+                            isExisting: true
+                        }))
+                    }
+                }
             } catch (e) {
-                paperTrailLinks = []
+                paperTrailFiles = { certificates: [], programs: [], photos: [] }
             }
         }
 
         // Containers for dynamic fields
         let authorsContainer
         let websiteLinksContainer
-        let paperTrailLinksContainer
+        let certificatesContainer
+        let programsContainer
+        let photosContainer
 
-        // Function to add an author field
         const addAuthorField = (name = '') => {
             const authorIndex = authors.length
             authors.push({ name })
@@ -1045,17 +1879,28 @@ export const publicationResearch = () => {
                         },
                         style: {
                             flex: '1',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
+                            padding: '10px 12px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
+                            fontSize: '14px',
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
                         },
                         event: {
-                            type: 'input',
+                            type: 'focus',
                             method: (e) => {
+                                e.target.style.borderColor = '#1a73e8'
+                                e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                            },
+                            type2: 'blur',
+                            method2: (e) => {
+                                e.target.style.borderColor = '#dadce0'
+                                e.target.style.boxShadow = 'none'
+                            },
+                            type3: 'input',
+                            method3: (e) => {
                                 if (authors[authorIndex]) {
                                     authors[authorIndex].name = e.target.value
                                 }
@@ -1067,20 +1912,30 @@ export const publicationResearch = () => {
                         att: { type: 'button' },
                         text: '×',
                         style: {
-                            padding: '8px 12px',
-                            backgroundColor: '#f44336',
+                            padding: '6px 12px',
+                            backgroundColor: '#fce8e6',
                             border: 'none',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '16px',
+                            borderRadius: '8px',
+                            color: '#d93025',
+                            fontSize: '18px',
                             cursor: 'pointer',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s ease',
+                            lineHeight: '1'
                         },
                         event: {
                             type: 'click',
                             method: () => {
                                 authors.splice(authorIndex, 1)
                                 authorRow.remove()
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.target.style.backgroundColor = '#fad2cf'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.target.style.backgroundColor = '#fce8e6'
                             }
                         }
                     })
@@ -1090,7 +1945,6 @@ export const publicationResearch = () => {
             return authorRow
         }
 
-        // Function to add a website link
         const addWebsiteLinkField = (url = '', label = '') => {
             const linkIndex = websiteLinks.length
             websiteLinks.push({ url, label })
@@ -1115,17 +1969,28 @@ export const publicationResearch = () => {
                         },
                         style: {
                             flex: '1',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
+                            padding: '10px 12px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
+                            fontSize: '14px',
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
                         },
                         event: {
-                            type: 'input',
+                            type: 'focus',
                             method: (e) => {
+                                e.target.style.borderColor = '#1a73e8'
+                                e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                            },
+                            type2: 'blur',
+                            method2: (e) => {
+                                e.target.style.borderColor = '#dadce0'
+                                e.target.style.boxShadow = 'none'
+                            },
+                            type3: 'input',
+                            method3: (e) => {
                                 if (websiteLinks[linkIndex]) {
                                     websiteLinks[linkIndex].label = e.target.value
                                 }
@@ -1142,17 +2007,28 @@ export const publicationResearch = () => {
                         },
                         style: {
                             flex: '2',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
+                            padding: '10px 12px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
+                            fontSize: '14px',
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
                         },
                         event: {
-                            type: 'input',
+                            type: 'focus',
                             method: (e) => {
+                                e.target.style.borderColor = '#1a73e8'
+                                e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                            },
+                            type2: 'blur',
+                            method2: (e) => {
+                                e.target.style.borderColor = '#dadce0'
+                                e.target.style.boxShadow = 'none'
+                            },
+                            type3: 'input',
+                            method3: (e) => {
                                 if (websiteLinks[linkIndex]) {
                                     websiteLinks[linkIndex].url = e.target.value
                                 }
@@ -1164,20 +2040,30 @@ export const publicationResearch = () => {
                         att: { type: 'button' },
                         text: '×',
                         style: {
-                            padding: '8px 12px',
-                            backgroundColor: '#f44336',
+                            padding: '6px 12px',
+                            backgroundColor: '#fce8e6',
                             border: 'none',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '16px',
+                            borderRadius: '8px',
+                            color: '#d93025',
+                            fontSize: '18px',
                             cursor: 'pointer',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s ease',
+                            lineHeight: '1'
                         },
                         event: {
                             type: 'click',
                             method: () => {
                                 websiteLinks.splice(linkIndex, 1)
                                 linkRow.remove()
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.target.style.backgroundColor = '#fad2cf'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.target.style.backgroundColor = '#fce8e6'
                             }
                         }
                     })
@@ -1187,107 +2073,575 @@ export const publicationResearch = () => {
             return linkRow
         }
 
-        // Function to add a paper trail link
-        const addPaperTrailLinkField = (url = '', label = '') => {
-            const linkIndex = paperTrailLinks.length
-            paperTrailLinks.push({ url, label })
+        const addCertificateFile = (fileData = null) => {
+            const certIndex = paperTrailFiles.certificates.length
+            const fileObj = fileData || { file: null, name: '', path: '', isExisting: false }
+            paperTrailFiles.certificates.push(fileObj)
 
-            const linkRow = $({
+            const row = $({
                 tag: 'div',
-                att: { className: 'paper-trail-link-row', 'data-link-index': linkIndex },
+                att: { className: 'certificate-row', 'data-cert-index': certIndex },
                 style: {
                     display: 'flex',
                     gap: '8px',
                     marginBottom: '8px',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    backgroundColor: '#f8fff8',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e8f5e9'
                 },
                 child: [
-                    $({
-                        tag: 'select',
-                        att: { className: 'paper-trail-label-select' },
-                        style: {
-                            flex: '1',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none',
-                            cursor: 'pointer'
-                        },
-                        child: [
-                            $({ tag: 'option', att: { value: '' }, text: '-- Document Type --' }),
-                            $({ tag: 'option', att: { value: 'Certificate of Completion', selected: label === 'Certificate of Completion' }, text: 'Certificate of Completion' }),
-                            $({ tag: 'option', att: { value: 'Certificate of Presentation', selected: label === 'Certificate of Presentation' }, text: 'Certificate of Presentation' }),
-                            $({ tag: 'option', att: { value: 'Symposium Program', selected: label === 'Symposium Program' }, text: 'Symposium Program' }),
-                            $({ tag: 'option', att: { value: 'Published Paper', selected: label === 'Published Paper' }, text: 'Published Paper' }),
-                            $({ tag: 'option', att: { value: 'Acceptance Letter', selected: label === 'Acceptance Letter' }, text: 'Acceptance Letter' }),
-                            $({ tag: 'option', att: { value: 'Review Report', selected: label === 'Review Report' }, text: 'Review Report' }),
-                            $({ tag: 'option', att: { value: 'Other Document', selected: label === 'Other Document' }, text: 'Other Document' })
-                        ],
-                        event: {
-                            type: 'change',
-                            method: (e) => {
-                                if (paperTrailLinks[linkIndex]) {
-                                    paperTrailLinks[linkIndex].label = e.target.value
-                                }
-                            }
-                        }
-                    }),
+                    // File input for certificate
                     $({
                         tag: 'input',
                         att: {
-                            type: 'url',
-                            placeholder: 'https://...',
-                            value: url,
-                            className: 'paper-trail-url-input'
+                            type: 'file',
+                            accept: '.pdf,.doc,.docx',
+                            className: 'certificate-file-input'
                         },
                         style: {
                             flex: '2',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
+                            padding: '6px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
                             fontSize: '13px',
-                            outline: 'none'
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
                         },
                         event: {
-                            type: 'input',
+                            type: 'change',
                             method: (e) => {
-                                if (paperTrailLinks[linkIndex]) {
-                                    paperTrailLinks[linkIndex].url = e.target.value
+                                const file = e.target.files[0]
+                                if (file) {
+                                    paperTrailFiles.certificates[certIndex].file = file
+                                    paperTrailFiles.certificates[certIndex].name = file.name
+                                    paperTrailFiles.certificates[certIndex].isExisting = false
+                                    // Update label display
+                                    const labelDisplay = row.querySelector('.cert-file-name')
+                                    if (labelDisplay) {
+                                        labelDisplay.textContent = file.name
+                                        labelDisplay.style.color = '#1b5e20'
+                                    }
                                 }
                             }
                         }
                     }),
+                    // Display file name
+                    $({
+                        tag: 'span',
+                        att: { className: 'cert-file-name' },
+                        text: fileObj.isExisting ? fileObj.name : (fileObj.name || 'No file selected'),
+                        style: {
+                            flex: '1',
+                            fontSize: '12px',
+                            color: fileObj.isExisting ? '#1b5e20' : '#5f6368',
+                            fontWeight: '500',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                        }
+                    }),
+                    // Remove button
                     $({
                         tag: 'button',
                         att: { type: 'button' },
                         text: '×',
                         style: {
-                            padding: '8px 12px',
-                            backgroundColor: '#f44336',
+                            padding: '4px 10px',
+                            backgroundColor: '#fce8e6',
                             border: 'none',
                             borderRadius: '6px',
-                            color: '#fff',
+                            color: '#d93025',
                             fontSize: '16px',
                             cursor: 'pointer',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s ease',
+                            lineHeight: '1'
                         },
                         event: {
                             type: 'click',
                             method: () => {
-                                paperTrailLinks.splice(linkIndex, 1)
-                                linkRow.remove()
+                                paperTrailFiles.certificates.splice(certIndex, 1)
+                                row.remove()
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.target.style.backgroundColor = '#fad2cf'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.target.style.backgroundColor = '#fce8e6'
                             }
                         }
                     })
                 ]
             })
 
-            return linkRow
+            return row
+        }
+
+        const addProgramFile = (fileData = null) => {
+            const progIndex = paperTrailFiles.programs.length
+            const fileObj = fileData || { file: null, name: '', path: '', isExisting: false }
+            paperTrailFiles.programs.push(fileObj)
+
+            const row = $({
+                tag: 'div',
+                att: { className: 'program-row', 'data-prog-index': progIndex },
+                style: {
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '8px',
+                    alignItems: 'center',
+                    backgroundColor: '#f8faff',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e3f2fd'
+                },
+                child: [
+                    // File input for program
+                    $({
+                        tag: 'input',
+                        att: {
+                            type: 'file',
+                            accept: '.pdf,.doc,.docx',
+                            className: 'program-file-input'
+                        },
+                        style: {
+                            flex: '2',
+                            padding: '6px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
+                            fontSize: '13px',
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
+                        },
+                        event: {
+                            type: 'change',
+                            method: (e) => {
+                                const file = e.target.files[0]
+                                if (file) {
+                                    paperTrailFiles.programs[progIndex].file = file
+                                    paperTrailFiles.programs[progIndex].name = file.name
+                                    paperTrailFiles.programs[progIndex].isExisting = false
+                                    const labelDisplay = row.querySelector('.prog-file-name')
+                                    if (labelDisplay) {
+                                        labelDisplay.textContent = file.name
+                                        labelDisplay.style.color = '#0d47a1'
+                                    }
+                                }
+                            }
+                        }
+                    }),
+                    // Display file name
+                    $({
+                        tag: 'span',
+                        att: { className: 'prog-file-name' },
+                        text: fileObj.isExisting ? fileObj.name : (fileObj.name || 'No file selected'),
+                        style: {
+                            flex: '1',
+                            fontSize: '12px',
+                            color: fileObj.isExisting ? '#0d47a1' : '#5f6368',
+                            fontWeight: '500',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                        }
+                    }),
+                    // Remove button
+                    $({
+                        tag: 'button',
+                        att: { type: 'button' },
+                        text: '×',
+                        style: {
+                            padding: '4px 10px',
+                            backgroundColor: '#fce8e6',
+                            border: 'none',
+                            borderRadius: '6px',
+                            color: '#d93025',
+                            fontSize: '16px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s ease',
+                            lineHeight: '1'
+                        },
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                paperTrailFiles.programs.splice(progIndex, 1)
+                                row.remove()
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.target.style.backgroundColor = '#fad2cf'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.target.style.backgroundColor = '#fce8e6'
+                            }
+                        }
+                    })
+                ]
+            })
+
+            return row
+        }
+
+        const addPhotoFile = (fileData = null) => {
+            const photoIndex = paperTrailFiles.photos.length
+            const fileObj = fileData || { file: null, name: '', path: '', isExisting: false }
+            paperTrailFiles.photos.push(fileObj)
+
+            const row = $({
+                tag: 'div',
+                att: { className: 'photo-row', 'data-photo-index': photoIndex },
+                style: {
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '8px',
+                    alignItems: 'center',
+                    backgroundColor: '#fff8f0',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #ffe0b2'
+                },
+                child: [
+                    // File input for photo
+                    $({
+                        tag: 'input',
+                        att: {
+                            type: 'file',
+                            accept: 'image/jpeg,image/png,image/jpg,image/gif,image/webp',
+                            className: 'photo-file-input'
+                        },
+                        style: {
+                            flex: '2',
+                            padding: '6px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
+                            fontSize: '13px',
+                            outline: 'none',
+                            transition: 'border-color 0.2s ease'
+                        },
+                        event: {
+                            type: 'change',
+                            method: (e) => {
+                                const file = e.target.files[0]
+                                if (file) {
+                                    paperTrailFiles.photos[photoIndex].file = file
+                                    paperTrailFiles.photos[photoIndex].name = file.name
+                                    paperTrailFiles.photos[photoIndex].isExisting = false
+                                    const labelDisplay = row.querySelector('.photo-file-name')
+                                    if (labelDisplay) {
+                                        labelDisplay.textContent = file.name
+                                        labelDisplay.style.color = '#bf360c'
+                                    }
+                                    // Show preview if image
+                                    if (file.type.startsWith('image/')) {
+                                        const preview = row.querySelector('.photo-preview')
+                                        if (preview) {
+                                            const reader = new FileReader()
+                                            reader.onload = (e) => {
+                                                preview.src = e.target.result
+                                                preview.style.display = 'block'
+                                            }
+                                            reader.readAsDataURL(file)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }),
+                    // Photo preview
+                    $({
+                        tag: 'img',
+                        att: { className: 'photo-preview' },
+                        style: {
+                            width: '40px',
+                            height: '40px',
+                            objectFit: 'cover',
+                            borderRadius: '6px',
+                            display: fileObj.isExisting ? 'block' : 'none',
+                            border: '1px solid #e0e0e0'
+                        },
+                        ...(fileObj.isExisting && fileObj.path ? { att: { src: fileObj.path } } : {})
+                    }),
+                    // Display file name
+                    $({
+                        tag: 'span',
+                        att: { className: 'photo-file-name' },
+                        text: fileObj.isExisting ? fileObj.name : (fileObj.name || 'No file selected'),
+                        style: {
+                            flex: '1',
+                            fontSize: '12px',
+                            color: fileObj.isExisting ? '#bf360c' : '#5f6368',
+                            fontWeight: '500',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                        }
+                    }),
+                    // Remove button
+                    $({
+                        tag: 'button',
+                        att: { type: 'button' },
+                        text: '×',
+                        style: {
+                            padding: '4px 10px',
+                            backgroundColor: '#fce8e6',
+                            border: 'none',
+                            borderRadius: '6px',
+                            color: '#d93025',
+                            fontSize: '16px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s ease',
+                            lineHeight: '1'
+                        },
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                paperTrailFiles.photos.splice(photoIndex, 1)
+                                row.remove()
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.target.style.backgroundColor = '#fad2cf'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.target.style.backgroundColor = '#fce8e6'
+                            }
+                        }
+                    })
+                ]
+            })
+
+            return row
+        }
+
+        const addPhotoPreview = (file, container, isExisting = false, existingUrl = null, index = 0, photoData = null) => {
+            // If photoData is provided, use it; otherwise create from parameters
+            const data = photoData || {
+                file: file,
+                name: isExisting ? `Photo ${index + 1}` : (file ? file.name : ''),
+                path: isExisting ? existingUrl : '',
+                isExisting: isExisting,
+                index: index
+            }
+
+            const previewDiv = $({
+                tag: 'div',
+                style: {
+                    position: 'relative',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    aspectRatio: '1/1',
+                    backgroundColor: '#f5f5f5',
+                    border: '2px solid #e0e0e0',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                },
+                child: [
+                    // Image
+                    $({
+                        tag: 'img',
+                        att: {
+                            src: isExisting ? existingUrl : (file ? URL.createObjectURL(file) : ''),
+                            alt: isExisting ? `Photo ${index + 1}` : (file ? file.name : 'Photo'),
+                            loading: 'lazy'
+                        },
+                        style: {
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'transform 0.3s ease'
+                        },
+                        event: {
+                            type: 'error',
+                            method: (e) => {
+                                e.target.style.display = 'none'
+                                const parent = e.target.parentElement
+                                const fallback = document.createElement('div')
+                                fallback.style.cssText = `
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    width: 100%;
+                                    height: 100%;
+                                    background: #f5f5f5;
+                                    color: #9e9e9e;
+                                    font-size: 24px;
+                                `
+                                fallback.innerHTML = '<i class="fa-solid fa-image"></i>'
+                                parent.appendChild(fallback)
+                            }
+                        }
+                    }),
+                    // Overlay
+                    $({
+                        tag: 'div',
+                        style: {
+                            position: 'absolute',
+                            bottom: '0',
+                            left: '0',
+                            right: '0',
+                            backgroundColor: 'rgba(0,0,0,0.6)',
+                            padding: '4px 6px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            opacity: '0',
+                            transition: 'opacity 0.2s ease'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                style: {
+                                    color: '#fff',
+                                    fontSize: '8px',
+                                    opacity: 0.8,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    maxWidth: '60px'
+                                },
+                                text: isExisting ? `Photo ${index + 1}` : (file ? file.name.substring(0, 15) + (file.name.length > 15 ? '...' : '') : 'Photo')
+                            }),
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-expand' },
+                                style: {
+                                    color: '#fff',
+                                    fontSize: '10px',
+                                    cursor: 'pointer'
+                                },
+                                title: 'View full size',
+                                event: {
+                                    type: 'click',
+                                    method: (e) => {
+                                        e.stopPropagation()
+                                        const src = isExisting ? existingUrl : (file ? URL.createObjectURL(file) : '')
+                                        if (src) {
+                                            openPhotoViewer(src, isExisting ? `Photo ${index + 1}` : (file ? file.name : 'Photo'))
+                                        }
+                                    }
+                                }
+                            })
+                        ]
+                    }),
+                    // Remove button
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-solid fa-times' },
+                        style: {
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            color: '#fff',
+                            fontSize: '12px',
+                            backgroundColor: 'rgba(0,0,0,0.6)',
+                            padding: '3px 6px',
+                            borderRadius: '50%',
+                            opacity: '0',
+                            transition: 'opacity 0.2s ease',
+                            cursor: 'pointer'
+                        },
+                        title: 'Remove photo',
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                e.stopPropagation()
+                                // Find and remove the photo from paperTrailFiles.photos
+                                const photoIndex = paperTrailFiles.photos.findIndex(p => {
+                                    if (isExisting && p.isExisting) {
+                                        return p.path === existingUrl
+                                    }
+                                    if (file && !p.isExisting) {
+                                        return p.name === file.name && p.file === file
+                                    }
+                                    return false
+                                })
+                                
+                                if (photoIndex > -1) {
+                                    paperTrailFiles.photos.splice(photoIndex, 1)
+                                } else if (data && data.index !== undefined) {
+                                    // Fallback: use stored index
+                                    const idx = data.index
+                                    if (idx < paperTrailFiles.photos.length) {
+                                        paperTrailFiles.photos.splice(idx, 1)
+                                    }
+                                }
+                                
+                                // Remove the preview div
+                                previewDiv.remove()
+                                
+                                // Update count
+                                const photoCount = document.getElementById('photo-count')
+                                if (photoCount) {
+                                    photoCount.textContent = paperTrailFiles.photos.length
+                                }
+                                
+                                // Check if no photos left and show empty message
+                                const previewContainer = document.getElementById('photos-preview-container')
+                                if (previewContainer && paperTrailFiles.photos.length === 0) {
+                                    // Clear container and show empty message
+                                    previewContainer.innerHTML = ''
+                                    const emptyMessage = $({
+                                        tag: 'div',
+                                        text: 'No photos uploaded yet',
+                                        style: {
+                                            gridColumn: '1 / -1',
+                                            textAlign: 'center',
+                                            padding: '30px',
+                                            color: '#9aa0a6',
+                                            fontSize: '13px'
+                                        }
+                                    })
+                                    previewContainer.appendChild(emptyMessage)
+                                }
+                                
+                                showNotification('Photo removed', 'info')
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.target.style.backgroundColor = 'rgba(211, 47, 47, 0.8)'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.target.style.backgroundColor = 'rgba(0,0,0,0.6)'
+                            }
+                        }
+                    })
+                ],
+                event: {
+                    type: 'mouseenter',
+                    method: (e) => {
+                        e.currentTarget.style.borderColor = '#f57c00'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 124, 0, 0.2)'
+                        e.currentTarget.style.transform = 'scale(1.02)'
+                        const overlays = e.currentTarget.querySelectorAll('div:last-child, span:last-child')
+                        overlays.forEach(el => el.style.opacity = '1')
+                    },
+                    type2: 'mouseleave',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e0e0e0'
+                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'
+                        e.currentTarget.style.transform = 'scale(1)'
+                        const overlays = e.currentTarget.querySelectorAll('div:last-child, span:last-child')
+                        overlays.forEach(el => el.style.opacity = '0')
+                    }
+                }
+            })
+
+            container.appendChild(previewDiv)
         }
 
         modalElement = $({
@@ -1298,12 +2652,13 @@ export const publicationResearch = () => {
                 left: '0',
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: '1000',
-                fontFamily: 'Segoe UI, sans-serif'
+                fontFamily: 'Segoe UI, system-ui, -apple-system, sans-serif',
+                backdropFilter: 'blur(4px)'
             },
             event: {
                 type: 'click',
@@ -1317,29 +2672,30 @@ export const publicationResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '12px',
-                        width: '950px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '16px',
+                        width: '1000px',
                         maxWidth: '95%',
                         maxHeight: '90vh',
                         overflow: 'auto',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                        border: '1px solid #444'
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.05)',
+                        border: '1px solid #e8eaed'
                     },
                     child: [
                         // Modal header
                         $({
                             tag: 'div',
                             style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid #444',
+                                padding: '20px 28px',
+                                borderBottom: '1px solid #e8eaed',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 position: 'sticky',
                                 top: '0',
-                                backgroundColor: '#2d2d2d',
-                                zIndex: '1'
+                                backgroundColor: '#ffffff',
+                                zIndex: '1',
+                                borderRadius: '16px 16px 0 0'
                             },
                             child: [
                                 $({
@@ -1347,9 +2703,9 @@ export const publicationResearch = () => {
                                     text: isEditing ? 'Edit Publication' : 'Add Publication',
                                     style: {
                                         margin: '0',
-                                        fontSize: '20px',
-                                        fontWeight: '500',
-                                        color: '#fff'
+                                        fontSize: '22px',
+                                        fontWeight: '600',
+                                        color: '#1a1a1a'
                                     }
                                 }),
                                 $({
@@ -1357,10 +2713,10 @@ export const publicationResearch = () => {
                                     att: { className: 'fa-solid fa-times' },
                                     style: {
                                         fontSize: '20px',
-                                        color: '#888',
+                                        color: '#5f6368',
                                         cursor: 'pointer',
                                         padding: '8px',
-                                        borderRadius: '4px',
+                                        borderRadius: '8px',
                                         transition: 'all 0.2s ease'
                                     },
                                     event: {
@@ -1368,13 +2724,13 @@ export const publicationResearch = () => {
                                         method: closeModal,
                                         type2: 'mouseenter',
                                         method2: (e) => {
-                                            e.target.style.backgroundColor = '#444'
-                                            e.target.style.color = '#fff'
+                                            e.target.style.backgroundColor = '#f1f3f4'
+                                            e.target.style.color = '#1a1a1a'
                                         },
                                         type3: 'mouseleave',
                                         method3: (e) => {
                                             e.target.style.backgroundColor = 'transparent'
-                                            e.target.style.color = '#888'
+                                            e.target.style.color = '#5f6368'
                                         }
                                     }
                                 })
@@ -1385,7 +2741,7 @@ export const publicationResearch = () => {
                             tag: 'form',
                             att: { id: 'publication-form' },
                             style: {
-                                padding: '24px'
+                                padding: '28px'
                             },
                             child: [
                                 // Hidden ID field for editing
@@ -1410,8 +2766,8 @@ export const publicationResearch = () => {
                                             text: 'Type *',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#5f6368',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -1424,14 +2780,18 @@ export const publicationResearch = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#1a1a1a',
                                                 fontSize: '14px',
                                                 outline: 'none',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                appearance: 'none',         
+                                                WebkitAppearance: 'none',   
+                                                MozAppearance: 'none'  
                                             },
                                             child: [
                                                 $({ tag: 'option', att: { value: '' }, text: '-- Select Type --' }),
@@ -1442,6 +2802,16 @@ export const publicationResearch = () => {
                                                 type: 'change',
                                                 method: (e) => {
                                                     toggleLocationSelect(e.target.value)
+                                                },
+                                                type2: 'focus',
+                                                method2: (e) => {
+                                                    e.target.style.borderColor = '#1a73e8'
+                                                    e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                },
+                                                type3: 'blur',
+                                                method3: (e) => {
+                                                    e.target.style.borderColor = '#dadce0'
+                                                    e.target.style.boxShadow = 'none'
                                                 }
                                             }
                                         })
@@ -1465,8 +2835,8 @@ export const publicationResearch = () => {
                                             text: 'Title of Article *',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#5f6368',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -1481,17 +2851,30 @@ export const publicationResearch = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#1a1a1a',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
-                                                fontFamily: 'inherit'
+                                                fontFamily: 'inherit',
+                                                transition: 'all 0.2s ease'
                                             },
-                                            text: isEditing ? (item.title || '') : ''
+                                            text: isEditing ? (item.title || '') : '',
+                                            event: {
+                                                type: 'focus',
+                                                method: (e) => {
+                                                    e.target.style.borderColor = '#1a73e8'
+                                                    e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                },
+                                                type2: 'blur',
+                                                method2: (e) => {
+                                                    e.target.style.borderColor = '#dadce0'
+                                                    e.target.style.boxShadow = 'none'
+                                                }
+                                            }
                                         })
                                     ]
                                 }),
@@ -1514,7 +2897,7 @@ export const publicationResearch = () => {
                                                     tag: 'label',
                                                     text: 'Author(s) *',
                                                     style: {
-                                                        color: '#aaa',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1524,10 +2907,10 @@ export const publicationResearch = () => {
                                                     att: { type: 'button' },
                                                     text: '+ Add Author',
                                                     style: {
-                                                        padding: '6px 14px',
-                                                        backgroundColor: '#2196f3',
+                                                        padding: '6px 16px',
+                                                        backgroundColor: '#1a73e8',
                                                         border: 'none',
-                                                        borderRadius: '6px',
+                                                        borderRadius: '8px',
                                                         color: '#fff',
                                                         fontSize: '12px',
                                                         cursor: 'pointer',
@@ -1542,11 +2925,11 @@ export const publicationResearch = () => {
                                                         },
                                                         type2: 'mouseenter',
                                                         method2: (e) => {
-                                                            e.target.style.backgroundColor = '#1976d2'
+                                                            e.target.style.backgroundColor = '#1557b0'
                                                         },
                                                         type3: 'mouseleave',
                                                         method3: (e) => {
-                                                            e.target.style.backgroundColor = '#2196f3'
+                                                            e.target.style.backgroundColor = '#1a73e8'
                                                         }
                                                     }
                                                 })
@@ -1556,10 +2939,10 @@ export const publicationResearch = () => {
                                             tag: 'div',
                                             att: { id: 'authors-container' },
                                             style: {
-                                                backgroundColor: '#2a2a2a',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #444',
+                                                backgroundColor: '#fafafa',
+                                                padding: '14px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #e8eaed',
                                                 minHeight: '50px'
                                             },
                                             elementHandler: (el) => {
@@ -1592,8 +2975,8 @@ export const publicationResearch = () => {
                                                     text: 'Name of Book/Journal *',
                                                     style: {
                                                         display: 'block',
-                                                        marginBottom: '8px',
-                                                        color: '#aaa',
+                                                        marginBottom: '6px',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1609,13 +2992,26 @@ export const publicationResearch = () => {
                                                     },
                                                     style: {
                                                         width: '100%',
-                                                        padding: '10px',
-                                                        backgroundColor: '#333',
-                                                        border: '1px solid #444',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        border: '1px solid #dadce0',
+                                                        borderRadius: '8px',
+                                                        color: '#1a1a1a',
                                                         fontSize: '14px',
-                                                        outline: 'none'
+                                                        outline: 'none',
+                                                        transition: 'all 0.2s ease'
+                                                    },
+                                                    event: {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#1a73e8'
+                                                            e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                        },
+                                                        type2: 'blur',
+                                                        method2: (e) => {
+                                                            e.target.style.borderColor = '#dadce0'
+                                                            e.target.style.boxShadow = 'none'
+                                                        }
                                                     }
                                                 })
                                             ]
@@ -1628,8 +3024,8 @@ export const publicationResearch = () => {
                                                     text: 'ISSN/ISBN',
                                                     style: {
                                                         display: 'block',
-                                                        marginBottom: '8px',
-                                                        color: '#aaa',
+                                                        marginBottom: '6px',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1644,14 +3040,27 @@ export const publicationResearch = () => {
                                                     },
                                                     style: {
                                                         width: '100%',
-                                                        padding: '10px',
-                                                        backgroundColor: '#333',
-                                                        border: '1px solid #444',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        border: '1px solid #dadce0',
+                                                        borderRadius: '8px',
+                                                        color: '#1a1a1a',
                                                         fontSize: '14px',
                                                         outline: 'none',
-                                                        fontFamily: 'monospace'
+                                                        fontFamily: 'monospace',
+                                                        transition: 'all 0.2s ease'
+                                                    },
+                                                    event: {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#1a73e8'
+                                                            e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                        },
+                                                        type2: 'blur',
+                                                        method2: (e) => {
+                                                            e.target.style.borderColor = '#dadce0'
+                                                            e.target.style.boxShadow = 'none'
+                                                        }
                                                     }
                                                 })
                                             ]
@@ -1677,8 +3086,8 @@ export const publicationResearch = () => {
                                                     text: 'Vol.No/Issue No.',
                                                     style: {
                                                         display: 'block',
-                                                        marginBottom: '8px',
-                                                        color: '#aaa',
+                                                        marginBottom: '6px',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1693,14 +3102,27 @@ export const publicationResearch = () => {
                                                     },
                                                     style: {
                                                         width: '100%',
-                                                        padding: '10px',
-                                                        backgroundColor: '#333',
-                                                        border: '1px solid #444',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        border: '1px solid #dadce0',
+                                                        borderRadius: '8px',
+                                                        color: '#1a1a1a',
                                                         fontSize: '14px',
                                                         outline: 'none',
-                                                        fontFamily: 'monospace'
+                                                        fontFamily: 'monospace',
+                                                        transition: 'all 0.2s ease'
+                                                    },
+                                                    event: {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#1a73e8'
+                                                            e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                        },
+                                                        type2: 'blur',
+                                                        method2: (e) => {
+                                                            e.target.style.borderColor = '#dadce0'
+                                                            e.target.style.boxShadow = 'none'
+                                                        }
                                                     }
                                                 })
                                             ]
@@ -1713,8 +3135,8 @@ export const publicationResearch = () => {
                                                     text: 'Number of Pages',
                                                     style: {
                                                         display: 'block',
-                                                        marginBottom: '8px',
-                                                        color: '#aaa',
+                                                        marginBottom: '6px',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1729,13 +3151,26 @@ export const publicationResearch = () => {
                                                     },
                                                     style: {
                                                         width: '100%',
-                                                        padding: '10px',
-                                                        backgroundColor: '#333',
-                                                        border: '1px solid #444',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        border: '1px solid #dadce0',
+                                                        borderRadius: '8px',
+                                                        color: '#1a1a1a',
                                                         fontSize: '14px',
-                                                        outline: 'none'
+                                                        outline: 'none',
+                                                        transition: 'all 0.2s ease'
+                                                    },
+                                                    event: {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#1a73e8'
+                                                            e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                        },
+                                                        type2: 'blur',
+                                                        method2: (e) => {
+                                                            e.target.style.borderColor = '#dadce0'
+                                                            e.target.style.boxShadow = 'none'
+                                                        }
                                                     }
                                                 })
                                             ]
@@ -1748,8 +3183,8 @@ export const publicationResearch = () => {
                                                     text: 'Date of Publication *',
                                                     style: {
                                                         display: 'block',
-                                                        marginBottom: '8px',
-                                                        color: '#aaa',
+                                                        marginBottom: '6px',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1764,13 +3199,26 @@ export const publicationResearch = () => {
                                                     },
                                                     style: {
                                                         width: '100%',
-                                                        padding: '10px',
-                                                        backgroundColor: '#333',
-                                                        border: '1px solid #444',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        border: '1px solid #dadce0',
+                                                        borderRadius: '8px',
+                                                        color: '#1a1a1a',
                                                         fontSize: '14px',
-                                                        outline: 'none'
+                                                        outline: 'none',
+                                                        transition: 'all 0.2s ease'
+                                                    },
+                                                    event: {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#1a73e8'
+                                                            e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                        },
+                                                        type2: 'blur',
+                                                        method2: (e) => {
+                                                            e.target.style.borderColor = '#dadce0'
+                                                            e.target.style.boxShadow = 'none'
+                                                        }
                                                     }
                                                 })
                                             ]
@@ -1788,8 +3236,8 @@ export const publicationResearch = () => {
                                             text: 'DOI (if any)',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#5f6368',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -1804,14 +3252,27 @@ export const publicationResearch = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#1a1a1a',
                                                 fontSize: '14px',
                                                 outline: 'none',
-                                                fontFamily: 'monospace'
+                                                fontFamily: 'monospace',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            event: {
+                                                type: 'focus',
+                                                method: (e) => {
+                                                    e.target.style.borderColor = '#1a73e8'
+                                                    e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                },
+                                                type2: 'blur',
+                                                method2: (e) => {
+                                                    e.target.style.borderColor = '#dadce0'
+                                                    e.target.style.boxShadow = 'none'
+                                                }
                                             }
                                         })
                                     ]
@@ -1835,8 +3296,8 @@ export const publicationResearch = () => {
                                                     text: 'Publication National or International *',
                                                     style: {
                                                         display: 'block',
-                                                        marginBottom: '8px',
-                                                        color: '#aaa',
+                                                        marginBottom: '6px',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1849,20 +3310,36 @@ export const publicationResearch = () => {
                                                     },
                                                     style: {
                                                         width: '100%',
-                                                        padding: '10px',
-                                                        backgroundColor: '#333',
-                                                        border: '1px solid #444',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        border: '1px solid #dadce0',
+                                                        borderRadius: '8px',
+                                                        color: '#1a1a1a',
                                                         fontSize: '14px',
                                                         outline: 'none',
-                                                        cursor: 'pointer'
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        appearance: 'none',         
+                                                        WebkitAppearance: 'none',   
+                                                        MozAppearance: 'none'  
                                                     },
                                                     child: [
                                                         $({ tag: 'option', att: { value: '' }, text: '-- Select Type --' }),
                                                         $({ tag: 'option', att: { value: 'National', selected: isEditing && item.publicationType === 'National' }, text: 'National' }),
                                                         $({ tag: 'option', att: { value: 'International', selected: isEditing && item.publicationType === 'International' }, text: 'International' })
-                                                    ]
+                                                    ],
+                                                    event: {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#1a73e8'
+                                                            e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                        },
+                                                        type2: 'blur',
+                                                        method2: (e) => {
+                                                            e.target.style.borderColor = '#dadce0'
+                                                            e.target.style.boxShadow = 'none'
+                                                        }
+                                                    }
                                                 })
                                             ]
                                         }),
@@ -1874,8 +3351,8 @@ export const publicationResearch = () => {
                                                     text: 'Refereed/Non-refereed *',
                                                     style: {
                                                         display: 'block',
-                                                        marginBottom: '8px',
-                                                        color: '#aaa',
+                                                        marginBottom: '6px',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1888,20 +3365,36 @@ export const publicationResearch = () => {
                                                     },
                                                     style: {
                                                         width: '100%',
-                                                        padding: '10px',
-                                                        backgroundColor: '#333',
-                                                        border: '1px solid #444',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        border: '1px solid #dadce0',
+                                                        borderRadius: '8px',
+                                                        color: '#1a1a1a',
                                                         fontSize: '14px',
                                                         outline: 'none',
-                                                        cursor: 'pointer'
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        appearance: 'none',         
+                                                        WebkitAppearance: 'none',   
+                                                        MozAppearance: 'none'  
                                                     },
                                                     child: [
                                                         $({ tag: 'option', att: { value: '' }, text: '-- Select Status --' }),
                                                         $({ tag: 'option', att: { value: 'Refereed', selected: isEditing && item.refereeStatus === 'Refereed' }, text: 'Refereed' }),
                                                         $({ tag: 'option', att: { value: 'Non-refereed', selected: isEditing && item.refereeStatus === 'Non-refereed' }, text: 'Non-refereed' })
-                                                    ]
+                                                    ],
+                                                    event: {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#1a73e8'
+                                                            e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                        },
+                                                        type2: 'blur',
+                                                        method2: (e) => {
+                                                            e.target.style.borderColor = '#dadce0'
+                                                            e.target.style.boxShadow = 'none'
+                                                        }
+                                                    }
                                                 })
                                             ]
                                         })
@@ -1918,8 +3411,8 @@ export const publicationResearch = () => {
                                             text: 'Indexing Body (Scopus/WOS, etc.)',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#5f6368',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -1929,14 +3422,18 @@ export const publicationResearch = () => {
                                             att: { name: 'indexingBody' },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#1a1a1a',
                                                 fontSize: '14px',
                                                 outline: 'none',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                appearance: 'none',         
+                                                WebkitAppearance: 'none',   
+                                                MozAppearance: 'none'  
                                             },
                                             child: indexingBodies.map(ib =>
                                                 $({
@@ -1944,7 +3441,19 @@ export const publicationResearch = () => {
                                                     att: { value: ib, selected: isEditing && item.indexingBody === ib },
                                                     text: ib
                                                 })
-                                            )
+                                            ),
+                                            event: {
+                                                type: 'focus',
+                                                method: (e) => {
+                                                    e.target.style.borderColor = '#1a73e8'
+                                                    e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                },
+                                                type2: 'blur',
+                                                method2: (e) => {
+                                                    e.target.style.borderColor = '#dadce0'
+                                                    e.target.style.boxShadow = 'none'
+                                                }
+                                            }
                                         })
                                     ]
                                 }),
@@ -1952,7 +3461,7 @@ export const publicationResearch = () => {
                                 // Website Links section
                                 $({
                                     tag: 'div',
-                                    style: { marginBottom: '20px' },
+                                    style: { marginBottom: '24px' },
                                     child: [
                                         $({
                                             tag: 'div',
@@ -1967,7 +3476,7 @@ export const publicationResearch = () => {
                                                     tag: 'label',
                                                     text: 'Link of Website/Article Published',
                                                     style: {
-                                                        color: '#aaa',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1977,10 +3486,10 @@ export const publicationResearch = () => {
                                                     att: { type: 'button' },
                                                     text: '+ Add Link',
                                                     style: {
-                                                        padding: '6px 14px',
+                                                        padding: '6px 16px',
                                                         backgroundColor: '#00bcd4',
                                                         border: 'none',
-                                                        borderRadius: '6px',
+                                                        borderRadius: '8px',
                                                         color: '#fff',
                                                         fontSize: '12px',
                                                         cursor: 'pointer',
@@ -2009,10 +3518,10 @@ export const publicationResearch = () => {
                                             tag: 'div',
                                             att: { id: 'website-links-container' },
                                             style: {
-                                                backgroundColor: '#2a2a2a',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #444',
+                                                backgroundColor: '#fafafa',
+                                                padding: '14px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #e8eaed',
                                                 minHeight: '50px'
                                             },
                                             elementHandler: (el) => {
@@ -2027,10 +3536,16 @@ export const publicationResearch = () => {
                                     ]
                                 }),
 
-                                // Paper Trail Links section
+                                // Paper trail
                                 $({
                                     tag: 'div',
-                                    style: { marginBottom: '20px' },
+                                    style: {
+                                        marginBottom: '24px',
+                                        backgroundColor: '#fafffe',
+                                        border: '2px solid #ff980040',
+                                        borderRadius: '12px',
+                                        padding: '16px'
+                                    },
                                     child: [
                                         $({
                                             tag: 'div',
@@ -2038,75 +3553,680 @@ export const publicationResearch = () => {
                                                 display: 'flex',
                                                 justifyContent: 'space-between',
                                                 alignItems: 'center',
-                                                marginBottom: '8px'
+                                                marginBottom: '16px'
                                             },
                                             child: [
                                                 $({
                                                     tag: 'label',
-                                                    text: 'IMPORTANT! Link of Paper Trail Folder (certificate of completion/presentation, program of symposium, & other related documents)',
+                                                    text: '📁 Paper Trail Files (Certificate, Program & Photos)',
                                                     style: {
-                                                        color: '#ff9800',
-                                                        fontSize: '12px',
-                                                        fontWeight: '600',
-                                                        flex: '1'
+                                                        color: '#e65100',
+                                                        fontSize: '14px',
+                                                        fontWeight: '600'
                                                     }
                                                 }),
                                                 $({
-                                                    tag: 'button',
-                                                    att: { type: 'button' },
-                                                    text: '+ Add Paper Trail',
+                                                    tag: 'span',
+                                                    text: 'Upload PDFs and Images',
                                                     style: {
-                                                        padding: '6px 14px',
-                                                        backgroundColor: '#ff9800',
-                                                        border: 'none',
-                                                        borderRadius: '6px',
-                                                        color: '#fff',
-                                                        fontSize: '12px',
-                                                        cursor: 'pointer',
-                                                        fontWeight: '500',
-                                                        transition: 'all 0.2s ease',
-                                                        whiteSpace: 'nowrap'
-                                                    },
-                                                    event: {
-                                                        type: 'click',
-                                                        method: () => {
-                                                            const newRow = addPaperTrailLinkField()
-                                                            paperTrailLinksContainer.appendChild(newRow)
-                                                        },
-                                                        type2: 'mouseenter',
-                                                        method2: (e) => {
-                                                            e.target.style.backgroundColor = '#e68900'
-                                                        },
-                                                        type3: 'mouseleave',
-                                                        method3: (e) => {
-                                                            e.target.style.backgroundColor = '#ff9800'
-                                                        }
+                                                        fontSize: '11px',
+                                                        color: '#5f6368',
+                                                        fontStyle: 'italic'
                                                     }
                                                 })
                                             ]
                                         }),
+
+                                        // Two column grid for Certificates and Programs
                                         $({
                                             tag: 'div',
-                                            att: { id: 'paper-trail-links-container' },
                                             style: {
-                                                backgroundColor: '#2a2a2a',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #ff980040',
-                                                minHeight: '50px'
+                                                display: 'grid',
+                                                gridTemplateColumns: '1fr 1fr',
+                                                gap: '16px'
                                             },
-                                            elementHandler: (el) => {
-                                                paperTrailLinksContainer = el
-                                                if (isEditing && paperTrailLinks.length > 0) {
-                                                    paperTrailLinks.forEach(link => {
-                                                        paperTrailLinksContainer.appendChild(addPaperTrailLinkField(link.url, link.label))
-                                                    })
-                                                }
-                                            }
+                                            child: [
+                                                // LEFT COLUMN - Certificates
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        backgroundColor: '#f8fff8',
+                                                        border: '1px solid #c8e6c9',
+                                                        borderRadius: '10px',
+                                                        padding: '14px'
+                                                    },
+                                                    child: [
+                                                        // Certificate header with icon
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '12px',
+                                                                marginBottom: '16px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        width: '40px',
+                                                                        height: '40px',
+                                                                        borderRadius: '10px',
+                                                                        backgroundColor: '#e6f4ea',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        flexShrink: 0
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-certificate' },
+                                                                            style: { color: '#34a853', fontSize: '18px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        flex: 1
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'label',
+                                                                            text: 'Certificates',
+                                                                            style: {
+                                                                                color: '#202124',
+                                                                                fontSize: '14px',
+                                                                                fontWeight: '600',
+                                                                                margin: 0,
+                                                                                display: 'block'
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            text: 'Upload certificate/completion documents (PDF)',
+                                                                            style: {
+                                                                                fontSize: '12px',
+                                                                                color: '#5f6368',
+                                                                                display: 'block',
+                                                                                marginTop: '2px'
+                                                                            }
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        }),
+
+                                                        // Certificate upload area
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                marginBottom: '12px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'input',
+                                                                    att: {
+                                                                        type: 'file',
+                                                                        accept: '.pdf,.doc,.docx',
+                                                                        id: 'certificates-input' 
+                                                                    },
+                                                                    style: {
+                                                                        display: 'none'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'change',
+                                                                        method: (e) => {
+                                                                            const file = e.target.files[0]
+                                                                            if (file) {
+                                                                                if (file.type === 'application/pdf' || file.type === 'application/msword' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                                                                                    const fileData = {
+                                                                                        file: file,
+                                                                                        name: file.name,
+                                                                                        path: '',
+                                                                                        isExisting: false
+                                                                                    }
+                                                                                    paperTrailFiles.certificates.push(fileData)
+                                                                                    const newRow = addCertificateFile(fileData)
+                                                                                    certificatesContainer.appendChild(newRow)
+                                                                                    const certCount = document.getElementById('cert-count')
+                                                                                    if (certCount) {
+                                                                                        certCount.textContent = paperTrailFiles.certificates.length
+                                                                                    }
+                                                                                    showNotification(`Certificate "${file.name}" selected.`, 'info')
+                                                                                }
+                                                                            }
+                                                                            e.target.value = ''
+                                                                        }
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        backgroundColor: '#f8f9fa',
+                                                                        border: '2px dashed #dadce0',
+                                                                        borderRadius: '12px',
+                                                                        padding: '20px',
+                                                                        textAlign: 'center',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s ease',
+                                                                        marginBottom: '12px'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'click',
+                                                                        method: (e) => {
+                                                                            const fileInput = document.getElementById('certificates-input')
+                                                                            if (fileInput) fileInput.click()
+                                                                        },
+                                                                        type2: 'mouseenter',
+                                                                        method2: (e) => {
+                                                                            e.currentTarget.style.borderColor = '#34a853'
+                                                                            e.currentTarget.style.backgroundColor = '#f1f8fe'
+                                                                        },
+                                                                        type3: 'mouseleave',
+                                                                        method3: (e) => {
+                                                                            e.currentTarget.style.borderColor = '#dadce0'
+                                                                            e.currentTarget.style.backgroundColor = '#f8f9fa'
+                                                                        }
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-cloud-upload-alt' },
+                                                                            style: { fontSize: '28px', color: '#34a853', display: 'block', marginBottom: '8px' }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            text: 'Click or drag to upload certificate',
+                                                                            style: { fontSize: '13px', color: '#202124', marginBottom: '2px', fontWeight: '500' }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            text: 'PDF, DOC, DOCX supported',
+                                                                            style: { fontSize: '11px', color: '#5f6368' }
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        }),
+
+                                                        // Certificate files container
+                                                        $({
+                                                            tag: 'div',
+                                                            att: { id: 'certificates-container' },
+                                                            style: {
+                                                                minHeight: '30px',
+                                                                maxHeight: '100px',
+                                                                overflowY: 'auto'
+                                                            },
+                                                            elementHandler: (el) => {
+                                                                certificatesContainer = el
+                                                                if (isEditing && paperTrailFiles.certificates.length > 0) {
+                                                                    paperTrailFiles.certificates.forEach(cert => {
+                                                                        certificatesContainer.appendChild(addCertificateFile(cert))
+                                                                    })
+                                                                }
+                                                                // Update count
+                                                                const certCount = document.getElementById('cert-count')
+                                                                if (certCount) {
+                                                                    certCount.textContent = paperTrailFiles.certificates.length
+                                                                }
+                                                            }
+                                                        })
+                                                    ]
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        backgroundColor: '#f8faff',
+                                                        border: '1px solid #bbdefb',
+                                                        borderRadius: '10px',
+                                                        padding: '14px'
+                                                    },
+                                                    child: [
+                                                        
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '12px',
+                                                                marginBottom: '16px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        width: '40px',
+                                                                        height: '40px',
+                                                                        borderRadius: '10px',
+                                                                        backgroundColor: '#e3f2fd',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        flexShrink: 0
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-file-alt' },
+                                                                            style: { color: '#1a73e8', fontSize: '18px' }
+                                                                        })
+                                                                    ]
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        flex: 1
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'label',
+                                                                            text: 'Programs',
+                                                                            style: {
+                                                                                color: '#202124',
+                                                                                fontSize: '14px',
+                                                                                fontWeight: '600',
+                                                                                margin: 0,
+                                                                                display: 'block'
+                                                                            }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            text: 'Upload program/activity documents (PDF)',
+                                                                            style: {
+                                                                                fontSize: '12px',
+                                                                                color: '#5f6368',
+                                                                                display: 'block',
+                                                                                marginTop: '2px'
+                                                                            }
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        }),
+
+                                                        // Program upload area
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                marginBottom: '12px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'input',
+                                                                    att: {
+                                                                        type: 'file',
+                                                                        accept: '.pdf,.doc,.docx',
+                                                                        id: 'programs-input'
+                                                                    },
+                                                                    style: {
+                                                                        display: 'none'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'change',
+                                                                        method: (e) => {
+                                                                            const file = e.target.files[0]
+                                                                            if (file) {
+                                                                                if (file.type === 'application/pdf' || file.type === 'application/msword' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                                                                                    const fileData = {
+                                                                                        file: file,
+                                                                                        name: file.name,
+                                                                                        path: '',
+                                                                                        isExisting: false
+                                                                                    }
+                                                                                    paperTrailFiles.programs.push(fileData)
+                                                                                    const newRow = addProgramFile(fileData)
+                                                                                    programsContainer.appendChild(newRow)
+                                                                                    const progCount = document.getElementById('prog-count')
+                                                                                    if (progCount) {
+                                                                                        progCount.textContent = paperTrailFiles.programs.length
+                                                                                    }
+                                                                                    showNotification(`Program "${file.name}" selected.`, 'info')
+                                                                                }
+                                                                            }
+                                                                            e.target.value = ''
+                                                                        }
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    style: {
+                                                                        backgroundColor: '#f8f9fa',
+                                                                        border: '2px dashed #dadce0',
+                                                                        borderRadius: '12px',
+                                                                        padding: '20px',
+                                                                        textAlign: 'center',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s ease',
+                                                                        marginBottom: '12px'
+                                                                    },
+                                                                    event: {
+                                                                        type: 'click',
+                                                                        method: (e) => {
+                                                                            const fileInput = document.getElementById('programs-input')
+                                                                            if (fileInput) fileInput.click()
+                                                                        },
+                                                                        type2: 'mouseenter',
+                                                                        method2: (e) => {
+                                                                            e.currentTarget.style.borderColor = '#1a73e8'
+                                                                            e.currentTarget.style.backgroundColor = '#f1f8fe'
+                                                                        },
+                                                                        type3: 'mouseleave',
+                                                                        method3: (e) => {
+                                                                            e.currentTarget.style.borderColor = '#dadce0'
+                                                                            e.currentTarget.style.backgroundColor = '#f8f9fa'
+                                                                        }
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-cloud-upload-alt' },
+                                                                            style: { fontSize: '28px', color: '#1a73e8', display: 'block', marginBottom: '8px' }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            text: 'Click or drag to upload program',
+                                                                            style: { fontSize: '13px', color: '#202124', marginBottom: '2px', fontWeight: '500' }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'div',
+                                                                            text: 'PDF, DOC, DOCX supported',
+                                                                            style: { fontSize: '11px', color: '#5f6368' }
+                                                                        })
+                                                                    ]
+                                                                })
+                                                            ]
+                                                        }),
+
+                                                        // Program files container
+                                                        $({
+                                                            tag: 'div',
+                                                            att: { id: 'programs-container' },
+                                                            style: {
+                                                                minHeight: '30px',
+                                                                maxHeight: '100px',
+                                                                overflowY: 'auto'
+                                                            },
+                                                            elementHandler: (el) => {
+                                                                programsContainer = el
+                                                                if (isEditing && paperTrailFiles.programs.length > 0) {
+                                                                    paperTrailFiles.programs.forEach(prog => {
+                                                                        programsContainer.appendChild(addProgramFile(prog))
+                                                                    })
+                                                                }
+                                                                // Update count
+                                                                const progCount = document.getElementById('prog-count')
+                                                                if (progCount) {
+                                                                    progCount.textContent = paperTrailFiles.programs.length
+                                                                }
+                                                            }
+                                                        })
+                                                    ]
+                                                })
+                                            ]
+                                        }),
+          
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                marginTop: '16px',
+                                                backgroundColor: '#fff8f0',
+                                                border: '1px solid #ffe0b2',
+                                                borderRadius: '10px',
+                                                padding: '14px'
+                                            },
+                                            child: [
+                                                // Photo header with icon
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        marginBottom: '16px'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                width: '40px',
+                                                                height: '40px',
+                                                                borderRadius: '10px',
+                                                                backgroundColor: '#fff3e0',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                flexShrink: 0
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-images' },
+                                                                    style: { color: '#f57c00', fontSize: '18px' }
+                                                                })
+                                                            ]
+                                                        }),
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                flex: 1
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'label',
+                                                                    text: 'Photo Documentation',
+                                                                    style: {
+                                                                        color: '#202124',
+                                                                        fontSize: '14px',
+                                                                        fontWeight: '600',
+                                                                        margin: 0,
+                                                                        display: 'block'
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'span',
+                                                                    text: 'Upload event documentation photos',
+                                                                    style: {
+                                                                        fontSize: '12px',
+                                                                        color: '#5f6368',
+                                                                        display: 'block',
+                                                                        marginTop: '2px'
+                                                                    }
+                                                                })
+                                                            ]
+                                                        }),
+                                                        $({
+                                                            tag: 'span',
+                                                            text: 'Multiple',
+                                                            style: {
+                                                                fontSize: '11px',
+                                                                color: '#5f6368',
+                                                                backgroundColor: '#f1f3f4',
+                                                                padding: '4px 10px',
+                                                                borderRadius: '12px',
+                                                                fontWeight: '500'
+                                                            }
+                                                        })
+                                                    ]
+                                                }),
+
+                                                // Photo upload area
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        marginBottom: '12px'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'input',
+                                                            att: {
+                                                                type: 'file',
+                                                                accept: 'image/jpeg,image/png,image/jpg,image/gif,image/webp',
+                                                                multiple: true,
+                                                                id: 'photos-input'
+                                                            },
+                                                            style: {
+                                                                display: 'none'
+                                                            },
+                                                            event: {
+                                                                type: 'change',
+                                                                method: (e) => {
+                                                                    const files = Array.from(e.target.files)
+                                                                    const previewContainer = document.getElementById('photos-preview-container')
+                                                                    files.forEach(file => {
+                                                                        if (file.type.startsWith('image/')) {
+                                                                            // Store file data
+                                                                            const fileData = {
+                                                                                file: file,
+                                                                                name: file.name,
+                                                                                path: '',
+                                                                                isExisting: false
+                                                                            }
+                                                                            paperTrailFiles.photos.push(fileData)
+                                                                            // Add preview
+                                                                            if (previewContainer) {
+                                                                                addPhotoPreview(file, previewContainer, false, null)
+                                                                            }
+                                                                        }
+                                                                    })
+                                                                    const photoCount = document.getElementById('photo-count')
+                                                                    if (photoCount) {
+                                                                        photoCount.textContent = paperTrailFiles.photos.length
+                                                                    }
+                                                                    showNotification(`${files.length} photo(s) selected.`, 'info')
+                                                                    e.target.value = ''
+                                                                }
+                                                            }
+                                                        }),
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                backgroundColor: '#f8f9fa',
+                                                                border: '2px dashed #dadce0',
+                                                                borderRadius: '12px',
+                                                                padding: '20px',
+                                                                textAlign: 'center',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease',
+                                                                marginBottom: '12px'
+                                                            },
+                                                            event: {
+                                                                type: 'click',
+                                                                method: (e) => {
+                                                                    const fileInput = document.getElementById('photos-input')
+                                                                    if (fileInput) fileInput.click()
+                                                                },
+                                                                type2: 'mouseenter',
+                                                                method2: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#f57c00'
+                                                                    e.currentTarget.style.backgroundColor = '#fff3e0'
+                                                                },
+                                                                type3: 'mouseleave',
+                                                                method3: (e) => {
+                                                                    e.currentTarget.style.borderColor = '#dadce0'
+                                                                    e.currentTarget.style.backgroundColor = '#f8f9fa'
+                                                                }
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-cloud-upload-alt' },
+                                                                    style: { fontSize: '28px', color: '#f57c00', display: 'block', marginBottom: '8px' }
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    text: 'Click or drag to upload photos',
+                                                                    style: { fontSize: '13px', color: '#202124', marginBottom: '2px', fontWeight: '500' }
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    text: 'JPG, PNG, GIF, WEBP supported',
+                                                                    style: { fontSize: '11px', color: '#5f6368' }
+                                                                })
+                                                            ]
+                                                        }),
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center',
+                                                                marginBottom: '12px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    text: 'Uploaded Photos:',
+                                                                    style: { fontSize: '12px', color: '#5f6368', fontWeight: '500' }
+                                                                }),
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { id: 'photo-count' },
+                                                                    text: isEditing ? paperTrailFiles.photos.length : '0',
+                                                                    style: {
+                                                                        fontSize: '12px',
+                                                                        color: '#f57c00',
+                                                                        fontWeight: '600',
+                                                                        backgroundColor: '#fff3e0',
+                                                                        padding: '2px 12px',
+                                                                        borderRadius: '12px'
+                                                                    }
+                                                                })
+                                                            ]
+                                                        })
+                                                    ]
+                                                }),
+
+                                                // Photos preview grid
+                                                $({
+                                                    tag: 'div',
+                                                    att: { id: 'photos-preview-container' },
+                                                    style: {
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                                                        gap: '10px',
+                                                        maxHeight: '250px',
+                                                        overflowY: 'auto',
+                                                        padding: '4px'
+                                                    },
+                                                    elementHandler: (el) => {
+                                                        // Clear container
+                                                        el.innerHTML = ''
+                                                        
+                                                        // Add existing photos if editing
+                                                        if (isEditing && paperTrailFiles.photos.length > 0) {
+                                                            paperTrailFiles.photos.forEach((photo, index) => {
+                                                                if (photo.isExisting && photo.path) {
+                                                                    addPhotoPreview(null, el, true, photo.path, index)
+                                                                } else if (photo.file) {
+                                                                    addPhotoPreview(photo.file, el, false, null, index)
+                                                                }
+                                                            })
+                                                        }
+                                                        
+                                                        // Show empty message if no photos
+                                                        if (paperTrailFiles.photos.length === 0) {
+                                                            const emptyMessage = $({
+                                                                tag: 'div',
+                                                                text: 'No photos uploaded yet',
+                                                                style: {
+                                                                    gridColumn: '1 / -1',
+                                                                    textAlign: 'center',
+                                                                    padding: '30px',
+                                                                    color: '#9aa0a6',
+                                                                    fontSize: '13px'
+                                                                }
+                                                            })
+                                                            el.appendChild(emptyMessage)
+                                                        }
+                                                    }
+                                                })
+                                            ]
                                         })
                                     ]
                                 }),
-
                                 // Remarks
                                 $({
                                     tag: 'div',
@@ -2117,8 +4237,8 @@ export const publicationResearch = () => {
                                             text: 'Remarks',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#5f6368',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -2132,17 +4252,30 @@ export const publicationResearch = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#1a1a1a',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
-                                                fontFamily: 'inherit'
+                                                fontFamily: 'inherit',
+                                                transition: 'all 0.2s ease'
                                             },
-                                            text: isEditing ? (item.remarks || '') : ''
+                                            text: isEditing ? (item.remarks || '') : '',
+                                            event: {
+                                                type: 'focus',
+                                                method: (e) => {
+                                                    e.target.style.borderColor = '#1a73e8'
+                                                    e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                },
+                                                type2: 'blur',
+                                                method2: (e) => {
+                                                    e.target.style.borderColor = '#dadce0'
+                                                    e.target.style.boxShadow = 'none'
+                                                }
+                                            }
                                         })
                                     ]
                                 }),
@@ -2155,7 +4288,7 @@ export const publicationResearch = () => {
                                         justifyContent: 'flex-end',
                                         gap: '12px',
                                         marginTop: '24px',
-                                        borderTop: '1px solid #444',
+                                        borderTop: '1px solid #e8eaed',
                                         paddingTop: '20px'
                                     },
                                     child: [
@@ -2164,13 +4297,14 @@ export const publicationResearch = () => {
                                             att: { type: 'button' },
                                             text: 'Cancel',
                                             style: {
-                                                padding: '10px 24px',
+                                                padding: '10px 28px',
                                                 backgroundColor: 'transparent',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#aaa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#5f6368',
                                                 fontSize: '14px',
                                                 cursor: 'pointer',
+                                                fontWeight: '500',
                                                 transition: 'all 0.2s ease'
                                             },
                                             event: {
@@ -2178,7 +4312,7 @@ export const publicationResearch = () => {
                                                 method: closeModal,
                                                 type2: 'mouseenter',
                                                 method2: (e) => {
-                                                    e.target.style.backgroundColor = '#333'
+                                                    e.target.style.backgroundColor = '#f8f9fa'
                                                 },
                                                 type3: 'mouseleave',
                                                 method3: (e) => {
@@ -2191,10 +4325,10 @@ export const publicationResearch = () => {
                                             att: { type: 'submit' },
                                             text: isEditing ? 'Update Publication' : 'Add Publication',
                                             style: {
-                                                padding: '10px 24px',
-                                                backgroundColor: '#2196f3',
+                                                padding: '10px 32px',
+                                                backgroundColor: '#1a73e8',
                                                 border: 'none',
-                                                borderRadius: '6px',
+                                                borderRadius: '8px',
                                                 color: '#fff',
                                                 fontSize: '14px',
                                                 cursor: 'pointer',
@@ -2204,11 +4338,11 @@ export const publicationResearch = () => {
                                             event: {
                                                 type: 'mouseenter',
                                                 method: (e) => {
-                                                    e.target.style.backgroundColor = '#1976d2'
+                                                    e.target.style.backgroundColor = '#1557b0'
                                                 },
                                                 type2: 'mouseleave',
                                                 method2: (e) => {
-                                                    e.target.style.backgroundColor = '#2196f3'
+                                                    e.target.style.backgroundColor = '#1a73e8'
                                                 }
                                             }
                                         })
@@ -2242,7 +4376,6 @@ export const publicationResearch = () => {
         }, 100)
     }
 
-    // Toggle location select between campus and center
     const toggleLocationSelect = (type, selectedValue = '') => {
         const container = document.getElementById('location-select-container')
         if (!container) return
@@ -2255,9 +4388,10 @@ export const publicationResearch = () => {
                     tag: 'p',
                     text: 'Please select a type first',
                     style: {
-                        color: '#666',
+                        color: '#5f6368',
                         fontSize: '13px',
-                        fontStyle: 'italic'
+                        fontStyle: 'italic',
+                        padding: '8px 0'
                     }
                 })
             )
@@ -2277,7 +4411,7 @@ export const publicationResearch = () => {
                         style: {
                             display: 'block',
                             marginBottom: '8px',
-                            color: '#aaa',
+                            color: '#5f6368',
                             fontSize: '13px',
                             fontWeight: '500'
                         }
@@ -2290,14 +4424,17 @@ export const publicationResearch = () => {
                         },
                         style: {
                             width: '100%',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
+                            padding: '10px 14px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
                             fontSize: '14px',
                             outline: 'none',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            appearance: 'none',
+                            WebkitAppearance: 'none'
                         },
                         child: [
                             $({ tag: 'option', att: { value: '' }, text: `-- Select ${type === 'campus' ? 'Campus' : 'Center'} --` }),
@@ -2308,48 +4445,113 @@ export const publicationResearch = () => {
                                     text: opt
                                 })
                             )
-                        ]
+                        ],
+                        event: {
+                            type: 'focus',
+                            method: (e) => {
+                                e.target.style.borderColor = '#1a73e8'
+                                e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                            },
+                            type2: 'blur',
+                            method2: (e) => {
+                                e.target.style.borderColor = '#dadce0'
+                                e.target.style.boxShadow = 'none'
+                            }
+                        }
                     })
                 ]
             })
         )
     }
 
-    // Save publication data
     const savePublicationData = async (isEditing) => {
         const form = document.getElementById('publication-form')
         const formData = new FormData(form)
-        formData.append('action', isEditing ? 'update_publication' : 'add_publication')
 
-        // Add dynamic arrays as JSON
-        formData.append('authors', JSON.stringify(authors))
-        formData.append('websiteLinks', JSON.stringify(websiteLinks))
-        formData.append('paperTrailLinks', JSON.stringify(paperTrailLinks))
+        const authorNames = authors.map(a => a.name).filter(name => name.trim() !== '')
+        formData.set('authors', JSON.stringify(authorNames))
+        const validLinks = websiteLinks.filter(link => link.url && link.url.trim() !== '')
+        formData.set('websiteLinks', JSON.stringify(validLinks))
 
-        showLoading()
+        const certificateFiles = paperTrailFiles.certificates
+            .filter(cert => cert.file || cert.path)
+            .map(cert => ({
+                file: cert.file || null,
+                path: cert.path || null,
+                name: cert.name,
+                isExisting: cert.isExisting || false
+            }))
+        
+        // Programs
+        const programFiles = paperTrailFiles.programs
+            .filter(prog => prog.file || prog.path)
+            .map(prog => ({
+                file: prog.file || null,
+                path: prog.path || null,
+                name: prog.name,
+                isExisting: prog.isExisting || false
+            }))
+        
+        // Photos
+        const photoFiles = paperTrailFiles.photos
+            .filter(photo => photo.file || photo.path)
+            .map(photo => ({
+                file: photo.file || null,
+                path: photo.path || null,
+                name: photo.name,
+                isExisting: photo.isExisting || false
+            }))
+
+        // Create paper trail data object
+        const paperTrailData = {
+            certificates: certificateFiles.map(c => c.path || c.file?.name || ''),
+            programs: programFiles.map(p => p.path || p.file?.name || ''),
+            photos: photoFiles.map(p => p.path || p.file?.name || '')
+        }
+        formData.set('paperTrailLinks', JSON.stringify(paperTrailData))
+
+        // Append actual files to FormData for upload
+        // Certificates
+        certificateFiles.forEach(cert => {
+            if (cert.file) {
+                formData.append('certificates[]', cert.file)
+            }
+        })
+        
+        // Programs
+        programFiles.forEach(prog => {
+            if (prog.file) {
+                formData.append('programs[]', prog.file)
+            }
+        })
+        
+        // Photos
+        photoFiles.forEach(photo => {
+            if (photo.file) {
+                formData.append('photos[]', photo.file)
+            }
+        })
+
         try {
-            const response = await fetch('/api/publication-research', {
-                method: 'POST',
+            const endpoint = isEditing ? `/api/publications/${formData.get('id')}` : '/api/publications'
+            const method = isEditing ? 'PUT' : 'POST'
+
+            const response = await fetch(endpoint, {
+                method: method,
                 body: formData
             })
 
-            const result = await response.json()
-
-            if (result.success) {
-                closeModal()
-                showNotification(
-                    isEditing ? 'Publication updated successfully' : 'Publication added successfully',
-                    'success'
-                )
-                await refreshData()
-            } else {
-                showNotification(result.message || 'Error saving publication data', 'error')
+            if (!response.ok) {
+                throw new Error('Failed to save publication')
             }
+
+            const result = await response.json()
+            showNotification(isEditing ? 'Publication updated successfully!' : 'Publication added successfully!', 'success')
+            closeModal()
+            loadPublications()
         } catch (error) {
             console.error('Error saving publication:', error)
-            showNotification('Error connecting to server', 'error')
-        } finally {
-            hideLoading()
+            showNotification('Failed to save publication. Please try again.', 'error')
         }
     }
 
@@ -2362,7 +4564,6 @@ export const publicationResearch = () => {
         await fetchPublicationData()
     }
 
-    // Filter bar component
     const FilterBar = () => {
         return $({
             tag: 'div',
@@ -2371,10 +4572,11 @@ export const publicationResearch = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '16px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e8eaed',
                 flexWrap: 'wrap',
-                gap: '15px'
+                gap: '15px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             },
             child: [
                 $({
@@ -2397,13 +4599,13 @@ export const publicationResearch = () => {
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-book-open' },
-                                    style: { color: '#2196f3', fontSize: '22px' }
+                                    style: { color: '#1a73e8', fontSize: '22px' }
                                 }),
                                 $({
                                     tag: 'h2',
                                     text: 'Summary List of Research Articles Published',
                                     style: {
-                                        color: '#fff',
+                                        color: '#1a1a1a',
                                         fontFamily: 'Segoe UI, sans-serif',
                                         fontSize: '18px',
                                         fontWeight: '600',
@@ -2415,13 +4617,14 @@ export const publicationResearch = () => {
                                     tag: 'span',
                                     att: { className: 'record-count' },
                                     style: {
-                                        backgroundColor: '#333',
-                                        color: '#aaa',
-                                        padding: '4px 10px',
+                                        backgroundColor: '#f1f3f4',
+                                        color: '#5f6368',
+                                        padding: '4px 12px',
                                         borderRadius: '20px',
                                         fontSize: '12px',
                                         fontFamily: 'monospace',
-                                        border: '1px solid #444'
+                                        border: '1px solid #e8eaed',
+                                        fontWeight: '500'
                                     },
                                     text: '0 of 0 records'
                                 })
@@ -2432,11 +4635,12 @@ export const publicationResearch = () => {
                             tag: 'div',
                             style: {
                                 display: 'flex',
-                                gap: '12px',
-                                backgroundColor: '#333',
-                                padding: '4px 12px',
+                                gap: '10px',
+                                backgroundColor: '#f8f9fa',
+                                padding: '4px 8px',
                                 borderRadius: '12px',
-                                border: '1px solid #444'
+                                border: '1px solid #e8eaed',
+                                flexWrap: 'wrap'
                             },
                             child: [
                                 // Campus filter
@@ -2448,11 +4652,16 @@ export const publicationResearch = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#1a1a1a',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '160px'
+                                        maxWidth: '160px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
+                                        appearance: 'none',         
+                                        WebkitAppearance: 'none',   
+                                        MozAppearance: 'none'  
                                     },
                                     child: campuses.map(c =>
                                         $({
@@ -2467,7 +4676,26 @@ export const publicationResearch = () => {
                                         method: async (e) => {
                                             currentCampus = e.target.value
                                             await refreshData()
+                                        },
+                                        type2: 'focus',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#f1f3f4'
+                                        },
+                                        type3: 'blur',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
                                         }
+                                    }
+                                }),
+                                // Divider
+                                $({
+                                    tag: 'span',
+                                    text: '|',
+                                    style: {
+                                        color: '#dadce0',
+                                        fontSize: '20px',
+                                        lineHeight: '2',
+                                        padding: '0 2px'
                                     }
                                 }),
                                 // Center filter
@@ -2479,11 +4707,16 @@ export const publicationResearch = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#1a1a1a',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '250px'
+                                        maxWidth: '250px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
+                                        appearance: 'none',         
+                                        WebkitAppearance: 'none',   
+                                        MozAppearance: 'none'  
                                     },
                                     child: centers.map(c =>
                                         $({
@@ -2498,7 +4731,26 @@ export const publicationResearch = () => {
                                         method: async (e) => {
                                             currentCenter = e.target.value
                                             await refreshData()
+                                        },
+                                        type2: 'focus',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#f1f3f4'
+                                        },
+                                        type3: 'blur',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
                                         }
+                                    }
+                                }),
+                                // Divider
+                                $({
+                                    tag: 'span',
+                                    text: '|',
+                                    style: {
+                                        color: '#dadce0',
+                                        fontSize: '20px',
+                                        lineHeight: '2',
+                                        padding: '0 2px'
                                     }
                                 }),
                                 // Publication type filter
@@ -2510,11 +4762,16 @@ export const publicationResearch = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#1a1a1a',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '150px'
+                                        maxWidth: '150px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
+                                        appearance: 'none',         
+                                        WebkitAppearance: 'none',   
+                                        MozAppearance: 'none'  
                                     },
                                     child: publicationTypes.map(pt =>
                                         $({
@@ -2530,7 +4787,26 @@ export const publicationResearch = () => {
                                             currentPublicationType = e.target.value
                                             applyLocalFilters()
                                             updateRecordCount()
+                                        },
+                                        type2: 'focus',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#f1f3f4'
+                                        },
+                                        type3: 'blur',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
                                         }
+                                    }
+                                }),
+                                // Divider
+                                $({
+                                    tag: 'span',
+                                    text: '|',
+                                    style: {
+                                        color: '#dadce0',
+                                        fontSize: '20px',
+                                        lineHeight: '2',
+                                        padding: '0 2px'
                                     }
                                 }),
                                 // Referee status filter
@@ -2542,11 +4818,16 @@ export const publicationResearch = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#1a1a1a',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '160px'
+                                        maxWidth: '160px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
+                                        appearance: 'none',         
+                                        WebkitAppearance: 'none',   
+                                        MozAppearance: 'none'  
                                     },
                                     child: refereeStatuses.map(rs =>
                                         $({
@@ -2562,6 +4843,14 @@ export const publicationResearch = () => {
                                             currentRefereeStatus = e.target.value
                                             applyLocalFilters()
                                             updateRecordCount()
+                                        },
+                                        type2: 'focus',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#f1f3f4'
+                                        },
+                                        type3: 'blur',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
                                         }
                                     }
                                 })
@@ -2574,8 +4863,8 @@ export const publicationResearch = () => {
                     tag: 'button',
                     text: '+ Add Publication',
                     style: {
-                        padding: '10px 20px',
-                        backgroundColor: '#2196f3',
+                        padding: '10px 24px',
+                        backgroundColor: '#1a73e8',
                         border: 'none',
                         borderRadius: '25px',
                         color: '#fff',
@@ -2585,22 +4874,23 @@ export const publicationResearch = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(26, 115, 232, 0.2)'
                     },
                     event: {
                         type: 'click',
                         method: openAddModal,
                         type2: 'mouseenter',
                         method2: (e) => {
-                            e.target.style.backgroundColor = '#1976d2'
-                            e.target.style.transform = 'translateY(-1px)'
-                            e.target.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)'
+                            e.target.style.backgroundColor = '#1557b0'
+                            e.target.style.transform = 'translateY(-2px)'
+                            e.target.style.boxShadow = '0 6px 16px rgba(26, 115, 232, 0.3)'
                         },
                         type3: 'mouseleave',
                         method3: (e) => {
-                            e.target.style.backgroundColor = '#2196f3'
+                            e.target.style.backgroundColor = '#1a73e8'
                             e.target.style.transform = 'translateY(0)'
-                            e.target.style.boxShadow = 'none'
+                            e.target.style.boxShadow = '0 2px 4px rgba(26, 115, 232, 0.2)'
                         }
                     }
                 })
@@ -2608,31 +4898,44 @@ export const publicationResearch = () => {
         })
     }
 
-    // Statistics cards
     const StatsCards = () => {
         return $({
             tag: 'div',
             att: { className: 'stats-cards' },
             style: {
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444'
+                backgroundColor: '#f8f9fa',
+                borderBottom: '1px solid #e8eaed'
             },
             child: [
                 // Total Publications
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
+                        padding: '20px 24px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e8eaed',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                            e.currentTarget.style.transform = 'translateY(-2px)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                        }
                     },
                     child: [
                         $({
@@ -2641,17 +4944,17 @@ export const publicationResearch = () => {
                                 width: '54px',
                                 height: '54px',
                                 borderRadius: '16px',
-                                backgroundColor: 'rgba(33, 150, 243, 0.15)',
+                                backgroundColor: '#e3f2fd',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(33, 150, 243, 0.3)'
+                                flexShrink: 0
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-book-open' },
-                                    style: { color: '#2196f3', fontSize: '26px' }
+                                    style: { color: '#1a73e8', fontSize: '26px' }
                                 })
                             ]
                         }),
@@ -2666,7 +4969,7 @@ export const publicationResearch = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
+                                        color: '#1a1a1a',
                                         lineHeight: '1.2'
                                     }
                                 }),
@@ -2675,7 +4978,7 @@ export const publicationResearch = () => {
                                     text: 'Total Publications',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
+                                        color: '#5f6368',
                                         fontWeight: '500'
                                     }
                                 })
@@ -2687,13 +4990,27 @@ export const publicationResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
+                        padding: '20px 24px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e8eaed',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                            e.currentTarget.style.transform = 'translateY(-2px)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                        }
                     },
                     child: [
                         $({
@@ -2702,17 +5019,17 @@ export const publicationResearch = () => {
                                 width: '54px',
                                 height: '54px',
                                 borderRadius: '16px',
-                                backgroundColor: 'rgba(156, 39, 176, 0.15)',
+                                backgroundColor: '#f3e5f5',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(156, 39, 176, 0.3)'
+                                flexShrink: 0
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-users' },
-                                    style: { color: '#9c27b0', fontSize: '26px' }
+                                    style: { color: '#7b1fa2', fontSize: '26px' }
                                 })
                             ]
                         }),
@@ -2727,7 +5044,7 @@ export const publicationResearch = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
+                                        color: '#1a1a1a',
                                         lineHeight: '1.2'
                                     }
                                 }),
@@ -2736,7 +5053,7 @@ export const publicationResearch = () => {
                                     text: 'Total Authors',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
+                                        color: '#5f6368',
                                         fontWeight: '500'
                                     }
                                 })
@@ -2748,23 +5065,35 @@ export const publicationResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
-                        border: '1px solid #444',
-                        gridColumn: 'span 2'
+                        padding: '20px 24px',
+                        border: '1px solid #e8eaed',
+                        gridColumn: 'span 2',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                        }
                     },
                     child: [
                         $({
                             tag: 'div',
                             text: 'Publication Type Breakdown',
                             style: {
-                                fontSize: '13px',
-                                color: '#888',
-                                fontWeight: '500',
-                                marginBottom: '12px',
+                                fontSize: '12px',
+                                color: '#5f6368',
+                                fontWeight: '600',
+                                marginBottom: '14px',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
+                                letterSpacing: '0.8px'
                             }
                         }),
                         $({
@@ -2775,10 +5104,10 @@ export const publicationResearch = () => {
                                 gap: '12px'
                             },
                             child: [
-                                createTypeStat('National', '#2196f3', 'stat-national', 'fa-flag'),
-                                createTypeStat('International', '#e91e63', 'stat-international', 'fa-globe'),
-                                createTypeStat('Refereed', '#4caf50', 'stat-refereed', 'fa-check-circle'),
-                                createTypeStat('Non-refereed', '#ff9800', 'stat-non-refereed', 'fa-circle')
+                                createTypeStat('National', '#1a73e8', 'stat-national', 'fa-flag'),
+                                createTypeStat('International', '#d32f2f', 'stat-international', 'fa-globe'),
+                                createTypeStat('Refereed', '#2e7d32', 'stat-refereed', 'fa-check-circle'),
+                                createTypeStat('Non-refereed', '#e65100', 'stat-non-refereed', 'fa-circle')
                             ]
                         })
                     ]
@@ -2787,23 +5116,35 @@ export const publicationResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
-                        border: '1px solid #444',
-                        gridColumn: 'span 2'
+                        padding: '20px 24px',
+                        border: '1px solid #e8eaed',
+                        gridColumn: 'span 2',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                        }
                     },
                     child: [
                         $({
                             tag: 'div',
                             text: 'Indexing Breakdown',
                             style: {
-                                fontSize: '13px',
-                                color: '#888',
-                                fontWeight: '500',
-                                marginBottom: '12px',
+                                fontSize: '12px',
+                                color: '#5f6368',
+                                fontWeight: '600',
+                                marginBottom: '14px',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
+                                letterSpacing: '0.8px'
                             }
                         }),
                         $({
@@ -2814,8 +5155,8 @@ export const publicationResearch = () => {
                                 gap: '12px'
                             },
                             child: [
-                                createTypeStat('Scopus Indexed', '#ff9800', 'stat-scopus', 'fa-database'),
-                                createTypeStat('WOS Indexed', '#2196f3', 'stat-wos', 'fa-globe')
+                                createTypeStat('Scopus Indexed', '#e65100', 'stat-scopus', 'fa-database'),
+                                createTypeStat('WOS Indexed', '#0d47a1', 'stat-wos', 'fa-globe')
                             ]
                         })
                     ]
@@ -2824,96 +5165,118 @@ export const publicationResearch = () => {
         })
     }
 
-    // Create type stat item
     const createTypeStat = (label, color, className, icon) => {
         return $({
             tag: 'div',
             style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '12px',
-                backgroundColor: `${color}10`,
+                backgroundColor: '#f8f9fa',
                 borderRadius: '12px',
-                border: `1px solid ${color}30`
+                padding: '14px 16px',
+                border: `1px solid ${color}20`,
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = `${color}10`
+                    e.currentTarget.style.borderColor = `${color}40`
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = `0 4px 12px ${color}15`
+                },
+                type2: 'mouseleave',
+                method2: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f8f9fa'
+                    e.currentTarget.style.borderColor = `${color}20`
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = 'none'
+                }
             },
             child: [
                 $({
-                    tag: 'span',
-                    att: { className: `fa-solid ${icon}` },
+                    tag: 'div',
                     style: {
-                        fontSize: '20px',
-                        color: color,
-                        marginBottom: '8px',
-                        opacity: 0.7
-                    }
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '6px'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: `fa-solid ${icon}` },
+                            style: { color: color, fontSize: '14px' }
+                        }),
+                        $({
+                            tag: 'span',
+                            text: label,
+                            style: {
+                                fontSize: '12px',
+                                color: '#5f6368',
+                                fontWeight: '500'
+                            }
+                        })
+                    ]
                 }),
                 $({
                     tag: 'span',
-                    att: { className },
+                    att: { className: `stat-${className.split('-')[1] || className}` },
                     text: '0',
                     style: {
                         fontSize: '24px',
                         fontWeight: '700',
-                        color: color,
-                        lineHeight: '1.2'
-                    }
-                }),
-                $({
-                    tag: 'span',
-                    text: label,
-                    style: {
-                        fontSize: '11px',
-                        color: '#aaa',
-                        fontWeight: '500',
-                        marginTop: '4px'
+                        color: '#1a1a1a',
+                        display: 'block'
                     }
                 })
             ]
         })
     }
 
-    // Table header
     const TableHeader = () => {
         const headers = [
-            'NO.',
-            'Title of\nArticle',
-            'Author(s)',
-            'Name of\nBook/Journal',
-            'ISSN/\nISBN',
-            'Vol.No/\nIssue No.',
-            'Number\nof Pages',
-            'Date of\nPublication',
-            'DOI\n(if any)',
-            'Publication\nNational or\nInternational',
-            'Refereed/\nNon-refereed',
-            'Indexing Body\n(Scopus/WOS,\netc.)',
-            'Link of Website/\nArticle Published',
-            'IMPORTANT!\nLink of Paper Trail\nFolder',
-            'Remarks',
-            'ACTIONS'
+            { label: 'NO.', align: 'center', width: '50px' },
+            { label: 'Title of\nArticle', align: 'left', width: '250px' },
+            { label: 'Author(s)', align: 'left', width: '180px' },
+            { label: 'Name of\nBook/Journal', align: 'left', width: '180px' },
+            { label: 'ISSN/\nISBN', align: 'center', width: '100px' },
+            { label: 'Vol.No/\nIssue No.', align: 'center', width: '100px' },
+            { label: 'Number\nof Pages', align: 'center', width: '80px' },
+            { label: 'Date of\nPublication', align: 'center', width: '120px' },
+            { label: 'DOI\n(if any)', align: 'left', width: '150px' },
+            { label: 'Publication\nNational or\nInternational', align: 'center', width: '140px' },
+            { label: 'Refereed/\nNon-refereed', align: 'center', width: '140px' },
+            { label: 'Indexing Body\n(Scopus/WOS,\netc.)', align: 'center', width: '140px' },
+            { label: 'Link of Website/\nArticle Published', align: 'left', width: '200px' },
+            { label: 'IMPORTANT!\nLink of Paper Trail\nFolder', align: 'left', width: '300px' },
+            { label: 'Remarks', align: 'left', width: '150px' },
+            { label: 'ACTIONS', align: 'center', width: '100px' }
         ]
 
         const row = $({ tag: 'tr' })
 
         headers.forEach((header, index) => {
-            const isCenter = ['NO.', 'ISSN/\nISBN', 'Vol.No/\nIssue No.', 'Number\nof Pages', 'Date of\nPublication', 'Publication\nNational or\nInternational', 'Refereed/\nNon-refereed', 'Indexing Body\n(Scopus/WOS,\netc.)', 'ACTIONS'].includes(header)
-
             const th = $({
                 tag: 'th',
-                text: header,
+                text: header.label,
                 style: {
-                    padding: '14px 8px',
-                    textAlign: isCenter ? 'center' : 'left',
-                    fontSize: '13px',
+                    padding: '14px 10px',
+                    textAlign: header.align,
+                    fontSize: '12px',
                     fontWeight: '600',
-                    color: '#fff',
-                    backgroundColor: '#2d2d2d',
-                    border: '1px solid #444',
+                    color: '#1a1a1a',
+                    backgroundColor: '#f1f3f4',
+                    border: '1px solid #e8eaed',
+                    borderBottom: '2px solid #dadce0',
                     whiteSpace: 'pre-line',
                     wordBreak: 'break-word',
                     verticalAlign: 'middle',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.3px',
+                    minWidth: header.width,
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 2,
+                    textTransform: 'uppercase',
+                    fontSize: '11px'
                 }
             })
             row.appendChild(th)
@@ -2921,11 +5284,15 @@ export const publicationResearch = () => {
 
         return $({
             tag: 'thead',
+            style: {
+                position: 'sticky',
+                top: 0,
+                zIndex: 3
+            },
             child: [row]
         })
     }
 
-    // Main table component
     const DataTable = () => {
         return $({
             tag: 'div',
@@ -2933,8 +5300,9 @@ export const publicationResearch = () => {
                 width: '100%',
                 height: 'calc(100% - 380px)',
                 overflow: 'auto',
-                backgroundColor: '#2a2a2a',
-                position: 'relative'
+                backgroundColor: '#ffffff',
+                position: 'relative',
+                borderTop: '1px solid #e8eaed'
             },
             elementHandler: (el) => {
                 scrollContainer = el
@@ -2947,12 +5315,16 @@ export const publicationResearch = () => {
                     style: {
                         width: '100%',
                         minWidth: '2800px',
-                        borderCollapse: 'collapse'
+                        borderCollapse: 'collapse',
+                        backgroundColor: '#ffffff'
                     },
                     child: [
                         TableHeader(),
                         $({
                             tag: 'tbody',
+                            style: {
+                                backgroundColor: '#ffffff'
+                            },
                             elementHandler: (el) => {
                                 tableBody = el
                             }
@@ -2992,18 +5364,17 @@ export const publicationResearch = () => {
         }, 3000)
     }
 
-    // Return main container
     return $({
         tag: 'div',
         att: { className: 'publication-research-container' },
         style: {
             width: '100%',
             height: '100%',
-            backgroundColor: '#2a2a2a',
+            backgroundColor: '#f8f9fa',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            fontFamily: 'Segoe UI, sans-serif'
+            fontFamily: 'Segoe UI, system-ui, -apple-system, sans-serif'
         },
         elementHandler: (el) => {
             mainContainer = el
