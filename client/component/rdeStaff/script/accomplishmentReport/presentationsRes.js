@@ -1796,7 +1796,6 @@ export const facultyPresentation = () => {
             return researcherRow
         }
 
-        // Function to add photo preview
         const addPhotoPreview = (file, container, isExisting, photoUrl, index) => {
             const preview = $({
                 tag: 'div',

@@ -79,7 +79,6 @@ export const citationsResearch = () => {
         }
     }
 
-    // Fetch citations data
     const fetchCitationsData = async (cursor = null) => {
         if (isLoading) return
 
@@ -113,7 +112,7 @@ export const citationsResearch = () => {
                 formData.append('center', currentCenter)
             }
 
-            const response = await fetch('/api/citations-research', {
+            const response = await fetch('/citationResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -182,7 +181,6 @@ export const citationsResearch = () => {
         }
     }
 
-    // Handle scroll for infinite loading
     const handleScroll = () => {
         if (!scrollContainer || isLoading || !hasMore) return
 
@@ -193,7 +191,6 @@ export const citationsResearch = () => {
         }
     }
 
-    // Update statistics
     const updateStats = () => {
         const statTotalResearch = document.querySelector('.stat-total-research')
         const statTotalCitations = document.querySelector('.stat-total-citations')
@@ -210,7 +207,6 @@ export const citationsResearch = () => {
         if (statWithoutCitations) statWithoutCitations.textContent = currentStats.withoutCitations
     }
 
-    // Update record count
     const updateRecordCount = () => {
         const recordCount = document.querySelector('.record-count')
         if (recordCount) {
@@ -218,7 +214,6 @@ export const citationsResearch = () => {
         }
     }
 
-    // Update table with data
     const updateTableWithData = () => {
         if (!tableBody) return
 
@@ -234,64 +229,128 @@ export const citationsResearch = () => {
         })
     }
 
-    // Show empty state
     const showEmptyState = () => {
         if (!tableBody) return
 
         tableBody.innerHTML = ''
 
-        const emptyState = $({
-            tag: 'div',
-            att: { className: 'empty-state' },
+        // Create a single row that spans all columns
+        const emptyRow = $({
+            tag: 'tr',
             style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: '10%',
-                marginLeft: '100%',
-                height: '350px',
-                width: '100%',
-                color: '#888',
-                fontFamily: 'Segoe UI, sans-serif',
-                gridColumn: '1 / -1'
+                width: '100%'
             },
             child: [
                 $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-quote-right' },
+                    tag: 'td',
+                    att: {
+                        colSpan: 7 // Match the number of columns in your table
+                    },
                     style: {
-                        fontSize: '64px',
-                        marginBottom: '20px',
-                        opacity: 0.3,
-                        color: '#3f51b5'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'No Research Citations Found',
-                    style: {
-                        fontSize: '20px',
-                        marginBottom: '12px',
-                        fontWeight: '500',
-                        color: '#fff'
-                    }
-                }),
-                $({
-                    tag: 'div',
-                    text: 'Click "Add Citation" to add research citation records',
-                    style: {
-                        fontSize: '14px',
-                        opacity: 0.7
-                    }
+                        padding: '0',
+                        border: 'none',
+                        backgroundColor: 'transparent'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            att: { className: 'empty-state' },
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '400px',
+                                width: '100%',
+                                color: '#333',
+                                fontFamily: 'Segoe UI, sans-serif',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)',
+                                padding: '40px 20px',
+                                boxSizing: 'border-box',
+                                margin: '0 auto'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-quote-right' },
+                                    style: {
+                                        fontSize: '64px',
+                                        marginBottom: '20px',
+                                        opacity: 0.3,
+                                        color: '#1a73e8'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'No Research Citations Found',
+                                    style: {
+                                        fontSize: '20px',
+                                        marginBottom: '12px',
+                                        fontWeight: '500',
+                                        color: '#1a1a1a'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'Get started by adding your first research citation',
+                                    style: {
+                                        fontSize: '14px',
+                                        opacity: 0.6,
+                                        color: '#5f6368',
+                                        marginBottom: '20px'
+                                    }
+                                }),
+                                // Add Citation Button
+                                $({
+                                    tag: 'button',
+                                    text: '+ Add Citation',
+                                    style: {
+                                        padding: '12px 32px',
+                                        backgroundColor: '#1a73e8',
+                                        border: 'none',
+                                        borderRadius: '25px',
+                                        color: '#fff',
+                                        fontSize: '15px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 2px 4px rgba(26, 115, 232, 0.2)'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: (e) => {
+                                            e.stopPropagation()
+                                            openAddModal()
+                                        },
+                                        type2: 'mouseenter',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#1557b0'
+                                            e.target.style.transform = 'translateY(-2px)'
+                                            e.target.style.boxShadow = '0 6px 16px rgba(26, 115, 232, 0.3)'
+                                        },
+                                        type3: 'mouseleave',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = '#1a73e8'
+                                            e.target.style.transform = 'translateY(0)'
+                                            e.target.style.boxShadow = '0 2px 4px rgba(26, 115, 232, 0.2)'
+                                        }
+                                    }
+                                })
+                            ]
+                        })
+                    ]
                 })
             ]
         })
 
-        tableBody.appendChild(emptyState)
+        tableBody.appendChild(emptyRow)
     }
 
-    // Render citation count badge
     const renderCitationBadge = (count) => {
         if (count === undefined || count === null) return '—'
 
@@ -344,7 +403,6 @@ export const citationsResearch = () => {
         })
     }
 
-    // Render campus badge
     const renderCampusBadge = (campus) => {
         if (!campus || campus === '—') return '—'
 
@@ -387,7 +445,6 @@ export const citationsResearch = () => {
         })
     }
 
-    // Render citing research list
     const renderCitingResearch = (citingResearch) => {
         if (!citingResearch || citingResearch === '—') return '—'
 
@@ -473,7 +530,6 @@ export const citationsResearch = () => {
         })
     }
 
-    // Render authors list
     const renderAuthors = (authors) => {
         if (!authors || authors === '—') return '—'
 
@@ -516,7 +572,6 @@ export const citationsResearch = () => {
         })
     }
 
-    // Create data row
     const createDataRow = (item, rowNumber) => {
         const cells = []
 
@@ -528,10 +583,11 @@ export const citationsResearch = () => {
                     padding: '12px 8px',
                     textAlign: 'center',
                     fontSize: '12px',
-                    color: '#888',
-                    border: '1px solid #444',
+                    color: '#5f6368',
+                    border: '1px solid #e0e0e0',
                     fontFamily: 'monospace',
-                    verticalAlign: 'top'
+                    verticalAlign: 'top',
+                    backgroundColor: '#fafafa'
                 },
                 text: rowNumber.toString()
             })
@@ -544,12 +600,13 @@ export const citationsResearch = () => {
                 style: {
                     padding: '12px 8px',
                     fontSize: '13px',
-                    color: '#ddd',
-                    border: '1px solid #444',
+                    color: '#1a1a1a',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
                     fontWeight: '500',
                     lineHeight: '1.4',
-                    minWidth: '300px'
+                    minWidth: '300px',
+                    backgroundColor: '#ffffff'
                 },
                 text: item.title || '—'
             })
@@ -561,9 +618,10 @@ export const citationsResearch = () => {
                 tag: 'td',
                 style: {
                     padding: '8px',
-                    border: '1px solid #444',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    minWidth: '180px'
+                    minWidth: '180px',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderAuthors(item.authors)]
             })
@@ -576,9 +634,10 @@ export const citationsResearch = () => {
                 style: {
                     padding: '12px 8px',
                     textAlign: 'center',
-                    border: '1px solid #444',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    minWidth: '130px'
+                    minWidth: '130px',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderCampusBadge(item.campus)]
             })
@@ -591,24 +650,26 @@ export const citationsResearch = () => {
                 style: {
                     padding: '12px 8px',
                     textAlign: 'center',
-                    border: '1px solid #444',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
-                    minWidth: '120px'
+                    minWidth: '120px',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderCitationBadge(item.citations)]
             })
         )
 
-        // Title of research which cited
+        // Title of research
         cells.push(
             $({
                 tag: 'td',
                 style: {
                     padding: '8px',
-                    border: '1px solid #444',
+                    border: '1px solid #e0e0e0',
                     verticalAlign: 'top',
                     minWidth: '300px',
-                    maxWidth: '400px'
+                    maxWidth: '400px',
+                    backgroundColor: '#ffffff'
                 },
                 child: [renderCitingResearch(item.citingResearch)]
             })
@@ -621,8 +682,9 @@ export const citationsResearch = () => {
                 style: {
                     padding: '12px 8px',
                     textAlign: 'center',
-                    border: '1px solid #444',
-                    verticalAlign: 'middle'
+                    border: '1px solid #e0e0e0',
+                    verticalAlign: 'middle',
+                    backgroundColor: '#fafafa'
                 },
                 child: [createActionButtons(item)]
             })
@@ -631,70 +693,113 @@ export const citationsResearch = () => {
         return $({
             tag: 'tr',
             style: {
-                backgroundColor: rowNumber % 2 === 0 ? '#2a2a2a' : '#2d2d2d',
+                backgroundColor: rowNumber % 2 === 0 ? '#ffffff' : '#f8f9fa',
                 transition: 'all 0.2s ease'
             },
             child: cells,
             event: {
                 type: 'mouseenter',
                 method: (e) => {
-                    e.currentTarget.style.backgroundColor = '#333'
+                    e.currentTarget.style.backgroundColor = '#f1f3f4'
                 },
                 type2: 'mouseleave',
                 method2: (e) => {
-                    e.currentTarget.style.backgroundColor = rowNumber % 2 === 0 ? '#2a2a2a' : '#2d2d2d'
+                    e.currentTarget.style.backgroundColor = rowNumber % 2 === 0 ? '#ffffff' : '#f8f9fa'
                 }
             }
         })
     }
 
-    // Create action buttons
     const createActionButtons = (item) => {
         return $({
             tag: 'div',
             style: {
                 display: 'flex',
-                gap: '8px',
+                gap: '6px',
                 justifyContent: 'center'
             },
             child: [
                 $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-pen' },
+                    tag: 'button',
                     style: {
-                        color: '#ffb347',
+                        backgroundColor: '#e3f2fd',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
                         cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        color: '#1565c0'
                     },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-pen' },
+                            style: { fontSize: '12px' }
+                        })
+                    ],
                     title: 'Edit',
                     event: {
                         type: 'click',
                         method: (e) => {
                             e.stopPropagation()
                             openEditModal(item)
+                        },
+                        type2: 'mouseenter',
+                        method2: (e) => {
+                            e.currentTarget.style.backgroundColor = '#bbdefb'
+                            e.currentTarget.style.transform = 'translateY(-1px)'
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(26, 115, 232, 0.15)'
+                        },
+                        type3: 'mouseleave',
+                        method3: (e) => {
+                            e.currentTarget.style.backgroundColor = '#e3f2fd'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                            e.currentTarget.style.boxShadow = 'none'
                         }
                     }
                 }),
                 $({
-                    tag: 'span',
-                    att: { className: 'fa-solid fa-trash' },
+                    tag: 'button',
                     style: {
-                        color: '#f44336',
+                        backgroundColor: '#fce4ec',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
                         cursor: 'pointer',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        color: '#c62828'
                     },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-trash' },
+                            style: { fontSize: '12px' }
+                        })
+                    ],
                     title: 'Delete',
                     event: {
                         type: 'click',
                         method: (e) => {
                             e.stopPropagation()
                             deleteCitation(item)
+                        },
+                        type2: 'mouseenter',
+                        method2: (e) => {
+                            e.currentTarget.style.backgroundColor = '#ef9a9a'
+                            e.currentTarget.style.transform = 'translateY(-1px)'
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(198, 40, 40, 0.15)'
+                        },
+                        type3: 'mouseleave',
+                        method3: (e) => {
+                            e.currentTarget.style.backgroundColor = '#fce4ec'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                            e.currentTarget.style.boxShadow = 'none'
                         }
                     }
                 })
@@ -702,7 +807,6 @@ export const citationsResearch = () => {
         })
     }
 
-    // Open modal for adding/editing
     const openAddModal = () => {
         renderModal(null)
     }
@@ -711,7 +815,6 @@ export const citationsResearch = () => {
         renderModal(item)
     }
 
-    // Close modal
     const closeModal = () => {
         if (modalElement) {
             modalElement.remove()
@@ -719,7 +822,6 @@ export const citationsResearch = () => {
         }
     }
 
-    // Delete citation
     const deleteCitation = async (item) => {
         const confirmed = confirm('Are you sure you want to delete this citation record?')
         if (!confirmed) return
@@ -730,7 +832,7 @@ export const citationsResearch = () => {
             formData.append('action', 'delete_citation')
             formData.append('id', item.id)
 
-            const response = await fetch('/api/citations-research', {
+            const response = await fetch('/citationsResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -751,7 +853,6 @@ export const citationsResearch = () => {
         }
     }
 
-    // Render modal for add/edit
     const renderModal = (item = null) => {
         if (modalElement) {
             modalElement.remove()
@@ -810,17 +911,28 @@ export const citationsResearch = () => {
                         },
                         style: {
                             flex: '1',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '13px',
-                            outline: 'none'
+                            padding: '10px 14px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
+                            fontSize: '14px',
+                            outline: 'none',
+                            transition: 'all 0.2s ease'
                         },
                         event: {
-                            type: 'input',
+                            type: 'focus',
                             method: (e) => {
+                                e.target.style.borderColor = '#1a73e8'
+                                e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                            },
+                            type2: 'blur',
+                            method2: (e) => {
+                                e.target.style.borderColor = '#dadce0'
+                                e.target.style.boxShadow = 'none'
+                            },
+                            type3: 'input',
+                            method3: (e) => {
                                 if (authors[authorIndex]) {
                                     authors[authorIndex].name = e.target.value
                                 }
@@ -832,20 +944,30 @@ export const citationsResearch = () => {
                         att: { type: 'button' },
                         text: '×',
                         style: {
-                            padding: '8px 12px',
-                            backgroundColor: '#f44336',
+                            padding: '8px 14px',
+                            backgroundColor: '#fce8e6',
                             border: 'none',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '16px',
+                            borderRadius: '8px',
+                            color: '#d93025',
+                            fontSize: '18px',
                             cursor: 'pointer',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s ease',
+                            lineHeight: '1'
                         },
                         event: {
                             type: 'click',
                             method: () => {
                                 authors.splice(authorIndex, 1)
                                 authorRow.remove()
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.target.style.backgroundColor = '#fad2cf'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.target.style.backgroundColor = '#fce8e6'
                             }
                         }
                     })
@@ -856,19 +978,20 @@ export const citationsResearch = () => {
         }
 
         // Function to add a citing research field
-        const addCitingResearchField = (title = '', authors = '', year = '') => {
+        const addCitingResearchField = (title = '', authorsText = '', year = '') => {
             const researchIndex = citingResearch.length
-            citingResearch.push({ title, authors, year })
+            citingResearch.push({ title, authors: authorsText, year })
 
             const researchRow = $({
                 tag: 'div',
                 att: { className: 'citing-research-row', 'data-research-index': researchIndex },
                 style: {
-                    backgroundColor: '#333',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    marginBottom: '10px',
-                    border: '1px solid #444'
+                    backgroundColor: '#f8f9fa',
+                    padding: '16px',
+                    borderRadius: '10px',
+                    marginBottom: '12px',
+                    border: '1px solid #e8eaed',
+                    transition: 'all 0.2s ease'
                 },
                 child: [
                     $({
@@ -876,7 +999,7 @@ export const citationsResearch = () => {
                         style: {
                             display: 'flex',
                             gap: '8px',
-                            marginBottom: '8px',
+                            marginBottom: '10px',
                             alignItems: 'center'
                         },
                         child: [
@@ -890,17 +1013,28 @@ export const citationsResearch = () => {
                                 },
                                 style: {
                                     flex: '3',
-                                    padding: '10px',
-                                    backgroundColor: '#2a2a2a',
-                                    border: '1px solid #444',
-                                    borderRadius: '6px',
-                                    color: '#fff',
-                                    fontSize: '13px',
-                                    outline: 'none'
+                                    padding: '10px 14px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #dadce0',
+                                    borderRadius: '8px',
+                                    color: '#1a1a1a',
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    transition: 'all 0.2s ease'
                                 },
                                 event: {
-                                    type: 'input',
+                                    type: 'focus',
                                     method: (e) => {
+                                        e.target.style.borderColor = '#1a73e8'
+                                        e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                    },
+                                    type2: 'blur',
+                                    method2: (e) => {
+                                        e.target.style.borderColor = '#dadce0'
+                                        e.target.style.boxShadow = 'none'
+                                    },
+                                    type3: 'input',
+                                    method3: (e) => {
                                         if (citingResearch[researchIndex]) {
                                             citingResearch[researchIndex].title = e.target.value
                                         }
@@ -912,14 +1046,16 @@ export const citationsResearch = () => {
                                 att: { type: 'button' },
                                 text: '×',
                                 style: {
-                                    padding: '8px 12px',
-                                    backgroundColor: '#f44336',
+                                    padding: '8px 14px',
+                                    backgroundColor: '#fce8e6',
                                     border: 'none',
-                                    borderRadius: '6px',
-                                    color: '#fff',
-                                    fontSize: '16px',
+                                    borderRadius: '8px',
+                                    color: '#d93025',
+                                    fontSize: '18px',
                                     cursor: 'pointer',
-                                    fontWeight: 'bold'
+                                    fontWeight: 'bold',
+                                    transition: 'all 0.2s ease',
+                                    lineHeight: '1'
                                 },
                                 event: {
                                     type: 'click',
@@ -927,6 +1063,14 @@ export const citationsResearch = () => {
                                         citingResearch.splice(researchIndex, 1)
                                         researchRow.remove()
                                         updateCitationCount()
+                                    },
+                                    type2: 'mouseenter',
+                                    method2: (e) => {
+                                        e.target.style.backgroundColor = '#fad2cf'
+                                    },
+                                    type3: 'mouseleave',
+                                    method3: (e) => {
+                                        e.target.style.backgroundColor = '#fce8e6'
                                     }
                                 }
                             })
@@ -937,7 +1081,7 @@ export const citationsResearch = () => {
                         style: {
                             display: 'grid',
                             gridTemplateColumns: '1fr 100px',
-                            gap: '8px'
+                            gap: '10px'
                         },
                         child: [
                             $({
@@ -945,21 +1089,32 @@ export const citationsResearch = () => {
                                 att: {
                                     type: 'text',
                                     placeholder: 'Authors of citing research (optional)',
-                                    value: authors,
+                                    value: authorsText,
                                     className: 'citing-authors-input'
                                 },
                                 style: {
-                                    padding: '10px',
-                                    backgroundColor: '#2a2a2a',
-                                    border: '1px solid #444',
-                                    borderRadius: '6px',
-                                    color: '#fff',
-                                    fontSize: '13px',
-                                    outline: 'none'
+                                    padding: '10px 14px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #dadce0',
+                                    borderRadius: '8px',
+                                    color: '#1a1a1a',
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    transition: 'all 0.2s ease'
                                 },
                                 event: {
-                                    type: 'input',
+                                    type: 'focus',
                                     method: (e) => {
+                                        e.target.style.borderColor = '#1a73e8'
+                                        e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                    },
+                                    type2: 'blur',
+                                    method2: (e) => {
+                                        e.target.style.borderColor = '#dadce0'
+                                        e.target.style.boxShadow = 'none'
+                                    },
+                                    type3: 'input',
+                                    method3: (e) => {
                                         if (citingResearch[researchIndex]) {
                                             citingResearch[researchIndex].authors = e.target.value
                                         }
@@ -975,18 +1130,29 @@ export const citationsResearch = () => {
                                     className: 'citing-year-input'
                                 },
                                 style: {
-                                    padding: '10px',
-                                    backgroundColor: '#2a2a2a',
-                                    border: '1px solid #444',
-                                    borderRadius: '6px',
-                                    color: '#fff',
-                                    fontSize: '13px',
+                                    padding: '10px 14px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #dadce0',
+                                    borderRadius: '8px',
+                                    color: '#1a1a1a',
+                                    fontSize: '14px',
                                     outline: 'none',
+                                    transition: 'all 0.2s ease',
                                     textAlign: 'center'
                                 },
                                 event: {
-                                    type: 'input',
+                                    type: 'focus',
                                     method: (e) => {
+                                        e.target.style.borderColor = '#1a73e8'
+                                        e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                    },
+                                    type2: 'blur',
+                                    method2: (e) => {
+                                        e.target.style.borderColor = '#dadce0'
+                                        e.target.style.boxShadow = 'none'
+                                    },
+                                    type3: 'input',
+                                    method3: (e) => {
                                         if (citingResearch[researchIndex]) {
                                             citingResearch[researchIndex].year = e.target.value
                                         }
@@ -1017,12 +1183,13 @@ export const citationsResearch = () => {
                 left: '0',
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 zIndex: '1000',
-                fontFamily: 'Segoe UI, sans-serif'
+                fontFamily: 'Segoe UI, system-ui, -apple-system, sans-serif',
+                backdropFilter: 'blur(4px)'
             },
             event: {
                 type: 'click',
@@ -1036,29 +1203,30 @@ export const citationsResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
-                        borderRadius: '12px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '16px',
                         width: '850px',
                         maxWidth: '95%',
                         maxHeight: '90vh',
                         overflow: 'auto',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
-                        border: '1px solid #444'
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.05)',
+                        border: '1px solid #e8eaed'
                     },
                     child: [
                         // Modal header
                         $({
                             tag: 'div',
                             style: {
-                                padding: '20px 24px',
-                                borderBottom: '1px solid #444',
+                                padding: '20px 28px',
+                                borderBottom: '1px solid #e8eaed',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 position: 'sticky',
                                 top: '0',
-                                backgroundColor: '#2d2d2d',
-                                zIndex: '1'
+                                backgroundColor: '#ffffff',
+                                zIndex: '1',
+                                borderRadius: '16px 16px 0 0'
                             },
                             child: [
                                 $({
@@ -1066,9 +1234,9 @@ export const citationsResearch = () => {
                                     text: isEditing ? 'Edit Citation Record' : 'Add Citation Record',
                                     style: {
                                         margin: '0',
-                                        fontSize: '20px',
-                                        fontWeight: '500',
-                                        color: '#fff'
+                                        fontSize: '22px',
+                                        fontWeight: '600',
+                                        color: '#1a1a1a'
                                     }
                                 }),
                                 $({
@@ -1076,10 +1244,10 @@ export const citationsResearch = () => {
                                     att: { className: 'fa-solid fa-times' },
                                     style: {
                                         fontSize: '20px',
-                                        color: '#888',
+                                        color: '#5f6368',
                                         cursor: 'pointer',
                                         padding: '8px',
-                                        borderRadius: '4px',
+                                        borderRadius: '8px',
                                         transition: 'all 0.2s ease'
                                     },
                                     event: {
@@ -1087,13 +1255,13 @@ export const citationsResearch = () => {
                                         method: closeModal,
                                         type2: 'mouseenter',
                                         method2: (e) => {
-                                            e.target.style.backgroundColor = '#444'
-                                            e.target.style.color = '#fff'
+                                            e.target.style.backgroundColor = '#f1f3f4'
+                                            e.target.style.color = '#1a1a1a'
                                         },
                                         type3: 'mouseleave',
                                         method3: (e) => {
                                             e.target.style.backgroundColor = 'transparent'
-                                            e.target.style.color = '#888'
+                                            e.target.style.color = '#5f6368'
                                         }
                                     }
                                 })
@@ -1104,7 +1272,7 @@ export const citationsResearch = () => {
                             tag: 'form',
                             att: { id: 'citation-form' },
                             style: {
-                                padding: '24px'
+                                padding: '28px'
                             },
                             child: [
                                 // Hidden ID field for editing
@@ -1129,8 +1297,8 @@ export const citationsResearch = () => {
                                             text: 'Type *',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#5f6368',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -1143,14 +1311,18 @@ export const citationsResearch = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#1a1a1a',
                                                 fontSize: '14px',
                                                 outline: 'none',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                appearance: 'none',
+                                                WebkitAppearance: 'none',
+                                                MozAppearance: 'none',
                                             },
                                             child: [
                                                 $({ tag: 'option', att: { value: '' }, text: '-- Select Type --' }),
@@ -1161,6 +1333,16 @@ export const citationsResearch = () => {
                                                 type: 'change',
                                                 method: (e) => {
                                                     toggleLocationSelect(e.target.value)
+                                                },
+                                                type2: 'focus',
+                                                method2: (e) => {
+                                                    e.target.style.borderColor = '#1a73e8'
+                                                    e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                },
+                                                type3: 'blur',
+                                                method3: (e) => {
+                                                    e.target.style.borderColor = '#dadce0'
+                                                    e.target.style.boxShadow = 'none'
                                                 }
                                             }
                                         })
@@ -1184,8 +1366,8 @@ export const citationsResearch = () => {
                                             text: 'Title of Research *',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#5f6368',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -1200,17 +1382,30 @@ export const citationsResearch = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#1a1a1a',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
-                                                fontFamily: 'inherit'
+                                                fontFamily: 'inherit',
+                                                transition: 'all 0.2s ease'
                                             },
-                                            text: isEditing ? (item.title || '') : ''
+                                            text: isEditing ? (item.title || '') : '',
+                                            event: {
+                                                type: 'focus',
+                                                method: (e) => {
+                                                    e.target.style.borderColor = '#1a73e8'
+                                                    e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                },
+                                                type2: 'blur',
+                                                method2: (e) => {
+                                                    e.target.style.borderColor = '#dadce0'
+                                                    e.target.style.boxShadow = 'none'
+                                                }
+                                            }
                                         })
                                     ]
                                 }),
@@ -1233,7 +1428,7 @@ export const citationsResearch = () => {
                                                     tag: 'label',
                                                     text: 'Author/s *',
                                                     style: {
-                                                        color: '#aaa',
+                                                        color: '#5f6368',
                                                         fontSize: '13px',
                                                         fontWeight: '500'
                                                     }
@@ -1243,10 +1438,10 @@ export const citationsResearch = () => {
                                                     att: { type: 'button' },
                                                     text: '+ Add Author',
                                                     style: {
-                                                        padding: '6px 14px',
-                                                        backgroundColor: '#3f51b5',
+                                                        padding: '6px 16px',
+                                                        backgroundColor: '#1a73e8',
                                                         border: 'none',
-                                                        borderRadius: '6px',
+                                                        borderRadius: '8px',
                                                         color: '#fff',
                                                         fontSize: '12px',
                                                         cursor: 'pointer',
@@ -1261,11 +1456,11 @@ export const citationsResearch = () => {
                                                         },
                                                         type2: 'mouseenter',
                                                         method2: (e) => {
-                                                            e.target.style.backgroundColor = '#303f9f'
+                                                            e.target.style.backgroundColor = '#1557b0'
                                                         },
                                                         type3: 'mouseleave',
                                                         method3: (e) => {
-                                                            e.target.style.backgroundColor = '#3f51b5'
+                                                            e.target.style.backgroundColor = '#1a73e8'
                                                         }
                                                     }
                                                 })
@@ -1275,10 +1470,10 @@ export const citationsResearch = () => {
                                             tag: 'div',
                                             att: { id: 'authors-container' },
                                             style: {
-                                                backgroundColor: '#2a2a2a',
-                                                padding: '12px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #444',
+                                                backgroundColor: '#fafafa',
+                                                padding: '14px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #e8eaed',
                                                 minHeight: '50px'
                                             },
                                             elementHandler: (el) => {
@@ -1303,8 +1498,8 @@ export const citationsResearch = () => {
                                             text: 'Campus *',
                                             style: {
                                                 display: 'block',
-                                                marginBottom: '8px',
-                                                color: '#aaa',
+                                                marginBottom: '6px',
+                                                color: '#5f6368',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -1317,14 +1512,18 @@ export const citationsResearch = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#fff',
+                                                padding: '10px 14px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#1a1a1a',
                                                 fontSize: '14px',
                                                 outline: 'none',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                appearance: 'none',
+                                                WebkitAppearance: 'none',
+                                                MozAppearance: 'none',
                                             },
                                             child: [
                                                 $({ tag: 'option', att: { value: '' }, text: '-- Select Campus --' }),
@@ -1335,7 +1534,19 @@ export const citationsResearch = () => {
                                                         text: c
                                                     })
                                                 )
-                                            ]
+                                            ],
+                                            event: {
+                                                type: 'focus',
+                                                method: (e) => {
+                                                    e.target.style.borderColor = '#1a73e8'
+                                                    e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                                },
+                                                type2: 'blur',
+                                                method2: (e) => {
+                                                    e.target.style.borderColor = '#dadce0'
+                                                    e.target.style.boxShadow = 'none'
+                                                }
+                                            }
                                         })
                                     ]
                                 }),
@@ -1351,7 +1562,9 @@ export const citationsResearch = () => {
                                                 display: 'flex',
                                                 justifyContent: 'space-between',
                                                 alignItems: 'center',
-                                                marginBottom: '8px'
+                                                marginBottom: '10px',
+                                                flexWrap: 'wrap',
+                                                gap: '8px'
                                             },
                                             child: [
                                                 $({
@@ -1359,14 +1572,15 @@ export const citationsResearch = () => {
                                                     style: {
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        gap: '12px'
+                                                        gap: '12px',
+                                                        flexWrap: 'wrap'
                                                     },
                                                     child: [
                                                         $({
                                                             tag: 'label',
                                                             text: 'Title of Research Which Cited',
                                                             style: {
-                                                                color: '#aaa',
+                                                                color: '#5f6368',
                                                                 fontSize: '13px',
                                                                 fontWeight: '500'
                                                             }
@@ -1377,12 +1591,12 @@ export const citationsResearch = () => {
                                                             text: `Citing Research Count: ${citingResearch.length}`,
                                                             style: {
                                                                 fontSize: '11px',
-                                                                color: '#3f51b5',
+                                                                color: '#1a73e8',
                                                                 fontWeight: '600',
-                                                                backgroundColor: 'rgba(63, 81, 181, 0.1)',
-                                                                padding: '3px 10px',
+                                                                backgroundColor: '#e8f0fe',
+                                                                padding: '3px 12px',
                                                                 borderRadius: '12px',
-                                                                border: '1px solid rgba(63, 81, 181, 0.2)'
+                                                                border: '1px solid #d2e3fc'
                                                             }
                                                         })
                                                     ]
@@ -1392,10 +1606,10 @@ export const citationsResearch = () => {
                                                     att: { type: 'button' },
                                                     text: '+ Add Citing Research',
                                                     style: {
-                                                        padding: '6px 14px',
+                                                        padding: '6px 16px',
                                                         backgroundColor: '#ff9800',
                                                         border: 'none',
-                                                        borderRadius: '6px',
+                                                        borderRadius: '8px',
                                                         color: '#fff',
                                                         fontSize: '12px',
                                                         cursor: 'pointer',
@@ -1424,6 +1638,9 @@ export const citationsResearch = () => {
                                         $({
                                             tag: 'div',
                                             att: { id: 'citing-research-container' },
+                                            style: {
+                                                minHeight: '50px'
+                                            },
                                             elementHandler: (el) => {
                                                 citingResearchContainer = el
                                                 if (isEditing && citingResearch.length > 0) {
@@ -1447,7 +1664,7 @@ export const citationsResearch = () => {
                                         justifyContent: 'flex-end',
                                         gap: '12px',
                                         marginTop: '24px',
-                                        borderTop: '1px solid #444',
+                                        borderTop: '1px solid #e8eaed',
                                         paddingTop: '20px'
                                     },
                                     child: [
@@ -1456,13 +1673,14 @@ export const citationsResearch = () => {
                                             att: { type: 'button' },
                                             text: 'Cancel',
                                             style: {
-                                                padding: '10px 24px',
+                                                padding: '10px 28px',
                                                 backgroundColor: 'transparent',
-                                                border: '1px solid #444',
-                                                borderRadius: '6px',
-                                                color: '#aaa',
+                                                border: '1px solid #dadce0',
+                                                borderRadius: '8px',
+                                                color: '#5f6368',
                                                 fontSize: '14px',
                                                 cursor: 'pointer',
+                                                fontWeight: '500',
                                                 transition: 'all 0.2s ease'
                                             },
                                             event: {
@@ -1470,7 +1688,7 @@ export const citationsResearch = () => {
                                                 method: closeModal,
                                                 type2: 'mouseenter',
                                                 method2: (e) => {
-                                                    e.target.style.backgroundColor = '#333'
+                                                    e.target.style.backgroundColor = '#f8f9fa'
                                                 },
                                                 type3: 'mouseleave',
                                                 method3: (e) => {
@@ -1483,10 +1701,10 @@ export const citationsResearch = () => {
                                             att: { type: 'submit' },
                                             text: isEditing ? 'Update Citation' : 'Add Citation',
                                             style: {
-                                                padding: '10px 24px',
-                                                backgroundColor: '#3f51b5',
+                                                padding: '10px 32px',
+                                                backgroundColor: '#1a73e8',
                                                 border: 'none',
-                                                borderRadius: '6px',
+                                                borderRadius: '8px',
                                                 color: '#fff',
                                                 fontSize: '14px',
                                                 cursor: 'pointer',
@@ -1496,11 +1714,11 @@ export const citationsResearch = () => {
                                             event: {
                                                 type: 'mouseenter',
                                                 method: (e) => {
-                                                    e.target.style.backgroundColor = '#303f9f'
+                                                    e.target.style.backgroundColor = '#1557b0'
                                                 },
                                                 type2: 'mouseleave',
                                                 method2: (e) => {
-                                                    e.target.style.backgroundColor = '#3f51b5'
+                                                    e.target.style.backgroundColor = '#1a73e8'
                                                 }
                                             }
                                         })
@@ -1534,7 +1752,6 @@ export const citationsResearch = () => {
         }, 100)
     }
 
-    // Toggle location select between campus and center
     const toggleLocationSelect = (type, selectedValue = '') => {
         const container = document.getElementById('location-select-container')
         if (!container) return
@@ -1547,9 +1764,10 @@ export const citationsResearch = () => {
                     tag: 'p',
                     text: 'Please select a type first',
                     style: {
-                        color: '#666',
+                        color: '#5f6368',
                         fontSize: '13px',
-                        fontStyle: 'italic'
+                        fontStyle: 'italic',
+                        padding: '8px 0'
                     }
                 })
             )
@@ -1568,8 +1786,8 @@ export const citationsResearch = () => {
                         text: labelText,
                         style: {
                             display: 'block',
-                            marginBottom: '8px',
-                            color: '#aaa',
+                            marginBottom: '6px',
+                            color: '#5f6368',
                             fontSize: '13px',
                             fontWeight: '500'
                         }
@@ -1582,14 +1800,18 @@ export const citationsResearch = () => {
                         },
                         style: {
                             width: '100%',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '6px',
-                            color: '#fff',
+                            padding: '10px 14px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #dadce0',
+                            borderRadius: '8px',
+                            color: '#1a1a1a',
                             fontSize: '14px',
                             outline: 'none',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            appearance: 'none',
+                            WebkitAppearance: 'none',
+                            MozAppearance: 'none'
                         },
                         child: [
                             $({ tag: 'option', att: { value: '' }, text: `-- Select ${type === 'campus' ? 'Campus' : 'Center'} --` }),
@@ -1600,29 +1822,48 @@ export const citationsResearch = () => {
                                     text: opt
                                 })
                             )
-                        ]
+                        ],
+                        event: {
+                            type: 'focus',
+                            method: (e) => {
+                                e.target.style.borderColor = '#1a73e8'
+                                e.target.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)'
+                                e.target.style.backgroundColor = '#ffffff'
+                            },
+                            type2: 'blur',
+                            method2: (e) => {
+                                e.target.style.borderColor = '#dadce0'
+                                e.target.style.boxShadow = 'none'
+                                e.target.style.backgroundColor = '#f8f9fa'
+                            },
+                            type3: 'mouseenter',
+                            method3: (e) => {
+                                e.target.style.backgroundColor = '#f1f3f4'
+                            },
+                            type4: 'mouseleave',
+                            method4: (e) => {
+                                if (document.activeElement !== e.target) {
+                                    e.target.style.backgroundColor = '#f8f9fa'
+                                }
+                            }
+                        }
                     })
                 ]
             })
         )
     }
 
-    // Save citation data
     const saveCitationData = async (isEditing) => {
         const form = document.getElementById('citation-form')
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_citation' : 'add_citation')
-
-        // Add dynamic arrays as JSON
         formData.append('authors', JSON.stringify(authors))
         formData.append('citingResearch', JSON.stringify(citingResearch))
-
-        // Auto-calculate number of citations
         formData.append('citations', citingResearch.length.toString())
 
         showLoading()
         try {
-            const response = await fetch('/api/citations-research', {
+            const response = await fetch('/citationsResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -1647,7 +1888,6 @@ export const citationsResearch = () => {
         }
     }
 
-    // Refresh data
     const refreshData = async () => {
         citationsData = []
         filteredData = []
@@ -1656,7 +1896,6 @@ export const citationsResearch = () => {
         await fetchCitationsData()
     }
 
-    // Filter bar component
     const FilterBar = () => {
         return $({
             tag: 'div',
@@ -1665,10 +1904,11 @@ export const citationsResearch = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '16px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #e8eaed',
                 flexWrap: 'wrap',
-                gap: '15px'
+                gap: '15px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             },
             child: [
                 $({
@@ -1691,13 +1931,13 @@ export const citationsResearch = () => {
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-quote-right' },
-                                    style: { color: '#3f51b5', fontSize: '22px' }
+                                    style: { color: '#1a73e8', fontSize: '22px' }
                                 }),
                                 $({
                                     tag: 'h2',
                                     text: 'Research Citations',
                                     style: {
-                                        color: '#fff',
+                                        color: '#1a1a1a',
                                         fontFamily: 'Segoe UI, sans-serif',
                                         fontSize: '20px',
                                         fontWeight: '600',
@@ -1709,13 +1949,14 @@ export const citationsResearch = () => {
                                     tag: 'span',
                                     att: { className: 'record-count' },
                                     style: {
-                                        backgroundColor: '#333',
-                                        color: '#aaa',
-                                        padding: '4px 10px',
+                                        backgroundColor: '#f1f3f4',
+                                        color: '#5f6368',
+                                        padding: '4px 12px',
                                         borderRadius: '20px',
                                         fontSize: '12px',
                                         fontFamily: 'monospace',
-                                        border: '1px solid #444'
+                                        border: '1px solid #e8eaed',
+                                        fontWeight: '500'
                                     },
                                     text: '0 of 0 records'
                                 })
@@ -1726,11 +1967,12 @@ export const citationsResearch = () => {
                             tag: 'div',
                             style: {
                                 display: 'flex',
-                                gap: '12px',
-                                backgroundColor: '#333',
-                                padding: '4px 12px',
+                                gap: '10px',
+                                backgroundColor: '#f8f9fa',
+                                padding: '4px 8px',
                                 borderRadius: '12px',
-                                border: '1px solid #444'
+                                border: '1px solid #e8eaed',
+                                flexWrap: 'wrap'
                             },
                             child: [
                                 // Campus filter
@@ -1742,11 +1984,16 @@ export const citationsResearch = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#1a1a1a',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '160px'
+                                        maxWidth: '160px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none'
                                     },
                                     child: campuses.map(c =>
                                         $({
@@ -1761,7 +2008,26 @@ export const citationsResearch = () => {
                                         method: async (e) => {
                                             currentCampus = e.target.value
                                             await refreshData()
+                                        },
+                                        type2: 'focus',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#f1f3f4'
+                                        },
+                                        type3: 'blur',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
                                         }
+                                    }
+                                }),
+                                // Divider
+                                $({
+                                    tag: 'span',
+                                    text: '|',
+                                    style: {
+                                        color: '#dadce0',
+                                        fontSize: '18px',
+                                        lineHeight: '1',
+                                        padding: '0 2px'
                                     }
                                 }),
                                 // Center filter
@@ -1773,11 +2039,16 @@ export const citationsResearch = () => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         padding: '8px 12px',
-                                        color: '#a1a1a1ff',
+                                        color: '#1a1a1a',
                                         fontSize: '13px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '250px'
+                                        maxWidth: '250px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none'
                                     },
                                     child: centers.map(c =>
                                         $({
@@ -1792,6 +2063,14 @@ export const citationsResearch = () => {
                                         method: async (e) => {
                                             currentCenter = e.target.value
                                             await refreshData()
+                                        },
+                                        type2: 'focus',
+                                        method2: (e) => {
+                                            e.target.style.backgroundColor = '#f1f3f4'
+                                        },
+                                        type3: 'blur',
+                                        method3: (e) => {
+                                            e.target.style.backgroundColor = 'transparent'
                                         }
                                     }
                                 })
@@ -1804,8 +2083,8 @@ export const citationsResearch = () => {
                     tag: 'button',
                     text: '+ Add Citation',
                     style: {
-                        padding: '10px 20px',
-                        backgroundColor: '#3f51b5',
+                        padding: '10px 24px',
+                        backgroundColor: '#1a73e8',
                         border: 'none',
                         borderRadius: '25px',
                         color: '#fff',
@@ -1815,22 +2094,23 @@ export const citationsResearch = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(26, 115, 232, 0.2)'
                     },
                     event: {
                         type: 'click',
                         method: openAddModal,
                         type2: 'mouseenter',
                         method2: (e) => {
-                            e.target.style.backgroundColor = '#303f9f'
-                            e.target.style.transform = 'translateY(-1px)'
-                            e.target.style.boxShadow = '0 4px 12px rgba(63, 81, 181, 0.3)'
+                            e.target.style.backgroundColor = '#1557b0'
+                            e.target.style.transform = 'translateY(-2px)'
+                            e.target.style.boxShadow = '0 6px 16px rgba(26, 115, 232, 0.3)'
                         },
                         type3: 'mouseleave',
                         method3: (e) => {
-                            e.target.style.backgroundColor = '#3f51b5'
+                            e.target.style.backgroundColor = '#1a73e8'
                             e.target.style.transform = 'translateY(0)'
-                            e.target.style.boxShadow = 'none'
+                            e.target.style.boxShadow = '0 2px 4px rgba(26, 115, 232, 0.2)'
                         }
                     }
                 })
@@ -1838,31 +2118,44 @@ export const citationsResearch = () => {
         })
     }
 
-    // Statistics cards
     const StatsCards = () => {
         return $({
             tag: 'div',
             att: { className: 'stats-cards' },
             style: {
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
-                backgroundColor: '#2a2a2a',
-                borderBottom: '1px solid #444'
+                backgroundColor: '#f8f9fa',
+                borderBottom: '1px solid #e8eaed'
             },
             child: [
                 // Total Research
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
+                        padding: '20px 24px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e8eaed',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                            e.currentTarget.style.transform = 'translateY(-2px)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                        }
                     },
                     child: [
                         $({
@@ -1871,17 +2164,17 @@ export const citationsResearch = () => {
                                 width: '54px',
                                 height: '54px',
                                 borderRadius: '16px',
-                                backgroundColor: 'rgba(63, 81, 181, 0.15)',
+                                backgroundColor: '#e8f0fe',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(63, 81, 181, 0.3)'
+                                flexShrink: 0
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-book' },
-                                    style: { color: '#3f51b5', fontSize: '26px' }
+                                    style: { color: '#1a73e8', fontSize: '26px' }
                                 })
                             ]
                         }),
@@ -1896,7 +2189,7 @@ export const citationsResearch = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
+                                        color: '#1a1a1a',
                                         lineHeight: '1.2'
                                     }
                                 }),
@@ -1905,7 +2198,7 @@ export const citationsResearch = () => {
                                     text: 'Total Research',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
+                                        color: '#5f6368',
                                         fontWeight: '500'
                                     }
                                 })
@@ -1917,13 +2210,27 @@ export const citationsResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
+                        padding: '20px 24px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e8eaed',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                            e.currentTarget.style.transform = 'translateY(-2px)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                        }
                     },
                     child: [
                         $({
@@ -1932,17 +2239,17 @@ export const citationsResearch = () => {
                                 width: '54px',
                                 height: '54px',
                                 borderRadius: '16px',
-                                backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                                backgroundColor: '#e8f5e9',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(76, 175, 80, 0.3)'
+                                flexShrink: 0
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-quote-right' },
-                                    style: { color: '#4caf50', fontSize: '26px' }
+                                    style: { color: '#2e7d32', fontSize: '26px' }
                                 })
                             ]
                         }),
@@ -1957,7 +2264,7 @@ export const citationsResearch = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
+                                        color: '#1a1a1a',
                                         lineHeight: '1.2'
                                     }
                                 }),
@@ -1966,7 +2273,7 @@ export const citationsResearch = () => {
                                     text: 'Total Citations',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
+                                        color: '#5f6368',
                                         fontWeight: '500'
                                     }
                                 })
@@ -1978,13 +2285,27 @@ export const citationsResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
+                        padding: '20px 24px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e8eaed',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                            e.currentTarget.style.transform = 'translateY(-2px)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                        }
                     },
                     child: [
                         $({
@@ -1993,17 +2314,17 @@ export const citationsResearch = () => {
                                 width: '54px',
                                 height: '54px',
                                 borderRadius: '16px',
-                                backgroundColor: 'rgba(255, 215, 0, 0.15)',
+                                backgroundColor: '#fff8e1',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(255, 215, 0, 0.3)'
+                                flexShrink: 0
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-trophy' },
-                                    style: { color: '#ffd700', fontSize: '26px' }
+                                    style: { color: '#f9a825', fontSize: '26px' }
                                 })
                             ]
                         }),
@@ -2018,7 +2339,7 @@ export const citationsResearch = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
+                                        color: '#1a1a1a',
                                         lineHeight: '1.2'
                                     }
                                 }),
@@ -2027,7 +2348,7 @@ export const citationsResearch = () => {
                                     text: 'Highest Citations',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
+                                        color: '#5f6368',
                                         fontWeight: '500'
                                     }
                                 })
@@ -2039,13 +2360,27 @@ export const citationsResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
+                        padding: '20px 24px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '1px solid #444'
+                        border: '1px solid #e8eaed',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                            e.currentTarget.style.transform = 'translateY(-2px)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                        }
                     },
                     child: [
                         $({
@@ -2054,17 +2389,17 @@ export const citationsResearch = () => {
                                 width: '54px',
                                 height: '54px',
                                 borderRadius: '16px',
-                                backgroundColor: 'rgba(0, 188, 212, 0.15)',
+                                backgroundColor: '#e0f7fa',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(0, 188, 212, 0.3)'
+                                flexShrink: 0
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-chart-line' },
-                                    style: { color: '#00bcd4', fontSize: '26px' }
+                                    style: { color: '#00838f', fontSize: '26px' }
                                 })
                             ]
                         }),
@@ -2079,7 +2414,7 @@ export const citationsResearch = () => {
                                     style: {
                                         fontSize: '32px',
                                         fontWeight: '700',
-                                        color: '#fff',
+                                        color: '#1a1a1a',
                                         lineHeight: '1.2'
                                     }
                                 }),
@@ -2088,7 +2423,7 @@ export const citationsResearch = () => {
                                     text: 'Average Citations',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#aaa',
+                                        color: '#5f6368',
                                         fontWeight: '500'
                                     }
                                 })
@@ -2100,23 +2435,35 @@ export const citationsResearch = () => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
-                        padding: '18px 22px',
-                        border: '1px solid #444',
-                        gridColumn: 'span 2'
+                        padding: '20px 24px',
+                        border: '1px solid #e8eaed',
+                        gridColumn: 'span 2',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                        }
                     },
                     child: [
                         $({
                             tag: 'div',
                             text: 'Citation Status',
                             style: {
-                                fontSize: '13px',
-                                color: '#888',
-                                fontWeight: '500',
-                                marginBottom: '12px',
+                                fontSize: '12px',
+                                color: '#5f6368',
+                                fontWeight: '600',
+                                marginBottom: '14px',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
+                                letterSpacing: '0.8px'
                             }
                         }),
                         $({
@@ -2127,8 +2474,8 @@ export const citationsResearch = () => {
                                 gap: '12px'
                             },
                             child: [
-                                createStatusStat('With Citations', '#4caf50', 'stat-with-citations', 'fa-check-circle'),
-                                createStatusStat('Without Citations', '#f44336', 'stat-without-citations', 'fa-circle-xmark')
+                                createStatusStat('With Citations', '#2e7d32', 'stat-with-citations', 'fa-check-circle'),
+                                createStatusStat('Without Citations', '#c62828', 'stat-without-citations', 'fa-circle-xmark')
                             ]
                         })
                     ]
@@ -2137,87 +2484,108 @@ export const citationsResearch = () => {
         })
     }
 
-    // Create status stat item
     const createStatusStat = (label, color, className, icon) => {
         return $({
             tag: 'div',
             style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '12px',
-                backgroundColor: `${color}10`,
+                backgroundColor: '#f8f9fa',
                 borderRadius: '12px',
-                border: `1px solid ${color}30`
+                padding: '14px 16px',
+                border: `1px solid ${color}20`,
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = `${color}10`
+                    e.currentTarget.style.borderColor = `${color}40`
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = `0 4px 12px ${color}15`
+                },
+                type2: 'mouseleave',
+                method2: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f8f9fa'
+                    e.currentTarget.style.borderColor = `${color}20`
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = 'none'
+                }
             },
             child: [
                 $({
-                    tag: 'span',
-                    att: { className: `fa-solid ${icon}` },
+                    tag: 'div',
                     style: {
-                        fontSize: '20px',
-                        color: color,
-                        marginBottom: '8px',
-                        opacity: 0.7
-                    }
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '6px'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: `fa-solid ${icon}` },
+                            style: { color: color, fontSize: '14px' }
+                        }),
+                        $({
+                            tag: 'span',
+                            text: label,
+                            style: {
+                                fontSize: '12px',
+                                color: '#5f6368',
+                                fontWeight: '500'
+                            }
+                        })
+                    ]
                 }),
                 $({
                     tag: 'span',
-                    att: { className },
+                    att: { className: `stat-${className.split('-')[1] || className}` },
                     text: '0',
                     style: {
                         fontSize: '24px',
                         fontWeight: '700',
-                        color: color,
-                        lineHeight: '1.2'
-                    }
-                }),
-                $({
-                    tag: 'span',
-                    text: label,
-                    style: {
-                        fontSize: '11px',
-                        color: '#aaa',
-                        fontWeight: '500',
-                        marginTop: '4px'
+                        color: '#1a1a1a',
+                        display: 'block'
                     }
                 })
             ]
         })
     }
 
-    // Table header
     const TableHeader = () => {
         const headers = [
-            'NO.',
-            'Title of\nResearch',
-            'Author/s',
-            'Campus',
-            'No. of\nCitations',
-            'Title of Research\nWhich Cited',
-            'ACTIONS'
+            { label: 'NO.', align: 'center', width: '50px' },
+            { label: 'Title of Research', align: 'left', width: '250px' },
+            { label: 'Author/s', align: 'left', width: '180px' },
+            { label: 'Campus', align: 'left', width: '130px' },
+            { label: 'No. of Citations', align: 'left', width: '100px' },
+            { label: 'Title of Research Which Cited', align: 'left', width: '300px' },
+            { label: 'ACTIONS', align: 'center', width: '100px' }
         ]
 
         const row = $({ tag: 'tr' })
 
         headers.forEach((header, index) => {
-            const isCenter = ['NO.', 'Campus', 'No. of\nCitations', 'ACTIONS'].includes(header)
-
             const th = $({
                 tag: 'th',
-                text: header,
+                text: header.label,
                 style: {
-                    padding: '14px 8px',
-                    textAlign: isCenter ? 'center' : 'left',
+                    padding: '14px 10px',
+                    textAlign: header.align,
                     fontSize: '11px',
                     fontWeight: '600',
-                    color: '#fff',
-                    backgroundColor: '#2d2d2d',
-                    border: '1px solid #444',
+                    color: '#1a1a1a',
+                    backgroundColor: '#f1f3f4',
+                    border: '1px solid #e8eaed',
+                    borderBottom: '2px solid #dadce0',
                     whiteSpace: 'pre-line',
                     wordBreak: 'break-word',
                     verticalAlign: 'middle',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.3px',
+                    minWidth: header.width,
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 2,
+                    textTransform: 'uppercase'
                 }
             })
             row.appendChild(th)
@@ -2225,11 +2593,15 @@ export const citationsResearch = () => {
 
         return $({
             tag: 'thead',
+            style: {
+                position: 'sticky',
+                top: 0,
+                zIndex: 3
+            },
             child: [row]
         })
     }
 
-    // Main table component
     const DataTable = () => {
         return $({
             tag: 'div',
@@ -2237,8 +2609,9 @@ export const citationsResearch = () => {
                 width: '100%',
                 height: 'calc(100% - 320px)',
                 overflow: 'auto',
-                backgroundColor: '#2a2a2a',
-                position: 'relative'
+                backgroundColor: '#ffffff',
+                position: 'relative',
+                borderTop: '1px solid #e8eaed'
             },
             elementHandler: (el) => {
                 scrollContainer = el
@@ -2251,12 +2624,16 @@ export const citationsResearch = () => {
                     style: {
                         width: '100%',
                         minWidth: '1500px',
-                        borderCollapse: 'collapse'
+                        borderCollapse: 'collapse',
+                        backgroundColor: '#ffffff'
                     },
                     child: [
                         TableHeader(),
                         $({
                             tag: 'tbody',
+                            style: {
+                                backgroundColor: '#ffffff'
+                            },
                             elementHandler: (el) => {
                                 tableBody = el
                             }
@@ -2267,7 +2644,6 @@ export const citationsResearch = () => {
         })
     }
 
-    // Show notification
     const showNotification = (message, type = 'info') => {
         const notification = $({
             tag: 'div',
@@ -2296,14 +2672,13 @@ export const citationsResearch = () => {
         }, 3000)
     }
 
-    // Return main container
     return $({
         tag: 'div',
         att: { className: 'citations-research-container' },
         style: {
             width: '100%',
             height: '100%',
-            backgroundColor: '#2a2a2a',
+            backgroundColor: '#ffffff',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
