@@ -137,7 +137,10 @@ class CompletedResearchAPI {
                 'search' => $_POST['search'] ?? null
             ];
 
-            $whereClauses = ["e.status = 'accepted'"];
+            $whereClauses = [
+                "e.status = 'accepted'",
+                "rf.completion_status = 'completed'" 
+            ];
             
             if (!empty($symposiumIds)) {
                 $idsList = implode(',', array_map('intval', $symposiumIds));
@@ -183,9 +186,6 @@ class CompletedResearchAPI {
             }
 
             $whereSql = implode(" AND ", $whereClauses);
-
-            // FIX: Use MAX() or MIN() aggregation functions for columns from joined tables
-            // to satisfy ONLY_FULL_GROUP_BY mode
             $query = "SELECT 
                         rf.id,
                         rf.senderid,
@@ -199,6 +199,7 @@ class CompletedResearchAPI {
                         rf.date_started,
                         rf.date_completed,
                         rf.paper_trail_no,
+                        rf.completion_status,
                         e.id as endorsement_id,
                         e.status as endorsement_status,
                         e.date as endorsement_date,
@@ -406,7 +407,7 @@ class CompletedResearchAPI {
                         })($row),
                         'benefitingIndustry' => $row['benefitingIndustryVal'] ?? '—',
                         'supportDocs1' => !empty($supportDocs) ? json_encode($supportDocs) : '—',
-                        'programTitle' => $row['utilizationTypeVal'] ?? '—',  // Fixed: Use utilizationTypeVal
+                        'programTitle' => $row['utilizationTypeVal'] ?? '—',
                         'dateConducted' => $formatDate($row['dateConductedVal']),
                         'traineesCount' => $row['traineesCountVal'] ?? '—',
                         'supportDocs2' => $utilLinks
@@ -449,9 +450,266 @@ class CompletedResearchAPI {
         }
         echo json_encode($this->response);
     }
+
+    public function updateCompletedResearch() {
+        try {
+            // Get POST data
+            $researchId = isset($_POST['research_id']) ? intval($_POST['research_id']) : 0;
+            $action = isset($_POST['action_type']) ? $_POST['action_type'] : ''; // 'confirm' or 'not_presented'
+            
+            if (!$researchId) {
+                throw new Exception("Research ID is required");
+            }
+            
+            if (!in_array($action, ['confirm', 'not_presented'])) {
+                throw new Exception("Invalid action type");
+            }
+            
+            // Get staff ID from session or POST
+            $confirmedBy = isset($_POST['confirmed_by']) ? intval($_POST['confirmed_by']) : 0;
+            if (!$confirmedBy) {
+                // Try to get from session
+                session_start();
+                $confirmedBy = $_SESSION['staff_id'] ?? 0;
+            }
+            
+            if (!$confirmedBy) {
+                throw new Exception("Confirmation staff ID is required");
+            }
+            
+            // Determine new status
+            $newStatus = ($action === 'confirm') ? 'completed' : 'not_presented';
+            
+            // Update the research file
+            $query = "UPDATE researchfile 
+                      SET completion_status = ?, confirmed_by = ? 
+                      WHERE id = ?";
+            
+            $stmt = $this->con->prepare($query);
+            $stmt->bind_param("sii", $newStatus, $confirmedBy, $researchId);
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to update: " . $stmt->error);
+            }
+            
+            if ($stmt->affected_rows === 0) {
+                throw new Exception("No record found with ID: " . $researchId);
+            }
+            
+            $this->response->status = true;
+            $this->response->message = "Research successfully marked as '" . ($action === 'confirm' ? 'completed' : 'not presented') . "'";
+            $this->response->data = [
+                'research_id' => $researchId,
+                'new_status' => $newStatus,
+                'confirmed_by' => $confirmedBy
+            ];
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
+        }
+        echo json_encode($this->response);
+    }
+
+    public function fetchConfirmResearch() {
+        try {
+            // Get staff ID from session
+            $staffId = 0;
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            
+            // Get staff ID from session
+            if (isset($_SESSION['staff_id'])) {
+                $staffId = intval($_SESSION['staff_id']);
+            } else {
+                // Try to get staff ID from rdestaff table using username
+                if (isset($_SESSION['userName']) && !empty($_SESSION['userName']) && $_SESSION['userName'] !== 'UNKNOWN') {
+                    $username = $_SESSION['userName'];
+                    $staffQuery = "SELECT id FROM rdestaff WHERE username = ? LIMIT 1";
+                    $stmt = $this->con->prepare($staffQuery);
+                    if ($stmt) {
+                        $stmt->bind_param("s", $username);
+                        $stmt->execute();
+                        $staffResult = $stmt->get_result();
+                        if ($staffRow = $staffResult->fetch_assoc()) {
+                            $staffId = intval($staffRow['id']);
+                            $_SESSION['staff_id'] = $staffId;
+                        }
+                        $stmt->close();
+                    }
+                }
+            }
+
+            // First, get all Symposium event IDs
+            $events = $this->getEvents();
+            $symposiumIds = array_keys($events);
+            
+            // Build the WHERE clause to only include Symposium events
+            $eventCondition = "";
+            if (!empty($symposiumIds)) {
+                $idsList = implode(',', array_map('intval', $symposiumIds));
+                $eventCondition = " AND (rf.event_id IN ($idsList) OR LOWER(rf.event) LIKE '%symposium%')";
+            } else {
+                $eventCondition = " AND LOWER(rf.event) LIKE '%symposium%'";
+            }
+
+            // Only fetch pending confirmation for SYMPOSIUM events
+            $query = "SELECT 
+                        rf.id,
+                        rf.author,
+                        rf.coauthor,
+                        rf.title,
+                        rf.paper_trail_no,
+                        rf.completion_status,
+                        rf.confirmed_by,
+                        rf.event,
+                        rf.event_id,
+                        e.id as endorsement_id,
+                        e.date as endorsement_date,
+                        e.status as endorsement_status
+                    FROM endorsement e
+                    INNER JOIN researchfile rf ON e.id = rf.endorsementid
+                    WHERE e.status = 'accepted' 
+                    AND (rf.completion_status IS NULL 
+                        OR rf.completion_status = '' 
+                        OR rf.completion_status = 'pending_confirmation')
+                    $eventCondition
+                    ORDER BY rf.id DESC";
+            
+            $result = $this->con->query($query);
+            
+            if (!$result) {
+                throw new Exception("Query failed: " . $this->con->error);
+            }
+            
+            $data = [];
+            while ($row = $result->fetch_assoc()) {
+                // Parse authors
+                $authors = [];
+                
+                if (!empty($row['author']) && $row['author'] !== 'NULL' && $row['author'] !== null) {
+                    $authors[] = trim($row['author']);
+                }
+
+                if (!empty($row['coauthor']) && $row['coauthor'] !== 'NULL' && $row['coauthor'] !== null) {
+                    $coauthorData = $row['coauthor'];
+        
+                    if (is_string($coauthorData) && (strpos($coauthorData, '[') === 0 || strpos($coauthorData, '{') === 0)) {
+                        $coauthors = json_decode($coauthorData, true);
+                        if (is_array($coauthors)) {
+                            foreach ($coauthors as $co) {
+                                if (!empty($co) && $co !== 'NULL') {
+                                    $authors[] = trim($co);
+                                }
+                            }
+                        }
+                    } else {
+                        $coauthorList = explode(',', $coauthorData);
+                        foreach ($coauthorList as $co) {
+                            $co = trim($co);
+                            if (!empty($co) && $co !== 'NULL') {
+                                $authors[] = $co;
+                            }
+                        }
+                    }
+                }
+                
+                $authors = array_values(array_unique(array_filter($authors)));
+                
+                // Determine presenter (first author)
+                $presenter = !empty($authors) ? $authors[0] : '—';
+                
+                // Determine status display
+                $statusDisplay = 'Pending Confirmation';
+                if ($row['completion_status'] === 'pending_confirmation') {
+                    $statusDisplay = 'Pending';
+                } elseif ($row['completion_status'] === 'not_presented') {
+                    $statusDisplay = 'Not Presented';
+                } elseif ($row['completion_status'] === 'completed') {
+                    $statusDisplay = 'Completed';
+                } else {
+                    $statusDisplay = 'Pending Confirmation'; // For NULL or empty
+                }
+                
+                // Determine event type for display
+                $eventType = 'Symposium';
+                if (stripos($row['event'] ?? '', 'In-House') !== false) {
+                    $eventType = 'In-House';
+                }
+                
+                $data[] = [
+                    'id' => intval($row['id']),
+                    'paper_trail_no' => $row['paper_trail_no'] ?? '—',
+                    'title' => $row['title'] ?? '—',
+                    'authors' => implode(', ', $authors),
+                    'author_count' => count($authors),
+                    'presenter' => $presenter,
+                    'completion_status' => $row['completion_status'] ?? 'pending_confirmation',
+                    'status_display' => $statusDisplay,
+                    'endorsement_date' => $row['endorsement_date'] ?? '—',
+                    'endorsement_status' => $row['endorsement_status'] ?? '—',
+                    'confirmed_by' => $row['confirmed_by'] ?? null,
+                    'event' => $row['event'] ?? '—',
+                    'event_type' => $eventType,
+                    'event_id' => $row['event_id'] ?? null
+                ];
+            }
+            
+            // Get statistics
+            $stats = [
+                'total' => count($data),
+                'pending' => 0,
+                'not_presented' => 0,
+                'completed' => 0
+            ];
+            
+            foreach ($data as $item) {
+                if ($item['completion_status'] === 'pending_confirmation' || $item['completion_status'] === null || $item['completion_status'] === '') {
+                    $stats['pending']++;
+                } elseif ($item['completion_status'] === 'not_presented') {
+                    $stats['not_presented']++;
+                } elseif ($item['completion_status'] === 'completed') {
+                    $stats['completed']++;
+                }
+            }
+            
+            $this->response->status = true;
+            $this->response->message = 'Pending confirmation data fetched successfully';
+            $this->response->data = $data;
+            $this->response->stats = $stats;
+            $this->response->staff_id = $staffId ?: null;
+            $this->response->record_count = count($data);
+            $this->response->event_filter = 'Symposium only';
+            
+        } catch (Exception $e) {
+            $this->response->status = false;
+            $this->response->message = 'Error: ' . $e->getMessage();
+            $this->response->data = [];
+            $this->response->stats = ['total' => 0, 'pending' => 0, 'not_presented' => 0, 'completed' => 0];
+            $this->response->staff_id = null;
+            $this->response->record_count = 0;
+        }
+        
+        echo json_encode($this->response);
+    }
 }
 
-// Global Connection assumed from require once
+$action = $_POST['action'] ?? $_GET['action'] ?? 'fetch';
+
 $con = $conn; 
 $api = new CompletedResearchAPI($con);
-$api->fetchCompletedResearch();
+
+switch ($action) {
+    case 'fetch':
+        $api->fetchCompletedResearch();
+        break;
+    case 'fetch_confirm':
+        $api->fetchConfirmResearch();
+        break;
+    case 'update':
+        $api->updateCompletedResearch();
+        break;
+    default:
+        echo json_encode(['status' => false, 'message' => 'Invalid action']);
+        break;
+}
