@@ -69,7 +69,7 @@ any('/certification', 'server/rde/certification.php');
 post('/saveCertificationDrive', 'server/rde/certification_drive.php');
 post('/quarterlyMonitoring', 'server/rde/quarterlyMonitoring.php');
 post('/ongoingresearch', 'server/rde/accomplishment/onGoingRes.php');
-post('/completedRes', 'server/rde/accomplishment/completedRes.php');
+post('/completedResesearch', 'server/rde/accomplishment/completedRes.php');
 post('/attendedResearch', 'server/rde/accomplishment/attendedRes.php');
 post('/citationResearch', 'server/rde/accomplishment/citationRes.php');
 post('/facilitiesImprovement', 'server/rde/accomplishment/facilResImprov.php');
