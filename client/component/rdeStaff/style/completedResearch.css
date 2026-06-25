@@ -159,3 +159,24 @@
         border-bottom: 1px solid #ccc !important;
     }
 }
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Confirm research search input styles */
+.confirm-research-search:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1) !important;
+}
+
+.confirm-research-search::placeholder {
+    color: #adb5bd;
+}

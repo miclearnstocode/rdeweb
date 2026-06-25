@@ -14,7 +14,7 @@ export const LoadLocation = (url) => {
     window.location.assign(url)
 }
 
-export const $ = ({ tag, att, text, html, child, elementHandler, style, externalStyle, event }) => {
+export const $ = ({ tag, att, text, html, child, elementHandler, style, externalStyle, event, event2, event3, event4, event5 }) => {
     let Tag
     if (externalStyle) {
         const link = document.createElement('link')
@@ -29,17 +29,21 @@ export const $ = ({ tag, att, text, html, child, elementHandler, style, external
     } else {
         console.log('tag is missing..!')
     }
-    if (event) {
-        Object.keys(event).forEach(key => {
-            if (key.startsWith('type')) {
-                const suffix = key.replace('type', '')
-                const methodKey = 'method' + suffix
-                if (event[methodKey]) {
-                    Tag.addEventListener(event[key], event[methodKey])
+    const events = [event, event2, event3, event4, event5].filter(e => e)
+    events.forEach(evt => {
+        if (evt) {
+            Object.keys(evt).forEach(key => {
+                if (key.startsWith('type')) {
+                    const suffix = key.replace('type', '')
+                    const methodKey = 'method' + suffix
+                    if (evt[methodKey]) {
+                        Tag.addEventListener(evt[key], evt[methodKey])
+                    }
                 }
-            }
-        })
-    }
+            })
+        }
+    })
+
     if (text) {
         Tag.innerText = text
     }
@@ -194,231 +198,6 @@ export const Waiting = () => {
                             id: 'loading-content'
                         }
                     })
-                ]
-            })
-        ]
-    }))
-}
-
-export const ConfirmationAlert = (message, eventClose, options = {}) => {
-    const { 
-        title = 'Success', 
-        icon = 'check-circle',
-        iconColor = '#4caf50',
-        buttonText = 'Close',
-        buttonColor = '#4caf50'
-    } = options;
-    
-    let modalContainer
-    let modal
-    let timeoutId
-
-    const getModalContainer = (el) => {
-        modalContainer = el
-    }
-
-    const getModalMain = (el) => {
-        modal = el
-    }
-
-    // Close function
-    const closeModal = (e) => {
-        if (e) e.stopPropagation()
-        if (timeoutId) clearTimeout(timeoutId)
-        if (modalContainer && modalContainer.remove) {
-            modalContainer.style.opacity = '0'
-            modalContainer.style.transform = 'scale(0.95)'
-            setTimeout(() => {
-                if (modalContainer && modalContainer.remove) {
-                    modalContainer.remove()
-                }
-                if (eventClose && typeof eventClose === 'function') {
-                    eventClose()
-                }
-            }, 200)
-        } else {
-            if (eventClose && typeof eventClose === 'function') {
-                eventClose()
-            }
-        }
-    }
-
-    // Auto close after 5 seconds
-    if (options.autoClose !== false) {
-        timeoutId = setTimeout(() => {
-            closeModal()
-        }, 5000)
-    }
-
-    // Get icon HTML
-    const getIconHtml = () => {
-        const icons = {
-            'check-circle': '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/></svg>',
-            'error': '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/></svg>',
-            'warning': '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="currentColor"/></svg>',
-            'info': '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/></svg>'
-        }
-        return icons[icon] || icons['check-circle']
-    }
-
-    const closeButton = $({
-        tag: 'button',
-        text: buttonText,
-        style: {
-            cursor: 'pointer',
-            padding: '12px 28px',
-            textAlign: 'center',
-            backgroundColor: buttonColor,
-            color: '#fff',
-            borderRadius: '30px',
-            marginTop: '16px',
-            userSelect: 'none',
-            width: 'auto',
-            minWidth: '120px',
-            margin: '16px auto 0',
-            border: 'none',
-            fontSize: '14px',
-            fontWeight: '600',
-            transition: 'all 0.2s ease',
-            boxShadow: `0 4px 12px ${buttonColor}40`
-        },
-        event: {
-            type: 'click',
-            method: (e) => {
-                e.stopPropagation()
-                e.preventDefault()
-                closeModal(e)
-            },
-            type2: 'mouseenter',
-            method2: (e) => {
-                e.target.style.transform = 'translateY(-2px)'
-                e.target.style.boxShadow = `0 6px 16px ${buttonColor}60`
-            },
-            type3: 'mouseleave',
-            method3: (e) => {
-                e.target.style.transform = 'translateY(0)'
-                e.target.style.boxShadow = `0 4px 12px ${buttonColor}40`
-            }
-        }
-    })
-
-    const messageBox = $({
-        tag: 'div',
-        style: {
-            padding: '8px 0',
-            textAlign: 'center',
-            color: '#e0e0e0',
-            fontSize: '15px',
-            lineHeight: '1.5',
-            wordBreak: 'break-word'
-        },
-        text: message
-    })
-
-    return ($({
-        tag: 'div',
-        externalStyle: '/client/lib/loaderStyleLib.css',
-        att: {
-            className: 'coverMOdal'
-        },
-        style: {
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            zIndex: '1000',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: '0',
-            transition: 'opacity 0.2s ease, transform 0.2s ease',
-            transform: 'scale(0.95)'
-        },
-        elementHandler: (el) => {
-            getModalContainer(el)
-            // Trigger animation
-            setTimeout(() => {
-                if (el) {
-                    el.style.opacity = '1'
-                    el.style.transform = 'scale(1)'
-                }
-            }, 10)
-        },
-        child: [
-            $({
-                tag: 'div',
-                att: {
-                    className: 'confirmAlert'
-                },
-                style: {
-                    background: 'linear-gradient(145deg, #1e1e2a 0%, #15151d 100%)',
-                    padding: '32px',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-                    minWidth: '320px',
-                    maxWidth: '450px',
-                    width: '90%',
-                    position: 'relative',
-                    pointerEvents: 'auto',
-                    textAlign: 'center'
-                },
-                elementHandler: getModalMain,
-                child: [
-                    // Icon
-                    $({
-                        tag: 'div',
-                        style: {
-                            color: iconColor,
-                            marginBottom: '20px',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                        },
-                        html: getIconHtml()
-                    }),
-                    // Title
-                    $({
-                        tag: 'h3',
-                        text: title,
-                        style: {
-                            color: '#fff',
-                            fontSize: '22px',
-                            fontWeight: '700',
-                            margin: '0 0 12px 0'
-                        }
-                    }),
-                    // Message
-                    messageBox,
-                    // Close button
-                    closeButton,
-                    // Progress bar for auto-close
-                    options.autoClose !== false ? $({
-                        tag: 'div',
-                        style: {
-                            width: '100%',
-                            height: '3px',
-                            backgroundColor: 'rgba(255,255,255,0.1)',
-                            borderRadius: '3px',
-                            marginTop: '20px',
-                            overflow: 'hidden'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
-                                style: {
-                                    width: '100%',
-                                    height: '100%',
-                                    backgroundColor: iconColor,
-                                    borderRadius: '3px',
-                                    animation: 'shrinkProgress 5s linear forwards'
-                                }
-                            })
-                        ]
-                    }) : null
                 ]
             })
         ]
@@ -620,7 +399,6 @@ export const Move = ({ panel, object, getLocation }) => {
     }
 }
 
-
 export const TimeConvert = (time) => {
     let state
     let hour
@@ -718,7 +496,6 @@ export const baseCheck = (base, dat) => {
     return false
 }
 
-
 export class CanvasPdf {
     constructor(object, pdfLib, docId) {
         this.object = object
@@ -744,46 +521,55 @@ export class CanvasPdf {
 }
 
 export const SearchMethod = ({ nodeList, textArray, display }) => {
-    const list = nodeList
-    list.forEach(node => {
-        node.style.display = display
-    })
+    const list = Array.from(nodeList || []);
+    
+    if (!list.length) return;
+    
+    // Get the search text
     let searchText = textArray.map(val => {
-        return val.replace('_', ' ')
-    })
-    searchText.forEach(valText => {
-        for (let val of list) {
-            if (valText !== '') {
-                if (!val.innerText.toUpperCase().includes(valText)) {
-                    if (val.style.display !== 'none') {
-                        val.style.display = 'none'
-                    }
-
-                } else {
-                    if (val.innerText.toUpperCase().includes(valText)) {
-                        if (val.style.display !== 'none') {
-                            val.style.display = display
-                        }
-
-                    } else {
-                        val.style.display = 'none'
-                    }
-
-
-
-                }
+        return val.replace('_', ' ').trim();
+    });
+    
+    // Filter out empty search terms
+    searchText = searchText.filter(val => val !== '');
+    
+    // If no search text, show all
+    if (searchText.length === 0) {
+        list.forEach(node => {
+            node.style.display = display || '';
+        });
+        return;
+    }
+    
+    // Batch the DOM updates
+    const updates = [];
+    
+    // For each node, check if it contains ALL search terms
+    list.forEach(node => {
+        const nodeText = node.innerText.toUpperCase();
+        let matchesAll = true;
+        
+        for (let text of searchText) {
+            if (!nodeText.includes(text.toUpperCase())) {
+                matchesAll = false;
+                break;
             }
-
         }
-    })
-    list.forEach(val => {
-        searchText.forEach(text => {
-            if (!val.innerText.toUpperCase().includes(text.toUpperCase())) {
-                val.style.display = 'none'
-            }
-        })
-    })
+        
+        updates.push({
+            node: node,
+            show: matchesAll
+        });
+    });
+    
+    // Apply all updates at once using requestAnimationFrame
+    requestAnimationFrame(() => {
+        updates.forEach(({ node, show }) => {
+            node.style.display = show ? (display || '') : 'none';
+        });
+    });
 }
+
 export const UnderConstruction = ({ message = "This feature is under construction", duration = 3000 }) => {
     let notificationContainer
 
@@ -1637,6 +1423,152 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
     }
     document.addEventListener('keydown', handleKey)
 }
+export const ConfirmationAlert = (message, eventClose, options = {}) => {
+    const { 
+        title = 'Success', 
+        icon = 'check-circle',
+        iconColor = '#4caf50',
+        buttonText = 'OK',
+        buttonColor = '#4caf50',
+        type = 'success'
+    } = options;
+    
+    let modalContainer = null;
+    let timeoutId = null;
+    let isClosed = false;
+
+    // Close function
+    const closeModal = (e) => {
+        if (isClosed) return;
+        isClosed = true;
+        
+        if (e) e.stopPropagation();
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        if (modalContainer) {
+            modalContainer.classList.remove('active');
+            modalContainer.classList.add('closing');
+            
+            setTimeout(() => {
+                if (modalContainer && modalContainer.parentNode) {
+                    modalContainer.parentNode.removeChild(modalContainer);
+                }
+                if (eventClose && typeof eventClose === 'function') {
+                    eventClose();
+                }
+            }, 300);
+        } else {
+            if (eventClose && typeof eventClose === 'function') {
+                eventClose();
+            }
+        }
+    };
+
+    // Auto close after 5 seconds
+    if (options.autoClose !== false) {
+        timeoutId = setTimeout(() => {
+            closeModal();
+        }, 5000);
+    }
+
+    // Get icon HTML
+    const getIconHtml = () => {
+        const icons = {
+            'check-circle': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+            </svg>`,
+            'error': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
+            </svg>`,
+            'warning': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="currentColor"/>
+            </svg>`,
+            'info': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
+            </svg>`
+        };
+        return icons[icon] || icons['check-circle'];
+    };
+
+    // Get type class
+    const getTypeClass = () => {
+        const types = {
+            'success': 'confirmation-alert-success',
+            'error': 'confirmation-alert-error',
+            'warning': 'confirmation-alert-warning',
+            'info': 'confirmation-alert-info'
+        };
+        return types[type] || 'confirmation-alert-success';
+    };
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = `confirmation-alert-overlay ${getTypeClass()}`;
+    
+    // Create container
+    const container = document.createElement('div');
+    container.className = 'confirmation-alert-container';
+    
+    // Build content
+    container.innerHTML = `
+        <div class="confirmation-alert-icon" style="color: ${iconColor}">
+            ${getIconHtml()}
+        </div>
+        <h3 class="confirmation-alert-title">${title}</h3>
+        <div class="confirmation-alert-message">${message}</div>
+        <button class="confirmation-alert-button" style="background: ${buttonColor}; box-shadow: 0 4px 16px ${buttonColor}40;">
+            ${buttonText}
+        </button>
+        ${options.autoClose !== false ? `
+            <div class="confirmation-alert-progress">
+                <div class="confirmation-alert-progress-bar" style="background: ${iconColor};"></div>
+            </div>
+        ` : ''}
+    `;
+    
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+    
+    // Store reference
+    modalContainer = overlay;
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        overlay.classList.add('active');
+    });
+    
+    // Add event listener to button
+    const button = container.querySelector('.confirmation-alert-button');
+    if (button) {
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            closeModal(e);
+        });
+    }
+    
+    // Close on overlay click (but not on container click)
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeModal(e);
+        }
+    });
+    
+    // Close on Escape key
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            closeModal(e);
+            document.removeEventListener('keydown', handleKeyDown);
+        }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Return close function for manual control
+    return {
+        close: closeModal,
+        element: overlay
+    };
+};
 
 export const CustomModal = ({
     title = 'Modal',
@@ -2642,4 +2574,287 @@ export const DragDropUpload = ({
         },
         renderPreviews
     };
+};
+
+export const showToast = (message, type = 'success', duration = 3500) => {
+    const colors = {
+        success: {
+            bg: '#4caf50',
+            icon: '✅',
+            border: '#43a047',
+            glow: 'rgba(76, 175, 80, 0.3)',
+            title: 'Success'
+        },
+        error: {
+            bg: '#f99393',
+            icon: '❌',
+            border: '#d32f2f',
+            glow: 'rgba(239, 83, 80, 0.3)',
+            title: 'Error'
+        },
+        warning: {
+            bg: '#ffa726',
+            icon: '⚠️',
+            border: '#f57c00',
+            glow: 'rgba(255, 167, 38, 0.3)',
+            title: 'Warning'
+        },
+        info: {
+            bg: '#42a5f5',
+            icon: 'ℹ️',
+            border: '#1e88e5',
+            glow: 'rgba(66, 165, 245, 0.3)',
+            title: 'Info'
+        },
+        confirm: {
+            bg: '#4caf50',
+            icon: '✅',
+            border: '#43a047',
+            glow: 'rgba(76, 175, 80, 0.3)',
+            title: 'Completed'
+        },
+        not_presented: {
+            bg: '#f99393',
+            icon: '❌',
+            border: '#d32f2f',
+            glow: 'rgba(239, 83, 80, 0.3)',
+            title: 'Not Presented'
+        }
+    };
+
+    const config = colors[type] || colors.success;
+    
+    // Create toast container
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 28px;
+        right: 28px;
+        background: ${config.bg};
+        border-left: 5px solid ${config.bg};
+        border-radius: 14px;
+        padding: 18px 22px 18px 18px;
+        color: #ffffff;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 60px ${config.glow};
+        z-index: 999999;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        max-width: 440px;
+        min-width: 320px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        transform: translateX(120%);
+        opacity: 0;
+        transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    `;
+    
+    // Icon container with pulse animation
+    const iconContainer = document.createElement('div');
+    iconContainer.style.cssText = `
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+    `;
+    
+    // Pulse ring
+    const pulseRing = document.createElement('div');
+    pulseRing.style.cssText = `
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        opacity: 0;
+        animation: toastPulse 2s ease-out infinite;
+    `;
+    iconContainer.appendChild(pulseRing);
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.style.cssText = `
+        font-size: 20px;
+        line-height: 1;
+        position: relative;
+        z-index: 1;
+    `;
+    iconSpan.textContent = config.icon;
+    iconContainer.appendChild(iconSpan);
+    
+    // Content
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = `
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    `;
+    
+    const titleSpan = document.createElement('span');
+    titleSpan.style.cssText = `
+        font-weight: 700;
+        font-size: 15px;
+        color: #ffffff;
+        letter-spacing: -0.2px;
+    `;
+    titleSpan.textContent = config.title;
+    
+    const messageSpan = document.createElement('span');
+    messageSpan.style.cssText = `
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 13px;
+        line-height: 1.6;
+        word-wrap: break-word;
+    `;
+    messageSpan.textContent = message;
+    
+    contentDiv.appendChild(titleSpan);
+    contentDiv.appendChild(messageSpan);
+    
+    // Close button with hover effect
+    const closeBtn = document.createElement('button');
+    closeBtn.style.cssText = `
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        font-size: 14px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+        line-height: 1;
+        margin-top: -2px;
+    `;
+    closeBtn.textContent = '✕';
+    closeBtn.onmouseenter = () => {
+        closeBtn.style.color = '#fff';
+        closeBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+    };
+    closeBtn.onmouseleave = () => {
+        closeBtn.style.color = 'rgba(255, 255, 255, 0.6)';
+        closeBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+    };
+    
+    // Progress bar
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = `
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 0 0 0 14px;
+        width: 100%;
+        transition: width ${duration}ms linear;
+    `;
+    
+    toast.appendChild(iconContainer);
+    toast.appendChild(contentDiv);
+    toast.appendChild(closeBtn);
+    toast.appendChild(progressBar);
+    document.body.appendChild(toast);
+    
+    // Add keyframe animation for pulse
+    if (!document.getElementById('toast-pulse-style')) {
+        const style = document.createElement('style');
+        style.id = 'toast-pulse-style';
+        style.textContent = `
+            @keyframes toastPulse {
+                0% {
+                    transform: scale(1);
+                    opacity: 0.6;
+                }
+                100% {
+                    transform: scale(1.5);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Force a reflow before triggering animation
+    void toast.offsetHeight;
+    
+    // Trigger entrance animation - slide in from right to left
+    toast.style.transform = 'translateX(0)';
+    toast.style.opacity = '1';
+    
+    // Start progress bar animation
+    requestAnimationFrame(() => {
+        progressBar.style.width = '0%';
+    });
+    
+    // Auto close
+    let timeoutId = setTimeout(() => {
+        closeToast();
+    }, duration);
+    
+    // Close function - slide out to right
+    const closeToast = () => {
+        if (toast.dataset.closing === 'true') return;
+        toast.dataset.closing = 'true';
+        
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        clearTimeout(timeoutId);
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 500);
+    };
+    
+    // Close on button click
+    closeBtn.addEventListener('click', closeToast);
+    
+    // Close on Escape key
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            closeToast();
+            document.removeEventListener('keydown', handleKeyDown);
+        }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Pause on hover
+    toast.addEventListener('mouseenter', () => {
+        clearTimeout(timeoutId);
+        progressBar.style.transition = 'none';
+        progressBar.style.width = '0%';
+    });
+    
+    toast.addEventListener('mouseleave', () => {
+        const remaining = progressBar.style.width || '0%';
+        const remainingTime = (parseFloat(remaining) / 100) * duration;
+        progressBar.style.transition = `width ${remainingTime}ms linear`;
+        progressBar.style.width = '0%';
+        
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            closeToast();
+        }, remainingTime || duration);
+    });
+    
+    return { close: closeToast, element: toast };
+};
+
+export const Toast = {
+    success: (message, duration) => showToast(message, 'success', duration),
+    error: (message, duration) => showToast(message, 'error', duration),
+    warning: (message, duration) => showToast(message, 'warning', duration),
+    info: (message, duration) => showToast(message, 'info', duration),
+    confirm: (message, duration) => showToast(message, 'confirm', duration),
+    notPresented: (message, duration) => showToast(message, 'not_presented', duration)
 };
