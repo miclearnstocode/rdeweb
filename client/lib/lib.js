@@ -1617,7 +1617,7 @@ export const CustomModal = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: '999',
+            zIndex: '1003',
             opacity: '0',
             transform: 'scale(0.98)',
             transition: 'opacity 0.25s ease, transform 0.25s ease'

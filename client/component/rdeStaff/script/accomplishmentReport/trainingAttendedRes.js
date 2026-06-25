@@ -1,4 +1,4 @@
-import { $, Waiting } from "../../../../lib/lib.js"
+import { $, Waiting, DragDropUpload, CustomModal } from "../../../../lib/lib.js"
 
 export const trainingsAttended = () => {
     let mainContainer
@@ -474,7 +474,14 @@ export const trainingsAttended = () => {
     }
 
     const renderDocumentLinks = (item) => {
-        const links = item.paperTrailLinks || {}
+        // Build links from the individual fields
+        const links = {
+            memorandum: item.memorandum_drive_view_url || null,
+            invitation: item.invitation_drive_view_url || null,
+            certificate: item.certificate_drive_view_url || null,
+            program: item.program_drive_view_url || null
+        }
+        
         const hasLinks = Object.values(links).some(val => val && val.length > 0)
         
         if (!hasLinks) {
@@ -500,11 +507,10 @@ export const trainingsAttended = () => {
         
         // Map of link types to display names and icons
         const linkMap = [
-            { key: 'activityProposal', label: 'Activity Proposal', icon: 'fa-solid fa-file-pdf', color: '#ea4335' },
-            { key: 'attendanceSheet', label: 'Attendance Sheet', icon: 'fa-solid fa-users', color: '#34a853' },
-            { key: 'activityReport', label: 'Activity Report', icon: 'fa-solid fa-chart-line', color: '#1a73e8' },
-            { key: 'program', label: 'Program', icon: 'fa-solid fa-calendar-alt', color: '#7c3aed' },
-            { key: 'photos', label: 'Photos', icon: 'fa-solid fa-images', color: '#fbbc04' }
+            { key: 'memorandum', label: 'Memorandum', icon: 'fa-solid fa-file-pdf', color: '#ea4335' },
+            { key: 'invitation', label: 'Invitation', icon: 'fa-solid fa-envelope', color: '#1a73e8' },
+            { key: 'certificate', label: 'Certificate', icon: 'fa-solid fa-award', color: '#34a853' },
+            { key: 'program', label: 'Program', icon: 'fa-solid fa-calendar-alt', color: '#7c3aed' }
         ]
         
         linkMap.forEach(({ key, label, icon, color }) => {
@@ -629,7 +635,6 @@ export const trainingsAttended = () => {
             })
         )
 
-        // Helper to ensure render functions return a DOM node
         const safeRender = (renderedValue) => {
             return typeof renderedValue === 'string' ? $({ tag: 'span', text: renderedValue }) : renderedValue
         }
@@ -734,7 +739,6 @@ export const trainingsAttended = () => {
             })
         )
 
-        // Paper Trail Links - Updated to use renderDocumentLinks
         cells.push(
             $({
                 tag: 'td',
@@ -1097,6 +1101,351 @@ export const trainingsAttended = () => {
 
             return attendeeRow
         }
+
+        const createDocumentUploader = (label, inputName, existingFile) => {
+            const uploadId = `upload-${inputName}-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            let currentFiles = [];
+            
+            if (existingFile) {
+                currentFiles = [existingFile];
+            }
+            
+            // Create the DragDropUpload component
+            const uploader = DragDropUpload({
+                label: label,
+                accept: '.pdf',
+                multiple: false,
+                required: false,
+                currentFiles: currentFiles,
+                maxSizeMB: 10,
+                description: `Drop your ${label.toLowerCase()} file here or click to browse`,
+                showPreview: true,
+                id: uploadId,
+                onFileSelect: (files, allFiles) => {
+                    // When a file is selected, store it in the form data
+                    const fileInput = document.getElementById(`${inputName}-actual-input`);
+                    if (fileInput && files.length > 0) {
+                        // Create a DataTransfer to set the file
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(files[0]);
+                        fileInput.files = dataTransfer.files;
+                        
+                        // Trigger change event
+                        const event = new Event('change', { bubbles: true });
+                        fileInput.dispatchEvent(event);
+                    }
+                },
+                onFileRemove: (file, index, allFiles) => {
+                    // When a file is removed, clear the file input
+                    const fileInput = document.getElementById(`${inputName}-actual-input`);
+                    if (fileInput) {
+                        fileInput.value = '';
+                        // Trigger change event
+                        const event = new Event('change', { bubbles: true });
+                        fileInput.dispatchEvent(event);
+                    }
+                },
+                onFileView: (file, fileName) => {
+                    // Determine display name
+                    let displayName = fileName;
+                    if (!displayName) {
+                        if (typeof file === 'string') {
+                            displayName = file.split('/').pop() || 'File';
+                        } else if (file instanceof File) {
+                            displayName = file.name;
+                        } else if (file && file.name) {
+                            displayName = file.name;
+                        } else {
+                            displayName = 'File';
+                        }
+                    }
+                    
+                    const isImage = typeof file === 'string' 
+                        ? /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(file)
+                        : file.type && file.type.startsWith('image/');
+                    
+                    const isPDF = typeof file === 'string'
+                        ? /\.pdf$/i.test(file)
+                        : file.type === 'application/pdf';
+                    
+                    let fileUrl = typeof file === 'string' ? file : URL.createObjectURL(file);
+                    
+                    // Determine file icon
+                    const getFileIcon = (name) => {
+                        if (/\.(pdf)$/i.test(name)) return 'fa-file-pdf';
+                        if (/\.(doc|docx)$/i.test(name)) return 'fa-file-word';
+                        if (/\.(xls|xlsx)$/i.test(name)) return 'fa-file-excel';
+                        if (/\.(ppt|pptx)$/i.test(name)) return 'fa-file-powerpoint';
+                        if (/\.(zip|rar|7z)$/i.test(name)) return 'fa-file-archive';
+                        if (/\.(mp4|avi|mov|wmv)$/i.test(name)) return 'fa-file-video';
+                        if (/\.(mp3|wav|aac)$/i.test(name)) return 'fa-file-audio';
+                        if (/\.(txt|log|md)$/i.test(name)) return 'fa-file-lines';
+                        if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(name)) return 'fa-file-image';
+                        return 'fa-file';
+                    };
+                    
+                    // Create content for the modal with better height management
+                    const modalContent = $({
+                        tag: 'div',
+                        style: {
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0',
+                            gap: '16px',
+                            minHeight: '500px' // Added minimum height
+                        },
+                        child: [
+                            // File info header
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '12px 16px',
+                                    backgroundColor: '#f8fafc',
+                                    borderRadius: '10px',
+                                    border: '1px solid #e8ecf0',
+                                    flexShrink: 0 // Prevent header from shrinking
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: `fa-solid ${getFileIcon(displayName)}` },
+                                        style: {
+                                            fontSize: '20px',
+                                            color: '#64748b'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: displayName,
+                                        style: {
+                                            fontSize: '14px',
+                                            color: '#1a2a3a',
+                                            fontWeight: '500',
+                                            flex: 1,
+                                            wordBreak: 'break-all'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'a',
+                                        att: {
+                                            href: fileUrl,
+                                            download: displayName,
+                                            target: '_blank'
+                                        },
+                                        style: {
+                                            padding: '6px 14px',
+                                            backgroundColor: '#1a73e8',
+                                            color: '#ffffff',
+                                            borderRadius: '8px',
+                                            textDecoration: 'none',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                att: { className: 'fa-solid fa-download' },
+                                                style: { fontSize: '12px' }
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                text: 'Download'
+                                            })
+                                        ],
+                                        event: {
+                                            type: 'mouseenter',
+                                            method: (e) => {
+                                                e.currentTarget.style.backgroundColor = '#1557b0'
+                                            },
+                                            type2: 'mouseleave',
+                                            method2: (e) => {
+                                                e.currentTarget.style.backgroundColor = '#1a73e8'
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            
+                            // File preview - INCREASED HEIGHT
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    flex: 1,
+                                    minHeight: '500px', // Increased from 300px to 500px
+                                    maxHeight: 'calc(85vh - 180px)', // Increased from 80vh
+                                    backgroundColor: '#f8fafc',
+                                    borderRadius: '12px',
+                                    border: '1px solid #e8ecf0',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    position: 'relative'
+                                },
+                                child: isImage ? [
+                                    $({
+                                        tag: 'img',
+                                        att: {
+                                            src: fileUrl,
+                                            alt: displayName
+                                        },
+                                        style: {
+                                            maxWidth: '100%',
+                                            maxHeight: '100%',
+                                            objectFit: 'contain',
+                                            padding: '12px'
+                                        }
+                                    })
+                                ] : isPDF ? [
+                                    $({
+                                        tag: 'iframe',
+                                        att: {
+                                            src: fileUrl
+                                        },
+                                        style: {
+                                            width: '100%',
+                                            height: '100%',
+                                            minHeight: '500px', // Added minHeight for iframe
+                                            border: 'none'
+                                        }
+                                    })
+                                ] : [
+                                    // For non-image, non-PDF files, show file info with download option
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '16px',
+                                            padding: '40px',
+                                            width: '100%',
+                                            height: '100%'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                att: { className: `fa-solid ${getFileIcon(displayName)}` },
+                                                style: {
+                                                    fontSize: '64px',
+                                                    color: '#94a3b8'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                text: 'Preview not available for this file type',
+                                                style: {
+                                                    fontSize: '16px',
+                                                    color: '#64748b',
+                                                    textAlign: 'center'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'a',
+                                                att: {
+                                                    href: fileUrl,
+                                                    download: displayName,
+                                                    target: '_blank'
+                                                },
+                                                style: {
+                                                    padding: '10px 24px',
+                                                    backgroundColor: '#1a73e8',
+                                                    color: '#ffffff',
+                                                    borderRadius: '10px',
+                                                    textDecoration: 'none',
+                                                    fontSize: '14px',
+                                                    fontWeight: '500',
+                                                    transition: 'all 0.2s ease',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: { className: 'fa-solid fa-download' },
+                                                        style: { fontSize: '14px' }
+                                                    }),
+                                                    $({
+                                                        tag: 'span',
+                                                        text: 'Download File'
+                                                    })
+                                                ],
+                                                event: {
+                                                    type: 'mouseenter',
+                                                    method: (e) => {
+                                                        e.currentTarget.style.backgroundColor = '#1557b0'
+                                                    },
+                                                    type2: 'mouseleave',
+                                                    method2: (e) => {
+                                                        e.currentTarget.style.backgroundColor = '#1a73e8'
+                                                    }
+                                                }
+                                            })
+                                        ]
+                                    })
+                                ]
+                            })
+                        ]
+                    });
+                    
+                    // Show the modal with full size
+                    const modal = CustomModal({
+                        title: displayName,
+                        content: modalContent,
+                        size: 'full', // Changed from 'large' to 'full' for maximum space
+                        closeOnOverlayClick: true,
+                        onClose: () => {
+                            // Revoke object URL if it was created
+                            if (!(typeof file === 'string')) {
+                                setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Create a wrapper div that contains the uploader and a hidden file input
+            const wrapper = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0'
+                },
+                child: [
+                    // Hidden file input for form submission
+                    $({
+                        tag: 'input',
+                        att: {
+                            type: 'file',
+                            name: inputName,
+                            id: `${inputName}-actual-input`,
+                            accept: '.pdf,.jpg,.jpeg,.png,.gif,.webp'
+                        },
+                        style: { display: 'none' }
+                    }),
+                    // The DragDropUpload component
+                    uploader.element
+                ]
+            });
+            
+            return wrapper;
+        };
 
         modalElement = $({
             tag: 'div',
@@ -1740,7 +2089,7 @@ export const trainingsAttended = () => {
                                             ]
                                         }),
 
-                                        // Paper Trail Documents section with modern file upload
+                                        // Paper Trail Documents with DragDropUpload
                                         $({
                                             tag: 'div',
                                             style: { marginBottom: '24px' },
@@ -1809,14 +2158,15 @@ export const trainingsAttended = () => {
                                                         gap: '16px'
                                                     },
                                                     child: [
-                                                        createModernFileUpload('Memorandum to Attend', 'memorandum_file', 'fa-solid fa-file-pdf', '#ea4335', isEditing ? item.memorandum_file : null),
-                                                        createModernFileUpload('Invitation', 'invitation_file', 'fa-solid fa-envelope', '#1a73e8', isEditing ? item.invitation_file : null),
-                                                        createModernFileUpload('Certificate', 'certificate_file', 'fa-solid fa-award', '#34a853', isEditing ? item.certificate_file : null),
-                                                        createModernFileUpload('Program', 'program_file', 'fa-solid fa-calendar-alt', '#7c3aed', isEditing ? item.program_file : null)
+                                                        createDocumentUploader('Memorandum to Attend', 'memorandum_file', isEditing ? (item.memorandum_drive_view_url || null) : null),
+                                                        createDocumentUploader('Invitation', 'invitation_file', isEditing ? (item.invitation_drive_view_url || null) : null),
+                                                        createDocumentUploader('Certificate', 'certificate_file', isEditing ? (item.certificate_drive_view_url || null) : null),
+                                                        createDocumentUploader('Program', 'program_file', isEditing ? (item.program_drive_view_url || null) : null)
                                                     ]
                                                 })
                                             ]
                                         }),
+
                                         // Modal footer
                                         $({
                                             tag: 'div',
@@ -2156,7 +2506,7 @@ export const trainingsAttended = () => {
                         wordBreak: 'break-all',
                         minHeight: '20px'
                     },
-                    text: existingFile ? existingFile.split('/').pop() || 'Document' : ''
+                    text: existingFile ? '📄 ' + (existingFile.split('/').pop() || 'Document') : ''
                 }),
                 
                 // Status indicator
@@ -2423,7 +2773,7 @@ export const trainingsAttended = () => {
 
         showLoading()
         try {
-            const response = await fetch('/attendedResearch', {  // Updated endpoint
+            const response = await fetch('/attendedResearch', { 
                 method: 'POST',
                 body: formData
             })
