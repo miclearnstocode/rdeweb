@@ -17,27 +17,16 @@ require_once __DIR__ . '/../../db.php';
 
 date_default_timezone_set('Asia/Manila');
 
-/**
- * Clean folder name for Google Drive
- */
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
+
 function cleanTrainingFolderName($name) {
     if (empty($name)) {
         return 'Untitled_' . time();
     }
-    
-    // Remove special characters
     $clean = preg_replace('/[<>:"\/\\|?*]/', '', $name);
-    
-    // Replace multiple spaces with single space
     $clean = preg_replace('/\s+/', ' ', $clean);
-    
-    // Trim whitespace
     $clean = trim($clean);
-    
-    // Remove trailing periods and commas
     $clean = rtrim($clean, '.,');
-    
-    // Limit length (Google Drive has 255 char limit)
     if (strlen($clean) > 200) {
         $clean = substr($clean, 0, 197) . '...';
     }
@@ -45,9 +34,6 @@ function cleanTrainingFolderName($name) {
     return $clean;
 }
 
-/**
- * Get or create folder in Google Drive
- */
 function getOrCreateFolder($driveService, $parentId, $folderName) {
     $folderId = $driveService->findOrCreateFolder($folderName, $parentId);
     if (!$folderId) {
@@ -56,19 +42,13 @@ function getOrCreateFolder($driveService, $parentId, $folderName) {
     return $folderId;
 }
 
-/**
- * Create complete folder structure for a training record
- */
 function createTrainingFolderStructure($driveService, $type, $location, $trainingTitle, $date) {
     $rootFolderName = 'Trainings/Activity Conducted/Facilitated';
-    
-    // Find or create root folder
     $rootFolderId = $driveService->findOrCreateFolder($rootFolderName);
     if (!$rootFolderId) {
         throw new Exception("Failed to create root folder: $rootFolderName");
     }
     
-    // Format training folder name: Title_YYYY-MM-DD
     $formattedDate = date('Y-m-d', strtotime($date));
     $cleanTitle = cleanTrainingFolderName($trainingTitle);
     $trainingFolderName = $cleanTitle . '_' . $formattedDate;
@@ -79,21 +59,17 @@ function createTrainingFolderStructure($driveService, $type, $location, $trainin
     $categoryFolderId = null;
     
     if ($type === 'campus') {
-        // Structure: Campus/{CampusName}/{TrainingFolder}
         $campusParentId = getOrCreateFolder($driveService, $rootFolderId, 'Campus');
         $campusFolderId = getOrCreateFolder($driveService, $campusParentId, $location);
         $parentId = $campusFolderId;
     } else {
-        // Structure: Centers/{CenterName}/{TrainingFolder}
         $centersParentId = getOrCreateFolder($driveService, $rootFolderId, 'Centers');
         $centerFolderId = getOrCreateFolder($driveService, $centersParentId, $location);
         $parentId = $centerFolderId;
     }
     
-    // Create training entry folder
     $trainingFolderId = getOrCreateFolder($driveService, $parentId, $trainingFolderName);
     
-    // Create photos subfolder
     $photosFolderId = $driveService->findOrCreateFolder('photos', $trainingFolderId);
     
     return [
@@ -107,9 +83,6 @@ function createTrainingFolderStructure($driveService, $type, $location, $trainin
     ];
 }
 
-/**
- * Upload file to Google Drive
- */
 function uploadTrainingFile($driveService, $fileTemp, $fileName, $folderId) {
     if (!$driveService || empty($fileTemp) || !file_exists($fileTemp)) {
         return null;
@@ -129,9 +102,6 @@ function uploadTrainingFile($driveService, $fileTemp, $fileName, $folderId) {
     return null;
 }
 
-/**
- * Upload multiple photos
- */
 function uploadTrainingPhotos($driveService, $photos, $photosFolderId) {
     $uploadedPhotos = [];
     
@@ -161,9 +131,6 @@ function uploadTrainingPhotos($driveService, $photos, $photosFolderId) {
     ];
 }
 
-/**
- * Delete file from Google Drive
- */
 function deleteTrainingFile($driveService, $fileId) {
     if (empty($fileId)) return true;
     
@@ -175,11 +142,8 @@ function deleteTrainingFile($driveService, $fileId) {
     }
 }
 
-/**
- * Handle INSERT operation
- */
+
 function handleInsert($con, $driveService, $data, $files) {
-    // Map frontend field names to backend field names
     $type = $data['type'] ?? null;
     $location = $data['location'] ?? null;
     $title = $data['title'] ?? '';
@@ -188,8 +152,7 @@ function handleInsert($con, $driveService, $data, $files) {
     $fundSource = $data['fundSource'] ?? $data['fund_source'] ?? null;
     $topicsDiscussed = $data['topics_discussed'];
     $attendees = isset($data['attendees']) ? (int)$data['attendees'] : 0;
-    
-    // Validate required fields
+
     if (empty($title)) {
         return ['success' => false, 'message' => "Training title is required"];
     }
@@ -203,13 +166,11 @@ function handleInsert($con, $driveService, $data, $files) {
         return ['success' => false, 'message' => "Number of attendees is required and must be greater than 0"];
     }
     
-    // Get user ID from session
     $userId = $_SESSION['userId'] ?? 0;
     if (!$userId) {
         return ['success' => false, 'message' => "User not authenticated"];
     }
     
-    // Create folder structure in Google Drive
     try {
         $folders = createTrainingFolderStructure(
             $driveService,
@@ -227,14 +188,12 @@ function handleInsert($con, $driveService, $data, $files) {
         return ['success' => false, 'message' => "Failed to create folder structure: " . $e->getMessage()];
     }
     
-    // Upload files
     $activityProposal = null;
     $attendanceSheet = null;
     $activityReport = null;
     $program = null;
     $photos = ['urls' => [], 'file_ids' => []];
     
-    // Upload Activity Proposal
     if (isset($files['activity_proposal']) && $files['activity_proposal']['error'] === UPLOAD_ERR_OK) {
         $activityProposal = uploadTrainingFile(
             $driveService,
@@ -244,7 +203,6 @@ function handleInsert($con, $driveService, $data, $files) {
         );
     }
     
-    // Upload Attendance Sheet
     if (isset($files['attendance_sheet']) && $files['attendance_sheet']['error'] === UPLOAD_ERR_OK) {
         $attendanceSheet = uploadTrainingFile(
             $driveService,
@@ -254,7 +212,6 @@ function handleInsert($con, $driveService, $data, $files) {
         );
     }
     
-    // Upload Activity Report
     if (isset($files['activity_report']) && $files['activity_report']['error'] === UPLOAD_ERR_OK) {
         $activityReport = uploadTrainingFile(
             $driveService,
@@ -264,7 +221,6 @@ function handleInsert($con, $driveService, $data, $files) {
         );
     }
     
-    // Upload Program
     if (isset($files['program']) && $files['program']['error'] === UPLOAD_ERR_OK) {
         $program = uploadTrainingFile(
             $driveService,
@@ -274,7 +230,6 @@ function handleInsert($con, $driveService, $data, $files) {
         );
     }
     
-    // Upload Photos
     $photoFiles = [];
     if (isset($files['photos'])) {
         $photoInput = $files['photos'];
@@ -298,7 +253,6 @@ function handleInsert($con, $driveService, $data, $files) {
         $photos = uploadTrainingPhotos($driveService, $photoFiles, $photosFolderId);
     }
     
-    // Process Resource Persons - Accept comma-separated string or JSON
     $resourcePersons = [];
     if (isset($data['resourcePersons']) && !empty($data['resourcePersons'])) {
         $input = $data['resourcePersons'];
@@ -355,7 +309,6 @@ function handleInsert($con, $driveService, $data, $files) {
     $resourcePersonsJson = json_encode($resourcePersons);
     $participantsJson = json_encode($participants);
     
-    // Prepare SQL query
     $query = "INSERT INTO conducted_trainings (
         type, location, title, date, budget, fund_source,
         topics_discussed, resource_persons, participants, attendees,
@@ -447,9 +400,6 @@ function handleInsert($con, $driveService, $data, $files) {
     }
 }
 
-/**
- * Handle FETCH operation
- */
 function handleFetch($con, $data) {
     $limit = isset($data['limit']) ? (int)$data['limit'] : 50;
     $cursor = isset($data['cursor']) ? (int)$data['cursor'] : 0;
@@ -602,9 +552,6 @@ function handleFetch($con, $data) {
     ];
 }
 
-/**
- * Handle UPDATE operation
- */
 function handleUpdate($con, $driveService, $data, $files) {
     $userId = $_SESSION['userId'] ?? 0;
     $recordId = $data['id'] ?? 0;
@@ -848,9 +795,6 @@ function handleUpdate($con, $driveService, $data, $files) {
     }
 }
 
-/**
- * Move file to trash in Google Drive
- */
 function trashTrainingFile($driveService, $fileId) {
     if (empty($fileId)) return true;
     
@@ -862,9 +806,6 @@ function trashTrainingFile($driveService, $fileId) {
     }
 }
 
-/**
- * Move folder and its contents to trash in Google Drive
- */
 function trashTrainingFolder($driveService, $folderId) {
     if (empty($folderId)) return true;
     
@@ -876,9 +817,6 @@ function trashTrainingFolder($driveService, $folderId) {
     }
 }
 
-/**
- * Handle DELETE operation
- */
 function handleDelete($con, $driveService, $data) {
     $recordId = $data['id'] ?? 0;
     
@@ -934,6 +872,186 @@ function handleDelete($con, $driveService, $data) {
     }
 }
 
+function handleGetImage($con, $data) {
+    $fileId = $data['fileId'] ?? '';
+    $size = isset($data['size']) ? (int)$data['size'] : 400;
+    
+    if (empty($fileId)) {
+        http_response_code(400);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'File ID is required']);
+        exit();
+    }
+    
+    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $fileId)) {
+        http_response_code(400);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Invalid file ID format']);
+        exit();
+    }
+    
+    // Try to get the image using multiple methods
+    $imageData = null;
+    $contentType = null;
+    
+    // Method 1: Try direct download with export=download
+    $urls = [
+        "https://drive.google.com/uc?export=download&id={$fileId}",
+        "https://drive.google.com/uc?export=view&id={$fileId}",
+        "https://drive.google.com/thumbnail?id={$fileId}&sz={$size}",
+        "https://drive.google.com/file/d/{$fileId}/view"
+    ];
+    
+    foreach ($urls as $url) {
+        try {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+            
+            // Get the content
+            $response = curl_exec($ch);
+            $info = curl_getinfo($ch);
+            $contentType = $info['content_type'] ?? '';
+            
+            // Check if we got a valid image
+            if ($response && strpos($contentType, 'image/') !== false) {
+                $imageData = $response;
+                break;
+            }
+            
+            // If content-type is not image, check the actual content
+            if ($response) {
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->buffer($response);
+                if (strpos($mimeType, 'image/') === 0) {
+                    $imageData = $response;
+                    $contentType = $mimeType;
+                    break;
+                }
+                
+                // Check if it's an HTML page (Google Drive confirmation page)
+                if (strpos($response, 'confirm') !== false) {
+                    // Extract the confirmation token
+                    preg_match('/confirm=([a-zA-Z0-9_-]+)/', $response, $matches);
+                    if (isset($matches[1])) {
+                        $confirmUrl = "https://drive.google.com/uc?export=download&id={$fileId}&confirm={$matches[1]}";
+                        $ch2 = curl_init();
+                        curl_setopt($ch2, CURLOPT_URL, $confirmUrl);
+                        curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+                        curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, true);
+                        curl_setopt($ch2, CURLOPT_SSL_VERIFYPEER, false);
+                        curl_setopt($ch2, CURLOPT_SSL_VERIFYHOST, false);
+                        curl_setopt($ch2, CURLOPT_TIMEOUT, 30);
+                        curl_setopt($ch2, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+                        $imageData = curl_exec($ch2);
+                        $contentType = curl_getinfo($ch2, CURLINFO_CONTENT_TYPE);
+                        curl_close($ch2);
+                        
+                        if ($imageData && strpos($contentType, 'image/') !== false) {
+                            break;
+                        }
+                    }
+                }
+            }
+            
+        } catch (Exception $e) {
+            error_log("Failed to fetch image from $url: " . $e->getMessage());
+            continue;
+        } finally {
+            if (isset($ch)) {
+                curl_close($ch);
+            }
+        }
+    }
+    
+    // If no image found, try one more time with a different approach
+    if (!$imageData || !$contentType || strpos($contentType, 'image/') === false) {
+        try {
+            // Try using file_get_contents with stream context
+            $context = stream_context_create([
+                'http' => [
+                    'header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n",
+                    'timeout' => 30,
+                    'follow_location' => 1,
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false
+                    ]
+                ]
+            ]);
+            
+            $url = "https://drive.google.com/uc?export=download&id={$fileId}";
+            $imageData = @file_get_contents($url, false, $context);
+            
+            if ($imageData) {
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->buffer($imageData);
+                if (strpos($mimeType, 'image/') === 0) {
+                    $contentType = $mimeType;
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Failed with file_get_contents: " . $e->getMessage());
+        }
+    }
+    
+    // If still no image, check if it's stored in our database with a different format
+    if (!$imageData || !$contentType || strpos($contentType, 'image/') === false) {
+        // Try to get the original URL from the database and redirect
+        try {
+            $query = "SELECT photos FROM conducted_trainings WHERE photos LIKE ?";
+            $searchPattern = "%{$fileId}%";
+            $stmt = $con->prepare($query);
+            $stmt->bind_param("s", $searchPattern);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                $photos = json_decode($row['photos'], true);
+                if ($photos && isset($photos['urls'])) {
+                    foreach ($photos['urls'] as $url) {
+                        if (strpos($url, $fileId) !== false) {
+                            // Redirect to the original Google Drive URL
+                            header("Location: " . $url);
+                            exit();
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Database lookup failed: " . $e->getMessage());
+        }
+        
+        http_response_code(404);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Image not found or not accessible']);
+        exit();
+    }
+    
+    // Set proper headers for image delivery
+    header('Content-Type: ' . $contentType);
+    header('Content-Length: ' . strlen($imageData));
+    header('Cache-Control: public, max-age=86400');
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Accept');
+    
+    // For debugging - log the content type
+    error_log("Serving image with content type: " . $contentType);
+    
+    echo $imageData;
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($action === 'get_image' || $action === 'getImage')) {
+    handleGetImage($con, $_GET);
+    exit(); // handleGetImage already exits, but this ensures we stop here
+}
 if (!isset($conn)) {
     global $conn;
 }
@@ -953,9 +1071,7 @@ try {
     $driveService = new GoogleDriveService();
 
     $response = ['success' => false, 'message' => 'No action specified'];
-    
-    $action = $_POST['action'] ?? $_GET['action'] ?? '';
-    
+
     if ($_SERVER['REQUEST_METHOD'] === 'GET' || $action === 'fetch_conducted') {
         $data = $_GET;
         if ($action === 'fetch_conducted') {
