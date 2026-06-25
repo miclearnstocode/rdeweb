@@ -305,7 +305,7 @@ export const CompletedResearch = () => {
                 padding: '8px 16px',
                 color: '#212529',
                 fontSize: '14px',
-                width: '250px',
+                width: '400px',
                 outline: 'none',
                 transition: 'all 0.3s ease'
             },
@@ -349,7 +349,7 @@ export const CompletedResearch = () => {
         const centerFilter = $({
             tag: 'select',
             att: { className: 'center-filter-select' },
-            style: { ...filterSelectStyle, maxWidth: '180px' },
+            style: { ...filterSelectStyle, maxWidth: '200px' },
             child: [$({ tag: 'option', att: { value: 'All' }, text: 'All Centers' })],
             event: {
                 type: 'change',
@@ -362,7 +362,7 @@ export const CompletedResearch = () => {
 
         const campusFilter = $({
             tag: 'select',
-            att: { className: 'campus-filter-select' },
+            att: { className: 'campus-filter-select', maxWidth: '200px' },
             style: filterSelectStyle,
             child: [
                 $({ tag: 'option', att: { value: 'All' }, text: 'All Campuses' }),
@@ -379,7 +379,7 @@ export const CompletedResearch = () => {
 
         const categoryFilter = $({
             tag: 'select',
-            att: { className: 'category-filter-select' },
+            att: { className: 'category-filter-select', maxWidth: '200px' },
             style: filterSelectStyle,
             child: [$({ tag: 'option', att: { value: 'All' }, text: 'All Categories' })],
             event: {
@@ -444,46 +444,91 @@ export const CompletedResearch = () => {
             tag: 'div',
             style: {
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                flexDirection: 'column',
                 padding: '16px 24px',
                 backgroundColor: '#ffffff',
                 borderBottom: '1px solid #e9ecef',
-                flexWrap: 'wrap',
                 gap: '12px'
             },
             child: [
+                // Top row - Title and records count
                 $({
                     tag: 'div',
-                    style: { display: 'flex', alignItems: 'center', gap: '12px' },
+                    style: {
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '12px'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', alignItems: 'center', gap: '12px' },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-table' },
+                                    style: { color: '#0d6efd', fontSize: '20px' }
+                                }),
+                                $({
+                                    tag: 'h2',
+                                    text: 'Completed Research',
+                                    style: {
+                                        color: '#212529',
+                                        fontSize: '20px',
+                                        fontWeight: '600',
+                                        margin: '0'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'research-count' },
+                                    style: {
+                                        backgroundColor: '#f1f3f5',
+                                        color: '#6c757d',
+                                        padding: '2px 10px',
+                                        borderRadius: '12px',
+                                        fontSize: '12px',
+                                        border: '1px solid #dee2e6'
+                                    },
+                                    text: '0 records'
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // Instructions - Below title and above filters
+                $({
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 16px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #e9ecef',
+                        flexWrap: 'wrap'
+                    },
                     child: [
                         $({
                             tag: 'span',
-                            att: { className: 'fa-solid fa-table' },
-                            style: { color: '#0d6efd', fontSize: '20px' }
-                        }),
-                        $({
-                            tag: 'h2',
-                            text: 'Completed Research',
+                            att: { className: 'fa-solid fa-circle-info' },
                             style: {
-                                color: '#212529',
-                                fontSize: '20px',
-                                fontWeight: '600',
-                                margin: '0'
+                                color: '#0d6efd',
+                                fontSize: '16px',
+                                flexShrink: '0'
                             }
                         }),
                         $({
                             tag: 'span',
-                            att: { className: 'research-count' },
+                            text: 'Confirmation of Research Paper here to mark a paper as completed. Search and filter to find specific research papers.',
                             style: {
-                                backgroundColor: '#f1f3f5',
-                                color: '#6c757d',
-                                padding: '2px 10px',
-                                borderRadius: '12px',
-                                fontSize: '12px',
-                                border: '1px solid #dee2e6'
-                            },
-                            text: '0 records'
+                                color: '#495057',
+                                fontSize: '13px',
+                                lineHeight: '1.5'
+                            }
                         })
                     ]
                 }),
@@ -1105,7 +1150,7 @@ export const CompletedResearch = () => {
             });
             
             modalInstance = CustomModal({
-                title: 'Confirm Research Presentation',
+                title: 'Confirm Research Paper Successfully Presented',
                 content: modalContent,
                 size: 'large',
                 footer: [closeButton]
