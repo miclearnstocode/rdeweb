@@ -1423,40 +1423,48 @@ export const FileViewerModal = (fileUrl, title = 'File Preview', accentColor = '
     }
     document.addEventListener('keydown', handleKey)
 }
+
 export const ConfirmationAlert = (message, eventClose, options = {}) => {
     const { 
         title = 'Success', 
-        icon = 'check-circle',
+        icon = 'fa-circle-check',
         iconColor = '#4caf50',
         buttonText = 'OK',
         buttonColor = '#4caf50',
-        type = 'success'
+        type = 'success',
+        duration = 4000,
+        position = 'top-right'
     } = options;
     
-    let modalContainer = null;
+    let toastElement = null;
     let timeoutId = null;
     let isClosed = false;
 
     // Close function
-    const closeModal = (e) => {
+    const closeToast = (e) => {
         if (isClosed) return;
         isClosed = true;
         
         if (e) e.stopPropagation();
         if (timeoutId) clearTimeout(timeoutId);
         
-        if (modalContainer) {
-            modalContainer.classList.remove('active');
-            modalContainer.classList.add('closing');
+        if (toastElement) {
+            toastElement.classList.remove('active');
+            toastElement.classList.add('closing');
             
             setTimeout(() => {
-                if (modalContainer && modalContainer.parentNode) {
-                    modalContainer.parentNode.removeChild(modalContainer);
+                if (toastElement && toastElement.parentNode) {
+                    toastElement.parentNode.removeChild(toastElement);
+                }
+                // Remove container if empty
+                const container = document.getElementById('confirmation-toast-container');
+                if (container && container.children.length === 0) {
+                    container.remove();
                 }
                 if (eventClose && typeof eventClose === 'function') {
                     eventClose();
                 }
-            }, 300);
+            }, 400);
         } else {
             if (eventClose && typeof eventClose === 'function') {
                 eventClose();
@@ -1464,111 +1472,383 @@ export const ConfirmationAlert = (message, eventClose, options = {}) => {
         }
     };
 
-    // Auto close after 5 seconds
-    if (options.autoClose !== false) {
-        timeoutId = setTimeout(() => {
-            closeModal();
-        }, 5000);
-    }
-
-    // Get icon HTML
+    // Get icon HTML - Using Font Awesome
     const getIconHtml = () => {
+        // Font Awesome icons mapping
         const icons = {
-            'check-circle': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+            'fa-circle-check': `<i class="fa-solid fa-circle-check" style="font-size: 24px; color: ${iconColor};"></i>`,
+            'fa-circle-check': `<i class="fa-regular fa-circle-check" style="font-size: 24px; color: ${iconColor};"></i>`,
+            'fa-check-circle': `<i class="fa-solid fa-check-circle" style="font-size: 24px; color: ${iconColor};"></i>`,
+            'fa-circle-xmark': `<i class="fa-solid fa-circle-xmark" style="font-size: 24px; color: ${iconColor};"></i>`,
+            'fa-triangle-exclamation': `<i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; color: ${iconColor};"></i>`,
+            'fa-circle-info': `<i class="fa-solid fa-circle-info" style="font-size: 24px; color: ${iconColor};"></i>`
+        };
+        
+        // Check if using Font Awesome icon
+        if (icon && icon.startsWith('fa-')) {
+            return icons[icon] || icons['fa-circle-check'];
+        }
+        
+        // Fallback: use SVG
+        const svgIcons = {
+            'check-circle': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="${iconColor}"/>
             </svg>`,
-            'error': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
+            'error': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="${iconColor}"/>
             </svg>`,
-            'warning': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="currentColor"/>
+            'warning': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" fill="${iconColor}"/>
             </svg>`,
-            'info': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
+            'info': `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="${iconColor}"/>
             </svg>`
         };
-        return icons[icon] || icons['check-circle'];
+        return svgIcons[icon] || svgIcons['check-circle'];
     };
 
-    // Get type class
-    const getTypeClass = () => {
-        const types = {
-            'success': 'confirmation-alert-success',
-            'error': 'confirmation-alert-error',
-            'warning': 'confirmation-alert-warning',
-            'info': 'confirmation-alert-info'
-        };
-        return types[type] || 'confirmation-alert-success';
+    // Position styles
+    const positionStyles = {
+        'top-right': { top: '20px', right: '20px', transform: 'translateX(calc(100% + 20px))' },
+        'top-left': { top: '20px', left: '20px', transform: 'translateX(calc(-100% - 20px))' },
+        'bottom-right': { bottom: '20px', right: '20px', transform: 'translateX(calc(100% + 20px))' },
+        'bottom-left': { bottom: '20px', left: '20px', transform: 'translateX(calc(-100% - 20px))' },
+        'top-center': { top: '20px', left: '50%', transform: 'translateX(-50%) translateY(-100px)' },
+        'bottom-center': { bottom: '20px', left: '50%', transform: 'translateX(-50%) translateY(100px)' }
     };
 
-    // Create overlay
-    const overlay = document.createElement('div');
-    overlay.className = `confirmation-alert-overlay ${getTypeClass()}`;
-    
-    // Create container
-    const container = document.createElement('div');
-    container.className = 'confirmation-alert-container';
-    
-    // Build content
-    container.innerHTML = `
-        <div class="confirmation-alert-icon" style="color: ${iconColor}">
-            ${getIconHtml()}
-        </div>
-        <h3 class="confirmation-alert-title">${title}</h3>
-        <div class="confirmation-alert-message">${message}</div>
-        <button class="confirmation-alert-button" style="background: ${buttonColor}; box-shadow: 0 4px 16px ${buttonColor}40;">
-            ${buttonText}
-        </button>
-        ${options.autoClose !== false ? `
-            <div class="confirmation-alert-progress">
-                <div class="confirmation-alert-progress-bar" style="background: ${iconColor};"></div>
-            </div>
-        ` : ''}
+    const pos = positionStyles[position] || positionStyles['top-right'];
+
+    // Create toast container if it doesn't exist
+    let container = document.getElementById('confirmation-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'confirmation-toast-container';
+        container.className = 'confirmation-toast-container';
+        container.style.cssText = `
+            position: fixed;
+            z-index: 99999;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 450px;
+            width: 100%;
+            ${position === 'top-right' || position === 'top-left' || position === 'top-center' ? 'top: 20px;' : 'bottom: 20px;'}
+            ${position === 'top-right' || position === 'bottom-right' ? 'right: 20px;' : ''}
+            ${position === 'top-left' || position === 'bottom-left' ? 'left: 20px;' : ''}
+            ${position === 'top-center' || position === 'bottom-center' ? 'left: 50%; transform: translateX(-50%);' : ''}
+        `;
+        document.body.appendChild(container);
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `confirmation-toast confirmation-toast-${type}`;
+    toast.style.cssText = `
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 18px 22px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+        border-left: 5px solid ${iconColor};
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        pointer-events: auto;
+        opacity: 0;
+        transform: ${pos.transform};
+        transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        max-width: 100%;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #f1f3f5;
+    `;
+
+    // Icon wrapper
+    const iconWrapper = document.createElement('div');
+    iconWrapper.className = 'confirmation-toast-icon';
+    iconWrapper.style.cssText = `
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: ${iconColor}12;
+        border-radius: 50%;
     `;
     
-    overlay.appendChild(container);
-    document.body.appendChild(overlay);
+    // Use Font Awesome icon
+    if (icon && icon.startsWith('fa-')) {
+        const faIcon = document.createElement('i');
+        faIcon.className = icon;
+        faIcon.style.cssText = `font-size: 20px; color: ${iconColor};`;
+        iconWrapper.appendChild(faIcon);
+    } else {
+        iconWrapper.innerHTML = getIconHtml();
+    }
+
+    // Content
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'confirmation-toast-content';
+    contentWrapper.style.cssText = `
+        flex: 1;
+        min-width: 0;
+        padding-top: 2px;
+    `;
+
+    let titleHtml = '';
+    if (title) {
+        titleHtml = `<div class="confirmation-toast-title" style="font-weight:600;font-size:15px;color:#1a1a2e;margin-bottom:3px;">${title}</div>`;
+    }
+
+    contentWrapper.innerHTML = `
+        ${titleHtml}
+        <div class="confirmation-toast-message" style="font-size:13px;color:#495057;line-height:1.6;word-wrap:break-word;">${message}</div>
+    `;
+
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'confirmation-toast-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        font-size: 22px;
+        color: #adb5bd;
+        cursor: pointer;
+        padding: 0 4px;
+        flex-shrink: 0;
+        line-height: 1;
+        transition: all 0.2s ease;
+        margin-top: -2px;
+    `;
+    closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.color = '#495057';
+        closeBtn.style.transform = 'scale(1.1)';
+    });
+    closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.color = '#adb5bd';
+        closeBtn.style.transform = 'scale(1)';
+    });
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeToast(e);
+    });
+
+    // Progress bar
+    const progressBar = document.createElement('div');
+    progressBar.className = 'confirmation-toast-progress';
+    progressBar.style.cssText = `
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: #e9ecef;
+    `;
     
-    // Store reference
-    modalContainer = overlay;
-    
+    const progressInner = document.createElement('div');
+    progressInner.className = 'confirmation-toast-progress-inner';
+    progressInner.style.cssText = `
+        height: 100%;
+        width: 100%;
+        background: ${iconColor};
+        animation: progress-shrink ${duration}ms linear forwards;
+        border-radius: 0 0 0 2px;
+    `;
+    progressBar.appendChild(progressInner);
+
+    // Build toast
+    toast.appendChild(iconWrapper);
+    toast.appendChild(contentWrapper);
+    toast.appendChild(closeBtn);
+    toast.appendChild(progressBar);
+
+    // Add to container
+    container.appendChild(toast);
+    toastElement = toast;
+
     // Trigger animation
     requestAnimationFrame(() => {
-        overlay.classList.add('active');
-    });
-    
-    // Add event listener to button
-    const button = container.querySelector('.confirmation-alert-button');
-    if (button) {
-        button.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            closeModal(e);
+        requestAnimationFrame(() => {
+            toast.classList.add('active');
+            toast.style.opacity = '1';
+            if (position === 'top-right' || position === 'bottom-right' || position === 'top-left' || position === 'bottom-left') {
+                toast.style.transform = 'translateX(0)';
+            } else if (position === 'top-center') {
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+            } else if (position === 'bottom-center') {
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+            }
         });
+    });
+
+    // Auto close
+    if (duration > 0) {
+        timeoutId = setTimeout(() => {
+            closeToast();
+        }, duration);
     }
-    
-    // Close on overlay click (but not on container click)
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            closeModal(e);
+
+    // Click on toast to dismiss
+    toast.addEventListener('click', (e) => {
+        if (e.target === toast) {
+            closeToast(e);
         }
     });
-    
-    // Close on Escape key
-    const handleKeyDown = (e) => {
-        if (e.key === 'Escape') {
-            closeModal(e);
-            document.removeEventListener('keydown', handleKeyDown);
-        }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    
-    // Return close function for manual control
+
+    // Return close function
     return {
-        close: closeModal,
-        element: overlay
+        close: closeToast,
+        element: toast
     };
 };
+
+export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirmText = 'OK', cancelText = 'Cancel', type = 'info' }) => {
+    let modalInstance
+
+    const footer = ({ closeModal }) => {
+        // If there's no onCancel provided, only show the confirm button
+        if (!onCancel && type !== 'confirm') {
+            return $({
+                tag: 'div',
+                style: { display: 'flex', gap: '12px', justifyContent: 'center' },
+                child: [
+                    $({
+                        tag: 'button',
+                        text: confirmText,
+                        style: {
+                            padding: '10px 30px',
+                            backgroundColor: getButtonColor(),
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            transition: 'all 0.2s ease'
+                        },
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                closeModal()
+                                if (onConfirm) onConfirm()
+                            }
+                        }
+                    })
+                ]
+            })
+        }
+        
+        return $({
+            tag: 'div',
+            style: { display: 'flex', gap: '12px', justifyContent: 'flex-end' },
+            child: [
+                $({
+                    tag: 'button',
+                    text: cancelText,
+                    style: {
+                        padding: '8px 20px',
+                        backgroundColor: '#444',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            closeModal()
+                            if (onCancel) onCancel()
+                        }
+                    }
+                }),
+                $({
+                    tag: 'button',
+                    text: confirmText,
+                    style: {
+                        padding: '8px 24px',
+                        backgroundColor: getButtonColor(),
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            closeModal()
+                            if (onConfirm) onConfirm()
+                        }
+                    }
+                })
+            ]
+        })
+    }
+    
+    // Helper function to get button color based on type
+    const getButtonColor = () => {
+        switch(type) {
+            case 'success':
+                return '#4CAF50' // Green
+            case 'error':
+                return '#f44336' // Red
+            case 'warning':
+                return '#ff9800' // Orange
+            case 'confirm':
+                return '#2196F3' // Blue
+            default:
+                return '#4CAF50' // Default green for info/success
+        }
+    }
+    
+    // Helper function to get icon based on type
+    const getIcon = () => {
+        switch(type) {
+            case 'success':
+                return { icon: 'fas fa-check-circle', color: '#4CAF50' }
+            case 'error':
+                return { icon: 'fas fa-times-circle', color: '#f44336' }
+            case 'warning':
+                return { icon: 'fas fa-exclamation-triangle', color: '#ff9800' }
+            case 'confirm':
+                return { icon: 'fas fa-question-circle', color: '#2196F3' }
+            default:
+                return { icon: 'fas fa-info-circle', color: '#4CAF50' }
+        }
+    }
+
+    const iconData = getIcon()
+    const content = $({
+        tag: 'div',
+        style: { textAlign: 'center', padding: '20px 0' },
+        child: [
+            $({ 
+                tag: 'i', 
+                att: { className: iconData.icon }, 
+                style: { fontSize: '48px', color: iconData.color, marginBottom: '16px', display: 'block' } 
+            }),
+            $({ tag: 'p', text: message, style: { color: '#ccc', fontSize: '15px', lineHeight: '1.5', margin: 0 } })
+        ]
+    })
+
+    modalInstance = CustomModal({
+        title,
+        content,
+        footer,
+        size: 'small',
+        closeOnOverlayClick: false
+    })
+
+    return modalInstance
+}
 
 export const CustomModal = ({
     title = 'Modal',
@@ -1802,151 +2082,6 @@ export const CustomModal = ({
     document.addEventListener('keydown', handleKey)
 
     return { closeModal, modalId, element: modalOverlay }
-}
-
-export const ConfirmationModal = ({ title, message, onConfirm, onCancel, confirmText = 'OK', cancelText = 'Cancel', type = 'info' }) => {
-    let modalInstance
-
-    const footer = ({ closeModal }) => {
-        // If there's no onCancel provided, only show the confirm button
-        if (!onCancel && type !== 'confirm') {
-            return $({
-                tag: 'div',
-                style: { display: 'flex', gap: '12px', justifyContent: 'center' },
-                child: [
-                    $({
-                        tag: 'button',
-                        text: confirmText,
-                        style: {
-                            padding: '10px 30px',
-                            backgroundColor: getButtonColor(),
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: '#fff',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            transition: 'all 0.2s ease'
-                        },
-                        event: {
-                            type: 'click',
-                            method: () => {
-                                closeModal()
-                                if (onConfirm) onConfirm()
-                            }
-                        }
-                    })
-                ]
-            })
-        }
-        
-        return $({
-            tag: 'div',
-            style: { display: 'flex', gap: '12px', justifyContent: 'flex-end' },
-            child: [
-                $({
-                    tag: 'button',
-                    text: cancelText,
-                    style: {
-                        padding: '8px 20px',
-                        backgroundColor: '#444',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        transition: 'all 0.2s ease'
-                    },
-                    event: {
-                        type: 'click',
-                        method: () => {
-                            closeModal()
-                            if (onCancel) onCancel()
-                        }
-                    }
-                }),
-                $({
-                    tag: 'button',
-                    text: confirmText,
-                    style: {
-                        padding: '8px 24px',
-                        backgroundColor: getButtonColor(),
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        transition: 'all 0.2s ease'
-                    },
-                    event: {
-                        type: 'click',
-                        method: () => {
-                            closeModal()
-                            if (onConfirm) onConfirm()
-                        }
-                    }
-                })
-            ]
-        })
-    }
-    
-    // Helper function to get button color based on type
-    const getButtonColor = () => {
-        switch(type) {
-            case 'success':
-                return '#4CAF50' // Green
-            case 'error':
-                return '#f44336' // Red
-            case 'warning':
-                return '#ff9800' // Orange
-            case 'confirm':
-                return '#2196F3' // Blue
-            default:
-                return '#4CAF50' // Default green for info/success
-        }
-    }
-    
-    // Helper function to get icon based on type
-    const getIcon = () => {
-        switch(type) {
-            case 'success':
-                return { icon: 'fas fa-check-circle', color: '#4CAF50' }
-            case 'error':
-                return { icon: 'fas fa-times-circle', color: '#f44336' }
-            case 'warning':
-                return { icon: 'fas fa-exclamation-triangle', color: '#ff9800' }
-            case 'confirm':
-                return { icon: 'fas fa-question-circle', color: '#2196F3' }
-            default:
-                return { icon: 'fas fa-info-circle', color: '#4CAF50' }
-        }
-    }
-
-    const iconData = getIcon()
-    const content = $({
-        tag: 'div',
-        style: { textAlign: 'center', padding: '20px 0' },
-        child: [
-            $({ 
-                tag: 'i', 
-                att: { className: iconData.icon }, 
-                style: { fontSize: '48px', color: iconData.color, marginBottom: '16px', display: 'block' } 
-            }),
-            $({ tag: 'p', text: message, style: { color: '#ccc', fontSize: '15px', lineHeight: '1.5', margin: 0 } })
-        ]
-    })
-
-    modalInstance = CustomModal({
-        title,
-        content,
-        footer,
-        size: 'small',
-        closeOnOverlayClick: false
-    })
-
-    return modalInstance
 }
 
 export const AlertModal = ({ title, message, onClose, buttonText = 'OK' }) => {
