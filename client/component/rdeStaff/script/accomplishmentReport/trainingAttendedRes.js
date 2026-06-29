@@ -64,19 +64,6 @@ export const trainingsAttended = () => {
         'Local'
     ]
 
-    const showLoading = () => {
-        if (!loadingElement) {
-            loadingElement = Waiting()
-            document.body.appendChild(loadingElement)
-        }
-    }
-    const hideLoading = () => {
-        if (loadingElement) {
-            loadingElement.remove()
-            loadingElement = null
-        }
-    }
-
     const fetchAttendedData = async (cursor = null) => {
         if (isLoading) return
 
@@ -86,8 +73,11 @@ export const trainingsAttended = () => {
 
         isLoading = true
 
+        // Show loading only on initial load (no cursor)
+        let waitingElement = null;
         if (!cursor) {
-            showLoading()
+            waitingElement = Waiting();
+            document.body.appendChild(waitingElement);
             attendedData = []
             filteredData = []
             hasMore = true
@@ -171,7 +161,11 @@ export const trainingsAttended = () => {
             }
         } finally {
             isLoading = false
-            hideLoading()
+            
+            // Remove loading element if it was shown (initial load only)
+            if (!cursor && waitingElement && waitingElement.parentNode) {
+                waitingElement.parentNode.removeChild(waitingElement);
+            }
         }
     }
 
@@ -513,26 +507,184 @@ export const trainingsAttended = () => {
             { key: 'program', label: 'Program', icon: 'fa-solid fa-calendar-alt', color: '#7c3aed' }
         ]
         
+        // Helper function to get download URL from preview URL
+        const getDownloadUrl = (previewUrl) => {
+            // Convert preview URL to download URL
+            // From: https://drive.google.com/file/d/{fileId}/preview
+            // To: https://drive.google.com/uc?id={fileId}&export=download
+            const match = previewUrl.match(/\/d\/([^/]+)/);
+            if (match && match[1]) {
+                return `https://drive.google.com/uc?id=${match[1]}&export=download`;
+            }
+            return previewUrl; // Fallback to original URL
+        }
+        
+        // Helper function to get file name from URL
+        const getFileName = (url) => {
+            const match = url.match(/\/d\/([^/]+)/);
+            return match ? `Document-${match[1].substring(0, 8)}` : 'Document';
+        }
+        
+        // Helper function to open file preview in CustomModal
+        const openFilePreview = (url, label) => {
+            const fileName = getFileName(url);
+            const downloadUrl = getDownloadUrl(url);
+            
+            // Use Google Drive preview URL directly in iframe
+            const previewContent = $({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px'
+                },
+                child: [
+                    // File info header
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '12px 16px',
+                            backgroundColor: '#f8fafc',
+                            borderRadius: '10px',
+                            border: '1px solid #e8ecf0',
+                            flexShrink: 0
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-file-pdf' },
+                                style: {
+                                    fontSize: '20px',
+                                    color: '#64748b'
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: `${label} Document`,
+                                style: {
+                                    fontSize: '14px',
+                                    color: '#1a2a3a',
+                                    fontWeight: '500',
+                                    flex: 1
+                                }
+                            }),
+                            // Download button
+                            $({
+                                tag: 'a',
+                                att: {
+                                    href: downloadUrl,
+                                    target: '_blank',
+                                    rel: 'noopener noreferrer'
+                                },
+                                style: {
+                                    padding: '8px 16px',
+                                    backgroundColor: '#1a73e8',
+                                    color: '#ffffff',
+                                    borderRadius: '8px',
+                                    textDecoration: 'none',
+                                    fontSize: '13px',
+                                    fontWeight: '500',
+                                    transition: 'all 0.2s ease',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-download' },
+                                        style: { fontSize: '12px' }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: 'Download'
+                                    })
+                                ],
+                                event: {
+                                    type: 'mouseenter',
+                                    method: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#1557b0'
+                                    },
+                                    type2: 'mouseleave',
+                                    method2: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#1a73e8'
+                                    }
+                                }
+                            })
+                        ]
+                    }),
+                    
+                    // Google Drive Preview iframe
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '100%',
+                            flex: 1,
+                            minHeight: '500px',
+                            backgroundColor: '#f8fafc',
+                            borderRadius: '12px',
+                            border: '1px solid #e8ecf0',
+                            overflow: 'hidden'
+                        },
+                        child: [
+                            $({
+                                tag: 'iframe',
+                                att: {
+                                    src: url,
+                                    frameborder: '0',
+                                    allowfullscreen: 'true'
+                                },
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    minHeight: '500px',
+                                    border: 'none',
+                                    borderRadius: '12px'
+                                }
+                            })
+                        ]
+                    })
+                ]
+            })
+            
+            // Show in CustomModal
+            CustomModal({
+                title: `Preview: ${label} Document`,
+                content: previewContent,
+                size: 'large',
+                closeOnOverlayClick: true
+            })
+        }
+        
         linkMap.forEach(({ key, label, icon, color }) => {
             const value = links[key]
             if (value && value.length > 0) {
                 const link = $({
-                    tag: 'a',
+                    tag: 'button',
                     att: {
-                        href: value,
-                        target: '_blank',
-                        title: label
+                        type: 'button',
+                        title: `Preview ${label}`
                     },
                     style: {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
                         color: color,
+                        backgroundColor: 'transparent',
+                        border: 'none',
                         textDecoration: 'none',
                         fontSize: '12px',
                         padding: '2px 6px',
                         borderRadius: '4px',
-                        transition: 'all 0.2s ease'
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        fontFamily: 'inherit',
+                        textAlign: 'left'
                     },
                     child: [
                         $({
@@ -546,12 +698,18 @@ export const trainingsAttended = () => {
                         })
                     ],
                     event: {
-                        type: 'mouseenter',
+                        type: 'click',
                         method: (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            openFilePreview(value, label)
+                        },
+                        type2: 'mouseenter',
+                        method2: (e) => {
                             e.currentTarget.style.backgroundColor = '#f1f3f4'
                         },
-                        type2: 'mouseleave',
-                        method2: (e) => {
+                        type3: 'mouseleave',
+                        method3: (e) => {
                             e.currentTarget.style.backgroundColor = 'transparent'
                         }
                     }
@@ -918,8 +1076,11 @@ export const trainingsAttended = () => {
         const confirmed = confirm('Are you sure you want to delete this training/seminar record?')
         if (!confirmed) return
 
+        // Create and show loading using your custom Waiting component
+        const waitingElement = Waiting();
+        document.body.appendChild(waitingElement);
+
         try {
-            showLoading()
             const formData = new FormData()
             formData.append('action', 'delete_attended')
             formData.append('id', item.id)
@@ -941,7 +1102,10 @@ export const trainingsAttended = () => {
             console.error('Error deleting training:', error)
             showNotification('Error connecting to server', 'error')
         } finally {
-            hideLoading()
+            // Remove the loading element
+            if (waitingElement && waitingElement.parentNode) {
+                waitingElement.parentNode.removeChild(waitingElement);
+            }
         }
     }
 
@@ -952,154 +1116,21 @@ export const trainingsAttended = () => {
 
         const isEditing = item !== null
 
+        let attendeesString = '';
         if (isEditing && item.attendees) {
             try {
-                attendees = typeof item.attendees === 'string' ? JSON.parse(item.attendees) : item.attendees
-                if (!Array.isArray(attendees)) attendees = []
+                const attendeesArray = typeof item.attendees === 'string' ? JSON.parse(item.attendees) : item.attendees;
+                if (Array.isArray(attendeesArray)) {
+                    const names = attendeesArray.map(a => {
+                        if (typeof a === 'string') return a;
+                        if (a && a.name) return a.name;
+                        return '';
+                    }).filter(n => n);
+                    attendeesString = names.join(', ');
+                }
             } catch (e) {
-                attendees = []
+                attendeesString = '';
             }
-        }
-        if (attendees.length === 0) {
-            attendees = [{ name: '', position: '' }]
-        }
-        let attendeesContainer
-
-        // Function to add an attendee field
-        const addAttendeeField = (name = '', position = '') => {
-            const attendeeIndex = attendees.length
-            attendees.push({ name, position })
-
-            const attendeeRow = $({
-                tag: 'div',
-                att: { className: 'attendee-row', 'data-attendee-index': attendeeIndex },
-                style: {
-                    display: 'flex',
-                    gap: '8px',
-                    marginBottom: '8px',
-                    alignItems: 'center'
-                },
-                child: [
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'text',
-                            placeholder: 'Attendee name',
-                            value: name,
-                            className: 'attendee-name-input'
-                        },
-                        style: {
-                            flex: '2',
-                            padding: '10px 14px',
-                            backgroundColor: '#f8f9fa',
-                            border: '2px solid #e8eaed',
-                            borderRadius: '8px',
-                            color: '#202124',
-                            fontSize: '14px',
-                            outline: 'none',
-                            transition: 'all 0.2s ease',
-                            fontFamily: 'inherit'
-                        },
-                        event: {
-                            type: 'focus',
-                            method: (e) => {
-                                e.target.style.borderColor = '#1a73e8'
-                                e.target.style.backgroundColor = '#ffffff'
-                                e.target.style.boxShadow = '0 0 0 4px rgba(26,115,232,0.1)'
-                            },
-                            type2: 'blur',
-                            method2: (e) => {
-                                e.target.style.borderColor = '#e8eaed'
-                                e.target.style.backgroundColor = '#f8f9fa'
-                                e.target.style.boxShadow = 'none'
-                            },
-                            type3: 'input',
-                            method3: (e) => {
-                                if (attendees[attendeeIndex]) {
-                                    attendees[attendeeIndex].name = e.target.value
-                                }
-                            }
-                        }
-                    }),
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'text',
-                            placeholder: 'Position/Designation (optional)',
-                            value: position,
-                            className: 'attendee-position-input'
-                        },
-                        style: {
-                            flex: '1',
-                            padding: '10px 14px',
-                            backgroundColor: '#f8f9fa',
-                            border: '2px solid #e8eaed',
-                            borderRadius: '8px',
-                            color: '#202124',
-                            fontSize: '14px',
-                            outline: 'none',
-                            transition: 'all 0.2s ease',
-                            fontFamily: 'inherit'
-                        },
-                        event: {
-                            type: 'focus',
-                            method: (e) => {
-                                e.target.style.borderColor = '#1a73e8'
-                                e.target.style.backgroundColor = '#ffffff'
-                                e.target.style.boxShadow = '0 0 0 4px rgba(26,115,232,0.1)'
-                            },
-                            type2: 'blur',
-                            method2: (e) => {
-                                e.target.style.borderColor = '#e8eaed'
-                                e.target.style.backgroundColor = '#f8f9fa'
-                                e.target.style.boxShadow = 'none'
-                            },
-                            type3: 'input',
-                            method3: (e) => {
-                                if (attendees[attendeeIndex]) {
-                                    attendees[attendeeIndex].position = e.target.value
-                                }
-                            }
-                        }
-                    }),
-                    $({
-                        tag: 'button',
-                        att: { type: 'button' },
-                        text: '×',
-                        style: {
-                            padding: '8px 14px',
-                            backgroundColor: '#f1f3f4',
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: '#5f6368',
-                            fontSize: '18px',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            transition: 'all 0.2s ease',
-                            lineHeight: '1'
-                        },
-                        event: {
-                            type: 'click',
-                            method: () => {
-                                attendees.splice(attendeeIndex, 1)
-                                attendeeRow.remove()
-                            },
-                            type2: 'mouseenter',
-                            method2: (e) => {
-                                e.currentTarget.style.backgroundColor = '#ea4335'
-                                e.currentTarget.style.color = '#ffffff'
-                            },
-                            type3: 'mouseleave',
-                            method3: (e) => {
-                                e.currentTarget.style.backgroundColor = '#f1f3f4'
-                                e.currentTarget.style.color = '#5f6368'
-                            }
-                        }
-                    })
-                ]
-            })
-
-            return attendeeRow
         }
 
         const createDocumentUploader = (label, inputName, existingFile) => {
@@ -1122,55 +1153,54 @@ export const trainingsAttended = () => {
                 showPreview: true,
                 id: uploadId,
                 onFileSelect: (files, allFiles) => {
-                    // When a file is selected, store it in the form data
                     const fileInput = document.getElementById(`${inputName}-actual-input`);
                     if (fileInput && files.length > 0) {
-                        // Create a DataTransfer to set the file
                         const dataTransfer = new DataTransfer();
                         dataTransfer.items.add(files[0]);
                         fileInput.files = dataTransfer.files;
                         
-                        // Trigger change event
                         const event = new Event('change', { bubbles: true });
                         fileInput.dispatchEvent(event);
                     }
                 },
                 onFileRemove: (file, index, allFiles) => {
-                    // When a file is removed, clear the file input
                     const fileInput = document.getElementById(`${inputName}-actual-input`);
                     if (fileInput) {
                         fileInput.value = '';
-                        // Trigger change event
                         const event = new Event('change', { bubbles: true });
                         fileInput.dispatchEvent(event);
                     }
                 },
                 onFileView: (file, fileName) => {
-                    // Determine display name
                     let displayName = fileName;
+                    let fileUrl = typeof file === 'string' ? file : URL.createObjectURL(file);
+                    
                     if (!displayName) {
                         if (typeof file === 'string') {
-                            displayName = file.split('/').pop() || 'File';
+                            displayName = file.split('/').pop() || 'Document';
                         } else if (file instanceof File) {
                             displayName = file.name;
                         } else if (file && file.name) {
                             displayName = file.name;
                         } else {
-                            displayName = 'File';
+                            displayName = 'Document';
                         }
                     }
                     
-                    const isImage = typeof file === 'string' 
-                        ? /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(file)
-                        : file.type && file.type.startsWith('image/');
+                    // Check if it's a Google Drive URL
+                    const isGoogleDriveUrl = typeof file === 'string' && file.includes('drive.google.com');
                     
-                    const isPDF = typeof file === 'string'
-                        ? /\.pdf$/i.test(file)
-                        : file.type === 'application/pdf';
+                    // Get download URL from Google Drive preview URL
+                    const getDownloadUrl = (previewUrl) => {
+                        const match = previewUrl.match(/\/d\/([^/]+)/);
+                        if (match && match[1]) {
+                            return `https://drive.google.com/uc?id=${match[1]}&export=download`;
+                        }
+                        return previewUrl;
+                    };
                     
-                    let fileUrl = typeof file === 'string' ? file : URL.createObjectURL(file);
+                    const downloadUrl = isGoogleDriveUrl ? getDownloadUrl(fileUrl) : fileUrl;
                     
-                    // Determine file icon
                     const getFileIcon = (name) => {
                         if (/\.(pdf)$/i.test(name)) return 'fa-file-pdf';
                         if (/\.(doc|docx)$/i.test(name)) return 'fa-file-word';
@@ -1184,7 +1214,6 @@ export const trainingsAttended = () => {
                         return 'fa-file';
                     };
                     
-                    // Create content for the modal with better height management
                     const modalContent = $({
                         tag: 'div',
                         style: {
@@ -1192,18 +1221,13 @@ export const trainingsAttended = () => {
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '0',
-                            gap: '16px',
-                            minHeight: '500px' // Added minimum height
+                            gap: '16px'
                         },
                         child: [
                             // File info header
                             $({
                                 tag: 'div',
                                 style: {
-                                    width: '100%',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '12px',
@@ -1211,7 +1235,7 @@ export const trainingsAttended = () => {
                                     backgroundColor: '#f8fafc',
                                     borderRadius: '10px',
                                     border: '1px solid #e8ecf0',
-                                    flexShrink: 0 // Prevent header from shrinking
+                                    flexShrink: 0
                                 },
                                 child: [
                                     $({
@@ -1233,15 +1257,16 @@ export const trainingsAttended = () => {
                                             wordBreak: 'break-all'
                                         }
                                     }),
+                                    // Download button
                                     $({
                                         tag: 'a',
                                         att: {
-                                            href: fileUrl,
-                                            download: displayName,
-                                            target: '_blank'
+                                            href: downloadUrl,
+                                            target: '_blank',
+                                            rel: 'noopener noreferrer'
                                         },
                                         style: {
-                                            padding: '6px 14px',
+                                            padding: '8px 16px',
                                             backgroundColor: '#1a73e8',
                                             color: '#ffffff',
                                             borderRadius: '8px',
@@ -1251,7 +1276,8 @@ export const trainingsAttended = () => {
                                             transition: 'all 0.2s ease',
                                             display: 'inline-flex',
                                             alignItems: 'center',
-                                            gap: '6px'
+                                            gap: '6px',
+                                            flexShrink: 0
                                         },
                                         child: [
                                             $({
@@ -1278,14 +1304,14 @@ export const trainingsAttended = () => {
                                 ]
                             }),
                             
-                            // File preview - INCREASED HEIGHT
+                            // File preview - Use Google Drive preview for existing files
                             $({
                                 tag: 'div',
                                 style: {
                                     width: '100%',
                                     flex: 1,
-                                    minHeight: '500px', // Increased from 300px to 500px
-                                    maxHeight: 'calc(85vh - 180px)', // Increased from 80vh
+                                    minHeight: '500px',
+                                    maxHeight: 'calc(85vh - 180px)',
                                     backgroundColor: '#f8fafc',
                                     borderRadius: '12px',
                                     border: '1px solid #e8ecf0',
@@ -1295,21 +1321,25 @@ export const trainingsAttended = () => {
                                     justifyContent: 'center',
                                     position: 'relative'
                                 },
-                                child: isImage ? [
+                                child: isGoogleDriveUrl ? [
+                                    // Google Drive iframe preview
                                     $({
-                                        tag: 'img',
+                                        tag: 'iframe',
                                         att: {
                                             src: fileUrl,
-                                            alt: displayName
+                                            frameborder: '0',
+                                            allowfullscreen: 'true'
                                         },
                                         style: {
-                                            maxWidth: '100%',
-                                            maxHeight: '100%',
-                                            objectFit: 'contain',
-                                            padding: '12px'
+                                            width: '100%',
+                                            height: '100%',
+                                            minHeight: '500px',
+                                            border: 'none',
+                                            borderRadius: '12px'
                                         }
                                     })
-                                ] : isPDF ? [
+                                ] : [
+                                    // Newly uploaded file preview
                                     $({
                                         tag: 'iframe',
                                         att: {
@@ -1318,99 +1348,21 @@ export const trainingsAttended = () => {
                                         style: {
                                             width: '100%',
                                             height: '100%',
-                                            minHeight: '500px', // Added minHeight for iframe
+                                            minHeight: '500px',
                                             border: 'none'
                                         }
-                                    })
-                                ] : [
-                                    // For non-image, non-PDF files, show file info with download option
-                                    $({
-                                        tag: 'div',
-                                        style: {
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '16px',
-                                            padding: '40px',
-                                            width: '100%',
-                                            height: '100%'
-                                        },
-                                        child: [
-                                            $({
-                                                tag: 'span',
-                                                att: { className: `fa-solid ${getFileIcon(displayName)}` },
-                                                style: {
-                                                    fontSize: '64px',
-                                                    color: '#94a3b8'
-                                                }
-                                            }),
-                                            $({
-                                                tag: 'div',
-                                                text: 'Preview not available for this file type',
-                                                style: {
-                                                    fontSize: '16px',
-                                                    color: '#64748b',
-                                                    textAlign: 'center'
-                                                }
-                                            }),
-                                            $({
-                                                tag: 'a',
-                                                att: {
-                                                    href: fileUrl,
-                                                    download: displayName,
-                                                    target: '_blank'
-                                                },
-                                                style: {
-                                                    padding: '10px 24px',
-                                                    backgroundColor: '#1a73e8',
-                                                    color: '#ffffff',
-                                                    borderRadius: '10px',
-                                                    textDecoration: 'none',
-                                                    fontSize: '14px',
-                                                    fontWeight: '500',
-                                                    transition: 'all 0.2s ease',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '8px'
-                                                },
-                                                child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: { className: 'fa-solid fa-download' },
-                                                        style: { fontSize: '14px' }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: 'Download File'
-                                                    })
-                                                ],
-                                                event: {
-                                                    type: 'mouseenter',
-                                                    method: (e) => {
-                                                        e.currentTarget.style.backgroundColor = '#1557b0'
-                                                    },
-                                                    type2: 'mouseleave',
-                                                    method2: (e) => {
-                                                        e.currentTarget.style.backgroundColor = '#1a73e8'
-                                                    }
-                                                }
-                                            })
-                                        ]
                                     })
                                 ]
                             })
                         ]
                     });
                     
-                    // Show the modal with full size
                     const modal = CustomModal({
-                        title: displayName,
+                        title: `Preview: ${displayName}`,
                         content: modalContent,
-                        size: 'full', // Changed from 'large' to 'full' for maximum space
+                        size: 'large',
                         closeOnOverlayClick: true,
                         onClose: () => {
-                            // Revoke object URL if it was created
                             if (!(typeof file === 'string')) {
                                 setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
                             }
@@ -1419,7 +1371,6 @@ export const trainingsAttended = () => {
                 }
             });
             
-            // Create a wrapper div that contains the uploader and a hidden file input
             const wrapper = $({
                 tag: 'div',
                 style: {
@@ -1428,7 +1379,6 @@ export const trainingsAttended = () => {
                     gap: '0'
                 },
                 child: [
-                    // Hidden file input for form submission
                     $({
                         tag: 'input',
                         att: {
@@ -1439,7 +1389,6 @@ export const trainingsAttended = () => {
                         },
                         style: { display: 'none' }
                     }),
-                    // The DragDropUpload component
                     uploader.element
                 ]
             });
@@ -1679,7 +1628,7 @@ export const trainingsAttended = () => {
                                             style: { marginBottom: '24px' }
                                         }),
 
-                                        // Attendees section
+                                        // NEW: Attendees single entry field
                                         $({
                                             tag: 'div',
                                             style: { marginBottom: '24px' },
@@ -1688,11 +1637,30 @@ export const trainingsAttended = () => {
                                                     tag: 'div',
                                                     style: {
                                                         display: 'flex',
-                                                        justifyContent: 'space-between',
                                                         alignItems: 'center',
+                                                        gap: '12px',
                                                         marginBottom: '12px'
                                                     },
                                                     child: [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                width: '36px',
+                                                                height: '36px',
+                                                                borderRadius: '10px',
+                                                                backgroundColor: '#f3e8ff',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-users' },
+                                                                    style: { color: '#7c3aed', fontSize: '16px' }
+                                                                })
+                                                            ]
+                                                        }),
                                                         $({
                                                             tag: 'div',
                                                             child: [
@@ -1703,12 +1671,13 @@ export const trainingsAttended = () => {
                                                                         color: '#202124',
                                                                         fontSize: '14px',
                                                                         fontWeight: '600',
-                                                                        display: 'block'
+                                                                        display: 'block',
+                                                                        margin: 0
                                                                     }
                                                                 }),
                                                                 $({
                                                                     tag: 'span',
-                                                                    text: 'Add all attendees who participated',
+                                                                    text: 'Names Separated by commas..',
                                                                     style: {
                                                                         fontSize: '12px',
                                                                         color: '#5f6368',
@@ -1717,72 +1686,88 @@ export const trainingsAttended = () => {
                                                                     }
                                                                 })
                                                             ]
-                                                        }),
-                                                        $({
-                                                            tag: 'button',
-                                                            att: { type: 'button' },
-                                                            style: {
-                                                                padding: '8px 16px',
-                                                                backgroundColor: '#7c3aed',
-                                                                border: 'none',
-                                                                borderRadius: '8px',
-                                                                color: '#ffffff',
-                                                                fontSize: '13px',
-                                                                cursor: 'pointer',
-                                                                fontWeight: '500',
-                                                                transition: 'all 0.2s ease',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '6px',
-                                                                fontFamily: 'inherit'
-                                                            },
-                                                            child: [
-                                                                $({
-                                                                    tag: 'span',
-                                                                    att: { className: 'fa-solid fa-plus' },
-                                                                    style: { fontSize: '12px' }
-                                                                }),
-                                                                $({
-                                                                    tag: 'span',
-                                                                    text: 'Add Attendee'
-                                                                })
-                                                            ],
-                                                            event: {
-                                                                type: 'click',
-                                                                method: () => {
-                                                                    const newRow = addAttendeeField()
-                                                                    attendeesContainer.appendChild(newRow)
-                                                                },
-                                                                type2: 'mouseenter',
-                                                                method2: (e) => {
-                                                                    e.currentTarget.style.backgroundColor = '#6d28d9'
-                                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.3)'
-                                                                },
-                                                                type3: 'mouseleave',
-                                                                method3: (e) => {
-                                                                    e.currentTarget.style.backgroundColor = '#7c3aed'
-                                                                    e.currentTarget.style.boxShadow = 'none'
-                                                                }
-                                                            }
                                                         })
                                                     ]
                                                 }),
                                                 $({
-                                                    tag: 'div',
-                                                    att: { id: 'attendees-container' },
-                                                    style: {
-                                                        backgroundColor: '#f8f9fa',
-                                                        padding: '16px',
-                                                        borderRadius: '12px',
-                                                        border: '2px solid #e8eaed',
-                                                        minHeight: '50px'
+                                                    tag: 'textarea',
+                                                    att: {
+                                                        name: 'attendees_input',
+                                                        id: 'attendees-input',
+                                                        placeholder: 'Names Separated by commas..',
+                                                        required: true,
+                                                        rows: '4'
                                                     },
-                                                    elementHandler: (el) => {
-                                                        attendeesContainer = el
-                                                        // Populate existing attendees
-                                                        attendees.forEach(attendee => {
-                                                            attendeesContainer.appendChild(addAttendeeField(attendee.name, attendee.position))
-                                                        })
+                                                    text: attendeesString,
+                                                    style: {
+                                                        width: '100%',
+                                                        padding: '14px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        border: '2px solid #e8eaed',
+                                                        borderRadius: '10px',
+                                                        color: '#202124',
+                                                        fontSize: '14px',
+                                                        outline: 'none',
+                                                        transition: 'all 0.2s ease',
+                                                        fontFamily: 'inherit',
+                                                        resize: 'vertical',
+                                                        lineHeight: '1.6',
+                                                        minHeight: '100px'
+                                                    },
+                                                    event: {
+                                                        type: 'focus',
+                                                        method: (e) => {
+                                                            e.target.style.borderColor = '#7c3aed'
+                                                            e.target.style.backgroundColor = '#ffffff'
+                                                            e.target.style.boxShadow = '0 0 0 4px rgba(124,58,237,0.1)'
+                                                        },
+                                                        type2: 'blur',
+                                                        method2: (e) => {
+                                                            e.target.style.borderColor = '#e8eaed'
+                                                            e.target.style.backgroundColor = '#f8f9fa'
+                                                            e.target.style.boxShadow = 'none'
+                                                        },
+                                                        type3: 'input',
+                                                        method3: (e) => {
+                                                            // Auto-resize textarea
+                                                            e.target.style.height = 'auto';
+                                                            e.target.style.height = e.target.scrollHeight + 'px';
+                                                            
+                                                            // Preview parsed names
+                                                            const names = e.target.value.split(',').map(n => n.trim()).filter(n => n);
+                                                            const previewEl = document.getElementById('attendees-preview');
+                                                            if (previewEl) {
+                                                                if (names.length > 0) {
+                                                                    previewEl.style.display = 'flex';
+                                                                    previewEl.innerHTML = `
+                                                                        <span style="font-size: 12px; color: #7c3aed; font-weight: 600; margin-right: 8px;">
+                                                                            ${names.length} attendee${names.length > 1 ? 's' : ''} detected:
+                                                                        </span>
+                                                                        <span style="font-size: 12px; color: #5f6368;">
+                                                                            ${names.join(' • ')}
+                                                                        </span>
+                                                                    `;
+                                                                } else {
+                                                                    previewEl.style.display = 'none';
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }),
+                                                // Preview of parsed names
+                                                $({
+                                                    tag: 'div',
+                                                    att: { id: 'attendees-preview' },
+                                                    style: {
+                                                        display: attendeesString ? 'flex' : 'none',
+                                                        flexWrap: 'wrap',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        marginTop: '10px',
+                                                        padding: '10px 14px',
+                                                        backgroundColor: '#f3e8ff',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #e9d5ff'
                                                     }
                                                 })
                                             ]
@@ -2281,6 +2266,24 @@ export const trainingsAttended = () => {
             } else {
                 toggleLocationSelect('', '')
             }
+            
+            // Initialize attendee preview if there are existing attendees
+            const attendeesInput = document.getElementById('attendees-input');
+            if (attendeesInput && attendeesString) {
+                const names = attendeesString.split(',').map(n => n.trim()).filter(n => n);
+                const previewEl = document.getElementById('attendees-preview');
+                if (previewEl && names.length > 0) {
+                    previewEl.style.display = 'flex';
+                    previewEl.innerHTML = `
+                        <span style="font-size: 12px; color: #7c3aed; font-weight: 600; margin-right: 8px;">
+                            ${names.length} attendee${names.length > 1 ? 's' : ''} detected:
+                        </span>
+                        <span style="font-size: 12px; color: #5f6368;">
+                            ${names.join(' • ')}
+                        </span>
+                    `;
+                }
+            }
         }, 100)
     }
 
@@ -2363,6 +2366,7 @@ export const trainingsAttended = () => {
                                 }),
                                 $({
                                     tag: 'span',
+                                    att: { className: 'file-attached-text' },
                                     text: existingFile ? 'File attached' : 'No file attached',
                                     style: {
                                         fontSize: '11px',
@@ -2375,11 +2379,11 @@ export const trainingsAttended = () => {
                         }),
                         $({
                             tag: 'span',
-                            text: 'Required',
+                            text: required ? 'Required' : 'Optional',
                             style: {
                                 fontSize: '10px',
-                                color: '#ea4335',
-                                backgroundColor: '#fce8e6',
+                                color: required ? '#ea4335' : '#5f6368',
+                                backgroundColor: required ? '#fce8e6' : '#f1f3f4',
                                 padding: '2px 10px',
                                 borderRadius: '12px',
                                 fontWeight: '600',
@@ -2416,7 +2420,7 @@ export const trainingsAttended = () => {
                                     const file = e.target.files[0]
                                     if (file) {
                                         const fileNameSpan = document.getElementById(`${name}-filename`)
-                                        const statusSpan = e.currentTarget.closest('.modern-upload-card').querySelector('.upload-status')
+                                        const statusSpan = e.currentTarget.closest('.modern-upload-card')?.querySelector('.upload-status')
                                         if (fileNameSpan) {
                                             fileNameSpan.textContent = file.name
                                             fileNameSpan.style.color = '#1e8e3e'
@@ -2425,8 +2429,7 @@ export const trainingsAttended = () => {
                                             statusSpan.textContent = '✅ File selected'
                                             statusSpan.style.color = '#1e8e3e'
                                         }
-                                        // Update the file attached text
-                                        const attachText = e.currentTarget.closest('.modern-upload-card').querySelector('.file-attached-text')
+                                        const attachText = e.currentTarget.closest('.modern-upload-card')?.querySelector('.file-attached-text')
                                         if (attachText) {
                                             attachText.textContent = 'File ready to upload'
                                             attachText.style.color = '#1e8e3e'
@@ -2533,7 +2536,7 @@ export const trainingsAttended = () => {
                             marginTop: '4px'
                         },
                         child: [
-                            // View button
+                            // View button - Now using CustomModal
                             $({
                                 tag: 'button',
                                 att: { type: 'button' },
@@ -2569,7 +2572,237 @@ export const trainingsAttended = () => {
                                     type: 'click',
                                     method: (e) => {
                                         e.preventDefault()
-                                        window.open(existingFile, '_blank')
+                                        
+                                        // Get file info
+                                        const fileName = existingFile.split('/').pop() || 'Document'
+                                        const isImage = /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(existingFile)
+                                        const isPDF = /\.pdf$/i.test(existingFile)
+                                        
+                                        // Get file icon
+                                        const getFileIcon = (name) => {
+                                            if (/\.(pdf)$/i.test(name)) return 'fa-file-pdf'
+                                            if (/\.(doc|docx)$/i.test(name)) return 'fa-file-word'
+                                            if (/\.(xls|xlsx)$/i.test(name)) return 'fa-file-excel'
+                                            if (/\.(ppt|pptx)$/i.test(name)) return 'fa-file-powerpoint'
+                                            if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(name)) return 'fa-file-image'
+                                            return 'fa-file'
+                                        }
+                                        
+                                        // Create preview content
+                                        const previewContent = $({
+                                            tag: 'div',
+                                            style: {
+                                                width: '100%',
+                                                height: '100%',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '16px'
+                                            },
+                                            child: [
+                                                // File info header
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        padding: '12px 16px',
+                                                        backgroundColor: '#f8fafc',
+                                                        borderRadius: '10px',
+                                                        border: '1px solid #e8ecf0'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'span',
+                                                            att: { className: `fa-solid ${getFileIcon(fileName)}` },
+                                                            style: {
+                                                                fontSize: '20px',
+                                                                color: '#64748b'
+                                                            }
+                                                        }),
+                                                        $({
+                                                            tag: 'span',
+                                                            text: fileName,
+                                                            style: {
+                                                                fontSize: '14px',
+                                                                color: '#1a2a3a',
+                                                                fontWeight: '500',
+                                                                flex: 1,
+                                                                wordBreak: 'break-all'
+                                                            }
+                                                        }),
+                                                        $({
+                                                            tag: 'a',
+                                                            att: {
+                                                                href: existingFile,
+                                                                download: fileName,
+                                                                target: '_blank'
+                                                            },
+                                                            style: {
+                                                                padding: '6px 14px',
+                                                                backgroundColor: '#1a73e8',
+                                                                color: '#ffffff',
+                                                                borderRadius: '8px',
+                                                                textDecoration: 'none',
+                                                                fontSize: '13px',
+                                                                fontWeight: '500',
+                                                                transition: 'all 0.2s ease',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-download' },
+                                                                    style: { fontSize: '12px' }
+                                                                }),
+                                                                $({
+                                                                    tag: 'span',
+                                                                    text: 'Download'
+                                                                })
+                                                            ],
+                                                            event: {
+                                                                type: 'mouseenter',
+                                                                method: (e) => {
+                                                                    e.currentTarget.style.backgroundColor = '#1557b0'
+                                                                },
+                                                                type2: 'mouseleave',
+                                                                method2: (e) => {
+                                                                    e.currentTarget.style.backgroundColor = '#1a73e8'
+                                                                }
+                                                            }
+                                                        })
+                                                    ]
+                                                }),
+                                                
+                                                // File preview
+                                                $({
+                                                    tag: 'div',
+                                                    style: {
+                                                        width: '100%',
+                                                        minHeight: '400px',
+                                                        maxHeight: '65vh',
+                                                        backgroundColor: '#f8fafc',
+                                                        borderRadius: '12px',
+                                                        border: '1px solid #e8ecf0',
+                                                        overflow: 'hidden',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    },
+                                                    child: isImage ? [
+                                                        $({
+                                                            tag: 'img',
+                                                            att: {
+                                                                src: existingFile,
+                                                                alt: fileName
+                                                            },
+                                                            style: {
+                                                                maxWidth: '100%',
+                                                                maxHeight: '100%',
+                                                                objectFit: 'contain',
+                                                                padding: '12px'
+                                                            }
+                                                        })
+                                                    ] : isPDF ? [
+                                                        $({
+                                                            tag: 'iframe',
+                                                            att: {
+                                                                src: existingFile
+                                                            },
+                                                            style: {
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                minHeight: '400px',
+                                                                border: 'none'
+                                                            }
+                                                        })
+                                                    ] : [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                gap: '16px',
+                                                                padding: '40px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: `fa-solid ${getFileIcon(fileName)}` },
+                                                                    style: {
+                                                                        fontSize: '64px',
+                                                                        color: '#94a3b8'
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    text: 'Preview not available for this file type',
+                                                                    style: {
+                                                                        fontSize: '16px',
+                                                                        color: '#64748b',
+                                                                        textAlign: 'center'
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'a',
+                                                                    att: {
+                                                                        href: existingFile,
+                                                                        download: fileName,
+                                                                        target: '_blank'
+                                                                    },
+                                                                    style: {
+                                                                        padding: '10px 24px',
+                                                                        backgroundColor: '#1a73e8',
+                                                                        color: '#ffffff',
+                                                                        borderRadius: '10px',
+                                                                        textDecoration: 'none',
+                                                                        fontSize: '14px',
+                                                                        fontWeight: '500',
+                                                                        transition: 'all 0.2s ease',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '8px'
+                                                                    },
+                                                                    child: [
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            att: { className: 'fa-solid fa-download' },
+                                                                            style: { fontSize: '14px' }
+                                                                        }),
+                                                                        $({
+                                                                            tag: 'span',
+                                                                            text: 'Download File'
+                                                                        })
+                                                                    ],
+                                                                    event: {
+                                                                        type: 'mouseenter',
+                                                                        method: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#1557b0'
+                                                                        },
+                                                                        type2: 'mouseleave',
+                                                                        method2: (e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#1a73e8'
+                                                                        }
+                                                                    }
+                                                                })
+                                                            ]
+                                                        })
+                                                    ]
+                                                })
+                                            ]
+                                        })
+                                        
+                                        // Show in CustomModal
+                                        CustomModal({
+                                            title: fileName,
+                                            content: previewContent,
+                                            size: 'large',
+                                            closeOnOverlayClick: true
+                                        })
                                     },
                                     type2: 'mouseenter',
                                     method2: (e) => {
@@ -2585,8 +2818,12 @@ export const trainingsAttended = () => {
                             }),
                             // Download button
                             $({
-                                tag: 'button',
-                                att: { type: 'button' },
+                                tag: 'a',
+                                att: {
+                                    href: existingFile,
+                                    download: existingFile.split('/').pop() || 'document',
+                                    target: '_blank'
+                                },
                                 style: {
                                     flex: 1,
                                     padding: '8px 12px',
@@ -2602,7 +2839,8 @@ export const trainingsAttended = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '6px'
+                                    gap: '6px',
+                                    textDecoration: 'none'
                                 },
                                 child: [
                                     $({
@@ -2616,18 +2854,13 @@ export const trainingsAttended = () => {
                                     })
                                 ],
                                 event: {
-                                    type: 'click',
+                                    type: 'mouseenter',
                                     method: (e) => {
-                                        e.preventDefault()
-                                        window.open(existingFile, '_blank')
-                                    },
-                                    type2: 'mouseenter',
-                                    method2: (e) => {
                                         e.currentTarget.style.backgroundColor = '#e6f4ea'
                                         e.currentTarget.style.borderColor = '#34a853'
                                     },
-                                    type3: 'mouseleave',
-                                    method3: (e) => {
+                                    type2: 'mouseleave',
+                                    method2: (e) => {
                                         e.currentTarget.style.backgroundColor = 'transparent'
                                         e.currentTarget.style.borderColor = '#e8eaed'
                                     }
@@ -2639,7 +2872,6 @@ export const trainingsAttended = () => {
             ]
         })
     }
-
     const toggleLocationSelect = (type, selectedValue = '') => {
         const container = document.getElementById('location-select-container')
         if (!container) return
@@ -2765,13 +2997,19 @@ export const trainingsAttended = () => {
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_attended' : 'add_attended')
 
-        if (typeof attendees !== 'undefined') {
-            formData.append('attendees', JSON.stringify(attendees))
-        } else if (window.currentAttendees) {
-            formData.append('attendees', JSON.stringify(window.currentAttendees))
+        // Parse the comma-separated attendees input into a simple array of strings
+        const attendeesInput = document.getElementById('attendees-input');
+        if (attendeesInput) {
+            const namesString = attendeesInput.value.trim();
+            const namesArray = namesString.split(',').map(name => name.trim()).filter(name => name);
+            // Send as simple array of strings: ["Juan Pusong", "Juan Tamad"]
+            formData.append('attendees', JSON.stringify(namesArray));
         }
 
-        showLoading()
+        // Create and show loading using your custom Waiting component
+        const waitingElement = Waiting();
+        document.body.appendChild(waitingElement);
+
         try {
             const response = await fetch('/attendedResearch', { 
                 method: 'POST',
@@ -2794,7 +3032,9 @@ export const trainingsAttended = () => {
             console.error('Error saving training data:', error)
             showNotification('Error connecting to server', 'error')
         } finally {
-            hideLoading()
+            if (waitingElement && waitingElement.parentNode) {
+                waitingElement.parentNode.removeChild(waitingElement);
+            }
         }
     }
 

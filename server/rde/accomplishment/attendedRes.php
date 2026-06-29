@@ -31,7 +31,6 @@ require_once __DIR__ . '/../../db.php';
 
 date_default_timezone_set('Asia/Manila');
 
-// Helper function to get current quarter
 function getCurrentQuarter() {
     $month = date('n');
     $year = date('Y');
@@ -49,7 +48,6 @@ function getCurrentQuarter() {
     return "{$year} RDE {$quarter} Accomplishment Report";
 }
 
-// Helper function to clean folder names
 function cleanAttendedFolderName($name) {
     if (empty($name)) {
         return 'Untitled_' . time();
@@ -68,7 +66,6 @@ function cleanAttendedFolderName($name) {
     return $clean;
 }
 
-// Function to upload file to Google Drive for attended trainings
 function uploadAttendedFileToDrive($tempFilePath, $fileName, $documentType, $type, $location, $category, $title) {
     try {
         if (!file_exists($tempFilePath)) {
@@ -88,8 +85,6 @@ function uploadAttendedFileToDrive($tempFilePath, $fileName, $documentType, $typ
         
         // Get current quarter folder name (e.g., "2026 RDE 2nd Quarter Accomplishment Report")
         $quarterFolderName = getCurrentQuarter();
-        
-        // Clean names for folder structure
         $cleanLocation = cleanAttendedFolderName($location);
         $cleanCategory = cleanAttendedFolderName($category);
         $cleanTitle = cleanAttendedFolderName($title);
@@ -97,18 +92,28 @@ function uploadAttendedFileToDrive($tempFilePath, $fileName, $documentType, $typ
         // Get or create quarter root folder
         $quarterFolderId = getOrCreateRootFolder($drive, $quarterFolderName);
         
-        // Get or create "Attended Research" subfolder
-        $attendedResearchFolderId = getOrCreateSubFolder($drive, $quarterFolderId, 'Attended Research');
+        // Get or create "Faculty Research Training Attended" folder
+        $attendedResearchFolderId = getOrCreateSubFolder($drive, $quarterFolderId, 'Faculty Research Training Attended');
         
-        // Get or create training title folder
-        $titleFolderId = getOrCreateSubFolder($drive, $attendedResearchFolderId, $cleanTitle);
+        // ADDED: Get or create location/campus folder based on type and location
+        $locationFolderName = '';
+        if ($type === 'campus') {
+            $locationFolderName = $cleanLocation . ' Campus';
+        } elseif ($type === 'center') {
+            $locationFolderName = $cleanLocation;
+        } else {
+            $locationFolderName = $cleanLocation;
+        }
         
-        // Generate filename with document type prefix
+        $locationFolderId = getOrCreateSubFolder($drive, $attendedResearchFolderId, $locationFolderName);
+        
+        // Get or create title folder inside the location folder
+        $titleFolderId = getOrCreateSubFolder($drive, $locationFolderId, $cleanTitle);
+        
         $extension = pathinfo($fileName, PATHINFO_EXTENSION);
         $nameOnly = pathinfo($fileName, PATHINFO_FILENAME);
         $prefixedFileName = $documentType . '_' . $nameOnly . '.' . $extension;
         
-        // Upload file to training title folder
         error_log("Uploading $documentType file: $prefixedFileName to folder: $titleFolderId");
         $uploadResult = $drive->uploadFile($tempFilePath, $prefixedFileName, $titleFolderId);
         
@@ -132,6 +137,7 @@ function uploadAttendedFileToDrive($tempFilePath, $fileName, $documentType, $typ
             'drive_download_url' => $downloadUrl,
             'drive_quarter_folder_id' => $quarterFolderId,
             'drive_attended_folder_id' => $attendedResearchFolderId,
+            'drive_location_folder_id' => $locationFolderId,
             'drive_title_folder_id' => $titleFolderId,
             'file_name' => $uploadResult['name'] ?? $fileName,
             'file_size' => $uploadResult['size'] ?? 0
@@ -174,7 +180,6 @@ function getOrCreateRootFolder($drive, $folderName) {
 
 function getOrCreateSubFolder($drive, $parentId, $folderName) {
     if (empty($parentId)) {
-        throw new Exception("Parent folder ID is required");
     }
     
     // Use findOrCreateFolder which supports Shared Drives
@@ -211,8 +216,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'fetch_attended') {
         
         $cursor = isset($_POST['cursor']) ? intval($_POST['cursor']) : 0;
         $limit = 50;
-        
-        // Build WHERE conditions
+
         $whereConditions = [];
         $params = [];
         $types = "";
@@ -265,7 +269,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'fetch_attended') {
         $summaryResult = $summaryStmt->get_result();
         $summary = $summaryResult->fetch_assoc();
         
-        // Get paginated data
+        // Get paginated data - Select all columns including the document URLs
         $dataQuery = "SELECT * FROM attended_trainings $whereClause ORDER BY id DESC LIMIT ? OFFSET ?";
         $dataStmt = $con->prepare($dataQuery);
         
@@ -280,7 +284,11 @@ if (isset($_POST['action']) && $_POST['action'] === 'fetch_attended') {
         while ($row = $dataResult->fetch_assoc()) {
             // Decode JSON fields
             $row['attendees'] = json_decode($row['attendees'], true);
-            $row['paper_trail_links'] = json_decode($row['paper_trail_links'], true);
+            // The document URLs are already available in the row:
+            // memorandum_drive_view_url
+            // invitation_drive_view_url
+            // certificate_drive_view_url
+            // program_drive_view_url
             $data[] = $row;
         }
         
@@ -319,7 +327,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'add_attended') {
         
         $type = $_POST['type'] ?? '';
         $location = $_POST['location'] ?? '';
-        $attendees = $_POST['attendees'] ?? '[]';
+        $attendeesJson = $_POST['attendees'] ?? '[]';
         $title = $_POST['title'] ?? '';
         $category = $_POST['category'] ?? '';
         $date = $_POST['date'] ?? '';
@@ -332,11 +340,48 @@ if (isset($_POST['action']) && $_POST['action'] === 'add_attended') {
             throw new Exception("Please fill in all required fields");
         }
         
-        // Validate attendees
-        $attendeesArray = json_decode($attendees, true);
-        if (empty($attendeesArray) || !is_array($attendeesArray)) {
-            throw new Exception("Please add at least one attendee");
+        // Validate attendees - accepts both array format and comma-separated string
+        $attendeesArray = [];
+        
+        // Check if attendees is already a JSON array
+        if (!empty($attendeesJson) && $attendeesJson !== '[]') {
+            $decodedAttendees = json_decode($attendeesJson, true);
+            if (is_array($decodedAttendees) && !empty($decodedAttendees)) {
+                // Handle both formats: array of objects [{name: "..."}] or array of strings ["..."]
+                foreach ($decodedAttendees as $attendee) {
+                    if (is_string($attendee)) {
+                        // Already a string
+                        $attendeesArray[] = $attendee;
+                    } elseif (is_array($attendee) && isset($attendee['name'])) {
+                        // Object with name property
+                        $attendeesArray[] = $attendee['name'];
+                    }
+                }
+            }
         }
+        
+        // If not parsed from JSON, try processing as comma-separated string
+        if (empty($attendeesArray) && isset($_POST['attendees_input'])) {
+            $attendeesInput = trim($_POST['attendees_input']);
+            if (!empty($attendeesInput)) {
+                // Split by comma and clean up names
+                $names = array_map('trim', explode(',', $attendeesInput));
+                $attendeesArray = array_filter($names, function($name) {
+                    return !empty($name);
+                });
+            }
+        }
+        
+        // Validate that we have at least one attendee
+        if (empty($attendeesArray)) {
+            throw new Exception("Please add at least one attendee. Enter names separated by commas (e.g., Dr. Michael John, Juan Tamad, Juan Pusong)");
+        }
+        
+        // Clean and normalize all names
+        $attendeesArray = array_values(array_map('trim', $attendeesArray));
+        
+        // Convert to JSON array of strings for database storage
+        $attendees = json_encode($attendeesArray);
         
         // Upload files to Google Drive
         $memorandumResult = null;
@@ -459,12 +504,21 @@ if (isset($_POST['action']) && $_POST['action'] === 'update_attended') {
         $id = $_POST['id'] ?? 0;
         $type = $_POST['type'] ?? '';
         $location = $_POST['location'] ?? '';
-        $attendees = $_POST['attendees'] ?? '[]';
+        $attendeesJson = $_POST['attendees'] ?? '[]';
         $title = $_POST['title'] ?? '';
         $category = $_POST['category'] ?? '';
         $date = $_POST['date'] ?? '';
         $venue = $_POST['venue'] ?? '';
         $sponsoringAgency = $_POST['sponsoringAgency'] ?? '';
+        
+        // Validate required fields
+        if (empty($id)) {
+            throw new Exception("Record ID is required");
+        }
+        
+        if (empty($type) || empty($location) || empty($title) || empty($category) || empty($date) || empty($venue) || empty($sponsoringAgency)) {
+            throw new Exception("Please fill in all required fields");
+        }
         
         // Get existing record
         $existingStmt = $con->prepare("SELECT * FROM attended_trainings WHERE id = ?");
@@ -475,6 +529,49 @@ if (isset($_POST['action']) && $_POST['action'] === 'update_attended') {
         if (!$existing) {
             throw new Exception("Record not found");
         }
+        
+        // Validate attendees - accepts both array format and comma-separated string
+        $attendeesArray = [];
+        
+        // Check if attendees is already a JSON array
+        if (!empty($attendeesJson) && $attendeesJson !== '[]') {
+            $decodedAttendees = json_decode($attendeesJson, true);
+            if (is_array($decodedAttendees) && !empty($decodedAttendees)) {
+                // Handle both formats: array of objects [{name: "..."}] or array of strings ["..."]
+                foreach ($decodedAttendees as $attendee) {
+                    if (is_string($attendee)) {
+                        // Already a string
+                        $attendeesArray[] = $attendee;
+                    } elseif (is_array($attendee) && isset($attendee['name'])) {
+                        // Object with name property
+                        $attendeesArray[] = $attendee['name'];
+                    }
+                }
+            }
+        }
+        
+        // If not parsed from JSON, try processing as comma-separated string
+        if (empty($attendeesArray) && isset($_POST['attendees_input'])) {
+            $attendeesInput = trim($_POST['attendees_input']);
+            if (!empty($attendeesInput)) {
+                // Split by comma and clean up names
+                $names = array_map('trim', explode(',', $attendeesInput));
+                $attendeesArray = array_filter($names, function($name) {
+                    return !empty($name);
+                });
+            }
+        }
+        
+        // Validate that we have at least one attendee
+        if (empty($attendeesArray)) {
+            throw new Exception("Please add at least one attendee. Enter names separated by commas (e.g., Dr. Michael John, Juan Tamad, Juan Pusong)");
+        }
+        
+        // Clean and normalize all names
+        $attendeesArray = array_values(array_map('trim', $attendeesArray));
+        
+        // Convert to JSON array of strings for database storage
+        $attendees = json_encode($attendeesArray);
         
         // Upload new files if provided
         $memorandumResult = null;
