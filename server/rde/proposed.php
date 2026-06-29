@@ -101,10 +101,10 @@ class ProposedResearchAPI {
     
     private function getRevisionStatusDisplay($revisionStatus) {
         $statusMap = [
-            'revision_pending' => 'Pending Revision',
-            'revision_submitted' => 'Revised Submitted',
-            'revision_accepted' => 'Revision Accepted',
-            'revision_rejected' => 'Revision Rejected'
+            'revision_pending' => 'Pending Paper Revision',
+            'revision_submitted' => 'Revision Paper Submitted',
+            'revision_accepted' => 'Accepted Paper Revision',
+            'revision_rejected' => 'Paper Revision Rejected'
         ];
         
         return $statusMap[$revisionStatus] ?? $revisionStatus;
@@ -174,6 +174,8 @@ class ProposedResearchAPI {
                         rf.revised_drive_download_url,
                         rf.date_started,
                         rf.date_completed,
+                        rf.presented_inhouse,
+                        rf.confirm_by_inhouse,
                         en.id as endorsement_id,
                         en.status as endorsement_status,
                         en.date as endorsement_date,
@@ -216,7 +218,6 @@ class ProposedResearchAPI {
             
             foreach ($rows as $row) {
                 // Determine event type from MULTIPLE sources
-                // Priority: 1) researchfile.event, 2) endorsement.event, 3) event_list
                 $eventType = 'other';
                 $eventNameForType = '';
                 
@@ -354,6 +355,12 @@ class ProposedResearchAPI {
                     $revisionStatus = $row['revision_status'] ?? 'revision_pending';
                     $revisionStatusDisplay = $this->getRevisionStatusDisplay($revisionStatus);
                     
+                    // Get confirm by user email if exists
+                    $confirmByEmail = '';
+                    if (!empty($row['confirm_by_inhouse'])) {
+                        $confirmByEmail = $this->getUserEmail($row['confirm_by_inhouse']);
+                    }
+                    
                     // Build research entry
                     $researchEntry = [
                         'id' => $row['id'],
@@ -380,12 +387,13 @@ class ProposedResearchAPI {
                         'revised_drive_view_url' => $row['revised_drive_view_url'] ?? '',
                         'revised_drive_download_url' => $row['revised_drive_download_url'] ?? '',
                         'has_positions' => !empty($paperPositions),
-                        'endorsement_date' => $row['endorsement_date'] ?? ''
+                        'endorsement_date' => $row['endorsement_date'] ?? '',
+                        'presented_inhouse' => $row['presented_inhouse'] ?? 'pending_confirmation',
+                        'confirm_by_inhouse' => $row['confirm_by_inhouse'] ?? '',
+                        'confirm_by_email' => $confirmByEmail
                     ];
                     
                     // Set status columns based on event type
-                    // For the 2026 records (38th University Faculty In-House Review = inhouse)
-                    // For the 2024 records (42nd Annual RDE Faculty Symposium = symposium)
                     if ($eventType === 'inhouse') {
                         $researchEntry['inhouseUniversity'] = $revisionStatusDisplay;
                         $researchEntry['symposiumUniversity'] = '';
@@ -393,7 +401,6 @@ class ProposedResearchAPI {
                         $researchEntry['symposiumUniversity'] = $revisionStatusDisplay;
                         $researchEntry['inhouseUniversity'] = '';
                     } else {
-                        // For unknown types, try to determine from event name
                         $eventNameLower = strtolower($eventInfo['name'] ?? '');
                         if (strpos($eventNameLower, 'in-house') !== false || strpos($eventNameLower, 'inhouse') !== false) {
                             $researchEntry['inhouseUniversity'] = $revisionStatusDisplay;
@@ -402,7 +409,6 @@ class ProposedResearchAPI {
                             $researchEntry['symposiumUniversity'] = $revisionStatusDisplay;
                             $researchEntry['inhouseUniversity'] = '';
                         } else {
-                            // Default: show in both if we can't determine
                             $researchEntry['inhouseUniversity'] = $revisionStatusDisplay;
                             $researchEntry['symposiumUniversity'] = $revisionStatusDisplay;
                         }
@@ -425,6 +431,285 @@ class ProposedResearchAPI {
         
         echo json_encode($this->response);
     }
+
+    public function fetchInhouseProposals() {
+        try {
+            $statusFilter = $_GET['status'] ?? $_POST['status'] ?? 'pending_confirmation';
+            
+            // Build query to fetch in-house review proposals with JOIN to get staff info
+            $query = "SELECT 
+                        rf.id,
+                        rf.title,
+                        rf.author,
+                        rf.coauthor,
+                        rf.paper_trail_no,
+                        rf.event as event_name,
+                        rf.category,
+                        rf.campus,
+                        rf.center,
+                        rf.presented_inhouse,
+                        rf.confirm_by_inhouse,
+                        rf.date_started,
+                        en.id as endorsement_id,
+                        en.date as endorsement_date,
+                        en.status as endorsement_status,
+                        rd.email as confirm_by_email,
+                        rd.username as confirm_by_username
+                    FROM researchfile rf
+                    LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                    LEFT JOIN rdestaff rd ON rf.confirm_by_inhouse = rd.id
+                    WHERE rf.event LIKE '%in-house%' OR rf.event LIKE '%In-house%' OR rf.event LIKE '%In House%'
+                    AND en.status = 'accepted'";
+            
+            // Add status filter
+            if ($statusFilter === 'pending_confirmation') {
+                $query .= " AND (rf.presented_inhouse IS NULL OR rf.presented_inhouse = '' OR rf.presented_inhouse = 'pending_confirmation')";
+            } elseif ($statusFilter === 'presented') {
+                $query .= " AND rf.presented_inhouse = 'proposal_presented'";
+            } elseif ($statusFilter === 'not_presented') {
+                $query .= " AND rf.presented_inhouse = 'proposal_not_presented'";
+            }
+            
+            $query .= " ORDER BY rf.date_started DESC, rf.id ASC";
+            
+            $result = $this->con->query($query);
+            
+            if (!$result) {
+                throw new Exception("Query failed: " . $this->con->error);
+            }
+            
+            $proposals = [];
+            $stats = [
+                'pending' => 0,
+                'presented' => 0,
+                'not_presented' => 0,
+                'total' => 0
+            ];
+            
+            while ($row = $result->fetch_assoc()) {
+                // Parse authors
+                $parsedAuthors = $this->parseAuthorsAndFaculty($row['author'], $row['coauthor']);
+                
+                // Determine presenter (first author or main author)
+                $presenter = $row['author'] ?? $parsedAuthors['all_researchers'][0] ?? 'N/A';
+                
+                // Get status display
+                $statusDisplay = $row['presented_inhouse'] ?? 'pending_confirmation';
+                $statusLabel = $this->getPresentationStatusLabel($statusDisplay);
+                
+                // Get confirm by info - prefer email, fallback to username
+                $confirmByDisplay = '';
+                if (!empty($row['confirm_by_email'])) {
+                    $confirmByDisplay = $row['confirm_by_email'];
+                } elseif (!empty($row['confirm_by_username'])) {
+                    $confirmByDisplay = $row['confirm_by_username'];
+                } elseif (!empty($row['confirm_by_inhouse'])) {
+                    // If we have an ID but no email/username, try to fetch it
+                    $confirmByDisplay = $this->getUserDisplayName($row['confirm_by_inhouse']);
+                }
+                
+                $proposals[] = [
+                    'id' => $row['id'],
+                    'paper_trail_no' => $row['paper_trail_no'] ?? 'N/A',
+                    'title' => $row['title'] ?? 'Untitled',
+                    'authors' => $parsedAuthors['authors_list'],
+                    'all_researchers' => $parsedAuthors['all_researchers'],
+                    'presenter' => $presenter,
+                    'status' => $statusDisplay,
+                    'status_label' => $statusLabel,
+                    'campus' => $row['campus'] ?? '',
+                    'category' => $row['category'] ?? '',
+                    'event_name' => $row['event_name'] ?? '',
+                    'endorsement_id' => $row['endorsement_id'],
+                    'endorsement_date' => $row['endorsement_date'],
+                    'confirm_by' => $row['confirm_by_inhouse'] ?? '',
+                    'confirm_by_display' => $confirmByDisplay,
+                    'date_started' => $row['date_started'] ?? ''
+                ];
+                
+                // Update stats
+                $stats['total']++;
+                if ($statusDisplay === 'pending_confirmation' || empty($statusDisplay)) {
+                    $stats['pending']++;
+                } elseif ($statusDisplay === 'proposal_presented') {
+                    $stats['presented']++;
+                } elseif ($statusDisplay === 'proposal_not_presented') {
+                    $stats['not_presented']++;
+                }
+            }
+            
+            $this->response->status = true;
+            $this->response->message = 'In-house proposals fetched successfully';
+            $this->response->data = $proposals;
+            $this->response->stats = $stats;
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
+            error_log("Error in fetchInhouseProposals: " . $e->getMessage());
+        }
+        
+        echo json_encode($this->response);
+    }
+
+    private function getUserDisplayName($userId) {
+        if (empty($userId)) {
+            return '';
+        }
+        
+        try {
+            // First try to get email
+            $query = "SELECT email, username FROM rdestaff WHERE id = ?";
+            $stmt = $this->con->prepare($query);
+            $stmt->bind_param("s", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                if (!empty($row['email'])) {
+                    return $row['email'];
+                }
+                if (!empty($row['username'])) {
+                    return $row['username'];
+                }
+            }
+            
+            // If not found in rdestaff, try account_detail
+            $query2 = "SELECT email, fullName FROM account_detail WHERE id = ?";
+            $stmt2 = $this->con->prepare($query2);
+            $stmt2->bind_param("s", $userId);
+            $stmt2->execute();
+            $result2 = $stmt2->get_result();
+            
+            if ($row2 = $result2->fetch_assoc()) {
+                if (!empty($row2['email'])) {
+                    return $row2['email'];
+                }
+                if (!empty($row2['fullName'])) {
+                    return $row2['fullName'];
+                }
+            }
+            
+            // If no email/username found, return the ID itself
+            return $userId;
+            
+        } catch (Exception $e) {
+            error_log("Error fetching user display name: " . $e->getMessage());
+            return $userId;
+        }
+    }
+
+    private function getUserEmail($userId) {
+        if (empty($userId)) {
+            return '';
+        }
+        
+        try {
+            $query = "SELECT email FROM rdestaff WHERE id = ?";
+            $stmt = $this->con->prepare($query);
+            $stmt->bind_param("s", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                return $row['email'] ?? '';
+            }
+            
+            // If not found in rdestaff, try account_detail
+            $query2 = "SELECT email FROM account_detail WHERE id = ?";
+            $stmt2 = $this->con->prepare($query2);
+            $stmt2->bind_param("s", $userId);
+            $stmt2->execute();
+            $result2 = $stmt2->get_result();
+            
+            if ($row2 = $result2->fetch_assoc()) {
+                return $row2['email'] ?? '';
+            }
+            
+            return '';
+        } catch (Exception $e) {
+            error_log("Error fetching user email: " . $e->getMessage());
+            return '';
+        }
+    }
+
+    private function getPresentationStatusLabel($status) {
+        $labels = [
+            'proposal_presented' => 'Presented',
+            'proposal_not_presented' => 'Not Presented',
+            'pending_confirmation' => 'Pending Confirmation'
+        ];
+        return $labels[$status] ?? 'Pending Confirmation';
+    }
+
+    public function updatePresentationStatus() {
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (!$input) {
+                $input = $_POST;
+            }
+            
+            $researchId = $input['research_id'] ?? 0;
+            $status = $input['status'] ?? ''; // 'proposal_presented' or 'proposal_not_presented'
+            $confirmBy = $input['confirm_by'] ?? '';
+            
+            if (!$researchId) {
+                $this->response->message = 'Research ID is required';
+                echo json_encode($this->response);
+                return;
+            }
+            
+            if (!in_array($status, ['proposal_presented', 'proposal_not_presented'])) {
+                $this->response->message = 'Invalid status. Must be proposal_presented or proposal_not_presented';
+                echo json_encode($this->response);
+                return;
+            }
+            
+            // Get user info if not provided
+            if (empty($confirmBy)) {
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                // Store the rdestaff.id in confirm_by_inhouse
+                $userId = $_SESSION['userId'] ?? $_SESSION['user_id'] ?? $_SESSION['username'] ?? '';
+                $confirmBy = $userId;
+            }
+            
+            // Update the researchfile - store the user ID (rdestaff.id)
+            $updateQuery = "UPDATE researchfile SET 
+                            presented_inhouse = ?, 
+                            confirm_by_inhouse = ?
+                        WHERE id = ?";
+            
+            $stmt = $this->con->prepare($updateQuery);
+            $stmt->bind_param("ssi", $status, $confirmBy, $researchId);
+            
+            if ($stmt->execute()) {
+                // Get the user's display name for the response
+                $displayName = $this->getUserDisplayName($confirmBy);
+                
+                $this->response->status = true;
+                $this->response->message = 'Presentation status updated successfully';
+                $this->response->data = [
+                    'research_id' => $researchId,
+                    'presented_inhouse' => $status,
+                    'confirm_by' => $confirmBy,
+                    'confirm_by_display' => $displayName,
+                    'status_label' => $this->getPresentationStatusLabel($status)
+                ];
+            } else {
+                throw new Exception("Failed to update status: " . $stmt->error);
+            }
+            
+            $stmt->close();
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
+            error_log("Update presentation status error: " . $e->getMessage());
+        }
+        
+        echo json_encode($this->response);
+    }
     
     // Get single research paper details with academic positions
     public function getResearchPaper($id) {
@@ -441,6 +726,8 @@ class ProposedResearchAPI {
                         rf.revision_status,
                         rf.revised_drive_view_url,
                         rf.revised_drive_download_url,
+                        rf.presented_inhouse,
+                        rf.confirm_by_inhouse,
                         en.id as endorsement_id,
                         en.status as endorsement_status
                     FROM researchfile rf
@@ -505,11 +792,13 @@ class ProposedResearchAPI {
                     'revision_status' => $row['revision_status'] ?? 'revision_pending',
                     'revised_drive_view_url' => $row['revised_drive_view_url'] ?? '',
                     'revised_drive_download_url' => $row['revised_drive_download_url'] ?? '',
-                    'academic_positions' => $academicPositions
+                    'academic_positions' => $academicPositions,
+                    'presented_inhouse' => $row['presented_inhouse'] ?? 'pending_confirmation',
+                    'confirm_by_inhouse' => $row['confirm_by_inhouse'] ?? ''
                 ];
                 
                 $this->response->status = true;
-                unset($this->response->stats); // Remove stats from single paper response
+                unset($this->response->stats);
                 $this->response->data = $paperDetails;
             } else {
                 $this->response->message = 'Research paper not found';
@@ -553,7 +842,6 @@ class ProposedResearchAPI {
             $params = [$researchId];
             $types = "i";
             
-            // Use eventName for filtering if provided, but make it optional as resid is the primary key
             if (!empty($eventType)) {
                 $query .= " AND (comments.eventType = ? OR comments.eventType LIKE ?)";
                 $params[] = $eventType;
@@ -584,7 +872,7 @@ class ProposedResearchAPI {
             }
             
             $this->response->status = true;
-            unset($this->response->stats); // Remove stats from comments response
+            unset($this->response->stats);
             $this->response->data = $comments;
             
         } catch (Exception $e) {
@@ -604,7 +892,7 @@ class ProposedResearchAPI {
             }
             
             $researchId = $input['research_id'] ?? 0;
-            $status = $input['status'] ?? ''; // 'revision_accepted' or 'revision_rejected'
+            $status = $input['status'] ?? '';
             
             if (!$researchId) {
                 $this->response->message = 'Research ID is required';
@@ -618,7 +906,6 @@ class ProposedResearchAPI {
                 return;
             }
             
-            // If revision is accepted, also mark as internally funded
             $fundedUpdate = "";
             if ($status === 'revision_accepted') {
                 $fundedUpdate = ", is_internally_funded = 1";
@@ -648,6 +935,7 @@ class ProposedResearchAPI {
         
         echo json_encode($this->response);
     }
+    
     public function rejectRevisedDocument() {
         try {
             if (session_status() === PHP_SESSION_NONE) {
@@ -669,8 +957,6 @@ class ProposedResearchAPI {
                 throw new Exception("Research ID or Endorsement ID is required");
             }
 
-            // Get endorsementid and event info from researchfile
-            // Try to find by rf.id first, then by rf.endorsementid if not found
             $infoQuery = "SELECT rf.id as research_id, rf.endorsementid, rf.event, rf.title FROM researchfile rf WHERE rf.id = ? OR rf.endorsementid = ?";
             $infoStmt = $this->con->prepare($infoQuery);
             $infoStmt->bind_param("ii", $researchId, $researchId);
@@ -682,17 +968,15 @@ class ProposedResearchAPI {
                 throw new Exception("Research record not found for ID: " . $researchId);
             }
             
-            $researchId = $infoRow['research_id']; // Ensure we use the correct researchfile ID
+            $researchId = $infoRow['research_id'];
             $endorsementId = $infoRow['endorsementid'];
             if (empty($type)) {
                 $type = 'Rejected Revised Submission: ' . ($infoRow['event'] ?? 'Unknown Event');
             }
             $infoStmt->close();
             
-            // Get user email or name for rejectedby
             $rejectedByName = 'Unknown';
             if (!empty($rejectedById)) {
-                // Try rdestaff first
                 $userQuery = "SELECT username, email FROM rdestaff WHERE id = ?";
                 $userStmt = $this->con->prepare($userQuery);
                 $userStmt->bind_param("s", $rejectedById);
@@ -701,7 +985,6 @@ class ProposedResearchAPI {
                 if ($userRow = $userResult->fetch_assoc()) {
                     $rejectedByName = $userRow['email'] ?: $userRow['username'];
                 } else {
-                    // Try account_detail if not in rdestaff
                     $userQuery2 = "SELECT fullName, email FROM account_detail WHERE id = ?";
                     $userStmt2 = $this->con->prepare($userQuery2);
                     $userStmt2->bind_param("s", $rejectedById);
@@ -715,10 +998,8 @@ class ProposedResearchAPI {
                 $userStmt->close();
             }
             
-            // Start transaction
             $this->con->begin_transaction();
 
-            // 1. Update researchfile status
             $updateQuery = "UPDATE researchfile SET revision_status = 'revision_rejected', last_revision_date = NOW() WHERE id = ?";
             $updateStmt = $this->con->prepare($updateQuery);
             $updateStmt->bind_param("i", $researchId);
@@ -727,7 +1008,6 @@ class ProposedResearchAPI {
             }
             $updateStmt->close();
 
-            // 2. Insert into rejecteddocs table
             $rejectedId = round(microtime(true) * 1000) . '';
             $insertQuery = "INSERT INTO rejecteddocs (id, docid, url, type, rejectedby, reason, date) VALUES (?, ?, ?, ?, ?, ?, NOW())";
             $insertStmt = $this->con->prepare($insertQuery);
@@ -738,7 +1018,6 @@ class ProposedResearchAPI {
             }
             $insertStmt->close();
 
-            // Commit transaction
             $this->con->commit();
 
             $this->response->status = true;
@@ -751,9 +1030,7 @@ class ProposedResearchAPI {
             ];
             
         } catch (Exception $e) {
-            // Rollback if there's an error (con->rollback() is safe even if no transaction)
             @$this->con->rollback();
-            
             $this->response->status = false;
             $this->response->message = 'Error: ' . $e->getMessage();
             error_log("Reject document error: " . $e->getMessage());
@@ -761,6 +1038,7 @@ class ProposedResearchAPI {
         
         echo json_encode($this->response);
     }
+    
     public function saveAcademicPositions() {
         try {
             $input = json_decode(file_get_contents('php://input'), true);
@@ -866,7 +1144,6 @@ class ProposedResearchAPI {
             
             $events = $this->getEvents();
             
-            // Count all accepted research, not just those with event_id
             $query = "SELECT 
                         rf.id,
                         rf.event_id,
@@ -884,7 +1161,6 @@ class ProposedResearchAPI {
                 while ($row = $result->fetch_assoc()) {
                     $eventType = 'other';
                     
-                    // Determine event type
                     if ($row['event_id'] && isset($events[$row['event_id']])) {
                         $eventType = $this->getEventType($events[$row['event_id']]['name']);
                     } elseif (!empty($row['event_name'])) {
@@ -899,7 +1175,6 @@ class ProposedResearchAPI {
                         $stats['symposium']++;
                     }
                     
-                    // Check if this year
                     $year = null;
                     if (!empty($row['event_date'])) {
                         $year = date('Y', strtotime($row['event_date']));
@@ -936,16 +1211,12 @@ if ($con->connect_error) {
     exit;
 }
 
-// Set charset to utf8mb4
 $con->set_charset("utf8mb4");
 
-// Create API instance
 $api = new ProposedResearchAPI($con);
 
-// Handle different actions based on request
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-// For JSON requests, try to get action from JSON body
 if (empty($action)) {
     $input = json_decode(file_get_contents('php://input'), true);
     if ($input && isset($input['action'])) {
@@ -956,6 +1227,14 @@ if (empty($action)) {
 switch ($action) {
     case 'fetch':
         $api->fetchProposedResearch();
+        break;
+        
+    case 'fetch_inhouse':
+        $api->fetchInhouseProposals();
+        break;
+        
+    case 'update_presentation':
+        $api->updatePresentationStatus();
         break;
         
     case 'get':
@@ -977,9 +1256,11 @@ switch ($action) {
     case 'update_revision_status':
         $api->updateRevisionStatus();
         break;
+        
     case 'reject_revised':
         $api->rejectRevisedDocument();
         break;
+        
     case 'save_positions':
         $api->saveAcademicPositions();
         break;

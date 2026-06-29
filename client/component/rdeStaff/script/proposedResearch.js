@@ -1,4 +1,5 @@
 import { $, Waiting, RejectCommentModal } from "../../../lib/lib.js"
+import { InhouseConfirmationModal } from './helperComponents/InhouseConfirmationModal.js';
 
 export const ProposedResearch = () => {
     let mainTableContainer
@@ -1954,7 +1955,7 @@ export const ProposedResearch = () => {
                 countSpan.textContent = `Showing ${filteredData.length} of ${totalCount} records`
             }
         }
-
+        const confirmModal = InhouseConfirmationModal();
         window.updateFilterCount = updateCount
 
         return $({
@@ -2172,6 +2173,58 @@ export const ProposedResearch = () => {
                                 type: 'change',
                                 method: (e) => {
                                     filterByStatus(e.target.value)
+                                }
+                            }
+                        }),
+                        $({
+                            tag: 'button',
+                            style: {
+                                padding: '8px 20px',
+                                backgroundColor: '#0d6efd',
+                                border: 'none',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-check-circle' },
+                                    style: {
+                                        fontSize: '14px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Confirm Presentations'
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    confirmModal.openModal();
+                                }
+                            },
+                            event2: {
+                                type: 'mouseenter',
+                                method: (e) => {
+                                    e.target.style.backgroundColor = '#0b5ed7';
+                                    e.target.style.transform = 'translateY(-1px)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(13, 110, 253, 0.3)';
+                                }
+                            },
+                            event3: {
+                                type: 'mouseleave',
+                                method: (e) => {
+                                    e.target.style.backgroundColor = '#0d6efd';
+                                    e.target.style.transform = 'translateY(0)';
+                                    e.target.style.boxShadow = 'none';
                                 }
                             }
                         })
