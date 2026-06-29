@@ -3159,10 +3159,10 @@ if (isset($_POST['researchFile'])) {
                     $data->id = intval($row['id']);
 
                     if (!empty($row['drive_view_url'])) {
-                        $data->file = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
+                        $data->file = filter_var($row['research_file_drive_view_url'], FILTER_SANITIZE_URL);
                         $data->file_type = 'drive';
                         $data->drive_file_id = htmlspecialchars($row['drive_file_id'] ?? '', ENT_QUOTES, 'UTF-8');
-                        $data->drive_download_url = filter_var($row['drive_download_url'] ?? '', ENT_QUOTES);
+                        $data->drive_download_url = filter_var($row['research_file_download_url'] ?? '', ENT_QUOTES);
                     } elseif (!empty($row['local_file'])) {
                         $data->file = htmlspecialchars($row['local_file'], ENT_QUOTES, 'UTF-8');
                         $data->file_type = 'local';
@@ -3303,7 +3303,7 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->category = $res['category'];
                 $researchDocs->researchFile = $res['file'];
                 $researchDocs->drive_file_id = $res['drive_file_id'];
-                $researchDocs->drive_download_url = $res['drive_download_url'];
+                $researchDocs->drive_download_url = $res['research_file_download_url'];
                 $researchDocs->drive_folder_id = $res['drive_folder_id'];
                 $researchDocs->drive_event_folder_id = $res['drive_event_folder_id'];
                 $researchDocs->drive_center_folder_id = $res['drive_center_folder_id'];
