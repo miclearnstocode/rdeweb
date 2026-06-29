@@ -165,47 +165,53 @@ export const SummaryAccomplishment = () => {
 
             const result = await response.json()
 
-            // Fetch training count from summaryAccomplishment API
-            let trainingCount = 0
+            // Fetch both training counts in a single call
+            let trainingConductedCount = 0
+            let trainingAttendedCount = 0
+            
             try {
-                const trainingFormData = new FormData()
-                trainingFormData.append('action', 'trainingConducted')
+                const bothCountsFormData = new FormData()
+                bothCountsFormData.append('action', 'bothCounts')
 
-                // Apply current filters to the training count
+                // Apply current filters
                 if (activeFilters.campus !== 'all') {
-                    trainingFormData.append('type', 'campus')
-                    trainingFormData.append('location', activeFilters.campus)
+                    bothCountsFormData.append('type', 'campus')
+                    bothCountsFormData.append('location', activeFilters.campus)
                 } else if (activeFilters.center !== 'all') {
-                    trainingFormData.append('type', 'center')
-                    trainingFormData.append('location', activeFilters.center)
+                    bothCountsFormData.append('type', 'center')
+                    bothCountsFormData.append('location', activeFilters.center)
                 } else {
-                    trainingFormData.append('type', 'All')
+                    bothCountsFormData.append('type', 'All')
                 }
 
-                const trainingResponse = await fetch('/summaryAccomplish', {
+                const bothCountsResponse = await fetch('/summaryAccomplish', {
                     method: 'POST',
-                    body: trainingFormData
+                    body: bothCountsFormData
                 })
 
-                const trainingResult = await trainingResponse.json()
+                const bothCountsResult = await bothCountsResponse.json()
 
-                if (trainingResult.status && trainingResult.data) {
-                    trainingCount = trainingResult.data.count || 0
+                if (bothCountsResult.status && bothCountsResult.data) {
+                    trainingConductedCount = bothCountsResult.data.conducted || 0
+                    trainingAttendedCount = bothCountsResult.data.attended || 0
+                    console.log('Training counts:', {
+                        conducted: trainingConductedCount,
+                        attended: trainingAttendedCount,
+                        filters: activeFilters
+                    })
                 }
-            } catch (trainingError) {
-                console.error('Error fetching training count:', trainingError)
+            } catch (countsError) {
+                console.error('Error fetching training counts:', countsError)
             }
 
             if (result.success && result.summary) {
                 const stats = {}
-                // Set default 0 for all stat keys
                 statsCards.forEach(card => { stats[card.key] = 0 })
-                // Map the backend summary values to the card keys
+                
                 stats.ongoingResearch = result.summary.totalOngoing ?? 0
                 stats.completedResearch = result.summary.completed ?? 0
-                // Use the training count from the dedicated API
-                stats.conductedResearch = trainingCount
-                stats.trainingsAttended = result.summary.trainingsAttended ?? 0
+                stats.conductedResearch = trainingConductedCount
+                stats.trainingsAttended = trainingAttendedCount
                 stats.igpResearch = result.summary.igpResearch ?? 0
                 stats.participationResearch = result.summary.participationResearch ?? 0
                 stats.facilitiesImprovement = result.summary.facilitiesImprovement ?? 0
@@ -213,18 +219,23 @@ export const SummaryAccomplishment = () => {
                 stats.publicationResearch = result.summary.publicationResearch ?? 0
                 stats.citationsResearch = result.summary.citationsResearch ?? 0
                 stats.ipAssets = result.summary.ipAssets ?? 0
+                
                 updateStatsCards(stats)
             } else {
-                // On failure, render cards with zeros but try to show training count
                 const zeroStats = {}
                 statsCards.forEach(card => {
-                    zeroStats[card.key] = card.key === 'conductedResearch' ? trainingCount : 0
+                    if (card.key === 'conductedResearch') {
+                        zeroStats[card.key] = trainingConductedCount
+                    } else if (card.key === 'trainingsAttended') {
+                        zeroStats[card.key] = trainingAttendedCount
+                    } else {
+                        zeroStats[card.key] = 0
+                    }
                 })
                 updateStatsCards(zeroStats)
             }
         } catch (error) {
             console.error('Error fetching summary data:', error)
-            // On error, render cards with zeros
             const zeroStats = {}
             statsCards.forEach(card => { zeroStats[card.key] = 0 })
             updateStatsCards(zeroStats)
