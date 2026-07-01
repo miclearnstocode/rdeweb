@@ -1,5 +1,6 @@
 import { $, Waiting, DragDropUpload, CustomModal } from "../../../../lib/lib.js"
 
+// other files set as optional
 export const trainingsAttended = () => {
     let mainContainer
     let tableBody
@@ -3002,13 +3003,11 @@ export const trainingsAttended = () => {
         if (attendeesInput) {
             const namesString = attendeesInput.value.trim();
             const namesArray = namesString.split(',').map(name => name.trim()).filter(name => name);
-            // Send as simple array of strings: ["Juan Pusong", "Juan Tamad"]
             formData.append('attendees', JSON.stringify(namesArray));
         }
 
-        // Create and show loading using your custom Waiting component
-        const waitingElement = Waiting();
-        document.body.appendChild(waitingElement);
+        const loading = Waiting();
+        document.body.appendChild(loading);
 
         try {
             const response = await fetch('/attendedResearch', { 
@@ -3017,6 +3016,10 @@ export const trainingsAttended = () => {
             })
 
             const result = await response.json()
+
+            if (loading && loading.remove) {
+                loading.remove();
+            }
 
             if (result.success) {
                 closeModal()
@@ -3029,12 +3032,12 @@ export const trainingsAttended = () => {
                 showNotification(result.message || 'Error saving training/seminar data', 'error')
             }
         } catch (error) {
+            // Remove loading on error - EXACTLY like the working component
+            if (loading && loading.remove) {
+                loading.remove();
+            }
             console.error('Error saving training data:', error)
             showNotification('Error connecting to server', 'error')
-        } finally {
-            if (waitingElement && waitingElement.parentNode) {
-                waitingElement.parentNode.removeChild(waitingElement);
-            }
         }
     }
 
@@ -3314,7 +3317,6 @@ export const trainingsAttended = () => {
                         })
                     ]
                 }),
-                // Add Training button
                 $({
                     tag: 'button',
                     style: {
@@ -3347,7 +3349,21 @@ export const trainingsAttended = () => {
                     ],
                     event: {
                         type: 'click',
-                        method: openAddModal,
+                        method: () => {
+                            // Show loading before opening modal
+                            const loading = Waiting();
+                            document.body.appendChild(loading);
+                            
+                            // Small delay to ensure loading renders
+                            setTimeout(() => {
+                                // Remove loading
+                                if (loading && loading.remove) {
+                                    loading.remove();
+                                }
+                                // Open the modal
+                                openAddModal();
+                            }, 300);
+                        },
                         type2: 'mouseenter',
                         method2: (e) => {
                             e.currentTarget.style.backgroundColor = '#6d28d9'
