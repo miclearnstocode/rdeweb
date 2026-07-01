@@ -16,6 +16,9 @@ export const igpResearch = () => {
     let nextCursor = null
     let totalCount = 0
     let initialLoadDone = false
+    let researchSuggestions = []
+    let selectedResearchId = null
+    let clients = []
 
     // Stats state
     let currentStats = {
@@ -41,7 +44,6 @@ export const igpResearch = () => {
         'Dayao'
     ]
 
-    // Center options
     const centers = [
         'All Centers',
         'Crop Science Research & Development Center (CSRDC)',
@@ -67,6 +69,49 @@ export const igpResearch = () => {
         if (loadingElement) {
             loadingElement.remove()
             loadingElement = null
+        }
+    }
+
+    // Fetch completed research projects for suggestions
+    const fetchResearchSuggestions = async (searchTerm = '') => {
+        try {
+            const formData = new FormData()
+            formData.append('action', 'fetch_completed_research')
+            
+            // Add filters based on current selection
+            if (currentCampus !== 'All Campuses') {
+                formData.append('campus', currentCampus)
+            }
+            if (currentCenter !== 'All Centers') {
+                formData.append('center', currentCenter)
+            }
+            if (searchTerm.trim()) {
+                formData.append('search', searchTerm.trim())
+            }
+
+            const response = await fetch('/IGPResearchProjects', {
+                method: 'POST',
+                body: formData
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+            }
+
+            const result = await response.json()
+            
+            if (result.success) {
+                researchSuggestions = result.data || []
+                return researchSuggestions
+            } else {
+                console.error('Error fetching research suggestions:', result.message)
+                researchSuggestions = []
+                return []
+            }
+        } catch (error) {
+            console.error('Error fetching research suggestions:', error)
+            researchSuggestions = []
+            return []
         }
     }
 
@@ -101,6 +146,7 @@ export const igpResearch = () => {
             }
             if (currentCenter !== 'All Centers') {
                 formData.append('center', currentCenter)
+                formData.append('type', 'center')
             }
 
             const response = await fetch('/IGPResearchProjects', {
@@ -139,10 +185,18 @@ export const igpResearch = () => {
                     nextCursor = result.pagination?.next_cursor || null
                     hasMore = result.pagination?.has_more || false
 
-                    // Update stats
+                    // Update stats - ONLY update the IGP stats, not all stats
                     if (result.summary) {
-                        currentStats = result.summary
-                        totalCount = result.summary.totalProjects
+                        // Only update the IGP-related stats
+                        currentStats = {
+                            totalProjects: result.summary.totalProjects || 0,
+                            totalIncome: result.summary.totalIncome || 0,
+                            q1Income: result.summary.q1Income || 0,
+                            q2Income: result.summary.q2Income || 0,
+                            q3Income: result.summary.q3Income || 0,
+                            q4Income: result.summary.q4Income || 0
+                        }
+                        totalCount = result.summary.totalProjects || 0
                         updateStats()
                     }
                 } else {
@@ -183,22 +237,29 @@ export const igpResearch = () => {
     }
 
     const updateStats = () => {
-        const statValues = document.querySelectorAll('.stat-value')
-        const statLabels = document.querySelectorAll('.stat-label')
-
-        // Update total projects
-        if (statValues[0]) statValues[0].textContent = currentStats.totalProjects
-
-        // Update total income
-        if (statValues[1]) statValues[1].textContent = formatCurrency(currentStats.totalIncome)
-
+        const container = document.querySelector('.igp-research-container');
+        if (!container) return;
+        
+        // Find stats within this container only using the specific class
+        const statValues = container.querySelectorAll('.igp-stat-value');
+        const quarterStats = container.querySelectorAll('.igp-quarter-stat-value');
+        
+        // Update total projects (first stat)
+        if (statValues.length >= 1) {
+            statValues[0].textContent = currentStats.totalProjects || 0;
+        }
+        
+        // Update total income (second stat)
+        if (statValues.length >= 2) {
+            statValues[1].textContent = formatCurrency(currentStats.totalIncome || 0);
+        }
+        
         // Update quarter incomes
-        const quarterStats = document.querySelectorAll('.quarter-stat-value')
         if (quarterStats.length >= 4) {
-            quarterStats[0].textContent = formatCurrency(currentStats.q1Income)
-            quarterStats[1].textContent = formatCurrency(currentStats.q2Income)
-            quarterStats[2].textContent = formatCurrency(currentStats.q3Income)
-            quarterStats[3].textContent = formatCurrency(currentStats.q4Income)
+            quarterStats[0].textContent = formatCurrency(currentStats.q1Income || 0);
+            quarterStats[1].textContent = formatCurrency(currentStats.q2Income || 0);
+            quarterStats[2].textContent = formatCurrency(currentStats.q3Income || 0);
+            quarterStats[3].textContent = formatCurrency(currentStats.q4Income || 0);
         }
     }
 
@@ -267,7 +328,7 @@ export const igpResearch = () => {
                         textAlign: 'center',
                         verticalAlign: 'middle',
                         width: '100%',
-                        minWidth: '1800px' // Match table minWidth for horizontal scroll
+                        minWidth: '1800px'
                     },
                     child: [
                         $({
@@ -361,7 +422,7 @@ export const igpResearch = () => {
                                         }),
                                         $({
                                             tag: 'span',
-                                            text: 'Add IGP Project'
+                                            text: 'Add Income Generated Project'
                                         })
                                     ],
                                     event: {
@@ -393,7 +454,16 @@ export const igpResearch = () => {
     }
 
     const renderClients = (clients) => {
-        if (!clients || clients === '—') return '—'
+        if (!clients || clients === '—') {
+            return $({
+                tag: 'span',
+                text: '—',
+                style: {
+                    color: '#9aa0a6',
+                    fontSize: '12px'
+                }
+            })
+        }
 
         let clientList = []
         try {
@@ -402,13 +472,36 @@ export const igpResearch = () => {
             } else if (Array.isArray(clients)) {
                 clientList = clients
             } else {
-                return clients
+                return $({
+                    tag: 'span',
+                    text: clients,
+                    style: {
+                        color: '#202124',
+                        fontSize: '12px'
+                    }
+                })
             }
         } catch (e) {
-            return clients
+            return $({
+                tag: 'span',
+                text: clients,
+                style: {
+                    color: '#202124',
+                    fontSize: '12px'
+                }
+            })
         }
 
-        if (clientList.length === 0) return '—'
+        if (clientList.length === 0) {
+            return $({
+                tag: 'span',
+                text: '—',
+                style: {
+                    color: '#9aa0a6',
+                    fontSize: '12px'
+                }
+            })
+        }
 
         return $({
             tag: 'div',
@@ -427,14 +520,14 @@ export const igpResearch = () => {
                         padding: '6px 8px',
                         backgroundColor: idx % 2 === 0 ? 'rgba(255, 152, 0, 0.05)' : 'transparent',
                         borderRadius: '4px',
-                        borderBottom: '1px solid #444'
+                        borderBottom: '1px solid #e8eaed'
                     },
                     child: [
                         $({
                             tag: 'div',
                             text: name,
                             style: {
-                                color: '#ddd',
+                                color: '#202124',
                                 fontWeight: '500',
                                 fontSize: '12px',
                                 lineHeight: '1.4'
@@ -445,7 +538,7 @@ export const igpResearch = () => {
                                 tag: 'div',
                                 text: type,
                                 style: {
-                                    color: '#ff9800',
+                                    color: '#f5a623',
                                     fontSize: '10px',
                                     fontStyle: 'italic',
                                     lineHeight: '1.3',
@@ -750,10 +843,12 @@ export const igpResearch = () => {
     }
 
     const openAddModal = () => {
+        selectedResearchId = null
         renderModal(null)
     }
 
     const openEditModal = (item) => {
+        selectedResearchId = item.researchfile_id || null
         renderModal(item)
     }
 
@@ -762,6 +857,7 @@ export const igpResearch = () => {
             modalElement.remove()
             modalElement = null
         }
+        selectedResearchId = null
     }
 
     const deleteProject = async (item) => {
@@ -774,7 +870,7 @@ export const igpResearch = () => {
             formData.append('action', 'delete_igp')
             formData.append('id', item.id)
 
-            const response = await fetch('/api/igp-research', {
+            const response = await fetch('/IGPResearchProjects', {
                 method: 'POST',
                 body: formData
             })
@@ -795,6 +891,333 @@ export const igpResearch = () => {
         }
     }
 
+    // Create autocomplete dropdown for research titles
+    const createResearchAutocomplete = (currentValue = '', currentResearchId = null) => {
+        let inputElement = null
+        let dropdownElement = null
+        let suggestionsContainer = null
+        let isDropdownOpen = false
+        let selectedIndex = -1
+        let searchTimeout = null
+
+        // Container for the autocomplete
+        const container = $({
+            tag: 'div',
+            style: {
+                position: 'relative',
+                width: '100%'
+            }
+        })
+
+        // Input field
+        const input = $({
+            tag: 'input',
+            att: {
+                type: 'text',
+                id: 'research-title-search',
+                placeholder: 'Type to search existing research projects or enter new title...',
+                value: currentValue || '',
+                autocomplete: 'off'
+            },
+            style: {
+                width: '100%',
+                padding: '12px 14px',
+                backgroundColor: '#f8f9fa',
+                border: '2px solid #e8eaed',
+                borderRadius: '10px',
+                color: '#202124',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+                fontFamily: 'inherit'
+            },
+            event: {
+                type: 'focus',
+                method: (e) => {
+                    e.target.style.borderColor = '#f5a623'
+                    e.target.style.backgroundColor = '#ffffff'
+                    e.target.style.boxShadow = '0 0 0 4px rgba(245,166,35,0.1)'
+                    if (e.target.value.length > 0) {
+                        showSuggestions(e.target.value)
+                    }
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.target.style.borderColor = '#e8eaed'
+                    e.target.style.backgroundColor = '#f8f9fa'
+                    e.target.style.boxShadow = 'none'
+                    // Delay hiding to allow click on suggestion
+                    setTimeout(() => {
+                        hideSuggestions()
+                    }, 200)
+                },
+                type3: 'input',
+                method3: (e) => {
+                    const value = e.target.value
+                    // Clear selected research ID if user types manually
+                    if (selectedResearchId && value !== currentValue) {
+                        selectedResearchId = null
+                        // Update hidden input
+                        const hiddenInput = document.getElementById('researchfile_id')
+                        if (hiddenInput) hiddenInput.value = ''
+                    }
+                    // Show suggestions
+                    clearTimeout(searchTimeout)
+                    searchTimeout = setTimeout(() => {
+                        if (value.trim().length > 0) {
+                            showSuggestions(value)
+                        } else {
+                            hideSuggestions()
+                            // Clear suggestions list
+                            researchSuggestions = []
+                        }
+                    }, 300)
+                },
+                type4: 'keydown',
+                method4: (e) => {
+                    const suggestions = document.querySelectorAll('.suggestion-item')
+                    if (suggestions.length === 0) return
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault()
+                        selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1)
+                        highlightSuggestion(suggestions, selectedIndex)
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault()
+                        selectedIndex = Math.max(selectedIndex - 1, 0)
+                        highlightSuggestion(suggestions, selectedIndex)
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault()
+                        if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+                            suggestions[selectedIndex].click()
+                        }
+                    } else if (e.key === 'Escape') {
+                        hideSuggestions()
+                    }
+                }
+            },
+            elementHandler: (el) => {
+                inputElement = el
+            }
+        })
+
+        // Hidden input for researchfile_id
+        const hiddenInput = $({
+            tag: 'input',
+            att: {
+                type: 'hidden',
+                name: 'researchfile_id',
+                id: 'researchfile_id',
+                value: currentResearchId || ''
+            }
+        })
+
+        // Suggestions dropdown
+        const suggestionsDiv = $({
+            tag: 'div',
+            att: { id: 'research-suggestions' },
+            style: {
+                position: 'absolute',
+                top: '100%',
+                left: '0',
+                right: '0',
+                backgroundColor: '#ffffff',
+                border: '2px solid #e8eaed',
+                borderRadius: '10px',
+                marginTop: '4px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                display: 'none',
+                zIndex: '1000',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+            },
+            elementHandler: (el) => {
+                suggestionsContainer = el
+            }
+        })
+
+        // Show suggestions
+        const showSuggestions = async (searchTerm) => {
+            if (!suggestionsContainer) return
+
+            // Fetch suggestions from server
+            await fetchResearchSuggestions(searchTerm)
+
+            if (researchSuggestions.length === 0) {
+                // Show "No results" or "Create new" option
+                suggestionsContainer.innerHTML = ''
+                const noResult = $({
+                    tag: 'div',
+                    style: {
+                        padding: '12px 16px',
+                        color: '#5f6368',
+                        fontSize: '14px',
+                        textAlign: 'center'
+                    },
+                    text: 'No matching research projects found. You can type a new title.'
+                })
+                suggestionsContainer.appendChild(noResult)
+                suggestionsContainer.style.display = 'block'
+                isDropdownOpen = true
+                return
+            }
+
+            suggestionsContainer.innerHTML = ''
+            researchSuggestions.forEach((project, index) => {
+                const item = $({
+                    tag: 'div',
+                    att: { 
+                        className: 'suggestion-item',
+                        'data-id': project.id,
+                        'data-title': project.title,
+                        'data-author': project.author || '',
+                        'data-event': project.event || '',
+                        'data-date': project.date_completed || ''
+                    },
+                    style: {
+                        padding: '10px 16px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f1f3f4',
+                        transition: 'all 0.2s ease',
+                        backgroundColor: index === 0 ? '#f8f9fa' : 'transparent'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                fontWeight: '500',
+                                color: '#202124',
+                                fontSize: '14px',
+                                marginBottom: '4px'
+                            },
+                            text: project.title || 'Untitled'
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                gap: '16px',
+                                fontSize: '12px',
+                                color: '#5f6368'
+                            },
+                            child: [
+                                ...(project.author ? [
+                                    $({
+                                        tag: 'span',
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                style: { fontWeight: '500' },
+                                                text: 'Author: '
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                text: project.author
+                                            })
+                                        ]
+                                    })
+                                ] : []),
+                                ...(project.event ? [
+                                    $({
+                                        tag: 'span',
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                style: { fontWeight: '500' },
+                                                text: 'Event: '
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                text: project.event
+                                            })
+                                        ]
+                                    })
+                                ] : []),
+                                ...(project.date_completed ? [
+                                    $({
+                                        tag: 'span',
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                style: { fontWeight: '500' },
+                                                text: 'Completed: '
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                text: project.date_completed
+                                            })
+                                        ]
+                                    })
+                                ] : [])
+                            ]
+                        })
+                    ],
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            selectSuggestion(project)
+                        },
+                        type2: 'mouseenter',
+                        method2: (e) => {
+                            // Remove highlight from all
+                            document.querySelectorAll('.suggestion-item').forEach(el => {
+                                el.style.backgroundColor = 'transparent'
+                            })
+                            e.currentTarget.style.backgroundColor = '#f8f9fa'
+                            selectedIndex = index
+                        }
+                    }
+                })
+                suggestionsContainer.appendChild(item)
+            })
+
+            suggestionsContainer.style.display = 'block'
+            isDropdownOpen = true
+            selectedIndex = -1
+        }
+
+        // Hide suggestions
+        const hideSuggestions = () => {
+            if (suggestionsContainer) {
+                suggestionsContainer.style.display = 'none'
+                isDropdownOpen = false
+            }
+        }
+
+        // Select a suggestion
+        const selectSuggestion = (project) => {
+            if (inputElement) {
+                inputElement.value = project.title
+                // Update hidden input with researchfile_id
+                selectedResearchId = project.id
+                const hiddenInputEl = document.getElementById('researchfile_id')
+                if (hiddenInputEl) {
+                    hiddenInputEl.value = project.id
+                }
+                hideSuggestions()
+                // Trigger a focus event to update styling
+                inputElement.focus()
+            }
+        }
+
+        // Highlight suggestion
+        const highlightSuggestion = (suggestions, index) => {
+            suggestions.forEach((el, i) => {
+                el.style.backgroundColor = i === index ? '#f8f9fa' : 'transparent'
+            })
+            // Scroll to selected item
+            if (suggestions[index]) {
+                suggestions[index].scrollIntoView({ block: 'nearest' })
+            }
+        }
+
+        container.appendChild(input)
+        container.appendChild(hiddenInput)
+        container.appendChild(suggestionsDiv)
+
+        return container
+    }
+
     const renderModal = (item = null) => {
         if (modalElement) {
             modalElement.remove()
@@ -802,21 +1225,32 @@ export const igpResearch = () => {
 
         const isEditing = item !== null
 
-        // Clients state
-        let clients = []
+        clients = []
         if (isEditing && item.clients) {
             try {
-                clients = typeof item.clients === 'string' ? JSON.parse(item.clients) : item.clients
-                if (!Array.isArray(clients)) clients = []
+                if (typeof item.clients === 'string') {
+                    const parsed = JSON.parse(item.clients)
+                    if (Array.isArray(parsed)) {
+                        clients = parsed
+                    }
+                } else if (Array.isArray(item.clients)) {
+                    clients = item.clients
+                }
             } catch (e) {
                 clients = []
             }
         }
+        
+        // Make sure clients is always an array
+        if (!Array.isArray(clients)) {
+            clients = []
+        }
 
         // Container for client fields
         let clientsContainer
+        let autocompleteContainer = null
 
-        // Function to add a client field
+        // Function to add a client field - uses the outer clients array
         const addClientField = (name = '', type = '') => {
             const clientIndex = clients.length
             clients.push({ name, type })
@@ -1050,7 +1484,7 @@ export const igpResearch = () => {
                                         }),
                                         $({
                                             tag: 'h2',
-                                            text: isEditing ? 'Edit IGP Project' : 'Add IGP Project',
+                                            text: isEditing ? 'Edit Income Generated Project' : 'Add Income Generated Project',
                                             style: {
                                                 margin: '0',
                                                 fontSize: '22px',
@@ -1182,6 +1616,11 @@ export const igpResearch = () => {
                                                         type: 'change',
                                                         method: (e) => {
                                                             toggleLocationSelect(e.target.value)
+                                                            // Refresh suggestions when type changes
+                                                            const searchInput = document.getElementById('research-title-search')
+                                                            if (searchInput && searchInput.value.trim()) {
+                                                                fetchResearchSuggestions(searchInput.value.trim())
+                                                            }
                                                         },
                                                         type2: 'focus',
                                                         method2: (e) => {
@@ -1217,7 +1656,7 @@ export const igpResearch = () => {
                                             }
                                         }),
 
-                                        // Research Program/Project Title
+                                        // Research Program/Project Title with Autocomplete
                                         $({
                                             tag: 'div',
                                             style: { marginBottom: '24px' },
@@ -1234,39 +1673,23 @@ export const igpResearch = () => {
                                                     }
                                                 }),
                                                 $({
-                                                    tag: 'input',
-                                                    att: {
-                                                        type: 'text',
-                                                        name: 'title',
-                                                        value: isEditing ? (item.title || '') : '',
-                                                        placeholder: 'Enter research program/project title...',
-                                                        required: true
-                                                    },
+                                                    tag: 'div',
                                                     style: {
-                                                        width: '100%',
-                                                        padding: '12px 14px',
-                                                        backgroundColor: '#f8f9fa',
-                                                        border: '2px solid #e8eaed',
-                                                        borderRadius: '10px',
-                                                        color: '#202124',
-                                                        fontSize: '14px',
-                                                        outline: 'none',
-                                                        transition: 'all 0.2s ease',
-                                                        fontFamily: 'inherit'
+                                                        fontSize: '12px',
+                                                        color: '#5f6368',
+                                                        marginBottom: '8px'
                                                     },
-                                                    event: {
-                                                        type: 'focus',
-                                                        method: (e) => {
-                                                            e.target.style.borderColor = '#f5a623'
-                                                            e.target.style.backgroundColor = '#ffffff'
-                                                            e.target.style.boxShadow = '0 0 0 4px rgba(245,166,35,0.1)'
-                                                        },
-                                                        type2: 'blur',
-                                                        method2: (e) => {
-                                                            e.target.style.borderColor = '#e8eaed'
-                                                            e.target.style.backgroundColor = '#f8f9fa'
-                                                            e.target.style.boxShadow = 'none'
-                                                        }
+                                                    text: 'Search for existing research projects or type a new title'
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    elementHandler: (el) => {
+                                                        autocompleteContainer = el
+                                                        const autocomplete = createResearchAutocomplete(
+                                                            isEditing ? (item.title || '') : '',
+                                                            isEditing ? (item.researchfile_id || null) : null
+                                                        )
+                                                        el.appendChild(autocomplete)
                                                     }
                                                 })
                                             ]
@@ -1294,7 +1717,7 @@ export const igpResearch = () => {
                                                         type: 'text',
                                                         name: 'researchers',
                                                         value: isEditing ? (item.researchers || '') : '',
-                                                        placeholder: 'Enter researchers or project in-charge...',
+                                                        placeholder: 'Researchers or project in-charge...',
                                                         required: true
                                                     },
                                                     style: {
@@ -1347,7 +1770,7 @@ export const igpResearch = () => {
                                                     tag: 'textarea',
                                                     att: {
                                                         name: 'description',
-                                                        placeholder: 'Enter project description...',
+                                                        placeholder: 'Project description...',
                                                         rows: '3'
                                                     },
                                                     style: {
@@ -1403,7 +1826,7 @@ export const igpResearch = () => {
                                                     tag: 'textarea',
                                                     att: {
                                                         name: 'technology',
-                                                        placeholder: 'Enter technology, product, or commodity generated and commercialized...',
+                                                        placeholder: 'Technology, product, or commodity generated and commercialized...',
                                                         rows: '2'
                                                     },
                                                     style: {
@@ -1600,7 +2023,7 @@ export const igpResearch = () => {
                                                                 }),
                                                                 $({
                                                                     tag: 'span',
-                                                                    text: 'Enter income generated for each quarter',
+                                                                    text: 'Income generated for each quarter',
                                                                     style: {
                                                                         fontSize: '12px',
                                                                         color: '#5f6368',
@@ -1893,6 +2316,7 @@ export const igpResearch = () => {
                         tag: 'select',
                         att: {
                             name: 'location',
+                            id: 'location-select',
                             required: true
                         },
                         style: {
@@ -1930,14 +2354,22 @@ export const igpResearch = () => {
                             )
                         ],
                         event: {
-                            type: 'focus',
+                            type: 'change',
                             method: (e) => {
+                                // Refresh suggestions when location changes
+                                const searchInput = document.getElementById('research-title-search')
+                                if (searchInput && searchInput.value.trim()) {
+                                    fetchResearchSuggestions(searchInput.value.trim())
+                                }
+                            },
+                            type2: 'focus',
+                            method2: (e) => {
                                 e.target.style.borderColor = '#f5a623'
                                 e.target.style.backgroundColor = '#ffffff'
                                 e.target.style.boxShadow = '0 0 0 4px rgba(245,166,35,0.1)'
                             },
-                            type2: 'blur',
-                            method2: (e) => {
+                            type3: 'blur',
+                            method3: (e) => {
                                 e.target.style.borderColor = '#e8eaed'
                                 e.target.style.backgroundColor = '#f8f9fa'
                                 e.target.style.boxShadow = 'none'
@@ -1955,17 +2387,36 @@ export const igpResearch = () => {
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_igp' : 'add_igp')
 
-        // Add clients as JSON
-        formData.append('clients', JSON.stringify(clients))
+        // ========== FIX: Use the outer clients array ==========
+        const clientsData = clients.map(client => ({
+            name: client.name || '',
+            type: client.type || ''
+        })).filter(client => client.name.trim() !== '')
+        
+        console.log('Saving clients:', clientsData); // Debug log
+        formData.append('clients', JSON.stringify(clientsData))
+
+        // Get the title from the search input
+        const titleInput = document.getElementById('research-title-search')
+        if (titleInput) {
+            formData.set('title', titleInput.value)
+        }
+
+        // Debug: Log all form data
+        console.log('Form data being sent:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
 
         showLoading()
         try {
-            const response = await fetch('/api/igp-research', {
+            const response = await fetch('/IGPResearchProjects', {
                 method: 'POST',
                 body: formData
             })
 
             const result = await response.json()
+            console.log('API Response:', result);
 
             if (result.success) {
                 closeModal()
@@ -2240,7 +2691,7 @@ export const igpResearch = () => {
                         }),
                         $({
                             tag: 'span',
-                            text: 'Add IGP Project'
+                            text: 'Add Income Generated Project'
                         })
                     ],
                     event: {
@@ -2264,7 +2715,6 @@ export const igpResearch = () => {
         })
     }
 
-    // Statistics cards
     const StatsCards = () => {
         return $({
             tag: 'div',
@@ -2334,7 +2784,7 @@ export const igpResearch = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'stat-value' },
+                                    att: { className: 'igp-stat-value' }, // Added specific class
                                     text: '0',
                                     style: {
                                         fontSize: '32px',
@@ -2412,7 +2862,7 @@ export const igpResearch = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'stat-value' },
+                                    att: { className: 'igp-stat-value' }, // Added specific class
                                     text: '₱0.00',
                                     style: {
                                         fontSize: '24px',
@@ -2504,7 +2954,6 @@ export const igpResearch = () => {
         })
     }
 
-    // Create quarter stat item
     const createQuarterStat = (label, color, index) => {
         return $({
             tag: 'div',
@@ -2537,7 +2986,7 @@ export const igpResearch = () => {
             child: [
                 $({
                     tag: 'span',
-                    att: { className: 'quarter-stat-value' },
+                    att: { className: 'igp-quarter-stat-value' }, // Added specific class
                     text: '₱0.00',
                     style: {
                         fontSize: '20px',
@@ -2603,7 +3052,6 @@ export const igpResearch = () => {
                     boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                 },
                 child: [
-                    // Add icon based on header
                     $({
                         tag: 'span',
                         style: {
@@ -2710,7 +3158,7 @@ export const igpResearch = () => {
                     tag: 'table',
                     style: {
                         width: '100%',
-                        minWidth: '1800px', // Ensures horizontal scroll when content exceeds container
+                        minWidth: '1800px',
                         borderCollapse: 'collapse',
                         backgroundColor: '#ffffff'
                     },

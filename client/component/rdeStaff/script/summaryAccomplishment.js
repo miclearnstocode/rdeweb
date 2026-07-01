@@ -117,7 +117,7 @@ export const SummaryAccomplishment = () => {
         { value: 'Sigma', label: 'Sigma' },
         { value: 'Pilar', label: 'Pilar' },
         { value: 'Dayao', label: 'Dayao' },
-        { value: 'Roxas', label: 'Roxas' }
+        { value: 'Roxas City Main', label: 'Roxas City Main' }
     ]
 
     // Center filter options
@@ -154,86 +154,90 @@ export const SummaryAccomplishment = () => {
         showLoading()
 
         try {
-            // Fetch main summary data from /monitor
-            const formData = new FormData()
-            formData.append('action', 'fetch')
+            // 1. Fetch totalOngoing and completed from /monitor
+            const monitorFormData = new FormData()
+            monitorFormData.append('action', 'fetch')
 
-            const response = await fetch('/monitor', {
+            const monitorResponse = await fetch('/monitor', {
                 method: 'POST',
-                body: formData
+                body: monitorFormData
             })
 
-            const result = await response.json()
+            const monitorResult = await monitorResponse.json()
+            console.log('Monitor data:', monitorResult);
 
-            // Fetch both training counts in a single call
-            let trainingConductedCount = 0
-            let trainingAttendedCount = 0
-            
-            try {
-                const bothCountsFormData = new FormData()
-                bothCountsFormData.append('action', 'bothCounts')
+            // 2. Fetch training counts (bothCounts)
+            const trainingFormData = new FormData()
+            trainingFormData.append('action', 'bothCounts')
 
-                // Apply current filters
-                if (activeFilters.campus !== 'all') {
-                    bothCountsFormData.append('type', 'campus')
-                    bothCountsFormData.append('location', activeFilters.campus)
-                } else if (activeFilters.center !== 'all') {
-                    bothCountsFormData.append('type', 'center')
-                    bothCountsFormData.append('location', activeFilters.center)
-                } else {
-                    bothCountsFormData.append('type', 'All')
-                }
-
-                const bothCountsResponse = await fetch('/summaryAccomplish', {
-                    method: 'POST',
-                    body: bothCountsFormData
-                })
-
-                const bothCountsResult = await bothCountsResponse.json()
-
-                if (bothCountsResult.status && bothCountsResult.data) {
-                    trainingConductedCount = bothCountsResult.data.conducted || 0
-                    trainingAttendedCount = bothCountsResult.data.attended || 0
-                    console.log('Training counts:', {
-                        conducted: trainingConductedCount,
-                        attended: trainingAttendedCount,
-                        filters: activeFilters
-                    })
-                }
-            } catch (countsError) {
-                console.error('Error fetching training counts:', countsError)
+            if (activeFilters.campus !== 'all') {
+                trainingFormData.append('type', 'campus')
+                trainingFormData.append('location', activeFilters.campus)
+            } else if (activeFilters.center !== 'all') {
+                trainingFormData.append('type', 'center')
+                trainingFormData.append('location', activeFilters.center)
             }
 
-            if (result.success && result.summary) {
-                const stats = {}
-                statsCards.forEach(card => { stats[card.key] = 0 })
-                
-                stats.ongoingResearch = result.summary.totalOngoing ?? 0
-                stats.completedResearch = result.summary.completed ?? 0
-                stats.conductedResearch = trainingConductedCount
-                stats.trainingsAttended = trainingAttendedCount
-                stats.igpResearch = result.summary.igpResearch ?? 0
-                stats.participationResearch = result.summary.participationResearch ?? 0
-                stats.facilitiesImprovement = result.summary.facilitiesImprovement ?? 0
-                stats.facultyPresentation = result.summary.facultyPresentation ?? 0
-                stats.publicationResearch = result.summary.publicationResearch ?? 0
-                stats.citationsResearch = result.summary.citationsResearch ?? 0
-                stats.ipAssets = result.summary.ipAssets ?? 0
-                
-                updateStatsCards(stats)
-            } else {
-                const zeroStats = {}
-                statsCards.forEach(card => {
-                    if (card.key === 'conductedResearch') {
-                        zeroStats[card.key] = trainingConductedCount
-                    } else if (card.key === 'trainingsAttended') {
-                        zeroStats[card.key] = trainingAttendedCount
-                    } else {
-                        zeroStats[card.key] = 0
-                    }
-                })
-                updateStatsCards(zeroStats)
+            const trainingResponse = await fetch('/summaryAccomplish', {
+                method: 'POST',
+                body: trainingFormData
+            })
+
+            const trainingResult = await trainingResponse.json()
+            console.log('Training counts:', trainingResult);
+
+            // 3. Fetch IGP count (igpCount)
+            const igpFormData = new FormData()
+            igpFormData.append('action', 'igpCount')
+
+            if (activeFilters.campus !== 'all') {
+                igpFormData.append('type', 'campus')
+                igpFormData.append('location', activeFilters.campus)
+            } else if (activeFilters.center !== 'all') {
+                igpFormData.append('type', 'center')
+                igpFormData.append('location', activeFilters.center)
             }
+
+            const igpResponse = await fetch('/summaryAccomplish', {
+                method: 'POST',
+                body: igpFormData
+            })
+
+            const igpResult = await igpResponse.json()
+            console.log('IGP count:', igpResult);
+
+            // 4. Build stats
+            const stats = {}
+            statsCards.forEach(card => { stats[card.key] = 0 })
+
+            // Stats from /monitor
+            if (monitorResult.success && monitorResult.summary) {
+                stats.ongoingResearch = monitorResult.summary.totalOngoing || 0
+                stats.completedResearch = monitorResult.summary.completed || 0
+            }
+
+            // Stats from bothCounts
+            if (trainingResult.status && trainingResult.data) {
+                stats.conductedResearch = trainingResult.data.conducted || 0
+                stats.trainingsAttended = trainingResult.data.attended || 0
+            }
+
+            // Stats from igpCount
+            if (igpResult.status && igpResult.data) {
+                stats.igpResearch = igpResult.data.igpResearch || 0
+            }
+
+            // Other stats (you might want to fetch these from somewhere else)
+            stats.participationResearch = 0
+            stats.facilitiesImprovement = 0
+            stats.facultyPresentation = 0
+            stats.publicationResearch = 0
+            stats.citationsResearch = 0
+            stats.ipAssets = 0
+
+            console.log('Final stats:', stats);
+            updateStatsCards(stats)
+
         } catch (error) {
             console.error('Error fetching summary data:', error)
             const zeroStats = {}
