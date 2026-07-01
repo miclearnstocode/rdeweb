@@ -5,11 +5,11 @@ export const InhouseConfirmationModal = () => {
     let filteredProposals = [];
     let stats = { pending: 0, presented: 0, not_presented: 0, total: 0 };
     let isLoading = false;
-    let currentFilter = 'all';
+    let currentFilter = 'pending_confirmation'; // Default to pending only
     let searchTerm = '';
     let modalCloseFn = null;
 
-    const fetchProposals = async (statusFilter = 'all') => {
+    const fetchProposals = async (statusFilter = 'pending_confirmation') => {
         if (isLoading) return;
         isLoading = true;
 
@@ -17,6 +17,7 @@ export const InhouseConfirmationModal = () => {
             const formData = new FormData();
             formData.append('action', 'fetch_inhouse');
             
+            // Always fetch pending by default, but allow other filters
             const statusParam = statusFilter === 'all' ? '' : statusFilter;
             if (statusParam) {
                 formData.append('status', statusParam);
@@ -51,8 +52,20 @@ export const InhouseConfirmationModal = () => {
     const applyFilters = () => {
         let filtered = [...proposals];
 
+        // Apply status filter - default to pending only
         if (currentFilter !== 'all') {
             filtered = filtered.filter(p => p.status === currentFilter);
+        } else {
+            // If 'all' is selected, show everything but we default to pending
+            // You can change this behavior
+        }
+
+        // Always filter out confirmed/presented/not_presented if not explicitly showing them
+        // This ensures only pending are shown by default
+        if (currentFilter === 'pending_confirmation' || !currentFilter) {
+            filtered = filtered.filter(p => 
+                p.status === 'pending_confirmation' || !p.status
+            );
         }
 
         if (searchTerm.trim()) {
@@ -253,26 +266,24 @@ export const InhouseConfirmationModal = () => {
                     const result = await response.json();
                     
                     if (result.status) {
+                        // Refresh proposals - keep the current filter
                         await fetchProposals(currentFilter);
                         
                         // Use different toast types based on status
                         if (isPresented) {
-                            // Presented - Green success toast
                             showToast(
-                                `Status updated to PRESENTED`,
+                                `✅ "${proposal.title || 'Untitled'}" marked as PRESENTED`,
                                 'success',
                                 3000
                             );
                         } else {
-                            // Not Presented - Warning/Orange toast
                             showToast(
-                                `Status updated to NOT PRESENTED`,
+                                `📌 "${proposal.title || 'Untitled'}" marked as NOT PRESENTED`,
                                 'warning',
                                 3000
                             );
                         }
                     } else {
-                        // Use showToast with correct signature: (message, type, duration)
                         showToast(
                             result.message || 'Update failed',
                             'error',
@@ -281,10 +292,8 @@ export const InhouseConfirmationModal = () => {
                     }
                 } catch (error) {
                     console.error('Error updating status:', error);
-                    
-                    // Use showToast with correct signature: (message, type, duration)
                     showToast(
-                        error.message || 'An error occurred while updating the status. Please try again.',
+                        error.message || 'An error occurred while updating the status.',
                         'error',
                         4000
                     );
@@ -308,7 +317,51 @@ export const InhouseConfirmationModal = () => {
         tableBody.innerHTML = '';
 
         if (filteredProposals.length === 0) {
-            // ... empty state code ...
+            const emptyRow = $({
+                tag: 'tr',
+                child: [
+                    $({
+                        tag: 'td',
+                        att: { colspan: '7' },
+                        style: {
+                            textAlign: 'center',
+                            padding: '50px 20px',
+                            color: '#868e96'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-inbox' },
+                                style: {
+                                    fontSize: '40px',
+                                    display: 'block',
+                                    marginBottom: '12px',
+                                    color: '#dee2e6'
+                                }
+                            }),
+                            $({
+                                tag: 'div',
+                                text: 'No pending proposals found',
+                                style: {
+                                    fontSize: '15px',
+                                    fontWeight: '500',
+                                    color: '#495057'
+                                }
+                            }),
+                            $({
+                                tag: 'div',
+                                text: 'All proposals have been confirmed',
+                                style: {
+                                    fontSize: '13px',
+                                    color: '#adb5bd',
+                                    marginTop: '4px'
+                                }
+                            })
+                        ]
+                    })
+                ]
+            });
+            tableBody.appendChild(emptyRow);
             return;
         }
 
@@ -405,7 +458,7 @@ export const InhouseConfirmationModal = () => {
                             year: 'numeric'
                         }) : 'N/A'
                     }),
-                    // Actions
+                    // Actions - Only show for pending proposals
                     $({
                         tag: 'td',
                         style: {
@@ -572,7 +625,7 @@ export const InhouseConfirmationModal = () => {
 
         const countEl = document.getElementById('inhouse-count');
         if (countEl) {
-            countEl.textContent = `Showing ${filteredProposals.length} of ${proposals.length} records`;
+            countEl.textContent = `Showing ${filteredProposals.length} pending proposals`;
         }
     };
 
@@ -610,7 +663,7 @@ export const InhouseConfirmationModal = () => {
                         borderBottom: '1px solid #e9ecef'
                     },
                     child: [
-                        // Filter buttons
+                        // Filter buttons - Default to Pending
                         $({
                             tag: 'div',
                             style: {
@@ -619,10 +672,10 @@ export const InhouseConfirmationModal = () => {
                                 flexWrap: 'wrap'
                             },
                             child: [
-                                { value: 'all', label: 'All' },
-                                { value: 'pending_confirmation', label: 'Pending' },
+                                { value: 'pending_confirmation', label: 'Pending', default: true },
                                 { value: 'proposal_presented', label: 'Presented' },
-                                { value: 'proposal_not_presented', label: 'Not Presented' }
+                                { value: 'proposal_not_presented', label: 'Not Presented' },
+                                { value: 'all', label: 'All' }
                             ].map(opt => {
                                 const isActive = opt.value === currentFilter;
                                 return $({
@@ -702,7 +755,7 @@ export const InhouseConfirmationModal = () => {
                                     tag: 'input',
                                     att: {
                                         type: 'text',
-                                        placeholder: 'Search by title, author, paper trail...'
+                                        placeholder: 'Search pending proposals...'
                                     },
                                     style: {
                                         width: '100%',
@@ -887,7 +940,8 @@ export const InhouseConfirmationModal = () => {
                                                         letterSpacing: '0.5px',
                                                         borderBottom: '2px solid #dee2e6'
                                                     }
-                                                })                                            ]
+                                                })
+                                            ]
                                         })
                                     ]
                                 }),
@@ -972,11 +1026,71 @@ export const InhouseConfirmationModal = () => {
             title: 'In-House Review Proposal Confirmation',
             size: 'full',
             content: (props) => {
-                const content = buildModalContent();
+                // Instruction banner
+                const instructionBanner = $({
+                    tag: 'div',
+                    style: {
+                        backgroundColor: '#f0f7ff',
+                        borderLeft: '4px solid #4361ee',
+                        padding: '14px 20px',
+                        marginBottom: '16px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-info-circle' },
+                            style: {
+                                color: '#4361ee',
+                                fontSize: '18px',
+                                marginTop: '2px',
+                                flexShrink: '0'
+                            }
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                fontSize: '13px',
+                                color: '#1a2a3a',
+                                lineHeight: '1.6'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    text: '📋 Pending Proposals for Confirmation',
+                                    style: {
+                                        fontWeight: '600',
+                                        marginBottom: '2px',
+                                        color: '#1a2a3a'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'These proposals are in tally and need to be confirmed as presented or not presented. Once confirmed, they will no longer appear in this list.',
+                                    style: {
+                                        color: '#495057',
+                                        fontSize: '12px'
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                });
+
+                const mainContent = buildModalContent();
+                
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+                wrapper.appendChild(instructionBanner);
+                wrapper.appendChild(mainContent);
+                
                 setTimeout(() => {
-                    fetchProposals(currentFilter);
+                    fetchProposals('pending_confirmation');
                 }, 150);
-                return content;
+                return wrapper;
             },
             footer: (props) => {
                 return $({
