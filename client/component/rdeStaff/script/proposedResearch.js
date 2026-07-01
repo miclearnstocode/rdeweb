@@ -1749,11 +1749,58 @@ export const ProposedResearch = () => {
 
         statsContainer.innerHTML = ''
 
+        // Use stats from API response
+        const {
+            total = 0,
+            inHouseReview = 0,
+            symposium = 0,
+            thisYear = 0,
+            inHousePresented = 0,
+            inHousePending = 0,
+            inHouseNotPresented = 0,
+            symposiumCompleted = 0,
+            symposiumPending = 0
+        } = stats
+
+        // Calculate percentages for progress bars
+        const inHouseProgress = inHouseReview > 0 ? (inHousePresented / inHouseReview) * 100 : 0
+        const symposiumProgress = symposium > 0 ? (symposiumCompleted / symposium) * 100 : 0
+
         const statElements = [
-            { label: 'Total Proposed', value: stats.total, icon: 'fa-file-lines', color: 'deepskyblue' },
-            { label: 'In-House Review', value: stats.inHouseReview, icon: 'fa-users', color: '#ff9800' },
-            { label: 'Symposium', value: stats.symposium, icon: 'fa-microphone', color: '#4caf50' },
-            { label: 'This Year', value: stats.thisYear, icon: 'fa-calendar', color: '#00bcd4' }
+            { 
+                label: 'Total Proposed', 
+                value: total,  // Now shows 32 (7 + 25)
+                icon: 'fa-file-lines', 
+                color: '#4361ee',
+                subText: `${inHousePresented} In-House · ${symposiumCompleted} Symposium`
+            },
+            { 
+                label: 'In-House Review Presented', 
+                value: inHousePresented,
+                icon: 'fa-check-circle', 
+                color: '#2b8a3e',
+                subText: `✅ ${inHousePresented} Presented · ⏳ ${inHousePending} Pending · ❌ ${inHouseNotPresented} Not`,
+                progress: inHouseProgress,
+                progressColor: '#2b8a3e',
+                badge: `${Math.round(inHouseProgress)}% presented`
+            },
+            { 
+                label: 'Symposium Completed', 
+                value: symposiumCompleted,
+                icon: 'fa-check-circle', 
+                color: '#4caf50',
+                subText: `✅ ${symposiumCompleted} Completed · ⏳ ${symposiumPending} Pending`,
+                progress: symposiumProgress,
+                progressColor: '#4caf50',
+                badge: `${Math.round(symposiumProgress)}% completed`
+            },
+            { 
+                label: 'This Year', 
+                value: thisYear, 
+                icon: 'fa-calendar', 
+                color: '#00bcd4',
+                subText: new Date().getFullYear()
+            }
         ]
 
         statElements.forEach(stat => {
@@ -1769,7 +1816,24 @@ export const ProposedResearch = () => {
                     flex: '1',
                     minWidth: '160px',
                     border: '1px solid #ececec',
-                    transition: 'transform 0.2s ease'
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                },
+                event: {
+                    type: 'mouseenter',
+                    method: (e) => {
+                        e.target.style.transform = 'translateY(-2px)'
+                        e.target.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'
+                    }
+                },
+                event2: {
+                    type: 'mouseleave',
+                    method: (e) => {
+                        e.target.style.transform = 'translateY(0)'
+                        e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
+                    }
                 },
                 child: [
                     $({
@@ -1781,7 +1845,8 @@ export const ProposedResearch = () => {
                             backgroundColor: `${stat.color}20`,
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center'
+                            justifyContent: 'center',
+                            flexShrink: '0'
                         },
                         child: [
                             $({
@@ -1793,16 +1858,22 @@ export const ProposedResearch = () => {
                     }),
                     $({
                         tag: 'div',
-                        style: { display: 'flex', flexDirection: 'column' },
+                        style: { 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            flex: '1',
+                            minWidth: '0'
+                        },
                         child: [
                             $({
                                 tag: 'span',
                                 text: stat.value,
                                 style: {
                                     fontSize: '28px',
-                                    fontWeight: '600',
-                                    color: '#272727',
-                                    lineHeight: '1.2'
+                                    fontWeight: '700',
+                                    color: '#1a1a2e',
+                                    lineHeight: '1.2',
+                                    fontFamily: "'Inter', 'Segoe UI', sans-serif"
                                 }
                             }),
                             $({
@@ -1812,9 +1883,61 @@ export const ProposedResearch = () => {
                                     fontSize: '12px',
                                     color: '#636e72',
                                     textTransform: 'uppercase',
-                                    letterSpacing: '0.5px'
+                                    letterSpacing: '0.5px',
+                                    fontWeight: '600',
+                                    marginTop: '2px'
                                 }
-                            })
+                            }),
+                            stat.badge ? $({
+                                tag: 'span',
+                                text: stat.badge,
+                                style: {
+                                    fontSize: '11px',
+                                    color: stat.color,
+                                    marginTop: '2px',
+                                    fontWeight: '600',
+                                    backgroundColor: `${stat.color}15`,
+                                    padding: '2px 10px',
+                                    borderRadius: '12px',
+                                    display: 'inline-block',
+                                    alignSelf: 'flex-start'
+                                }
+                            }) : null,
+                            stat.subText ? $({
+                                tag: 'span',
+                                text: stat.subText,
+                                style: {
+                                    fontSize: '11px',
+                                    color: '#868e96',
+                                    marginTop: '4px',
+                                    fontWeight: '400',
+                                    letterSpacing: '0.2px',
+                                    display: 'block'
+                                }
+                            }) : null,
+                            stat.progress !== undefined ? $({
+                                tag: 'div',
+                                style: {
+                                    marginTop: '6px',
+                                    width: '100%',
+                                    height: '4px',
+                                    backgroundColor: '#f1f3f5',
+                                    borderRadius: '2px',
+                                    overflow: 'hidden'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            width: `${stat.progress}%`,
+                                            height: '100%',
+                                            backgroundColor: stat.progressColor || stat.color,
+                                            borderRadius: '2px',
+                                            transition: 'width 0.6s ease'
+                                        }
+                                    })
+                                ]
+                            }) : null
                         ]
                     })
                 ]

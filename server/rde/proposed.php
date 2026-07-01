@@ -152,10 +152,84 @@ class ProposedResearchAPI {
     
     public function fetchProposedResearch() {
         try {
-            // Get all events first for reference
             $events = $this->getEvents();
             
-            // Get ALL research papers with accepted status or active events
+            $statsQuery = "SELECT 
+                            rf.id,
+                            rf.event as event_name,
+                            rf.presented_inhouse,
+                            rf.completion_status,
+                            en.date as endorsement_date,
+                            e.date as event_date,
+                            YEAR(COALESCE(e.date, en.date)) as endorsement_year
+                        FROM researchfile rf
+                        LEFT JOIN endorsement en ON rf.endorsementid = en.id
+                        LEFT JOIN event_list e ON rf.event_id = e.id
+                        WHERE (en.status = 'accepted' OR e.status = 1 OR rf.status = 'accepted')";
+            
+            $statsResult = $this->con->query($statsQuery);
+            
+            $stats = [
+                'total' => 0,
+                'inHouseReview' => 0,
+                'symposium' => 0,
+                'thisYear' => 0,
+                // Additional stats for the cards
+                'inHousePresented' => 0,
+                'inHousePending' => 0,
+                'inHouseNotPresented' => 0,
+                'symposiumCompleted' => 0,
+                'symposiumPending' => 0
+            ];
+            
+            if ($statsResult) {
+                while ($row = $statsResult->fetch_assoc()) {
+                    $eventName = $row['event_name'] ?? '';
+                    $eventNameLower = strtolower($eventName);
+                    $year = $row['endorsement_year'];
+                    
+                    if (!$year && !empty($row['endorsement_date'])) {
+                        $year = (int)date('Y', strtotime($row['endorsement_date']));
+                    }
+                    if (!$year) {
+                        $year = (int)date('Y');
+                    }
+                    
+                    $isInHouse = strpos($eventNameLower, 'in-house') !== false || 
+                                strpos($eventNameLower, 'inhouse') !== false || 
+                                strpos($eventNameLower, 'in house') !== false;
+                    
+                    $isSymposium = strpos($eventNameLower, 'symposium') !== false;
+                    
+                    if ($isInHouse) {
+                        $stats['inHouseReview']++;
+                        $presentedStatus = $row['presented_inhouse'] ?? 'pending_confirmation';
+                        
+                        if ($presentedStatus === 'proposal_presented') {
+                            $stats['inHousePresented']++;
+                        } elseif ($presentedStatus === 'proposal_not_presented') {
+                            $stats['inHouseNotPresented']++;
+                        } else {
+                            $stats['inHousePending']++;
+                        }
+                    } elseif ($isSymposium) {
+                        $stats['symposium']++;
+                        $completionStatus = $row['completion_status'] ?? 'pending_confirmation';
+                        
+                        if ($completionStatus === 'completed') {
+                            $stats['symposiumCompleted']++;
+                        } else {
+                            $stats['symposiumPending']++;
+                        }
+                    }
+                    
+                    $stats['total']++;
+                    if ($year == (int)date('Y')) {
+                        $stats['thisYear']++;
+                    }
+                }
+            }
+            
             $query = "SELECT 
                         rf.id,
                         rf.senderid,
@@ -176,6 +250,7 @@ class ProposedResearchAPI {
                         rf.date_completed,
                         rf.presented_inhouse,
                         rf.confirm_by_inhouse,
+                        rf.completion_status,
                         en.id as endorsement_id,
                         en.status as endorsement_status,
                         en.date as endorsement_date,
@@ -184,7 +259,16 @@ class ProposedResearchAPI {
                     FROM researchfile rf
                     LEFT JOIN endorsement en ON rf.endorsementid = en.id
                     LEFT JOIN event_list e ON rf.event_id = e.id
-                    WHERE en.status = 'accepted' OR e.status = 1
+                    WHERE (en.status = 'accepted' OR e.status = 1 OR rf.status = 'accepted')
+                    AND (
+                        -- In-House Review: must be presented
+                        ((rf.event LIKE '%in-house review%' OR rf.event LIKE '%In-house review%' OR rf.event LIKE '%In House Review%')
+                        AND rf.presented_inhouse = 'proposal_presented')
+                        OR
+                        -- Symposium: must be completed
+                        ((rf.event LIKE '%symposium%' OR rf.event LIKE '%Symposium%')
+                        AND rf.completion_status = 'completed')
+                    )
                     ORDER BY COALESCE(e.date, en.date) DESC, rf.id ASC";
             
             $result = $this->con->query($query);
@@ -194,14 +278,7 @@ class ProposedResearchAPI {
             }
             
             $researchData = [];
-            $stats = [
-                'total' => 0,
-                'inHouseReview' => 0,
-                'symposium' => 0,
-                'thisYear' => 0
-            ];
             
-            // Collect all research IDs to fetch academic positions
             $researchIds = [];
             $rows = [];
             
@@ -210,64 +287,52 @@ class ProposedResearchAPI {
                 $researchIds[] = $row['id'];
             }
             
-            // Get academic positions for all research papers
             $academicPositions = $this->getAcademicPositions($researchIds);
             
-            // Group papers by endorsement year (from endorsement.date)
             $papersByYear = [];
             
             foreach ($rows as $row) {
-                // Determine event type from MULTIPLE sources
                 $eventType = 'other';
                 $eventNameForType = '';
                 
-                // First check researchfile.event (event_name)
                 if (!empty($row['event_name'])) {
                     $eventNameForType = $row['event_name'];
                     $eventType = $this->getEventType($row['event_name']);
                 }
                 
-                // If still 'other', check endorsement.event (endorsement_event_name)
                 if ($eventType === 'other' && !empty($row['endorsement_event_name'])) {
                     $eventNameForType = $row['endorsement_event_name'];
                     $eventType = $this->getEventType($row['endorsement_event_name']);
                 }
                 
-                // If still 'other' and event_id exists in event_list, check event_list
                 if ($eventType === 'other' && $row['event_id'] && isset($events[$row['event_id']])) {
                     $eventNameForType = $events[$row['event_id']]['name'];
                     $eventType = $this->getEventType($eventNameForType);
                 }
                 
-                // Get year - endorsement_year from SQL should be reliable
                 $year = $row['endorsement_year'];
                 
-                // Fallback: if endorsement_year is null, try to parse endorsement_date
                 if (!$year && !empty($row['endorsement_date'])) {
                     $year = (int)date('Y', strtotime($row['endorsement_date']));
                     error_log("Fallback year from endorsement_date for ID {$row['id']}: $year");
                 }
                 
-                // Final fallback: use current year
                 if (!$year) {
                     $year = (int)date('Y');
                     error_log("WARNING: No year found for ID {$row['id']}, using current year: $year");
                 }
                 
-                // Build event info
                 $eventInfo = [
                     'name' => $eventNameForType ?: $row['event_name'] ?: $row['endorsement_event_name'] ?: '',
                     'date' => $row['endorsement_date'] ?? $row['date_started'] ?? '',
                     'year' => $year
                 ];
                 
-                // If event_id exists in event_list, use that for additional info
                 if ($row['event_id'] && isset($events[$row['event_id']])) {
                     $eventInfo['name'] = $eventInfo['name'] ?: $events[$row['event_id']]['name'];
                     $eventInfo['date'] = $eventInfo['date'] ?: $events[$row['event_id']]['date'];
                 }
                 
-                // Group by year
                 if (!isset($papersByYear[$year])) {
                     $papersByYear[$year] = [];
                 }
@@ -278,31 +343,14 @@ class ProposedResearchAPI {
                     'eventType' => $eventType,
                     'year' => $year
                 ];
-                
-                // Update stats
-                $stats['total']++;
-                
-                if ($eventType === 'inhouse') {
-                    $stats['inHouseReview']++;
-                } elseif ($eventType === 'symposium') {
-                    $stats['symposium']++;
-                }
-                
-                // Check if this year
-                if ($year == (int)date('Y')) {
-                    $stats['thisYear']++;
-                }
             }
             
-            // Sort years in descending order
             krsort($papersByYear);
             
             error_log("Years found: " . implode(', ', array_keys($papersByYear)));
             error_log("Papers per year: " . print_r(array_map('count', $papersByYear), true));
             
-            // Process each year separately
             foreach ($papersByYear as $year => $yearPapers) {
-                // Sort papers within the year by endorsement date and then by ID
                 usort($yearPapers, function($a, $b) {
                     $dateA = $a['row']['endorsement_date'] ?? $a['row']['date_started'] ?? '';
                     $dateB = $b['row']['endorsement_date'] ?? $b['row']['date_started'] ?? '';
@@ -313,7 +361,6 @@ class ProposedResearchAPI {
                     return $b['row']['id'] - $a['row']['id'];
                 });
                 
-                // Reset paper index for each year
                 $paperIndex = 1;
                 
                 foreach ($yearPapers as $paperData) {
@@ -321,7 +368,6 @@ class ProposedResearchAPI {
                     $eventType = $paperData['eventType'];
                     $eventInfo = $paperData['eventInfo'];
                     
-                    // Parse authors and faculty researchers
                     $parsedAuthors = $this->parseAuthorsAndFaculty($row['author'], $row['coauthor']);
                     
                     $paperPositions = $academicPositions[$row['id']] ?? [];
@@ -343,7 +389,6 @@ class ProposedResearchAPI {
                         ];
                     }
                     
-                    // Use endorsement date for display
                     $dateStarted = '';
                     if (!empty($row['endorsement_date'])) {
                         $dateStarted = date('M j, Y', strtotime($row['endorsement_date']));
@@ -351,17 +396,14 @@ class ProposedResearchAPI {
                         $dateStarted = date('M j, Y', strtotime($row['date_started']));
                     }
                     
-                    // Get revision status display
                     $revisionStatus = $row['revision_status'] ?? 'revision_pending';
                     $revisionStatusDisplay = $this->getRevisionStatusDisplay($revisionStatus);
                     
-                    // Get confirm by user email if exists
                     $confirmByEmail = '';
                     if (!empty($row['confirm_by_inhouse'])) {
                         $confirmByEmail = $this->getUserEmail($row['confirm_by_inhouse']);
                     }
                     
-                    // Build research entry
                     $researchEntry = [
                         'id' => $row['id'],
                         'endorsement_id' => $row['endorsement_id'],
@@ -390,10 +432,10 @@ class ProposedResearchAPI {
                         'endorsement_date' => $row['endorsement_date'] ?? '',
                         'presented_inhouse' => $row['presented_inhouse'] ?? 'pending_confirmation',
                         'confirm_by_inhouse' => $row['confirm_by_inhouse'] ?? '',
-                        'confirm_by_email' => $confirmByEmail
+                        'confirm_by_email' => $confirmByEmail,
+                        'completion_status' => $row['completion_status'] ?? ''
                     ];
                     
-                    // Set status columns based on event type
                     if ($eventType === 'inhouse') {
                         $researchEntry['inhouseUniversity'] = $revisionStatusDisplay;
                         $researchEntry['symposiumUniversity'] = '';
@@ -419,10 +461,13 @@ class ProposedResearchAPI {
                 }
             }
             
+            $filteredTotal = count($researchData);
+            $stats['total'] = $filteredTotal;  // Override total with filtered count
+            
             $this->response->status = true;
             $this->response->message = 'Proposed research fetched successfully';
-            $this->response->data = $researchData;
-            $this->response->stats = $stats;
+            $this->response->data = $researchData;      // Filtered data for table
+            $this->response->stats = $stats;            // Stats with total = filtered count
             
         } catch (Exception $e) {
             $this->response->message = 'Error: ' . $e->getMessage();
