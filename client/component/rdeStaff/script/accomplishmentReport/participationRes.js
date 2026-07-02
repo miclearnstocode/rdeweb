@@ -1,4 +1,4 @@
-import { $, Waiting } from "../../../../lib/lib.js"
+import { $, Waiting, CustomModal } from "../../../../lib/lib.js"
 
 export const participationResearch = () => {
     let mainContainer
@@ -15,6 +15,8 @@ export const participationResearch = () => {
     let nextCursor = null
     let totalCount = 0
     let initialLoadDone = false
+    let products = []
+    let paperTrailLinks = {}
 
     // Stats state
     let currentStats = {
@@ -25,6 +27,17 @@ export const participationResearch = () => {
         techPitching: 0
     }
 
+    let selectedFiles = {
+        activityProposal: null,
+        activityReport: null,
+        photoDocumentation: []
+    }
+    let existingFiles = {
+        activityProposal: null,
+        activityReport: null,
+        photoDocumentation: []
+    }
+    let isSaving = false
     // Campus options
     const campuses = [
         'All Campuses',
@@ -64,6 +77,78 @@ export const participationResearch = () => {
             loadingElement.remove()
             loadingElement = null
         }
+    }
+
+    const viewFileInModal = (url, title = 'File Viewer') => {
+        if (!url) return
+
+        let contentEl
+        const isImageUrl = url.match(/\.(jpeg|jpg|gif|png|webp|svg)/i) || url.startsWith('data:image/') || url.startsWith('blob:')
+
+        if (isImageUrl) {
+            contentEl = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px',
+                    backgroundColor: '#f8fafc',
+                    width: '100%',
+                    height: '100%',
+                    overflow: 'auto'
+                },
+                child: [
+                    $({
+                        tag: 'img',
+                        att: {
+                            src: url,
+                            alt: title
+                        },
+                        style: {
+                            maxWidth: '100%',
+                            maxHeight: '70vh',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                            objectFit: 'contain'
+                        }
+                    })
+                ]
+            })
+        } else {
+            contentEl = $({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    height: '70vh',
+                    backgroundColor: '#ffffff'
+                },
+                child: [
+                    $({
+                        tag: 'iframe',
+                        att: {
+                            src: url,
+                            frameBorder: '0',
+                            allow: 'autoplay'
+                        },
+                        style: {
+                            width: '100%',
+                            height: '100%',
+                            border: 'none',
+                            borderRadius: '0 0 24px 24px'
+                        }
+                    })
+                ]
+            })
+        }
+
+        CustomModal({
+            title: title,
+            content: contentEl,
+            size: 'large',
+            showCloseButton: true,
+            closeOnOverlayClick: true
+        })
     }
 
     const fetchParticipationData = async (cursor = null) => {
@@ -221,7 +306,7 @@ export const participationResearch = () => {
         // Get the actual column count from the table header
         const headerRow = document.querySelector('.participation-container thead tr')
         let columnCount = 9 // Default to 9 columns for this table
-        
+
         if (headerRow) {
             const headerCells = headerRow.querySelectorAll('th')
             if (headerCells.length > 0) {
@@ -453,36 +538,330 @@ export const participationResearch = () => {
     const renderLinks = (links) => {
         if (!links || links === '—' || (Array.isArray(links) && links.length === 0)) {
             return $({
-                tag: 'span',
-                text: '—',
+                tag: 'div',
                 style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '16px 8px',
                     color: '#9aa0a6',
                     fontSize: '12px',
-                    fontStyle: 'italic'
-                }
+                    fontStyle: 'italic',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '8px',
+                    border: '1px dashed #e8eaed'
+                },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-regular fa-file-lines' },
+                        style: { fontSize: '14px', marginRight: '8px', opacity: 0.5 }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: 'No attachments'
+                    })
+                ]
             })
         }
 
-        let linkArray = []
-        try {
-            if (typeof links === 'string') {
-                linkArray = JSON.parse(links)
-            } else if (Array.isArray(links)) {
-                linkArray = links
+        // Build an array of links to display
+        let linkItems = []
+
+        // If links is an object with activityProposal, photoDocumentation, activityReport
+        if (typeof links === 'object' && !Array.isArray(links)) {
+            // Activity Proposal
+            if (links.activityProposal) {
+                const proposal = links.activityProposal
+                if (typeof proposal === 'object' && proposal.view_url) {
+                    linkItems.push({
+                        url: proposal.view_url,
+                        download_url: proposal.download_url || proposal.view_url,
+                        label: 'Activity Proposal',
+                        type: 'proposal',
+                        icon: 'fa-regular fa-file-pdf',
+                        iconColor: '#ea4335'
+                    })
+                } else if (typeof proposal === 'string') {
+                    linkItems.push({
+                        url: proposal,
+                        download_url: proposal,
+                        label: 'Activity Proposal',
+                        type: 'proposal',
+                        icon: 'fa-regular fa-file-pdf',
+                        iconColor: '#ea4335'
+                    })
+                }
             }
-        } catch (e) {
-            return links
+
+            // Activity Report
+            if (links.activityReport) {
+                const report = links.activityReport
+                if (typeof report === 'object' && report.view_url) {
+                    linkItems.push({
+                        url: report.view_url,
+                        download_url: report.download_url || report.view_url,
+                        label: 'Activity Report',
+                        type: 'report',
+                        icon: 'fa-regular fa-file-lines',
+                        iconColor: '#1a73e8'
+                    })
+                } else if (typeof report === 'string') {
+                    linkItems.push({
+                        url: report,
+                        download_url: report,
+                        label: 'Activity Report',
+                        type: 'report',
+                        icon: 'fa-regular fa-file-lines',
+                        iconColor: '#1a73e8'
+                    })
+                }
+            }
+
+            // Photo Documentation
+            if (links.photoDocumentation && Array.isArray(links.photoDocumentation) && links.photoDocumentation.length > 0) {
+                links.photoDocumentation.forEach((photo, index) => {
+                    if (typeof photo === 'object' && photo.view_url) {
+                        linkItems.push({
+                            url: photo.view_url,
+                            download_url: photo.download_url || photo.view_url,
+                            label: `Photo ${index + 1}`,
+                            type: 'photo',
+                            icon: 'fa-regular fa-image',
+                            iconColor: '#34a853'
+                        })
+                    } else if (typeof photo === 'string') {
+                        linkItems.push({
+                            url: photo,
+                            download_url: photo,
+                            label: `Photo ${index + 1}`,
+                            type: 'photo',
+                            icon: 'fa-regular fa-image',
+                            iconColor: '#34a853'
+                        })
+                    }
+                })
+            }
+
+            // If no items found, show empty state
+            if (linkItems.length === 0) {
+                return $({
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '16px 8px',
+                        color: '#9aa0a6',
+                        fontSize: '12px',
+                        fontStyle: 'italic',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px dashed #e8eaed'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-regular fa-file-lines' },
+                            style: { fontSize: '14px', marginRight: '8px', opacity: 0.5 }
+                        }),
+                        $({
+                            tag: 'span',
+                            text: 'No attachments'
+                        })
+                    ]
+                })
+            }
+        } else if (Array.isArray(links)) {
+            linkItems = links.map((link, idx) => {
+                if (typeof link === 'string') {
+                    return {
+                        url: link,
+                        download_url: link,
+                        label: `Document ${idx + 1}`,
+                        type: 'document',
+                        icon: 'fa-regular fa-file',
+                        iconColor: '#f5a623'
+                    }
+                }
+                return {
+                    url: link.url || link,
+                    download_url: link.download_url || link.url || link,
+                    label: link.label || `Document ${idx + 1}`,
+                    type: link.type || 'document',
+                    icon: link.icon || 'fa-regular fa-file',
+                    iconColor: link.iconColor || '#f5a623'
+                }
+            })
+        } else if (typeof links === 'string') {
+            try {
+                const parsed = JSON.parse(links)
+                if (Array.isArray(parsed)) {
+                    return renderLinks(parsed)
+                }
+                if (typeof parsed === 'object') {
+                    return renderLinks(parsed)
+                }
+            } catch (e) {
+                return renderLinks([{
+                    url: links,
+                    download_url: links,
+                    label: 'Document',
+                    type: 'document',
+                    icon: 'fa-regular fa-file',
+                    iconColor: '#f5a623'
+                }])
+            }
         }
 
-        if (linkArray.length === 0) {
+        // Render the link items
+        if (linkItems.length === 0) {
             return $({
-                tag: 'span',
-                text: '—',
+                tag: 'div',
                 style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '16px 8px',
                     color: '#9aa0a6',
                     fontSize: '12px',
-                    fontStyle: 'italic'
-                }
+                    fontStyle: 'italic',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '8px',
+                    border: '1px dashed #e8eaed'
+                },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-regular fa-file-lines' },
+                        style: { fontSize: '14px', marginRight: '8px', opacity: 0.5 }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: 'No attachments'
+                    })
+                ]
+            })
+        }
+
+        // Function to open file in modal - REMOVED DUPLICATE TITLE
+        const viewFileInModal = (url, label) => {
+            // Extract file type from label for icon
+            let iconColor = '#1a73e8'
+            let iconClass = 'fa-regular fa-file'
+
+            if (label.includes('Proposal')) {
+                iconColor = '#ea4335'
+                iconClass = 'fa-regular fa-file-pdf'
+            } else if (label.includes('Report')) {
+                iconColor = '#1a73e8'
+                iconClass = 'fa-regular fa-file-lines'
+            } else if (label.includes('Photo')) {
+                iconColor = '#34a853'
+                iconClass = 'fa-regular fa-image'
+            }
+
+            CustomModal({
+                title: label,  // Title shows only the label
+                size: 'large',
+                content: `
+                    <div style="
+                        display: flex;
+                        flex-direction: column;
+                        height: 100%;
+                        min-height: 500px;
+                        background: #f8f9fa;
+                        border-radius: 12px;
+                        overflow: hidden;
+                    ">
+                        <iframe
+                            src="${url}"
+                            style="
+                                flex: 1;
+                                width: 100%;
+                                border: none;
+                                background: #ffffff;
+                                min-height: 500px;
+                            "
+                            allow="autoplay; encrypted-media"
+                            allowfullscreen
+                        ></iframe>
+                    </div>
+                `,
+                footer: ({ closeModal }) => [
+                    $({
+                        tag: 'button',
+                        text: 'Close',
+                        style: {
+                            padding: '8px 24px',
+                            backgroundColor: '#f1f3f4',
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: '#5f6368',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            transition: 'all 0.2s ease',
+                            fontFamily: 'inherit'
+                        },
+                        event: {
+                            type: 'click',
+                            method: closeModal,
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.currentTarget.style.backgroundColor = '#e8eaed'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.currentTarget.style.backgroundColor = '#f1f3f4'
+                            }
+                        }
+                    }),
+                    $({
+                        tag: 'button',
+                        text: 'Download',
+                        style: {
+                            padding: '8px 24px',
+                            backgroundColor: '#1a73e8',
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: '#ffffff',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            transition: 'all 0.2s ease',
+                            fontFamily: 'inherit'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-download' },
+                                style: { fontSize: '12px', marginRight: '8px' }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: 'Download'
+                            })
+                        ],
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                const downloadUrl = linkItems.find(l => l.url === url)?.download_url || url
+                                window.open(downloadUrl, '_blank')
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => {
+                                e.currentTarget.style.backgroundColor = '#1557b0'
+                                e.currentTarget.style.transform = 'scale(1.02)'
+                            },
+                            type3: 'mouseleave',
+                            method3: (e) => {
+                                e.currentTarget.style.backgroundColor = '#1a73e8'
+                                e.currentTarget.style.transform = 'scale(1)'
+                            }
+                        }
+                    })
+                ]
             })
         }
 
@@ -491,55 +870,85 @@ export const participationResearch = () => {
             style: {
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '6px'
+                gap: '4px',
+                padding: '2px 0'
             },
-            child: linkArray.map((link, idx) => {
-                const url = typeof link === 'string' ? link : link.url || link
-                const label = typeof link === 'string' ? `Document ${idx + 1}` : (link.label || `Document ${idx + 1}`)
+            child: linkItems.map((link) => {
+                const iconColor = link.iconColor || '#5f6368'
+                const bgColor = `${iconColor}15`
 
                 return $({
-                    tag: 'a',
-                    att: {
-                        href: url,
-                        target: '_blank',
-                        rel: 'noopener noreferrer'
-                    },
+                    tag: 'div',
                     style: {
-                        color: '#1a73e8',
-                        textDecoration: 'none',
-                        fontSize: '12px',
-                        wordBreak: 'break-all',
-                        padding: '6px 10px',
-                        backgroundColor: '#f1f8fe',
-                        borderRadius: '6px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        border: '1px solid #d2e3fc',
-                        transition: 'all 0.2s ease'
+                        gap: '10px',
+                        padding: '8px 12px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '8px',
+                        border: '1px solid #e8eaed',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                     },
-                    child: [
-                        $({
-                            tag: 'span',
-                            att: { className: 'fa-solid fa-external-link-alt' },
-                            style: { fontSize: '10px', opacity: 0.7 }
-                        }),
-                        $({ tag: 'span', text: label })
-                    ],
                     event: {
                         type: 'mouseenter',
                         method: (e) => {
-                            e.currentTarget.style.backgroundColor = '#e8f0fe'
-                            e.currentTarget.style.borderColor = '#1a73e8'
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(26,115,232,0.15)'
+                            e.currentTarget.style.borderColor = iconColor
+                            e.currentTarget.style.boxShadow = `0 2px 8px ${iconColor}25`
+                            e.currentTarget.style.transform = 'translateY(-1px)'
                         },
                         type2: 'mouseleave',
                         method2: (e) => {
-                            e.currentTarget.style.backgroundColor = '#f1f8fe'
-                            e.currentTarget.style.borderColor = '#d2e3fc'
-                            e.currentTarget.style.boxShadow = 'none'
+                            e.currentTarget.style.borderColor = '#e8eaed'
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                        },
+                        // Click to open in modal
+                        type3: 'click',
+                        method3: () => {
+                            viewFileInModal(link.url, link.label)
                         }
-                    }
+                    },
+                    child: [
+                        // Icon with colored background
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                backgroundColor: bgColor,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: link.icon || 'fa-regular fa-file' },
+                                    style: {
+                                        fontSize: '15px',
+                                        color: iconColor
+                                    }
+                                })
+                            ]
+                        }),
+
+                        // Label
+                        $({
+                            tag: 'span',
+                            text: link.label,
+                            style: {
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                color: '#202124',
+                                flex: 1,
+                                lineHeight: '1.3'
+                            }
+                        })
+                    ]
                 })
             })
         })
@@ -588,8 +997,7 @@ export const participationResearch = () => {
                             lineHeight: '1.4',
                             marginBottom: '8px'
                         }
-                    }),
-                    renderActivityTypeBadge(item.activityType)
+                    })
                 ]
             })
         )
@@ -689,7 +1097,8 @@ export const participationResearch = () => {
                     padding: '8px',
                     border: '1px solid #e8eaed',
                     verticalAlign: 'top',
-                    maxWidth: '250px',
+                    minWidth: '200px',
+                    maxWidth: '300px',
                     backgroundColor: '#ffffff'
                 },
                 child: [renderLinks(item.paperTrailLinks)]
@@ -842,40 +1251,6 @@ export const participationResearch = () => {
         })
     }
 
-    const renderActivityTypeBadge = (type) => {
-        if (!type) return '—'
-
-        const typeColors = {
-            'Research Exhibit': { bg: '#e8f0fe', color: '#1a73e8', border: '#d2e3fc' },
-            'Product Launch': { bg: '#e6f4ea', color: '#34a853', border: '#b7e1cd' },
-            'Training': { bg: '#fef7e8', color: '#f5a623', border: '#fde8c8' },
-            'Seminar': { bg: '#f3e8f9', color: '#7c3aed', border: '#e8d5f5' },
-            'Conference': { bg: '#fce8e6', color: '#ea4335', border: '#f5c6cb' }
-        }
-
-        const colors = typeColors[type] || { 
-            bg: '#f1f3f4', 
-            color: '#5f6368', 
-            border: '#e8eaed' 
-        }
-
-        return $({
-            tag: 'span',
-            text: type,
-            style: {
-                display: 'inline-block',
-                padding: '3px 12px',
-                borderRadius: '12px',
-                fontSize: '11px',
-                fontWeight: '600',
-                backgroundColor: colors.bg,
-                color: colors.color,
-                border: `1px solid ${colors.border}`,
-                letterSpacing: '0.3px'
-            }
-        })
-    }
-
     const openAddModal = () => {
         renderModal(null)
     }
@@ -901,7 +1276,7 @@ export const participationResearch = () => {
             formData.append('action', 'delete_participation')
             formData.append('id', item.id)
 
-            const response = await fetch('/api/participation-research', {
+            const response = await fetch('/participationResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -925,7 +1300,7 @@ export const participationResearch = () => {
     const createModernFileUpload = (label, name, icon, color, existingFile, accept = '.pdf', multiple = false) => {
         // State for preview images
         let previewImages = []
-        
+
         // If editing and existing files exist, populate preview
         if (existingFile && multiple && Array.isArray(existingFile)) {
             previewImages = existingFile
@@ -933,9 +1308,14 @@ export const participationResearch = () => {
             previewImages = [existingFile]
         }
 
+        // Initialize the global selected files if not exists
+        if (!selectedFiles[name]) {
+            selectedFiles[name] = multiple ? [] : null
+        }
+
         const container = $({
             tag: 'div',
-            att: {className: 'modern-upload-card'},
+            att: { className: 'modern-upload-card' },
             style: {
                 backgroundColor: '#ffffff',
                 borderRadius: '12px',
@@ -986,9 +1366,9 @@ export const participationResearch = () => {
                                 $({
                                     tag: 'span',
                                     att: { className: icon },
-                                    style: { 
-                                        color: color, 
-                                        fontSize: '16px' 
+                                    style: {
+                                        color: color,
+                                        fontSize: '16px'
                                     }
                                 })
                             ]
@@ -1012,10 +1392,19 @@ export const participationResearch = () => {
                                 }),
                                 $({
                                     tag: 'span',
-                                    text: existingFile ? (multiple ? `${existingFile.length} files attached` : 'File attached') : (multiple ? '' : 'No file attached'),
+                                    att: { className: 'file-attach-text' },
+                                    text: (() => {
+                                        if (multiple && selectedFiles[name] && selectedFiles[name].length > 0) {
+                                            return `${selectedFiles[name].length} files selected`
+                                        }
+                                        if (!multiple && selectedFiles[name]) {
+                                            return selectedFiles[name].name || 'File selected'
+                                        }
+                                        return existingFile ? (multiple ? `${existingFile.length} files attached` : 'File attached') : (multiple ? '' : 'No file attached')
+                                    })(),
                                     style: {
                                         fontSize: '11px',
-                                        color: existingFile ? '#34a853' : (multiple ? 'transparent' : '#9aa0a6'),
+                                        color: (multiple && selectedFiles[name] && selectedFiles[name].length > 0) || (!multiple && selectedFiles[name]) ? '#34a853' : (existingFile ? '#34a853' : (multiple ? 'transparent' : '#9aa0a6')),
                                         display: 'block',
                                         marginTop: '2px'
                                     }
@@ -1037,7 +1426,7 @@ export const participationResearch = () => {
                         })
                     ]
                 }),
-                
+
                 // File input area
                 $({
                     tag: 'div',
@@ -1068,8 +1457,12 @@ export const participationResearch = () => {
                                         const statusSpan = e.currentTarget.closest('.modern-upload-card').querySelector('.upload-status')
                                         const previewContainer = document.getElementById(`${name}-preview-container`)
                                         const fileCountSpan = document.getElementById(`${name}-file-count`)
-                                        
+                                        const attachText = e.currentTarget.closest('.modern-upload-card').querySelector('.file-attach-text')
+
+                                        // ===== STORE FILES IN GLOBAL VARIABLE =====
                                         if (multiple) {
+                                            selectedFiles[name] = Array.from(files)
+
                                             // Multiple files - add to preview
                                             Array.from(files).forEach(file => {
                                                 if (file.type.startsWith('image/')) {
@@ -1079,7 +1472,6 @@ export const participationResearch = () => {
                                                         if (previewContainer) {
                                                             previewContainer.appendChild(imgPreview)
                                                         }
-                                                        // Update file count
                                                         if (fileCountSpan) {
                                                             const currentCount = previewContainer ? previewContainer.children.length : 0
                                                             fileCountSpan.textContent = currentCount
@@ -1088,12 +1480,9 @@ export const participationResearch = () => {
                                                     reader.readAsDataURL(file)
                                                 }
                                             })
-                                            
-                                            // For images, just show a simple notification - NO "file(s) selected" text
+
                                             if (accept.includes('image')) {
-                                                // Only show notification
                                                 showNotification(`${files.length} photo(s) added`, 'success')
-                                                // Clear the file name display for images
                                                 if (fileNameSpan) {
                                                     fileNameSpan.textContent = ''
                                                 }
@@ -1101,7 +1490,6 @@ export const participationResearch = () => {
                                                     statusSpan.textContent = ''
                                                 }
                                             } else {
-                                                // For non-image multiple files
                                                 if (fileNameSpan) {
                                                     fileNameSpan.textContent = `${files.length} file(s) selected`
                                                     fileNameSpan.style.color = '#1e8e3e'
@@ -1113,6 +1501,8 @@ export const participationResearch = () => {
                                                 showNotification(`${files.length} file(s) selected successfully`, 'success')
                                             }
                                         } else {
+                                            selectedFiles[name] = files[0]
+
                                             // Single file
                                             const file = files[0]
                                             if (fileNameSpan) {
@@ -1123,8 +1513,7 @@ export const participationResearch = () => {
                                                 statusSpan.textContent = '✅ File selected'
                                                 statusSpan.style.color = '#1e8e3e'
                                             }
-                                            
-                                            // Show preview if image
+
                                             if (file.type.startsWith('image/')) {
                                                 const reader = new FileReader()
                                                 reader.onload = (event) => {
@@ -1137,24 +1526,23 @@ export const participationResearch = () => {
                                                 }
                                                 reader.readAsDataURL(file)
                                             }
-                                            
+
                                             showNotification(`${file.name} selected successfully`, 'success')
                                         }
-                                        
+
                                         // Update the file attached text
-                                        const attachText = e.currentTarget.closest('.modern-upload-card').querySelector('.file-attached-text')
                                         if (attachText) {
-                                            attachText.textContent = multiple && accept.includes('image') ? '' : (multiple ? 'Files ready to upload' : 'File ready to upload')
+                                            const count = multiple ? files.length : 1
+                                            attachText.textContent = multiple && accept.includes('image') ? `${count} photo(s) selected` : (multiple ? `${count} files selected` : `${files[0].name} selected`)
                                             attachText.style.color = '#1e8e3e'
                                         }
-                                        
-                                        // Reset input to allow re-selecting same files
-                                        e.target.value = ''
+
+
                                     }
                                 }
                             }
                         }),
-                        
+
                         // Custom upload button
                         $({
                             tag: 'button',
@@ -1179,9 +1567,9 @@ export const participationResearch = () => {
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-cloud-upload-alt' },
-                                    style: { 
-                                        fontSize: '16px', 
-                                        color: existingFile ? '#34a853' : color 
+                                    style: {
+                                        fontSize: '16px',
+                                        color: existingFile ? '#34a853' : color
                                     }
                                 }),
                                 $({
@@ -1210,7 +1598,7 @@ export const participationResearch = () => {
                         })
                     ]
                 }),
-                
+
                 // File name display - hidden for image uploads
                 $({
                     tag: 'div',
@@ -1225,24 +1613,40 @@ export const participationResearch = () => {
                         minHeight: '20px',
                         display: accept.includes('image') ? 'none' : 'block'
                     },
-                    text: existingFile ? (multiple ? `${existingFile.length} file(s)` : existingFile.split('/').pop() || 'Document') : ''
+                    text: (() => {
+                        if (multiple && selectedFiles[name] && selectedFiles[name].length > 0) {
+                            return `${selectedFiles[name].length} file(s) selected`
+                        }
+                        if (!multiple && selectedFiles[name]) {
+                            return selectedFiles[name].name
+                        }
+                        return existingFile ? (multiple ? `${existingFile.length} file(s)` : existingFile.split('/').pop() || 'Document') : ''
+                    })()
                 }),
-                
+
                 // Status indicator - hidden for image uploads
                 $({
                     tag: 'div',
                     att: { className: 'upload-status' },
                     style: {
                         fontSize: '11px',
-                        color: existingFile ? '#34a853' : (multiple ? 'transparent' : '#ea4335'),
+                        color: (multiple && selectedFiles[name] && selectedFiles[name].length > 0) || (!multiple && selectedFiles[name]) ? '#34a853' : (existingFile ? '#34a853' : (multiple ? 'transparent' : '#ea4335')),
                         textAlign: 'center',
                         marginBottom: '8px',
                         fontWeight: '500',
                         display: accept.includes('image') ? 'none' : 'block'
                     },
-                    text: existingFile ? (multiple ? '✅ Files attached' : '✅ File attached') : (multiple ? '' : '⚠️ File required')
+                    text: (() => {
+                        if (multiple && selectedFiles[name] && selectedFiles[name].length > 0) {
+                            return `✅ ${selectedFiles[name].length} file(s) selected`
+                        }
+                        if (!multiple && selectedFiles[name]) {
+                            return '✅ File selected'
+                        }
+                        return existingFile ? (multiple ? '✅ Files attached' : '✅ File attached') : (multiple ? '' : '⚠️ File required')
+                    })()
                 }),
-                
+
                 // Image preview container (only for image uploads)
                 ...(accept.includes('image') ? [
                     $({
@@ -1266,7 +1670,12 @@ export const participationResearch = () => {
                             $({
                                 tag: 'span',
                                 att: { id: `${name}-file-count` },
-                                text: existingFile ? (Array.isArray(existingFile) ? existingFile.length : 1) : '0',
+                                text: (() => {
+                                    if (multiple && selectedFiles[name] && selectedFiles[name].length > 0) {
+                                        return selectedFiles[name].length
+                                    }
+                                    return existingFile ? (Array.isArray(existingFile) ? existingFile.length : 1) : '0'
+                                })(),
                                 style: {
                                     fontSize: '12px',
                                     color: '#1a73e8',
@@ -1301,7 +1710,6 @@ export const participationResearch = () => {
                                     const imgPreview = createImagePreview(url, 'Existing image', false)
                                     el.appendChild(imgPreview)
                                 })
-                                // Update file count
                                 const fileCountSpan = document.getElementById(`${name}-file-count`)
                                 if (fileCountSpan) {
                                     fileCountSpan.textContent = existingFile.length
@@ -1314,8 +1722,7 @@ export const participationResearch = () => {
                                     fileCountSpan.textContent = '1'
                                 }
                             }
-                            
-                            // Update file count whenever children change
+
                             const observer = new MutationObserver(() => {
                                 const fileCountSpan = document.getElementById(`${name}-file-count`)
                                 if (fileCountSpan) {
@@ -1326,7 +1733,7 @@ export const participationResearch = () => {
                         }
                     })
                 ] : []),
-                
+
                 // Action buttons (if file exists)
                 ...(existingFile ? [
                     $({
@@ -1374,9 +1781,11 @@ export const participationResearch = () => {
                                     method: (e) => {
                                         e.preventDefault()
                                         if (multiple && Array.isArray(existingFile)) {
-                                            window.open(existingFile[0], '_blank')
+                                            if (existingFile.length > 0) {
+                                                viewFileInModal(existingFile[0], label)
+                                            }
                                         } else {
-                                            window.open(existingFile, '_blank')
+                                            viewFileInModal(existingFile, label)
                                         }
                                     },
                                     type2: 'mouseenter',
@@ -1611,25 +2020,41 @@ export const participationResearch = () => {
 
         const isEditing = item !== null
 
-        // Products state
         let products = []
         if (isEditing && item.products) {
             try {
-                products = typeof item.products === 'string' ? JSON.parse(item.products) : item.products
-                if (!Array.isArray(products)) products = []
+                const parsedProducts = typeof item.products === 'string' ? JSON.parse(item.products) : item.products
+                if (Array.isArray(parsedProducts)) {
+                    // Store the array directly as strings
+                    products = parsedProducts.map(p => {
+                        // If it's an object with name/description, just get the name
+                        if (typeof p === 'object' && p !== null) {
+                            return p.name || p.toString()
+                        }
+                        return String(p)
+                    })
+                } else {
+                    products = []
+                }
             } catch (e) {
                 products = []
             }
         }
 
         // Paper trail files state
-        let paperTrailFiles = {
+        paperTrailLinks = {
             activityProposal: null,
             photoDocumentation: [],
             activityReport: null
         }
 
-        let existingFiles = {
+        // Reset file selections for the new form session
+        selectedFiles = {
+            activityProposal: null,
+            activityReport: null,
+            photoDocumentation: []
+        }
+        existingFiles = {
             activityProposal: null,
             photoDocumentation: [],
             activityReport: null
@@ -1641,7 +2066,7 @@ export const participationResearch = () => {
                 if (parsed && typeof parsed === 'object') {
                     if (parsed.activityProposal) existingFiles.activityProposal = parsed.activityProposal
                     if (parsed.activityReport) existingFiles.activityReport = parsed.activityReport
-                    
+
                     if (parsed.photoDocumentation) {
                         if (Array.isArray(parsed.photoDocumentation)) {
                             existingFiles.photoDocumentation = parsed.photoDocumentation
@@ -1658,10 +2083,14 @@ export const participationResearch = () => {
         // Container for products
         let productsContainer
 
-        // Function to add a product field
-        const addProductField = (name = '', description = '') => {
+        // Function to add a product field (single input with comma-separated values)
+        const addProductField = (value = '') => {
             const productIndex = products.length
-            products.push({ name, description })
+            // If there's existing data, parse it
+            let inputValue = value
+            if (value && typeof value === 'string') {
+                inputValue = value
+            }
 
             const productRow = $({
                 tag: 'div',
@@ -1677,8 +2106,8 @@ export const participationResearch = () => {
                         tag: 'input',
                         att: {
                             type: 'text',
-                            placeholder: 'Product/Technology name',
-                            value: name,
+                            placeholder: 'Enter products/technologies (comma separated)',
+                            value: inputValue,
                             className: 'product-name-input'
                         },
                         style: {
@@ -1708,49 +2137,9 @@ export const participationResearch = () => {
                             },
                             type3: 'input',
                             method3: (e) => {
+                                // Store the raw comma-separated string
                                 if (products[productIndex]) {
-                                    products[productIndex].name = e.target.value
-                                }
-                            }
-                        }
-                    }),
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'text',
-                            placeholder: 'Brief description (optional)',
-                            value: description,
-                            className: 'product-description-input'
-                        },
-                        style: {
-                            flex: '2',
-                            padding: '10px 14px',
-                            backgroundColor: '#f8f9fa',
-                            border: '2px solid #e8eaed',
-                            borderRadius: '8px',
-                            color: '#202124',
-                            fontSize: '13px',
-                            outline: 'none',
-                            transition: 'all 0.2s ease',
-                            fontFamily: 'inherit'
-                        },
-                        event: {
-                            type: 'focus',
-                            method: (e) => {
-                                e.target.style.borderColor = '#00bcd4'
-                                e.target.style.backgroundColor = '#ffffff'
-                                e.target.style.boxShadow = '0 0 0 4px rgba(0, 188, 212, 0.1)'
-                            },
-                            type2: 'blur',
-                            method2: (e) => {
-                                e.target.style.borderColor = '#e8eaed'
-                                e.target.style.backgroundColor = '#f8f9fa'
-                                e.target.style.boxShadow = 'none'
-                            },
-                            type3: 'input',
-                            method3: (e) => {
-                                if (products[productIndex]) {
-                                    products[productIndex].description = e.target.value
+                                    products[productIndex].raw = e.target.value
                                 }
                             }
                         }
@@ -1795,6 +2184,7 @@ export const participationResearch = () => {
             return productRow
         }
 
+        // Create the modal element
         modalElement = $({
             tag: 'div',
             style: {
@@ -1812,14 +2202,6 @@ export const participationResearch = () => {
                 fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 padding: '20px'
             },
-            event: {
-                type: 'click',
-                method: (e) => {
-                    if (e.target === e.currentTarget) {
-                        closeModal()
-                    }
-                }
-            },
             child: [
                 $({
                     tag: 'div',
@@ -1836,7 +2218,6 @@ export const participationResearch = () => {
                         flexDirection: 'column'
                     },
                     child: [
-                        // Modal header
                         $({
                             tag: 'div',
                             style: {
@@ -2090,7 +2471,7 @@ export const participationResearch = () => {
                                             ]
                                         }),
 
-                                        // Products Exhibited section
+                                        // Products Exhibited section - Single input with comma separation
                                         $({
                                             tag: 'div',
                                             style: { marginBottom: '24px' },
@@ -2119,7 +2500,7 @@ export const participationResearch = () => {
                                                                 }),
                                                                 $({
                                                                     tag: 'span',
-                                                                    text: 'Add products or technologies exhibited',
+                                                                    text: 'Enter products or technologies separated by commas',
                                                                     style: {
                                                                         fontSize: '12px',
                                                                         color: '#5f6368',
@@ -2128,53 +2509,6 @@ export const participationResearch = () => {
                                                                     }
                                                                 })
                                                             ]
-                                                        }),
-                                                        $({
-                                                            tag: 'button',
-                                                            att: { type: 'button' },
-                                                            style: {
-                                                                padding: '8px 16px',
-                                                                backgroundColor: '#00bcd4',
-                                                                border: 'none',
-                                                                borderRadius: '8px',
-                                                                color: '#ffffff',
-                                                                fontSize: '13px',
-                                                                cursor: 'pointer',
-                                                                fontWeight: '500',
-                                                                transition: 'all 0.2s ease',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '6px',
-                                                                fontFamily: 'inherit'
-                                                            },
-                                                            child: [
-                                                                $({
-                                                                    tag: 'span',
-                                                                    att: { className: 'fa-solid fa-plus' },
-                                                                    style: { fontSize: '12px' }
-                                                                }),
-                                                                $({
-                                                                    tag: 'span',
-                                                                    text: 'Add Product'
-                                                                })
-                                                            ],
-                                                            event: {
-                                                                type: 'click',
-                                                                method: () => {
-                                                                    const newRow = addProductField()
-                                                                    productsContainer.appendChild(newRow)
-                                                                },
-                                                                type2: 'mouseenter',
-                                                                method2: (e) => {
-                                                                    e.currentTarget.style.backgroundColor = '#0097a7'
-                                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 188, 212, 0.3)'
-                                                                },
-                                                                type3: 'mouseleave',
-                                                                method3: (e) => {
-                                                                    e.currentTarget.style.backgroundColor = '#00bcd4'
-                                                                    e.currentTarget.style.boxShadow = 'none'
-                                                                }
-                                                            }
                                                         })
                                                     ]
                                                 }),
@@ -2185,19 +2519,107 @@ export const participationResearch = () => {
                                                         backgroundColor: '#f8f9fa',
                                                         padding: '16px',
                                                         borderRadius: '12px',
-                                                        border: '2px solid #e8eaed',
-                                                        minHeight: '50px'
+                                                        border: '2px solid #e8eaed'
                                                     },
-                                                    elementHandler: (el) => {
-                                                        productsContainer = el
-                                                        if (isEditing && products.length > 0) {
-                                                            products.forEach(product => {
-                                                                productsContainer.appendChild(
-                                                                    addProductField(product.name, product.description)
-                                                                )
-                                                            })
-                                                        }
-                                                    }
+                                                    child: [
+                                                        // Single input for products
+                                                        $({
+                                                            tag: 'input',
+                                                            att: {
+                                                                type: 'text',
+                                                                id: 'products-input',
+                                                                name: 'productsInput',
+                                                                placeholder: 'e.g., Smart Farming System, Organic Fertilizer, IoT Sensor',
+                                                                value: (() => {
+                                                                    // Initialize with existing products
+                                                                    if (isEditing && products && products.length > 0) {
+                                                                        // If products is array of objects with name property
+                                                                        if (typeof products[0] === 'object' && products[0].name) {
+                                                                            return products.map(p => p.name).join(', ')
+                                                                        }
+                                                                        // If products is array of strings
+                                                                        return products.join(', ')
+                                                                    }
+                                                                    return ''
+                                                                })()
+                                                            },
+                                                            style: {
+                                                                width: '100%',
+                                                                padding: '12px 14px',
+                                                                backgroundColor: '#ffffff',
+                                                                border: '2px solid #e8eaed',
+                                                                borderRadius: '8px',
+                                                                color: '#202124',
+                                                                fontSize: '14px',
+                                                                outline: 'none',
+                                                                transition: 'all 0.2s ease',
+                                                                fontFamily: 'inherit'
+                                                            },
+                                                            event: {
+                                                                type: 'focus',
+                                                                method: (e) => {
+                                                                    e.target.style.borderColor = '#00bcd4'
+                                                                    e.target.style.backgroundColor = '#ffffff'
+                                                                    e.target.style.boxShadow = '0 0 0 4px rgba(0, 188, 212, 0.1)'
+                                                                },
+                                                                type2: 'blur',
+                                                                method2: (e) => {
+                                                                    e.target.style.borderColor = '#e8eaed'
+                                                                    e.target.style.backgroundColor = '#ffffff'
+                                                                    e.target.style.boxShadow = 'none'
+                                                                },
+                                                                type3: 'input',
+                                                                method3: (e) => {
+                                                                    // Update products array in real-time for reference
+                                                                    const rawValue = e.target.value
+                                                                    const items = rawValue.split(',').map(s => s.trim()).filter(s => s.length > 0)
+                                                                    products = items
+
+                                                                    // Update tags display
+                                                                    const tagsContainer = document.getElementById('products-tags-container')
+                                                                    if (tagsContainer) {
+                                                                        tagsContainer.innerHTML = ''
+                                                                        items.forEach(item => {
+                                                                            const tag = document.createElement('span')
+                                                                            tag.style.cssText = `
+                                                                                background-color: #e8f0fe;
+                                                                                color: #1a73e8;
+                                                                                padding: 4px 12px;
+                                                                                border-radius: 16px;
+                                                                                font-size: 12px;
+                                                                                font-weight: 500;
+                                                                                border: 1px solid #d2e3fc;
+                                                                            `
+                                                                            tag.textContent = item
+                                                                            tagsContainer.appendChild(tag)
+                                                                        })
+                                                                    }
+                                                                }
+                                                            }
+                                                        }),
+                                                        // Tags/chips for visual feedback
+                                                        $({
+                                                            tag: 'div',
+                                                            att: { id: 'products-tags-container' },
+                                                            style: {
+                                                                display: 'flex',
+                                                                flexWrap: 'wrap',
+                                                                gap: '8px',
+                                                                marginTop: '12px',
+                                                                minHeight: '30px',
+                                                                padding: '4px 0'
+                                                            },
+                                                            elementHandler: (el) => {
+                                                                // Trigger initial update after render
+                                                                setTimeout(() => {
+                                                                    const input = document.getElementById('products-input')
+                                                                    if (input) {
+                                                                        input.dispatchEvent(new Event('input'))
+                                                                    }
+                                                                }, 50)
+                                                            }
+                                                        })
+                                                    ]
                                                 })
                                             ]
                                         }),
@@ -2429,7 +2851,7 @@ export const participationResearch = () => {
                                             ]
                                         }),
 
-                                        // Paper Trail Attachments section with modern file upload
+                                        // Paper Trail Attachments section
                                         $({
                                             tag: 'div',
                                             style: { marginBottom: '24px' },
@@ -2500,9 +2922,16 @@ export const participationResearch = () => {
                                                     },
                                                     child: [
                                                         // Activity Proposal (PDF)
-                                                        createModernFileUpload('Activity Proposal', 'activity_proposal', 'fa-solid fa-file-pdf', '#ea4335', isEditing ? existingFiles.activityProposal : null, '.pdf'),
-                                                        
-                                                        // Photo Documentation (Multiple Images) - Updated with remove button
+                                                        createModernFileUpload(
+                                                            'Activity Proposal',
+                                                            'activityProposal',
+                                                            'fa-solid fa-file-pdf',
+                                                            '#ea4335',
+                                                            isEditing ? existingFiles.activityProposal : null,
+                                                            '.pdf'
+                                                        ),
+
+                                                        // Photo Documentation (Multiple Images)
                                                         $({
                                                             tag: 'div',
                                                             style: {
@@ -2555,9 +2984,9 @@ export const participationResearch = () => {
                                                                                 $({
                                                                                     tag: 'span',
                                                                                     att: { className: 'fa-solid fa-images' },
-                                                                                    style: { 
-                                                                                        color: '#00bcd4', 
-                                                                                        fontSize: '16px' 
+                                                                                    style: {
+                                                                                        color: '#00bcd4',
+                                                                                        fontSize: '16px'
                                                                                     }
                                                                                 })
                                                                             ]
@@ -2581,6 +3010,7 @@ export const participationResearch = () => {
                                                                                 }),
                                                                                 $({
                                                                                     tag: 'span',
+                                                                                    att: { className: 'photo-attach-text' },
                                                                                     text: isEditing && existingFiles.photoDocumentation ? `${existingFiles.photoDocumentation.length} files attached` : 'No files attached',
                                                                                     style: {
                                                                                         fontSize: '11px',
@@ -2606,7 +3036,7 @@ export const participationResearch = () => {
                                                                         })
                                                                     ]
                                                                 }),
-                                                                
+
                                                                 // File input area
                                                                 $({
                                                                     tag: 'div',
@@ -2620,8 +3050,8 @@ export const participationResearch = () => {
                                                                             tag: 'input',
                                                                             att: {
                                                                                 type: 'file',
-                                                                                name: 'photo_documentation',
-                                                                                id: 'photo_documentation-input',
+                                                                                name: 'photoDocumentation[]',
+                                                                                id: 'photoDocumentation-input',
                                                                                 accept: '.jpg,.jpeg,.png,.gif,.webp',
                                                                                 multiple: true
                                                                             },
@@ -2633,31 +3063,26 @@ export const participationResearch = () => {
                                                                                 method: (e) => {
                                                                                     const files = e.target.files
                                                                                     if (files && files.length > 0) {
-                                                                                        const previewContainer = document.getElementById('photo_documentation-preview-container')
-                                                                                        const fileCountSpan = document.getElementById('photo_documentation-file-count')
-                                                                                        
-                                                                                        // Add files to paperTrailFiles
+                                                                                        const previewContainer = document.getElementById('photoDocumentation-preview-container')
+                                                                                        const fileCountSpan = document.getElementById('photoDocumentation-file-count')
+
+                                                                                        // Add to selectedFiles and preview
                                                                                         Array.from(files).forEach(file => {
                                                                                             if (file.type.startsWith('image/')) {
-                                                                                                paperTrailFiles.photoDocumentation.push(file)
-                                                                                            }
-                                                                                        })
-                                                                                        
-                                                                                        // Add to preview
-                                                                                        Array.from(files).forEach(file => {
-                                                                                            if (file.type.startsWith('image/')) {
+                                                                                                selectedFiles.photoDocumentation.push(file)
                                                                                                 const reader = new FileReader()
                                                                                                 reader.onload = (event) => {
                                                                                                     const imgPreview = createImagePreviewWithRemove(
-                                                                                                        event.target.result, 
-                                                                                                        file.name, 
+                                                                                                        event.target.result,
+                                                                                                        file.name,
                                                                                                         true,
                                                                                                         () => {
-                                                                                                            // Remove from paperTrailFiles
-                                                                                                            const index = paperTrailFiles.photoDocumentation.findIndex(f => f.name === file.name && f.size === file.size)
-                                                                                                            if (index !== -1) {
-                                                                                                                paperTrailFiles.photoDocumentation.splice(index, 1)
+                                                                                                            // Remove from selectedFiles
+                                                                                                            const fileIdx = selectedFiles.photoDocumentation.indexOf(file)
+                                                                                                            if (fileIdx !== -1) {
+                                                                                                                selectedFiles.photoDocumentation.splice(fileIdx, 1)
                                                                                                             }
+
                                                                                                             // Update file count
                                                                                                             if (fileCountSpan) {
                                                                                                                 const currentCount = previewContainer ? previewContainer.children.length : 0
@@ -2666,7 +3091,7 @@ export const participationResearch = () => {
                                                                                                             // Update attached text
                                                                                                             const attachText = document.querySelector('.photo-attach-text')
                                                                                                             if (attachText) {
-                                                                                                                const remaining = paperTrailFiles.photoDocumentation.length + (existingFiles.photoDocumentation ? existingFiles.photoDocumentation.length : 0)
+                                                                                                                const remaining = previewContainer ? previewContainer.children.length : 0
                                                                                                                 attachText.textContent = remaining > 0 ? `${remaining} files attached` : 'No files attached'
                                                                                                                 attachText.style.color = remaining > 0 ? '#34a853' : '#9aa0a6'
                                                                                                             }
@@ -2684,14 +3109,13 @@ export const participationResearch = () => {
                                                                                                 reader.readAsDataURL(file)
                                                                                             }
                                                                                         })
-                                                                                        
+
                                                                                         showNotification(`${files.length} photo(s) added`, 'success')
-                                                                                        e.target.value = ''
                                                                                     }
                                                                                 }
                                                                             }
                                                                         }),
-                                                                        
+
                                                                         // Custom upload button
                                                                         $({
                                                                             tag: 'button',
@@ -2716,9 +3140,9 @@ export const participationResearch = () => {
                                                                                 $({
                                                                                     tag: 'span',
                                                                                     att: { className: 'fa-solid fa-cloud-upload-alt' },
-                                                                                    style: { 
-                                                                                        fontSize: '16px', 
-                                                                                        color: isEditing && existingFiles.photoDocumentation ? '#34a853' : '#00bcd4' 
+                                                                                    style: {
+                                                                                        fontSize: '16px',
+                                                                                        color: isEditing && existingFiles.photoDocumentation ? '#34a853' : '#00bcd4'
                                                                                     }
                                                                                 }),
                                                                                 $({
@@ -2730,7 +3154,7 @@ export const participationResearch = () => {
                                                                                 type: 'click',
                                                                                 method: (e) => {
                                                                                     e.preventDefault()
-                                                                                    const fileInput = document.getElementById('photo_documentation-input')
+                                                                                    const fileInput = document.getElementById('photoDocumentation-input')
                                                                                     if (fileInput) fileInput.click()
                                                                                 },
                                                                                 type2: 'mouseenter',
@@ -2747,8 +3171,8 @@ export const participationResearch = () => {
                                                                         })
                                                                     ]
                                                                 }),
-                                                                
-                                                                // Image preview container with remove buttons
+
+                                                                // Image preview container
                                                                 $({
                                                                     tag: 'div',
                                                                     style: {
@@ -2769,7 +3193,7 @@ export const participationResearch = () => {
                                                                         }),
                                                                         $({
                                                                             tag: 'span',
-                                                                            att: { id: 'photo_documentation-file-count' },
+                                                                            att: { id: 'photoDocumentation-file-count' },
                                                                             text: isEditing && existingFiles.photoDocumentation ? existingFiles.photoDocumentation.length : '0',
                                                                             style: {
                                                                                 fontSize: '12px',
@@ -2784,7 +3208,7 @@ export const participationResearch = () => {
                                                                 }),
                                                                 $({
                                                                     tag: 'div',
-                                                                    att: { id: 'photo_documentation-preview-container' },
+                                                                    att: { id: 'photoDocumentation-preview-container' },
                                                                     style: {
                                                                         display: 'grid',
                                                                         gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
@@ -2803,48 +3227,48 @@ export const participationResearch = () => {
                                                                         if (isEditing && existingFiles.photoDocumentation && Array.isArray(existingFiles.photoDocumentation)) {
                                                                             existingFiles.photoDocumentation.forEach((url, index) => {
                                                                                 const imgPreview = createImagePreviewWithRemove(
-                                                                                    url, 
-                                                                                    `Image ${index + 1}`, 
+                                                                                    url,
+                                                                                    `Image ${index + 1}`,
                                                                                     false,
                                                                                     () => {
                                                                                         // Remove from existingFiles
                                                                                         const idx = existingFiles.photoDocumentation.indexOf(url)
                                                                                         if (idx !== -1) {
                                                                                             existingFiles.photoDocumentation.splice(idx, 1)
-                                                                                            // Update file count
-                                                                                            const fileCountSpan = document.getElementById('photo_documentation-file-count')
-                                                                                            if (fileCountSpan) {
-                                                                                                fileCountSpan.textContent = existingFiles.photoDocumentation.length
-                                                                                            }
-                                                                                            // Update attached text
-                                                                                            const attachText = document.querySelector('.photo-attach-text')
-                                                                                            if (attachText) {
-                                                                                                const remaining = paperTrailFiles.photoDocumentation.length + existingFiles.photoDocumentation.length
-                                                                                                attachText.textContent = remaining > 0 ? `${remaining} files attached` : 'No files attached'
-                                                                                                attachText.style.color = remaining > 0 ? '#34a853' : '#9aa0a6'
-                                                                                            }
+                                                                                        }
+                                                                                        // Update file count
+                                                                                        const fileCountSpan = document.getElementById('photoDocumentation-file-count')
+                                                                                        if (fileCountSpan) {
+                                                                                            fileCountSpan.textContent = existingFiles.photoDocumentation.length
+                                                                                        }
+                                                                                        // Update attached text
+                                                                                        const attachText = document.querySelector('.photo-attach-text')
+                                                                                        if (attachText) {
+                                                                                            const remaining = existingFiles.photoDocumentation.length
+                                                                                            attachText.textContent = remaining > 0 ? `${remaining} files attached` : 'No files attached'
+                                                                                            attachText.style.color = remaining > 0 ? '#34a853' : '#9aa0a6'
                                                                                         }
                                                                                     }
                                                                                 )
                                                                                 el.appendChild(imgPreview)
                                                                             })
                                                                             // Update file count
-                                                                            const fileCountSpan = document.getElementById('photo_documentation-file-count')
+                                                                            const fileCountSpan = document.getElementById('photoDocumentation-file-count')
                                                                             if (fileCountSpan) {
                                                                                 fileCountSpan.textContent = existingFiles.photoDocumentation.length
                                                                             }
                                                                         }
-                                                                        
+
                                                                         // Update file count whenever children change
                                                                         const observer = new MutationObserver(() => {
-                                                                            const fileCountSpan = document.getElementById('photo_documentation-file-count')
+                                                                            const fileCountSpan = document.getElementById('photoDocumentation-file-count')
                                                                             if (fileCountSpan) {
                                                                                 fileCountSpan.textContent = el.children.length
                                                                             }
                                                                             // Update attached text
                                                                             const attachText = document.querySelector('.photo-attach-text')
                                                                             if (attachText) {
-                                                                                const remaining = paperTrailFiles.photoDocumentation.length + (existingFiles.photoDocumentation ? existingFiles.photoDocumentation.length : 0)
+                                                                                const remaining = el.children.length
                                                                                 attachText.textContent = remaining > 0 ? `${remaining} files attached` : 'No files attached'
                                                                                 attachText.style.color = remaining > 0 ? '#34a853' : '#9aa0a6'
                                                                             }
@@ -2852,7 +3276,7 @@ export const participationResearch = () => {
                                                                         observer.observe(el, { childList: true, subtree: true })
                                                                     }
                                                                 }),
-                                                                
+
                                                                 // Action buttons (if files exist)
                                                                 ...(isEditing && existingFiles.photoDocumentation && existingFiles.photoDocumentation.length > 0 ? [
                                                                     $({
@@ -2900,7 +3324,7 @@ export const participationResearch = () => {
                                                                                     method: (e) => {
                                                                                         e.preventDefault()
                                                                                         if (existingFiles.photoDocumentation && existingFiles.photoDocumentation.length > 0) {
-                                                                                            window.open(existingFiles.photoDocumentation[0], '_blank')
+                                                                                            viewFileInModal(existingFiles.photoDocumentation[0], 'Photo Documentation')
                                                                                         }
                                                                                     },
                                                                                     type2: 'mouseenter',
@@ -2972,9 +3396,16 @@ export const participationResearch = () => {
                                                                 ] : [])
                                                             ]
                                                         }),
-                                                        
+
                                                         // Activity Report (PDF)
-                                                        createModernFileUpload('Activity Report', 'activity_report', 'fa-solid fa-file-alt', '#1a73e8', isEditing ? existingFiles.activityReport : null, '.pdf')
+                                                        createModernFileUpload(
+                                                            'Activity Report',
+                                                            'activityReport',
+                                                            'fa-solid fa-file-alt',
+                                                            '#1a73e8',
+                                                            isEditing ? existingFiles.activityReport : null,
+                                                            '.pdf'
+                                                        )
                                                     ]
                                                 })
                                             ]
@@ -3060,7 +3491,7 @@ export const participationResearch = () => {
                                         type: 'submit',
                                         method: async (e) => {
                                             e.preventDefault()
-                                            await saveParticipationData(isEditing)
+                                            await saveParticipationData(isEditing, item)
                                         }
                                     }
                                 })
@@ -3171,10 +3602,10 @@ export const participationResearch = () => {
                             paddingRight: '40px'
                         },
                         child: [
-                            $({ 
-                                tag: 'option', 
-                                att: { value: '' }, 
-                                text: `-- Select ${type === 'campus' ? 'Campus' : 'Center'} --` 
+                            $({
+                                tag: 'option',
+                                att: { value: '' },
+                                text: `-- Select ${type === 'campus' ? 'Campus' : 'Center'} --`
                             }),
                             ...options.map(opt =>
                                 $({
@@ -3204,18 +3635,67 @@ export const participationResearch = () => {
         )
     }
 
-    const saveParticipationData = async (isEditing) => {
+    const saveParticipationData = async (isEditing, item = null) => {
+        if (isSaving) return
+        isSaving = true
+
+        const submitBtn = document.querySelector('#participation-form button[type="submit"]')
+        let originalBtnText = ''
+        if (submitBtn) {
+            originalBtnText = submitBtn.textContent
+            submitBtn.disabled = true
+            submitBtn.textContent = 'Saving...'
+            submitBtn.style.opacity = '0.7'
+            submitBtn.style.cursor = 'not-allowed'
+        }
+
         const form = document.getElementById('participation-form')
         const formData = new FormData(form)
+
         formData.append('action', isEditing ? 'update_participation' : 'add_participation')
 
-        // Add dynamic arrays as JSON
-        formData.append('products', JSON.stringify(products))
-        formData.append('paperTrailLinks', JSON.stringify(paperTrailLinks))
+        // Get products from the input field
+        const productsInput = document.getElementById('products-input')
+        let productValues = []
+
+        if (productsInput) {
+            const rawValue = productsInput.value
+            productValues = rawValue.split(',').map(s => s.trim()).filter(s => s.length > 0)
+        }
+        formData.append('products', JSON.stringify(productValues))
+
+        // Build paperTrailLinks using globally tracked existingFiles state
+        const paperTrailData = {
+            activityProposal: null,
+            photoDocumentation: [],
+            activityReport: null
+        }
+
+        if (isEditing) {
+            if (existingFiles.activityProposal && !selectedFiles.activityProposal) {
+                paperTrailData.activityProposal = existingFiles.activityProposal
+            }
+            if (existingFiles.activityReport && !selectedFiles.activityReport) {
+                paperTrailData.activityReport = existingFiles.activityReport
+            }
+            paperTrailData.photoDocumentation = existingFiles.photoDocumentation || []
+        }
+
+        formData.append('paperTrailLinks', JSON.stringify(paperTrailData))
+
+        // Remove default single-file input data to prevent browser-native overwrite behavior
+        formData.delete('photoDocumentation[]')
+
+        // Manually append all files currently stored in selectedFiles.photoDocumentation
+        if (selectedFiles.photoDocumentation && selectedFiles.photoDocumentation.length > 0) {
+            selectedFiles.photoDocumentation.forEach(file => {
+                formData.append('photoDocumentation[]', file)
+            })
+        }
 
         showLoading()
         try {
-            const response = await fetch('/api/participation-research', {
+            const response = await fetch('/participationResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -3223,6 +3703,17 @@ export const participationResearch = () => {
             const result = await response.json()
 
             if (result.success) {
+                // Reset selected files after successful upload
+                selectedFiles = {
+                    activityProposal: null,
+                    activityReport: null,
+                    photoDocumentation: []
+                }
+                existingFiles = {
+                    activityProposal: null,
+                    activityReport: null,
+                    photoDocumentation: []
+                }
                 closeModal()
                 showNotification(
                     isEditing ? 'Participation record updated successfully' : 'Participation record added successfully',
@@ -3236,6 +3727,13 @@ export const participationResearch = () => {
             console.error('Error saving participation:', error)
             showNotification('Error connecting to server', 'error')
         } finally {
+            isSaving = false
+            if (submitBtn) {
+                submitBtn.disabled = false
+                submitBtn.textContent = originalBtnText
+                submitBtn.style.opacity = '1'
+                submitBtn.style.cursor = 'pointer'
+            }
             hideLoading()
         }
     }
@@ -3904,7 +4402,7 @@ export const participationResearch = () => {
         return $({
             tag: 'div',
             style: {
-                width: 'calc(100% - 48px)', 
+                width: 'calc(100% - 48px)',
                 height: '100%',
                 overflow: 'auto',
                 backgroundColor: '#ffffff',
