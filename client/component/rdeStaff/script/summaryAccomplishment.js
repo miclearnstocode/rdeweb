@@ -136,6 +136,8 @@ export const SummaryAccomplishment = () => {
     const showLoading = () => {
         if (!loadingElement) {
             loadingElement = Waiting()
+            // Ensure loading element appears above modal
+            loadingElement.style.zIndex = '9999'
             document.body.appendChild(loadingElement)
         }
     }
@@ -164,7 +166,6 @@ export const SummaryAccomplishment = () => {
             })
 
             const monitorResult = await monitorResponse.json()
-            console.log('Monitor data:', monitorResult);
 
             // 2. Fetch training counts (bothCounts)
             const trainingFormData = new FormData()
@@ -184,7 +185,6 @@ export const SummaryAccomplishment = () => {
             })
 
             const trainingResult = await trainingResponse.json()
-            console.log('Training counts:', trainingResult);
 
             // 3. Fetch IGP count (igpCount)
             const igpFormData = new FormData()
@@ -204,9 +204,27 @@ export const SummaryAccomplishment = () => {
             })
 
             const igpResult = await igpResponse.json()
-            console.log('IGP count:', igpResult);
 
-            // 4. Build stats
+            // 4. Fetch Participation count with filters
+            const participationFormData = new FormData()
+            participationFormData.append('action', 'participationCount')
+
+            if (activeFilters.campus !== 'all') {
+                participationFormData.append('type', 'campus')
+                participationFormData.append('location', activeFilters.campus)
+            } else if (activeFilters.center !== 'all') {
+                participationFormData.append('type', 'center')
+                participationFormData.append('location', activeFilters.center)
+            }
+
+            const participationResponse = await fetch('/summaryAccomplish', {
+                method: 'POST',
+                body: participationFormData
+            })
+
+            const participationResult = await participationResponse.json()
+
+            // 5. Build stats
             const stats = {}
             statsCards.forEach(card => { stats[card.key] = 0 })
 
@@ -227,15 +245,15 @@ export const SummaryAccomplishment = () => {
                 stats.igpResearch = igpResult.data.igpResearch || 0
             }
 
-            // Other stats (you might want to fetch these from somewhere else)
-            stats.participationResearch = 0
+            if (participationResult.status && participationResult.data) {
+                stats.participationResearch = participationResult.data.participation || 0
+            }
+
             stats.facilitiesImprovement = 0
             stats.facultyPresentation = 0
             stats.publicationResearch = 0
             stats.citationsResearch = 0
             stats.ipAssets = 0
-
-            console.log('Final stats:', stats);
             updateStatsCards(stats)
 
         } catch (error) {
@@ -2231,9 +2249,9 @@ export const SummaryAccomplishment = () => {
                     child: options.map(opt =>
                         $({
                             tag: 'option',
-                            att: { 
-                                value: opt.value, 
-                                selected: opt.value === currentValue 
+                            att: {
+                                value: opt.value,
+                                selected: opt.value === currentValue
                             },
                             text: opt.label,
                             style: {
@@ -2371,7 +2389,6 @@ export const SummaryAccomplishment = () => {
                             event: {
                                 type: 'click',
                                 method: () => {
-                                    console.log('Export report clicked')
                                 }
                             }
                         }),

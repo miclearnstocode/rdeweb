@@ -176,7 +176,6 @@ export const participationResearch = () => {
                 formData.append('cursor', cursor)
             }
 
-            // Add filters
             if (currentCampus !== 'All Campuses') {
                 formData.append('campus', currentCampus)
             }
