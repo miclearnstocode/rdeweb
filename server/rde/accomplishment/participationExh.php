@@ -117,17 +117,8 @@ function createParticipationFolderStructure($driveService, $type, $location, $ac
     $categoryFolderName = 'Participation';
     $categoryFolderId = getOrCreateFolder($driveService, $rootFolderId, $categoryFolderName);
     
-    // Location: Campus or Center
-    $locationFolderId = null;
-    if ($type === 'campus') {
-        $campusParentId = getOrCreateFolder($driveService, $categoryFolderId, 'Campus');
-        $locationFolderId = getOrCreateFolder($driveService, $campusParentId, $location);
-    } else if ($type === 'center') {
-        $centersParentId = getOrCreateFolder($driveService, $categoryFolderId, 'Centers');
-        $locationFolderId = getOrCreateFolder($driveService, $centersParentId, $location);
-    } else {
-        $locationFolderId = getOrCreateFolder($driveService, $categoryFolderId, $location);
-    }
+    // Location: Campus or Center directly inside the Participation folder
+    $locationFolderId = getOrCreateFolder($driveService, $categoryFolderId, $location);
     
     // Activity folder: Pasidungog 2025 (without date in name)
     $cleanTitle = cleanAccomplishmentFolderName($activityTitle);
