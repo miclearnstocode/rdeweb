@@ -8,6 +8,8 @@ import {Summary} from "./src/Summary.js";
 import {PrintResearch} from "../../otherComponent/researchSummary.js";
 import { Forwarded } from "./src/forwarded.js";
 
+
+//add certification attachment when there is title changes
 export const ResearchMain = () => {
     let mainFrame, leftPdiv
     const getMainFrame = (el) => {

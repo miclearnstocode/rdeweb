@@ -197,14 +197,14 @@ const openViewResearchesModal = () => {
 
         // Table Header
         const thead = $({ tag: 'thead' })
-        const headerRow = $({ 
-            tag: 'tr', 
-            style: { 
+        const headerRow = $({
+            tag: 'tr',
+            style: {
                 backgroundColor: '#f8fafc',
                 borderBottom: '2px solid #e8ecf0'
-            } 
+            }
         })
-        
+
         // Updated columns for the research view modal
         const columns = ['Event Name', 'Campus/Center', 'Files']
 
@@ -251,20 +251,20 @@ const openViewResearchesModal = () => {
                     att: { colSpan: 3 },
                     style: { padding: '60px', textAlign: 'center' },
                     child: [
-                        $({ 
-                            tag: 'i', 
-                            att: { className: iconClass }, 
-                            style: { fontSize: '48px', display: 'block', marginBottom: '16px', color: '#94a3b8' } 
+                        $({
+                            tag: 'i',
+                            att: { className: iconClass },
+                            style: { fontSize: '48px', display: 'block', marginBottom: '16px', color: '#94a3b8' }
                         }),
-                        $({ 
-                            tag: 'div', 
-                            text: mainText, 
-                            style: { fontSize: '16px', marginBottom: '8px', color: '#64748b', fontWeight: '500' } 
+                        $({
+                            tag: 'div',
+                            text: mainText,
+                            style: { fontSize: '16px', marginBottom: '8px', color: '#64748b', fontWeight: '500' }
                         }),
-                        ...(subText ? [$({ 
-                            tag: 'div', 
-                            text: subText, 
-                            style: { fontSize: '13px', color: '#94a3b8' } 
+                        ...(subText ? [$({
+                            tag: 'div',
+                            text: subText,
+                            style: { fontSize: '13px', color: '#94a3b8' }
                         })] : [])
                     ]
                 })
@@ -485,7 +485,7 @@ const openViewResearchesModal = () => {
         const row = $({
             tag: 'tr',
             att: { 'data-event': `${eventName} ${location} ${files.map(f => f.title || '').join(' ')}` },
-            style: { 
+            style: {
                 borderBottom: '1px solid #f0f2f5',
                 transition: 'background-color 0.2s ease'
             },
@@ -504,23 +504,23 @@ const openViewResearchesModal = () => {
         const eventCell = $({
             tag: 'td',
             text: eventName,
-            style: { 
-                padding: '16px 16px', 
-                color: '#1a2a3a', 
-                fontSize: '14px', 
-                verticalAlign: 'top', 
-                fontWeight: '600' 
+            style: {
+                padding: '16px 16px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                verticalAlign: 'top',
+                fontWeight: '600'
             }
         })
 
         const locationCell = $({
             tag: 'td',
             text: location,
-            style: { 
-                padding: '16px 16px', 
-                color: '#475569', 
-                fontSize: '14px', 
-                verticalAlign: 'top' 
+            style: {
+                padding: '16px 16px',
+                color: '#475569',
+                fontSize: '14px',
+                verticalAlign: 'top'
             }
         })
 
@@ -531,10 +531,10 @@ const openViewResearchesModal = () => {
         })
 
         if (files.length === 0) {
-            filesCell.appendChild($({ 
-                tag: 'span', 
-                text: 'No files', 
-                style: { color: '#94a3b8', fontSize: '13px', fontStyle: 'italic' } 
+            filesCell.appendChild($({
+                tag: 'span',
+                text: 'No files',
+                style: { color: '#94a3b8', fontSize: '13px', fontStyle: 'italic' }
             }))
         } else {
             files.forEach(file => {
@@ -569,15 +569,15 @@ const openViewResearchesModal = () => {
                     att: { colSpan: 3 },
                     style: { padding: '60px', textAlign: 'center' },
                     child: [
-                        $({ 
-                            tag: 'i', 
-                            att: { className: 'fas fa-spinner fa-pulse' }, 
-                            style: { fontSize: '40px', display: 'block', marginBottom: '16px', color: '#1976D2' } 
+                        $({
+                            tag: 'i',
+                            att: { className: 'fas fa-spinner fa-pulse' },
+                            style: { fontSize: '40px', display: 'block', marginBottom: '16px', color: '#1976D2' }
                         }),
-                        $({ 
-                            tag: 'div', 
-                            text: searchTerm ? `Searching for "${searchTerm}"...` : 'Loading research documents...', 
-                            style: { fontSize: '14px', color: '#64748b' } 
+                        $({
+                            tag: 'div',
+                            text: searchTerm ? `Searching for "${searchTerm}"...` : 'Loading research documents...',
+                            style: { fontSize: '14px', color: '#64748b' }
                         })
                     ]
                 })
@@ -643,31 +643,31 @@ const openViewResearchesModal = () => {
                         att: { colSpan: 3 },
                         style: { padding: '60px', textAlign: 'center' },
                         child: [
-                            $({ 
-                                tag: 'i', 
-                                att: { className: 'fas fa-exclamation-triangle' }, 
-                                style: { fontSize: '40px', display: 'block', marginBottom: '16px', color: '#ef4444' } 
+                            $({
+                                tag: 'i',
+                                att: { className: 'fas fa-exclamation-triangle' },
+                                style: { fontSize: '40px', display: 'block', marginBottom: '16px', color: '#ef4444' }
                             }),
-                            $({ 
-                                tag: 'div', 
-                                text: 'Failed to load research documents', 
-                                style: { fontSize: '16px', marginBottom: '8px', color: '#1a2a3a', fontWeight: '500' } 
+                            $({
+                                tag: 'div',
+                                text: 'Failed to load research documents',
+                                style: { fontSize: '16px', marginBottom: '8px', color: '#1a2a3a', fontWeight: '500' }
                             }),
-                            $({ 
-                                tag: 'div', 
-                                text: error.message, 
-                                style: { fontSize: '13px', color: '#94a3b8', marginBottom: '16px' } 
+                            $({
+                                tag: 'div',
+                                text: error.message,
+                                style: { fontSize: '13px', color: '#94a3b8', marginBottom: '16px' }
                             }),
                             $({
                                 tag: 'button',
                                 text: 'Retry',
-                                style: { 
-                                    marginTop: '8px', 
-                                    padding: '10px 24px', 
-                                    backgroundColor: '#1976D2', 
-                                    border: 'none', 
-                                    borderRadius: '8px', 
-                                    color: '#fff', 
+                                style: {
+                                    marginTop: '8px',
+                                    padding: '10px 24px',
+                                    backgroundColor: '#1976D2',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    color: '#fff',
                                     cursor: 'pointer',
                                     fontSize: '13px',
                                     fontWeight: '600',
@@ -919,7 +919,7 @@ export const Research = () => {
                 `;
                 e.currentTarget.style.position = 'relative';
                 e.currentTarget.appendChild(tooltip);
-                
+
                 e.currentTarget.addEventListener('mouseleave', () => {
                     if (tooltip && tooltip.remove) tooltip.remove();
                 }, { once: true });
@@ -942,22 +942,22 @@ export const Research = () => {
                     backdropFilter: 'blur(4px)'
                 },
                 child: [
-                    $({ 
-                        tag: 'i', 
-                        att: { className: `fas ${buttonConfigs.comments.iconClass}` }, 
-                        style: { color: buttonConfigs.comments.icon, fontSize: '15px' } 
+                    $({
+                        tag: 'i',
+                        att: { className: `fas ${buttonConfigs.comments.iconClass}` },
+                        style: { color: buttonConfigs.comments.icon, fontSize: '15px' }
                     })
                 ],
                 event: {
                     type: 'click',
                     method: () => viewComments(rowData),
                     type2: 'mouseenter',
-                    method2: (e) => { 
+                    method2: (e) => {
                         e.currentTarget.style.background = buttonConfigs.comments.hover;
                         e.currentTarget.style.transform = 'translateY(-2px)';
                     },
                     type3: 'mouseleave',
-                    method3: (e) => { 
+                    method3: (e) => {
                         e.currentTarget.style.background = buttonConfigs.comments.background;
                         e.currentTarget.style.transform = 'translateY(0)';
                     }
@@ -982,22 +982,22 @@ export const Research = () => {
                     backdropFilter: 'blur(4px)'
                 },
                 child: [
-                    $({ 
-                        tag: 'i', 
-                        att: { className: `fas ${buttonConfigs.edit.iconClass}` }, 
-                        style: { color: buttonConfigs.edit.icon, fontSize: '15px' } 
+                    $({
+                        tag: 'i',
+                        att: { className: `fas ${buttonConfigs.edit.iconClass}` },
+                        style: { color: buttonConfigs.edit.icon, fontSize: '15px' }
                     })
                 ],
                 event: {
                     type: 'click',
                     method: () => editDocument(rowData),
                     type2: 'mouseenter',
-                    method2: (e) => { 
+                    method2: (e) => {
                         e.currentTarget.style.background = buttonConfigs.edit.hover;
                         e.currentTarget.style.transform = 'translateY(-2px)';
                     },
                     type3: 'mouseleave',
-                    method3: (e) => { 
+                    method3: (e) => {
                         e.currentTarget.style.background = buttonConfigs.edit.background;
                         e.currentTarget.style.transform = 'translateY(0)';
                     }
@@ -1022,22 +1022,22 @@ export const Research = () => {
                     backdropFilter: 'blur(4px)'
                 },
                 child: [
-                    $({ 
-                        tag: 'i', 
-                        att: { className: `fas ${buttonConfigs.delete.iconClass}` }, 
-                        style: { color: buttonConfigs.delete.icon, fontSize: '15px' } 
+                    $({
+                        tag: 'i',
+                        att: { className: `fas ${buttonConfigs.delete.iconClass}` },
+                        style: { color: buttonConfigs.delete.icon, fontSize: '15px' }
                     })
                 ],
                 event: {
                     type: 'click',
                     method: () => deleteDocument(rowData),
                     type2: 'mouseenter',
-                    method2: (e) => { 
+                    method2: (e) => {
                         e.currentTarget.style.background = buttonConfigs.delete.hover;
                         e.currentTarget.style.transform = 'translateY(-2px)';
                     },
                     type3: 'mouseleave',
-                    method3: (e) => { 
+                    method3: (e) => {
                         e.currentTarget.style.background = buttonConfigs.delete.background;
                         e.currentTarget.style.transform = 'translateY(0)';
                     }
@@ -1062,10 +1062,10 @@ export const Research = () => {
                     backdropFilter: 'blur(4px)'
                 },
                 child: [
-                    $({ 
-                        tag: 'i', 
-                        att: { className: `fas ${buttonConfigs.resubmit.iconClass}` }, 
-                        style: { color: buttonConfigs.resubmit.icon, fontSize: '15px' } 
+                    $({
+                        tag: 'i',
+                        att: { className: `fas ${buttonConfigs.resubmit.iconClass}` },
+                        style: { color: buttonConfigs.resubmit.icon, fontSize: '15px' }
                     })
                 ],
                 event: {
@@ -1075,12 +1075,12 @@ export const Research = () => {
                         handleResubmit(rowData.endorsement_id);
                     },
                     type2: 'mouseenter',
-                    method2: (e) => { 
+                    method2: (e) => {
                         e.currentTarget.style.background = buttonConfigs.resubmit.hover;
                         e.currentTarget.style.transform = 'translateY(-2px)';
                     },
                     type3: 'mouseleave',
-                    method3: (e) => { 
+                    method3: (e) => {
                         e.currentTarget.style.background = buttonConfigs.resubmit.background;
                         e.currentTarget.style.transform = 'translateY(0)';
                     }
@@ -1470,16 +1470,11 @@ export const Research = () => {
 
     const createTableRow = (doc) => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
-
-        // Use the backend-computed status directly
         let status = doc.status || 'pending'
-
-        // Clean up NULL values
         if (status === 'NULL' || status === 'null' || status === null) {
             status = 'pending'
         }
 
-        // Create a single file display with all files
         const createFileList = () => {
             const container = $({
                 tag: 'div',
@@ -1490,7 +1485,6 @@ export const Research = () => {
                 }
             })
 
-            // Helper to create individual file row
             const createFileRow = (label, fileUrl, fileType, iconColor) => {
                 if (!fileUrl || fileUrl === '—' || fileUrl === null) return null
 
@@ -1584,6 +1578,10 @@ export const Research = () => {
             const certificateRow = createFileRow('Certificate', doc.certificateFile, 'certificate', '#9C27B0')
             if (certificateRow) container.appendChild(certificateRow)
 
+            // Title Change Certificate (from title_certificate_view_url)
+            const titleCertificateRow = createFileRow('Title Certificate', doc.title_certificate_view_url, 'title_certificate', '#E91E63')
+            if (titleCertificateRow) container.appendChild(titleCertificateRow)
+
             // Local In-House specific files (Program and Certificate from local_inhouse table)
             if (doc.local_inhouse === 1 || doc.local_inhouse === '1') {
                 const localProgramRow = createFileRow('Local Program', doc.local_program_file_view_url, 'program', '#4caf50')
@@ -1625,10 +1623,107 @@ export const Research = () => {
         buttonContainer.appendChild(actionButtons)
         actionsCell.appendChild(buttonContainer)
 
+        // ===== TITLE DISPLAY WITH CHANGE FLAG =====
+        let titleDisplay
+
+        // Check if title was changed (title_changed == 1 from backend)
+        const isTitleChanged = parseInt(doc.title_changed) === 1
+
+        if (isTitleChanged && doc.final_symposium_title) {
+            // Title was changed - show both original and new with flag
+            titleDisplay = $({
+                tag: 'div',
+                style: { display: 'flex', flexDirection: 'column', gap: '4px' },
+                child: [
+                    // Original title with strikethrough
+                    $({
+                        tag: 'div',
+                        style: {
+                            color: '#94a3b8',
+                            fontSize: '11px',
+                            textDecoration: 'line-through',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                        },
+                        child: [
+                            $({ tag: 'span', text: doc.original_title || '—' }),
+                            $({
+                                tag: 'span',
+                                text: '(Original)',
+                                style: {
+                                    color: '#94a3b8',
+                                    fontSize: '9px',
+                                    fontStyle: 'italic'
+                                }
+                            })
+                        ]
+                    }),
+                    // New title with CHANGE FLAG
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            flexWrap: 'wrap'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                text: doc.title || '—',
+                                style: {
+                                    color: '#1976D2',
+                                    fontSize: '14px',
+                                    fontWeight: '600'
+                                }
+                            }),
+                            // ===== CHANGE FLAG BADGE =====
+                            $({
+                                tag: 'span',
+                                style: {
+                                    backgroundColor: '#FFF3E0',
+                                    color: '#E65100',
+                                    padding: '2px 10px',
+                                    borderRadius: '12px',
+                                    fontSize: '10px',
+                                    fontWeight: '700',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    border: '1px solid #FFCC80',
+                                    letterSpacing: '0.3px',
+                                    textTransform: 'uppercase'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'i',
+                                        att: { className: 'fas fa-pen' },
+                                        style: { fontSize: '9px' }
+                                    }),
+                                    $({ tag: 'span', text: 'Title Changed' })
+                                ],
+                                att: { title: 'This title was changed from the original In-House Review title' }
+                            })
+                        ]
+                    })
+                ]
+            })
+        } else {
+            // No title change - display normally
+            titleDisplay = $({
+                tag: 'div',
+                style: { display: 'flex', alignItems: 'center', gap: '6px' },
+                child: [
+                    $({ tag: 'span', text: doc.title || '—' })
+                ]
+            })
+        }
+
         const cells = [
             doc.eventName || '—',
             getStatusBadge(status),
-            doc.title || '—',
+            titleDisplay,
             doc.category || '—',
             doc.presenter || '—',
             doc.author || '—',
@@ -1989,7 +2084,7 @@ export const Research = () => {
                             });
 
                             const result = await response.json();
-                            
+
                             if (loadingModal && loadingModal.closeModal) {
                                 loadingModal.closeModal();
                             }
@@ -2050,7 +2145,8 @@ export const Research = () => {
             research: 'Research Document',
             program: 'Program File',
             endorsement: 'Endorsement Letter',
-            certificate: 'Certificate File'
+            certificate: 'Certificate File',
+            title_certificate: 'Title Change Certificate'  // <-- ADD THIS
         }
         const displayName = typeNames[fileType] || 'Document'
 
@@ -2059,7 +2155,8 @@ export const Research = () => {
             research: '#2196F3',
             program: '#4caf50',
             endorsement: '#ff9800',
-            certificate: '#8a2be2'
+            certificate: '#9C27B0',
+            title_certificate: '#E91E63'  // <-- ADD THIS
         }
         const accentColor = accentColors[fileType] || '#2196F3'
 
@@ -2108,7 +2205,7 @@ export const Research = () => {
                 try {
                     loading = Waiting()
                     document.body.appendChild(loading)
-                    
+
                     await new Promise(resolve => setTimeout(resolve, 50))
 
                     const form = new FormData()
@@ -2143,9 +2240,9 @@ export const Research = () => {
                             }
                         }))
                     } else {
-                        AlertModal({ 
-                            title: 'Delete Failed', 
-                            message: result.message || 'Failed to delete document' 
+                        AlertModal({
+                            title: 'Delete Failed',
+                            message: result.message || 'Failed to delete document'
                         })
                     }
                 } catch (error) {
@@ -2153,9 +2250,9 @@ export const Research = () => {
                     if (loading && loading.remove) {
                         loading.remove()
                     }
-                    AlertModal({ 
-                        title: 'Error', 
-                        message: 'Error deleting document: ' + error.message 
+                    AlertModal({
+                        title: 'Error',
+                        message: 'Error deleting document: ' + error.message
                     })
                 }
             }
@@ -2262,7 +2359,7 @@ export const Research = () => {
             endorsementFile: null,
             certificateFile: null
         }
-        
+
         const modal = $({
             tag: 'div',
             style: {
@@ -2335,7 +2432,7 @@ export const Research = () => {
                 })
             ]
         })
-        
+
         // Main content container that will be dynamically swapped
         const mainContentContainer = $({
             tag: 'div',
@@ -2391,12 +2488,12 @@ export const Research = () => {
                 type: 'click',
                 method: () => modal.remove(),
                 type2: 'mouseenter',
-                method2: (e) => { 
+                method2: (e) => {
                     e.currentTarget.style.backgroundColor = '#f1f5f9';
                     e.currentTarget.style.borderColor = '#cbd5e1';
                 },
                 type3: 'mouseleave',
-                method3: (e) => { 
+                method3: (e) => {
                     e.currentTarget.style.backgroundColor = '#f8fafc';
                     e.currentTarget.style.borderColor = '#e8ecf0';
                 }
@@ -2484,7 +2581,7 @@ export const Research = () => {
             submitFormData.append('campus', formData.campus);
             submitFormData.append('coAuthor', JSON.stringify(formData.coAuthors));
             submitFormData.append('presenter', formData.presenter);
-            
+
             // Append files
             if (formData.researchFile) {
                 submitFormData.append('researchDoc', formData.researchFile);
@@ -2492,7 +2589,7 @@ export const Research = () => {
             if (formData.endorsementFile) {
                 submitFormData.append('uploadedFileEndorsement', formData.endorsementFile);
             }
-            
+
             // For In-House events, append program and certificate files
             if (isInHouse) {
                 if (formData.programFile && formData.programFile.length > 0) {
@@ -2516,12 +2613,12 @@ export const Research = () => {
                     method: 'POST',
                     body: submitFormData
                 });
-                
+
                 const result = await response.json();
-                
+
                 // Remove loading
                 if (loading && loading.remove) loading.remove();
-                
+
                 if (result.status) {
                     // Close modal
                     modal.remove();
@@ -2540,7 +2637,7 @@ export const Research = () => {
                 document.body.appendChild(ConfirmationAlert('Error submitting form: ' + error.message));
             }
         });
-        
+
         footer.appendChild(cancelBtn)
         footer.appendChild(submitBtn)
 
@@ -2572,10 +2669,10 @@ export const Research = () => {
 
             // Event selection
             const eventField = $({ tag: 'div', style: { marginBottom: '10px' } })
-            eventField.appendChild($({ 
-                tag: 'label', 
-                text: 'Event Name *', 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            eventField.appendChild($({
+                tag: 'label',
+                text: 'Event Name *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
             eventSelect = $({
                 tag: 'select',
@@ -2704,10 +2801,10 @@ export const Research = () => {
 
             // Title field
             const titleField = $({ tag: 'div', style: { marginBottom: '0' } })
-            titleField.appendChild($({ 
-                tag: 'label', 
-                text: 'Document Title *', 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            titleField.appendChild($({
+                tag: 'label',
+                text: 'Document Title *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
             titleInput = $({
                 tag: 'input',
@@ -2735,7 +2832,7 @@ export const Research = () => {
                         e.currentTarget.style.backgroundColor = '#f8fafc';
                     },
                     type3: 'input',
-                    method3: (e) => { 
+                    method3: (e) => {
                         formData.title = capitalizeFirstLetter(e.target.value);
                         e.target.value = formData.title;
                     }
@@ -2744,10 +2841,10 @@ export const Research = () => {
             titleField.appendChild(titleInput)
 
             const campusField = $({ tag: 'div', style: { marginBottom: '0' } })
-            campusField.appendChild($({ 
-                tag: 'label', 
-                text: 'Campus *', 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            campusField.appendChild($({
+                tag: 'label',
+                text: 'Campus *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
             campusSelect = $({
                 tag: 'select',
@@ -2789,10 +2886,10 @@ export const Research = () => {
 
             // Category field
             const categoryField = $({ tag: 'div', style: { marginBottom: '0' } })
-            categoryField.appendChild($({ 
-                tag: 'label', 
-                text: 'Category *', 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            categoryField.appendChild($({
+                tag: 'label',
+                text: 'Category *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
             categorySelect = $({
                 tag: 'select',
@@ -2844,10 +2941,10 @@ export const Research = () => {
 
             // Center field
             const centerField = $({ tag: 'div', style: { marginBottom: '0' } })
-            centerField.appendChild($({ 
-                tag: 'label', 
-                text: 'Center *', 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            centerField.appendChild($({
+                tag: 'label',
+                text: 'Center *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
             centerSelect = $({
                 tag: 'select',
@@ -2888,10 +2985,10 @@ export const Research = () => {
 
             // Author field
             const authorField = $({ tag: 'div', style: { marginBottom: '0' } })
-            authorField.appendChild($({ 
-                tag: 'label', 
-                text: 'Main Author *', 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            authorField.appendChild($({
+                tag: 'label',
+                text: 'Main Author *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
             authorInput = $({
                 tag: 'input',
@@ -2919,7 +3016,7 @@ export const Research = () => {
                         e.currentTarget.style.backgroundColor = '#f8fafc';
                     },
                     type3: 'input',
-                    method3: (e) => { 
+                    method3: (e) => {
                         formData.author = capitalizeFirstLetter(e.target.value);
                         e.target.value = formData.author;
                     }
@@ -2929,10 +3026,10 @@ export const Research = () => {
 
             // Presenter field
             const presenterField = $({ tag: 'div', style: { marginBottom: '0' } })
-            presenterField.appendChild($({ 
-                tag: 'label', 
-                text: 'Presenter *', 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            presenterField.appendChild($({
+                tag: 'label',
+                text: 'Presenter *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
             presenterInput = $({
                 tag: 'input',
@@ -2970,10 +3067,10 @@ export const Research = () => {
 
             // Co-authors field
             const coAuthorField = $({ tag: 'div', style: { marginBottom: '0' } })
-            coAuthorField.appendChild($({ 
-                tag: 'label', 
-                text: 'Co-Authors', 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            coAuthorField.appendChild($({
+                tag: 'label',
+                text: 'Co-Authors',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
 
             const coAuthorInputGroup = $({
@@ -3118,10 +3215,10 @@ export const Research = () => {
                 }
             })
 
-            fileSection.appendChild($({ 
-                tag: 'h4', 
-                text: 'Attachments', 
-                style: { color: '#1a2a3a', marginBottom: '16px', fontSize: '16px', fontWeight: '600' } 
+            fileSection.appendChild($({
+                tag: 'h4',
+                text: 'Attachments',
+                style: { color: '#1a2a3a', marginBottom: '16px', fontSize: '16px', fontWeight: '600' }
             }))
 
             const fileGrid = $({
@@ -3150,10 +3247,10 @@ export const Research = () => {
                     display: 'none'
                 }
             })
-            localFilesTitle = $({ 
-                tag: 'h4', 
-                text: 'Local Files', 
-                style: { color: '#1976D2', marginBottom: '16px', fontSize: '16px', fontWeight: '600' } 
+            localFilesTitle = $({
+                tag: 'h4',
+                text: 'Local Files',
+                style: { color: '#1976D2', marginBottom: '16px', fontSize: '16px', fontWeight: '600' }
             })
             localFilesSection.appendChild(localFilesTitle)
 
@@ -3208,10 +3305,10 @@ export const Research = () => {
         // FileUploadField
         function FileUploadField({ label, fieldName }) {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
-            container.appendChild($({ 
-                tag: 'label', 
-                text: label, 
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } 
+            container.appendChild($({
+                tag: 'label',
+                text: label,
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
 
             const uploadArea = $({
@@ -3241,17 +3338,21 @@ export const Research = () => {
                 }
             })
 
-            uploadArea.appendChild($({ tag: 'i', att: { className: 'fas fa-cloud-upload-alt' },
+            uploadArea.appendChild($({
+                tag: 'i', att: { className: 'fas fa-cloud-upload-alt' },
                 style: { fontSize: '32px', color: '#1976D2', marginBottom: '12px', display: 'block' }
             }))
-            uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, 
-                style: { color: '#1a2a3a', fontSize: '14px', fontWeight: '500' } 
+            uploadArea.appendChild($({
+                tag: 'div', text: `Click to upload ${label}`,
+                style: { color: '#1a2a3a', fontSize: '14px', fontWeight: '500' }
             }))
-            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', 
-                style: { color: '#64748b', fontSize: '12px', marginTop: '6px' } 
+            uploadArea.appendChild($({
+                tag: 'div', text: '(PDF only, Max 10MB)',
+                style: { color: '#64748b', fontSize: '12px', marginTop: '6px' }
             }))
 
-            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '12px', fontSize: '13px', color: '#2e7d32', textAlign: 'center', fontWeight: '500' } 
+            const fileNameDisplay = $({
+                tag: 'div', style: { marginTop: '12px', fontSize: '13px', color: '#2e7d32', textAlign: 'center', fontWeight: '500' }
             })
 
             const fileInput = $({
@@ -3357,10 +3458,10 @@ export const Research = () => {
                 boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
             },
             child: [
-                $({ 
-                    tag: 'i', 
-                    att: { className: 'fas fa-plus-circle' }, 
-                    style: { color: '#1976D2', fontSize: '16px' } 
+                $({
+                    tag: 'i',
+                    att: { className: 'fas fa-plus-circle' },
+                    style: { color: '#1976D2', fontSize: '16px' }
                 }),
                 $({ tag: 'span', text: 'Submit Entry', style: { fontWeight: '600' } })
             ],
@@ -3402,10 +3503,10 @@ export const Research = () => {
                 boxShadow: '0 2px 4px rgba(25, 118, 210, 0.2)'
             },
             child: [
-                $({ 
-                    tag: 'i', 
-                    att: { className: 'fas fa-table-list' }, 
-                    style: { fontSize: '15px' } 
+                $({
+                    tag: 'i',
+                    att: { className: 'fas fa-table-list' },
+                    style: { fontSize: '15px' }
                 }),
                 $({ tag: 'span', text: 'View Researches' })
             ],
@@ -3482,12 +3583,12 @@ export const Research = () => {
                         tag: 'div',
                         style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' },
                         child: [
-                            $({ 
-                                tag: 'span', 
-                                text: stat.label, 
-                                style: { color: '#5a6874', fontSize: '14px', fontWeight: '500', letterSpacing: '0.3px' } 
+                            $({
+                                tag: 'span',
+                                text: stat.label,
+                                style: { color: '#5a6874', fontSize: '14px', fontWeight: '500', letterSpacing: '0.3px' }
                             }),
-                            $({ 
+                            $({
                                 tag: 'div',
                                 style: {
                                     backgroundColor: `${stat.color}10`,
@@ -3498,10 +3599,10 @@ export const Research = () => {
                                     justifyContent: 'center'
                                 },
                                 child: [
-                                    $({ 
-                                        tag: 'i', 
-                                        att: { className: `fas ${stat.icon}` }, 
-                                        style: { color: stat.color, fontSize: '20px' } 
+                                    $({
+                                        tag: 'i',
+                                        att: { className: `fas ${stat.icon}` },
+                                        style: { color: stat.color, fontSize: '20px' }
                                     })
                                 ]
                             })
@@ -3552,12 +3653,12 @@ export const Research = () => {
 
         // Table header
         const thead = $({ tag: 'thead' })
-        const headerRow = $({ 
-            tag: 'tr', 
-            style: { 
+        const headerRow = $({
+            tag: 'tr',
+            style: {
                 backgroundColor: '#f8fafc',
                 borderBottom: '1px solid #e8ecf0'
-            } 
+            }
         })
 
         const columns = ['Event Name', 'Status', 'Title', 'Category', 'Presenter', 'Author', 'Co-Authors', 'Attachments', 'Actions']
@@ -3683,12 +3784,30 @@ export const Research = () => {
                                         }
                                     }
 
+                                    // ===== CRITICAL: Capture title_changed and related fields =====
+                                    // Get title_changed from researchDoc (backend sends it)
+                                    const titleChanged = parseInt(researchDoc.title_changed) === 1
+                                    const finalSymposiumTitle = researchDoc.final_symposium_title || null
+                                    const originalTitle = researchDoc.original_title || researchDoc.title || '—'
+
+                                    // Determine which title to display
+                                    let displayTitle = researchDoc.title || '—'
+
+                                    // If title was changed and we have a final_symposium_title, use it
+                                    if (titleChanged && finalSymposiumTitle) {
+                                        displayTitle = finalSymposiumTitle
+                                    }
 
                                     // Create document object for table
                                     const documentObj = {
                                         id: researchDoc.docId,
                                         eventName: endorsement.eventType || '—',
-                                        title: researchDoc.title || '—',
+                                        // ===== TITLE FIELDS =====
+                                        title: displayTitle,
+                                        original_title: originalTitle,
+                                        final_symposium_title: finalSymposiumTitle,
+                                        title_changed: titleChanged ? 1 : 0,
+                                        // ===== END TITLE FIELDS =====
                                         category: researchDoc.category || '—',
                                         presenter: researchDoc.presenter || '—',
                                         author: researchDoc.author || '—',
@@ -3697,11 +3816,11 @@ export const Research = () => {
                                         revision_status: endorsement.revision_status || researchDoc.revision_status || null,
                                         revision_count: endorsement.revision_count || researchDoc.revision_count || 0,
                                         revised_title: endorsement.revised_title || researchDoc.revised_title || null,
-                                        title_changed: endorsement.title_changed || researchDoc.title_changed || 0,
                                         researchFile: researchDoc.drive_view_url || researchDoc.researchFile || '—',
                                         programFile: researchDoc.program_drive_view_url || researchDoc.program_drive_file_id || '—',
                                         endorsementFile: endorsement.drive_view_url || endorsement.endorsementFile || '—',
                                         certificateFile: researchDoc.certificate_drive_view_url || '—',
+                                        title_certificate_view_url: researchDoc.title_certificate_view_url || null,
                                         drive_file_id: researchDoc.drive_file_id,
                                         drive_view_url: researchDoc.drive_view_url,
                                         endorsement_id: endorsement.id,
@@ -3715,6 +3834,16 @@ export const Research = () => {
                                         local_program_file_view_url: researchDoc.local_program_file_view_url,
                                         local_certificate_file_view_url: researchDoc.local_certificate_file_view_url
                                     }
+
+                                    // Debug log to verify title_changed is being captured
+                                    console.log('Document:', {
+                                        id: documentObj.id,
+                                        title: documentObj.title,
+                                        original_title: documentObj.original_title,
+                                        final_symposium_title: documentObj.final_symposium_title,
+                                        title_changed: documentObj.title_changed
+                                    })
+
                                     const row = createTableRow(documentObj)
                                     tbody.appendChild(row)
                                 })
