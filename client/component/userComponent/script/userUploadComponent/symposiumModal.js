@@ -1,5 +1,6 @@
-import { $, Waiting, ConfirmationAlert, ConfirmationModal} from '../../../../lib/lib.js'
+import { $, Waiting, ConfirmationAlert, DragDropUpload, ValidatePDF, CustomModal } from '../../../../lib/lib.js'
 
+//add certification attachment when there is title changes
 export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedded = false }) => {
     let currentStep = 1
     let modalContainer
@@ -27,6 +28,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         // Title change fields
         title_changed: false,
         new_title: '',
+        title_certificate_file: null,
+
 
         // University In-House Review fields
         selected_inhouse_id: null,
@@ -50,11 +53,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         researchFile: null,
         endorsementFile: null
     }
-
-    // File upload states
-    let programFileInput, programFileNameDisplay
-    let researchFileInput, researchFileNameDisplay
-    let endorsementFileInput, endorsementFileNameDisplay
 
     // Center categories mapping (from existing)
     const centerCategoryMapping = {
@@ -82,301 +80,388 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
     ]
 
     const createModal = () => {
-        const modal = $({
-            tag: 'div',
-            style: {
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.85)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 101,
-                backdropFilter: 'blur(5px)',
-                animation: 'fadeIn 0.3s ease'
-            },
-            elementHandler: (el) => { modalContainer = el }
-        })
+        let modalRef = null
 
-        const modalContent = $({
-            tag: 'div',
-            style: {
-                backgroundColor: '#1a1a1a',
-                borderRadius: '16px',
-                width: '90%',
-                maxWidth: '900px',
-                maxHeight: '85vh',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-                boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-                animation: 'slideUp 0.3s ease'
-            }
-        })
+        // Build the content for the modal
+        const buildContent = ({ closeModal }) => {
+            const container = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0',
+                    minHeight: '400px'
+                }
+            })
 
-        // Header
-        const header = $({
-            tag: 'div',
-            style: {
-                padding: '20px 24px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexShrink: 0
-            },
-            child: [
-                $({
-                    tag: 'div',
-                    child: [
-                        $({ tag: 'h3', text: 'Symposium Submission', style: { color: '#fff', margin: 0, fontSize: '20px' } }),
-                        $({ tag: 'p', text: eventName, style: { color: '#888', margin: '4px 0 0', fontSize: '13px' } })
-                    ]
-                }),
-                $({
-                    tag: 'i',
-                    att: { className: 'fas fa-times' },
-                    style: { color: '#999', fontSize: '20px', cursor: 'pointer' },
-                    event: {
-                        type: 'click',
-                        method: () => {
-                            if (modalContainer) modalContainer.remove()
-                            if (onClose) onClose()
-                        }
-                    }
-                })
+            // Step indicators
+            const stepWrapper = $({
+                tag: 'div',
+                style: {
+                    padding: '0 0 20px 0',
+                    borderBottom: '1px solid #e8ecf0',
+                    flexShrink: 0
+                }
+            })
+
+            stepIndicators = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '20px',
+                    position: 'relative'
+                }
+            })
+
+            const steps = [
+                { number: 1, title: 'In-House Review' },
+                { number: 2, title: 'Title Change' },
+                { number: 3, title: 'Symposium Details' }
             ]
-        })
 
-        // Step indicators
-        const stepWrapper = $({
-            tag: 'div',
-            style: {
-                padding: '20px 24px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                flexShrink: 0
-            }
-        })
+            steps.forEach((step, index) => {
+                const stepItem = $({
+                    tag: 'div',
+                    style: {
+                        flex: 1,
+                        textAlign: 'center',
+                        position: 'relative',
+                        zIndex: 2
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            text: step.number.toString(),
+                            style: {
+                                width: '34px',
+                                height: '34px',
+                                backgroundColor: index === 0 ? '#1976D2' : '#e8ecf0',
+                                borderRadius: '50%',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: index === 0 ? '#fff' : '#94a3b8',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                marginBottom: '8px',
+                                transition: 'all 0.3s ease'
+                            },
+                            att: { className: `step-circle-${step.number}` }
+                        }),
+                        $({
+                            tag: 'div',
+                            text: step.title,
+                            style: {
+                                color: index === 0 ? '#1976D2' : '#94a3b8',
+                                fontSize: '12px',
+                                fontWeight: index === 0 ? '600' : '400',
+                                transition: 'all 0.3s ease'
+                            },
+                            att: { className: `step-text-${step.number}` }
+                        })
+                    ]
+                })
+                stepIndicators.appendChild(stepItem)
+            })
 
-        stepIndicators = $({
-            tag: 'div',
-            style: {
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: '20px',
-                position: 'relative'
-            }
-        })
+            // Progress line - background (gray)
+            const progressLineBg = $({
+                tag: 'div',
+                style: {
+                    position: 'absolute',
+                    top: '17px',
+                    left: '0',
+                    right: '0',
+                    height: '3px',
+                    backgroundColor: '#e8ecf0',
+                    zIndex: 1,
+                    borderRadius: '2px'
+                }
+            })
 
-        const steps = [
-            { number: 1, title: 'In-House Review' },
-            { number: 2, title: 'Title Change' },
-            { number: 3, title: 'Symposium Details' }
-        ]
+            // Progress line - fill (blue)
+            const progressFill = $({
+                tag: 'div',
+                style: {
+                    position: 'absolute',
+                    top: '0',
+                    left: '0',
+                    height: '100%',
+                    width: '33.33%',
+                    backgroundColor: '#1976D2',
+                    transition: 'width 0.4s ease',
+                    zIndex: 2,
+                    borderRadius: '2px'
+                },
+                att: { className: 'progress-fill' }
+            })
 
-        steps.forEach((step, index) => {
-            const stepItem = $({
+            progressLineBg.appendChild(progressFill)
+            stepIndicators.appendChild(progressLineBg)
+            stepWrapper.appendChild(stepIndicators)
+
+            // Step contents container
+            const stepsContainer = $({
                 tag: 'div',
                 style: {
                     flex: 1,
-                    textAlign: 'center',
-                    position: 'relative',
-                    zIndex: 2
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        text: step.number.toString(),
-                        style: {
-                            width: '32px',
-                            height: '32px',
-                            backgroundColor: index === 0 ? '#2196F3' : '#333',
-                            borderRadius: '50%',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#fff',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            marginBottom: '8px',
-                            transition: 'all 0.3s ease'
-                        },
-                        att: { className: `step-circle-${step.number}` }
-                    }),
-                    $({
-                        tag: 'div',
-                        text: step.title,
-                        style: {
-                            color: index === 0 ? '#2196F3' : '#666',
-                            fontSize: '12px',
-                            transition: 'all 0.3s ease'
-                        },
-                        att: { className: `step-text-${step.number}` }
-                    })
-                ]
+                    overflow: 'auto',
+                    padding: '24px 0 0 0',
+                    minHeight: '300px'
+                }
             })
-            stepIndicators.appendChild(stepItem)
-        })
 
-        // Progress line - background (gray)
-        const progressLineBg = $({
-            tag: 'div',
-            style: {
-                position: 'absolute',
-                top: '16px',
-                left: '0',
-                right: '0',
-                height: '2px',
-                backgroundColor: '#333',
-                zIndex: 1
+            stepContents = []
+
+            // Step 1: In-House Review Selection
+            const step1Content = createStep1Content()
+            stepContents.push(step1Content)
+
+            // Step 2: Title Change
+            const step2Content = createStep2Content()
+            stepContents.push(step2Content)
+
+            // Step 3: Symposium Details
+            const step3Content = createStep3Content()
+            stepContents.push(step3Content)
+
+            stepContents.forEach((content, idx) => {
+                content.style.display = idx === 0 ? 'block' : 'none'
+                stepsContainer.appendChild(content)
+            })
+
+            container.appendChild(stepWrapper)
+            container.appendChild(stepsContainer)
+
+            return container
+        }
+
+        // Build footer with navigation buttons
+        const buildFooter = ({ closeModal }) => {
+            const footerContainer = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                    gap: '12px'
+                }
+            })
+
+            const leftDiv = $({ tag: 'div' })
+
+            const rightDiv = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    gap: '12px'
+                }
+            })
+
+            // Previous button
+            const prevBtn = $({
+                tag: 'button',
+                text: 'Previous',
+                style: {
+                    padding: '10px 24px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#475569',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    display: 'none',
+                    transition: 'all 0.2s ease'
+                },
+                att: { className: 'footer-prev', type: 'button' },
+                event: {
+                    type: 'click',
+                    method: () => navigateStep(-1),
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                    }
+                }
+            })
+
+            // Next button
+            const nextBtn = $({
+                tag: 'button',
+                text: 'Next',
+                style: {
+                    padding: '10px 28px',
+                    backgroundColor: '#1976D2',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                },
+                att: { className: 'footer-next', type: 'button' },
+                event: {
+                    type: 'click',
+                    method: () => handleNext(),
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = '#1565C0';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(25, 118, 210, 0.3)';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.backgroundColor = '#1976D2';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                    }
+                }
+            })
+
+            // Submit button
+            const submitBtn = $({
+                tag: 'button',
+                text: 'Submit Symposium Entry',
+                style: {
+                    padding: '10px 28px',
+                    backgroundColor: '#4caf50',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    display: 'none',
+                    transition: 'all 0.2s ease'
+                },
+                att: { className: 'footer-submit', type: 'button', disabled: false },
+                event: {
+                    type: 'click',
+                    method: () => submitSymposium(),
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = '#388E3C';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(76, 175, 80, 0.3)';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.backgroundColor = '#4caf50';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                    }
+                }
+            })
+
+            rightDiv.appendChild(prevBtn)
+            rightDiv.appendChild(nextBtn)
+            rightDiv.appendChild(submitBtn)
+
+            footerContainer.appendChild(leftDiv)
+            footerContainer.appendChild(rightDiv)
+
+            return footerContainer
+        }
+
+        // Store navigation functions for later use
+        const navigateStep = (delta) => {
+            const newStep = currentStep + delta
+            if (newStep < 1 || newStep > 3) return
+
+            // Validate current step before proceeding
+            if (delta === 1) {
+                const currentStepContent = stepContents[currentStep - 1]
+                if (currentStepContent && currentStepContent.__validate) {
+                    if (!currentStepContent.__validate()) return
+                }
             }
-        })
 
-        // Progress line - fill (blue)
-        const progressFill = $({
-            tag: 'div',
-            style: {
-                position: 'absolute',
-                top: '0',
-                left: '0',
-                height: '100%',
-                width: '33.33%',  // Start at 33.33% for step 1
-                backgroundColor: '#2196F3',
-                transition: 'width 0.3s ease',
-                zIndex: 2,
-                borderRadius: '2px'
+            // Update step 2 reference if coming from step 1
+            if (delta === 1 && currentStep === 1 && stepContents[1] && stepContents[1].__updateReference) {
+                stepContents[1].__updateReference()
+            }
+
+            // Hide current step
+            const currentContent = stepContents[currentStep - 1]
+            if (currentContent) {
+                currentContent.style.display = 'none'
+            }
+
+            currentStep = newStep
+
+            // Show new step
+            const newContent = stepContents[currentStep - 1]
+            if (newContent) {
+                newContent.style.display = 'block'
+            }
+
+            // Update step indicators
+            for (let i = 1; i <= 3; i++) {
+                const circle = document.querySelector(`.step-circle-${i}`)
+                const text = document.querySelector(`.step-text-${i}`)
+                if (circle) {
+                    circle.style.backgroundColor = i <= currentStep ? '#1976D2' : '#e8ecf0'
+                    circle.style.color = i <= currentStep ? '#fff' : '#94a3b8'
+                }
+                if (text) {
+                    text.style.color = i <= currentStep ? '#1976D2' : '#94a3b8'
+                    text.style.fontWeight = i <= currentStep ? '600' : '400'
+                }
+            }
+
+            // Update progress line fill
+            const progressFill = document.querySelector('.progress-fill')
+            if (progressFill) {
+                const progressPercentage = (currentStep / 3) * 100
+                progressFill.style.width = `${progressPercentage}%`
+            }
+
+            // Update buttons
+            const prevBtn = document.querySelector('.footer-prev')
+            const nextBtn = document.querySelector('.footer-next')
+            const submitBtn = document.querySelector('.footer-submit')
+
+            if (prevBtn) {
+                prevBtn.style.display = currentStep === 1 ? 'none' : 'block'
+            }
+            if (nextBtn) {
+                nextBtn.style.display = currentStep === 3 ? 'none' : 'block'
+            }
+            if (submitBtn) {
+                submitBtn.style.display = currentStep === 3 ? 'block' : 'none'
+                submitBtn.disabled = false
+            }
+        }
+
+        const handleNext = () => navigateStep(1)
+
+        // Create and open the modal using CustomModal
+        modalRef = CustomModal({
+            title: `Symposium Submission: ${eventName}`,
+            content: buildContent,
+            footer: buildFooter,
+            size: 'large',
+            onClose: () => {
+                if (onClose) onClose()
+                modalRef = null
             },
-            att: { className: 'progress-fill' }
+            closeOnOverlayClick: false,
+            showCloseButton: true
         })
 
-        progressLineBg.appendChild(progressFill)
-        stepIndicators.appendChild(progressLineBg)
-        stepWrapper.appendChild(stepIndicators)
+        // Store modal container reference for closing
+        modalContainer = modalRef?.element
 
-        // Step contents container
-        const stepsContainer = $({
-            tag: 'div',
-            style: {
-                flex: 1,
-                overflow: 'auto',
-                padding: '24px'
-            }
-        })
-
-        stepContents = []
-
-        // Step 1: In-House Review Selection
-        const step1Content = createStep1Content()
-        stepContents.push(step1Content)
-
-        // Step 2: Title Change
-        const step2Content = createStep2Content()
-        stepContents.push(step2Content)
-
-        // Step 3: Symposium Details
-        const step3Content = createStep3Content()
-        stepContents.push(step3Content)
-
-        stepContents.forEach((content, idx) => {
-            content.style.display = idx === 0 ? 'block' : 'none'
-            stepsContainer.appendChild(content)
-        })
-
-        // Footer with navigation buttons
-        const footer = $({
-            tag: 'div',
-            style: {
-                padding: '16px 24px',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: '12px',
-                flexShrink: 0
-            }
-        })
-
-        const prevBtn = $({
-            tag: 'button',
-            text: 'Previous',
-            style: {
-                padding: '10px 24px',
-                backgroundColor: '#444',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                display: 'none'
-            },
-            att: { className: 'footer-prev', type: 'button' },
-            event: {
-                type: 'click',
-                method: () => navigateStep(-1)
-            }
-        })
-
-        const nextBtn = $({
-            tag: 'button',
-            text: 'Next',
-            style: {
-                padding: '10px 28px',
-                backgroundColor: '#2196F3',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-            },
-            att: { className: 'footer-next', type: 'button' },
-            event: {
-                type: 'click',
-                method: () => handleNext()
-            }
-        })
-
-        const submitBtn = $({
-            tag: 'button',
-            text: 'Submit Symposium Entry',
-            style: {
-                padding: '10px 28px',
-                backgroundColor: '#4caf50',
-                border: 'none',
-                borderRadius: '8px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                display: 'none'
-            },
-            att: { className: 'footer-submit', type: 'button', disabled: false },
-            event: {
-                type: 'click',
-                method: () => submitSymposium()
-            }
-        })
-
-        const leftDiv = $({ tag: 'div' })
-        const rightDiv = $({ tag: 'div', style: { display: 'flex', gap: '12px' } })
-
-        rightDiv.appendChild(prevBtn)
-        rightDiv.appendChild(nextBtn)
-        rightDiv.appendChild(submitBtn)
-
-        footer.appendChild(leftDiv)
-        footer.appendChild(rightDiv)
-
-        modalContent.appendChild(header)
-        modalContent.appendChild(stepWrapper)
-        modalContent.appendChild(stepsContainer)
-        modalContent.appendChild(footer)
-        modal.appendChild(modalContent)
-
-        return modal
+        return modalRef?.element
     }
 
     const createStep1Content = () => {
@@ -401,35 +486,46 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             containerDiv.appendChild($({
                 tag: 'label',
                 text: label,
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
             }))
 
             const uploadArea = $({
                 tag: 'div',
                 style: {
-                    border: '2px dashed #444',
-                    borderRadius: '8px',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '10px',
                     padding: '32px',
                     minHeight: '130px',
                     textAlign: 'center',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    backgroundColor: 'rgba(255,255,255,0.05)'
+                    transition: 'all 0.2s ease',
+                    backgroundColor: '#f8fafc'
                 },
                 event: {
                     type: 'click',
-                    method: () => fileInput.click()
+                    method: () => fileInput.click(),
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    }
                 }
             })
 
             uploadArea.appendChild($({
                 tag: 'i',
                 att: { className: 'fas fa-cloud-upload-alt' },
-                style: { fontSize: '28px', color: '#666', marginBottom: '6px', display: 'block' }
+                style: { fontSize: '28px', color: '#1976D2', marginBottom: '6px', display: 'block' }
             }))
-            uploadArea.appendChild($({ tag: 'div', text: `Click to upload`, style: { color: '#888', fontSize: '12px' } }))
+            uploadArea.appendChild($({ tag: 'div', text: 'Click to upload', style: { color: '#64748b', fontSize: '13px', fontWeight: '500' } }))
+            uploadArea.appendChild($({ tag: 'div', text: 'PDF only, Max 10MB', style: { color: '#94a3b8', fontSize: '11px', marginTop: '4px' } }))
 
-            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '6px', fontSize: '11px', color: '#4caf50', textAlign: 'center' } })
+            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '6px', fontSize: '12px', color: '#2e7d32', textAlign: 'center', fontWeight: '500' } })
 
             const fileInput = $({
                 tag: 'input',
@@ -472,62 +568,68 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
             return containerDiv
         }
+
         const updateLocalCoAuthorList = () => {
             if (!localCoAuthorListContainer) return
             localCoAuthorListContainer.innerHTML = ''
-            ;(formData.local_coAuthors || []).forEach((author, idx) => {
-                const tag = $({
-                    tag: 'div',
-                    style: {
-                        backgroundColor: '#2a2a2a',
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '12px'
-                    },
-                    child: [
-                        $({ tag: 'span', text: author, style: { color: '#fff' } }),
-                        $({
-                            tag: 'i',
-                            att: { className: 'fas fa-times' },
-                            style: { color: '#999', fontSize: '10px', cursor: 'pointer' },
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    formData.local_coAuthors.splice(idx, 1)
-                                    updateLocalCoAuthorList()
+                ; (formData.local_coAuthors || []).forEach((author, idx) => {
+                    const tag = $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#e8f5e9',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '12px'
+                        },
+                        child: [
+                            $({ tag: 'span', text: author, style: { color: '#2e7d32' } }),
+                            $({
+                                tag: 'i',
+                                att: { className: 'fas fa-times' },
+                                style: { color: '#666', fontSize: '10px', cursor: 'pointer', transition: 'all 0.2s ease' },
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        formData.local_coAuthors.splice(idx, 1)
+                                        updateLocalCoAuthorList()
+                                    },
+                                    type2: 'mouseenter',
+                                    method2: (e) => { e.currentTarget.style.color = '#ef4444' },
+                                    type3: 'mouseleave',
+                                    method3: (e) => { e.currentTarget.style.color = '#666' }
                                 }
-                            }
-                        })
-                    ]
+                            })
+                        ]
+                    })
+                    localCoAuthorListContainer.appendChild(tag)
                 })
-                localCoAuthorListContainer.appendChild(tag)
-            })
         }
+
         // Info box
         const infoBox = $({
             tag: 'div',
             style: {
-                backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                borderRadius: '10px',
+                backgroundColor: '#e3f2fd',
+                borderRadius: '12px',
                 padding: '16px',
                 marginBottom: '24px',
-                borderLeft: '4px solid #2196F3'
+                borderLeft: '4px solid #1976D2'
             },
             child: [
                 $({
                     tag: 'div',
                     style: { display: 'flex', gap: '12px', alignItems: 'flex-start' },
                     child: [
-                        $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { color: '#2196F3', fontSize: '18px', marginTop: '2px' } }),
+                        $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { color: '#1976D2', fontSize: '18px', marginTop: '2px' } }),
                         $({
                             tag: 'div',
                             style: { flex: 1 },
                             child: [
-                                $({ tag: 'div', text: 'In-House Review Required', style: { color: '#2196F3', fontWeight: '600', marginBottom: '4px' } }),
-                                $({ tag: 'div', text: 'This symposium requires that your paper was first presented in an In-House Review.', style: { color: '#ccc', fontSize: '13px' } })
+                                $({ tag: 'div', text: 'In-House Review Required', style: { color: '#1976D2', fontWeight: '600', marginBottom: '4px' } }),
+                                $({ tag: 'div', text: 'This symposium requires that your paper was first presented in an In-House Review.', style: { color: '#475569', fontSize: '13px' } })
                             ]
                         })
                     ]
@@ -541,7 +643,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         typeSection.appendChild($({
             tag: 'label',
             text: 'Where was the paper presented for In-House Review? *',
-            style: { display: 'block', color: '#bbb', marginBottom: '12px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#334155', marginBottom: '12px', fontSize: '14px', fontWeight: '600' }
         }))
 
         const typeOptions = $({ tag: 'div', style: { display: 'flex', gap: '16px' } })
@@ -551,26 +653,42 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             tag: 'div',
             style: {
                 flex: 1,
-                backgroundColor: '#2a2a2a',
-                borderRadius: '10px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '12px',
                 padding: '16px',
                 cursor: 'pointer',
-                border: '2px solid transparent',
-                transition: 'all 0.2s'
+                border: '2px solid #e8ecf0',
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                },
+                type2: 'mouseleave',
+                method2: (e) => {
+                    if (e.currentTarget.style.borderColor !== '#1976D2') {
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                    }
+                }
             }
         })
 
         const localRadio = $({
             tag: 'input',
             att: { type: 'radio', name: 'presentation_type', value: 'local' },
-            style: { marginRight: '12px', cursor: 'pointer' },
+            style: { marginRight: '12px', cursor: 'pointer', accentColor: '#1976D2' },
             event: {
                 type: 'change',
                 method: (e) => {
                     if (e.target.checked) {
                         formData.presentation_type = 'local'
-                        localContainer.style.borderColor = '#2196F3'
-                        universityContainer.style.borderColor = 'transparent'
+                        localContainer.style.borderColor = '#1976D2'
+                        localContainer.style.backgroundColor = '#e3f2fd'
+                        universityContainer.style.borderColor = '#e8ecf0'
+                        universityContainer.style.backgroundColor = '#f8fafc'
                         localFieldsContainer.style.display = 'block'
                         universityFields.style.display = 'none'
                         formData.university_title = ''
@@ -580,8 +698,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         })
 
-        const localTitleSpan = $({ tag: 'span', text: 'Local In-House Review', style: { fontWeight: '600', color: '#fff' } })
-        const localDescSpan = $({ tag: 'div', text: 'Presented at campus/center level', style: { fontSize: '12px', color: '#888', marginTop: '8px', marginLeft: '28px' } })
+        const localTitleSpan = $({ tag: 'span', text: 'Local In-House Review', style: { fontWeight: '600', color: '#1a2a3a' } })
+        const localDescSpan = $({ tag: 'div', text: 'Presented at campus/center level', style: { fontSize: '12px', color: '#64748b', marginTop: '8px', marginLeft: '28px' } })
         const localRadioLabel = $({ tag: 'label', style: { display: 'flex', alignItems: 'center', cursor: 'pointer' }, child: [localRadio, localTitleSpan] })
 
         localContainer.appendChild(localRadioLabel)
@@ -590,8 +708,10 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localContainer.addEventListener('click', () => {
             localRadio.checked = true
             formData.presentation_type = 'local'
-            localContainer.style.borderColor = '#2196F3'
-            universityContainer.style.borderColor = 'transparent'
+            localContainer.style.borderColor = '#1976D2'
+            localContainer.style.backgroundColor = '#e3f2fd'
+            universityContainer.style.borderColor = '#e8ecf0'
+            universityContainer.style.backgroundColor = '#f8fafc'
             localFieldsContainer.style.display = 'block'
             universityFields.style.display = 'none'
             formData.university_title = ''
@@ -603,26 +723,42 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             tag: 'div',
             style: {
                 flex: 1,
-                backgroundColor: '#2a2a2a',
-                borderRadius: '10px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '12px',
                 padding: '16px',
                 cursor: 'pointer',
-                border: '2px solid transparent',
-                transition: 'all 0.2s'
+                border: '2px solid #e8ecf0',
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                },
+                type2: 'mouseleave',
+                method2: (e) => {
+                    if (e.currentTarget.style.borderColor !== '#1976D2') {
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                    }
+                }
             }
         })
 
         const universityRadio = $({
             tag: 'input',
             att: { type: 'radio', name: 'presentation_type', value: 'university' },
-            style: { marginRight: '12px', cursor: 'pointer' },
+            style: { marginRight: '12px', cursor: 'pointer', accentColor: '#1976D2' },
             event: {
                 type: 'change',
                 method: (e) => {
                     if (e.target.checked) {
                         formData.presentation_type = 'university'
-                        universityContainer.style.borderColor = '#2196F3'
-                        localContainer.style.borderColor = 'transparent'
+                        universityContainer.style.borderColor = '#1976D2'
+                        universityContainer.style.backgroundColor = '#e3f2fd'
+                        localContainer.style.borderColor = '#e8ecf0'
+                        localContainer.style.backgroundColor = '#f8fafc'
                         localFieldsContainer.style.display = 'none'
                         universityFields.style.display = 'block'
 
@@ -659,8 +795,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         })
 
-        const universityTitleSpan = $({ tag: 'span', text: 'University In-House Review', style: { fontWeight: '600', color: '#fff' } })
-        const universityDescSpan = $({ tag: 'div', text: 'Presented at university level', style: { fontSize: '12px', color: '#888', marginTop: '8px', marginLeft: '28px' } })
+        const universityTitleSpan = $({ tag: 'span', text: 'University In-House Review', style: { fontWeight: '600', color: '#1a2a3a' } })
+        const universityDescSpan = $({ tag: 'div', text: 'Presented at university level', style: { fontSize: '12px', color: '#64748b', marginTop: '8px', marginLeft: '28px' } })
         const universityRadioLabel = $({ tag: 'label', style: { display: 'flex', alignItems: 'center', cursor: 'pointer' }, child: [universityRadio, universityTitleSpan] })
 
         universityContainer.appendChild(universityRadioLabel)
@@ -669,8 +805,10 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         universityContainer.addEventListener('click', () => {
             universityRadio.checked = true
             formData.presentation_type = 'university'
-            universityContainer.style.borderColor = '#2196F3'
-            localContainer.style.borderColor = 'transparent'
+            universityContainer.style.borderColor = '#1976D2'
+            universityContainer.style.backgroundColor = '#e3f2fd'
+            localContainer.style.borderColor = '#e8ecf0'
+            localContainer.style.backgroundColor = '#f8fafc'
             localFieldsContainer.style.display = 'none'
             universityFields.style.display = 'block'
 
@@ -730,37 +868,47 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localTitleSection.appendChild($({
             tag: 'label',
             text: 'Document Title *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
 
-        // Create input
         localTitleInput = $({
             tag: 'input',
             att: { type: 'text', placeholder: 'Exact title presented in Local In-House Review' },
             style: {
                 width: '100%',
                 padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'input',
+                type: 'focus',
                 method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'input',
+                method3: (e) => {
                     const input = e.target
                     const start = input.selectionStart
                     const end = input.selectionEnd
                     let value = input.value
-                    
-                    // Capitalize first letter of each word
+
                     let words = value.split(' ')
                     let capitalized = words.map(word => {
                         if (word.length === 0) return word
                         return word.charAt(0).toUpperCase() + word.slice(1)
                     }).join(' ')
-                    
+
                     if (capitalized !== value) {
                         input.value = capitalized
                         input.setSelectionRange(start, end)
@@ -772,7 +920,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
             }
         })
-
         localTitleSection.appendChild(localTitleInput)
         leftColumn.appendChild(localTitleSection)
 
@@ -781,28 +928,40 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localCampusSection.appendChild($({
             tag: 'label',
             text: 'Campus *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
         localCampusInput = $({
             tag: 'select',
             style: {
                 width: '100%',
                 padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'change',
-                method: (e) => { formData.local_campus = e.target.value }
+                type: 'focus',
+                method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'change',
+                method3: (e) => { formData.local_campus = e.target.value }
             },
             elementHandler: (el) => {
                 const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz']
-                el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true } }))
+                el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                 campuses.forEach(campus => {
-                    el.appendChild($({ tag: 'option', text: campus, att: { value: campus } }))
+                    el.appendChild($({ tag: 'option', text: campus, att: { value: campus }, style: { color: '#1a2a3a' } }))
                 })
             }
         })
@@ -814,31 +973,43 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localCategorySection.appendChild($({
             tag: 'label',
             text: 'Category *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
         localCategorySelect = $({
             tag: 'select',
             style: {
                 width: '100%',
                 padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'change',
+                type: 'focus',
                 method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'change',
+                method3: (e) => {
                     formData.local_category = e.target.value
                     updateLocalCenters(e.target.value)
                 }
             },
             elementHandler: (el) => {
                 el.innerHTML = ''
-                el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
+                el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                 categories.forEach(cat => {
-                    el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
+                    el.appendChild($({ tag: 'option', text: cat, att: { value: cat }, style: { color: '#1a2a3a' } }))
                 })
             }
         })
@@ -850,22 +1021,37 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localCenterSection.appendChild($({
             tag: 'label',
             text: 'Center *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
         localCenterSelect = $({
             tag: 'select',
             style: {
                 width: '100%',
                 padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'change',
-                method: (e) => { formData.local_center = e.target.value }
+                type: 'focus',
+                method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'change',
+                method3: (e) => { formData.local_center = e.target.value }
+            },
+            elementHandler: (el) => {
+                el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
             }
         })
         localCenterSection.appendChild(localCenterSelect)
@@ -878,7 +1064,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localAuthorSection.appendChild($({
             tag: 'label',
             text: 'Main Author *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
         localAuthorInput = $({
             tag: 'input',
@@ -886,27 +1072,38 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             style: {
                 width: '100%',
                 padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'input',
+                type: 'focus',
                 method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'input',
+                method3: (e) => {
                     const input = e.target
                     const start = input.selectionStart
                     const end = input.selectionEnd
                     let value = input.value
-                    
-                    // Capitalize first letter of each word
+
                     let words = value.split(' ')
                     let capitalized = words.map(word => {
                         if (word.length === 0) return word
                         return word.charAt(0).toUpperCase() + word.slice(1)
                     }).join(' ')
-                    
+
                     if (capitalized !== value) {
                         input.value = capitalized
                         input.setSelectionRange(start, end)
@@ -925,7 +1122,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localPresenterSection.appendChild($({
             tag: 'label',
             text: 'Presenter *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
         localPresenterInput = $({
             tag: 'input',
@@ -933,27 +1130,38 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             style: {
                 width: '100%',
                 padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'input',
+                type: 'focus',
                 method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'input',
+                method3: (e) => {
                     const input = e.target
                     const start = input.selectionStart
                     const end = input.selectionEnd
                     let value = input.value
-                    
-                    // Capitalize first letter of each word
+
                     let words = value.split(' ')
                     let capitalized = words.map(word => {
                         if (word.length === 0) return word
                         return word.charAt(0).toUpperCase() + word.slice(1)
                     }).join(' ')
-                    
+
                     if (capitalized !== value) {
                         input.value = capitalized
                         input.setSelectionRange(start, end)
@@ -972,7 +1180,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localCoAuthorSection.appendChild($({
             tag: 'label',
             text: 'Co-Authors',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
 
         const localCoAuthorInputGroup = $({ tag: 'div', style: { display: 'flex', gap: '10px', marginBottom: '12px' } })
@@ -982,27 +1190,38 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             style: {
                 flex: 1,
                 padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'input',
+                type: 'focus',
                 method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'input',
+                method3: (e) => {
                     const input = e.target
                     const start = input.selectionStart
                     const end = input.selectionEnd
                     let value = input.value
-                    
-                    // Capitalize first letter of each word
+
                     let words = value.split(' ')
                     let capitalized = words.map(word => {
                         if (word.length === 0) return word
                         return word.charAt(0).toUpperCase() + word.slice(1)
                     }).join(' ')
-                    
+
                     if (capitalized !== value) {
                         input.value = capitalized
                         input.setSelectionRange(start, end)
@@ -1016,12 +1235,14 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             text: 'Add',
             style: {
                 padding: '8px 20px',
-                backgroundColor: '#2196F3',
+                backgroundColor: '#1976D2',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 color: '#fff',
                 cursor: 'pointer',
-                fontSize: '14px'
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
             },
             event: {
                 type: 'click',
@@ -1030,10 +1251,14 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     if (name) {
                         if (!formData.local_coAuthors) formData.local_coAuthors = []
                         formData.local_coAuthors.push(name)
-                        updateLocalCoAuthorList() // Now this function is defined
+                        updateLocalCoAuthorList()
                         localCoAuthorInput.value = ''
                     }
-                }
+                },
+                type2: 'mouseenter',
+                method2: (e) => { e.currentTarget.style.backgroundColor = '#1565C0' },
+                type3: 'mouseleave',
+                method3: (e) => { e.currentTarget.style.backgroundColor = '#1976D2' }
             }
         })
 
@@ -1063,7 +1288,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 gap: '16px',
                 marginTop: '20px',
                 paddingTop: '20px',
-                borderTop: '1px solid rgba(255,255,255,0.1)'
+                borderTop: '1px solid #e8ecf0'
             }
         })
         localFileUploadsGrid.appendChild(createLocalFileUploadField('Program File *', 'local_programFile', (file) => { formData.local_program = file }))
@@ -1077,9 +1302,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             if (localCenterSelect) {
                 const currentValue = localCenterSelect.value
                 localCenterSelect.innerHTML = ''
-                localCenterSelect.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
+                localCenterSelect.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                 centers.forEach(center => {
-                    localCenterSelect.appendChild($({ tag: 'option', text: center, att: { value: center } }))
+                    localCenterSelect.appendChild($({ tag: 'option', text: center, att: { value: center }, style: { color: '#1a2a3a' } }))
                 })
                 if (currentValue && centers.includes(currentValue)) {
                     localCenterSelect.value = currentValue
@@ -1093,9 +1318,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         // Loading indicator
         const loadingDiv = $({
             tag: 'div',
-            style: { textAlign: 'center', padding: '20px', color: '#888' },
+            style: { textAlign: 'center', padding: '20px', color: '#64748b' },
             child: [
-                $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '24px', marginBottom: '10px', display: 'block' } }),
+                $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '24px', marginBottom: '10px', display: 'block', color: '#1976D2' } }),
                 $({ tag: 'div', text: 'Loading your accepted in-house reviews...' })
             ]
         })
@@ -1105,7 +1330,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         searchSection.appendChild($({
             tag: 'label',
             text: 'Search Accepted University In-House Review *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
 
         const searchWrapper = $({
@@ -1120,15 +1345,27 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 width: '100%',
                 padding: '12px 14px',
                 paddingRight: '40px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'input',
+                type: 'focus',
                 method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'input',
+                method3: (e) => {
                     const searchTerm = e.target.value.toLowerCase()
                     filterAndDisplayResults(searchTerm)
                 }
@@ -1143,7 +1380,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 right: '14px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#666',
+                color: '#94a3b8',
                 fontSize: '16px'
             }
         })
@@ -1158,10 +1395,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 marginTop: '12px',
                 maxHeight: '300px',
                 overflowY: 'auto',
-                backgroundColor: '#2a2a2a',
-                borderRadius: '8px',
-                border: '1px solid #444',
-                display: 'none'
+                backgroundColor: '#ffffff',
+                borderRadius: '10px',
+                border: '1px solid #e8ecf0',
+                display: 'none',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
             }
         })
 
@@ -1171,11 +1409,12 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         const selectedReviewSection = $({
             tag: 'div',
             style: {
-                backgroundColor: '#1a5c2e',
-                borderRadius: '10px',
+                backgroundColor: '#e8f5e9',
+                borderRadius: '12px',
                 padding: '16px',
                 marginBottom: '24px',
-                display: 'none'
+                display: 'none',
+                border: '1px solid #c8e6c9'
             },
             att: { id: 'selectedReviewDisplay' }
         })
@@ -1205,7 +1444,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 searchResultsContainer.innerHTML = ''
                 const noResult = $({
                     tag: 'div',
-                    style: { padding: '16px', textAlign: 'center', color: '#888', fontSize: '13px' },
+                    style: { padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' },
                     text: 'No matching in-house reviews found'
                 })
                 searchResultsContainer.appendChild(noResult)
@@ -1218,15 +1457,25 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             filteredReviewsList.forEach(review => {
                 const resultItem = $({
                     tag: 'div',
-                    style: { padding: '12px 16px', borderBottom: '1px solid #444', cursor: 'pointer', transition: 'all 0.2s' },
+                    style: {
+                        padding: '12px 16px',
+                        borderBottom: '1px solid #e8ecf0',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        backgroundColor: '#ffffff'
+                    },
                     event: {
                         type: 'click',
-                        method: () => selectInhouseReview(review)
+                        method: () => selectInhouseReview(review),
+                        type2: 'mouseenter',
+                        method2: (e) => { e.currentTarget.style.backgroundColor = '#f1f5f9' },
+                        type3: 'mouseleave',
+                        method3: (e) => { e.currentTarget.style.backgroundColor = '#ffffff' }
                     },
                     child: [
-                        $({ tag: 'div', style: { color: '#fff', fontWeight: '500', marginBottom: '4px' }, text: review.title }),
-                        $({ tag: 'div', style: { color: '#888', fontSize: '12px' }, text: `Author: ${review.author}` }),
-                        review.event_name ? $({ tag: 'div', style: { color: '#666', fontSize: '11px', marginTop: '4px' }, text: `Event: ${review.event_name}` }) : null
+                        $({ tag: 'div', style: { color: '#1a2a3a', fontWeight: '500', marginBottom: '4px' }, text: review.title }),
+                        $({ tag: 'div', style: { color: '#64748b', fontSize: '12px' }, text: `Author: ${review.author}` }),
+                        review.event_name ? $({ tag: 'div', style: { color: '#94a3b8', fontSize: '11px', marginTop: '4px' }, text: `Event: ${review.event_name}` }) : null
                     ]
                 })
                 searchResultsContainer.appendChild(resultItem)
@@ -1248,23 +1497,23 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             selectedReviewSection.style.display = 'block'
             selectedReviewContent.innerHTML = ''
 
-            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#4caf50', marginBottom: '8px', fontWeight: 'bold' }, text: '✓ Presented in In-House Review:' }))
-            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#fff', marginBottom: '4px' }, text: `Title: ${selected.title}` }))
-            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Author: ${selected.author}` }))
+            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#2e7d32', marginBottom: '8px', fontWeight: 'bold' }, text: '✓ Presented in In-House Review:' }))
+            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#1a2a3a', marginBottom: '4px' }, text: `Title: ${selected.title}` }))
+            selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#475569', fontSize: '12px', marginBottom: '4px' }, text: `Author: ${selected.author}` }))
 
             if (selected.coauthors && selected.coauthors.length > 0) {
                 const coauthorsText = selected.coauthors.join(', ')
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Co-Authors: ${coauthorsText}` }))
+                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#475569', fontSize: '12px', marginBottom: '4px' }, text: `Co-Authors: ${coauthorsText}` }))
             }
 
             if (selected.category) {
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Category: ${selected.category}` }))
+                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#475569', fontSize: '12px', marginBottom: '4px' }, text: `Category: ${selected.category}` }))
             }
             if (selected.center) {
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#ccc', fontSize: '12px', marginBottom: '4px' }, text: `Center: ${selected.center}` }))
+                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#475569', fontSize: '12px', marginBottom: '4px' }, text: `Center: ${selected.center}` }))
             }
             if (selected.event_name) {
-                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#888', fontSize: '11px', marginTop: '4px' }, text: `Event: ${selected.event_name}` }))
+                selectedReviewContent.appendChild($({ tag: 'div', style: { color: '#64748b', fontSize: '11px', marginTop: '4px' }, text: `Event: ${selected.event_name}` }))
             }
 
             const changeLink = $({
@@ -1274,7 +1523,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     $({
                         tag: 'span',
                         text: 'Change Selection',
-                        style: { color: '#2196F3', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' },
+                        style: { color: '#1976D2', cursor: 'pointer', fontSize: '12px', fontWeight: '500', transition: 'all 0.2s ease' },
                         event: {
                             type: 'click',
                             method: () => {
@@ -1284,7 +1533,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                                 formData.selected_university_review = null
                                 formData.university_title = ''
                                 formData.university_coauthors = []
-                            }
+                            },
+                            type2: 'mouseenter',
+                            method2: (e) => { e.currentTarget.style.color = '#1565C0' },
+                            type3: 'mouseleave',
+                            method3: (e) => { e.currentTarget.style.color = '#1976D2' }
                         }
                     })
                 ]
@@ -1305,7 +1558,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 const formDataReq = new FormData()
                 formDataReq.append('getAcceptedInhouseReviews', 'true')
 
-                const response = await fetch('/uploadResearchFile', {
+                const response = await fetch('/uploadFacultyDocs', {
                     method: 'POST',
                     body: formDataReq
                 })
@@ -1322,8 +1575,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     loadingDiv.innerHTML = ''
                     loadingDiv.appendChild($({
                         tag: 'div',
-                        style: { textAlign: 'center', padding: '20px', color: '#f44336' },
-                        text: 'No accepted in-house reviews found. Please complete an in-house review first.'
+                        style: { textAlign: 'center', padding: '20px', color: '#ef4444' },
+                        child: [
+                            $({ tag: 'i', att: { className: 'fas fa-exclamation-circle' }, style: { fontSize: '24px', display: 'block', marginBottom: '10px' } }),
+                            $({ tag: 'div', text: 'No accepted in-house reviews found. Please complete an in-house review first.' })
+                        ]
                     }))
                     searchInput.disabled = true
                 }
@@ -1333,8 +1589,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 loadingDiv.innerHTML = ''
                 loadingDiv.appendChild($({
                     tag: 'div',
-                    style: { textAlign: 'center', padding: '20px', color: '#f44336' },
-                    text: 'Error loading in-house reviews. Please refresh and try again.'
+                    style: { textAlign: 'center', padding: '20px', color: '#ef4444' },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '24px', display: 'block', marginBottom: '10px' } }),
+                        $({ tag: 'div', text: 'Error loading in-house reviews. Please refresh and try again.' })
+                    ]
                 }))
             }
         }
@@ -1354,7 +1613,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
         // Store references for validation
         container.__validate = () => {
-
             if (!formData.presentation_type) {
                 ConfirmationAlert('Please select where the paper was presented for In-House Review', () => { })
                 return false
@@ -1413,8 +1671,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         const infoBox = $({
             tag: 'div',
             style: {
-                backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                borderRadius: '10px',
+                backgroundColor: '#fff3e0',
+                borderRadius: '12px',
                 padding: '16px',
                 marginBottom: '24px',
                 borderLeft: '4px solid #FF9800'
@@ -1429,8 +1687,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                             tag: 'div',
                             style: { flex: 1 },
                             child: [
-                                $({ tag: 'div', text: 'Title Change Tracking', style: { color: '#FF9800', fontWeight: '600', marginBottom: '4px' } }),
-                                $({ tag: 'div', text: 'If the symposium title differs from the In-House Review title, please indicate the new title below.', style: { color: '#ccc', fontSize: '13px' } })
+                                $({ tag: 'div', text: 'Title Change Tracking', style: { color: '#E65100', fontWeight: '600', marginBottom: '4px' } }),
+                                $({ tag: 'div', text: 'If the symposium title differs from the In-House Review title, please indicate the new title below.', style: { color: '#475569', fontSize: '13px' } })
                             ]
                         })
                     ]
@@ -1443,14 +1701,15 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         const refSection = $({
             tag: 'div',
             style: {
-                backgroundColor: '#2a2a2a',
-                borderRadius: '8px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '10px',
                 padding: '12px 16px',
-                marginBottom: '24px'
+                marginBottom: '24px',
+                border: '1px solid #e8ecf0'
             },
             child: [
-                $({ tag: 'div', text: 'In-House Review Title:', style: { color: '#888', fontSize: '12px', marginBottom: '4px' } }),
-                $({ tag: 'div', text: '—', style: { color: '#fff', fontSize: '14px', fontWeight: '500' }, att: { id: 'refInhouseTitle' } })
+                $({ tag: 'div', text: 'In-House Review Title:', style: { color: '#64748b', fontSize: '12px', marginBottom: '4px' } }),
+                $({ tag: 'div', text: '—', style: { color: '#1a2a3a', fontSize: '14px', fontWeight: '500' }, att: { id: 'refInhouseTitle' } })
             ]
         })
         container.appendChild(refSection)
@@ -1465,19 +1724,24 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 $({
                     tag: 'input',
                     att: { type: 'checkbox' },
-                    style: { width: '18px', height: '18px', cursor: 'pointer' },
+                    style: { width: '18px', height: '18px', cursor: 'pointer', accentColor: '#1976D2' },
                     event: {
                         type: 'change',
                         method: (e) => {
                             formData.title_changed = e.target.checked
                             newTitleContainer.style.display = formData.title_changed ? 'block' : 'none'
+                            certificateAttachmentContainer.style.display = formData.title_changed ? 'block' : 'none'
                             if (!formData.title_changed) {
                                 formData.new_title = ''
+                                formData.title_certificate_file = null
+                                if (certificateUpload && certificateUpload.clearFiles) {
+                                    certificateUpload.clearFiles()
+                                }
                             }
                         }
                     }
                 }),
-                $({ tag: 'span', text: 'Has the research title changed for the Symposium?', style: { color: '#fff', fontSize: '14px' } })
+                $({ tag: 'span', text: 'Has the research title changed for the Symposium?', style: { color: '#1a2a3a', fontSize: '14px', fontWeight: '500' } })
             ]
         })
         checkboxSection.appendChild(checkboxLabel)
@@ -1488,12 +1752,12 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         newTitleContainer.appendChild($({
             tag: 'label',
             text: 'New Research Title for Symposium *',
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         }))
         newTitleContainer.appendChild($({
             tag: 'div',
             text: 'This will be saved as the Final Symposium Title',
-            style: { color: '#888', fontSize: '12px', marginBottom: '8px' }
+            style: { color: '#64748b', fontSize: '12px', marginBottom: '8px' }
         }))
 
         const newTitleInput = $({
@@ -1502,24 +1766,146 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             style: {
                 width: '100%',
                 padding: '12px 14px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e8ecf0',
+                borderRadius: '10px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
             },
             event: {
-                type: 'input',
-                method: (e) => { formData.new_title = e.target.value }
+                type: 'focus',
+                method: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                },
+                type2: 'blur',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                },
+                type3: 'input',
+                method3: (e) => {
+                    formData.new_title = e.target.value
+                }
             }
         })
         newTitleContainer.appendChild(newTitleInput)
         container.appendChild(newTitleContainer)
 
+        // ===== CERTIFICATE ATTACHMENT SECTION =====
+        const certificateAttachmentContainer = $({
+            tag: 'div',
+            style: {
+                display: 'none',
+                marginTop: '20px',
+                padding: '20px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '12px',
+                border: '1px solid #e8ecf0'
+            }
+        })
+
+        // Header for certificate section
+        const certHeader = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '16px'
+            },
+            child: [
+                $({
+                    tag: 'i',
+                    att: { className: 'fas fa-certificate' },
+                    style: { color: '#1976D2', fontSize: '20px' }
+                }),
+                $({
+                    tag: 'span',
+                    text: 'Certificate of Title Change',
+                    style: { color: '#1a2a3a', fontSize: '16px', fontWeight: '600' }
+                })
+            ]
+        })
+        certificateAttachmentContainer.appendChild(certHeader)
+
+        // Description
+        certificateAttachmentContainer.appendChild($({
+            tag: 'div',
+            text: 'Please upload the Certificate of Title Change as proof of the research title change.',
+            style: { color: '#64748b', fontSize: '13px', marginBottom: '16px' }
+        }))
+
+        // Drag and Drop Upload for Certificate
+        let certificateUpload = null
+        const uploadContainer = $({
+            tag: 'div',
+            style: { marginBottom: '12px' }
+        })
+
+        const uploadElement = DragDropUpload({
+            label: 'Certificate of Title Change',
+            accept: '.pdf',
+            multiple: false,
+            required: true,
+            maxSizeMB: 10,
+            description: 'Upload the certificate of title change (PDF only)',
+            onFileSelect: async (files, allFiles) => {
+                if (files && files.length > 0) {
+                    const file = files[0]
+                    const validation = await ValidatePDF(file, 10)
+                    if (validation.valid) {
+                        formData.title_certificate_file = file
+                    } else {
+                        ConfirmationAlert('Invalid Certificate: ' + validation.error, () => { })
+                        if (certificateUpload && certificateUpload.clearFiles) {
+                            certificateUpload.clearFiles()
+                        }
+                        formData.title_certificate_file = null
+                    }
+                }
+            },
+            onFileRemove: (file, index, allFiles) => {
+                formData.title_certificate_file = null
+            }
+        })
+
+        certificateUpload = uploadElement
+        uploadContainer.appendChild(uploadElement.element)
+        certificateAttachmentContainer.appendChild(uploadContainer)
+
+        // Validation note
+        certificateAttachmentContainer.appendChild($({
+            tag: 'div',
+            style: {
+                fontSize: '12px',
+                color: '#64748b',
+                padding: '8px 12px',
+                backgroundColor: '#fff8e1',
+                borderRadius: '8px',
+                borderLeft: '3px solid #FFC107'
+            },
+            child: [
+                $({ tag: 'i', att: { className: 'fas fa-info-circle' }, style: { color: '#FFC107', marginRight: '8px' } }),
+                $({ tag: 'span', text: 'Only PDF files are accepted. Maximum file size: 10MB.' })
+            ]
+        }))
+
+        container.appendChild(certificateAttachmentContainer)
+
+        // Store reference for validation
         container.__validate = () => {
-            if (formData.title_changed && (!formData.new_title || formData.new_title.trim() === '')) {
-                ConfirmationAlert('Please enter the new research title for the Symposium', () => { })
-                return false
+            if (formData.title_changed) {
+                if (!formData.new_title || formData.new_title.trim() === '') {
+                    ConfirmationAlert('Please enter the new research title for the Symposium', () => { })
+                    return false
+                }
+                if (!formData.title_certificate_file) {
+                    ConfirmationAlert('Please upload the Certificate of Title Change', () => { })
+                    return false
+                }
             }
             return true
         }
@@ -1528,7 +1914,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             const refEl = refSection.querySelector('#refInhouseTitle')
             if (refEl) {
                 if (formData.presentation_type === 'local') {
-                    // Add null check and default value
                     refEl.innerText = (formData.local_title && formData.local_title.trim() !== '') ? formData.local_title : '—'
                 } else if (formData.presentation_type === 'university') {
                     if (formData.selected_university_review && formData.selected_university_review.title) {
@@ -1555,25 +1940,98 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         // Store references to fields for dynamic updates
         let categorySelect, centerSelect, authorInput, presenterInput, coAuthorContainer
         let dateStartedField, dateCompletedField
-        let campusSelect // Changed from campusField to campusSelect
+        let campusSelect
 
-        // Function to auto-fill from selected university in-house review
-        const autoFillFromUniversityReview = (selectedReview) => {
-            if (!selectedReview) return
+        // ===== FUNCTION TO AUTO-FILL FROM LOCAL IN-HOUSE REVIEW =====
+        const autoFillFromLocalReview = () => {
+            // Check if we have local in-house data
+            if (formData.presentation_type !== 'local') return
 
-            // Auto-fill Category
-            if (selectedReview.category && categorySelect) {
+            // Get data from formData (which was set in Step 1)
+            const localData = {
+                title: formData.local_title || '',
+                campus: formData.local_campus || '',
+                category: formData.local_category || '',
+                center: formData.local_center || '',
+                author: formData.local_author || '',
+                presenter: formData.local_presenter || '',
+                coAuthors: formData.local_coAuthors || []
+            }
+
+            // Only fill if we have data
+            if (!localData.author && !localData.category) return
+
+            // Fill Category
+            if (localData.category && categorySelect) {
                 const categorySelectEl = categorySelect.querySelector('select')
                 if (categorySelectEl) {
-                    categorySelectEl.value = selectedReview.category
-                    formData.category = selectedReview.category
-                    // Trigger change to update centers
+                    categorySelectEl.value = localData.category
+                    formData.category = localData.category
+                    // Trigger change event to update centers
                     const changeEvent = new Event('change')
                     categorySelectEl.dispatchEvent(changeEvent)
                 }
             }
 
-            // Auto-fill Center (need to wait for category change to populate centers)
+            // Fill Center (with slight delay to ensure categories are loaded)
+            setTimeout(() => {
+                if (localData.center && centerSelect) {
+                    const centerSelectEl = centerSelect.querySelector('select')
+                    if (centerSelectEl) {
+                        centerSelectEl.value = localData.center
+                        formData.center = localData.center
+                    }
+                }
+            }, 100)
+
+            // Fill Author
+            if (localData.author && authorInput) {
+                const authorInputEl = authorInput.querySelector('input')
+                if (authorInputEl) {
+                    authorInputEl.value = localData.author
+                    formData.author = localData.author
+                }
+            }
+
+            // Fill Presenter
+            if (localData.presenter && presenterInput) {
+                const presenterInputEl = presenterInput.querySelector('input')
+                if (presenterInputEl) {
+                    presenterInputEl.value = localData.presenter
+                    formData.presenter = localData.presenter
+                }
+            }
+
+            // Fill Co-Authors
+            if (localData.coAuthors && localData.coAuthors.length > 0 && coAuthorContainer) {
+                formData.coAuthors = [...localData.coAuthors]
+                updateCoAuthorList()
+            }
+
+            // Fill Campus
+            if (localData.campus && campusSelect) {
+                const campusSelectEl = campusSelect.querySelector('select')
+                if (campusSelectEl) {
+                    campusSelectEl.value = localData.campus
+                    formData.campus = localData.campus
+                }
+            }
+        }
+
+        // ===== FUNCTION TO AUTO-FILL FROM UNIVERSITY IN-HOUSE REVIEW =====
+        const autoFillFromUniversityReview = (selectedReview) => {
+            if (!selectedReview) return
+
+            if (selectedReview.category && categorySelect) {
+                const categorySelectEl = categorySelect.querySelector('select')
+                if (categorySelectEl) {
+                    categorySelectEl.value = selectedReview.category
+                    formData.category = selectedReview.category
+                    const changeEvent = new Event('change')
+                    categorySelectEl.dispatchEvent(changeEvent)
+                }
+            }
+
             setTimeout(() => {
                 if (selectedReview.center && centerSelect) {
                     const centerSelectEl = centerSelect.querySelector('select')
@@ -1584,7 +2042,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
             }, 100)
 
-            // Auto-fill Author
             if (selectedReview.author && authorInput) {
                 const authorInputEl = authorInput.querySelector('input')
                 if (authorInputEl) {
@@ -1593,14 +2050,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
             }
 
-            // Auto-fill Co-authors
             if (selectedReview.coauthors && selectedReview.coauthors.length > 0 && coAuthorContainer) {
                 formData.coAuthors = [...selectedReview.coauthors]
                 updateCoAuthorList()
-                console.log('Auto-filled co-authors:', formData.coAuthors)
             }
 
-            // Auto-fill Campus if available
             if (selectedReview.campus && campusSelect) {
                 const campusSelectEl = campusSelect.querySelector('select')
                 if (campusSelectEl) {
@@ -1609,7 +2063,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
             }
 
-            // Auto-fill Date Started if available
             if (selectedReview.date_started && dateStartedField) {
                 const dateStartedEl = dateStartedField.querySelector('input')
                 if (dateStartedEl) {
@@ -1618,7 +2071,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
             }
 
-            // Auto-fill Date Completed if available
             if (selectedReview.date_completed && dateCompletedField) {
                 const dateCompletedEl = dateCompletedField.querySelector('input')
                 if (dateCompletedEl) {
@@ -1628,7 +2080,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         }
 
-        // Function to update co-author list display
         const updateCoAuthorList = () => {
             if (!coAuthorContainer) return
             const listContainer = coAuthorContainer.querySelector('.coauthor-list')
@@ -1638,7 +2089,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 const tag = $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2a2a2a',
+                        backgroundColor: '#e8f5e9',
                         padding: '4px 10px',
                         borderRadius: '20px',
                         display: 'inline-flex',
@@ -1647,17 +2098,21 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                         fontSize: '12px'
                     },
                     child: [
-                        $({ tag: 'span', text: author, style: { color: '#fff' } }),
+                        $({ tag: 'span', text: author, style: { color: '#2e7d32' } }),
                         $({
                             tag: 'i',
                             att: { className: 'fas fa-times' },
-                            style: { color: '#999', fontSize: '10px', cursor: 'pointer' },
+                            style: { color: '#666', fontSize: '10px', cursor: 'pointer', transition: 'all 0.2s ease' },
                             event: {
                                 type: 'click',
                                 method: () => {
                                     formData.coAuthors.splice(idx, 1)
                                     updateCoAuthorList()
-                                }
+                                },
+                                type2: 'mouseenter',
+                                method2: (e) => { e.currentTarget.style.color = '#ef4444' },
+                                type3: 'mouseleave',
+                                method3: (e) => { e.currentTarget.style.color = '#666' }
                             }
                         })
                     ]
@@ -1666,16 +2121,15 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             })
         }
 
-        // Function to update centers based on selected category
         const updateCenters = (category) => {
             const centers = categoryToCenters[category] || Object.keys(centerCategoryMapping)
             const selectEl = centerSelect.querySelector('select')
             if (selectEl) {
                 const currentValue = selectEl.value
                 selectEl.innerHTML = ''
-                selectEl.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
+                selectEl.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                 centers.forEach(center => {
-                    selectEl.appendChild($({ tag: 'option', text: center, att: { value: center } }))
+                    selectEl.appendChild($({ tag: 'option', text: center, att: { value: center }, style: { color: '#1a2a3a' } }))
                 })
                 if (currentValue && centers.includes(currentValue)) {
                     selectEl.value = currentValue
@@ -1686,13 +2140,13 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         }
 
-        // ========== CREATE CAMPUS DROPDOWN (matching Step 1) ==========
+        // ===== CREATE FORM FIELDS =====
         const createCampusDropdown = () => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: 'Campus *',
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
             }))
 
             const select = $({
@@ -1700,23 +2154,33 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 style: {
                     width: '100%',
                     padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'change',
+                    type: 'focus',
                     method: (e) => {
-                        formData.campus = e.target.value
-                    }
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.outline = 'none';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'change',
+                    method3: (e) => { formData.campus = e.target.value }
                 },
                 elementHandler: (el) => {
                     const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz']
-                    el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true } }))
+                    el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                     campuses.forEach(campus => {
-                        el.appendChild($({ tag: 'option', text: campus, att: { value: campus } }))
+                        el.appendChild($({ tag: 'option', text: campus, att: { value: campus }, style: { color: '#1a2a3a' } }))
                     })
                 }
             })
@@ -1725,13 +2189,12 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             return container
         }
 
-        // ========== CREATE CATEGORY DROPDOWN ==========
         const createCategoryDropdown = () => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: 'Category *',
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
             }))
 
             const select = $({
@@ -1739,24 +2202,36 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 style: {
                     width: '100%',
                     padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'change',
+                    type: 'focus',
                     method: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.outline = 'none';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'change',
+                    method3: (e) => {
                         formData.category = e.target.value
                         updateCenters(e.target.value)
                     }
                 },
                 elementHandler: (el) => {
                     el.innerHTML = ''
-                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true } }))
+                    el.appendChild($({ tag: 'option', text: '-- Select Category --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                     categories.forEach(cat => {
-                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat } }))
+                        el.appendChild($({ tag: 'option', text: cat, att: { value: cat }, style: { color: '#1a2a3a' } }))
                     })
                 }
             })
@@ -1765,13 +2240,12 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             return container
         }
 
-        // ========== CREATE CENTER DROPDOWN ==========
         const createCenterDropdown = () => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: 'Center *',
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
             }))
 
             const select = $({
@@ -1779,33 +2253,44 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 style: {
                     width: '100%',
                     padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'change',
+                    type: 'focus',
                     method: (e) => {
-                        formData.center = e.target.value
-                    }
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.outline = 'none';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'change',
+                    method3: (e) => { formData.center = e.target.value }
                 },
                 elementHandler: (el) => {
                     el.innerHTML = ''
-                    el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true } }))
+                    el.appendChild($({ tag: 'option', text: '-- Select Center --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
                 }
             })
 
             container.appendChild(select)
             return container
         }
+
         const createTextField = (label, placeholder, onInput) => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
-            container.appendChild($({ 
-                tag: 'label', 
-                text: label, 
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } 
+            container.appendChild($({
+                tag: 'label',
+                text: label,
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
             }))
             const input = $({
                 tag: 'input',
@@ -1813,34 +2298,43 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 style: {
                     width: '100%',
                     padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
-                event: { 
-                    type: 'input', 
+                event: {
+                    type: 'focus',
                     method: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.outline = 'none';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'input',
+                    method3: (e) => {
                         const inputEl = e.target;
                         const start = inputEl.selectionStart;
                         const end = inputEl.selectionEnd;
                         let value = inputEl.value;
-                        
-                        // Capitalize first letter of each word
+
                         let words = value.split(' ');
                         let capitalized = words.map(word => {
                             if (word.length === 0) return word;
                             return word.charAt(0).toUpperCase() + word.slice(1);
                         }).join(' ');
-                        
+
                         if (capitalized !== value) {
                             inputEl.value = capitalized;
                             inputEl.setSelectionRange(start, end);
-                            // Pass the VALUE (string), not the event
                             if (onInput) onInput(capitalized);
                         } else {
-                            // Pass the VALUE (string), not the event
                             if (onInput) onInput(value);
                         }
                     }
@@ -1849,12 +2343,13 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             container.appendChild(input)
             return container
         }
+
         const createDateField = (label, onChange) => {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
                 text: label,
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
             }))
             const input = $({
                 tag: 'input',
@@ -1862,13 +2357,28 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 style: {
                     width: '100%',
                     padding: '10px 12px',
-                    backgroundColor: '#2a2a2a',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '14px'
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
                 },
-                event: { type: 'change', method: onChange }
+                event: {
+                    type: 'focus',
+                    method: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.outline = 'none';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'change',
+                    method3: onChange
+                }
             })
             container.appendChild(input)
             return container
@@ -1879,35 +2389,45 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             container.appendChild($({
                 tag: 'label',
                 text: label,
-                style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
             }))
 
             const uploadArea = $({
                 tag: 'div',
                 style: {
-                    border: '2px dashed #444',
-                    borderRadius: '8px',
-                    padding: '20px',
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '10px',
+                    padding: '24px',
                     textAlign: 'center',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    backgroundColor: 'rgba(255,255,255,0.05)'
+                    transition: 'all 0.2s ease',
+                    backgroundColor: '#f8fafc'
                 },
                 event: {
                     type: 'click',
-                    method: () => fileInput.click()
+                    method: () => fileInput.click(),
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    }
                 }
             })
 
             uploadArea.appendChild($({
                 tag: 'i',
                 att: { className: 'fas fa-cloud-upload-alt' },
-                style: { fontSize: '32px', color: '#666', marginBottom: '8px', display: 'block' }
+                style: { fontSize: '32px', color: '#1976D2', marginBottom: '8px', display: 'block' }
             }))
-            uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#888', fontSize: '14px' } }))
-            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', style: { color: '#666', fontSize: '12px', marginTop: '4px' } }))
+            uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#1a2a3a', fontSize: '14px', fontWeight: '500' } }))
+            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', style: { color: '#64748b', fontSize: '12px', marginTop: '4px' } }))
 
-            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '8px', fontSize: '12px', color: '#4caf50', textAlign: 'center' } })
+            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '8px', fontSize: '12px', color: '#2e7d32', textAlign: 'center', fontWeight: '500' } })
 
             const fileInput = $({
                 tag: 'input',
@@ -1942,12 +2462,111 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             return container
         }
 
+        const createCoAuthorField = (updateCoAuthorListFn) => {
+            const container = $({ tag: 'div', style: { marginBottom: '0' } })
+            container.appendChild($({
+                tag: 'label',
+                text: 'Co-Authors',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
+            }))
+
+            const inputGroup = $({ tag: 'div', style: { display: 'flex', gap: '10px', marginBottom: '12px' } })
+            const input = $({
+                tag: 'input',
+                att: { type: 'text', placeholder: 'Enter co-author name' },
+                style: {
+                    flex: 1,
+                    padding: '10px 12px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#1a2a3a',
+                    fontSize: '14px',
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    type: 'focus',
+                    method: (e) => {
+                        e.currentTarget.style.borderColor = '#1976D2';
+                        e.currentTarget.style.outline = 'none';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                    },
+                    type2: 'blur',
+                    method2: (e) => {
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                    },
+                    type3: 'input',
+                    method3: (e) => {
+                        const inputEl = e.target
+                        const start = inputEl.selectionStart
+                        const end = inputEl.selectionEnd
+                        let value = inputEl.value
+
+                        let words = value.split(' ')
+                        let capitalized = words.map(word => {
+                            if (word.length === 0) return word
+                            return word.charAt(0).toUpperCase() + word.slice(1)
+                        }).join(' ')
+
+                        if (capitalized !== value) {
+                            inputEl.value = capitalized
+                            inputEl.setSelectionRange(start, end)
+                        }
+                    }
+                }
+            })
+            const addBtn = $({
+                tag: 'button',
+                text: 'Add',
+                style: {
+                    padding: '8px 20px',
+                    backgroundColor: '#1976D2',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: () => {
+                        const name = input.value.trim()
+                        if (name) {
+                            formData.coAuthors.push(name)
+                            updateCoAuthorListFn()
+                            input.value = ''
+                        }
+                    },
+                    type2: 'mouseenter',
+                    method2: (e) => { e.currentTarget.style.backgroundColor = '#1565C0' },
+                    type3: 'mouseleave',
+                    method3: (e) => { e.currentTarget.style.backgroundColor = '#1976D2' }
+                }
+            })
+
+            const listContainer = $({
+                tag: 'div',
+                style: { display: 'flex', flexWrap: 'wrap', gap: '8px' },
+                att: { className: 'coauthor-list' }
+            })
+
+            inputGroup.appendChild(input)
+            inputGroup.appendChild(addBtn)
+            container.appendChild(inputGroup)
+            container.appendChild(listContainer)
+
+            return container
+        }
+
+        // ===== BUILD THE FORM =====
         const formBody = $({
             tag: 'div',
-            style: { padding: '24px' }
+            style: { padding: '0' }
         })
 
-        // Two column layout
         const twoColumnLayout = $({
             tag: 'div',
             style: {
@@ -1958,7 +2577,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         })
 
-        // Create all fields
         campusSelect = createCampusDropdown()
         categorySelect = createCategoryDropdown()
         centerSelect = createCenterDropdown()
@@ -1978,17 +2596,16 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         twoColumnLayout.appendChild(dateCompletedField)
         container.appendChild(twoColumnLayout)
 
-        // File upload sections
         const fileSection = $({
             tag: 'div',
             style: {
                 marginTop: '20px',
                 paddingTop: '20px',
-                borderTop: '1px solid rgba(255,255,255,0.1)'
+                borderTop: '1px solid #e8ecf0'
             }
         })
 
-        fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#fff', marginBottom: '16px', fontSize: '16px' } }))
+        fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#1a2a3a', marginBottom: '16px', fontSize: '16px', fontWeight: '600' } }))
 
         const fileGrid = $({
             tag: 'div',
@@ -2007,15 +2624,17 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         fileSection.appendChild(fileGrid)
         container.appendChild(fileSection)
 
-        // Store field references
+        // ===== STORE REFERENCES =====
         container.fields = {
             campusSelect, categorySelect, centerSelect, authorInput, presenterInput,
             dateStartedField, dateCompletedField, researchFileField, endorsementFileField, coAuthorContainer
         }
 
-        // Store auto-fill function for external access
+        // ===== EXPOSE AUTO-FILL FUNCTIONS =====
         container.autoFillFromUniversityReview = autoFillFromUniversityReview
+        container.autoFillFromLocalReview = autoFillFromLocalReview
 
+        // ===== VALIDATION =====
         container.__validate = () => {
             if (!formData.campus || formData.campus.trim() === '') {
                 ConfirmationAlert('Please select the campus/location', () => { })
@@ -2055,197 +2674,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
             return true
         }
-
-        return container
-    }
-
-    const createSelectField = (label, options, onChange) => {
-        const container = $({ tag: 'div', style: { marginBottom: '0' } })
-        container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        const select = $({
-            tag: 'select',
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: { type: 'change', method: onChange },
-            elementHandler: (el) => {
-                el.innerHTML = ''
-                el.appendChild($({ tag: 'option', text: `-- Select ${label.replace('*', '').trim()} --`, att: { value: '', disabled: true, selected: true } }))
-                options.forEach(opt => {
-                    el.appendChild($({ tag: 'option', text: opt, att: { value: opt } }))
-                })
-            }
-        })
-        container.appendChild(select)
-        return container
-    }
-
-    const createDateField = (label, onChange) => {
-        const container = $({ tag: 'div', style: { marginBottom: '0' } })
-        container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-        const input = $({
-            tag: 'input',
-            att: { type: 'date' },
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: { type: 'change', method: onChange }
-        })
-        container.appendChild(input)
-        return container
-    }
-
-    const createCoAuthorField = (updateCoAuthorListFn) => {
-        const container = $({ tag: 'div', style: { marginBottom: '0' } })
-        container.appendChild($({ tag: 'label', text: 'Co-Authors', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-
-        const inputGroup = $({ tag: 'div', style: { display: 'flex', gap: '10px', marginBottom: '12px' } })
-        const input = $({
-            tag: 'input',
-            att: { type: 'text', placeholder: 'Enter co-author name' },
-            style: {
-                flex: 1,
-                padding: '10px 12px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'input',
-                method: (e) => {
-                    const inputEl = e.target
-                    const start = inputEl.selectionStart
-                    const end = inputEl.selectionEnd
-                    let value = inputEl.value
-                    
-                    // Capitalize first letter of each word
-                    let words = value.split(' ')
-                    let capitalized = words.map(word => {
-                        if (word.length === 0) return word
-                        return word.charAt(0).toUpperCase() + word.slice(1)
-                    }).join(' ')
-                    
-                    if (capitalized !== value) {
-                        inputEl.value = capitalized
-                        inputEl.setSelectionRange(start, end)
-                    }
-                }
-            }
-        })
-        const addBtn = $({
-            tag: 'button',
-            text: 'Add',
-            style: {
-                padding: '8px 20px',
-                backgroundColor: '#2196F3',
-                border: 'none',
-                borderRadius: '6px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '14px'
-            },
-            event: {
-                type: 'click',
-                method: () => {
-                    const name = input.value.trim()
-                    if (name) {
-                        formData.coAuthors.push(name)
-                        updateCoAuthorListFn()
-                        input.value = ''
-                    }
-                }
-            }
-        })
-
-        // Add class to list container for easy selection
-        const listContainer = $({
-            tag: 'div',
-            style: { display: 'flex', flexWrap: 'wrap', gap: '8px' },
-            att: { className: 'coauthor-list' }
-        })
-
-        inputGroup.appendChild(input)
-        inputGroup.appendChild(addBtn)
-        container.appendChild(inputGroup)
-        container.appendChild(listContainer)
-
-        return container
-    }
-
-    const createFileUploadField = (label, fieldName) => {
-        const container = $({ tag: 'div' })
-        container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
-
-        const uploadArea = $({
-            tag: 'div',
-            style: {
-                border: '2px dashed #444',
-                borderRadius: '8px',
-                padding: '20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                backgroundColor: 'rgba(255,255,255,0.05)'
-            },
-            event: {
-                type: 'click',
-                method: () => fileInput.click()
-            }
-        })
-
-        uploadArea.appendChild($({
-            tag: 'i',
-            att: { className: 'fas fa-cloud-upload-alt' },
-            style: { fontSize: '32px', color: '#666', marginBottom: '8px', display: 'block' }
-        }))
-        uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#888', fontSize: '14px' } }))
-        uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', style: { color: '#666', fontSize: '12px', marginTop: '4px' } }))
-
-        const fileNameDisplay = $({ tag: 'div', style: { marginTop: '8px', fontSize: '12px', color: '#4caf50', textAlign: 'center' } })
-
-        const fileInput = $({
-            tag: 'input',
-            att: { type: 'file', accept: '.pdf,application/pdf', style: 'display: none' },
-            event: {
-                type: 'change',
-                method: (e) => {
-                    const file = e.target.files[0]
-                    if (file) {
-                        const isPdfFile = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-                        if (!isPdfFile) {
-                            ConfirmationAlert('Please select a valid PDF file', () => { })
-                            fileInput.value = ''
-                            return
-                        }
-                        if (file.size > 10 * 1024 * 1024) {
-                            ConfirmationAlert('File size exceeds 10MB limit', () => { })
-                            fileInput.value = ''
-                            return
-                        }
-                        formData[fieldName] = file
-                        fileNameDisplay.innerText = `✓ Selected: ${file.name}`
-                    }
-                }
-            }
-        })
-
-        container.appendChild(uploadArea)
-        container.appendChild(fileNameDisplay)
-        container.appendChild(fileInput)
 
         return container
     }
@@ -2292,7 +2720,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 text.style.color = i <= currentStep ? '#2196F3' : '#666'
             }
         }
-        
+
         // Update progress line fill - Each step = 33.33%
         const progressFill = document.querySelector('.progress-fill')
         if (progressFill) {
@@ -2322,7 +2750,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
     const handleNext = () => navigateStep(1)
 
     const submitSymposium = async () => {
-        // Validate final step for all presentation types before submitting
         if (stepContents[2] && stepContents[2].__validate) {
             if (!stepContents[2].__validate()) return
         }
@@ -2335,7 +2762,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             if (formData.presentation_type === 'local') {
                 // Validate required files
                 if (!formData.local_program) throw new Error('Program file is required')
-                if (!formData.local_certificateFile) throw new Error('Certificate file is required')
+                if (!formData.local_certificateFile) throw new Error('Local certificate file is required')
 
                 const researchTitle = formData.title_changed ? formData.new_title : formData.local_title
 
@@ -2345,33 +2772,38 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 symposiumFormData.append('eventType', eventName)
                 symposiumFormData.append('eventId', eventId)
                 symposiumFormData.append('presentation_type', 'local')
-                
+
                 // Local In-House fields
                 symposiumFormData.append('local_title', formData.local_title)
-                symposiumFormData.append('original_title', formData.local_title)  // ← ORIGINAL local title
+                symposiumFormData.append('original_title', formData.local_title)
                 symposiumFormData.append('local_campus', formData.local_campus)
                 symposiumFormData.append('local_category', formData.local_category)
                 symposiumFormData.append('local_center', formData.local_center)
                 symposiumFormData.append('local_author', formData.local_author)
                 symposiumFormData.append('local_presenter', formData.local_presenter)
                 symposiumFormData.append('local_coAuthors', JSON.stringify(formData.local_coAuthors || []))
-                
-                // Program and certificate files
+
+                // Local In-House Program and Certificate files
                 if (formData.local_program) {
                     symposiumFormData.append('programFile', formData.local_program)
                 }
                 if (formData.local_certificateFile) {
-                    symposiumFormData.append('certificateFile', formData.local_certificateFile)
+                    symposiumFormData.append('local_certificateFile', formData.local_certificateFile)
                 }
-                
+
                 // Title change info
                 symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
                 if (formData.title_changed && formData.new_title) {
-                    symposiumFormData.append('final_symposium_title', formData.new_title)  // ← NEW title only if changed
+                    symposiumFormData.append('final_symposium_title', formData.new_title)
                 } else {
-                    symposiumFormData.append('final_symposium_title', '')  // Send empty if not changed
+                    symposiumFormData.append('final_symposium_title', '')
                 }
-                
+
+                // Title change certificate (only if title changed) - using title_certificate_file
+                if (formData.title_changed && formData.title_certificate_file) {
+                    symposiumFormData.append('titleCertificateFile', formData.title_certificate_file)
+                }
+
                 // Symposium fields (Step 3)
                 symposiumFormData.append('category', formData.category)
                 symposiumFormData.append('center', formData.center)
@@ -2381,7 +2813,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 symposiumFormData.append('campus', formData.campus)
                 symposiumFormData.append('date_started', formData.date_started)
                 symposiumFormData.append('date_completed', formData.date_completed)
-                
+
                 // Step 3 files
                 if (formData.researchFile) {
                     symposiumFormData.append('researchDoc', formData.researchFile)
@@ -2390,35 +2822,33 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     symposiumFormData.append('endorsementFile', formData.endorsementFile)
                 }
 
-                const response = await fetch('/uploadResearchFile', {
+                const response = await fetch('/uploadFacultyDocs', {
                     method: 'POST',
                     body: symposiumFormData
                 })
 
                 if (!response.ok) {
-                    const errorText = await response.text()
-                    console.error('Server error:', errorText)
                     throw new Error(`Server error: ${response.status}`)
                 }
 
                 const result = await response.json()
 
-                if (!result.status) {
+                // Check both status and success flags
+                if (!result.status || !result.success) {
                     throw new Error(result.message || 'Symposium submission failed')
                 }
 
-                console.log('Local In-House Symposium submission successful')
 
                 if (loading && loading.remove) loading.remove()
-                
+
                 // Close the current modal
                 if (modalContainer) modalContainer.remove()
-                
+
                 // Show success message
                 ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
                     if (onSuccess) onSuccess()
                 })
-                
+
                 return
 
             } else if (formData.presentation_type === 'university') {
@@ -2428,32 +2858,36 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
 
                 const selectedReview = inhouseReviewsList.find(r => r.id == formData.selected_inhouse_id)
-                
+
                 const symposiumFormData = new FormData()
                 symposiumFormData.append('uploadSymposium', 'true')
                 symposiumFormData.append('eventType', eventName)
                 symposiumFormData.append('eventId', eventId)
                 symposiumFormData.append('presentation_type', 'university')
                 symposiumFormData.append('selected_inhouse_id', formData.selected_inhouse_id)
-                
-                // FIXED: Only append original_title ONCE
+
                 symposiumFormData.append('original_title', selectedReview ? selectedReview.title : '')
-                
+
                 if (selectedReview) {
                     symposiumFormData.append('original_author', selectedReview.author)
                     symposiumFormData.append('original_category', selectedReview.category || '')
                     symposiumFormData.append('original_center', selectedReview.center || '')
                     symposiumFormData.append('original_coauthors', JSON.stringify(selectedReview.coauthors || []))
                 }
-                
+
                 // Title change info
                 symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
                 if (formData.title_changed && formData.new_title) {
-                    symposiumFormData.append('final_symposium_title', formData.new_title)  // ← NEW title only if changed
+                    symposiumFormData.append('final_symposium_title', formData.new_title)
                 } else {
-                    symposiumFormData.append('final_symposium_title', '')  // Send empty if not changed
+                    symposiumFormData.append('final_symposium_title', '')
                 }
-                
+
+                // Title change certificate (only if title changed) - using title_certificate_file
+                if (formData.title_changed && formData.title_certificate_file) {
+                    symposiumFormData.append('titleCertificateFile', formData.title_certificate_file)
+                }
+
                 // Symposium fields (Step 3)
                 symposiumFormData.append('category', formData.category)
                 symposiumFormData.append('center', formData.center)
@@ -2463,7 +2897,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 symposiumFormData.append('campus', formData.campus)
                 symposiumFormData.append('date_started', formData.date_started)
                 symposiumFormData.append('date_completed', formData.date_completed)
-                
+
                 // Step 3 files
                 if (formData.researchFile) {
                     symposiumFormData.append('researchDoc', formData.researchFile)
@@ -2472,24 +2906,21 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     symposiumFormData.append('endorsementFile', formData.endorsementFile)
                 }
 
-                const response = await fetch('/uploadResearchFile', {
+                const response = await fetch('/uploadFacultyDocs', {
                     method: 'POST',
                     body: symposiumFormData
                 })
 
                 if (!response.ok) {
-                    const errorText = await response.text()
-                    console.error('Server error:', errorText)
                     throw new Error(`Server error: ${response.status}`)
                 }
 
                 const result = await response.json()
 
-                if (!result.status) {
+                // Check both status and success flags
+                if (!result.status || !result.success) {
                     throw new Error(result.message || 'Symposium submission failed')
                 }
-
-                console.log('University Symposium submission successful')
             }
 
             // In submitSymposium, after successful submission:
@@ -2505,7 +2936,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         } catch (error) {
             if (loading && loading.remove) loading.remove()
             console.error('Submission error:', error)
-            
+
             // Show error modal
             ConfirmationAlert({
                 title: 'Submission Failed',
@@ -2515,140 +2946,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             })
         }
     }
-
-    // Function to reset all form data after successful submission
-    const resetFormData = () => {
-        // Reset main form data object
-        formData = {
-            presentation_type: null,
-            local_title: '',
-            local_program: null,
-            title_changed: false,
-            new_title: '',
-            title: '',
-            category: '',
-            center: '',
-            author: '',
-            presenter: '',
-            coAuthors: [],
-            date_started: '',
-            date_completed: '',
-            campus: '',
-            researchFile: null,
-            endorsementFile: null,
-            university_title: '',
-            selected_inhouse_id: null,
-            university_author: '',
-            university_category: '',
-            university_center: '',
-            university_coauthors: [],
-            selected_university_review: null
-        }
-
-        // Clear step 3 fields if they exist
-        if (stepContents[2] && stepContents[2].fields) {
-            const fields = stepContents[2].fields
-
-            if (fields.campusField) {
-                const campusInput = fields.campusField.querySelector('input')
-                if (campusInput) campusInput.value = ''
-            }
-
-            if (fields.categorySelect) {
-                const categorySelectEl = fields.categorySelect.querySelector('select')
-                if (categorySelectEl) categorySelectEl.value = ''
-            }
-
-            if (fields.centerSelect) {
-                const centerSelectEl = fields.centerSelect.querySelector('select')
-                if (centerSelectEl) centerSelectEl.value = ''
-            }
-
-            if (fields.authorInput) {
-                const authorInputEl = fields.authorInput.querySelector('input')
-                if (authorInputEl) authorInputEl.value = ''
-            }
-
-            if (fields.presenterInput) {
-                const presenterInputEl = fields.presenterInput.querySelector('input')
-                if (presenterInputEl) presenterInputEl.value = ''
-            }
-
-            if (fields.dateStartedField) {
-                const dateStartedEl = fields.dateStartedField.querySelector('input')
-                if (dateStartedEl) dateStartedEl.value = ''
-            }
-
-            if (fields.dateCompletedField) {
-                const dateCompletedEl = fields.dateCompletedField.querySelector('input')
-                if (dateCompletedEl) dateCompletedEl.value = ''
-            }
-
-            // Clear co-authors list
-            if (fields.coAuthorContainer) {
-                const listContainer = fields.coAuthorContainer.querySelector('.coauthor-list')
-                if (listContainer) listContainer.innerHTML = ''
-            }
-        }
-
-        // Reset step indicators to step 1
-        currentStep = 1
-        if (stepContents) {
-            stepContents.forEach((content, idx) => {
-                content.style.display = idx === 0 ? 'block' : 'none'
-            })
-
-            // Update step indicators UI
-            for (let i = 1; i <= 3; i++) {
-                const circle = document.querySelector(`.step-circle-${i}`)
-                const text = document.querySelector(`.step-text-${i}`)
-                if (circle) {
-                    circle.style.backgroundColor = i === 1 ? '#2196F3' : '#333'
-                }
-                if (text) {
-                    text.style.color = i === 1 ? '#2196F3' : '#666'
-                }
-            }
-            
-            // Reset progress fill to 33.33% (Step 1)
-            const progressFill = document.querySelector('.progress-fill')
-            if (progressFill) {
-                progressFill.style.width = '33.33%'
-            }
-
-            // Reset buttons
-            const prevBtn = document.querySelector('.footer-prev')
-            const nextBtn = document.querySelector('.footer-next')
-            const submitBtn = document.querySelector('.footer-submit')
-
-            if (prevBtn) prevBtn.style.display = 'none'
-            if (nextBtn) nextBtn.style.display = 'block'
-            if (submitBtn) {
-                    submitBtn.style.display = 'none'
-                    submitBtn.disabled = false
-                }
-        }
-    }
-
-    const style = $({
-        tag: 'style',
-        text: `
-            @keyframes fadeIn {
-                from { opacity: 0 }
-                to { opacity: 1 }
-            }
-            @keyframes slideUp {
-                from {
-                    opacity: 0
-                    transform: translateY(30px)
-                }
-                to {
-                    opacity: 1
-                    transform: translateY(0)
-                }
-            }
-        `
-    })
 
     const addProgressAnimation = () => {
         if (!document.querySelector('#progress-animation-style')) {
