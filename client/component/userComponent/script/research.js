@@ -3835,15 +3835,6 @@ export const Research = () => {
                                         local_certificate_file_view_url: researchDoc.local_certificate_file_view_url
                                     }
 
-                                    // Debug log to verify title_changed is being captured
-                                    console.log('Document:', {
-                                        id: documentObj.id,
-                                        title: documentObj.title,
-                                        original_title: documentObj.original_title,
-                                        final_symposium_title: documentObj.final_symposium_title,
-                                        title_changed: documentObj.title_changed
-                                    })
-
                                     const row = createTableRow(documentObj)
                                     tbody.appendChild(row)
                                 })
