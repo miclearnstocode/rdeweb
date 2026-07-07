@@ -2197,7 +2197,6 @@ export const Research = () => {
         openUploadModal(true, doc)
     }
 
-    // Delete document
     const deleteDocument = (doc) => {
         DeleteConfirmModal('Delete Document', `Are you sure you want to delete "${doc.title}"? This action cannot be undone.`).then(async (confirmed) => {
             if (confirmed) {
@@ -2233,12 +2232,16 @@ export const Research = () => {
                         }
                         refreshStats()
 
-                        // Show success message
-                        document.body.appendChild(ConfirmationAlert(result.message, () => {
-                            if (window.refreshDocumentsTable) {
-                                window.refreshDocumentsTable()
+                        // FIX: Use AlertModal instead of ConfirmationAlert for success message
+                        AlertModal({
+                            title: 'Success',
+                            message: result.message || 'Document deleted successfully',
+                            onClose: () => {
+                                if (window.refreshDocumentsTable) {
+                                    window.refreshDocumentsTable()
+                                }
                             }
-                        }))
+                        })
                     } else {
                         AlertModal({
                             title: 'Delete Failed',
