@@ -3433,6 +3433,9 @@ if (isset($_POST['researchReviewed'])) {
                 rf.confirmed_by,
                 rf.presented_inhouse,
                 rf.confirm_by_inhouse,
+                rf.revised_file_id,
+                rf.revised_drive_view_url,
+                rf.revised_drive_download_url,
                 el.date_of_presentation,
                 el.name as event_name,
                 li.program_file_view_url as local_program_file_view_url,
@@ -3473,7 +3476,7 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->original_title = $res['title'];
                 $researchDocs->final_symposium_title = $res['final_symposium_title'];
                 
-                // Use final_symposium_title if available, otherwise use title
+                // Use final_symposium_title if available and title_changed is 1
                 if (!empty($res['final_symposium_title']) && $researchDocs->title_changed == 1) {
                     $researchDocs->title = $res['final_symposium_title'];
                 } else {
@@ -3519,6 +3522,9 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDocs->confirmed_by = $res['confirmed_by'] ?? null;
                 $researchDocs->presented_inhouse = $res['presented_inhouse'] ?? 0;
                 $researchDocs->confirm_by_inhouse = $res['confirm_by_inhouse'] ?? null;
+                $researchDocs->revised_file_id = $res['revised_file_id'] ?? null;
+                $researchDocs->revised_drive_view_url = $res['revised_drive_view_url'] ?? null;
+                $researchDocs->revised_drive_download_url = $res['revised_drive_download_url'] ?? null;
 
                 // Paper Trail fields
                 $researchDocs->pt_researchfile_view_url = $res['pt_researchfile_view_url'] ?? null;
