@@ -1,16 +1,17 @@
+
 import { $, UnderConstruction } from '../lib/lib.js';
-import { NavBar } from "./extensionComponent/supportComponents/navigation.js";
-import { Frame } from "./extensionComponent/supportComponents/userFrame.js";
-import { Button } from "./extensionComponent/supportComponents/navigation.js";
-import { Extension } from "./extensionComponent/extension.js";
-import { Error } from "../error.js";
-import { Header } from "./otherComponent/header.js";
-import { ExtensionSettings } from "./extensionComponent/supportComponents/settings.js";
-import { Create } from "./extensionComponent/supportComponents/create.js";
-import { Files } from "./extensionComponent/supportComponents/Files.js";
-import { ReqButton } from "./extensionComponent/supportComponents/Request.js";
-import { Publication } from "./extensionComponent/supportComponents/publicationUser.js";
-import { PatentUM } from "./extensionComponent/supportComponents/patentUMuser.js";
+import { NavBar } from './extensionComponent/supportComponents/navigation.js';
+import { Frame } from './extensionComponent/supportComponents/userFrame.js';
+import { Button } from './extensionComponent/supportComponents/navigation.js';
+import { Extension } from './extensionComponent/extension.js';
+import { Error } from '../error.js';
+import { Header } from './otherComponent/header.js';
+import { ExtensionSettings } from './extensionComponent/supportComponents/settings.js';
+import { Create } from './extensionComponent/supportComponents/create.js';
+import { Files } from './extensionComponent/supportComponents/Files.js';
+import { ReqButton } from './extensionComponent/supportComponents/Request.js';
+import { Publication } from './extensionComponent/supportComponents/publicationUser.js';
+import { PatentUM } from './extensionComponent/supportComponents/patentUMuser.js';
 import { Utilization } from './extensionComponent/supportComponents/utilizationUser.js';
 
 // Map of tab IDs to their components and configurations
@@ -99,144 +100,144 @@ export const ExtensionUserPanel = () => {
     }
 
     const Props = {
-            getNav: (nav) => {
-                nav.appendChild($({
-                    tag: 'div',
-                    att: {
-                        className: 'modern-logo'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            att: {
-                                className: 'logo-container'
-                            },
-                            child: [
-                                $({
-                                    tag: 'img',
-                                    att: {
-                                        src: '/client/images/cap.png',
-                                        alt: 'CAPSU Logo',
-                                        className: 'capsu-logo'
-                                    },
-                                    style: {
-                                        width: '150px',
-                                        height: '150px',
-                                        objectFit: 'contain'
-                                    }
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            att: {
-                                className: 'panel-title'
-                            },
-                            style: {
-                                textAlign: 'center',
-                                marginTop: '8px',
-                                marginBottom: '16px',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: '#000000',
-                                width: '100%'
-                            },
-                            text: 'Extension Chair Panel'
-                        })
-                    ]
-                }))
-
-                nav.appendChild(ReqButton());
-
-                // Render tabs in the specified order
-                tabOrder.forEach((tabId) => {
-                    const tab = tabs[tabId];
-                    if (!tab) return;
-
-                    // Create the button
-                    const button = Button({
-                        icon: {
-                            type: 'icon',
-                            text: tab.icon,
-                            class: 'tabsIcon'
-                        },
-                        label: {
-                            type: 'label',
-                            text: tab.label,
-                            class: 'tabsButton'
-                        },
-                        eventHandler: () => {
-                            if (tab.disabled) {
-                                document.body.appendChild(UnderConstruction({
-                                    message: `${tab.label} feature is currently under construction`,
-                                }));
-                            } else {
-                                window.location.assign(tab.url);
-                            }
-                        }
-                    });
-
-                    // Remove any existing classes
-                    button.className = button.className
-                        .replace(/active-nav/g, '')
-                        .replace(/userAnimate/g, '')
-                        .replace(/disabled-tab/g, '')
-                        .trim();
-
-                    // disabled class if tab is disabled
-                    if (tab.disabled) {
-                        button.classList.add('disabled-tab');
-                    }
-
-                    // active class ONLY if this is the active tab AND it's not disabled
-                    if (tabId === activeTabId && !tab.disabled) {
-                        button.classList.add('active-nav');
-                    }
-
-                    const buttonWrapper = $({
+        getNav: (nav) => {
+            nav.appendChild($({
+                tag: 'div',
+                att: {
+                    className: 'modern-logo'
+                },
+                child: [
+                    $({
                         tag: 'div',
                         att: {
-                            className: 'nav-item-wrapper',
-                            'data-tab-id': tabId
+                            className: 'logo-container'
                         },
-                        child: [button]
-                    });
+                        child: [
+                            $({
+                                tag: 'img',
+                                att: {
+                                    src: '/client/images/cap.png',
+                                    alt: 'CAPSU Logo',
+                                    className: 'capsu-logo'
+                                },
+                                style: {
+                                    width: '150px',
+                                    height: '150px',
+                                    objectFit: 'contain'
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        att: {
+                            className: 'panel-title'
+                        },
+                        style: {
+                            textAlign: 'center',
+                            marginTop: '8px',
+                            marginBottom: '16px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#000000',
+                            width: '100%'
+                        },
+                        text: 'Extension Chair Panel'
+                    })
+                ]
+            }))
 
-                    nav.appendChild(buttonWrapper);
+            nav.appendChild(ReqButton());
+
+            // Render tabs in the specified order
+            tabOrder.forEach((tabId) => {
+                const tab = tabs[tabId];
+                if (!tab) return;
+
+                // Create the button
+                const button = Button({
+                    icon: {
+                        type: 'icon',
+                        text: tab.icon,
+                        class: 'tabsIcon'
+                    },
+                    label: {
+                        type: 'label',
+                        text: tab.label,
+                        class: 'tabsButton'
+                    },
+                    eventHandler: () => {
+                        if (tab.disabled) {
+                            document.body.appendChild(UnderConstruction({
+                                message: `${tab.label} feature is currently under construction`,
+                            }));
+                        } else {
+                            window.location.assign(tab.url);
+                        }
+                    }
                 });
 
-                const activeButtons = nav.querySelectorAll('.active-nav');
-                if (activeButtons.length > 1) {
-                    for (let i = 1; i < activeButtons.length; i++) {
-                        activeButtons[i].classList.remove('active-nav');
-                    }
-                }
-            },
-            getFrame: (frame) => {
-                frame.className = 'modern-frame';
+                // Remove any existing classes
+                button.className = button.className
+                    .replace(/active-nav/g, '')
+                    .replace(/userAnimate/g, '')
+                    .replace(/disabled-tab/g, '')
+                    .trim();
 
-                let activeTab = tabs[activeTabId];
-
-                if (activeTab?.disabled) {
-                    activeTabId = 'research-tab';
-                    activeTab = tabs['research-tab'];
+                // disabled class if tab is disabled
+                if (tab.disabled) {
+                    button.classList.add('disabled-tab');
                 }
 
-                if (activeTab && !activeTab.disabled) {
-                    const pageWrapper = $({
-                        tag: 'div',
-                        att: {
-                            className: 'page-wrapper'
-                        },
-                        child: [activeTab.page()]
-                    });
-                    frame.appendChild(pageWrapper);
-                } else {
-                    // Ultimate fallback
-                    frame.appendChild(Error());
+                // active class ONLY if this is the active tab AND it's not disabled
+                if (tabId === activeTabId && !tab.disabled) {
+                    button.classList.add('active-nav');
+                }
+
+                const buttonWrapper = $({
+                    tag: 'div',
+                    att: {
+                        className: 'nav-item-wrapper',
+                        'data-tab-id': tabId
+                    },
+                    child: [button]
+                });
+
+                nav.appendChild(buttonWrapper);
+            });
+
+            const activeButtons = nav.querySelectorAll('.active-nav');
+            if (activeButtons.length > 1) {
+                for (let i = 1; i < activeButtons.length; i++) {
+                    activeButtons[i].classList.remove('active-nav');
                 }
             }
+        },
+        getFrame: (frame) => {
+            frame.className = 'modern-frame';
+
+            let activeTab = tabs[activeTabId];
+
+            if (activeTab?.disabled) {
+                activeTabId = 'research-tab';
+                activeTab = tabs['research-tab'];
+            }
+
+            if (activeTab && !activeTab.disabled) {
+                const pageWrapper = $({
+                    tag: 'div',
+                    att: {
+                        className: 'page-wrapper'
+                    },
+                    child: [activeTab.page()]
+                });
+                frame.appendChild(pageWrapper);
+            } else {
+                // Ultimate fallback
+                frame.appendChild(Error());
+            }
         }
+    }
 
     // Only Header if root element exists
     const root = document.getElementById('root');

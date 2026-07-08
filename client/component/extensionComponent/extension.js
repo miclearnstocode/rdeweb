@@ -1,7 +1,7 @@
 import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal, AlertModal } from '../../lib/lib.js'
 import { handleResubmit } from './supportComponents/resubmit.js'
 import { Print } from "./../otherComponent/comment.js"
-import { SymposiumModal } from './extensionUploadComponent/extensionSymposiumModal.js'
+import { SymposiumModal } from './extensionUploadComponents/extensionSymposiumModal.js'
 
 // View Extension Modal
 const openViewExtensionModal = () => {
