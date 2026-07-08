@@ -1920,6 +1920,12 @@ if (isset($_POST['saveLocalInhouse'])) {
         $mainAuthor = trim($_POST['main_author'] ?? '');
         $presenter = trim($_POST['presenter'] ?? '');
         $coAuthors = $_POST['co_authors'] ?? '[]';
+        
+        // ===== FIX: Initialize these variables =====
+        $date_started = isset($_POST['date_started']) && !empty($_POST['date_started']) ? $_POST['date_started'] : null;
+        $date_completed = isset($_POST['date_completed']) && !empty($_POST['date_completed']) ? $_POST['date_completed'] : null;
+        $final_symposium_title = isset($_POST['final_symposium_title']) && !empty($_POST['final_symposium_title']) ? $_POST['final_symposium_title'] : null;
+        $title_changed = isset($_POST['title_changed']) ? (int) $_POST['title_changed'] : 0;
 
         // Validate required fields
         if (empty($documentTitle) || empty($mainAuthor) || empty($category) || empty($center) || empty($campus)) {
@@ -2045,8 +2051,8 @@ if (isset($_POST['saveLocalInhouse'])) {
         // ===== STEP 1: INSERT INTO researchfile TABLE FIRST =====
         $rev = 'pending';
         $nullEndorsement = null;
-        $title_changed = 0;
 
+        // ===== FIX: Use proper variable names =====
         $insertResearchQuery = "INSERT INTO researchfile(
             paper_trail_no, senderid, endorsementid, event_id, author, coauthor, presenter,
             date_started, date_completed, title, final_symposium_title, event, status,
@@ -2070,22 +2076,22 @@ if (isset($_POST['saveLocalInhouse'])) {
             $mainAuthor,
             $coAuthors,
             $presenter,
-            $date_started,
-            $date_completed,
+            $date_started,        // Now defined
+            $date_completed,      // Now defined
             $documentTitle,
-            $final_symposium_tile,
+            $final_symposium_title, // Now defined (fixed typo)
             $eventName,
             $rev,
             $category,
             $center,
             $campus,
-            $title_changed,
+            $title_changed,       // Now defined
             $programEventFileId,
-            $programEventViewUrl,        
-            $programDriveDownloadUrl,       
-            $eventFolderId,               
-            $centerFolderId,               
-            $categoryFolderId             
+            $programEventViewUrl,
+            $programDriveDownloadUrl,
+            $eventFolderId,
+            $centerFolderId,
+            $categoryFolderId
         );
 
         if (!$insertResearchStmt->execute()) {
@@ -2167,8 +2173,10 @@ if (isset($_POST['saveLocalInhouse'])) {
         error_log("saveLocalInhouse error: " . $e->getMessage());
         $response->message = $e->getMessage();
         $response->status = false;
+        $response->success = false;
     }
 
+    ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
@@ -2254,7 +2262,6 @@ if (isset($_POST['uploadSymposium'])) {
             $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $categoryFolderId);
             
             // ===== STEP 1: UPLOAD SYMPOSIUM FILES TO ENTRY FOLDER =====
-            // Upload Symposium Research File
             $researchDriveFileId = null;
             $researchDriveViewUrl = null;
             $researchPaperTrailResult = null;
@@ -2865,7 +2872,17 @@ if (isset($_POST['uploadSymposium'])) {
             $researchId = $con->insert_id;
             $response->research_id = $researchId;
             $response->paper_trail_no = $paperTrailNo;
-            
+
+            // ===== MARK THE ORIGINAL IN-HOUSE RESEARCH AS SUBMITTED =====
+            if ($selectedInhouseId) {
+                $updateSubmittedQuery = "UPDATE researchfile SET symposium_submitted = 1 WHERE id = ?";
+                $updateSubmittedStmt = $con->prepare($updateSubmittedQuery);
+                $updateSubmittedStmt->bind_param("i", $selectedInhouseId);
+                $updateSubmittedStmt->execute();
+                $updateSubmittedStmt->close();
+                error_log("Marked research ID $selectedInhouseId as symposium_submitted");
+            }
+    
             // Save Paper Trail records for university symposium
             if ($researchPaperTrailResult && $researchPaperTrailResult['success']) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Symposium', $researchPaperTrailResult);
@@ -3087,7 +3104,7 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
             throw new Exception("Database connection failed: " . $con->connect_error);
         }
 
-        // Query to get accepted in-house reviews for this user
+        // ===== UPDATED QUERY - FILTER OUT ALREADY SUBMITTED =====
         $query = "SELECT 
                     rf.id,
                     rf.title,
@@ -3097,6 +3114,7 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
                     rf.center,
                     rf.event,
                     rf.event_id,
+                    rf.symposium_submitted,
                     e.status,
                     el.name as event_name,
                     el.date as event_date
@@ -3107,7 +3125,8 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
                          OR rf.event LIKE '%in-house review%'
                          OR rf.event LIKE '%In-House Review%')
                   AND rf.senderid = ? 
-                  AND (e.status = 'accepted' OR rf.status = 'accepted') 
+                  AND (e.status = 'accepted' OR rf.status = 'accepted')
+                  AND rf.symposium_submitted = 0 
                   ORDER BY el.date DESC, rf.id DESC";
 
         $stmt = $con->prepare($query);
@@ -3133,6 +3152,7 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
             $data->event_name = $row['event_name'] ?? $row['event'] ?? '';
             $data->event_date = $row['event_date'] ?? '';
             $data->status = $row['status'] ?? '';
+            $data->symposium_submitted = (int)($row['symposium_submitted'] ?? 0);
 
             // Parse coauthors
             if (!empty($row['coauthor'])) {
@@ -3153,19 +3173,11 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
         
     } catch (Exception $e) {
         error_log("Error fetching accepted in-house reviews: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
-        error_log("Session data: " . print_r($_SESSION, true));
-        
         $response->message = $e->getMessage();
         $response->status = false;
         $response->data = [];
-        $response->debug = [
-            'userId' => $_SESSION['userId'] ?? 'not set',
-            'sessionExists' => isset($_SESSION)
-        ];
     }
 
-    // Clear any buffered output and send clean JSON
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     header('X-Content-Type-Options: nosniff');
@@ -3373,203 +3385,172 @@ if (isset($_POST['researchFile'])) {
 }
 //displayed the data in the center table
 if (isset($_POST['researchReviewed'])) {
+    // Clean any previous output
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+    
     $response = new stdClass();
     $response->list = [];
+    $response->status = true;
+    $response->message = '';
 
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $userId = $_SESSION['userId'] ?? 0;
-
-        $queryEndorsement = "SELECT * FROM `endorsement` WHERE `senderid`='$userId'";
-
-        foreach ($con->query($queryEndorsement) as $val) {
-            $endorsement = new stdClass();
-            $endorsement->endorsementFile = $val['drive_view_url'];
-            $endorsement->drive_file_id = $val['drive_file_id'] ?? null;
-            $endorsement->drive_download_url = $val['drive_download_url'] ?? null;
-            $endorsement->eventType = $val['event'];
-            $endorsement->date = $val['date'];
-            $endorsement->status = $val['status'];
-            $endorsement->id = $val['id'];
-            $endorsement->ResearchDocs = [];
-            $enID = $val['id'];
-
-            $queryResearch = "SELECT 
-                rf.author,
-                rf.coauthor,
-                rf.presenter,
-                rf.title,
-                rf.final_symposium_title,
-                rf.title_changed,
-                rf.center,
-                rf.campus,
-                rf.date_started,
-                rf.date_completed,
-                rf.id as docId,
-                rf.category,
-                rf.drive_view_url as file,
-                rf.drive_file_id,
-                rf.drive_download_url,
-                rf.drive_folder_id,
-                rf.drive_event_folder_id,
-                rf.drive_center_folder_id,
-                rf.program_drive_view_url,
-                rf.program_drive_file_id,
-                rf.certificate_drive_file_id,
-                rf.certificate_drive_view_url,
-                rf.title_certificate_view_url,
-                rf.title_certificate_download_url,
-                rf.revision_status,
-                rf.revision_count,
-                rf.event_id,
-                rf.status as original_status,
-                rf.local_inhouse,
-                rf.paper_trail_no,
-                rf.resubmitted,
-                rf.resubmit_count,
-                rf.is_internally_funded,
-                rf.funding_approved_date,
-                rf.last_revision_date,
-                rf.completion_status,
-                rf.confirmed_by,
-                rf.presented_inhouse,
-                rf.confirm_by_inhouse,
-                rf.revised_file_id,
-                rf.revised_drive_view_url,
-                rf.revised_drive_download_url,
-                el.date_of_presentation,
-                el.name as event_name,
-                li.program_file_view_url as local_program_file_view_url,
-                li.program_file_download_url as local_program_file_download_url,
-                li.certificate_file_view_url as local_certificate_file_view_url,
-                li.certificate_file_download_url as local_certificate_file_download_url,
-                ptf.researchfile_drive_view_url as pt_researchfile_view_url,
-                ptf.researchfile_drive_download_url as pt_researchfile_download_url,
-                ptf.endorsement_drive_view_url as pt_endorsement_view_url,
-                ptf.endorsement_drive_download_url as pt_endorsement_download_url,
-                ptf.program_drive_view_url as pt_program_view_url,
-                ptf.program_drive_download_url as pt_program_download_url,
-                ptf.certificate_drive_view_url as pt_certificate_view_url,
-                ptf.certificate_drive_download_url as pt_certificate_download_url,
-                ptf.title_certificate_view_url as pt_title_certificate_view_url,
-                ptf.title_certificate_download_url as pt_title_certificate_download_url,
-                ptf.paper_trail_root_id,
-                ptf.submission_folder_id,
-                ptf.year_folder_id,
-                ptf.research_folder_id,
-                ptf.research_folder_name,
-                ptf.submission_type
-            FROM `researchfile` rf
-            LEFT JOIN `event_list` el ON rf.event_id = el.id
-            LEFT JOIN `local_inhouse` li ON rf.id = li.research_id
-            LEFT JOIN `paper_trail_files` ptf ON rf.paper_trail_no = ptf.paper_trail_no AND rf.id = ptf.research_id
-            WHERE rf.senderid='$userId' AND rf.endorsementid='$enID'
-            GROUP BY rf.id";
-
-            foreach ($con->query($queryResearch) as $res) {
-                $researchDocs = new stdClass();
-                $researchDocs->author = $res['author'];
-                $researchDocs->coauthor = $res['coauthor'];
-                $researchDocs->presenter = $res['presenter'];
-                
-                // ===== TITLE DISPLAY LOGIC =====
-                $researchDocs->title_changed = (int)($res['title_changed'] ?? 0);
-                $researchDocs->original_title = $res['title'];
-                $researchDocs->final_symposium_title = $res['final_symposium_title'];
-                
-                // Use final_symposium_title if available and title_changed is 1
-                if (!empty($res['final_symposium_title']) && $researchDocs->title_changed == 1) {
-                    $researchDocs->title = $res['final_symposium_title'];
-                } else {
-                    $researchDocs->title = $res['title'];
-                }
-                
-                $researchDocs->center = $res['center'];
-                $researchDocs->campus = $res['campus'];
-                $researchDocs->date_started = $res['date_started'];
-                $researchDocs->date_completed = $res['date_completed'];
-                $researchDocs->docId = $res['docId'];
-                $researchDocs->category = $res['category'];
-                $researchDocs->researchFile = $res['file'];
-                $researchDocs->drive_file_id = $res['drive_file_id'];
-                $researchDocs->drive_download_url = $res['drive_download_url'];
-                $researchDocs->drive_folder_id = $res['drive_folder_id'];
-                $researchDocs->drive_event_folder_id = $res['drive_event_folder_id'];
-                $researchDocs->drive_center_folder_id = $res['drive_center_folder_id'];
-                $researchDocs->program_drive_view_url = $res['program_drive_view_url'];
-                $researchDocs->program_drive_file_id = $res['program_drive_file_id'];
-                $researchDocs->certificate_drive_file_id = $res['certificate_drive_file_id'];
-                $researchDocs->certificate_drive_view_url = $res['certificate_drive_view_url'];
-                $researchDocs->title_certificate_view_url = $res['title_certificate_view_url'] ?? null;
-                $researchDocs->title_certificate_download_url = $res['title_certificate_download_url'] ?? null;
-                $researchDocs->revision_status = $res['revision_status'];
-                $researchDocs->revision_count = $res['revision_count'];
-                $researchDocs->event_id = $res['event_id'];
-                $researchDocs->date_of_presentation = $res['date_of_presentation'];
-                $researchDocs->original_status = $res['original_status'];
-                $researchDocs->event_name = $res['event_name'];
-                $researchDocs->local_inhouse = $res['local_inhouse'];
-                $researchDocs->local_program_file_view_url = $res['local_program_file_view_url'];
-                $researchDocs->local_program_file_download_url = $res['local_program_file_download_url'];
-                $researchDocs->local_certificate_file_view_url = $res['local_certificate_file_view_url'];
-                $researchDocs->local_certificate_file_download_url = $res['local_certificate_file_download_url'];
-                $researchDocs->paper_trail_no = $res['paper_trail_no'] ?? null;
-                $researchDocs->resubmitted = $res['resubmitted'] ?? 0;
-                $researchDocs->resubmit_count = $res['resubmit_count'] ?? 0;
-                $researchDocs->is_internally_funded = $res['is_internally_funded'] ?? 0;
-                $researchDocs->funding_approved_date = $res['funding_approved_date'] ?? null;
-                $researchDocs->last_revision_date = $res['last_revision_date'] ?? null;
-                $researchDocs->completion_status = $res['completion_status'] ?? null;
-                $researchDocs->confirmed_by = $res['confirmed_by'] ?? null;
-                $researchDocs->presented_inhouse = $res['presented_inhouse'] ?? 0;
-                $researchDocs->confirm_by_inhouse = $res['confirm_by_inhouse'] ?? null;
-                $researchDocs->revised_file_id = $res['revised_file_id'] ?? null;
-                $researchDocs->revised_drive_view_url = $res['revised_drive_view_url'] ?? null;
-                $researchDocs->revised_drive_download_url = $res['revised_drive_download_url'] ?? null;
-
-                // Paper Trail fields
-                $researchDocs->pt_researchfile_view_url = $res['pt_researchfile_view_url'] ?? null;
-                $researchDocs->pt_researchfile_download_url = $res['pt_researchfile_download_url'] ?? null;
-                $researchDocs->pt_endorsement_view_url = $res['pt_endorsement_view_url'] ?? null;
-                $researchDocs->pt_endorsement_download_url = $res['pt_endorsement_download_url'] ?? null;
-                $researchDocs->pt_program_view_url = $res['pt_program_view_url'] ?? null;
-                $researchDocs->pt_program_download_url = $res['pt_program_download_url'] ?? null;
-                $researchDocs->pt_certificate_view_url = $res['pt_certificate_view_url'] ?? null;
-                $researchDocs->pt_certificate_download_url = $res['pt_certificate_download_url'] ?? null;
-                $researchDocs->pt_title_certificate_view_url = $res['pt_title_certificate_view_url'] ?? null;
-                $researchDocs->pt_title_certificate_download_url = $res['pt_title_certificate_download_url'] ?? null;
-                $researchDocs->paper_trail_root_id = $res['paper_trail_root_id'] ?? null;
-                $researchDocs->submission_folder_id = $res['submission_folder_id'] ?? null;
-                $researchDocs->year_folder_id = $res['year_folder_id'] ?? null;
-                $researchDocs->research_folder_id = $res['research_folder_id'] ?? null;
-                $researchDocs->research_folder_name = $res['research_folder_name'] ?? null;
-                $researchDocs->submission_type = $res['submission_type'] ?? null;
-
-                // Determine the display status based on business rules
-                $currentDate = date('Y-m-d H:i:s');
-                $presentationDate = $res['date_of_presentation'] ?? null;
-                $originalStatus = $res['original_status'] ?? 'pending';
-                $revisionStatus = $res['revision_status'] ?? null;
-
-                if ($originalStatus === 'rejected') {
-                    $displayStatus = 'rejected';
-                } elseif ($presentationDate === null) {
-                    $displayStatus = $originalStatus;
-                } elseif ($presentationDate < $currentDate) {
-                    $displayStatus = !empty($revisionStatus) ? $revisionStatus : 'revision_pending';
-                } else {
-                    $displayStatus = $originalStatus;
-                }
-
-                $researchDocs->status = $displayStatus;
-                $endorsement->ResearchDocs[] = $researchDocs;
-            }
-            $response->list[] = $endorsement;
+    try {
+        // Check if user is logged in
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
         }
-        $con->close();
+        
+        $userId = $_SESSION['userId'];
+        
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            if ($con->connect_error) {
+                throw new Exception("Database connection failed: " . $con->connect_error);
+            }
+
+            // Temporarily disable ONLY_FULL_GROUP_BY for this session
+            $con->query("SET SESSION sql_mode = ''");
+            
+            // Get endorsements
+            $queryEndorsement = "SELECT * FROM endorsement WHERE senderid = ? ORDER BY date DESC";
+            $endorseStmt = $con->prepare($queryEndorsement);
+            if (!$endorseStmt) {
+                throw new Exception("Prepare failed: " . $con->error);
+            }
+            $endorseStmt->bind_param("i", $userId);
+            $endorseStmt->execute();
+            $endorseResult = $endorseStmt->get_result();
+
+            while ($val = $endorseResult->fetch_assoc()) {
+                $endorsement = new stdClass();
+                $endorsement->endorsementFile = $val['drive_view_url'] ?? null;
+                $endorsement->drive_file_id = $val['drive_file_id'] ?? null;
+                $endorsement->drive_download_url = $val['drive_download_url'] ?? null;
+                $endorsement->eventType = $val['event'] ?? '';
+                $endorsement->date = $val['date'] ?? '';
+                $endorsement->status = $val['status'] ?? '';
+                $endorsement->id = $val['id'] ?? 0;
+                $endorsement->ResearchDocs = [];
+                $enID = $val['id'];
+
+                // ===== FIX: Remove GROUP BY or use proper aggregation =====
+                $queryResearch = "SELECT 
+                    rf.author,
+                    rf.coauthor,
+                    rf.presenter,
+                    rf.title,
+                    rf.final_symposium_title,
+                    rf.title_changed,
+                    rf.center,
+                    rf.campus,
+                    rf.date_started,
+                    rf.date_completed,
+                    rf.id as docId,
+                    rf.category,
+                    rf.drive_view_url as file,
+                    rf.drive_file_id,
+                    rf.program_drive_view_url,
+                    rf.certificate_drive_view_url,
+                    rf.title_certificate_view_url,
+                    rf.revision_status,
+                    rf.revision_count,
+                    rf.event_id,
+                    rf.status as original_status,
+                    rf.local_inhouse,
+                    el.date_of_presentation,
+                    el.name as event_name,
+                    li.program_file_view_url as local_program_file_view_url,
+                    li.certificate_file_view_url as local_certificate_file_view_url
+                FROM researchfile rf
+                LEFT JOIN event_list el ON rf.event_id = el.id
+                LEFT JOIN local_inhouse li ON rf.id = li.research_id
+                WHERE rf.senderid = ? AND rf.endorsementid = ?
+                ORDER BY rf.id DESC";
+
+                $researchStmt = $con->prepare($queryResearch);
+                if (!$researchStmt) {
+                    throw new Exception("Research query prepare failed: " . $con->error);
+                }
+                $researchStmt->bind_param("ii", $userId, $enID);
+                $researchStmt->execute();
+                $researchResult = $researchStmt->get_result();
+
+                while ($res = $researchResult->fetch_assoc()) {
+                    $researchDocs = new stdClass();
+                    $researchDocs->author = $res['author'] ?? '';
+                    $researchDocs->coauthor = $res['coauthor'] ?? '';
+                    $researchDocs->presenter = $res['presenter'] ?? '';
+                    
+                    // Title display logic
+                    $researchDocs->title_changed = (int)($res['title_changed'] ?? 0);
+                    $researchDocs->original_title = $res['title'] ?? '';
+                    $researchDocs->final_symposium_title = $res['final_symposium_title'] ?? null;
+                    
+                    if (!empty($res['final_symposium_title']) && $researchDocs->title_changed == 1) {
+                        $researchDocs->title = $res['final_symposium_title'];
+                    } else {
+                        $researchDocs->title = $res['title'] ?? '';
+                    }
+                    
+                    $researchDocs->center = $res['center'] ?? '';
+                    $researchDocs->campus = $res['campus'] ?? '';
+                    $researchDocs->date_started = $res['date_started'] ?? null;
+                    $researchDocs->date_completed = $res['date_completed'] ?? null;
+                    $researchDocs->docId = $res['docId'] ?? 0;
+                    $researchDocs->category = $res['category'] ?? '';
+                    $researchDocs->researchFile = $res['file'] ?? null;
+                    $researchDocs->drive_file_id = $res['drive_file_id'] ?? null;
+                    $researchDocs->program_drive_view_url = $res['program_drive_view_url'] ?? null;
+                    $researchDocs->certificate_drive_view_url = $res['certificate_drive_view_url'] ?? null;
+                    $researchDocs->title_certificate_view_url = $res['title_certificate_view_url'] ?? null;
+                    $researchDocs->revision_status = $res['revision_status'] ?? null;
+                    $researchDocs->revision_count = $res['revision_count'] ?? 0;
+                    $researchDocs->event_id = $res['event_id'] ?? null;
+                    $researchDocs->date_of_presentation = $res['date_of_presentation'] ?? null;
+                    $researchDocs->original_status = $res['original_status'] ?? 'pending';
+                    $researchDocs->event_name = $res['event_name'] ?? '';
+                    $researchDocs->local_inhouse = $res['local_inhouse'] ?? 0;
+                    $researchDocs->local_program_file_view_url = $res['local_program_file_view_url'] ?? null;
+                    $researchDocs->local_certificate_file_view_url = $res['local_certificate_file_view_url'] ?? null;
+
+                    // Determine the display status
+                    $currentDate = date('Y-m-d H:i:s');
+                    $presentationDate = $res['date_of_presentation'] ?? null;
+                    $originalStatus = $res['original_status'] ?? 'pending';
+                    $revisionStatus = $res['revision_status'] ?? null;
+
+                    if ($originalStatus === 'rejected') {
+                        $displayStatus = 'rejected';
+                    } elseif ($presentationDate === null) {
+                        $displayStatus = $originalStatus;
+                    } elseif ($presentationDate < $currentDate) {
+                        $displayStatus = !empty($revisionStatus) ? $revisionStatus : 'revision_pending';
+                    } else {
+                        $displayStatus = $originalStatus;
+                    }
+
+                    $researchDocs->status = $displayStatus;
+                    $endorsement->ResearchDocs[] = $researchDocs;
+                }
+                $response->list[] = $endorsement;
+            }
+            $con->close();
+            
+        } else {
+            throw new Exception("Database connection failed");
+        }
+        
+    } catch (Exception $e) {
+        error_log("researchReviewed error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+        $response->list = [];
     }
 
+    ob_clean();
     header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
     echo json_encode($response);
+    ob_end_flush();
     exit();
 }
 
