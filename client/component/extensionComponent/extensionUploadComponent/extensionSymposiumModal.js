@@ -691,6 +691,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localContainer.addEventListener('click', () => {
             localRadio.checked = true
             formData.presentation_type = 'local'
+            // Ensure these are always set
+            formData.local_category = 'Extension'
+            formData.local_center = 'Extension (Extension)'
             localContainer.style.borderColor = '#1976D2'
             localContainer.style.backgroundColor = '#e3f2fd'
             universityContainer.style.borderColor = '#e8ecf0'
@@ -998,40 +1001,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         localCategorySection.appendChild(categoryDisplay)
         formData.local_category = 'Extension'
         leftColumn.appendChild(localCategorySection)
-
-        // ===== CENTER - FIXED TO "Extension (Extension)" =====
-        const localCenterSection = $({ tag: 'div', style: { gridColumn: '1 / -1' } })
-        localCenterSection.appendChild($({
-            tag: 'label',
-            text: 'Center *',
-            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
-        }))
-
-        // Create a hidden input for center value
-        const centerHidden = $({
-            tag: 'input',
-            att: { type: 'hidden', value: 'Extension (Extension)' }
-        })
-
-        // Display the fixed center value
-        const centerDisplay = $({
-            tag: 'div',
-            text: 'Extension (Extension)',
-            style: {
-                width: '100%',
-                padding: '10px 12px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e8ecf0',
-                borderRadius: '10px',
-                color: '#1a2a3a',
-                fontSize: '14px'
-            }
-        })
-
-        localCenterSection.appendChild(centerHidden)
-        localCenterSection.appendChild(centerDisplay)
-
-        // Set the center value in formData
         formData.local_center = 'Extension (Extension)'
 
         // --- Right Column ---
@@ -1265,10 +1234,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         rightColumn.appendChild(localCoAuthorSection)
         localGrid.appendChild(leftColumn)
         localGrid.appendChild(rightColumn)
-        localGrid.appendChild(localCenterSection)
         localFieldsContainer.appendChild(localGrid)
 
-        // --- File Uploads Section (Full Width) - ONLY Program and Certificate Files ---
         const localFileUploadsGrid = $({
             tag: 'div',
             style: {
@@ -1584,7 +1551,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         })
 
-        // Store references for validation
         container.__validate = () => {
             if (!formData.presentation_type) {
                 ConfirmationAlert('Please select where the paper was presented for In-House Review', () => { })
@@ -1592,19 +1558,26 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
 
             if (formData.presentation_type === 'local') {
+                // Ensure category and center are always set
+                formData.local_category = 'Extension'
+                formData.local_center = 'Extension (Extension)'
+
                 if (!formData.local_title || formData.local_title.trim() === '') {
                     ConfirmationAlert('Please enter the Document Title', () => { })
                     return false
                 }
                 if (!formData.local_campus || formData.local_campus.trim() === '') {
-                    ConfirmationAlert('Please enter the Campus', () => { })
+                    ConfirmationAlert('Please select the Campus', () => { })
                     return false
                 }
-                if (!formData.local_category) {
-                    ConfirmationAlert('Please select a Category', () => { })
-                    return false
+                // Category is now always set, but check just in case
+                if (!formData.local_category || formData.local_category.trim() === '') {
+                    formData.local_category = 'Extension'
                 }
-                // Center is now fixed to 'Extension (Extension)' - no validation needed
+                // Center is now always set, but check just in case
+                if (!formData.local_center || formData.local_center.trim() === '') {
+                    formData.local_center = 'Extension (Extension)'
+                }
                 if (!formData.local_author || formData.local_author.trim() === '') {
                     ConfirmationAlert('Please enter the Main Author', () => { })
                     return false
@@ -1931,7 +1904,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             // Get current local data from Step 1
             const localData = {
                 campus: formData.local_campus || '',
-                category: formData.local_category || '',
+                category: formData.local_category || 'Extension',
                 center: formData.local_center || '',
                 author: formData.local_author || '',
                 coAuthors: formData.local_coAuthors || []
@@ -2846,8 +2819,8 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 symposiumFormData.append('local_title', formData.local_title)
                 symposiumFormData.append('original_title', formData.local_title)
                 symposiumFormData.append('local_campus', formData.local_campus)
-                symposiumFormData.append('local_category', formData.local_category)
-                symposiumFormData.append('local_center', formData.local_center)
+                symposiumFormData.append('local_category', 'Extension')
+                symposiumFormData.append('local_center', 'Extension (Extension)')
                 symposiumFormData.append('local_author', formData.local_author)
                 symposiumFormData.append('local_presenter', formData.local_presenter)
                 symposiumFormData.append('local_coAuthors', JSON.stringify(formData.local_coAuthors || []))
