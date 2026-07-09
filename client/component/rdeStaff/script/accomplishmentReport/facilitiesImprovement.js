@@ -7,6 +7,7 @@ export const facilitiesImprovement = () => {
     let modalElement = null
     let loadingElement = null
     let facilitiesData = []
+    let facilities = []
     let filteredData = []
     let currentCampus = 'All Campuses'
     let currentCenter = 'All Centers'
@@ -93,7 +94,7 @@ export const facilitiesImprovement = () => {
 
         try {
             const formData = new FormData()
-            formData.append('action', 'fetch_facilities')
+            formData.append('action', 'fetch_facility')
 
             if (cursor) {
                 formData.append('cursor', cursor)
@@ -242,7 +243,7 @@ export const facilitiesImprovement = () => {
         // Get the actual column count from the table header
         const headerRow = document.querySelector('.facilities-improvement-container thead tr')
         let columnCount = 1 // Default fallback
-        
+
         if (headerRow) {
             const headerCells = headerRow.querySelectorAll('th')
             if (headerCells.length > 0) {
@@ -258,13 +259,13 @@ export const facilitiesImprovement = () => {
             child: [
                 $({
                     tag: 'td',
-                    att: { 
+                    att: {
                         colSpan: columnCount,
                         align: 'center'
                     },
                     style: {
                         padding: '80px 20px',
-                        border: '1px solid #e8eaed',
+                        border: 'none',
                         backgroundColor: '#ffffff',
                         textAlign: 'center',
                         verticalAlign: 'middle',
@@ -281,13 +282,13 @@ export const facilitiesImprovement = () => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 width: '100%',
-                                maxWidth: '520px',
+                                maxWidth: '480px',
                                 margin: '0 auto',
                                 padding: '50px 30px',
-                                backgroundColor: '#f8f9fa',
-                                borderRadius: '16px',
-                                border: '2px dashed #e8eaed',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                backgroundColor: '#fafbfc',
+                                borderRadius: '20px',
+                                border: '2px dashed #e2e8f0',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                                 position: 'relative',
                                 top: '50%',
                                 transform: 'translateY(-50%)'
@@ -299,7 +300,7 @@ export const facilitiesImprovement = () => {
                                         width: '80px',
                                         height: '80px',
                                         borderRadius: '50%',
-                                        backgroundColor: '#f5f0ff',
+                                        backgroundColor: '#eef2ff',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -308,10 +309,10 @@ export const facilitiesImprovement = () => {
                                     child: [
                                         $({
                                             tag: 'span',
-                                            att: { className: 'fa-solid fa-microscope' },
+                                            att: { className: 'fas fa-microscope' },
                                             style: {
                                                 fontSize: '36px',
-                                                color: '#7c3aed',
+                                                color: '#4f46e5',
                                                 opacity: 0.6
                                             }
                                         })
@@ -321,12 +322,13 @@ export const facilitiesImprovement = () => {
                                     tag: 'div',
                                     text: 'No Facilities & Equipment Records Found',
                                     style: {
-                                        fontSize: '20px',
+                                        fontSize: '18px',
                                         marginBottom: '8px',
                                         fontWeight: '600',
-                                        color: '#202124',
+                                        color: '#1e293b',
                                         letterSpacing: '-0.3px',
-                                        textAlign: 'center'
+                                        textAlign: 'center',
+                                        fontFamily: "'Inter', sans-serif"
                                     }
                                 }),
                                 $({
@@ -334,10 +336,10 @@ export const facilitiesImprovement = () => {
                                     text: 'Click "Add Facility/Equipment" to add facilities and equipment records',
                                     style: {
                                         fontSize: '14px',
-                                        color: '#5f6368',
+                                        color: '#64748b',
                                         marginBottom: '24px',
                                         textAlign: 'center',
-                                        lineHeight: '1.5'
+                                        lineHeight: '1.6'
                                     }
                                 }),
                                 $({
@@ -348,10 +350,10 @@ export const facilitiesImprovement = () => {
                                     },
                                     style: {
                                         padding: '12px 32px',
-                                        backgroundColor: '#7c3aed',
+                                        backgroundColor: '#4f46e5',
                                         color: '#ffffff',
                                         border: 'none',
-                                        borderRadius: '10px',
+                                        borderRadius: '12px',
                                         fontSize: '14px',
                                         fontWeight: '600',
                                         cursor: 'pointer',
@@ -359,13 +361,14 @@ export const facilitiesImprovement = () => {
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: '8px',
-                                        fontFamily: 'inherit',
-                                        letterSpacing: '0.3px'
+                                        fontFamily: "'Inter', sans-serif",
+                                        letterSpacing: '0.3px',
+                                        boxShadow: '0 2px 8px rgba(79,70,229,0.2)'
                                     },
                                     child: [
                                         $({
                                             tag: 'span',
-                                            att: { className: 'fa-solid fa-plus' },
+                                            att: { className: 'fa-regular fa-plus' },
                                             style: { fontSize: '12px' }
                                         }),
                                         $({
@@ -381,14 +384,14 @@ export const facilitiesImprovement = () => {
                                         },
                                         type2: 'mouseenter',
                                         method2: (e) => {
-                                            e.currentTarget.style.backgroundColor = '#6d28d9'
-                                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(124,58,237,0.3)'
+                                            e.currentTarget.style.backgroundColor = '#4338ca'
+                                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(79,70,229,0.35)'
                                             e.currentTarget.style.transform = 'translateY(-2px)'
                                         },
                                         type3: 'mouseleave',
                                         method3: (e) => {
-                                            e.currentTarget.style.backgroundColor = '#7c3aed'
-                                            e.currentTarget.style.boxShadow = 'none'
+                                            e.currentTarget.style.backgroundColor = '#4f46e5'
+                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(79,70,229,0.2)'
                                             e.currentTarget.style.transform = 'translateY(0)'
                                         }
                                     }
@@ -419,15 +422,17 @@ export const facilitiesImprovement = () => {
     }
 
     const renderLabTypeBadge = (labType) => {
-        if (!labType || labType === '—') return '—'
+        if (!labType || labType === '—') {
+            return $({ tag: 'span', text: '—', style: { color: '#9aa0a6' } })
+        }
 
         const colors = [
-            { bg: '#e8f4fd', color: '#0066cc' },
-            { bg: '#e8edfd', color: '#4a6cf7' },
-            { bg: '#ede8fd', color: '#7c3aed' },
-            { bg: '#e8f5e9', color: '#2d7d46' },
-            { bg: '#fef3e8', color: '#cc7b00' },
-            { bg: '#fde8e8', color: '#cc3333' }
+            { bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
+            { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe' },
+            { bg: '#f3e8ff', color: '#6d28d9', border: '#d8b4fe' },
+            { bg: '#dcfce7', color: '#15803d', border: '#bbf7d0' },
+            { bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
+            { bg: '#fee2e2', color: '#b91c1c', border: '#fecaca' }
         ]
 
         const hash = labType.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
@@ -437,139 +442,55 @@ export const facilitiesImprovement = () => {
         return $({
             tag: 'span',
             style: {
-                display: 'inline-block',
-                padding: '4px 14px',
-                borderRadius: '16px',
-                fontSize: '12px',
-                fontWeight: '500',
-                backgroundColor: '#ffffff',
-                color: selectedColor.color,
-                border: `1px solid ${selectedColor.bg}`,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                transition: 'all 0.2s ease'
-            },
-            text: labType,
-            event: {
-                type: 'mouseenter',
-                method: (e) => {
-                    e.currentTarget.style.backgroundColor = selectedColor.bg
-                    e.currentTarget.style.transform = 'scale(1.05)'
-                },
-                type2: 'mouseleave',
-                method2: (e) => {
-                    e.currentTarget.style.backgroundColor = '#ffffff'
-                    e.currentTarget.style.transform = 'scale(1)'
-                }
-            }
-        })
-    }
-
-    const renderFundingBadge = (fundingType) => {
-        if (!fundingType || fundingType === '—') return '—'
-
-        const isInternal = fundingType === 'Internal'
-        const colors = isInternal
-            ? { bg: '#e8f5e9', color: '#2d7d46', border: '#a5d6a7', hoverBg: '#c8e6c9' }
-            : { bg: '#e3f2fd', color: '#0d47a1', border: '#90caf9', hoverBg: '#bbdefb' }
-
-        return $({
-            tag: 'span',
-            style: {
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '6px 16px',
+                gap: '6px',
+                padding: '5px 16px',
                 borderRadius: '20px',
                 fontSize: '12px',
                 fontWeight: '500',
-                backgroundColor: '#ffffff',
-                color: colors.color,
-                border: `2px solid ${colors.border}`,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                transition: 'all 0.25s ease',
-                cursor: 'default',
-                letterSpacing: '0.3px'
+                backgroundColor: selectedColor.bg,
+                color: selectedColor.color,
+                border: `1px solid ${selectedColor.border}`,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                transition: 'all 0.2s ease',
+                fontFamily: "'Inter', sans-serif"
             },
             child: [
-                // Colored circle background for icon
                 $({
                     tag: 'span',
                     style: {
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '20px',
-                        height: '20px',
+                        width: '6px',
+                        height: '6px',
                         borderRadius: '50%',
-                        backgroundColor: colors.bg,
-                        flexShrink: 0,
-                        transition: 'all 0.25s ease'
-                    },
-                    child: [
-                        $({
-                            tag: 'span',
-                            att: { className: `fa-solid ${isInternal ? 'fa-building' : 'fa-globe'}` },
-                            style: { 
-                                fontSize: '10px',
-                                color: colors.color,
-                                transition: 'all 0.25s ease'
-                            }
-                        })
-                    ]
-                }),
-                $({ 
-                    tag: 'span', 
-                    text: fundingType,
-                    style: {
-                        fontWeight: '600'
+                        backgroundColor: selectedColor.color,
+                        display: 'inline-block'
                     }
+                }),
+                $({
+                    tag: 'span',
+                    text: labType
                 })
             ],
             event: {
                 type: 'mouseenter',
                 method: (e) => {
-                    const badge = e.currentTarget
-                    badge.style.transform = 'translateY(-2px)'
-                    badge.style.boxShadow = `0 4px 16px ${colors.color}25`
-                    badge.style.borderColor = colors.color
-                    
-                    // Animate the icon circle
-                    const iconCircle = badge.querySelector('span:first-child')
-                    if (iconCircle) {
-                        iconCircle.style.backgroundColor = colors.hoverBg
-                        iconCircle.style.transform = 'scale(1.1)'
-                    }
-                    
-                    // Animate the icon
-                    const icon = badge.querySelector('.fa-solid')
-                    if (icon) {
-                        icon.style.transform = 'scale(1.1)'
-                    }
+                    e.currentTarget.style.transform = 'scale(1.04)'
+                    e.currentTarget.style.boxShadow = `0 4px 12px ${selectedColor.color}20`
                 },
                 type2: 'mouseleave',
                 method2: (e) => {
-                    const badge = e.currentTarget
-                    badge.style.transform = 'translateY(0)'
-                    badge.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
-                    badge.style.borderColor = colors.border
-                    
-                    const iconCircle = badge.querySelector('span:first-child')
-                    if (iconCircle) {
-                        iconCircle.style.backgroundColor = colors.bg
-                        iconCircle.style.transform = 'scale(1)'
-                    }
-                    
-                    const icon = badge.querySelector('.fa-solid')
-                    if (icon) {
-                        icon.style.transform = 'scale(1)'
-                    }
+                    e.currentTarget.style.transform = 'scale(1)'
+                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)'
                 }
             }
         })
     }
 
     const renderFacilities = (facilities) => {
-        if (!facilities || facilities === '—') return '—'
+        if (!facilities || facilities === '—') {
+            return $({ tag: 'span', text: '—', style: { color: '#9aa0a6' } })
+        }
 
         let facilityList = []
         try {
@@ -591,8 +512,8 @@ export const facilitiesImprovement = () => {
             style: {
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px',
-                padding: '4px 0'
+                gap: '6px',
+                padding: '2px 0'
             },
             child: facilityList.map((facility, idx) => {
                 const name = typeof facility === 'string' ? facility : facility.name || 'Unknown'
@@ -602,12 +523,12 @@ export const facilitiesImprovement = () => {
                 // Generate a consistent color based on facility name
                 const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
                 const colors = [
-                    { border: '#4a6cf7', bg: '#f0f4ff' },
-                    { border: '#7c3aed', bg: '#f5f0ff' },
-                    { border: '#00838f', bg: '#f0fafc' },
-                    { border: '#2d7d46', bg: '#f0faf0' },
-                    { border: '#cc7b00', bg: '#fff8f0' },
-                    { border: '#cc3333', bg: '#fff0f0' }
+                    { border: '#4f46e5', bg: '#eef2ff' },
+                    { border: '#7c3aed', bg: '#f3e8ff' },
+                    { border: '#0891b2', bg: '#ecfeff' },
+                    { border: '#059669', bg: '#ecfdf5' },
+                    { border: '#d97706', bg: '#fffbeb' },
+                    { border: '#dc2626', bg: '#fef2f2' }
                 ]
                 const colorIndex = hash % colors.length
                 const color = colors[colorIndex]
@@ -617,10 +538,10 @@ export const facilitiesImprovement = () => {
                     style: {
                         padding: '10px 14px',
                         backgroundColor: '#ffffff',
-                        borderRadius: '8px',
-                        border: `2px solid ${idx % 2 === 0 ? color.border : '#e8eaed'}`,
+                        borderRadius: '10px',
+                        border: `1px solid ${idx % 2 === 0 ? color.border : '#e2e8f0'}`,
                         borderLeft: `4px solid ${color.border}`,
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                         transition: 'all 0.2s ease'
                     },
                     event: {
@@ -628,15 +549,15 @@ export const facilitiesImprovement = () => {
                         method: (e) => {
                             e.currentTarget.style.backgroundColor = color.bg
                             e.currentTarget.style.transform = 'translateX(4px)'
-                            e.currentTarget.style.boxShadow = `0 4px 12px ${color.border}25`
+                            e.currentTarget.style.boxShadow = `0 4px 12px ${color.border}20`
                             e.currentTarget.style.borderColor = color.border
                         },
                         type2: 'mouseleave',
                         method2: (e) => {
                             e.currentTarget.style.backgroundColor = '#ffffff'
                             e.currentTarget.style.transform = 'translateX(0)'
-                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
-                            e.currentTarget.style.borderColor = idx % 2 === 0 ? color.border : '#e8eaed'
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
+                            e.currentTarget.style.borderColor = idx % 2 === 0 ? color.border : '#e2e8f0'
                         }
                     },
                     child: [
@@ -657,27 +578,30 @@ export const facilitiesImprovement = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '8px',
-                                        flex: '1'
+                                        flex: '1',
+                                        minWidth: '0'
                                     },
                                     child: [
                                         $({
                                             tag: 'span',
-                                            att: { className: 'fa-solid fa-microscope' },
+                                            att: { className: 'fas fa-microscope' },
                                             style: {
                                                 color: color.border,
-                                                fontSize: '12px',
-                                                opacity: 0.7
+                                                fontSize: '13px',
+                                                opacity: 0.7,
+                                                flexShrink: 0
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             text: name,
                                             style: {
-                                                color: '#202124',
+                                                color: '#1e293b',
                                                 fontWeight: '500',
                                                 fontSize: '13px',
                                                 lineHeight: '1.4',
-                                                wordBreak: 'break-word'
+                                                wordBreak: 'break-word',
+                                                fontFamily: "'Inter', sans-serif"
                                             }
                                         })
                                     ]
@@ -690,13 +614,13 @@ export const facilitiesImprovement = () => {
                                             alignItems: 'center',
                                             gap: '4px',
                                             padding: '3px 12px',
-                                            borderRadius: '12px',
+                                            borderRadius: '20px',
                                             backgroundColor: color.bg,
                                             color: color.border,
                                             fontSize: '11px',
                                             fontWeight: '600',
                                             whiteSpace: 'nowrap',
-                                            border: `1px solid ${color.border}40`
+                                            border: `1px solid ${color.border}30`
                                         },
                                         child: [
                                             $({
@@ -720,7 +644,7 @@ export const facilitiesImprovement = () => {
                                 style: {
                                     marginTop: '6px',
                                     paddingTop: '6px',
-                                    borderTop: '1px solid #f1f3f4',
+                                    borderTop: '1px solid #f1f5f9',
                                     display: 'flex',
                                     alignItems: 'flex-start',
                                     gap: '6px'
@@ -728,18 +652,19 @@ export const facilitiesImprovement = () => {
                                 child: [
                                     $({
                                         tag: 'span',
-                                        att: { className: 'fa-solid fa-align-left' },
+                                        att: { className: 'fa-regular fa-align-left' },
                                         style: {
-                                            color: '#9aa0a6',
+                                            color: '#94a3b8',
                                             fontSize: '10px',
-                                            marginTop: '2px'
+                                            marginTop: '2px',
+                                            flexShrink: 0
                                         }
                                     }),
                                     $({
                                         tag: 'div',
                                         text: description,
                                         style: {
-                                            color: '#5f6368',
+                                            color: '#64748b',
                                             fontSize: '12px',
                                             lineHeight: '1.4',
                                             flex: '1'
@@ -755,6 +680,7 @@ export const facilitiesImprovement = () => {
     }
 
     const createDataRow = (item, rowNumber) => {
+        const isEven = rowNumber % 2 === 0
         const cells = []
 
         // Row number
@@ -762,14 +688,14 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '14px 12px',
                     textAlign: 'center',
                     fontSize: '12px',
-                    color: '#5f6368',
-                    border: '1px solid #e8eaed',
-                    fontFamily: 'monospace',
-                    backgroundColor: '#ffffff',
-                    fontWeight: '500'
+                    color: '#64748b',
+                    borderBottom: '1px solid #f1f5f9',
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff',
+                    fontWeight: '500',
+                    fontFamily: "'Inter', monospace, sans-serif"
                 },
                 text: rowNumber.toString()
             })
@@ -780,29 +706,30 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '14px 12px',
                     textAlign: 'center',
-                    border: '1px solid #e8eaed',
-                    verticalAlign: 'top',
+                    borderBottom: '1px solid #f1f5f9',
+                    verticalAlign: 'middle',
                     minWidth: '160px',
-                    backgroundColor: '#ffffff'
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff'
                 },
                 child: [renderLabTypeBadge(item.laboratoryType)]
             })
         )
 
-        // Facilities/Equipment
+        // Facilities/Equipment - FIX: Ensure child is always an array of nodes
+        const facilitiesContent = renderFacilities(item.facilities)
         cells.push(
             $({
                 tag: 'td',
                 style: {
-                    padding: '8px',
-                    border: '1px solid #e8eaed',
+                    padding: '12px 10px',
+                    borderBottom: '1px solid #f1f5f9',
                     verticalAlign: 'top',
-                    minWidth: '250px',
-                    backgroundColor: '#ffffff'
+                    minWidth: '240px',
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff'
                 },
-                child: [renderFacilities(item.facilities)]
+                child: facilitiesContent && typeof facilitiesContent !== 'string' ? [facilitiesContent] : [$({ tag: 'span', text: '—', style: { color: '#9aa0a6' } })]
             })
         )
 
@@ -811,35 +738,49 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '14px 12px',
                     textAlign: 'center',
                     fontSize: '14px',
-                    color: '#202124',
+                    color: '#1e293b',
                     fontWeight: '600',
-                    border: '1px solid #e8eaed',
+                    borderBottom: '1px solid #f1f5f9',
                     verticalAlign: 'middle',
-                    backgroundColor: '#f8f9fa'
+                    backgroundColor: isEven ? '#f8fafc' : '#fafbfc'
                 },
                 child: item.totalUnits ? [
                     $({
                         tag: 'span',
                         style: {
-                            display: 'inline-block',
-                            padding: '2px 12px',
-                            backgroundColor: '#e8f0fe',
-                            color: '#1a73e8',
-                            borderRadius: '12px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 14px',
+                            backgroundColor: '#eef2ff',
+                            color: '#4f46e5',
+                            borderRadius: '20px',
                             fontSize: '13px',
-                            fontWeight: '600'
+                            fontWeight: '600',
+                            fontFamily: "'Inter', sans-serif"
                         },
-                        text: item.totalUnits
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-cube' },
+                                style: { fontSize: '11px' }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: item.totalUnits
+                            })
+                        ]
                     })
                 ] : [
                     $({
                         tag: 'span',
                         text: '—',
                         style: {
-                            color: '#9aa0a6'
+                            color: '#94a3b8',
+                            fontSize: '13px'
                         }
                     })
                 ]
@@ -851,14 +792,14 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '14px 12px',
                     textAlign: 'center',
-                    fontSize: '12px',
-                    color: '#202124',
-                    border: '1px solid #e8eaed',
+                    fontSize: '13px',
+                    color: '#334155',
+                    borderBottom: '1px solid #f1f5f9',
                     verticalAlign: 'middle',
                     whiteSpace: 'nowrap',
-                    backgroundColor: '#ffffff'
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff'
                 },
                 child: [
                     $({
@@ -866,7 +807,10 @@ export const facilitiesImprovement = () => {
                         style: {
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '6px',
+                            padding: '3px 10px',
+                            borderRadius: '6px',
+                            backgroundColor: '#f1f5f9'
                         },
                         child: [
                             $({
@@ -874,12 +818,13 @@ export const facilitiesImprovement = () => {
                                 att: { className: 'fa-regular fa-calendar' },
                                 style: {
                                     fontSize: '11px',
-                                    color: '#9aa0a6'
+                                    color: '#94a3b8'
                                 }
                             }),
                             $({
                                 tag: 'span',
-                                text: formatDate(item.dateAcquired)
+                                text: formatDate(item.dateAcquired),
+                                style: { fontSize: '12px' }
                             })
                         ]
                     })
@@ -892,14 +837,14 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '14px 12px',
                     fontSize: '13px',
-                    color: '#1e8e3e',
-                    border: '1px solid #e8eaed',
+                    color: '#065f46',
+                    borderBottom: '1px solid #f1f5f9',
                     verticalAlign: 'middle',
                     textAlign: 'right',
-                    fontFamily: "'Courier New', monospace",
-                    backgroundColor: item.internalFunding && parseFloat(item.internalFunding) > 0 ? '#f0faf0' : '#ffffff',
+                    fontFamily: "'Inter', 'Courier New', monospace",
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff',
                     fontWeight: '500'
                 },
                 child: item.internalFunding && parseFloat(item.internalFunding) > 0 ? [
@@ -908,15 +853,19 @@ export const facilitiesImprovement = () => {
                         style: {
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            padding: '3px 12px',
+                            borderRadius: '20px',
+                            backgroundColor: '#ecfdf5',
+                            border: '1px solid #a7f3d0'
                         },
                         child: [
                             $({
                                 tag: 'span',
-                                att: { className: 'fa-solid fa-building' },
+                                att: { className: 'fas fa-building' },
                                 style: {
                                     fontSize: '11px',
-                                    color: '#1e8e3e',
+                                    color: '#065f46',
                                     opacity: 0.6
                                 }
                             }),
@@ -931,7 +880,7 @@ export const facilitiesImprovement = () => {
                         tag: 'span',
                         text: '—',
                         style: {
-                            color: '#9aa0a6'
+                            color: '#94a3b8'
                         }
                     })
                 ]
@@ -943,14 +892,14 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '14px 12px',
                     fontSize: '13px',
-                    color: '#0d47a1',
-                    border: '1px solid #e8eaed',
+                    color: '#1e40af',
+                    borderBottom: '1px solid #f1f5f9',
                     verticalAlign: 'middle',
                     textAlign: 'right',
-                    fontFamily: "'Courier New', monospace",
-                    backgroundColor: item.externalFunding && parseFloat(item.externalFunding) > 0 ? '#f0f4ff' : '#ffffff',
+                    fontFamily: "'Inter', 'Courier New', monospace",
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff',
                     fontWeight: '500'
                 },
                 child: item.externalFunding && parseFloat(item.externalFunding) > 0 ? [
@@ -959,15 +908,19 @@ export const facilitiesImprovement = () => {
                         style: {
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            padding: '3px 12px',
+                            borderRadius: '20px',
+                            backgroundColor: '#eff6ff',
+                            border: '1px solid #bfdbfe'
                         },
                         child: [
                             $({
                                 tag: 'span',
-                                att: { className: 'fa-solid fa-globe' },
+                                att: { className: 'fa fa-globe' },
                                 style: {
                                     fontSize: '11px',
-                                    color: '#0d47a1',
+                                    color: '#1e40af',
                                     opacity: 0.6
                                 }
                             }),
@@ -982,7 +935,7 @@ export const facilitiesImprovement = () => {
                         tag: 'span',
                         text: '—',
                         style: {
-                            color: '#9aa0a6'
+                            color: '#94a3b8'
                         }
                     })
                 ]
@@ -994,14 +947,14 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '14px 12px',
                     fontSize: '12px',
-                    color: '#202124',
-                    border: '1px solid #e8eaed',
-                    verticalAlign: 'top',
+                    color: '#334155',
+                    borderBottom: '1px solid #f1f5f9',
+                    verticalAlign: 'middle',
                     lineHeight: '1.4',
                     minWidth: '150px',
-                    backgroundColor: '#ffffff'
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff'
                 },
                 child: item.sponsoringAgency ? [
                     $({
@@ -1009,20 +962,24 @@ export const facilitiesImprovement = () => {
                         style: {
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            padding: '3px 12px',
+                            borderRadius: '6px',
+                            backgroundColor: '#f1f5f9'
                         },
                         child: [
                             $({
                                 tag: 'span',
-                                att: { className: 'fa-regular fa-building' },
+                                att: { className: 'fas fa-building' },
                                 style: {
                                     fontSize: '11px',
-                                    color: '#9aa0a6'
+                                    color: '#94a3b8'
                                 }
                             }),
                             $({
                                 tag: 'span',
-                                text: item.sponsoringAgency
+                                text: item.sponsoringAgency,
+                                style: { fontSize: '12px' }
                             })
                         ]
                     })
@@ -1031,7 +988,8 @@ export const facilitiesImprovement = () => {
                         tag: 'span',
                         text: '—',
                         style: {
-                            color: '#9aa0a6'
+                            color: '#94a3b8',
+                            fontSize: '12px'
                         }
                     })
                 ]
@@ -1043,38 +1001,33 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '14px 12px',
                     fontSize: '12px',
-                    color: '#3c4043',
-                    border: '1px solid #e8eaed',
-                    verticalAlign: 'top',
+                    color: '#475569',
+                    borderBottom: '1px solid #f1f5f9',
+                    verticalAlign: 'middle',
                     lineHeight: '1.5',
                     minWidth: '200px',
-                    backgroundColor: '#ffffff'
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff'
                 },
                 child: item.purpose ? [
                     $({
                         tag: 'div',
                         style: {
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '4px'
+                            display: '-webkit-box',
+                            WebkitLineClamp: '2',
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxHeight: '42px'
                         },
                         child: [
                             $({
                                 tag: 'span',
-                                att: { className: 'fa-regular fa-file-lines' },
-                                style: {
-                                    fontSize: '11px',
-                                    color: '#9aa0a6',
-                                    marginTop: '1px'
-                                }
-                            }),
-                            $({
-                                tag: 'span',
                                 text: item.purpose,
                                 style: {
-                                    flex: '1'
+                                    fontSize: '12px',
+                                    lineHeight: '1.5'
                                 }
                             })
                         ]
@@ -1084,8 +1037,9 @@ export const facilitiesImprovement = () => {
                         tag: 'span',
                         text: '—',
                         style: {
-                            color: '#9aa0a6',
-                            fontStyle: 'italic'
+                            color: '#94a3b8',
+                            fontStyle: 'italic',
+                            fontSize: '12px'
                         }
                     })
                 ]
@@ -1097,11 +1051,11 @@ export const facilitiesImprovement = () => {
             $({
                 tag: 'td',
                 style: {
-                    padding: '12px 8px',
+                    padding: '10px 8px',
                     textAlign: 'center',
-                    border: '1px solid #e8eaed',
+                    borderBottom: '1px solid #f1f5f9',
                     verticalAlign: 'middle',
-                    backgroundColor: '#ffffff'
+                    backgroundColor: isEven ? '#fafbfc' : '#ffffff'
                 },
                 child: [createActionButtons(item)]
             })
@@ -1110,35 +1064,37 @@ export const facilitiesImprovement = () => {
         return $({
             tag: 'tr',
             style: {
-                backgroundColor: '#ffffff',
-                transition: 'all 0.2s ease'
+                backgroundColor: isEven ? '#fafbfc' : '#ffffff',
+                transition: 'all 0.15s ease',
+                borderRadius: '8px'
             },
             child: cells,
             event: {
                 type: 'mouseenter',
                 method: (e) => {
                     const row = e.currentTarget
-                    row.style.backgroundColor = '#f8f9fa'
-                    // Add subtle highlight effect to all cells
+                    row.style.backgroundColor = '#f1f5f9'
                     const cells = row.querySelectorAll('td')
                     cells.forEach(cell => {
-                        if (!cell.style.backgroundColor.includes('#f0faf0') && 
-                            !cell.style.backgroundColor.includes('#f0f4ff') &&
-                            !cell.style.backgroundColor.includes('#f8f9fa')) {
-                            cell.style.backgroundColor = '#f8f9fa'
+                        const currentBg = cell.style.backgroundColor
+                        if (!currentBg.includes('ecfdf5') &&
+                            !currentBg.includes('eff6ff') &&
+                            !currentBg.includes('f1f5f9')) {
+                            cell.style.backgroundColor = '#f1f5f9'
                         }
                     })
                 },
                 type2: 'mouseleave',
                 method2: (e) => {
                     const row = e.currentTarget
-                    row.style.backgroundColor = '#ffffff'
+                    const rowNum = parseInt(row.querySelector('td:first-child')?.textContent || 0)
+                    const isEvenRow = rowNum % 2 === 0
+                    row.style.backgroundColor = isEvenRow ? '#fafbfc' : '#ffffff'
                     const cells = row.querySelectorAll('td')
                     cells.forEach(cell => {
                         const currentBg = cell.style.backgroundColor
-                        // Reset only if it was changed by hover
-                        if (currentBg === 'rgb(248, 249, 250)' || currentBg === '#f8f9fa') {
-                            cell.style.backgroundColor = '#ffffff'
+                        if (currentBg === 'rgb(241, 245, 249)' || currentBg === '#f1f5f9') {
+                            cell.style.backgroundColor = isEvenRow ? '#fafbfc' : '#ffffff'
                         }
                     })
                 }
@@ -1159,7 +1115,7 @@ export const facilitiesImprovement = () => {
             tag: 'div',
             style: {
                 display: 'flex',
-                gap: '6px',
+                gap: '8px',
                 justifyContent: 'center',
                 alignItems: 'center'
             },
@@ -1169,27 +1125,27 @@ export const facilitiesImprovement = () => {
                     tag: 'button',
                     att: { type: 'button' },
                     style: {
-                        width: '34px',
-                        height: '34px',
-                        borderRadius: '8px',
-                        border: '1px solid #e8eaed',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
                         backgroundColor: '#ffffff',
-                        color: '#1a73e8',
+                        color: '#4f46e5',
                         cursor: 'pointer',
                         fontSize: '14px',
                         transition: 'all 0.2s ease',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                     },
                     title: 'Edit',
                     child: [
                         $({
                             tag: 'span',
-                            att: { className: 'fa-solid fa-pen' },
-                            style: { 
-                                fontSize: '13px',
+                            att: { className: 'fa-regular fa-pen-to-square' },
+                            style: {
+                                fontSize: '14px',
                                 transition: 'all 0.2s ease'
                             }
                         })
@@ -1203,11 +1159,11 @@ export const facilitiesImprovement = () => {
                         type2: 'mouseenter',
                         method2: (e) => {
                             const btn = e.currentTarget
-                            btn.style.backgroundColor = '#e8f0fe'
-                            btn.style.borderColor = '#1a73e8'
+                            btn.style.backgroundColor = '#eef2ff'
+                            btn.style.borderColor = '#4f46e5'
                             btn.style.transform = 'translateY(-2px)'
-                            btn.style.boxShadow = '0 4px 12px rgba(26,115,232,0.2)'
-                            const icon = btn.querySelector('.fa-solid')
+                            btn.style.boxShadow = '0 4px 12px rgba(79,70,229,0.15)'
+                            const icon = btn.querySelector('.fa-regular')
                             if (icon) {
                                 icon.style.transform = 'scale(1.1)'
                             }
@@ -1216,10 +1172,10 @@ export const facilitiesImprovement = () => {
                         method3: (e) => {
                             const btn = e.currentTarget
                             btn.style.backgroundColor = '#ffffff'
-                            btn.style.borderColor = '#e8eaed'
+                            btn.style.borderColor = '#e2e8f0'
                             btn.style.transform = 'translateY(0)'
-                            btn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
-                            const icon = btn.querySelector('.fa-solid')
+                            btn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
+                            const icon = btn.querySelector('.fa-regular')
                             if (icon) {
                                 icon.style.transform = 'scale(1)'
                             }
@@ -1231,27 +1187,27 @@ export const facilitiesImprovement = () => {
                     tag: 'button',
                     att: { type: 'button' },
                     style: {
-                        width: '34px',
-                        height: '34px',
-                        borderRadius: '8px',
-                        border: '1px solid #e8eaed',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
                         backgroundColor: '#ffffff',
-                        color: '#ea4335',
+                        color: '#ef4444',
                         cursor: 'pointer',
                         fontSize: '14px',
                         transition: 'all 0.2s ease',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                     },
                     title: 'Delete',
                     child: [
                         $({
                             tag: 'span',
-                            att: { className: 'fa-solid fa-trash' },
-                            style: { 
-                                fontSize: '13px',
+                            att: { className: 'fa-regular fa-trash-can' },
+                            style: {
+                                fontSize: '14px',
                                 transition: 'all 0.2s ease'
                             }
                         })
@@ -1265,11 +1221,11 @@ export const facilitiesImprovement = () => {
                         type2: 'mouseenter',
                         method2: (e) => {
                             const btn = e.currentTarget
-                            btn.style.backgroundColor = '#fce8e6'
-                            btn.style.borderColor = '#ea4335'
+                            btn.style.backgroundColor = '#fef2f2'
+                            btn.style.borderColor = '#ef4444'
                             btn.style.transform = 'translateY(-2px)'
-                            btn.style.boxShadow = '0 4px 12px rgba(234,67,53,0.2)'
-                            const icon = btn.querySelector('.fa-solid')
+                            btn.style.boxShadow = '0 4px 12px rgba(239,68,68,0.15)'
+                            const icon = btn.querySelector('.fa-regular')
                             if (icon) {
                                 icon.style.transform = 'scale(1.1)'
                             }
@@ -1278,10 +1234,10 @@ export const facilitiesImprovement = () => {
                         method3: (e) => {
                             const btn = e.currentTarget
                             btn.style.backgroundColor = '#ffffff'
-                            btn.style.borderColor = '#e8eaed'
+                            btn.style.borderColor = '#e2e8f0'
                             btn.style.transform = 'translateY(0)'
-                            btn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
-                            const icon = btn.querySelector('.fa-solid')
+                            btn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
+                            const icon = btn.querySelector('.fa-regular')
                             if (icon) {
                                 icon.style.transform = 'scale(1)'
                             }
@@ -1317,7 +1273,7 @@ export const facilitiesImprovement = () => {
             formData.append('action', 'delete_facility')
             formData.append('id', item.id)
 
-            const response = await fetch('/api/facilities-improvement', {
+            const response = await fetch('/facilitiesImprovement', {
                 method: 'POST',
                 body: formData
             })
@@ -2222,7 +2178,7 @@ export const facilitiesImprovement = () => {
                                                             child: [
                                                                 $({
                                                                     tag: 'span',
-                                                                    att: { className: 'fa-solid fa-globe' },
+                                                                    att: { className: 'fa-solid fa fa-globe' },
                                                                     style: { marginRight: '6px', fontSize: '12px' }
                                                                 }),
                                                                 $({
@@ -2688,18 +2644,18 @@ export const facilitiesImprovement = () => {
                                     boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
                                 },
                                 child: [
-                                    $({ 
-                                        tag: 'option', 
-                                        att: { value: '' }, 
+                                    $({
+                                        tag: 'option',
+                                        att: { value: '' },
                                         text: `-- Select ${type === 'campus' ? 'Campus' : 'Center'} --`,
                                         style: { color: '#9aa0a6' }
                                     }),
                                     ...options.map(opt =>
                                         $({
                                             tag: 'option',
-                                            att: { 
-                                                value: opt, 
-                                                selected: opt === selectedValue 
+                                            att: {
+                                                value: opt,
+                                                selected: opt === selectedValue
                                             },
                                             text: opt,
                                             style: { color: '#202124' }
@@ -2733,12 +2689,28 @@ export const facilitiesImprovement = () => {
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_facility' : 'add_facility')
 
-        // Add facilities as JSON
-        formData.append('facilities', JSON.stringify(facilities))
+        const facilityRows = document.querySelectorAll('.facility-row')
+        const facilitiesArray = []
+
+        facilityRows.forEach(row => {
+            const nameInput = row.querySelector('.facility-name-input')
+            const unitsInput = row.querySelector('.facility-units-input')
+            const descInput = row.querySelector('.facility-description-input')
+
+            if (nameInput && nameInput.value.trim()) {
+                facilitiesArray.push({
+                    name: nameInput.value.trim(),
+                    units: unitsInput ? parseInt(unitsInput.value) || 0 : 0,
+                    description: descInput ? descInput.value.trim() : ''
+                })
+            }
+        })
+
+        formData.append('facilities', JSON.stringify(facilitiesArray))
 
         showLoading()
         try {
-            const response = await fetch('/api/facilities-improvement', {
+            const response = await fetch('/facilitiesImprovement', {
                 method: 'POST',
                 body: formData
             })
@@ -2778,11 +2750,11 @@ export const facilitiesImprovement = () => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '16px 24px',
+                padding: '14px 24px',
                 backgroundColor: '#ffffff',
-                borderBottom: '2px solid #e8eaed',
+                borderBottom: '1px solid #e2e8f0',
                 flexWrap: 'wrap',
-                gap: '15px'
+                gap: '12px'
             },
             child: [
                 $({
@@ -2790,7 +2762,7 @@ export const facilitiesImprovement = () => {
                     style: {
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '20px',
+                        gap: '16px',
                         flexWrap: 'wrap',
                         flex: '1'
                     },
@@ -2806,19 +2778,20 @@ export const facilitiesImprovement = () => {
                                 $({
                                     tag: 'div',
                                     style: {
-                                        width: '44px',
-                                        height: '44px',
+                                        width: '40px',
+                                        height: '40px',
                                         borderRadius: '12px',
-                                        background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                                        background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center'
+                                        justifyContent: 'center',
+                                        flexShrink: 0
                                     },
                                     child: [
                                         $({
                                             tag: 'span',
-                                            att: { className: 'fa-solid fa-microscope' },
-                                            style: { color: '#ffffff', fontSize: '20px' }
+                                            att: { className: 'fas fa-microscope' },
+                                            style: { color: '#ffffff', fontSize: '18px' }
                                         })
                                     ]
                                 }),
@@ -2833,9 +2806,9 @@ export const facilitiesImprovement = () => {
                                             tag: 'h2',
                                             text: 'Summary List of Facilities and Equipment',
                                             style: {
-                                                color: '#202124',
-                                                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                                fontSize: '18px',
+                                                color: '#0f172a',
+                                                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                                                fontSize: '16px',
                                                 fontWeight: '600',
                                                 margin: '0',
                                                 letterSpacing: '-0.3px',
@@ -2845,9 +2818,9 @@ export const facilitiesImprovement = () => {
                                         $({
                                             tag: 'span',
                                             style: {
-                                                fontSize: '13px',
-                                                color: '#5f6368',
-                                                marginTop: '2px'
+                                                fontSize: '12px',
+                                                color: '#64748b',
+                                                marginTop: '1px'
                                             },
                                             text: 'Relevant to the Conduct of Research'
                                         })
@@ -2857,14 +2830,14 @@ export const facilitiesImprovement = () => {
                                     tag: 'span',
                                     att: { className: 'record-count' },
                                     style: {
-                                        backgroundColor: '#f1f3f4',
-                                        color: '#5f6368',
-                                        padding: '4px 12px',
+                                        backgroundColor: '#f1f5f9',
+                                        color: '#475569',
+                                        padding: '4px 14px',
                                         borderRadius: '20px',
                                         fontSize: '12px',
-                                        fontFamily: 'monospace',
+                                        fontFamily: "'Inter', monospace",
                                         fontWeight: '500',
-                                        border: '1px solid #e8eaed',
+                                        border: '1px solid #e2e8f0',
                                         whiteSpace: 'nowrap'
                                     },
                                     text: '0 of 0 records'
@@ -2876,11 +2849,11 @@ export const facilitiesImprovement = () => {
                             tag: 'div',
                             style: {
                                 display: 'flex',
-                                gap: '8px',
-                                backgroundColor: '#f8f9fa',
+                                gap: '6px',
+                                backgroundColor: '#f8fafc',
                                 padding: '4px',
-                                borderRadius: '10px',
-                                border: '2px solid #e8eaed',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
                                 flexWrap: 'wrap'
                             },
                             child: [
@@ -2892,21 +2865,22 @@ export const facilitiesImprovement = () => {
                                         backgroundColor: 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
-                                        padding: '8px 14px',
-                                        color: '#202124',
-                                        fontSize: '13px',
+                                        padding: '7px 14px',
+                                        color: '#1e293b',
+                                        fontSize: '12px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '160px',
-                                        fontFamily: 'inherit',
+                                        maxWidth: '150px',
+                                        fontFamily: "'Inter', sans-serif",
                                         transition: 'all 0.2s ease',
                                         appearance: 'none',
                                         WebkitAppearance: 'none',
                                         MozAppearance: 'none',
-                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%235f6368' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
+                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748b' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
                                         backgroundRepeat: 'no-repeat',
                                         backgroundPosition: 'right 10px center',
-                                        paddingRight: '30px'
+                                        paddingRight: '28px',
+                                        fontWeight: '500'
                                     },
                                     child: [
                                         ...campuses.map(c =>
@@ -2927,7 +2901,7 @@ export const facilitiesImprovement = () => {
                                         type2: 'focus',
                                         method2: (e) => {
                                             e.target.style.backgroundColor = '#ffffff'
-                                            e.target.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.1)'
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(79,70,229,0.08)'
                                         },
                                         type3: 'blur',
                                         method3: (e) => {
@@ -2944,21 +2918,22 @@ export const facilitiesImprovement = () => {
                                         backgroundColor: 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
-                                        padding: '8px 14px',
-                                        color: '#202124',
-                                        fontSize: '13px',
+                                        padding: '7px 14px',
+                                        color: '#1e293b',
+                                        fontSize: '12px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '250px',
-                                        fontFamily: 'inherit',
+                                        maxWidth: '220px',
+                                        fontFamily: "'Inter', sans-serif",
                                         transition: 'all 0.2s ease',
                                         appearance: 'none',
                                         WebkitAppearance: 'none',
                                         MozAppearance: 'none',
-                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%235f6368' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
+                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748b' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
                                         backgroundRepeat: 'no-repeat',
                                         backgroundPosition: 'right 10px center',
-                                        paddingRight: '30px'
+                                        paddingRight: '28px',
+                                        fontWeight: '500'
                                     },
                                     child: [
                                         ...centers.map(c =>
@@ -2979,7 +2954,7 @@ export const facilitiesImprovement = () => {
                                         type2: 'focus',
                                         method2: (e) => {
                                             e.target.style.backgroundColor = '#ffffff'
-                                            e.target.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.1)'
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(79,70,229,0.08)'
                                         },
                                         type3: 'blur',
                                         method3: (e) => {
@@ -2996,21 +2971,22 @@ export const facilitiesImprovement = () => {
                                         backgroundColor: 'transparent',
                                         border: 'none',
                                         borderRadius: '8px',
-                                        padding: '8px 14px',
-                                        color: '#202124',
-                                        fontSize: '13px',
+                                        padding: '7px 14px',
+                                        color: '#1e293b',
+                                        fontSize: '12px',
                                         cursor: 'pointer',
                                         outline: 'none',
-                                        maxWidth: '140px',
-                                        fontFamily: 'inherit',
+                                        maxWidth: '130px',
+                                        fontFamily: "'Inter', sans-serif",
                                         transition: 'all 0.2s ease',
                                         appearance: 'none',
                                         WebkitAppearance: 'none',
                                         MozAppearance: 'none',
-                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%235f6368' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
+                                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748b' d='M5 7L1 3h8z'/%3E%3C/svg%3E")`,
                                         backgroundRepeat: 'no-repeat',
                                         backgroundPosition: 'right 10px center',
-                                        paddingRight: '30px'
+                                        paddingRight: '28px',
+                                        fontWeight: '500'
                                     },
                                     child: [
                                         ...fundingTypes.map(ft =>
@@ -3032,7 +3008,7 @@ export const facilitiesImprovement = () => {
                                         type2: 'focus',
                                         method2: (e) => {
                                             e.target.style.backgroundColor = '#ffffff'
-                                            e.target.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.1)'
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(79,70,229,0.08)'
                                         },
                                         type3: 'blur',
                                         method3: (e) => {
@@ -3050,25 +3026,26 @@ export const facilitiesImprovement = () => {
                     tag: 'button',
                     style: {
                         padding: '10px 24px',
-                        backgroundColor: '#7c3aed',
+                        backgroundColor: '#4f46e5',
                         border: 'none',
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         color: '#ffffff',
-                        fontSize: '14px',
+                        fontSize: '13px',
                         fontWeight: '600',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
                         transition: 'all 0.2s ease',
-                        fontFamily: 'inherit',
+                        fontFamily: "'Inter', sans-serif",
                         whiteSpace: 'nowrap',
-                        letterSpacing: '0.3px'
+                        letterSpacing: '0.3px',
+                        boxShadow: '0 2px 8px rgba(79,70,229,0.2)'
                     },
                     child: [
                         $({
                             tag: 'span',
-                            att: { className: 'fa-solid fa-plus' },
+                            att: { className: 'fa-regular fa-plus' },
                             style: { fontSize: '12px' }
                         }),
                         $({
@@ -3081,15 +3058,15 @@ export const facilitiesImprovement = () => {
                         method: openAddModal,
                         type2: 'mouseenter',
                         method2: (e) => {
-                            e.currentTarget.style.backgroundColor = '#6d28d9'
+                            e.currentTarget.style.backgroundColor = '#4338ca'
                             e.currentTarget.style.transform = 'translateY(-2px)'
-                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(124,58,237,0.3)'
+                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(79,70,229,0.35)'
                         },
                         type3: 'mouseleave',
                         method3: (e) => {
-                            e.currentTarget.style.backgroundColor = '#7c3aed'
+                            e.currentTarget.style.backgroundColor = '#4f46e5'
                             e.currentTarget.style.transform = 'translateY(0)'
-                            e.currentTarget.style.boxShadow = 'none'
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(79,70,229,0.2)'
                         }
                     }
                 })
@@ -3106,8 +3083,8 @@ export const facilitiesImprovement = () => {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                 gap: '16px',
                 padding: '20px 24px',
-                backgroundColor: '#f8f9fa',
-                borderBottom: '2px solid #e8eaed'
+                backgroundColor: '#f8fafc',
+                borderBottom: '1px solid #e2e8f0'
             },
             child: [
                 // Total Facilities
@@ -3120,10 +3097,10 @@ export const facilitiesImprovement = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '2px solid #e8eaed',
+                        border: '1px solid #e2e8f0',
                         transition: 'all 0.3s ease',
                         cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                         position: 'relative',
                         overflow: 'hidden'
                     },
@@ -3131,18 +3108,17 @@ export const facilitiesImprovement = () => {
                         type: 'mouseenter',
                         method: (e) => {
                             e.currentTarget.style.transform = 'translateY(-4px)'
-                            e.currentTarget.style.borderColor = '#607d8b'
-                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(96,125,139,0.15)'
+                            e.currentTarget.style.borderColor = '#64748b'
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(100,116,139,0.10)'
                         },
                         type2: 'mouseleave',
                         method2: (e) => {
                             e.currentTarget.style.transform = 'translateY(0)'
-                            e.currentTarget.style.borderColor = '#e8eaed'
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.borderColor = '#e2e8f0'
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
                         }
                     },
                     child: [
-                        // Gradient accent bar
                         $({
                             tag: 'div',
                             style: {
@@ -3151,16 +3127,16 @@ export const facilitiesImprovement = () => {
                                 left: '0',
                                 right: '0',
                                 height: '4px',
-                                background: 'linear-gradient(90deg, #607d8b, #78909c)'
+                                background: 'linear-gradient(90deg, #64748b, #94a3b8)'
                             }
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                width: '54px',
-                                height: '54px',
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #607d8b, #78909c)',
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #64748b, #94a3b8)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -3169,8 +3145,8 @@ export const facilitiesImprovement = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'fa-solid fa-building' },
-                                    style: { color: '#ffffff', fontSize: '26px' }
+                                    att: { className: 'fas fa-building' },
+                                    style: { color: '#ffffff', fontSize: '24px' }
                                 })
                             ]
                         }),
@@ -3183,18 +3159,19 @@ export const facilitiesImprovement = () => {
                                     att: { className: 'stat-total-facilities stat-value' },
                                     text: '0',
                                     style: {
-                                        fontSize: '32px',
+                                        fontSize: '28px',
                                         fontWeight: '700',
-                                        color: '#202124',
-                                        lineHeight: '1.2'
+                                        color: '#0f172a',
+                                        lineHeight: '1.2',
+                                        fontFamily: "'Inter', sans-serif"
                                     }
                                 }),
                                 $({
                                     tag: 'span',
                                     text: 'Total Facilities',
                                     style: {
-                                        fontSize: '13px',
-                                        color: '#5f6368',
+                                        fontSize: '12px',
+                                        color: '#64748b',
                                         fontWeight: '500'
                                     }
                                 })
@@ -3212,10 +3189,10 @@ export const facilitiesImprovement = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '2px solid #e8eaed',
+                        border: '1px solid #e2e8f0',
                         transition: 'all 0.3s ease',
                         cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                         position: 'relative',
                         overflow: 'hidden'
                     },
@@ -3223,14 +3200,14 @@ export const facilitiesImprovement = () => {
                         type: 'mouseenter',
                         method: (e) => {
                             e.currentTarget.style.transform = 'translateY(-4px)'
-                            e.currentTarget.style.borderColor = '#00bcd4'
-                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,188,212,0.15)'
+                            e.currentTarget.style.borderColor = '#0ea5e9'
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(14,165,233,0.10)'
                         },
                         type2: 'mouseleave',
                         method2: (e) => {
                             e.currentTarget.style.transform = 'translateY(0)'
-                            e.currentTarget.style.borderColor = '#e8eaed'
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.borderColor = '#e2e8f0'
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
                         }
                     },
                     child: [
@@ -3242,16 +3219,16 @@ export const facilitiesImprovement = () => {
                                 left: '0',
                                 right: '0',
                                 height: '4px',
-                                background: 'linear-gradient(90deg, #00bcd4, #26c6da)'
+                                background: 'linear-gradient(90deg, #0ea5e9, #38bdf8)'
                             }
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                width: '54px',
-                                height: '54px',
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #00bcd4, #26c6da)',
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #0ea5e9, #38bdf8)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -3260,8 +3237,8 @@ export const facilitiesImprovement = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'fa-solid fa-microscope' },
-                                    style: { color: '#ffffff', fontSize: '26px' }
+                                    att: { className: 'fas fa-microscope' },
+                                    style: { color: '#ffffff', fontSize: '24px' }
                                 })
                             ]
                         }),
@@ -3274,18 +3251,19 @@ export const facilitiesImprovement = () => {
                                     att: { className: 'stat-total-equipment stat-value' },
                                     text: '0',
                                     style: {
-                                        fontSize: '32px',
+                                        fontSize: '28px',
                                         fontWeight: '700',
-                                        color: '#202124',
-                                        lineHeight: '1.2'
+                                        color: '#0f172a',
+                                        lineHeight: '1.2',
+                                        fontFamily: "'Inter', sans-serif"
                                     }
                                 }),
                                 $({
                                     tag: 'span',
                                     text: 'Equipment Count',
                                     style: {
-                                        fontSize: '13px',
-                                        color: '#5f6368',
+                                        fontSize: '12px',
+                                        color: '#64748b',
                                         fontWeight: '500'
                                     }
                                 })
@@ -3303,10 +3281,10 @@ export const facilitiesImprovement = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '2px solid #e8eaed',
+                        border: '1px solid #e2e8f0',
                         transition: 'all 0.3s ease',
                         cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                         position: 'relative',
                         overflow: 'hidden'
                     },
@@ -3314,14 +3292,14 @@ export const facilitiesImprovement = () => {
                         type: 'mouseenter',
                         method: (e) => {
                             e.currentTarget.style.transform = 'translateY(-4px)'
-                            e.currentTarget.style.borderColor = '#34a853'
-                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(52,168,83,0.15)'
+                            e.currentTarget.style.borderColor = '#22c55e'
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(34,197,94,0.10)'
                         },
                         type2: 'mouseleave',
                         method2: (e) => {
                             e.currentTarget.style.transform = 'translateY(0)'
-                            e.currentTarget.style.borderColor = '#e8eaed'
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.borderColor = '#e2e8f0'
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
                         }
                     },
                     child: [
@@ -3333,16 +3311,16 @@ export const facilitiesImprovement = () => {
                                 left: '0',
                                 right: '0',
                                 height: '4px',
-                                background: 'linear-gradient(90deg, #34a853, #66bb6a)'
+                                background: 'linear-gradient(90deg, #22c55e, #4ade80)'
                             }
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                width: '54px',
-                                height: '54px',
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #34a853, #66bb6a)',
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #22c55e, #4ade80)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -3351,8 +3329,8 @@ export const facilitiesImprovement = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'fa-solid fa-building-columns' },
-                                    style: { color: '#ffffff', fontSize: '26px' }
+                                    att: { className: 'fas fa-building-columns' },
+                                    style: { color: '#ffffff', fontSize: '24px' }
                                 })
                             ]
                         }),
@@ -3365,18 +3343,19 @@ export const facilitiesImprovement = () => {
                                     att: { className: 'stat-internal-funding stat-value' },
                                     text: '0',
                                     style: {
-                                        fontSize: '32px',
+                                        fontSize: '28px',
                                         fontWeight: '700',
-                                        color: '#202124',
-                                        lineHeight: '1.2'
+                                        color: '#0f172a',
+                                        lineHeight: '1.2',
+                                        fontFamily: "'Inter', sans-serif"
                                     }
                                 }),
                                 $({
                                     tag: 'span',
                                     text: 'Internal Funded',
                                     style: {
-                                        fontSize: '13px',
-                                        color: '#5f6368',
+                                        fontSize: '12px',
+                                        color: '#64748b',
                                         fontWeight: '500'
                                     }
                                 })
@@ -3394,10 +3373,10 @@ export const facilitiesImprovement = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '2px solid #e8eaed',
+                        border: '1px solid #e2e8f0',
                         transition: 'all 0.3s ease',
                         cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                         position: 'relative',
                         overflow: 'hidden'
                     },
@@ -3405,14 +3384,14 @@ export const facilitiesImprovement = () => {
                         type: 'mouseenter',
                         method: (e) => {
                             e.currentTarget.style.transform = 'translateY(-4px)'
-                            e.currentTarget.style.borderColor = '#1a73e8'
-                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(26,115,232,0.15)'
+                            e.currentTarget.style.borderColor = '#3b82f6'
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(59,130,246,0.10)'
                         },
                         type2: 'mouseleave',
                         method2: (e) => {
                             e.currentTarget.style.transform = 'translateY(0)'
-                            e.currentTarget.style.borderColor = '#e8eaed'
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.borderColor = '#e2e8f0'
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
                         }
                     },
                     child: [
@@ -3424,16 +3403,16 @@ export const facilitiesImprovement = () => {
                                 left: '0',
                                 right: '0',
                                 height: '4px',
-                                background: 'linear-gradient(90deg, #1a73e8, #4285f4)'
+                                background: 'linear-gradient(90deg, #3b82f6, #60a5fa)'
                             }
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                width: '54px',
-                                height: '54px',
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #1a73e8, #4285f4)',
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #3b82f6, #60a5fa)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -3442,8 +3421,8 @@ export const facilitiesImprovement = () => {
                             child: [
                                 $({
                                     tag: 'span',
-                                    att: { className: 'fa-solid fa-globe' },
-                                    style: { color: '#ffffff', fontSize: '26px' }
+                                    att: { className: 'fa fa-globe' },
+                                    style: { color: '#ffffff', fontSize: '24px' }
                                 })
                             ]
                         }),
@@ -3456,18 +3435,19 @@ export const facilitiesImprovement = () => {
                                     att: { className: 'stat-external-funding stat-value' },
                                     text: '0',
                                     style: {
-                                        fontSize: '32px',
+                                        fontSize: '28px',
                                         fontWeight: '700',
-                                        color: '#202124',
-                                        lineHeight: '1.2'
+                                        color: '#0f172a',
+                                        lineHeight: '1.2',
+                                        fontFamily: "'Inter', sans-serif"
                                     }
                                 }),
                                 $({
                                     tag: 'span',
                                     text: 'External Funded',
                                     style: {
-                                        fontSize: '13px',
-                                        color: '#5f6368',
+                                        fontSize: '12px',
+                                        color: '#64748b',
                                         fontWeight: '500'
                                     }
                                 })
@@ -3485,10 +3465,10 @@ export const facilitiesImprovement = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
-                        border: '2px solid #e8eaed',
+                        border: '1px solid #e2e8f0',
                         transition: 'all 0.3s ease',
                         cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                         gridColumn: 'span 1',
                         position: 'relative',
                         overflow: 'hidden'
@@ -3497,14 +3477,14 @@ export const facilitiesImprovement = () => {
                         type: 'mouseenter',
                         method: (e) => {
                             e.currentTarget.style.transform = 'translateY(-4px)'
-                            e.currentTarget.style.borderColor = '#fbbc04'
-                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(251,188,4,0.15)'
+                            e.currentTarget.style.borderColor = '#f59e0b'
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(245,158,11,0.10)'
                         },
                         type2: 'mouseleave',
                         method2: (e) => {
                             e.currentTarget.style.transform = 'translateY(0)'
-                            e.currentTarget.style.borderColor = '#e8eaed'
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)'
+                            e.currentTarget.style.borderColor = '#e2e8f0'
+                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'
                         }
                     },
                     child: [
@@ -3516,16 +3496,16 @@ export const facilitiesImprovement = () => {
                                 left: '0',
                                 right: '0',
                                 height: '4px',
-                                background: 'linear-gradient(90deg, #fbbc04, #fdd835)'
+                                background: 'linear-gradient(90deg, #f59e0b, #fbbf24)'
                             }
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                width: '54px',
-                                height: '54px',
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #fbbc04, #fdd835)',
+                                width: '50px',
+                                height: '50px',
+                                borderRadius: '14px',
+                                background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -3535,7 +3515,7 @@ export const facilitiesImprovement = () => {
                                 $({
                                     tag: 'span',
                                     att: { className: 'fa-solid fa-boxes-stacked' },
-                                    style: { color: '#ffffff', fontSize: '26px' }
+                                    style: { color: '#ffffff', fontSize: '24px' }
                                 })
                             ]
                         }),
@@ -3548,18 +3528,19 @@ export const facilitiesImprovement = () => {
                                     att: { className: 'stat-total-units stat-value' },
                                     text: '0',
                                     style: {
-                                        fontSize: '32px',
+                                        fontSize: '28px',
                                         fontWeight: '700',
-                                        color: '#202124',
-                                        lineHeight: '1.2'
+                                        color: '#0f172a',
+                                        lineHeight: '1.2',
+                                        fontFamily: "'Inter', sans-serif"
                                     }
                                 }),
                                 $({
                                     tag: 'span',
                                     text: 'Total Units/Pcs',
                                     style: {
-                                        fontSize: '13px',
-                                        color: '#5f6368',
+                                        fontSize: '12px',
+                                        color: '#64748b',
                                         fontWeight: '500'
                                     }
                                 })
@@ -3573,16 +3554,16 @@ export const facilitiesImprovement = () => {
 
     const TableHeader = () => {
         const headers = [
-            { key: '#', align: 'center', width: '40px' },
-            { key: 'Laboratory Type', align: 'center', width: '150px' },
-            { key: 'Facilities/Equipment', align: 'left', width: '220px' },
+            { key: '# No', align: 'center', width: '50px' },
+            { key: 'Laboratory Type', align: 'center', width: '160px' },
+            { key: 'Facilities/Equipment', align: 'left', width: '240px' },
             { key: 'Units', align: 'center', width: '80px' },
-            { key: 'Date Acquired', align: 'center', width: '110px' },
-            { key: 'Internal', align: 'right', width: '100px' },
-            { key: 'External', align: 'right', width: '100px' },
-            { key: 'Sponsoring Agency', align: 'left', width: '140px' },
-            { key: 'Purpose/Services', align: 'left', width: '180px' },
-            { key: 'Actions', align: 'center', width: '70px' }
+            { key: 'Date Acquired', align: 'center', width: '120px' },
+            { key: 'Internal', align: 'right', width: '110px' },
+            { key: 'External', align: 'right', width: '110px' },
+            { key: 'Sponsoring Agency', align: 'left', width: '150px' },
+            { key: 'Purpose/Services', align: 'left', width: '200px' },
+            { key: 'Actions', align: 'center', width: '90px' }
         ]
 
         const row = $({ tag: 'tr' })
@@ -3591,23 +3572,26 @@ export const facilitiesImprovement = () => {
             const th = $({
                 tag: 'th',
                 style: {
-                    padding: '10px 12px',
+                    padding: '14px 16px',
                     textAlign: align,
-                    fontSize: '10px',
+                    fontSize: '11px',
                     fontWeight: '600',
-                    color: '#5f6368',
-                    backgroundColor: '#f8f9fa',
-                    border: '1px solid #e8eaed',
-                    borderBottom: '2px solid #dadce0',
+                    color: '#475569',
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '2px solid #e2e8f0',
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
                     whiteSpace: 'nowrap',
                     verticalAlign: 'middle',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.3px',
+                    letterSpacing: '0.5px',
                     width: width || 'auto',
                     minWidth: width || 'auto',
                     position: 'sticky',
                     top: '0',
-                    zIndex: '2'
+                    zIndex: '2',
+                    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
                 },
                 text: key
             })
@@ -3629,10 +3613,10 @@ export const facilitiesImprovement = () => {
                 overflow: 'auto',
                 backgroundColor: '#ffffff',
                 position: 'relative',
-                border: '1px solid #e8eaed',
-                borderRadius: '8px',
+                borderRadius: '16px',
                 margin: '0 24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)',
+                border: '1px solid #e8ecf0'
             },
             elementHandler: (el) => {
                 scrollContainer = el
@@ -3644,9 +3628,11 @@ export const facilitiesImprovement = () => {
                     tag: 'table',
                     style: {
                         width: '100%',
-                        minWidth: '1300px',
-                        borderCollapse: 'collapse',
-                        backgroundColor: '#ffffff'
+                        minWidth: '1350px',
+                        borderCollapse: 'separate',
+                        borderSpacing: '0',
+                        backgroundColor: '#ffffff',
+                        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
                     },
                     child: [
                         TableHeader(),
