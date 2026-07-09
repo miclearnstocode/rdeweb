@@ -156,7 +156,17 @@ export const SummaryAccomplishment = () => {
         showLoading()
 
         try {
-            // 1. Fetch totalOngoing and completed from /monitor
+            // Build filter params for all requests
+            const filterParams = new URLSearchParams()
+            if (activeFilters.campus !== 'all') {
+                filterParams.append('type', 'campus')
+                filterParams.append('location', activeFilters.campus)
+            } else if (activeFilters.center !== 'all') {
+                filterParams.append('type', 'center')
+                filterParams.append('location', activeFilters.center)
+            }
+
+            // 1. Fetch ongoing and completed from /monitor
             const monitorFormData = new FormData()
             monitorFormData.append('action', 'fetch')
 
@@ -164,67 +174,77 @@ export const SummaryAccomplishment = () => {
                 method: 'POST',
                 body: monitorFormData
             })
-
             const monitorResult = await monitorResponse.json()
 
             // 2. Fetch training counts (bothCounts)
             const trainingFormData = new FormData()
             trainingFormData.append('action', 'bothCounts')
-
-            if (activeFilters.campus !== 'all') {
-                trainingFormData.append('type', 'campus')
-                trainingFormData.append('location', activeFilters.campus)
-            } else if (activeFilters.center !== 'all') {
-                trainingFormData.append('type', 'center')
-                trainingFormData.append('location', activeFilters.center)
+            if (filterParams.toString()) {
+                const params = filterParams.toString().split('&')
+                params.forEach(param => {
+                    const [key, value] = param.split('=')
+                    trainingFormData.append(key, value)
+                })
             }
 
             const trainingResponse = await fetch('/summaryAccomplish', {
                 method: 'POST',
                 body: trainingFormData
             })
-
             const trainingResult = await trainingResponse.json()
 
             // 3. Fetch IGP count (igpCount)
             const igpFormData = new FormData()
             igpFormData.append('action', 'igpCount')
-
-            if (activeFilters.campus !== 'all') {
-                igpFormData.append('type', 'campus')
-                igpFormData.append('location', activeFilters.campus)
-            } else if (activeFilters.center !== 'all') {
-                igpFormData.append('type', 'center')
-                igpFormData.append('location', activeFilters.center)
+            if (filterParams.toString()) {
+                const params = filterParams.toString().split('&')
+                params.forEach(param => {
+                    const [key, value] = param.split('=')
+                    igpFormData.append(key, value)
+                })
             }
 
             const igpResponse = await fetch('/summaryAccomplish', {
                 method: 'POST',
                 body: igpFormData
             })
-
             const igpResult = await igpResponse.json()
 
-            // 4. Fetch Participation count with filters
+            // 4. Fetch Participation count (participationCount)
             const participationFormData = new FormData()
             participationFormData.append('action', 'participationCount')
-
-            if (activeFilters.campus !== 'all') {
-                participationFormData.append('type', 'campus')
-                participationFormData.append('location', activeFilters.campus)
-            } else if (activeFilters.center !== 'all') {
-                participationFormData.append('type', 'center')
-                participationFormData.append('location', activeFilters.center)
+            if (filterParams.toString()) {
+                const params = filterParams.toString().split('&')
+                params.forEach(param => {
+                    const [key, value] = param.split('=')
+                    participationFormData.append(key, value)
+                })
             }
 
             const participationResponse = await fetch('/summaryAccomplish', {
                 method: 'POST',
                 body: participationFormData
             })
-
             const participationResult = await participationResponse.json()
 
-            // 5. Build stats
+            // 5. ===== FIX: Fetch Facilities Improvement count (facilitiesCount) =====
+            const facilitiesFormData = new FormData()
+            facilitiesFormData.append('action', 'facilitiesCount')
+            if (filterParams.toString()) {
+                const params = filterParams.toString().split('&')
+                params.forEach(param => {
+                    const [key, value] = param.split('=')
+                    facilitiesFormData.append(key, value)
+                })
+            }
+
+            const facilitiesResponse = await fetch('/summaryAccomplish', {
+                method: 'POST',
+                body: facilitiesFormData
+            })
+            const facilitiesResult = await facilitiesResponse.json()
+
+            // 6. Build stats
             const stats = {}
             statsCards.forEach(card => { stats[card.key] = 0 })
 
@@ -245,15 +265,22 @@ export const SummaryAccomplishment = () => {
                 stats.igpResearch = igpResult.data.igpResearch || 0
             }
 
+            // Stats from participationCount
             if (participationResult.status && participationResult.data) {
                 stats.participationResearch = participationResult.data.participation || 0
             }
 
-            stats.facilitiesImprovement = 0
+            // ===== FIX: Stats from facilitiesCount =====
+            if (facilitiesResult.status && facilitiesResult.data) {
+                stats.facilitiesImprovement = facilitiesResult.data.facilities || 0
+            }
+
+            // Other stats (hardcoded for now - you can add endpoints for these later)
             stats.facultyPresentation = 0
             stats.publicationResearch = 0
             stats.citationsResearch = 0
             stats.ipAssets = 0
+
             updateStatsCards(stats)
 
         } catch (error) {

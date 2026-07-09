@@ -23,7 +23,70 @@ try {
     $filterType = $_POST['type'] ?? $_GET['type'] ?? 'All';
     $filterLocation = $_POST['location'] ?? $_GET['location'] ?? '';
     
-    if ($action === 'bothCounts') {
+    // ========== CONDUCTED TRAININGS COUNT ==========
+    if ($action === 'conductedCount') {
+        $query = "SELECT COUNT(id) as total FROM conducted_trainings WHERE 1=1";
+        $params = [];
+        $types = "";
+        
+        if ($filterType !== 'All' && in_array($filterType, ['campus', 'center'])) {
+            $query .= " AND type = ?";
+            $params[] = $filterType;
+            $types .= "s";
+        }
+        if (!empty($filterLocation) && $filterLocation !== 'All') {
+            $query .= " AND location = ?";
+            $params[] = $filterLocation;
+            $types .= "s";
+        }
+        
+        $stmt = $con->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
+        
+        $response['status'] = true;
+        $response['message'] = 'Conducted trainings count retrieved successfully';
+        $response['data'] = ['conducted' => $count];
+        
+    // ========== ATTENDED TRAININGS COUNT ==========
+    } elseif ($action === 'attendedCount') {
+        $query = "SELECT COUNT(id) as total FROM attended_trainings WHERE 1=1";
+        $params = [];
+        $types = "";
+        
+        if ($filterType !== 'All' && in_array($filterType, ['campus', 'center'])) {
+            $query .= " AND type = ?";
+            $params[] = $filterType;
+            $types .= "s";
+        }
+        if (!empty($filterLocation) && $filterLocation !== 'All') {
+            $query .= " AND location = ?";
+            $params[] = $filterLocation;
+            $types .= "s";
+        }
+        
+        $stmt = $con->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
+        
+        $response['status'] = true;
+        $response['message'] = 'Attended trainings count retrieved successfully';
+        $response['data'] = ['attended' => $count];
+        
+    // ========== BOTH COUNTS (Conducted + Attended) ==========
+    } elseif ($action === 'bothCounts') {
         // Conducted trainings
         $conductedQuery = "SELECT COUNT(id) as total FROM conducted_trainings WHERE 1=1";
         $conductedParams = [];
@@ -80,92 +143,162 @@ try {
         $response['message'] = 'Training counts retrieved successfully';
         $response['data'] = [
             'conducted' => $conductedCount,
-            'attended' => $attendedCount,
-            'filters_applied' => [
-                'type' => $filterType,
-                'location' => $filterLocation
-            ]
+            'attended' => $attendedCount
         ];
         
-    // ========== IGP COUNT ACTION ==========
+    // ========== IGP COUNT ==========
     } elseif ($action === 'igpCount') {
-        $igpQuery = "SELECT COUNT(id) as total FROM igp_research_projects";
-        $igpParams = [];
-        $igpTypes = "";
-        $igpWhere = [];
+        $query = "SELECT COUNT(id) as total FROM igp_research_projects WHERE 1=1";
+        $params = [];
+        $types = "";
         
         if ($filterType !== 'All' && in_array($filterType, ['campus', 'center'])) {
-            $igpWhere[] = "type = ?";
-            $igpParams[] = $filterType;
-            $igpTypes .= "s";
+            $query .= " AND type = ?";
+            $params[] = $filterType;
+            $types .= "s";
         }
-        
         if (!empty($filterLocation) && $filterLocation !== 'All') {
-            $igpWhere[] = "location = ?";
-            $igpParams[] = $filterLocation;
-            $igpTypes .= "s";
+            $query .= " AND location = ?";
+            $params[] = $filterLocation;
+            $types .= "s";
         }
         
-        if (!empty($igpWhere)) {
-            $igpQuery .= " WHERE " . implode(" AND ", $igpWhere);
+        $stmt = $con->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
         }
-        
-        $igpStmt = $con->prepare($igpQuery);
-        if (!empty($igpParams)) {
-            $igpStmt->bind_param($igpTypes, ...$igpParams);
-        }
-        $igpStmt->execute();
-        $igpResult = $igpStmt->get_result();
-        $igpRow = $igpResult->fetch_assoc();
-        $igpCount = (int)($igpRow['total'] ?? 0);
-        $igpStmt->close();
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
         
         $response['status'] = true;
         $response['message'] = 'IGP count retrieved successfully';
-        $response['data'] = [
-            'igpResearch' => $igpCount,
-            'filters_applied' => [
-                'type' => $filterType,
-                'location' => $filterLocation
-            ]
-        ];
+        $response['data'] = ['igpResearch' => $count];
         
-    // ========== FETCH SUMMARY ACTION (without ongoing/completed) ==========
-// ========== FETCH SUMMARY ACTION (without ongoing/completed) ==========
-    } elseif ($action === 'fetch') {
-        // Get IGP Count with filters
-        $igpQuery = "SELECT COUNT(id) as total FROM igp_research_projects";
-        $igpParams = [];
-        $igpTypes = "";
-        $igpWhere = [];
+    // ========== PARTICIPATION COUNT ==========
+    } elseif ($action === 'participationCount') {
+        $query = "SELECT COUNT(id) as total FROM participation_research WHERE 1=1";
+        $params = [];
+        $types = "";
         
         if ($filterType !== 'All' && in_array($filterType, ['campus', 'center'])) {
-            $igpWhere[] = "type = ?";
-            $igpParams[] = $filterType;
-            $igpTypes .= "s";
+            $query .= " AND type = ?";
+            $params[] = $filterType;
+            $types .= "s";
         }
-        
         if (!empty($filterLocation) && $filterLocation !== 'All') {
-            $igpWhere[] = "location = ?";
-            $igpParams[] = $filterLocation;
-            $igpTypes .= "s";
+            $query .= " AND location = ?";
+            $params[] = $filterLocation;
+            $types .= "s";
         }
         
-        if (!empty($igpWhere)) {
-            $igpQuery .= " WHERE " . implode(" AND ", $igpWhere);
+        $stmt = $con->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
+        
+        $response['status'] = true;
+        $response['message'] = 'Participation count retrieved successfully';
+        $response['data'] = ['participation' => $count];
+        
+    // ========== FACILITIES IMPROVEMENT COUNT ==========
+    } elseif ($action === 'facilitiesCount') {
+        $query = "SELECT COUNT(id) as total FROM lab_facility WHERE 1=1";
+        $params = [];
+        $types = "";
+        
+        if ($filterType !== 'All' && in_array($filterType, ['campus', 'center'])) {
+            $query .= " AND type = ?";
+            $params[] = $filterType;
+            $types .= "s";
+        }
+        if (!empty($filterLocation) && $filterLocation !== 'All') {
+            $query .= " AND location = ?";
+            $params[] = $filterLocation;
+            $types .= "s";
         }
         
-        $igpStmt = $con->prepare($igpQuery);
-        if (!empty($igpParams)) {
-            $igpStmt->bind_param($igpTypes, ...$igpParams);
+        $stmt = $con->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
         }
-        $igpStmt->execute();
-        $igpResult = $igpStmt->get_result();
-        $igpRow = $igpResult->fetch_assoc();
-        $igpCount = (int)($igpRow['total'] ?? 0);
-        $igpStmt->close();
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
         
-        // Get Training counts WITH filters
+        $response['status'] = true;
+        $response['message'] = 'Facilities improvement count retrieved successfully';
+        $response['data'] = ['facilities' => $count];
+        
+    // ========== FACULTY PRESENTATIONS COUNT ==========
+    } elseif ($action === 'presentationCount') {
+        $query = "SELECT COUNT(id) as total FROM faculty_presentations";
+        $stmt = $con->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
+        
+        $response['status'] = true;
+        $response['message'] = 'Faculty presentations count retrieved successfully';
+        $response['data'] = ['presentations' => $count];
+        
+    // ========== PUBLICATIONS COUNT ==========
+    } elseif ($action === 'publicationCount') {
+        $query = "SELECT COUNT(id) as total FROM publications";
+        $stmt = $con->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
+        
+        $response['status'] = true;
+        $response['message'] = 'Publications count retrieved successfully';
+        $response['data'] = ['publications' => $count];
+        
+    // ========== CITATIONS COUNT ==========
+    } elseif ($action === 'citationsCount') {
+        $query = "SELECT COUNT(id) as total FROM research_citations";
+        $stmt = $con->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
+        
+        $response['status'] = true;
+        $response['message'] = 'Research citations count retrieved successfully';
+        $response['data'] = ['citations' => $count];
+        
+    // ========== IP ASSETS COUNT ==========
+    } elseif ($action === 'ipAssetsCount') {
+        $query = "SELECT COUNT(id) as total FROM ip_assets";
+        $stmt = $con->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $count = (int)($row['total'] ?? 0);
+        $stmt->close();
+        
+        $response['status'] = true;
+        $response['message'] = 'IP Assets count retrieved successfully';
+        $response['data'] = ['ipAssets' => $count];
+        
+    // ========== FETCH ALL SUMMARY COUNTS ==========
+    } elseif ($action === 'fetch') {
+        // Get all counts from individual queries
+        // Conducted trainings
         $conductedQuery = "SELECT COUNT(id) as total FROM conducted_trainings WHERE 1=1";
         $conductedParams = [];
         $conductedTypes = "";
@@ -191,7 +324,7 @@ try {
         $conductedCount = (int)($conductedRow['total'] ?? 0);
         $conductedStmt->close();
         
-        // Attended trainings WITH filters
+        // Attended trainings
         $attendedQuery = "SELECT COUNT(id) as total FROM attended_trainings WHERE 1=1";
         $attendedParams = [];
         $attendedTypes = "";
@@ -217,7 +350,33 @@ try {
         $attendedCount = (int)($attendedRow['total'] ?? 0);
         $attendedStmt->close();
         
-        // ===== FIX: Get Participation Research Count WITH filters =====
+        // IGP
+        $igpQuery = "SELECT COUNT(id) as total FROM igp_research_projects WHERE 1=1";
+        $igpParams = [];
+        $igpTypes = "";
+        
+        if ($filterType !== 'All' && in_array($filterType, ['campus', 'center'])) {
+            $igpQuery .= " AND type = ?";
+            $igpParams[] = $filterType;
+            $igpTypes .= "s";
+        }
+        if (!empty($filterLocation) && $filterLocation !== 'All') {
+            $igpQuery .= " AND location = ?";
+            $igpParams[] = $filterLocation;
+            $igpTypes .= "s";
+        }
+        
+        $igpStmt = $con->prepare($igpQuery);
+        if (!empty($igpParams)) {
+            $igpStmt->bind_param($igpTypes, ...$igpParams);
+        }
+        $igpStmt->execute();
+        $igpResult = $igpStmt->get_result();
+        $igpRow = $igpResult->fetch_assoc();
+        $igpCount = (int)($igpRow['total'] ?? 0);
+        $igpStmt->close();
+        
+        // Participation
         $participationQuery = "SELECT COUNT(id) as total FROM participation_research WHERE 1=1";
         $participationParams = [];
         $participationTypes = "";
@@ -243,17 +402,33 @@ try {
         $participationCount = (int)($participationRow['total'] ?? 0);
         $participationStmt->close();
         
-        // Get Facilities Improvement Count (add filters if needed)
-        $facilitiesQuery = "SELECT COUNT(id) as total FROM facilities_improvement";
-        // You can add filters here similarly if the table has type/location columns
+        // Facilities
+        $facilitiesQuery = "SELECT COUNT(id) as total FROM lab_facility WHERE 1=1";
+        $facilitiesParams = [];
+        $facilitiesTypes = "";
+        
+        if ($filterType !== 'All' && in_array($filterType, ['campus', 'center'])) {
+            $facilitiesQuery .= " AND type = ?";
+            $facilitiesParams[] = $filterType;
+            $facilitiesTypes .= "s";
+        }
+        if (!empty($filterLocation) && $filterLocation !== 'All') {
+            $facilitiesQuery .= " AND location = ?";
+            $facilitiesParams[] = $filterLocation;
+            $facilitiesTypes .= "s";
+        }
+        
         $facilitiesStmt = $con->prepare($facilitiesQuery);
+        if (!empty($facilitiesParams)) {
+            $facilitiesStmt->bind_param($facilitiesTypes, ...$facilitiesParams);
+        }
         $facilitiesStmt->execute();
         $facilitiesResult = $facilitiesStmt->get_result();
         $facilitiesRow = $facilitiesResult->fetch_assoc();
         $facilitiesCount = (int)($facilitiesRow['total'] ?? 0);
         $facilitiesStmt->close();
         
-        // Get Faculty Presentations Count
+        // Faculty Presentations
         $presentationQuery = "SELECT COUNT(id) as total FROM faculty_presentations";
         $presentationStmt = $con->prepare($presentationQuery);
         $presentationStmt->execute();
@@ -262,7 +437,7 @@ try {
         $presentationCount = (int)($presentationRow['total'] ?? 0);
         $presentationStmt->close();
         
-        // Get Publications Count
+        // Publications
         $publicationQuery = "SELECT COUNT(id) as total FROM publications";
         $publicationStmt = $con->prepare($publicationQuery);
         $publicationStmt->execute();
@@ -271,7 +446,7 @@ try {
         $publicationCount = (int)($publicationRow['total'] ?? 0);
         $publicationStmt->close();
         
-        // Get Research Citations Count
+        // Citations
         $citationsQuery = "SELECT COUNT(id) as total FROM research_citations";
         $citationsStmt = $con->prepare($citationsQuery);
         $citationsStmt->execute();
@@ -280,7 +455,7 @@ try {
         $citationsCount = (int)($citationsRow['total'] ?? 0);
         $citationsStmt->close();
         
-        // Get IP Assets Count
+        // IP Assets
         $ipAssetsQuery = "SELECT COUNT(id) as total FROM ip_assets";
         $ipAssetsStmt = $con->prepare($ipAssetsQuery);
         $ipAssetsStmt->execute();
@@ -290,7 +465,7 @@ try {
         $ipAssetsStmt->close();
         
         $response['status'] = true;
-        $response['message'] = 'Summary data retrieved successfully';
+        $response['message'] = 'All summary data retrieved successfully';
         $response['summary'] = [
             'igpResearch' => $igpCount,
             'conductedResearch' => $conductedCount,
@@ -307,40 +482,8 @@ try {
             'location' => $filterLocation
         ];
         
-    } elseif ($action === 'participationCount') {
-        $participationQuery = "SELECT COUNT(id) as total FROM participation_research WHERE 1=1";
-        $participationParams = [];
-        $participationTypes = "";
-        
-        if ($filterType !== 'All' && in_array($filterType, ['campus', 'center'])) {
-            $participationQuery .= " AND type = ?";
-            $participationParams[] = $filterType;
-            $participationTypes .= "s";
-        }
-        if (!empty($filterLocation) && $filterLocation !== 'All') {
-            $participationQuery .= " AND location = ?";
-            $participationParams[] = $filterLocation;
-            $participationTypes .= "s";
-        }
-        
-        $participationStmt = $con->prepare($participationQuery);
-        if (!empty($participationParams)) {
-            $participationStmt->bind_param($participationTypes, ...$participationParams);
-        }
-        $participationStmt->execute();
-        $participationResult = $participationStmt->get_result();
-        $participationRow = $participationResult->fetch_assoc();
-        $participationCount = (int)($participationRow['total'] ?? 0);
-        $participationStmt->close();
-        
-        $response['status'] = true;
-        $response['message'] = 'Participation count retrieved successfully';
-        $response['data'] = [
-            'participation' => $participationCount,
-        ];
-        
     } else {
-        $response['message'] = 'Invalid action. Available: bothCounts, igpCount, participationCount, fetch';
+        $response['message'] = 'Invalid action. Available actions: conductedCount, attendedCount, bothCounts, igpCount, participationCount, facilitiesCount, presentationCount, publicationCount, citationsCount, ipAssetsCount, fetch';
     }
     
     $con->close();
