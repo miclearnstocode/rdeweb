@@ -1,16 +1,11 @@
 <?php
-// Start output buffering FIRST
 ob_start();
 
-// Check if session is already started before starting it
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// ===== CRITICAL: Check for UNKNOWN username FIRST - BEFORE ANYTHING ELSE =====
-// This runs on EVERY request and immediately destroys invalid sessions
 if (isset($_SESSION['userName']) && $_SESSION['userName'] === 'UNKNOWN') {
-    // Clear invalid session
     $_SESSION = array();
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
@@ -21,14 +16,11 @@ if (isset($_SESSION['userName']) && $_SESSION['userName'] === 'UNKNOWN') {
     }
     session_destroy();
     
-    // Redirect to login immediately
     header('Location: /account/Login');
     exit();
 }
 
-// Also check for empty or null username
 if (!isset($_SESSION['userName']) || empty($_SESSION['userName']) || $_SESSION['userName'] === '') {
-    // Don't set UNKNOWN - just redirect if trying to access protected content
     if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
         strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
         header('Location: /account/Login');
@@ -70,7 +62,6 @@ if(isset($_POST['sessionChecker'])){
         $response->message = 'Invalid session - please login again';
         $response->redirectUrl = '/account/Login';
         
-        // Clear invalid session
         if(isset($_SESSION['login'])) {
             $_SESSION = array();
             if (ini_get("session.use_cookies")) {
@@ -91,7 +82,6 @@ if(isset($_POST['sessionChecker'])){
 }
 
 if(isset($_POST['getUserName'])){
-    // NEVER return 'UNKNOWN' - check and redirect instead
     $hasValidUsername = isset($_SESSION['userName']) && 
                         $_SESSION['userName'] !== 'UNKNOWN' && 
                         $_SESSION['userName'] !== '' &&
@@ -103,7 +93,6 @@ if(isset($_POST['getUserName'])){
             'redirect' => false
         ];
     } else {
-        // Instead of returning 'UNKNOWN', force redirect
         $response = [
             'username' => '',
             'redirect' => true,
@@ -111,7 +100,6 @@ if(isset($_POST['getUserName'])){
             'message' => 'Session invalid - please login'
         ];
         
-        // Clear the invalid session
         if (session_status() === PHP_SESSION_ACTIVE) {
             $_SESSION = array();
             session_destroy();
@@ -124,7 +112,6 @@ if(isset($_POST['getUserName'])){
     exit();
 }
 
-// Default response
 ob_clean();
 echo json_encode([
     'error' => 'Invalid request',

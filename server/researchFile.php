@@ -84,8 +84,6 @@ if (isset($_POST['researchSubmit'])) {
             rf.presenter,
             rf.coauthor,
             rf.drive_view_url,
-            rf.drive_file_id,
-            rf.drive_download_url,
             rf.file as local_file,
             rf.title as research_title,
             rf.event,
@@ -125,13 +123,9 @@ if (isset($_POST['researchSubmit'])) {
             if (!empty($val['drive_view_url'])) {
                 $data->file = $val['drive_view_url']; 
                 $data->file_type = 'drive';
-                $data->drive_file_id = $val['drive_file_id'];
-                $data->drive_download_url = $val['drive_download_url'];
             } else {
                 $data->file = $val['local_file'];
                 $data->file_type = 'local';
-                $data->drive_file_id = null;
-                $data->drive_download_url = null;
             }
 
             $data->title = $val['research_title'];
