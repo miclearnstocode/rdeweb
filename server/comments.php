@@ -155,17 +155,39 @@ if(isset($_POST['commentRequest'])){
     exit();
 }
 
+// FIXED: reqCommentIndiv2 handler with proper error handling
 if(isset($_POST['reqCommentIndiv2'])){
-    $res= new stdClass();
-    $res->name='';
-    $res->data='';
-    $res->isCommented=0;
-    $res->evID=null;
+    $response = new stdClass();
+    $response->name = '';
+    $response->data = '';
+    $response->isCommented = 0;
+    $response->evID = null;
+    $response->status = 'success';
+    $response->message = 'No comments found';
     
-    if ($cons = new mysqli($host, $username, $pass, $dbName)) {
-        $comName = $_POST['comName'];
-        $docId = $_POST['docId'];
+    try {
+        // Check if session exists
+        if (!isset($_SESSION) || session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Check if userId is set in session
+        if (!isset($_SESSION['userId'])) {
+            error_log('userId not set in session');
+            echo json_encode($response);
+            exit();
+        }
+        
+        $comName = $_POST['comName'] ?? '';
+        $docId = $_POST['docId'] ?? '';
         $evalId = $_SESSION['userId'];
+        
+        // Validate inputs
+        if (empty($comName) || empty($docId)) {
+            $response->message = 'Missing required parameters';
+            echo json_encode($response);
+            exit();
+        }
         
         // Map section names to database columns
         $columnMap = [
@@ -186,20 +208,56 @@ if(isset($_POST['reqCommentIndiv2'])){
                      FROM comments 
                      WHERE comments.resid = ? AND comments.evalid = ?";
             
+            $cons = new mysqli($host, $username, $pass, $dbName);
+            
+            if ($cons->connect_error) {
+                error_log('Database connection failed: ' . $cons->connect_error);
+                $response->message = 'Database connection failed';
+                echo json_encode($response);
+                exit();
+            }
+            
             $statement = $cons->prepare($query);
+            
+            if (!$statement) {
+                error_log('Prepare failed: ' . $cons->error);
+                $response->message = 'Query preparation failed';
+                echo json_encode($response);
+                exit();
+            }
+            
             $statement->bind_param("ss", $docId, $evalId);
-            $statement->execute();
+            
+            if (!$statement->execute()) {
+                error_log('Execute failed: ' . $statement->error);
+                $response->message = 'Query execution failed';
+                echo json_encode($response);
+                exit();
+            }
+            
             $result = $statement->get_result();
             
             while ($val = $result->fetch_assoc()) {
-                $res->name = $comName;
-                $res->data = $val['data'];
-                $res->isCommented = $val['isCommented'];
-                $res->evID = $val['evID'];
+                $response->name = $comName;
+                $response->data = $val['data'] ?? '';
+                $response->isCommented = (int)($val['isCommented'] ?? 0);
+                $response->evID = $val['evID'] ?? null;
+                $response->message = 'Comment loaded';
             }
+            
+            $statement->close();
+            $cons->close();
+        } else {
+            $response->message = 'Invalid section name';
         }
+    } catch (Exception $e) {
+        error_log('Exception in reqCommentIndiv2: ' . $e->getMessage());
+        $response->message = 'Server error: ' . $e->getMessage();
+        $response->status = 'error';
     }
-    echo json_encode($res);
+    
+    echo json_encode($response);
+    exit();
 }
 
 //endpoint to update isCommented status
@@ -218,7 +276,7 @@ if(isset($_POST['updateCommentStatus'])){
     }
 }
 
-// Add endpoint to update isScored status
+
 if(isset($_POST['updateScoreStatus'])){
     $docId = $_POST['docId'];
     $evalId = $_SESSION['userId'];
@@ -232,4 +290,13 @@ if(isset($_POST['updateScoreStatus'])){
         
         echo json_encode(['success' => true]);
     }
+}
+
+if(isset($_POST['test_connection'])){
+    $response = new stdClass();
+    $response->status = 'success';
+    $response->session = isset($_SESSION['userId']) ? $_SESSION['userId'] : 'not set';
+    $response->message = 'Connection test successful';
+    echo json_encode($response);
+    exit();
 }

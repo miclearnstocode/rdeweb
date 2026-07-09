@@ -601,32 +601,66 @@ export const CommentBoard = ({ title, docId, closeState }) => {
             }
         });
 
-        // Load saved data
         (async () => {
+            let loading = null
             try {
                 const form = new FormData();
                 form.append('reqCommentIndiv2', '1');
                 form.append('comName', section.id);
                 form.append('docId', docId);
 
-                let loading = Waiting()
+                loading = Waiting()
                 document.body.appendChild(loading)
 
-                const remove = () => {
-                    loading.remove()
+                const res = await fetch('/comments', {
+                    method: 'post',
+                    body: form,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                // Check if response is ok
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
                 }
-                const res = await fetch('/comments', { method: 'post', body: form });
-                const val = await res.json();
-                remove()
+
+                // Check if response has content
+                const text = await res.text();
+                if (!text || text.trim() === '') {
+                    throw new Error('Empty response from server');
+                }
+
+                let val;
+                try {
+                    val = JSON.parse(text);
+                } catch (e) {
+                    console.error('Invalid JSON response:', text);
+                    throw new Error('Invalid JSON response from server');
+                }
+
+                if (loading) loading.remove()
+
                 if (val && val.name) {
                     baseData[val.name] = val.data || '';
                     data[val.name] = val.data || '';
                     contentArea.innerHTML = val.data || '';
                     closeState({ base: { ...baseData }, raw: { ...data } });
+                } else {
+                    // No comments found, set empty state
+                    baseData[section.id] = '';
+                    data[section.id] = '';
+                    contentArea.innerHTML = '';
+                    closeState({ base: { ...baseData }, raw: { ...data } });
                 }
             } catch (error) {
-                remove()
+                if (loading) loading.remove()
                 console.error('Error loading comment:', error);
+                // Set empty state on error
+                baseData[section.id] = '';
+                data[section.id] = '';
+                contentArea.innerHTML = '';
+                closeState({ base: { ...baseData }, raw: { ...data } });
             }
         })();
 

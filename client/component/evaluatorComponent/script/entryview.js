@@ -67,7 +67,7 @@ export const EntryView = ({ docId, title, eventId, centerId }) => {
             tag: 'div',
             style: {
                 width: '90vw',
-                height: '93vh',
+                height: '85vh',
                 backgroundColor: '#ffffff',
                 margin: 'auto',
                 border: '1px solid #e8ecf1',

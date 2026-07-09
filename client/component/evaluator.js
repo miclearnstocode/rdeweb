@@ -168,27 +168,20 @@ export const Evaluator = () => {
     const getBox = (el) => {
         boxBody = el
     }
-
-    // FIXED: Search method that properly handles visibility without breaking layout
     const searchMethod = (ev) => {
         const searchTerm = ev.target.value.trim().toUpperCase()
 
         if (!boxBody) return
 
-        // Get all child nodes (entry cards)
         const children = boxBody.childNodes
 
         children.forEach(val => {
-            // Skip non-element nodes
             if (val.nodeType !== 1) return
 
-            // Get all text content from the card for searching
             const textContent = val.textContent?.toUpperCase() || ''
 
-            // Show/hide based on search term
             if (searchTerm === '' || textContent.includes(searchTerm)) {
                 val.style.display = ''
-                // Reset any inline styles that might have been applied
                 val.style.visibility = ''
                 val.style.opacity = ''
             } else {
