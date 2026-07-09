@@ -1767,7 +1767,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }),
                 $({
                     tag: 'span',
-                    text: 'Certificate of Title Change',
+                    text: 'Certificate of Title Change (Optional)',
                     style: { color: '#1a2a3a', fontSize: '16px', fontWeight: '600' }
                 })
             ]
@@ -1789,10 +1789,9 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         })
 
         const uploadElement = DragDropUpload({
-            label: 'Certificate of Title Change',
             accept: '.pdf',
             multiple: false,
-            required: true,
+            required: false,
             maxSizeMB: 10,
             description: 'Upload the certificate of title change (PDF only)',
             onFileSelect: async (files, allFiles) => {
@@ -1843,10 +1842,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             if (formData.title_changed) {
                 if (!formData.new_title || formData.new_title.trim() === '') {
                     ConfirmationAlert('Please enter the new research title for the Symposium', () => { })
-                    return false
-                }
-                if (!formData.title_certificate_file) {
-                    ConfirmationAlert('Please upload the Certificate of Title Change', () => { })
                     return false
                 }
             }
