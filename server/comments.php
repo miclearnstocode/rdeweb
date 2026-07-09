@@ -69,21 +69,22 @@ if(isset($_POST['commentRequest..'])){
         $result=$statement->get_result();
         while ($val=$result->fetch_assoc()){
             $data=new stdClass();
-            $data->intro=$val['intro'];
-            $data->abstract=$val['abstract'];
-            $data->objective=$val['objective'];
-            $data->methodology=$val['methodology'];
-            $data->results=$val['results'];
-            $data->recommendation=$val['recommendation'];
-            $data->literature=$val['literature'];
-            $data->other=$val['other'];
-            $data->isCommented=$val['isCommented'];
-            $data->fullname=$val['fullname'];
-            $data->category=$val['category'];
+            $data->intro = $val['intro'] ?? '';
+            $data->abstract = $val['abstract'] ?? '';
+            $data->objective = $val['objective'] ?? '';
+            $data->methodology = $val['methodology'] ?? '';
+            $data->results = $val['results'] ?? '';
+            $data->recommendation = $val['recommendation'] ?? '';
+            $data->literature = $val['literature'] ?? '';
+            $data->other = $val['other'] ?? '';
+            $data->isCommented = $val['isCommented'] ?? 0;
+            $data->fullname = $val['fullname'] ?? '';
+            $data->category = $val['category'] ?? '';
             $response[]=$data;
         }
     }
     echo json_encode($response);
+    exit();
 }
 
 if(isset($_POST['commentRequest'])){
@@ -97,7 +98,6 @@ if(isset($_POST['commentRequest'])){
     $response = [];
     
     if($con){
-        // Query to get comments for a specific document
         $query = "SELECT
             comments.intro,
             comments.abstract,
@@ -124,7 +124,6 @@ if(isset($_POST['commentRequest'])){
             $statement->execute();
             $result = $statement->get_result();
             
-            // Structure the response to match what the frontend expects
             $commentsList = [];
             while ($val = $result->fetch_assoc()){
                 $data = new stdClass();
@@ -145,7 +144,6 @@ if(isset($_POST['commentRequest'])){
                 $commentsList[] = $data;
             }
             
-            // Return in the format expected by the frontend's Print function
             $response = $commentsList;
             $statement->close();
         }
@@ -155,7 +153,7 @@ if(isset($_POST['commentRequest'])){
     exit();
 }
 
-// FIXED: reqCommentIndiv2 handler with proper error handling
+// FIXED: reqCommentIndiv2 handler - returns HTML content as-is
 if(isset($_POST['reqCommentIndiv2'])){
     $response = new stdClass();
     $response->name = '';
@@ -239,6 +237,7 @@ if(isset($_POST['reqCommentIndiv2'])){
             
             while ($val = $result->fetch_assoc()) {
                 $response->name = $comName;
+                // Return the data as-is (with HTML tags) - the frontend will render it
                 $response->data = $val['data'] ?? '';
                 $response->isCommented = (int)($val['isCommented'] ?? 0);
                 $response->evID = $val['evID'] ?? null;
@@ -276,7 +275,7 @@ if(isset($_POST['updateCommentStatus'])){
     }
 }
 
-
+// Add endpoint to update isScored status
 if(isset($_POST['updateScoreStatus'])){
     $docId = $_POST['docId'];
     $evalId = $_SESSION['userId'];
@@ -292,6 +291,7 @@ if(isset($_POST['updateScoreStatus'])){
     }
 }
 
+// Add a debug endpoint
 if(isset($_POST['test_connection'])){
     $response = new stdClass();
     $response->status = 'success';

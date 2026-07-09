@@ -601,6 +601,7 @@ export const CommentBoard = ({ title, docId, closeState }) => {
             }
         });
 
+        // Load saved data - FIXED to properly render HTML content
         (async () => {
             let loading = null
             try {
@@ -620,12 +621,10 @@ export const CommentBoard = ({ title, docId, closeState }) => {
                     }
                 });
 
-                // Check if response is ok
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
 
-                // Check if response has content
                 const text = await res.text();
                 if (!text || text.trim() === '') {
                     throw new Error('Empty response from server');
@@ -644,6 +643,7 @@ export const CommentBoard = ({ title, docId, closeState }) => {
                 if (val && val.name) {
                     baseData[val.name] = val.data || '';
                     data[val.name] = val.data || '';
+                    // IMPORTANT: Use innerHTML to render HTML tags
                     contentArea.innerHTML = val.data || '';
                     closeState({ base: { ...baseData }, raw: { ...data } });
                 } else {
