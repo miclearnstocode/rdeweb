@@ -29,7 +29,19 @@ export const facultyPresentation = () => {
         international: 0
     }
 
-    // Campus options
+    let paperTrailFiles = {
+        presentationSlides: [],
+        certificate: [],
+        photoDocumentation: []
+    }
+
+    let existingFiles = {
+        presentationSlides: [],
+        certificate: [],
+        photoDocumentation: []
+    }
+
+    let researchersData = []
     const campuses = [
         'All Campuses',
         'Roxas City Main',
@@ -43,7 +55,6 @@ export const facultyPresentation = () => {
         'Dayao'
     ]
 
-    // Center options
     const centers = [
         'All Centers',
         'Crop Science Research & Development Center (CSRDC)',
@@ -56,7 +67,6 @@ export const facultyPresentation = () => {
         'Extension'
     ]
 
-    // Scope options
     const scopes = [
         'All Scopes',
         'Local',
@@ -66,7 +76,6 @@ export const facultyPresentation = () => {
         'International'
     ]
 
-    // Award options
     const awardOptions = [
         'None',
         'Best Paper',
@@ -270,9 +279,9 @@ export const facultyPresentation = () => {
         tableBody.innerHTML = ''
 
         // Get the actual column count from the table header
-        const headerRow = document.querySelector('.presentations-container thead tr')
-        let columnCount = 1 // Default fallback
-        
+        const headerRow = document.querySelector('.presentations-research-container thead tr')
+        let columnCount = 1
+
         if (headerRow) {
             const headerCells = headerRow.querySelectorAll('th')
             if (headerCells.length > 0) {
@@ -283,12 +292,13 @@ export const facultyPresentation = () => {
         const emptyState = $({
             tag: 'tr',
             style: {
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                width: '100%'
             },
             child: [
                 $({
                     tag: 'td',
-                    att: { 
+                    att: {
                         colSpan: columnCount,
                         align: 'center'
                     },
@@ -298,8 +308,7 @@ export const facultyPresentation = () => {
                         backgroundColor: '#ffffff',
                         textAlign: 'center',
                         verticalAlign: 'middle',
-                        height: '400px',
-                        width: '100%'
+                        height: '400px'
                     },
                     child: [
                         $({
@@ -317,11 +326,7 @@ export const facultyPresentation = () => {
                                 backgroundColor: '#f8f9fa',
                                 borderRadius: '16px',
                                 border: '2px dashed #e8eaed',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)'
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                             },
                             child: [
                                 $({
@@ -453,49 +458,49 @@ export const facultyPresentation = () => {
         if (!scope || scope === '—') return '—'
 
         const scopeColors = {
-            'Local': { 
-                bg: '#e8f5e9', 
-                color: '#2d7d46', 
-                border: '#a5d6a7', 
+            'Local': {
+                bg: '#e8f5e9',
+                color: '#2d7d46',
+                border: '#a5d6a7',
                 hoverBg: '#c8e6c9',
-                icon: 'fa-map-pin' 
+                icon: 'fa-map-pin'
             },
-            'Institutional': { 
-                bg: '#e8f0fe', 
-                color: '#0d47a1', 
-                border: '#90caf9', 
+            'Institutional': {
+                bg: '#e8f0fe',
+                color: '#0d47a1',
+                border: '#90caf9',
                 hoverBg: '#bbdefb',
-                icon: 'fa-building-columns' 
+                icon: 'fa-building-columns'
             },
-            'Regional': { 
-                bg: '#fff8e1', 
-                color: '#cc7b00', 
-                border: '#ffe082', 
+            'Regional': {
+                bg: '#fff8e1',
+                color: '#cc7b00',
+                border: '#ffe082',
                 hoverBg: '#ffecb3',
-                icon: 'fa-map' 
+                icon: 'fa-map'
             },
-            'National': { 
-                bg: '#f5f0ff', 
-                color: '#7c3aed', 
-                border: '#dcc8ff', 
+            'National': {
+                bg: '#f5f0ff',
+                color: '#7c3aed',
+                border: '#dcc8ff',
                 hoverBg: '#ede8fd',
-                icon: 'fa-flag' 
+                icon: 'fa-flag'
             },
-            'International': { 
-                bg: '#fce8e6', 
-                color: '#c62828', 
-                border: '#ef9a9a', 
+            'International': {
+                bg: '#fce8e6',
+                color: '#c62828',
+                border: '#ef9a9a',
                 hoverBg: '#ffcdd2',
-                icon: 'fa-globe' 
+                icon: 'fa-globe'
             }
         }
 
-        const colors = scopeColors[scope] || { 
-            bg: '#f1f3f4', 
-            color: '#5f6368', 
-            border: '#dadce0', 
+        const colors = scopeColors[scope] || {
+            bg: '#f1f3f4',
+            color: '#5f6368',
+            border: '#dadce0',
             hoverBg: '#e8eaed',
-            icon: 'fa-circle' 
+            icon: 'fa-circle'
         }
 
         return $({
@@ -536,7 +541,7 @@ export const facultyPresentation = () => {
                         $({
                             tag: 'span',
                             att: { className: `fa-solid ${colors.icon}` },
-                            style: { 
+                            style: {
                                 fontSize: '11px',
                                 color: colors.color,
                                 transition: 'all 0.25s ease'
@@ -544,8 +549,8 @@ export const facultyPresentation = () => {
                         })
                     ]
                 }),
-                $({ 
-                    tag: 'span', 
+                $({
+                    tag: 'span',
                     text: scope,
                     style: {
                         fontWeight: '600'
@@ -559,14 +564,14 @@ export const facultyPresentation = () => {
                     badge.style.transform = 'translateY(-2px)'
                     badge.style.boxShadow = `0 4px 16px ${colors.color}25`
                     badge.style.borderColor = colors.color
-                    
+
                     // Animate the icon circle
                     const iconCircle = badge.querySelector('span:first-child')
                     if (iconCircle) {
                         iconCircle.style.backgroundColor = colors.hoverBg
                         iconCircle.style.transform = 'scale(1.1)'
                     }
-                    
+
                     // Animate the icon
                     const icon = badge.querySelector('.fa-solid')
                     if (icon) {
@@ -579,13 +584,13 @@ export const facultyPresentation = () => {
                     badge.style.transform = 'translateY(0)'
                     badge.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
                     badge.style.borderColor = colors.border
-                    
+
                     const iconCircle = badge.querySelector('span:first-child')
                     if (iconCircle) {
                         iconCircle.style.backgroundColor = colors.bg
                         iconCircle.style.transform = 'scale(1)'
                     }
-                    
+
                     const icon = badge.querySelector('.fa-solid')
                     if (icon) {
                         icon.style.transform = 'scale(1)'
@@ -599,38 +604,38 @@ export const facultyPresentation = () => {
         if (!award || award === '—' || award === 'None') return '—'
 
         const awardColors = {
-            'Best Paper': { 
-                bg: '#fff8e1', 
-                color: '#f9a825', 
-                border: '#ffe082', 
+            'Best Paper': {
+                bg: '#fff8e1',
+                color: '#f9a825',
+                border: '#ffe082',
                 hoverBg: '#ffecb3',
                 icon: 'fa-award'
             },
-            'Best Presenter': { 
-                bg: '#e8f8fa', 
-                color: '#00838f', 
-                border: '#b2ebf2', 
+            'Best Presenter': {
+                bg: '#e8f8fa',
+                color: '#00838f',
+                border: '#b2ebf2',
                 hoverBg: '#b2ebf2',
                 icon: 'fa-microphone'
             },
-            '1st Place': { 
-                bg: '#fff8e1', 
-                color: '#f9a825', 
-                border: '#ffd54f', 
+            '1st Place': {
+                bg: '#fff8e1',
+                color: '#f9a825',
+                border: '#ffd54f',
                 hoverBg: '#ffe082',
                 icon: 'fa-medal'
             },
-            '2nd Place': { 
-                bg: '#f5f5f5', 
-                color: '#78909c', 
-                border: '#cfd8dc', 
+            '2nd Place': {
+                bg: '#f5f5f5',
+                color: '#78909c',
+                border: '#cfd8dc',
                 hoverBg: '#e0e0e0',
                 icon: 'fa-medal'
             },
-            '3rd Place': { 
-                bg: '#fbe9e7', 
-                color: '#bf6a30', 
-                border: '#ffab91', 
+            '3rd Place': {
+                bg: '#fbe9e7',
+                color: '#bf6a30',
+                border: '#ffab91',
                 hoverBg: '#ffccbc',
                 icon: 'fa-medal'
             },
@@ -650,12 +655,12 @@ export const facultyPresentation = () => {
             }
         }
 
-        const colors = awardColors[award] || { 
-            bg: '#f1f3f4', 
-            color: '#5f6368', 
-            border: '#dadce0', 
+        const colors = awardColors[award] || {
+            bg: '#f1f3f4',
+            color: '#5f6368',
+            border: '#dadce0',
             hoverBg: '#e8eaed',
-            icon: 'fa-trophy' 
+            icon: 'fa-trophy'
         }
 
         return $({
@@ -695,7 +700,7 @@ export const facultyPresentation = () => {
                         $({
                             tag: 'span',
                             att: { className: `fa-solid ${colors.icon}` },
-                            style: { 
+                            style: {
                                 fontSize: '11px',
                                 color: colors.color,
                                 transition: 'all 0.25s ease'
@@ -703,8 +708,8 @@ export const facultyPresentation = () => {
                         })
                     ]
                 }),
-                $({ 
-                    tag: 'span', 
+                $({
+                    tag: 'span',
                     text: award,
                     style: {
                         fontWeight: '600'
@@ -718,14 +723,14 @@ export const facultyPresentation = () => {
                     badge.style.transform = 'translateY(-2px)'
                     badge.style.boxShadow = `0 4px 16px ${colors.color}25`
                     badge.style.borderColor = colors.color
-                    
+
                     // Animate the icon circle
                     const iconCircle = badge.querySelector('span:first-child')
                     if (iconCircle) {
                         iconCircle.style.backgroundColor = colors.hoverBg
                         iconCircle.style.transform = 'scale(1.1)'
                     }
-                    
+
                     // Animate the icon
                     const icon = badge.querySelector('.fa-solid')
                     if (icon) {
@@ -738,13 +743,13 @@ export const facultyPresentation = () => {
                     badge.style.transform = 'translateY(0)'
                     badge.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'
                     badge.style.borderColor = colors.border
-                    
+
                     const iconCircle = badge.querySelector('span:first-child')
                     if (iconCircle) {
                         iconCircle.style.backgroundColor = colors.bg
                         iconCircle.style.transform = 'scale(1)'
                     }
-                    
+
                     const icon = badge.querySelector('.fa-solid')
                     if (icon) {
                         icon.style.transform = 'scale(1)'
@@ -974,26 +979,26 @@ export const facultyPresentation = () => {
         }
 
         const attachmentTypes = [
-            { 
-                key: 'presentationSlides', 
-                label: 'Slides', 
-                icon: 'fa-solid fa-file-powerpoint', 
+            {
+                key: 'presentationSlides',
+                label: 'Slides',
+                icon: 'fa-solid fa-file-powerpoint',
                 color: '#d24726',
                 bg: '#fbe9e7',
                 border: '#ffab91'
             },
-            { 
-                key: 'certificate', 
-                label: 'Certificate', 
-                icon: 'fa-solid fa-certificate', 
+            {
+                key: 'certificate',
+                label: 'Certificate',
+                icon: 'fa-solid fa-certificate',
                 color: '#1a73e8',
                 bg: '#e8f0fe',
                 border: '#90caf9'
             },
-            { 
-                key: 'photoDocumentation', 
-                label: 'Photos', 
-                icon: 'fa-solid fa-images', 
+            {
+                key: 'photoDocumentation',
+                label: 'Photos',
+                icon: 'fa-solid fa-images',
                 color: '#34a853',
                 bg: '#e6f4ea',
                 border: '#a5d6a7'
@@ -1011,10 +1016,10 @@ export const facultyPresentation = () => {
                 .filter(type => linkData[type.key] && linkData[type.key].length > 0)
                 .map((type) => {
                     const urls = Array.isArray(linkData[type.key]) ? linkData[type.key] : [linkData[type.key]]
-                    
+
                     return urls.map((url, idx) => {
                         const fileName = url.split('/').pop() || `${type.label} ${idx + 1}`
-                        
+
                         return $({
                             tag: 'a',
                             att: {
@@ -1421,7 +1426,7 @@ export const facultyPresentation = () => {
                     // Add subtle highlight effect to all cells
                     const cells = row.querySelectorAll('td')
                     cells.forEach(cell => {
-                        if (!cell.style.backgroundColor.includes('#faf5ff') && 
+                        if (!cell.style.backgroundColor.includes('#faf5ff') &&
                             !cell.style.backgroundColor.includes('#f8f9fa')) {
                             cell.style.backgroundColor = '#f8f9fa'
                         }
@@ -1478,7 +1483,7 @@ export const facultyPresentation = () => {
                         $({
                             tag: 'span',
                             att: { className: 'fa-solid fa-pen' },
-                            style: { 
+                            style: {
                                 fontSize: '13px',
                                 transition: 'all 0.2s ease'
                             }
@@ -1540,7 +1545,7 @@ export const facultyPresentation = () => {
                         $({
                             tag: 'span',
                             att: { className: 'fa-solid fa-trash' },
-                            style: { 
+                            style: {
                                 fontSize: '13px',
                                 transition: 'all 0.2s ease'
                             }
@@ -1607,7 +1612,7 @@ export const facultyPresentation = () => {
             formData.append('action', 'delete_presentation')
             formData.append('id', item.id)
 
-            const response = await fetch('/api/presentations-research', {
+            const response = await fetch('/presentationResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -1635,30 +1640,24 @@ export const facultyPresentation = () => {
 
         const isEditing = item !== null
 
-        // Paper trail files state
-        let paperTrailFiles = {
-            presentationSlides: [],
-            certificate: [],
-            photoDocumentation: []
-        }
-        
-        // Existing files for display
-        let existingFiles = {
-            presentationSlides: [],
-            certificate: [],
-            photoDocumentation: []
+        if (isEditing && item.researchers) {
+            try {
+                researchersData = typeof item.researchers === 'string' ? JSON.parse(item.researchers) : item.researchers
+                if (!Array.isArray(researchersData)) researchersData = []
+            } catch (e) {
+                researchersData = []
+            }
         }
 
+        // Parse existing paper trail links from database
         if (isEditing && item.paperTrailLinks) {
             try {
                 const links = typeof item.paperTrailLinks === 'string' ? JSON.parse(item.paperTrailLinks) : item.paperTrailLinks
                 if (typeof links === 'object' && !Array.isArray(links)) {
-                    // New format with separate sections
                     existingFiles.presentationSlides = links.presentationSlides || []
                     existingFiles.certificate = links.certificate || []
                     existingFiles.photoDocumentation = links.photoDocumentation || []
                 } else if (Array.isArray(links)) {
-                    // Legacy format - convert to new format
                     links.forEach(link => {
                         if (link.label && link.url) {
                             if (link.label === 'Presentation Slides') {
@@ -1676,14 +1675,23 @@ export const facultyPresentation = () => {
             }
         }
 
-        // Researchers state
-        let researchers = []
-        if (isEditing && item.researchers) {
-            try {
-                researchers = typeof item.researchers === 'string' ? JSON.parse(item.researchers) : item.researchers
-                if (!Array.isArray(researchers)) researchers = []
-            } catch (e) {
-                researchers = []
+        // Also check the direct database fields for existing files
+        if (isEditing) {
+            if (item.presentationDriveViewUrl) {
+                existingFiles.presentationSlides = [item.presentationDriveViewUrl]
+            }
+            if (item.certificateDriveViewUrl) {
+                existingFiles.certificate = [item.certificateDriveViewUrl]
+            }
+            if (item.eventPhotosDriveViewUrl) {
+                try {
+                    const photos = JSON.parse(item.eventPhotosDriveViewUrl)
+                    if (Array.isArray(photos)) {
+                        existingFiles.photoDocumentation = photos
+                    }
+                } catch (e) {
+                    existingFiles.photoDocumentation = [item.eventPhotosDriveViewUrl]
+                }
             }
         }
 
@@ -1692,8 +1700,8 @@ export const facultyPresentation = () => {
 
         // Function to add a researcher field
         const addResearcherField = (name = '') => {
-            const researcherIndex = researchers.length
-            researchers.push({ name })
+            const researcherIndex = researchersData.length
+            researchersData.push({ name })
 
             const researcherRow = $({
                 tag: 'div',
@@ -1740,8 +1748,9 @@ export const facultyPresentation = () => {
                             },
                             type3: 'input',
                             method3: (e) => {
-                                if (researchers[researcherIndex]) {
-                                    researchers[researcherIndex].name = e.target.value
+                                const index = parseInt(e.currentTarget.closest('.researcher-row').dataset.researcherIndex)
+                                if (!isNaN(index) && researchersData[index]) {
+                                    researchersData[index].name = e.target.value
                                 }
                             }
                         }
@@ -1775,7 +1784,13 @@ export const facultyPresentation = () => {
                         event: {
                             type: 'click',
                             method: () => {
-                                researchers.splice(researcherIndex, 1)
+                                const index = parseInt(researcherRow.dataset.researcherIndex)
+                                if (!isNaN(index)) {
+                                    researchersData.splice(index, 1)
+                                    document.querySelectorAll('.researcher-row').forEach((row, idx) => {
+                                        row.dataset.researcherIndex = idx
+                                    })
+                                }
                                 researcherRow.remove()
                             },
                             type2: 'mouseenter',
@@ -1886,13 +1901,13 @@ export const facultyPresentation = () => {
                     })
                 ]
             })
-            
+
             // Remove empty message if it exists
             const emptyMessage = container.querySelector('div[style*="gridColumn: 1 / -1"]')
             if (emptyMessage) {
                 emptyMessage.remove()
             }
-            
+
             container.appendChild(preview)
         }
 
@@ -1900,9 +1915,9 @@ export const facultyPresentation = () => {
         const updatePhotoContainer = () => {
             const container = document.getElementById('photos-preview-container')
             if (!container) return
-            
+
             const totalPhotos = paperTrailFiles.photoDocumentation.length + existingFiles.photoDocumentation.length
-            
+
             if (totalPhotos === 0) {
                 container.innerHTML = ''
                 const emptyMessage = $({
@@ -1918,7 +1933,7 @@ export const facultyPresentation = () => {
                 })
                 container.appendChild(emptyMessage)
             }
-            
+
             // Update photo count
             const photoCount = document.getElementById('photo-count')
             if (photoCount) {
@@ -2377,12 +2392,18 @@ export const facultyPresentation = () => {
                                                     },
                                                     elementHandler: (el) => {
                                                         researchersContainer = el
-                                                        if (isEditing && researchers.length > 0) {
-                                                            researchers.forEach(researcher => {
-                                                                researchersContainer.appendChild(
-                                                                    addResearcherField(researcher.name)
-                                                                )
+                                                        // ===== FIX: Properly populate researchers when editing =====
+                                                        if (isEditing && researchersData.length > 0) {
+                                                            researchersData.forEach(researcher => {
+                                                                if (researcher.name) {
+                                                                    researchersContainer.appendChild(
+                                                                        addResearcherField(researcher.name)
+                                                                    )
+                                                                }
                                                             })
+                                                        } else if (!isEditing && researchersData.length === 0) {
+                                                            // Add one empty field by default for new records
+                                                            researchersContainer.appendChild(addResearcherField(''))
                                                         }
                                                     }
                                                 })
@@ -2766,7 +2787,7 @@ export const facultyPresentation = () => {
                                         // Paper Trail Links - Two Column Grid Layout
                                         $({
                                             tag: 'div',
-                                            style: { 
+                                            style: {
                                                 marginBottom: '24px',
                                                 display: 'grid',
                                                 gridTemplateColumns: '1fr 1fr',
@@ -2842,6 +2863,7 @@ export const facultyPresentation = () => {
                                                                 })
                                                             ]
                                                         }),
+                                                        // Hidden file input
                                                         $({
                                                             tag: 'input',
                                                             att: {
@@ -2855,19 +2877,46 @@ export const facultyPresentation = () => {
                                                                 method: (e) => {
                                                                     const file = e.target.files[0]
                                                                     if (file) {
-                                                                        paperTrailFiles.presentationSlides.push(file)
-                                                                        showNotification(`"${file.name}" selected for upload`, 'info')
-                                                                        // Update the file name display
+                                                                        // Store the file
+                                                                        paperTrailFiles.presentationSlides = [file]
+
+                                                                        // Update the file name display - find the element
                                                                         const fileNameDisplay = document.getElementById('slides-file-name')
                                                                         if (fileNameDisplay) {
                                                                             fileNameDisplay.textContent = file.name
                                                                             fileNameDisplay.style.color = '#1e8e3e'
+                                                                            fileNameDisplay.style.fontWeight = '500'
+                                                                            fileNameDisplay.style.fontStyle = 'normal'
+
+                                                                            // Add checkmark to parent container
+                                                                            const parentDiv = fileNameDisplay.closest('div')
+                                                                            if (parentDiv) {
+                                                                                // Remove old checkmark if exists
+                                                                                const oldCheckmark = parentDiv.querySelector('.upload-checkmark')
+                                                                                if (oldCheckmark) oldCheckmark.remove()
+
+                                                                                // Add new checkmark
+                                                                                const checkmark = $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'upload-checkmark' },
+                                                                                    text: ' ✓',
+                                                                                    style: {
+                                                                                        color: '#34a853',
+                                                                                        fontWeight: 'bold',
+                                                                                        fontSize: '14px'
+                                                                                    }
+                                                                                })
+                                                                                parentDiv.appendChild(checkmark)
+                                                                            }
                                                                         }
+
+                                                                        showNotification(`"${file.name}" selected for upload`, 'info')
                                                                     }
-                                                                    e.target.value = ''
+                                                                    e.target.value = '' // Reset input
                                                                 }
                                                             }
                                                         }),
+                                                        // Choose File button
                                                         $({
                                                             tag: 'div',
                                                             style: {
@@ -2923,6 +2972,7 @@ export const facultyPresentation = () => {
                                                                         }
                                                                     }
                                                                 }),
+                                                                // View button for existing files
                                                                 ...(isEditing && existingFiles.presentationSlides.length > 0 ? [
                                                                     $({
                                                                         tag: 'a',
@@ -2969,61 +3019,66 @@ export const facultyPresentation = () => {
                                                                 ] : [])
                                                             ]
                                                         }),
-                                                        ...(isEditing && existingFiles.presentationSlides.length > 0 ? [
-                                                            $({
-                                                                tag: 'div',
-                                                                style: {
-                                                                    marginTop: '8px',
-                                                                    padding: '6px 10px',
-                                                                    backgroundColor: '#f8f9fa',
-                                                                    borderRadius: '6px',
-                                                                    border: '1px solid #e8eaed',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '6px'
-                                                                },
-                                                                child: [
-                                                                    $({
-                                                                        tag: 'span',
-                                                                        att: { className: 'fa-solid fa-file' },
-                                                                        style: { fontSize: '11px', color: '#d24726' }
-                                                                    }),
-                                                                    $({
-                                                                        tag: 'span',
-                                                                        id: 'slides-file-name',
-                                                                        text: existingFiles.presentationSlides[0].split('/').pop() || 'Current file',
-                                                                        style: {
-                                                                            fontSize: '11px',
-                                                                            color: '#202124',
-                                                                            flex: '1',
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            whiteSpace: 'nowrap'
+                                                        // File name display - always render this element with dynamic ID
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                marginTop: '8px',
+                                                                padding: '6px 10px',
+                                                                backgroundColor: '#f8f9fa',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #e8eaed',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                minHeight: '32px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-file' },
+                                                                    style: {
+                                                                        fontSize: '11px',
+                                                                        color: paperTrailFiles.presentationSlides.length > 0 || existingFiles.presentationSlides.length > 0 ? '#d24726' : '#9aa0a6'
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { id: 'slides-file-name' },
+                                                                    text: (() => {
+                                                                        if (paperTrailFiles.presentationSlides.length > 0) {
+                                                                            return paperTrailFiles.presentationSlides[0].name
+                                                                        } else if (isEditing && existingFiles.presentationSlides.length > 0) {
+                                                                            return existingFiles.presentationSlides[0].split('/').pop() || 'Current file'
                                                                         }
-                                                                    }),
+                                                                        return 'No file selected'
+                                                                    })(),
+                                                                    style: {
+                                                                        fontSize: '11px',
+                                                                        color: (paperTrailFiles.presentationSlides.length > 0 || (isEditing && existingFiles.presentationSlides.length > 0)) ? '#1e8e3e' : '#9aa0a6',
+                                                                        flex: '1',
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        fontWeight: (paperTrailFiles.presentationSlides.length > 0 || (isEditing && existingFiles.presentationSlides.length > 0)) ? '500' : '400',
+                                                                        fontStyle: (paperTrailFiles.presentationSlides.length > 0 || (isEditing && existingFiles.presentationSlides.length > 0)) ? 'normal' : 'italic'
+                                                                    }
+                                                                }),
+                                                                // Checkmark indicator
+                                                                ...((paperTrailFiles.presentationSlides.length > 0 || (isEditing && existingFiles.presentationSlides.length > 0)) ? [
                                                                     $({
                                                                         tag: 'span',
-                                                                        text: '✓',
+                                                                        att: { className: 'upload-checkmark' },
+                                                                        text: ' ✓',
                                                                         style: {
-                                                                            fontSize: '12px',
-                                                                            color: '#34a853'
+                                                                            color: '#34a853',
+                                                                            fontWeight: 'bold',
+                                                                            fontSize: '14px'
                                                                         }
                                                                     })
-                                                                ]
-                                                            })
-                                                        ] : [
-                                                            $({
-                                                                tag: 'div',
-                                                                id: 'slides-file-name',
-                                                                style: {
-                                                                    marginTop: '8px',
-                                                                    fontSize: '11px',
-                                                                    color: '#9aa0a6',
-                                                                    fontStyle: 'italic'
-                                                                },
-                                                                text: 'No file selected'
-                                                            })
-                                                        ])
+                                                                ] : [])
+                                                            ]
+                                                        })
                                                     ]
                                                 }),
 
@@ -3096,6 +3151,7 @@ export const facultyPresentation = () => {
                                                                 })
                                                             ]
                                                         }),
+                                                        // Hidden file input
                                                         $({
                                                             tag: 'input',
                                                             att: {
@@ -3109,18 +3165,44 @@ export const facultyPresentation = () => {
                                                                 method: (e) => {
                                                                     const file = e.target.files[0]
                                                                     if (file) {
-                                                                        paperTrailFiles.certificate.push(file)
-                                                                        showNotification(`"${file.name}" selected for upload`, 'info')
+                                                                        // Store the file
+                                                                        paperTrailFiles.certificate = [file]
+
+                                                                        // Update the file name display
                                                                         const fileNameDisplay = document.getElementById('certificate-file-name')
                                                                         if (fileNameDisplay) {
                                                                             fileNameDisplay.textContent = file.name
                                                                             fileNameDisplay.style.color = '#1e8e3e'
+                                                                            fileNameDisplay.style.fontWeight = '500'
+                                                                            fileNameDisplay.style.fontStyle = 'normal'
+
+                                                                            // Add checkmark to parent container
+                                                                            const parentDiv = fileNameDisplay.closest('div')
+                                                                            if (parentDiv) {
+                                                                                const oldCheckmark = parentDiv.querySelector('.upload-checkmark')
+                                                                                if (oldCheckmark) oldCheckmark.remove()
+
+                                                                                const checkmark = $({
+                                                                                    tag: 'span',
+                                                                                    att: { className: 'upload-checkmark' },
+                                                                                    text: ' ✓',
+                                                                                    style: {
+                                                                                        color: '#34a853',
+                                                                                        fontWeight: 'bold',
+                                                                                        fontSize: '14px'
+                                                                                    }
+                                                                                })
+                                                                                parentDiv.appendChild(checkmark)
+                                                                            }
                                                                         }
+
+                                                                        showNotification(`"${file.name}" selected for upload`, 'info')
                                                                     }
-                                                                    e.target.value = ''
+                                                                    e.target.value = '' // Reset input
                                                                 }
                                                             }
                                                         }),
+                                                        // Choose File button
                                                         $({
                                                             tag: 'div',
                                                             style: {
@@ -3176,6 +3258,7 @@ export const facultyPresentation = () => {
                                                                         }
                                                                     }
                                                                 }),
+                                                                // View button for existing files
                                                                 ...(isEditing && existingFiles.certificate.length > 0 ? [
                                                                     $({
                                                                         tag: 'a',
@@ -3222,61 +3305,66 @@ export const facultyPresentation = () => {
                                                                 ] : [])
                                                             ]
                                                         }),
-                                                        ...(isEditing && existingFiles.certificate.length > 0 ? [
-                                                            $({
-                                                                tag: 'div',
-                                                                style: {
-                                                                    marginTop: '8px',
-                                                                    padding: '6px 10px',
-                                                                    backgroundColor: '#f8f9fa',
-                                                                    borderRadius: '6px',
-                                                                    border: '1px solid #e8eaed',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: '6px'
-                                                                },
-                                                                child: [
-                                                                    $({
-                                                                        tag: 'span',
-                                                                        att: { className: 'fa-solid fa-file' },
-                                                                        style: { fontSize: '11px', color: '#1a73e8' }
-                                                                    }),
-                                                                    $({
-                                                                        tag: 'span',
-                                                                        id: 'certificate-file-name',
-                                                                        text: existingFiles.certificate[0].split('/').pop() || 'Current file',
-                                                                        style: {
-                                                                            fontSize: '11px',
-                                                                            color: '#202124',
-                                                                            flex: '1',
-                                                                            overflow: 'hidden',
-                                                                            textOverflow: 'ellipsis',
-                                                                            whiteSpace: 'nowrap'
+                                                        // File name display - always render this element
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                marginTop: '8px',
+                                                                padding: '6px 10px',
+                                                                backgroundColor: '#f8f9fa',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #e8eaed',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                minHeight: '32px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-file' },
+                                                                    style: {
+                                                                        fontSize: '11px',
+                                                                        color: paperTrailFiles.certificate.length > 0 || existingFiles.certificate.length > 0 ? '#1a73e8' : '#9aa0a6'
+                                                                    }
+                                                                }),
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { id: 'certificate-file-name' },
+                                                                    text: (() => {
+                                                                        if (paperTrailFiles.certificate.length > 0) {
+                                                                            return paperTrailFiles.certificate[0].name
+                                                                        } else if (isEditing && existingFiles.certificate.length > 0) {
+                                                                            return existingFiles.certificate[0].split('/').pop() || 'Current file'
                                                                         }
-                                                                    }),
+                                                                        return 'No file selected'
+                                                                    })(),
+                                                                    style: {
+                                                                        fontSize: '11px',
+                                                                        color: (paperTrailFiles.certificate.length > 0 || (isEditing && existingFiles.certificate.length > 0)) ? '#1e8e3e' : '#9aa0a6',
+                                                                        flex: '1',
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap',
+                                                                        fontWeight: (paperTrailFiles.certificate.length > 0 || (isEditing && existingFiles.certificate.length > 0)) ? '500' : '400',
+                                                                        fontStyle: (paperTrailFiles.certificate.length > 0 || (isEditing && existingFiles.certificate.length > 0)) ? 'normal' : 'italic'
+                                                                    }
+                                                                }),
+                                                                // Checkmark indicator
+                                                                ...((paperTrailFiles.certificate.length > 0 || (isEditing && existingFiles.certificate.length > 0)) ? [
                                                                     $({
                                                                         tag: 'span',
-                                                                        text: '✓',
+                                                                        att: { className: 'upload-checkmark' },
+                                                                        text: ' ✓',
                                                                         style: {
-                                                                            fontSize: '12px',
-                                                                            color: '#34a853'
+                                                                            color: '#34a853',
+                                                                            fontWeight: 'bold',
+                                                                            fontSize: '14px'
                                                                         }
                                                                     })
-                                                                ]
-                                                            })
-                                                        ] : [
-                                                            $({
-                                                                tag: 'div',
-                                                                id: 'certificate-file-name',
-                                                                style: {
-                                                                    marginTop: '8px',
-                                                                    fontSize: '11px',
-                                                                    color: '#9aa0a6',
-                                                                    fontStyle: 'italic'
-                                                                },
-                                                                text: 'No file selected'
-                                                            })
-                                                        ])
+                                                                ] : [])
+                                                            ]
+                                                        })
                                                     ]
                                                 }),
 
@@ -3363,7 +3451,7 @@ export const facultyPresentation = () => {
                                                                 })
                                                             ]
                                                         }),
-                                                        
+
                                                         // Photo upload area
                                                         $({
                                                             tag: 'div',
@@ -3483,7 +3571,7 @@ export const facultyPresentation = () => {
                                                                 })
                                                             ]
                                                         }),
-                                                        
+
                                                         // Photos preview grid
                                                         $({
                                                             tag: 'div',
@@ -3829,18 +3917,18 @@ export const facultyPresentation = () => {
                                     boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
                                 },
                                 child: [
-                                    $({ 
-                                        tag: 'option', 
-                                        att: { value: '' }, 
+                                    $({
+                                        tag: 'option',
+                                        att: { value: '' },
                                         text: `-- Select ${type === 'campus' ? 'Campus' : 'Center'} --`,
                                         style: { color: '#9aa0a6' }
                                     }),
                                     ...options.map(opt =>
                                         $({
                                             tag: 'option',
-                                            att: { 
-                                                value: opt, 
-                                                selected: opt === selectedValue 
+                                            att: {
+                                                value: opt,
+                                                selected: opt === selectedValue
                                             },
                                             text: opt,
                                             style: { color: '#202124' }
@@ -3875,13 +3963,57 @@ export const facultyPresentation = () => {
         const formData = new FormData(form)
         formData.append('action', isEditing ? 'update_presentation' : 'add_presentation')
 
-        // Add dynamic arrays as JSON
+        // Collect researchers from the DOM
+        const researcherRows = document.querySelectorAll('.researcher-row')
+        const researchers = []
+        researcherRows.forEach(row => {
+            const input = row.querySelector('.researcher-name-input')
+            if (input && input.value.trim()) {
+                researchers.push({ name: input.value.trim() })
+            }
+        })
+
+        // If no researchers in DOM but we have researchersData, use that
+        if (researchers.length === 0 && researchersData && researchersData.length > 0) {
+            researchersData.forEach(r => {
+                if (r.name && r.name.trim()) {
+                    researchers.push({ name: r.name.trim() })
+                }
+            })
+        }
+
         formData.append('researchers', JSON.stringify(researchers))
-        formData.append('paperTrailLinks', JSON.stringify(paperTrailLinks))
+
+        if (paperTrailFiles.presentationSlides && paperTrailFiles.presentationSlides.length > 0) {
+            const file = paperTrailFiles.presentationSlides[0]
+            // Check if it's a File object (new upload) or just a URL (existing)
+            if (file instanceof File) {
+                formData.append('presentationSlides', file)
+            }
+        }
+
+        // Handle Certificate
+        if (paperTrailFiles.certificate && paperTrailFiles.certificate.length > 0) {
+            const file = paperTrailFiles.certificate[0]
+            if (file instanceof File) {
+                formData.append('certificate', file)
+            }
+        }
+
+        // Handle Event Photos (multiple files)
+        if (paperTrailFiles.photoDocumentation && paperTrailFiles.photoDocumentation.length > 0) {
+            const photoFiles = paperTrailFiles.photoDocumentation.filter(f => f instanceof File)
+            if (photoFiles.length > 0) {
+                // Append each photo file with the same field name
+                photoFiles.forEach(file => {
+                    formData.append('photoDocumentation[]', file)
+                })
+            }
+        }
 
         showLoading()
         try {
-            const response = await fetch('/api/presentations-research', {
+            const response = await fetch('/presentationResearch', {
                 method: 'POST',
                 body: formData
             })
@@ -4749,16 +4881,16 @@ export const facultyPresentation = () => {
         return $({
             tag: 'div',
             style: {
-                width: 'calc(100% - 48px)', 
+                width: 'calc(100% - 48px)',
                 height: 'calc(100% - 340px)',
                 overflow: 'auto',
                 backgroundColor: '#ffffff',
                 position: 'relative',
                 borderRadius: '12px',
                 border: '2px solid #e8eaed',
-                margin: '0 24px', 
+                margin: '0 24px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                alignSelf: 'center' 
+                alignSelf: 'center'
             },
             elementHandler: (el) => {
                 scrollContainer = el
