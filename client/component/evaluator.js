@@ -1,129 +1,163 @@
-import {$, Request} from '../lib/lib.js';
-import {Header} from "./otherComponent/header.js";
-import {Box, Search} from "./evaluatorComponent/script/listBox.js";
+import { $, Request } from '../lib/lib.js';
+import { Header } from "./otherComponent/header.js";
+import { Box, Search } from "./evaluatorComponent/script/listBox.js";
 
-export const Evaluator=()=>{
+export const Evaluator = () => {
     document.getElementById('root').appendChild(Header())
-    let event ,category
-    const Label=$({
-        tag:'div',
-        style:{
-            height:'auto', // Changed to auto
-            minHeight: '5vh', // Minimum height
-            width:'100%',
-            display:'flex',
-            flexWrap: 'wrap', // Allow wrapping on smaller screens
-            padding: '1vh 0',
+
+    const Label = $({
+        tag: 'div',
+        style: {
+            padding: '16px 24px',
+            background: '#f8fafc',
+            borderBottom: '1px solid #e8ecf1',
+            display: 'flex',
+            flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '1vw',
+            gap: '12px',
+            flexShrink: 0,
         },
-        child:[
+        child: [
             $({
-                tag:'div',
-                text:'Submitted Entries',
-                style:{
-                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                    width:'fit-content',
-                    height:'fit-content',
-                    marginLeft:'1vw',
-                    fontSize:'clamp(1rem, 1.5vw, 1.5rem)',
-                    fontWeight:'bold',
-                    color:'deepskyblue',
-                    backgroundImage:'linear-gradient(to right, #555,transparent)',
-                    padding: '0.5vh 2vw',
-                    borderRadius:'.5vw',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-
-                }
-            }),
-            $({
-                tag:'div',
-                style:{
-                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                    width:'auto',
-                    display:'flex',
-                    justifyContent: 'center',
+                tag: 'div',
+                style: {
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fontSize: 'clamp(18px, 1.5vw, 24px)',
+                    fontWeight: '700',
+                    color: '#0f172a',
+                    letterSpacing: '-0.3px',
+                    display: 'flex',
                     alignItems: 'center',
-                    padding:'0 1vw',
-                    gap:'1vw',
-                    flex: '1'
+                    gap: '8px',
                 },
-                child:[
+                child: [
                     $({
-                        tag:'div',
-                        style:{
-                            margin:'0',
-                            width:'auto',
-                            maxWidth:'45%',
-                            flex: '0 1 auto',
-                            minWidth:'150px',
-                            height:'fit-content',
-                            fontSize:'clamp(0.8rem, 1vw, 1.2rem)',
-                            fontWeight:'bold',
-                            color:'#777',
-                            borderBottom:'solid thin deepskyblue',
-                            paddingBottom: '0.5vh',
-                            wordWrap:'break-word',
-                            overflowWrap:'break-word',
-                            whiteSpace:'normal',
-                            textAlign: 'center',
+                        tag: 'span',
+                        att: {
+                            className: 'fa-solid fa-file-lines'
                         },
-                        elementHandler:(ev)=>{
-                            (async function(){
-                                const req= new Request('/evaluatorReg')
-                                req.Post([
-                                    {
-                                        name:'evalLeb',
-                                        value:'1'
-                                    }
-                                ])
-                                req.Json()
-                                req.Send().then(data=>{
-                                    ev.innerHTML=`<span style="color:deepskyblue">CENTER :</span> ${data.center}`
-                                }).catch(err=>{
-                                    console.error('Error loading center info:', err)
-                                    ev.innerHTML=`<span style="color:deepskyblue">CENTER :</span> <span style="color:red">Error loading</span>`
-                                })
-                            })()
+                        style: {
+                            fontSize: 'clamp(20px, 1.8vw, 28px)',
+                            color: '#3b82f6'
                         }
                     }),
                     $({
-                        tag:'div',
-                        style:{
-                            margin:'auto',
-                            width:'fit-content',
-                            maxWidth:'45%',
-                            height:'fit-content',
-                            fontSize:'1.1vw',
-                            fontWeight:'bold',
-                            color:'#777',
-                            borderBottom:'solid thin deepskyblue',
-                            wordWrap:'break-word',
-                            overflowWrap:'break-word',
-                            whiteSpace:'normal',
-                            flexShrink:'1',
-                            minWidth: '0'
+                        tag: 'span',
+                        text: 'Submitted Entries',
+                    })
+                ]
+            }),
+            $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    flexWrap: 'wrap',
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: '#f1f5f9',
+                            padding: '6px 16px',
+                            borderRadius: '20px',
+                            fontSize: '14px',
+                            color: '#475569',
                         },
-                        elementHandler:(ev)=>{
-                            (async function(){
-                                const req= new Request('/evaluatorReg')
-                                req.Post([
-                                    {
-                                        name:'evalLeb',
-                                        value:'1'
-                                    }
-                                ])
-                                req.Json()
-                                req.Send().then(data=>{
-                                    ev.innerHTML=`<span style="color:deepskyblue">EVENT :</span> ${data.event}`
-                                }).catch(err=>{
-                                    console.error('Error loading event info:', err)
-                                    ev.innerHTML=`<span style="color:deepskyblue">EVENT :</span> <span style="color:red">Error loading</span>`
-                                })
-                            })()
-                        }
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: {
+                                    className: 'fa-solid fa-building-columns'
+                                },
+                                style: {
+                                    fontSize: '14px',
+                                    color: '#3b82f6'
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: 'Center:',
+                                style: { color: '#64748b' }
+                            }),
+                            $({
+                                tag: 'span',
+                                style: {
+                                    fontWeight: '600',
+                                    color: '#0f172a'
+                                },
+                                elementHandler: (ev) => {
+                                    (async function () {
+                                        try {
+                                            const req = new Request('/evaluatorReg')
+                                            req.Post([{ name: 'evalLeb', value: '1' }])
+                                            req.Json()
+                                            const data = await req.Send()
+                                            ev.textContent = data.center || 'Not assigned'
+                                        } catch (err) {
+                                            console.error('Error loading center info:', err)
+                                            ev.textContent = 'Error loading'
+                                        }
+                                    })()
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: '#f1f5f9',
+                            padding: '6px 16px',
+                            borderRadius: '20px',
+                            fontSize: '14px',
+                            color: '#475569',
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: {
+                                    className: 'fa-solid fa-calendar-days'
+                                },
+                                style: {
+                                    fontSize: '14px',
+                                    color: '#8b5cf6'
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: 'Event:',
+                                style: { color: '#64748b' }
+                            }),
+                            $({
+                                tag: 'span',
+                                style: {
+                                    fontWeight: '600',
+                                    color: '#0f172a'
+                                },
+                                elementHandler: (ev) => {
+                                    (async function () {
+                                        try {
+                                            const req = new Request('/evaluatorReg')
+                                            req.Post([{ name: 'evalLeb', value: '1' }])
+                                            req.Json()
+                                            const data = await req.Send()
+                                            ev.textContent = data.event || 'Not assigned'
+                                        } catch (err) {
+                                            console.error('Error loading event info:', err)
+                                            ev.textContent = 'Error loading'
+                                        }
+                                    })()
+                                }
+                            })
+                        ]
                     })
                 ]
             }),
@@ -131,28 +165,47 @@ export const Evaluator=()=>{
     })
 
     let boxBody
-    const getBox=(el)=>{
-        boxBody=el
+    const getBox = (el) => {
+        boxBody = el
     }
-    const searchMethod=(ev)=>{
-        boxBody.childNodes.forEach(val=>{
-            if(!val.innerText.toUpperCase().includes(ev.target.value.toUpperCase())&&ev.target.value!==''){
-               val.style.display='none'
-            }else {
-                val.style.display=''
+
+    // FIXED: Search method that properly handles visibility without breaking layout
+    const searchMethod = (ev) => {
+        const searchTerm = ev.target.value.trim().toUpperCase()
+
+        if (!boxBody) return
+
+        // Get all child nodes (entry cards)
+        const children = boxBody.childNodes
+
+        children.forEach(val => {
+            // Skip non-element nodes
+            if (val.nodeType !== 1) return
+
+            // Get all text content from the card for searching
+            const textContent = val.textContent?.toUpperCase() || ''
+
+            // Show/hide based on search term
+            if (searchTerm === '' || textContent.includes(searchTerm)) {
+                val.style.display = ''
+                // Reset any inline styles that might have been applied
+                val.style.visibility = ''
+                val.style.opacity = ''
+            } else {
+                val.style.display = 'none'
             }
         })
     }
-    return($({
-        tag:'div',
-        externalStyle:'/client/component/evaluatorComponent/style/evaluator.css',
-        att:{
-            className:'evalPanel'
+
+    return ($({
+        tag: 'div',
+        externalStyle: '/client/component/evaluatorComponent/style/evaluator.css',
+        att: {
+            className: 'evalPanel'
         },
-        child:[
+        child: [
             Label,
             Search(searchMethod),
-           // HeaderTable(),
             Box(getBox)
         ]
     }))

@@ -1,87 +1,82 @@
-import {$, Request, Waiting} from '../../../lib/lib.js'
+import { $, Request, Waiting } from '../../../lib/lib.js'
 
-export const ScoreBoard = ({resId, eventId, center}) => {
+export const ScoreBoard = ({ resId, eventId, center }) => {
     let AbstainState = false;
     const dataArray = [];
-    
+
     const Submit = async () => {
-        // Check if all scores are zero
         const allScoresZero = dataArray.every(item => item.score === 0 || item.score === '0');
-        
+
         if (allScoresZero) {
             const confirmZero = confirm("All scores are zero. Are you sure you want to save zero scores for all criteria?");
             if (!confirmZero) {
                 return;
             }
         }
-        
-        // Show loading indicator
+
         const loading = Waiting();
         document.body.appendChild(loading);
-        loading.offsetHeight; // Force reflow
-        
+        loading.offsetHeight;
+
         const form = new FormData();
         form.append('center', center);
         form.append('docId', resId);
         form.append('scoreSave', '1');
-        
+
         dataArray.forEach(val => {
             form.append('criteriaId[]', val.criteriaId);
             form.append('Score[]', val.score);
         });
-        
+
         try {
             const response = await fetch('/scoreboard', {
                 method: 'POST',
                 body: form
             });
-            
+
             const data = await response.json();
-            
-            // Remove loading before showing alert
+
             if (loading && loading.parentNode) {
                 loading.remove();
             }
-            
+
             alert(data.message);
-            
+
             if (data.status) {
                 // Optionally refresh or update UI
-                // window.location.reload();
             }
         } catch (error) {
-            // Remove loading on error
             if (loading && loading.parentNode) {
                 loading.remove();
             }
-            
+
             console.error('Error saving scores:', error);
             alert('Error saving scores. Please try again.');
         }
     };
-    
-    const InputEvent = ({id, value}) => {
+
+    const InputEvent = ({ id, value }) => {
         for (let x = 0; x < dataArray.length; x++) {
             if (dataArray[x].criteriaId == id) {
                 dataArray[x].score = value;
             }
         }
     };
-    
+
     const scoreBoardCriPanel = () => {
-        const PerCritScore = ({name, description, percentage, crit_id}) => {
+        const PerCritScore = ({ name, description, percentage, crit_id }) => {
             return $({
                 tag: 'div',
                 style: {
                     width: '95%',
-                    margin: '12px auto',
-                    borderRadius: '12px',
-                    fontSize: '0.95vw',
-                    background: 'linear-gradient(145deg, #1e1e1e, #2a2a2a)',
-                    border: '1px solid #3a3a3a',
-                    padding: '1rem',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-                    transition: 'all 0.3s ease',
+                    margin: '10px auto',
+                    borderRadius: '10px',
+                    fontSize: '13px',
+                    background: '#ffffff',
+                    border: '1px solid #e8ecf1',
+                    padding: '14px 16px',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                    transition: 'all 0.2s ease',
                 },
                 child: [
                     // Criteria Name
@@ -89,15 +84,15 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                         tag: 'div',
                         text: name,
                         style: {
-                            color: '#FFD700',
-                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            fontSize: '1.1vw',
+                            color: '#0f172a',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                            fontSize: '14px',
                             fontWeight: '600',
-                            marginBottom: '8px',
+                            marginBottom: '6px',
                             letterSpacing: '0.3px'
                         }
                     }),
-                    
+
                     // Description with icon
                     $({
                         tag: 'div',
@@ -105,19 +100,19 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                             display: 'flex',
                             alignItems: 'flex-start',
                             gap: '8px',
-                            marginBottom: '15px',
-                            padding: '8px 12px',
-                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            borderRadius: '8px',
-                            borderLeft: '3px solid #FFD700'
+                            marginBottom: '12px',
+                            padding: '6px 12px',
+                            backgroundColor: '#f8fafc',
+                            borderRadius: '6px',
+                            borderLeft: '3px solid #3b82f6'
                         },
                         child: [
                             $({
                                 tag: 'span',
-                                att: {className: 'fa-solid fa-info-circle'},
+                                att: { className: 'fa-solid fa-info-circle' },
                                 style: {
-                                    color: '#FFD700',
-                                    fontSize: '0.9vw',
+                                    color: '#3b82f6',
+                                    fontSize: '13px',
                                     marginTop: '2px'
                                 }
                             }),
@@ -127,16 +122,16 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                                     innerHTML: `<i>"${description}"</i>`
                                 },
                                 style: {
-                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    fontSize: '0.9vw',
-                                    color: '#bbb',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                    fontSize: '13px',
+                                    color: '#475569',
                                     lineHeight: '1.5',
                                     fontStyle: 'italic'
                                 }
                             })
                         ]
                     }),
-                    
+
                     // Score input section
                     $({
                         tag: 'div',
@@ -144,7 +139,7 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            gap: '20px',
+                            gap: '16px',
                             flexWrap: 'wrap'
                         },
                         child: [
@@ -154,40 +149,40 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                                 style: {
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                                    padding: '6px 12px',
+                                    gap: '6px',
+                                    backgroundColor: '#eff6ff',
+                                    padding: '4px 12px',
                                     borderRadius: '20px'
                                 },
                                 child: [
                                     $({
                                         tag: 'span',
-                                        att: {className: 'fa-solid fa-percent'},
+                                        att: { className: 'fa-solid fa-percent' },
                                         style: {
-                                            color: '#FFD700',
-                                            fontSize: '0.9vw'
+                                            color: '#3b82f6',
+                                            fontSize: '12px'
                                         }
                                     }),
                                     $({
                                         tag: 'span',
                                         text: `Max: ${percentage}%`,
                                         style: {
-                                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                            fontSize: '0.9vw',
-                                            color: '#FFD700',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                            fontSize: '12px',
+                                            color: '#2563eb',
                                             fontWeight: '600'
                                         }
                                     })
                                 ]
                             }),
-                            
+
                             // Score input with label
                             $({
                                 tag: 'div',
                                 style: {
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '12px',
+                                    gap: '10px',
                                     flex: '1',
                                     justifyContent: 'flex-end'
                                 },
@@ -196,9 +191,9 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                                         tag: 'span',
                                         text: 'Score:',
                                         style: {
-                                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                            fontSize: '0.95vw',
-                                            color: '#ddd',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                            fontSize: '13px',
+                                            color: '#64748b',
                                             fontWeight: '500'
                                         }
                                     }),
@@ -216,30 +211,29 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                                         },
                                         event: {
                                             type: 'input',
-                                            method: function() {
-                                                // Ensure value doesn't exceed max
+                                            method: function () {
                                                 if (this.value > percentage) {
                                                     this.value = percentage;
                                                 }
                                                 if (this.value < 0) {
                                                     this.value = 0;
                                                 }
-                                                InputEvent({id: this.id, value: this.value});
+                                                InputEvent({ id: this.id, value: this.value });
                                             }
                                         },
                                         style: {
-                                            width: '80px',
-                                            height: '40px',
-                                            border: `2px solid ${AbstainState ? '#666' : '#FFD700'}`,
+                                            width: '70px',
+                                            height: '36px',
+                                            border: `2px solid ${AbstainState ? '#e2e8f0' : '#3b82f6'}`,
                                             outline: 'none',
                                             textAlign: 'center',
-                                            fontSize: '1vw',
+                                            fontSize: '14px',
                                             fontWeight: '600',
-                                            backgroundColor: AbstainState ? '#333' : '#2a2a2a',
-                                            color: AbstainState ? '#888' : '#FFD700',
+                                            backgroundColor: AbstainState ? '#f8fafc' : '#ffffff',
+                                            color: AbstainState ? '#94a3b8' : '#0f172a',
                                             borderRadius: '8px',
-                                            transition: 'all 0.3s ease',
-                                            opacity: AbstainState ? 0.5 : 1,
+                                            transition: 'all 0.2s ease',
+                                            opacity: AbstainState ? 0.6 : 1,
                                             cursor: AbstainState ? 'not-allowed' : 'text'
                                         },
                                         elementHandler: (el) => {
@@ -247,9 +241,9 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                                                 el.value = 0;
                                                 const req = new Request('/scoreboard');
                                                 req.Post([
-                                                    {name: 'scoreReq', value: '1'},
-                                                    {name: 'docId', value: resId},
-                                                    {name: 'criteria_id', value: crit_id}
+                                                    { name: 'scoreReq', value: '1' },
+                                                    { name: 'docId', value: resId },
+                                                    { name: 'criteria_id', value: crit_id }
                                                 ]);
                                                 req.Json();
                                                 req.Send().then(data => {
@@ -276,7 +270,7 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                 ]
             });
         };
-        
+
         return $({
             tag: 'div',
             style: {
@@ -284,42 +278,41 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                 width: '95%',
                 margin: '0 auto',
                 overflowY: 'auto',
-                padding: '10px 5px',
+                padding: '6px 4px',
                 scrollbarWidth: 'thin',
-                scrollbarColor: '#FFD700 #333'
+                scrollbarColor: '#cbd5e1 #f1f5f9'
             },
             elementHandler: async (el) => {
-                // Add custom scrollbar styles
                 const style = document.createElement('style');
                 style.textContent = `
                     ::-webkit-scrollbar {
                         width: 6px;
                     }
                     ::-webkit-scrollbar-track {
-                        background: #333;
+                        background: #f1f5f9;
                         border-radius: 10px;
                     }
                     ::-webkit-scrollbar-thumb {
-                        background: #FFD700;
+                        background: #cbd5e1;
                         border-radius: 10px;
                     }
                     ::-webkit-scrollbar-thumb:hover {
-                        background: #e5c100;
+                        background: #94a3b8;
                     }
                 `;
                 document.head.appendChild(style);
-                
+
                 const form = new FormData();
                 form.append('scoreboard_req', '1');
                 form.append('docId', resId);
-                
+
                 try {
                     const res = await fetch('/scoreboard', {
                         method: 'post',
                         body: form
                     });
                     const data = await res.json();
-                    
+
                     data.forEach(val => {
                         dataArray.push({
                             criteriaId: val.criteria_id,
@@ -327,7 +320,7 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                             description: val.description,
                             score: 0
                         });
-                        
+
                         el.appendChild(PerCritScore({
                             name: val.name,
                             description: val.description,
@@ -337,80 +330,84 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                     });
                 } catch (error) {
                     console.error('Error loading score criteria:', error);
-                    el.innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Error loading criteria. Please refresh.</div>';
+                    el.innerHTML = '<div style="color: #ef4444; padding: 20px; text-align: center; font-family: system-ui;">Error loading criteria. Please refresh.</div>';
                 }
             }
         });
     };
-    
+
     return $({
         tag: 'div',
         style: {
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(135deg, #1a1a1a 0%, #222 100%)',
+            background: '#ffffff',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         },
         child: [
             // Header
             $({
                 tag: 'div',
                 style: {
-                    padding: '16px 20px',
-                    backgroundColor: '#2a2a2a',
-                    borderBottom: '2px solid #FFD700',
-                    textAlign: 'center'
+                    padding: '14px 20px',
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '2px solid #8b5cf6',
+                    textAlign: 'center',
+                    flexShrink: 0,
                 },
                 child: [
                     $({
                         tag: 'span',
-                        att: {className: 'fa-solid fa-star'},
+                        att: { className: 'fa-solid fa-star' },
                         style: {
-                            fontSize: '1.2vw',
-                            color: '#FFD700',
+                            fontSize: '16px',
+                            color: '#8b5cf6',
                             marginRight: '10px'
                         }
                     }),
                     $({
                         tag: 'span',
-                        text: 'SCORE BOARD',
+                        text: 'Score Board',
                         style: {
-                            fontSize: '1.2vw',
+                            fontSize: '16px',
                             fontWeight: '600',
-                            color: '#fff',
-                            letterSpacing: '1px',
-                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif'
+                            color: '#0f172a',
+                            letterSpacing: '0.5px',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
                         }
                     })
                 ]
             }),
-            
+
             // Score criteria panel
             scoreBoardCriPanel(),
-            
+
             // Footer with buttons
             $({
                 tag: 'div',
                 style: {
-                    padding: '16px 20px',
-                    backgroundColor: '#2a2a2a',
-                    borderTop: '1px solid #3a3a3a',
+                    padding: '14px 20px',
+                    backgroundColor: '#f8fafc',
+                    borderTop: '1px solid #e8ecf1',
                     display: 'flex',
-                    gap: '12px',
-                    justifyContent: 'center'
+                    gap: '10px',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    flexWrap: 'wrap',
                 },
                 child: [
                     // Save Score button
                     $({
                         tag: 'button',
                         style: {
-                            padding: '10px 24px',
-                            backgroundColor: '#4CAF50',
+                            padding: '8px 20px',
+                            backgroundColor: '#22c55e',
                             border: 'none',
                             borderRadius: '8px',
-                            fontSize: '0.95vw',
+                            fontSize: '13px',
                             fontWeight: '600',
                             color: 'white',
                             cursor: 'pointer',
@@ -418,39 +415,50 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                             alignItems: 'center',
                             gap: '8px',
                             transition: 'all 0.2s ease',
-                            boxShadow: '0 2px 4px rgba(76, 175, 80, 0.3)'
+                            boxShadow: '0 2px 4px rgba(34,197,94,0.3)'
                         },
                         child: [
-                            $({tag: 'span', att: {className: 'fa-solid fa-save'}}),
-                            $({tag: 'span', text: 'Save Scores'})
+                            $({ tag: 'span', att: { className: 'fa-solid fa-save' } }),
+                            $({ tag: 'span', text: 'Save Scores' })
                         ],
                         event: {
                             type: 'click',
                             method: Submit
+                        },
+                        elementHandler: (el) => {
+                            el.addEventListener('mouseenter', () => {
+                                el.style.backgroundColor = '#16a34a';
+                                el.style.transform = 'translateY(-1px)';
+                                el.style.boxShadow = '0 4px 12px rgba(34,197,94,0.4)';
+                            });
+                            el.addEventListener('mouseleave', () => {
+                                el.style.backgroundColor = '#22c55e';
+                                el.style.transform = 'translateY(0)';
+                                el.style.boxShadow = '0 2px 4px rgba(34,197,94,0.3)';
+                            });
                         }
                     }),
-                    
+
                     // Abstain button
                     $({
                         tag: 'button',
                         style: {
-                            padding: '10px 24px',
-                            backgroundColor: AbstainState ? '#f44336' : '#666',
-                            border: 'none',
+                            padding: '8px 20px',
+                            backgroundColor: '#f1f5f9',
+                            border: '1px solid #e2e8f0',
                             borderRadius: '8px',
-                            fontSize: '0.95vw',
+                            fontSize: '13px',
                             fontWeight: '600',
-                            color: 'white',
+                            color: '#64748b',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
                             transition: 'all 0.2s ease',
-                            boxShadow: AbstainState ? '0 2px 4px rgba(244, 67, 54, 0.3)' : 'none'
                         },
                         child: [
-                            $({tag: 'span', att: {className: 'fa-solid fa-ban'}}),
-                            $({tag: 'span', text: AbstainState ? 'Abstained' : 'Abstain'})
+                            $({ tag: 'span', att: { className: 'fa-solid fa-ban' } }),
+                            $({ tag: 'span', text: 'Abstain' })
                         ],
                         event: {
                             type: 'click',
@@ -461,29 +469,26 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                                 } else {
                                     prompt = confirm("Your score for this document will not be included for computation. Do you want to proceed?");
                                 }
-                                
+
                                 if (prompt) {
-                                    // Show loading
                                     const loading = Waiting();
                                     document.body.appendChild(loading);
                                     loading.offsetHeight;
-                                    
+
                                     const req = new Request('/abstain');
                                     if (AbstainState) {
-                                        // Remove Abstain
                                         req.Post([
-                                            {name: 'removeAbstain', value: '1'},
-                                            {name: 'docId', value: resId}
+                                            { name: 'removeAbstain', value: '1' },
+                                            { name: 'docId', value: resId }
                                         ]);
                                     } else {
-                                        // Add Abstain
                                         req.Post([
-                                            {name: 'UpdateAbstain', value: '1'},
-                                            {name: 'docId', value: resId},
-                                            {name: 'reason', value: ''}
+                                            { name: 'UpdateAbstain', value: '1' },
+                                            { name: 'docId', value: resId },
+                                            { name: 'reason', value: '' }
                                         ]);
                                     }
-                                    
+
                                     req.Json();
                                     req.Send().then(data => {
                                         loading.remove();
@@ -503,21 +508,36 @@ export const ScoreBoard = ({resId, eventId, center}) => {
                         elementHandler: (el) => {
                             const req = new Request('/abstain');
                             req.Post([
-                                {name: 'checkAbstain', value: '1'},
-                                {name: 'docId', value: resId}
+                                { name: 'checkAbstain', value: '1' },
+                                { name: 'docId', value: resId }
                             ]);
                             req.Json();
                             req.Send().then(data => {
                                 AbstainState = (data.status !== 0);
                                 if (AbstainState) {
-                                    el.style.backgroundColor = '#f44336';
+                                    el.style.backgroundColor = '#fef2f2';
+                                    el.style.borderColor = '#fca5a5';
+                                    el.style.color = '#dc2626';
                                     el.innerHTML = '<span class="fa-solid fa-ban"></span><span>Abstained</span>';
                                 } else {
-                                    el.style.backgroundColor = '#666';
+                                    el.style.backgroundColor = '#f1f5f9';
+                                    el.style.borderColor = '#e2e8f0';
+                                    el.style.color = '#64748b';
                                     el.innerHTML = '<span class="fa-solid fa-ban"></span><span>Abstain</span>';
                                 }
                             }).catch(err => {
                                 console.error('Error checking abstain status:', err);
+                            });
+
+                            el.addEventListener('mouseenter', () => {
+                                if (!AbstainState) {
+                                    el.style.backgroundColor = '#e2e8f0';
+                                }
+                            });
+                            el.addEventListener('mouseleave', () => {
+                                if (!AbstainState) {
+                                    el.style.backgroundColor = '#f1f5f9';
+                                }
                             });
                         }
                     })

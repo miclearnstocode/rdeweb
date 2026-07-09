@@ -1,1624 +1,614 @@
-import {$, ConfirmationAlert, Request, Waiting} from '../../../lib/lib.js'
-import {EntryList} from "./EntryList.js";
-
-
-//the search box and the header of the list and the container of the list
-
-export const Search=(method)=>{
-    const searchBox=()=>{
-
-        return($({
-
-            tag:'div',
-
-            att:{
-
-                className:'searchBox'
-
-            },
-
-            child:[
-
-                $({
-
-                    tag:'span',
-
-                    att:{
-
-                        className:'fa fa-search searchIcEval'
-
-                    },
-
-                }),
-
-                $({
-
-                    tag:'input',
-
-                    att:{
-
-                        type:'search',
-
-                        placeholder:'Search Research Paper',
-
-                        className:'searchInputEval',
-                        id: 'search-input-evaluation',
-                        name: 'searchInputEvaluation'
-
-                    },
-
-                    style:{
-
-                        height:'5vh'
-
-                    },
-
-                    event:{
-
-                        type:'input',
-
-                        method:method
-
-                    }
-
-                })
-
-            ]
-
-        }))
-
-    }
-    const EntriesNumber=()=>{
-
-        return($({
-            tag:'div',
-            style:{
-                margin:'auto',
-                marginRight:'5vw',
-                height:'fit-content',
-                width:'fit-content',
-                display:'flex',
-                justifyContent:'center',
-
-            },
-            child:[
-                $({
-                    tag:'div',
-                    text:'Total number of Entries: ',
-                    style:{
-                        fontSize:'1.3vw',
-                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                        color:'deepskyblue',
-                        margin:'auto'
-                    }
-                }),
-                $({
-                    tag:'div',
-                    style:{
-                        fontSize:'1.2vw',
-                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                        color:'#bbb',
-                        margin:'auto'
-                    },
-                    elementHandler:async (el)=>{
-                        const req= new Request('/eventRequest')
-                        req.Post([
-                            {
-                                name:'collectEntries',
-                                value:'1'
-                            }
-                        ])
-                       // req.Json()
-                        req.Send().then(data=>{
-
-                            el.innerText=" "+data
-                        }).catch(err=>{
-                            console.error('Error loading entry count:', err)
-                            el.innerText=" 0"
-                        })
-                    }
-                })
-            ]
-        }))
-    }
-
-
-
-    return($({
-
-        tag:'div',
-
-        att:{
-
-            className: 'searchBarEval'
-
-        },
-        style:{
-
-        },
-
-        child:[
-
-            searchBox(),
-            EntriesNumber()
-
-        ]
-
-    }))
-
-}
-
-
-
-export const HeaderTable=()=>{
-
-    const label=[]
-
-    label.push({
-
-        text:'Date',
-
-        className:'dateListEval'
-
-    })
-
-    label.push({
-
-        text:'Author',
-
-        className:'authorListEval'
-
-    })
-
-    label.push({
-
-        text:'Center',
-
-        className:'centerListEval'
-
-    })
-
-    const gethead=(header)=>{
-
-        label.forEach(val=>{
-
-            header.appendChild($({
-
-                tag:'td',
-
-                text:val.text,
-
-                att:{
-
-                    className:val.className
-
-                }
-
-            }))
-
-        })
-
-    }
-
-    return($({
-
-        tag:'table',
-
-        att:{
-
-            className:'headerList'
-
-        },
-
-        child:[
-
+import { $, ConfirmationAlert, Request, Waiting } from '../../../lib/lib.js'
+import { EntryList } from "./EntryList.js";
+
+export const Search = (method) => {
+    return ($({
+        tag: 'div',
+        att: { className: 'searchBarEval' },
+        child: [
             $({
-
-                tag:'tr',
-
-                elementHandler:gethead
-
+                tag: 'div',
+                att: { className: 'searchBox' },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: {
+                            className: 'fa-solid fa-magnifying-glass searchIcEval'
+                        },
+                        style: {
+                            color: '#94a3b8',
+                            fontSize: '14px',
+                            marginRight: '10px',
+                        }
+                    }),
+                    $({
+                        tag: 'input',
+                        att: {
+                            type: 'search',
+                            placeholder: 'Search research papers...',
+                            className: 'searchInputEval',
+                            id: 'search-input-evaluation',
+                            name: 'searchInputEvaluation'
+                        },
+                        style: { height: 'auto' },
+                        event: {
+                            type: 'input',
+                            method: method
+                        }
+                    })
+                ]
+            }),
+            $({
+                tag: 'div',
+                att: { className: 'entriesCounter' },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: {
+                            className: 'fa-solid fa-chart-simple'
+                        },
+                        style: {
+                            fontSize: '14px',
+                            color: '#3b82f6'
+                        }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: 'Total Entries:'
+                    }),
+                    $({
+                        tag: 'span',
+                        att: { className: 'countNumber' },
+                        elementHandler: async (el) => {
+                            try {
+                                const req = new Request('/eventRequest')
+                                req.Post([{ name: 'collectEntries', value: '1' }])
+                                const data = await req.Send()
+                                el.textContent = data || '0'
+                            } catch (err) {
+                                console.error('Error loading entry count:', err)
+                                el.textContent = '0'
+                            }
+                        }
+                    })
+                ]
             })
-
         ]
-
     }))
-
 }
 
-
-
-export const Box=  (getBody)=>{
-
+export const Box = (getBody) => {
     let panelBox
 
-    const viewResearch=(file,fileId,comments,title)=>{
-
-        let com
-
-        if(comments<1){
-
-            com={
-
-                intro:'',
-
-                abstract:'',
-
-                objective:'',
-
-                methodology:'',
-
-                results:'',
-
-                recommendation:'',
-
-                literature:'',
-
-                other:'',
-
-            }
-
-        }else {
-
-            com=comments
-
-        }
-
+    const viewResearch = (file, fileId, comments, title) => {
+        let com = comments || { intro: '', abstract: '', objective: '', methodology: '', results: '', recommendation: '', literature: '', other: '' }
         let viewPanel
+        let categoryPanel
+        let commentState = false
 
-        const getPanel=(panel)=>{
+        const getPanel = (panel) => { viewPanel = panel }
+        const getCat = (cath) => { categoryPanel = cath }
 
-            viewPanel=panel
-
-        }
-
-        let commentState=false;
-
-
-
-        const setState=()=>{
-
-            commentState=!commentState
-
-            return commentState
-
-        }
-
-        let categ,scorebPan
-
-        const getCat=(cath)=>{
-
-            categ=cath
-
-        }
-
-        const Changer=(event)=>{
-
-
-
-            if(setState()){
-
-                categ.className+=' showContent';
-
-                event.target.style.color='red';
-
-            }else {
-
-                categ.className=categ.className.replace(' showContent','')
-
-                event.target.style.color='deepskyblue'
-
+        const toggleComments = (event) => {
+            commentState = !commentState
+            if (commentState) {
+                categoryPanel.classList.add('showContent')
+                event.target.style.color = '#ef4444'
+            } else {
+                categoryPanel.classList.remove('showContent')
+                event.target.style.color = '#3b82f6'
             }
-
         }
-        const data={
 
-            intro:com.intro,
+        const data = { ...com }
+        const baseData = { ...com }
 
-            abstract:com.abstract,
-
-            objective:com.objective,
-
-            methodology:com.methodology,
-
-            results:com.results,
-
-            recommendation:com.recommendation,
-
-            literature:com.literature,
-
-            other:com.other,
-
+        const baseCheck = () => {
+            const keys = Object.keys(data)
+            return keys.some(key => data[key] !== baseData[key])
         }
-        const baseData={
-            intro:com.intro,
 
-            abstract:com.abstract,
+        const CommentContain = ({ labelButton, Get, comment, id }) => {
+            let isOpen = false
+            let textEd, txtInp, saveIndicator
 
-            objective:com.objective,
-
-            methodology:com.methodology,
-
-            results:com.results,
-
-            recommendation:com.recommendation,
-
-            literature:com.literature,
-
-            other:com.other,
-        }
-        const baseCheck=(base,dat)=>{
-            let key=Object.keys(data)
-            let baseKey=Object.keys(baseData)
-            for(let x=0;x<key.length;x++){
-                if(data[key[x]]!==baseData[baseKey[x]]){
-                    return true
+            const toggleOpen = () => {
+                isOpen = !isOpen
+                if (txtInp) {
+                    txtInp.classList.toggle('open')
+                }
+                if (textEd) {
+                    textEd.classList.toggle('open')
                 }
             }
-            return false
-        }
 
-
-        const scoreBoardPanel=()=>{
-            return($({
-                tag:'div',
-                style:{
-                    width:''
-                }
-            }))
-        }
-        const Category=()=>{
-
-            const getData={
-
-                intro:(value)=>{data.intro=value},
-
-                abstract:(value)=>{data.abstract=value},
-
-                objective:(value)=>{data.objective=value},
-
-                methodology:(value)=>{data.methodology=value},
-
-                results:(value)=>{data.results=value},
-
-                recommendation:(value)=>{data.recommendation=value},
-
-                literature:(value)=>{data.literature=value},
-
-                other:(value)=>{data.other=value},
-
-            }
-
-            const CommentContain=({labelButton,Get,comment,id})=>{
-
-                let stateCom=true
-
-                let textEd,txtInp
-                let mark
-                const changeStateCom=()=>{
-
-                    stateCom=!stateCom
-
-                    return stateCom
-
-                }
-
-                const button=()=>{
-
-                    setTimeout(()=>{
-                        if(txtInp.innerText!==''){
-                           mark.style.visibility='visible'
-                        }
-                    },100)
-
-                    return($({
-                        tag:'div',
-                        style:{
-                            display:'flex',
-                            width:'100%',
-
+            const Editor = () => {
+                const controlIcon = ({ icon, event, text }) => {
+                    return ($({
+                        tag: 'button',
+                        style: {
+                            padding: '4px 10px',
+                            border: 'none',
+                            background: 'transparent',
+                            borderRadius: '4px',
+                            color: '#475569',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            transition: 'all 0.2s ease',
                         },
-                        child:[
+                        att: { className: icon },
+                        text: text || '',
+                        event: {
+                            type: 'click',
+                            method: event
+                        }
+                    }))
+                }
+
+                const ColorPicker = () => {
+                    let input
+                    return ($({
+                        tag: 'div',
+                        att: { className: 'color-picker' },
+                        child: [
                             $({
-                                tag:'div',
-                                style:{
-                                    margin:'auto',
-                                    width:'fit-content',
-                                    marginLeft:'.5vw',
-                                    visibility:'hidden',
-                                    color:'deepskyblue'
+                                tag: 'input',
+                                att: { type: 'color' },
+                                event: {
+                                    type: 'change',
+                                    method: (eve) => {
+                                        document.execCommand('foreColor', true, eve.target.value)
+                                    }
                                 },
-                                att:{
-                                    className:'fa-solid fa-circle-check'
-                                },
-                                elementHandler:(el)=>{
-                                   mark=el
-                                }
+                                elementHandler: (el) => { input = el }
                             }),
                             $({
-
-                                tag:'div',
-
-                                text:labelButton,
-
-                                att:{
-
-                                    className:'ComBot'
-
-                                },
-                                style:{
-                                  width:'100%'
-                                },
-
-                                event:{
-
-                                    type:'click',
-
-                                    method:()=>{
-
-                                        /* Checking if the changeStateCom() function returns true. If it does, it adds the class
-
-                                        comInOff to the textInput element. If it doesn't, it removes the class comInOff from the
-
-                                        textInput element. */
-
-                                        if(changeStateCom()){
-
-                                            txtInp.className+=' comInOff'
-
-                                            textEd.className+=' comInOff'
-
-                                        }else {
-
-                                            txtInp.className=txtInp.className.replace(' comInOff','')
-
-                                            txtInp.focus()
-
-                                            textEd.className=textEd.className.replace('comInOff','')
-
-
-
-                                        }
-
-
-
-                                    }
-
+                                tag: 'button',
+                                text: '🎨',
+                                style: { padding: '4px 10px' },
+                                event: {
+                                    type: 'click',
+                                    method: () => { input.click() }
                                 }
-
                             })
                         ]
                     }))
                 }
 
-
-                const TextInp=()=>{
-                    return($({
-
-                        tag:'div',
-
-                        att:{
-
-                            contentEditable: true,
-
-                            className:'commentInput comInOff',
-
-                            placeholder: 'Enter text here..!',
-
-                            innerHTML:comment,
-
-                            id:id
-
-                        },
-                        elementHandler:(el)=>{
-                            txtInp=el
-                        },
-
-
-                        style:{
-
-                            minHeight:'5vh',
-
-                            maxHeight:'30vh',
-
-                            overflowY:'auto',
-
-                            textAlign: 'left',
-
-                            fontFamily: 'arial',
-
-                            fontSize: '16px',
-
-                            paddingTop: '.5vh',
-
-                            paddingBottom: '.5vh',
-
-                            marginBottom:'1vh',
-
-                            marginTop:'.5vh',
-
-                            color:'black',
-
-                            backgroundColor:'white'
-
-                        },
-
-                        event:{
-
-                            type:'input',
-
-                            method:(event)=>{
-
-                                Get(event.target.innerHTML)
-                                if(event.target.innerText!==''){
-                                    mark.style.visibility='visible'
-                                }else {
-                                    mark.style.visibility='hidden'
-                                }
-
-                            }
-
-                        }
-
-                    }))
-                }
-                const Editor=()=>{
-                    const controlIcon=({icon,event,text})=>{
-
-                        return($({
-
-                            tag:'span',
-
-                            style:{
-
-                                fontSize:'1vw',
-
-                                padding:'.3rem',
-
-                                cursor:'pointer',
-
-                                marginLeft:'.5vw',
-
-                                marginRight:'.5vw',
-
-                                backgroundColor:'#777'
-
+                return ($({
+                    tag: 'div',
+                    att: { className: 'comment-content' },
+                    elementHandler: (el) => { textEd = el },
+                    child: [
+                        $({
+                            tag: 'div',
+                            att: { className: 'editor-toolbar' },
+                            child: [
+                                controlIcon({ icon: 'fa-solid fa-list-ul', event: () => document.execCommand('insertUnorderedList') }),
+                                controlIcon({ icon: 'fa-solid fa-list-ol', event: () => document.execCommand('insertOrderedList') }),
+                                controlIcon({ icon: 'fa-solid fa-bold', event: () => document.execCommand('bold') }),
+                                controlIcon({ icon: 'fa-solid fa-italic', event: () => document.execCommand('italic') }),
+                                controlIcon({ icon: 'fa-solid fa-underline', event: () => document.execCommand('underline') }),
+                                ColorPicker(),
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            att: {
+                                className: 'editor-input',
+                                contentEditable: true,
+                                'data-placeholder': 'Enter your comments here...',
                             },
-
-                            att:{
-
-                                className:icon
-
+                            elementHandler: (el) => {
+                                txtInp = el
+                                if (comment) el.innerHTML = comment
                             },
-
-                            text:text,
-
-                            event:{
-
-                                type:'click',
-
-                                method:event
-
-                            }
-
-                        }))
-
-                    }
-
-                    const Color=()=>{
-                        let inC
-                        return($({
-                            tag:'span',
-                            style:{
-                                fontSize:'1vw',
-                                padding:'.3rem',
-                                cursor:'pointer',
-                                marginLeft:'.5vw',
-                                marginRight:'.5vw',
-                                backgroundColor:'#777',
-                                position:'relative',
-                                width:'fit-content',
+                            style: {
+                                minHeight: '60px',
+                                maxHeight: '200px',
+                                overflowY: 'auto',
+                                padding: '12px',
+                                background: '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                color: '#1e293b',
+                                fontSize: '14px',
+                                lineHeight: '1.6',
+                                outline: 'none',
                             },
-                            child:[
-                                $({
-                                    tag:'input',
-                                    att:{
-                                        type:'color',
-                                    },
-                                    style:{
-                                        position:'absolute',
-                                        top:'0',
-                                        left:'0',
-                                        zIndex:'-1',
-                                        opacity:'0',
-                                        width:'5vh'
-                                    },
-                                    event:{
-                                        type:'change',
-
-                                        method:(eve)=>{
-
-                                            document.execCommand('foreColor',true,eve.target.value)
-                                        }
-                                    },
-                                    elementHandler:(el)=>{
-                                        setTimeout(()=>{ inC=el},100)
+                            event: {
+                                type: 'input',
+                                method: (event) => {
+                                    Get(event.target.innerHTML)
+                                    if (saveIndicator) {
+                                        saveIndicator.style.visibility = event.target.innerText ? 'visible' : 'hidden'
                                     }
+                                }
+                            }
+                        }),
+                        $({
+                            tag: 'div',
+                            att: { className: 'save-indicator' },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'check' },
+                                    text: '✓',
+                                    elementHandler: (el) => { saveIndicator = el }
                                 }),
-
                                 $({
-                                    tag:'span',
-                                    att:{
-                                        className:'fa-solid fa-palette'
-                                    },
-                                    text:'T'
+                                    tag: 'span',
+                                    text: 'Content saved',
+                                    style: { color: '#94a3b8' }
                                 })
-                            ],
-                            event:{
-                                type:'click',
-                                method:()=>{
-                                    inC.click()
-                                }
-                            }
-                        }))
-
-                    }
-
-                    const Highlight=()=>{
-                        let inC
-                        return($({
-                            tag:'span',
-                            style:{
-                                fontSize:'1vw',
-                                padding:'.3rem',
-                                cursor:'pointer',
-                                marginLeft:'.5vw',
-                                marginRight:'.5vw',
-                                backgroundColor:'#777',
-                                position:'relative',
-                                width:'fit-content',
-                            },
-                            child:[
-
-                                $({
-                                    tag:'input',
-                                    att:{
-                                        type:'color',
-                                    },
-                                    style:{
-                                        position:'absolute',
-                                        top:'0',
-                                        left:'0',
-                                        zIndex:'-1',
-                                        opacity:'0',
-                                        width:'5vh'
-                                    },
-                                    event:{
-                                        type:'change',
-                                        method:(eve)=>{
-                                            document.execCommand('backColor',true,eve.target.value)
-                                        }
-                                    },
-                                    elementHandler:(el)=>{
-
-                                        setTimeout(()=>{ inC=el},100)
-
-                                    }
-
-                                }),
-
-                                $({
-
-                                    tag:'span',
-
-                                    att:{
-
-                                        className:'fa-solid fa-highlighter'
-
-                                    },
-
-                                })
-
-                            ],
-
-
-
-                            event:{
-
-                                type:'click',
-
-                                method:()=>{
-
-                                    inC.click()
-
-                                }
-
-                            }
-
-                        }))
-
-                    }
-
-
-
-
-
-                    return($({
-
-                        tag:'div',
-
-                        style:{
-
-                            height:'fit-content',
-
-                            border:'solid thin #888',
-
-                            width:'98%',
-
-                            margin: 'auto',
-
-                            paddingBottom:'.5vh',
-
-                            paddingTop:'.5vh',
-
-                            textAlign:'left',
-
-
-
-                        },
-
-                        att:{
-
-                            className:'comInOff'
-
-                        },
-
-                        elementHandler:(el)=>{
-
-                            textEd=el
-
-                        },
-
-                        child:[
-
-                            /*
-
-                             $({
-
-                                 tag:'span',
-
-                                 text:'Font style',
-
-                                 style:{
-
-                                     fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
-                                     fontSize:'1vw'
-
-                                 },
-
-                                 child:[
-
-                                     $({
-
-                                         tag:'select',
-
-                                         style:{
-
-                                             width:'10vw',
-
-                                             height:'100%',
-
-                                             marginLeft:'.5vw',
-
-                                             marginRight: '1vw',
-
-                                         }
-
-                                     })
-
-                                 ]
-
-                             }),
-
-                             */
-
-                            controlIcon({
-
-                                icon:'fa-solid fa-list-ul',
-
-                                event:(eve)=>{
-
-                                    document.execCommand('insertUnorderedList')
-
-                                }
-
-                            }),
-
-                            controlIcon({
-
-                                icon:'fa-solid fa-list-ol',
-
-                                event:(eve)=>{
-
-                                    document.execCommand('insertOrderedList')
-
-                                }
-
-                            }), /*
-
-
-
-                             */
-
-                            controlIcon({
-
-                                icon:'fa-solid fa-bold',
-
-                                event:(eve)=>{
-
-                                    document.execCommand('bold')
-
-                                }
-
-                            }),
-
-                            controlIcon({
-
-                                icon:'fa-solid fa-italic',
-
-                                event:(eve)=>{
-
-                                    document.execCommand('italic')
-
-                                }
-
-                            }),
-
-                            controlIcon({
-
-                                icon:'fa-solid fa-underline',
-
-                                event:(eve)=>{
-
-                                    document.execCommand('underline')
-
-                                }
-
-                            }),
-
-                            Color(),
-
-                         //   Highlight()
-
-
-
-                        ]
-
-                    }))
-
-                }
-
-
-
-                return($({
-
-                    tag:'div',
-
-
-
-                    att:{
-
-                        className:'CommentCon'
-
-                    },
-
-                    child:[
-
-                        button(),
-
-                        Editor(),
-
-                        TextInp()
-
-                    ]
-
-                }))
-
-            }
-
-            const Submit=()=>{
-
-
-                return($({
-                    tag:'div',
-                    style:{
-                        width:'100%',
-                        display:'flex'
-                    },
-                    child:[
-
-                        $({
-
-                            tag:'div',
-
-                            att:{
-
-                                className:'SubmitComment'
-
-                            },
-                            style:{
-                                width:'60%',
-                                fontSize:'1vw',
-                                fontWeight:'bold',
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif'
-                            },
-
-                            text:'SAVE COMMENT',
-
-                            event:{
-
-                                type:'click',
-
-                                method:async ()=>{
-
-                                    getData.intro(document.getElementById('introDiv').innerHTML)
-
-                                    /* Creating an array of the keys of the data object. */
-
-                                    let keys=Object.keys(data)
-
-                                    let stateKeys=false
-
-                                    /* Checking if the data is empty or not. */
-
-                                    for(let x=0;x<keys.length;x++){
-
-                                        if(data[keys[x]]!==''){
-
-                                            stateKeys=true
-
-                                        }
-
-                                    }
-
-                                    if(stateKeys){
-
-                                        let loading = Waiting()
-
-                                        document.body.appendChild(loading)
-
-                                        const remove = () => {
-
-                                            loading.remove()
-
-                                        }
-
-                                        const form = new FormData();
-                                        form.append('comment', 'true')
-                                        form.append('intro', (data.intro)?data.intro:'')
-                                        form.append('abstract',(data.abstract)? data.abstract:'')
-                                        form.append('objective',(data.objective)? data.objective:'')
-                                        form.append('methodology',(data.methodology)? data.methodology:'')
-                                        form.append('results',(data.results)? data.results:'')
-                                        form.append('recommendation',(data.recommendation)? data.recommendation:'')
-                                        form.append('literature',(data.literature)? data.literature:'')
-                                        form.append('other',(data.other)? data.other:'')
-                                        form.append('docsId', fileId)
-                                        form.append('updateReview', 'true')
-                                        await fetch('/uploadResearchFile', {
-
-                                            method: 'POST',
-
-                                            body: form
-
-                                        }).then(res => {
-
-                                            if (res.ok) {
-
-                                                remove()
-
-                                                return res.json()
-
-                                            }
-
-                                        }).then(dat => {
-
-                                            if (dat.status) {
-
-                                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
-
-                                                    window.location.reload()
-
-                                                }))
-
-                                            } else {
-
-                                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
-
-                                                    window.location.reload()
-
-                                                }))
-
-                                            }
-
-                                        })
-
-                                    }else {
-
-                                        alert("No new comments added...!")
-
-                                        window.location.reload()
-
-                                    }
-                                }
-
-                            }
-
-                        }),
-                        $({
-                            tag:'div',
-                            att:{
-                                className:'SubmitComment'
-                            },
-                            style:{
-                                width:'40%',
-                                color:'red',
-                                fontSize:'1vw',
-                                fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                backgroundColor:'#111'
-                            },
-                            text:'RESET COMMENTS',
-                            event:{
-                                type:'click',
-                                method:()=>{
-                                    if(confirm("Do you want to delete all of your comments for this document?")){
-                                        const req= new Request('/uploadResearchFile')
-                                        req.Post([
-                                            {
-                                                name:'resetComments',
-                                                value:'1'
-                                            },
-                                            {
-                                                name:'docId',
-                                                value: fileId
-                                            }
-                                        ])
-                                        req.Json()
-                                        req.Send().then(data=>{
-                                            if(data.status){
-                                                alert("Comments deleted successfully...!")
-                                                window.location.reload()
-                                            }else {
-                                                alert(data.message)
-                                            }
-
-                                        }).catch(err=>{
-                                            console.error('Error deleting comments:', err)
-                                            alert('Error deleting comments. Please try again.')
-                                        })
-                                    }
-                                }
-                            },
-                        }),
-                    ]
-                }))
-
-            }
-
-
-
-            return($({
-
-                tag:'div',
-
-
-
-                att:{
-
-                    className:'categoryCon'
-
-                },
-
-                style:{
-
-                    height: 'fit-content',
-
-                    maxHeight: '90vh',
-
-                    border: 'solid thin deepskyblue',
-
-                    boxShadow:'-.5vw 1vh .5rem black'
-
-                },
-
-                elementHandler:getCat,
-
-                child:[
-
-                    $({
-
-                        tag:'div',
-
-                        style:{
-
-                            width:'98%',
-
-                            height:'fit-content',
-
-                            fontFamily:'monospace',
-
-                            fontSize:'1.2vw',
-
-                            margin:'1vh auto',
-
-                            backgroundColor: '#333',
-
-                            color:'#bbb',
-
-                            textAlign:'center',
-
-                            paddingTop:'1vh',
-
-                            paddingBottom:'1vh',
-
-                            border:'solid thin deepskyblue',
-
-                            borderRadius:'.5vw'
-
-                        },
-
-                        text:`" ${title} "`,
-
-                    }),
-                    CommentContain({
-
-                        labelButton:'Abstract',
-
-                        Get:getData.abstract,
-
-                        comment:data.abstract,
-
-                        id:'abstractDiv'
-
-                    }),
-                    CommentContain({
-
-                        labelButton:'Introduction',
-
-                        Get:getData.intro,
-
-                        comment:data.intro,
-
-                        id:'introDiv'
-
-                    }),
-                    CommentContain({
-
-                        labelButton:'Objectives',
-
-                        Get:getData.objective,
-
-                        comment:data.objective,
-
-                        id:'objectiveDiv'
-
-                    }),
-                    CommentContain({
-
-                        labelButton:'Methodology',
-
-                        Get:getData.methodology,
-
-                        comment:data.methodology,
-
-                        id:'methodDiv'
-
-                    }),
-                    CommentContain({
-
-                        labelButton:'Results and Discussion',
-
-                        Get:getData.results,
-
-                        comment:data.results,
-
-                        id:'resultDiv'
-
-                    }),
-                    CommentContain({
-
-                        labelButton:' Conclusions and Recommendations',
-
-                        Get:getData.recommendation,
-
-                        comment:data.recommendation,
-
-                        id:'recomDiv'
-
-                    }),
-                    CommentContain({
-
-                        labelButton:'References',
-
-                        Get:getData.literature,
-
-                        comment:data.literature,
-
-                        id:'litDiv'
-
-                    }),
-                    CommentContain({
-
-                        labelButton:'Other',
-
-                        Get:getData.other,
-
-                        comment:data.other,
-
-                        id:'otherDiv'
-
-                    }),
-                    Submit()
-
-
-
-                ]
-
-            }))
-
-        }
-
-        const ControlViewer=()=>{
-
-
-
-            const close=$({
-
-                tag:'div',
-
-                att:{
-
-                    className:'closeView'
-
-                },
-
-                style:{
-
-                    borderRadius:'50vw',
-
-                    width:'50%',
-
-                    height:'fit-content',
-
-                    padding:'.5rem'
-
-                },
-
-                event:{
-
-                    type:'click',
-
-                    method:()=>{
-
-                        let saveSta=true
-                        if(baseCheck(baseData,data)){
-                            saveSta=confirm("Do you want to exit without saving your data?")
-                        }
-
-                        if(saveSta){
-                            viewPanel.remove()
-                        }
-
-
-                    }
-
-                },
-
-                child:[
-
-                    $({
-
-                        tag:'div',
-
-                        att:{
-
-                            className:'fa-solid fa-circle-xmark'
-
-                        },
-
-                        style:{
-
-
-
-                        }
-
-                    })
-
-                ]
-
-            })
-
-
-
-            const Comments=()=>{
-
-
-
-                return($({
-
-                    tag:'div',
-
-                    att:{
-
-                        className:'CommentsBot'
-
-                    },
-
-                    event:{
-
-                        type:'click',
-
-                        method:Changer
-
-                    },
-
-
-
-                    child:[
-
-                        $({
-
-                            tag:'span',
-
-                            att:{
-
-                                className:'fa-solid fa-message'
-
-                            },
-
-
-
-                        }),
-
-                    ]
-
-                }))
-
-            }
-
-            const ScoreBoard=()=>{
-                return($({
-                    tag:'div',
-                    style:{
-                        display:'flex',
-                        width:'100%',
-                        height:'fit-content',
-                        marginBottom: '1vh',
-                        marginTop: '1vh'
-                    },
-                    child:[
-                        $({
-                            tag:'div',
-                            att:{
-                                className:'fa-solid fa-chart-column scrClas'
-                            },
-                            style:{
-                                fontSize:'3vw',
-                                margin:'auto',
-                                cursor:'pointer'
-                            }
+                            ]
                         })
                     ]
                 }))
             }
 
-            return($({
-
-                tag:'div',
-
-                att:{
-
-                    className:'closePanelViewer'
-
-                },
-
-                child:[
-
-                    close,
-
-                    Comments(),
-                    ScoreBoard()
-                ]
-
-            }))
-
-        }
-
-
-
-        const frame=$({
-
-            tag:'object',
-
-            att:{
-
-                className:'frameViewerEval',
-
-                data:file,
-
-                type:'application/pdf'
-
-            }
-
-        })
-
-        return($({
-
-            tag:'div',
-
-            att:{
-
-                className:'viewPanel'
-
-            },
-
-
-
-            elementHandler:getPanel,
-
-            child:[
-
-                frame,
-
-                ControlViewer(),
-
-                Category()
-
-            ]
-
-        }))
-
-    }
-
-
-
-    const listTable=({date,title,author,center,file,docID,comments,status})=>{
-        const R1=()=>{
-            const data=({className,content})=>{
-                return($({
-                    tag:'td',
-                    att:{
-                        className:className
-                    },
-                    text:content
-                }))
-            }
-            return($({
-                tag:'tr',
-                child:[
-                    data({
-                        className:'dateListEval',
-                        content:date
-                    }),
-                    data({
-                        className:'authorListEval',
-                        content:author
-                    }),
-                    data({
-                        className:'centerListEval',
-                        content:center
-                    }),
-                ]
-            }))
-        }
-        const R2=()=>{
-            return($({
-                tag:'tr',
-                style:{
-                    backgroundColor:'rgba(0,0,0,0.3)'
-                },
-                child:[
+            return ($({
+                tag: 'div',
+                att: { className: 'comment-section' },
+                child: [
                     $({
-                        tag:'td',
-                        att:{
-                            className:'titleEvalLabel',
-                            colSpan:'3',
-                            innerHTML:'<span style="font-family: Arial,sans-serif;font-weight: bolder;color: ghostwhite">Title: </span> '+title
-                        },
-                        text:'Title: '+title
+                        tag: 'div',
+                        att: { className: 'comment-toggle' },
+                        child: [
+                            $({
+                                tag: 'span',
+                                text: labelButton,
+                                style: { fontWeight: '500' }
+                            }),
+                            $({
+                                tag: 'span',
+                                att: { className: 'toggle-icon' },
+                                text: '▼',
+                                style: { transition: 'transform 0.3s ease' }
+                            })
+                        ],
+                        event: {
+                            type: 'click',
+                            method: (e) => {
+                                const icon = e.currentTarget.querySelector('.toggle-icon')
+                                icon.classList.toggle('open')
+                                const content = e.currentTarget.parentElement.querySelector('.comment-content')
+                                content.classList.toggle('open')
+                            }
+                        }
                     }),
+                    Editor()
                 ]
             }))
         }
-        return($({
-            tag:'table',
-            att:{
-                className:`listTableEval ${(status===null)?"borderHigh":""}`
-            },
-            event:{
-                type: 'click',
-                method:()=>{
-                    panelBox.appendChild(viewResearch(file,docID,comments,title))
-                }
-            },
-            child:[
-                R1(),
-                R2()
+
+        const Submit = () => {
+            return ($({
+                tag: 'div',
+                att: { className: 'comment-actions' },
+                child: [
+                    $({
+                        tag: 'button',
+                        att: { className: 'btn btn-primary' },
+                        text: '💾 Save Comments',
+                        event: {
+                            type: 'click',
+                            method: async () => {
+                                data.intro = document.getElementById('introDiv')?.innerHTML || ''
+                                const keys = Object.keys(data)
+                                const hasContent = keys.some(key => data[key] && data[key] !== '')
+
+                                if (!hasContent) {
+                                    alert('No new comments added...!')
+                                    return
+                                }
+
+                                const loading = Waiting()
+                                document.body.appendChild(loading)
+
+                                try {
+                                    const form = new FormData()
+                                    form.append('comment', 'true')
+                                    form.append('intro', data.intro || '')
+                                    form.append('abstract', data.abstract || '')
+                                    form.append('objective', data.objective || '')
+                                    form.append('methodology', data.methodology || '')
+                                    form.append('results', data.results || '')
+                                    form.append('recommendation', data.recommendation || '')
+                                    form.append('literature', data.literature || '')
+                                    form.append('other', data.other || '')
+                                    form.append('docsId', fileId)
+                                    form.append('updateReview', 'true')
+
+                                    const res = await fetch('/uploadResearchFile', {
+                                        method: 'POST',
+                                        body: form
+                                    })
+
+                                    loading.remove()
+
+                                    if (res.ok) {
+                                        const result = await res.json()
+                                        document.body.appendChild(ConfirmationAlert(
+                                            result.message || 'Comments saved successfully!',
+                                            () => window.location.reload()
+                                        ))
+                                    }
+                                } catch (err) {
+                                    loading.remove()
+                                    console.error('Error saving comments:', err)
+                                    alert('Error saving comments. Please try again.')
+                                }
+                            }
+                        }
+                    }),
+                    $({
+                        tag: 'button',
+                        att: { className: 'btn btn-danger' },
+                        text: '🗑️ Reset All',
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                if (confirm('Do you want to delete all of your comments for this document?')) {
+                                    const req = new Request('/uploadResearchFile')
+                                    req.Post([
+                                        { name: 'resetComments', value: '1' },
+                                        { name: 'docId', value: fileId }
+                                    ])
+                                    req.Json()
+                                    req.Send().then(data => {
+                                        if (data.status) {
+                                            alert('Comments deleted successfully!')
+                                            window.location.reload()
+                                        } else {
+                                            alert(data.message || 'Error deleting comments')
+                                        }
+                                    }).catch(err => {
+                                        console.error('Error deleting comments:', err)
+                                        alert('Error deleting comments. Please try again.')
+                                    })
+                                }
+                            }
+                        }
+                    })
+                ]
+            }))
+        }
+
+        const Category = () => {
+            return ($({
+                tag: 'div',
+                att: { className: 'categoryCon' },
+                style: {
+                    height: 'fit-content',
+                    maxHeight: '90vh',
+                    border: '1px solid #e8ecf1',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                    background: '#ffffff',
+                    borderRadius: '12px',
+                    overflowY: 'auto',
+                    padding: '16px',
+                },
+                elementHandler: getCat,
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            padding: '12px',
+                            marginBottom: '16px',
+                            background: '#f8fafc',
+                            borderRadius: '8px',
+                            textAlign: 'center',
+                            fontWeight: '600',
+                            color: '#0f172a',
+                            border: '1px solid #e8ecf1',
+                            fontSize: '14px',
+                        },
+                        text: `📄 ${title || 'Document'}`
+                    }),
+                    CommentContain({
+                        labelButton: 'Abstract',
+                        Get: (v) => { data.abstract = v },
+                        comment: data.abstract,
+                        id: 'abstractDiv'
+                    }),
+                    CommentContain({
+                        labelButton: 'Introduction',
+                        Get: (v) => { data.intro = v },
+                        comment: data.intro,
+                        id: 'introDiv'
+                    }),
+                    CommentContain({
+                        labelButton: 'Objectives',
+                        Get: (v) => { data.objective = v },
+                        comment: data.objective,
+                        id: 'objectiveDiv'
+                    }),
+                    CommentContain({
+                        labelButton: 'Methodology',
+                        Get: (v) => { data.methodology = v },
+                        comment: data.methodology,
+                        id: 'methodDiv'
+                    }),
+                    CommentContain({
+                        labelButton: 'Results & Discussion',
+                        Get: (v) => { data.results = v },
+                        comment: data.results,
+                        id: 'resultDiv'
+                    }),
+                    CommentContain({
+                        labelButton: 'Conclusions & Recommendations',
+                        Get: (v) => { data.recommendation = v },
+                        comment: data.recommendation,
+                        id: 'recomDiv'
+                    }),
+                    CommentContain({
+                        labelButton: 'References',
+                        Get: (v) => { data.literature = v },
+                        comment: data.literature,
+                        id: 'litDiv'
+                    }),
+                    CommentContain({
+                        labelButton: 'Other',
+                        Get: (v) => { data.other = v },
+                        comment: data.other,
+                        id: 'otherDiv'
+                    }),
+                    Submit()
+                ]
+            }))
+        }
+
+        const ControlViewer = () => {
+            return ($({
+                tag: 'div',
+                att: { className: 'view-sidebar' },
+                child: [
+                    $({
+                        tag: 'div',
+                        att: { className: 'sidebar-header' },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'doc-title' },
+                                text: title || 'Document Viewer'
+                            }),
+                            $({
+                                tag: 'button',
+                                att: { className: 'close-btn' },
+                                text: '✕',
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        if (baseCheck() && !confirm('Do you want to exit without saving your data?')) {
+                                            return
+                                        }
+                                        viewPanel.remove()
+                                    }
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        att: { className: 'comments-area' },
+                        child: [Category()]
+                    })
+                ]
+            }))
+        }
+
+        return ($({
+            tag: 'div',
+            att: { className: 'viewPanel' },
+            elementHandler: getPanel,
+            child: [
+                $({
+                    tag: 'div',
+                    att: { className: 'view-container' },
+                    child: [
+                        $({
+                            tag: 'div',
+                            att: { className: 'pdf-viewer' },
+                            child: [
+                                $({
+                                    tag: 'object',
+                                    att: {
+                                        className: 'frameViewerEval',
+                                        data: file,
+                                        type: 'application/pdf'
+                                    },
+                                    style: {
+                                        width: '100%',
+                                        height: '100%',
+                                        border: 'none',
+                                    }
+                                })
+                            ]
+                        }),
+                        ControlViewer()
+                    ]
+                })
             ]
         }))
     }
-    const Listv2=()=>{
-        return($({
-            tag:'div',
-            style:{
-            }
-        }))
-    }
 
-    const getListPanel= async (panel)=>{
+    const getListPanel = async (panel) => {
         getBody(panel)
-        panelBox=panel
+        panelBox = panel
+
         try {
-            // First fetch the category and event
+            // Get category and event
             const evalReq = new FormData()
             evalReq.append('evalLeb', '1')
-            const evalRes = await fetch('/evaluatorReg', {
-                method: 'POST',
-                body: evalReq
-            })
+            const evalRes = await fetch('/evaluatorReg', { method: 'POST', body: evalReq })
             const evalData = await evalRes.json()
 
-            const form=new FormData()
-            form.append('researchSubmit','true')
+            // Get research list
+            const form = new FormData()
+            form.append('researchSubmit', 'true')
             form.append('center', evalData.center)
             form.append('event', evalData.event)
-            
-            const res = await fetch('/uploadResearchFile',{
-                method:'POST',
-                body:form
-            })
+
+            const res = await fetch('/uploadResearchFile', { method: 'POST', body: form })
             const data = await res.json()
-            
-            data.list.forEach((val,i)=>{
-                if(val.status){
+
+            if (data.list && data.list.length) {
+                data.list.forEach((val) => {
+                    // Parse coauthors if it's a string representation of an array
+                    let coAuthors = val.coauthor || val.coAuthors || null
+                    if (typeof coAuthors === 'string' && coAuthors.startsWith('[') && coAuthors.endsWith(']')) {
+                        try {
+                            const parsed = JSON.parse(coAuthors)
+                            if (Array.isArray(parsed)) {
+                                coAuthors = parsed.join(', ')
+                            }
+                        } catch (e) {
+                            // If parsing fails, keep as is
+                        }
+                    }
+                    if (Array.isArray(coAuthors)) {
+                        coAuthors = coAuthors.join(', ')
+                    }
+
                     panel.appendChild(EntryList({
-                        title:val.title,
-                        author:val.author,
-                        center:val.center,
-                        docId:val.id,
-                        eventId:val.eventId || val.event_id,
-                        centerId:val.centerId,
+                        title: val.title,
+                        author: val.author,
+                        coAuthors: coAuthors,
+                        presenter: val.presenter,
+                        center: val.center,
+                        docId: val.id,
+                        eventId: val.eventId || val.event_id,
+                        centerId: val.centerId,
                         hasScore: val.hasScore || false,
                         hasComment: val.hasComment || false,
+                        status: val.status || false,
                     }))
-                }else {
-                    panel.insertBefore(EntryList({
-                        title:val.title,
-                        author:val.author,
-                        center:val.center,
-                        docId:val.id,
-                        status:true,
-                        eventId:val.eventId || val.event_id,
-                        catId:val.catId,
-                        hasScore: val.hasScore || false,
-                        hasComment: val.hasComment || false,
-                    }),panel.childNodes[0])
-                }
-            })
-        } catch(err){
+                })
+            } else {
+                panel.innerHTML = `
+                    <div style="text-align:center;padding:48px 24px;color:#94a3b8;">
+                        <div style="font-size:48px;margin-bottom:16px;">📭</div>
+                        <h3 style="color:#475569;margin-bottom:8px;">No entries found</h3>
+                        <p style="color:#94a3b8;font-size:14px;">There are no research papers submitted for this event yet.</p>
+                    </div>
+                `
+            }
+        } catch (err) {
             console.error('Error loading research list:', err)
-            panel.innerHTML='<div style="color:red;padding:20px">Error loading entries. Please refresh the page.</div>'
+            panel.innerHTML = `
+                <div style="text-align:center;padding:48px 24px;color:#ef4444;">
+                    <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+                    <h3 style="margin-bottom:8px;">Error loading entries</h3>
+                    <p style="font-size:14px;color:#94a3b8;">Please refresh the page to try again.</p>
+                </div>
+            `
         }
     }
-    return($({
-        tag:'div',
-        att:{
-            className:'listBox'
-        },
-        style:{
-            backgroundColor:'black'
-        },
-        elementHandler:getListPanel
+
+    return ($({
+        tag: 'div',
+        att: { className: 'listBox' },
+        elementHandler: getListPanel
     }))
 }

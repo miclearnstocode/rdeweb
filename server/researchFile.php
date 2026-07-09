@@ -65,8 +65,6 @@ if (isset($_POST['researchSubmit'])) {
         $response->userName = $_SESSION['userName'];
         $evalId = $_SESSION['userId'];
 
-        // FIXED: Use center code mapping for consistent comparison
-        // Get the actual center name from the center table using the session center code
         $centerNameQuery = "SELECT name FROM center WHERE code = ? OR UPPER(code) = UPPER(?) OR name LIKE ? LIMIT 1";
         $centerStmt = $con->prepare($centerNameQuery);
         $searchTerm = "%$center%";
@@ -75,47 +73,38 @@ if (isset($_POST['researchSubmit'])) {
         $centerResult = $centerStmt->get_result();
         $centerRow = $centerResult->fetch_assoc();
 
-        // If we found a matching center in the database, use its name
-        // Otherwise, use the original value but convert to proper case for comparison
         $dbCenterName = $centerRow ? $centerRow['name'] : $center;
 
         error_log("Evaluator center (session): $center");
         error_log("Looking for researchfiles with center: $dbCenterName");
 
-        // UPDATED QUERY with better center matching - REMOVED event deadline condition
         $sqlQueries = "SELECT 
-            researchfile.id,
-            researchfile.author,
-            researchfile.presenter,
-            researchfile.drive_view_url,
-            researchfile.drive_file_id,
-            researchfile.drive_download_url,
-            researchfile.file as local_file,
-            researchfile.title as research_title,
-            researchfile.event,
-            researchfile.event_id,      
-            researchfile.category,
+            rf.id,
+            rf.author,
+            rf.presenter,
+            rf.coauthor,
+            rf.drive_view_url,
+            rf.drive_file_id,
+            rf.drive_download_url,
+            rf.file as local_file,
+            rf.title as research_title,
+            rf.event,
+            rf.event_id,      
+            rf.category,
             endorsement.center,
             event_list.id as eventId,
             category.id as catId
-        FROM researchfile
-        LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
-        LEFT JOIN event_list ON researchfile.event_id = event_list.id
-        LEFT JOIN category ON researchfile.category = category.name
+        FROM researchfile as rf
+        LEFT JOIN endorsement ON endorsement.id = rf.endorsementid
+        LEFT JOIN event_list ON rf.event_id = event_list.id
+        LEFT JOIN category ON rf.category = category.name
         WHERE endorsement.status = ? 
-        AND (
-            researchfile.center = ? 
-            OR researchfile.center LIKE ?
-            OR UPPER(researchfile.center) = UPPER(?)
-            OR researchfile.center LIKE ?
-        )
-        AND researchfile.event_id = ?";
-        // REMOVED: "AND event_list.dead_line > CURRENT_TIMESTAMP"
+        AND (rf.center = ? OR rf.center LIKE ? OR UPPER(rf.center) = UPPER(?) OR rf.center LIKE ?)
+        AND rf.event_id = ?";  
 
         $stm = $con->prepare($sqlQueries);
         $stat = 'accepted';
 
-        // Create multiple variations for matching
         $centerExact = $dbCenterName;
         $centerLike = "%$dbCenterName%";
         $centerUpper = strtoupper($center);
@@ -131,10 +120,10 @@ if (isset($_POST['researchSubmit'])) {
             $data->status = NULL;
             $data->id = $val['id'];
             $data->author = $val['author'];
-
-            // BACKWARD COMPATIBILITY: Use Google Drive URL if available, otherwise local file
+            $data->presenter = $val['presenter'];
+            $data->coauthor = $val['coauthor'];
             if (!empty($val['drive_view_url'])) {
-                $data->file = $val['drive_view_url']; // Google Drive URL
+                $data->file = $val['drive_view_url']; 
                 $data->file_type = 'drive';
                 $data->drive_file_id = $val['drive_file_id'];
                 $data->drive_download_url = $val['drive_download_url'];
@@ -145,7 +134,7 @@ if (isset($_POST['researchSubmit'])) {
                 $data->drive_download_url = null;
             }
 
-            $data->title = $val['research_title']; // Research document title
+            $data->title = $val['research_title'];
             $data->event = $val['event'];
             $data->category = $val['category'];
             $data->campus = $val['campus'];
@@ -153,8 +142,7 @@ if (isset($_POST['researchSubmit'])) {
             $data->catId = $val['catId'];
             $data->center = $val['center'];
 
-            // Initialize comment fields
-            $data->comment_title = ''; // Separate field for comment title
+            $data->comment_title = '';
             $data->intro = '';
             $data->abstract = '';
             $data->objective = '';
@@ -164,11 +152,9 @@ if (isset($_POST['researchSubmit'])) {
             $data->literature = '';
             $data->other = '';
 
-            // Initialize status flags
             $data->hasComment = false;
             $data->hasScore = false;
 
-            // UPDATED query to include comments.title and check for comments
             $comquery = "SELECT 
                 comments.title as comment_title, 
                 comments.intro,
@@ -180,7 +166,6 @@ if (isset($_POST['researchSubmit'])) {
                 comments.literature,
                 comments.other,
                 comments.date,
-                -- Check if any comment field has content
                 CASE 
                     WHEN COALESCE(comments.title, '') != '' 
                          OR COALESCE(comments.intro, '') != ''
@@ -202,7 +187,7 @@ if (isset($_POST['researchSubmit'])) {
 
             while ($v = $res->fetch_assoc()) {
                 $data->status = 'updated';
-                $data->comment_title = $v['comment_title']; // Store comment title separately
+                $data->comment_title = $v['comment_title'];
                 $data->intro = $v['intro'];
                 $data->abstract = $v['abstract'];
                 $data->objective = $v['objective'];
@@ -214,7 +199,6 @@ if (isset($_POST['researchSubmit'])) {
                 $data->hasComment = ($v['has_comment_content'] == 1);
             }
 
-            // Check if this document has been scored
             $scoreQuery = "SELECT 
                 COUNT(*) as score_count,
                 CASE 
