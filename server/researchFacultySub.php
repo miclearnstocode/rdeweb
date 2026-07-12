@@ -1935,8 +1935,6 @@ if (isset($_POST['saveLocalInhouse'])) {
         // Generate paper trail number for Local In-House
         $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $documentTitle, $mainAuthor);
 
-        // Upload files to BOTH locations
-        require_once __DIR__ . '/../config/driver_config.php';
         $drive = new GoogleDriveService();
 
         $cleanTitle = cleanFolderNameForDrive($documentTitle);
@@ -3596,6 +3594,170 @@ if (isset($_POST['commentRequest'])) {
     echo json_encode($response);
 }
 
+if (isset($_POST['rejectedComments'])){
+    // Set proper JSON header
+    header('Content-Type: application/json; charset=utf-8');
+    
+    // Initialize response
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->reason = '';
+    $response->date = '';
+    $response->documentTitle = '';
+    $response->eventName = '';
+    $response->author = '';
+    $response->category = '';
+    $response->campus = '';
+    $response->center = '';
+    $response->documentStatus = '';
+    
+    // Log that the endpoint was called
+    error_log("=== rejectedComments endpoint called ===");
+    error_log("POST data: " . print_r($_POST, true));
+    
+    $docId = isset($_POST['docId']) ? intval($_POST['docId']) : 0;
+    
+    error_log("docId received: " . $docId);
+    
+    if ($docId <= 0) {
+        $response->message = 'Invalid document ID';
+        error_log("Invalid docId: " . $docId);
+        echo json_encode($response);
+        exit();
+    }
+    
+    try {
+        if (!isset($host) || !isset($username) || !isset($pass) || !isset($dbName)) {
+            error_log("Database connection variables not set");
+            $response->message = 'Database configuration error';
+            echo json_encode($response);
+            exit();
+        }
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            error_log("Database connection failed: " . $con->connect_error);
+            $response->message = 'Database connection failed: ' . $con->connect_error;
+            echo json_encode($response);
+            exit();
+        }
+        
+        error_log("Database connected successfully");
+        
+        $getEndorsementQuery = "SELECT endorsementid FROM researchfile WHERE id = ? LIMIT 1";
+        $stmt1 = $con->prepare($getEndorsementQuery);
+        $stmt1->bind_param("i", $docId);
+        $stmt1->execute();
+        $result1 = $stmt1->get_result();
+        
+        $endorsementId = $docId; // Default to the sent ID
+        
+        if ($result1 && $result1->num_rows > 0) {
+            $row1 = $result1->fetch_assoc();
+            $endorsementId = $row1['endorsementid'];
+            error_log("Found endorsement ID: " . $endorsementId . " for researchfile ID: " . $docId);
+        } else {
+            error_log("No researchfile found with ID: " . $docId . ", trying to use as endorsement ID directly");
+            $endorsementId = $docId;
+        }
+        $stmt1->close();
+        
+        $query = "SELECT 
+            rd.reason,
+            rd.date,
+            rf.title as document_title,
+            rf.event as event_name,
+            rf.author,
+            rf.category,
+            rf.campus,
+            rf.center,
+            rf.status as document_status,
+            rf.id as researchfile_id
+        FROM rejecteddocs rd
+        LEFT JOIN researchfile rf ON rd.docid = rf.endorsementid
+        WHERE rd.docid = ?
+        ORDER BY rd.date DESC
+        LIMIT 1";
+        
+        error_log("Query with endorsementId: " . $endorsementId);
+        
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            error_log("Prepare failed: " . $con->error);
+            $response->message = 'Database error: ' . $con->error;
+            echo json_encode($response);
+            exit();
+        }
+        
+        $stmt->bind_param("i", $endorsementId);
+        
+        if (!$stmt->execute()) {
+            error_log("Execute failed: " . $stmt->error);
+            $response->message = 'Query execution failed: ' . $stmt->error;
+            echo json_encode($response);
+            exit();
+        }
+        
+        $result = $stmt->get_result();
+        error_log("Result rows: " . $result->num_rows);
+        
+        if ($result && $result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            error_log("Row found: " . print_r($row, true));
+            
+            $response->status = true;
+            $response->message = 'Rejection reason found';
+            $response->reason = $row['reason'] ?? 'No reason provided';
+            $response->date = $row['date'] ?? '';
+            $response->rejectedBy = $row['rejected_by_name'] ?? 'Unknown';
+            $response->documentTitle = $row['document_title'] ?? 'N/A';
+            $response->eventName = $row['event_name'] ?? 'N/A';
+            $response->author = $row['author'] ?? 'N/A';
+            $response->category = $row['category'] ?? 'N/A';
+            $response->campus = $row['campus'] ?? 'N/A';
+            $response->center = $row['center'] ?? 'N/A';
+            $response->documentStatus = $row['document_status'] ?? 'N/A';
+            $response->researchfileId = $row['researchfile_id'] ?? null;
+        } else {
+            error_log("No rejection record found for endorsement ID: " . $endorsementId);
+            $response->message = 'No rejection record found for this document';
+            
+            // Check if the document is rejected in the researchfile table
+            $statusQuery = "SELECT status, title, event FROM researchfile WHERE id = ?";
+            $statusStmt = $con->prepare($statusQuery);
+            $statusStmt->bind_param("i", $docId);
+            $statusStmt->execute();
+            $statusResult = $statusStmt->get_result();
+            
+            if ($statusResult && $statusResult->num_rows > 0) {
+                $statusRow = $statusResult->fetch_assoc();
+                if ($statusRow['status'] === 'rejected') {
+                    $response->documentTitle = $statusRow['title'] ?? 'N/A';
+                    $response->eventName = $statusRow['event'] ?? 'N/A';
+                    $response->documentStatus = 'rejected';
+                    $response->reason = 'Document was rejected but no rejection reason was recorded.';
+                }
+            }
+            $statusStmt->close();
+        }
+        
+        $stmt->close();
+        $con->close();
+        
+    } catch (Exception $e) {
+        error_log("Exception: " . $e->getMessage());
+        $response->message = 'Error: ' . $e->getMessage();
+    }
+    
+    // Ensure we always return valid JSON
+    $jsonResponse = json_encode($response);
+    error_log("Response: " . $jsonResponse);
+    echo $jsonResponse;
+    exit();
+}
+
 if (isset($_POST['submitRevision'])) {
     $response = new stdClass();
     $response->status = false;
@@ -3654,7 +3816,6 @@ if (isset($_POST['submitRevision'])) {
         }
 
         try {
-            require_once __DIR__ . '/../config/driver_config.php';
             $driveService = new GoogleDriveService();
 
             // Get folder to upload to (prefer entry folder, fallback to center or event)
@@ -3860,8 +4021,6 @@ if (isset($_POST['deleteEndorsement'])) {
 
             error_log("Files to delete from Google Drive: " . json_encode($driveFileIds));
 
-            // Initialize Google Drive service
-            require_once __DIR__ . '/../config/driver_config.php';
 
             if (!class_exists('GoogleDriveService')) {
                 throw new Exception("GoogleDriveService class not found");
