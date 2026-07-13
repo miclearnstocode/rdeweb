@@ -952,8 +952,9 @@ export const Research = () => {
             style: {
                 display: 'flex',
                 gap: '8px',
-                justifyContent: 'center',
-                flexWrap: 'wrap'
+                justifyContent: 'flex-start',
+                flexWrap: 'nowrap',
+                alignItems: 'center'
             }
         })
 
@@ -963,7 +964,7 @@ export const Research = () => {
         // Define visibility rules based on your table
         const showComments = !['pending', 'revision_pending'].includes(currentStatus)
         const showEdit = ['pending', 'revision_pending', 'revision_submitted', 'revision_rejected'].includes(currentStatus)
-        const showDelete = ['pending', 'revision_pending', 'revision_submitted', 'revision_rejected'].includes(currentStatus)
+        const showDelete = ['pending', 'revision_pending', 'revision_submitted', 'revision_rejected', 'rejected'].includes(currentStatus)
         const showResubmit = currentStatus === 'rejected'
 
         // Button style configurations
@@ -2942,19 +2943,8 @@ export const Research = () => {
                 style: { padding: '28px' }
             })
 
-            // Two column layout
-            const twoColumnLayout = $({
-                tag: 'div',
-                style: {
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '20px',
-                    marginBottom: '20px'
-                }
-            })
-
-            // Event selection
-            const eventField = $({ tag: 'div', style: { marginBottom: '10px' } })
+            // Event selection (full width)
+            const eventField = $({ tag: 'div', style: { marginBottom: '20px' } })
             eventField.appendChild($({
                 tag: 'label',
                 text: 'Event Name *',
@@ -2990,23 +2980,16 @@ export const Research = () => {
                             const selectedOption = e.target.options[e.target.selectedIndex]
                             const selectedEventId = selectedOption ? selectedOption.getAttribute('id') : null
 
-                            // Check if selected event is In-House Review (not Symposium)
                             const isInHouse = selectedEventName && selectedEventName.toLowerCase().includes('in-house')
-
-                            // Check if selected event is Symposium
                             const isSymposium = selectedEventName && selectedEventName.toLowerCase().includes('symposium')
 
                             if (isSymposium && !isEdit && !symposiumModalActive) {
-                                // Animate out normal form
                                 normalFormContent.style.opacity = '0'
                                 normalFormContent.style.transform = 'translateX(-20px)'
 
                                 setTimeout(() => {
                                     normalFormContent.style.display = 'none'
-
-                                    // Create and show Symposium modal inside the container
                                     showSymposiumInContainer(selectedEventName, selectedEventId)
-
                                     symposiumPlaceholder.style.display = 'block'
                                     symposiumPlaceholder.style.opacity = '0'
                                     symposiumPlaceholder.style.transform = 'translateX(20px)'
@@ -3016,10 +2999,8 @@ export const Research = () => {
                                         symposiumPlaceholder.style.transform = 'translateX(0)'
                                     }, 50)
 
-                                    // Update header and footer
                                     const modalTitle = document.querySelector('#modalTitle')
                                     if (modalTitle) modalTitle.innerText = 'Symposium Submission (In-House Review Required)'
-
                                     submitBtn.style.display = 'none'
                                     isSymposiumMode = true
                                     symposiumModalActive = true
@@ -3027,11 +3008,9 @@ export const Research = () => {
                                 return
                             }
 
-                            // For non-Symposium events, continue with normal form
                             formData.eventName = selectedEventName
                             formData.eventId = selectedEventId
 
-                            // Show/hide local files section for In-House events only
                             if (localFilesSection) {
                                 localFilesSection.style.display = isInHouse ? 'block' : 'none'
                             }
@@ -3085,6 +3064,17 @@ export const Research = () => {
             })
             eventField.appendChild(eventSelect)
 
+            // Two column layout
+            const twoColumnLayout = $({
+                tag: 'div',
+                style: {
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '20px',
+                    marginBottom: '20px'
+                }
+            })
+
             // Title field
             const titleField = $({ tag: 'div', style: { marginBottom: '0' } })
             titleField.appendChild($({
@@ -3126,6 +3116,7 @@ export const Research = () => {
             })
             titleField.appendChild(titleInput)
 
+            // Campus field
             const campusField = $({ tag: 'div', style: { marginBottom: '0' } })
             campusField.appendChild($({
                 tag: 'label',
@@ -3310,16 +3301,95 @@ export const Research = () => {
             })
             authorField.appendChild(authorInput)
 
-            // Presenter field
+            // Presenter field - FIXED VERSION
             const presenterField = $({ tag: 'div', style: { marginBottom: '0' } })
-            presenterField.appendChild($({
+
+            // Create label with warning icon
+            const labelWrapper = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '8px'
+                }
+            })
+
+            // Add the presenter label
+            const presenterLabel = $({
                 tag: 'label',
                 text: 'Presenter *',
-                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
-            }))
+                style: {
+                    display: 'block',
+                    color: '#475569',
+                    fontSize: '13px',
+                    fontWeight: '600'
+                }
+            })
+            labelWrapper.appendChild(presenterLabel)
+
+            // Add warning icon
+            const warningIcon = $({
+                tag: 'i',
+                att: {
+                    className: 'fas fa-exclamation-triangle',
+                    title: 'The presenter name will be printed on the certificate and cannot be changed after submission.'
+                },
+                style: {
+                    color: '#FF9800',
+                    fontSize: '14px',
+                    cursor: 'help'
+                }
+            })
+            labelWrapper.appendChild(warningIcon)
+
+            // Append label wrapper to presenter field
+            presenterField.appendChild(labelWrapper)
+
+            // Add warning message
+            const warningMessage = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '8px',
+                    backgroundColor: '#FFF8E1',
+                    borderLeft: '3px solid #FF9800',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    marginBottom: '10px'
+                },
+                child: [
+                    $({
+                        tag: 'i',
+                        att: { className: 'fas fa-info-circle' },
+                        style: {
+                            color: '#FF9800',
+                            fontSize: '13px',
+                            marginTop: '1px'
+                        }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: 'The presenter name will appear on the certificate and cannot be changed after submission.',
+                        style: {
+                            color: '#795548',
+                            fontSize: '12px',
+                            lineHeight: '1.4'
+                        }
+                    })
+                ]
+            })
+            presenterField.appendChild(warningMessage)
+
+            // Add presenter input
             presenterInput = $({
                 tag: 'input',
-                att: { type: 'text', placeholder: 'Enter presenter name', value: isEdit ? capitalizeFirstLetter(editData?.presenter || '') : '' },
+                att: {
+                    type: 'text',
+                    placeholder: 'Enter presenter name',
+                    value: isEdit ? capitalizeFirstLetter(editData?.presenter || '') : ''
+                },
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -3481,6 +3551,7 @@ export const Research = () => {
             coAuthorField.appendChild(coAuthorInputGroup)
             coAuthorField.appendChild(coAuthorList)
 
+            // Add all fields to two column layout in the correct order
             twoColumnLayout.appendChild(titleField)
             twoColumnLayout.appendChild(campusField)
             twoColumnLayout.appendChild(categoryField)
@@ -3488,6 +3559,8 @@ export const Research = () => {
             twoColumnLayout.appendChild(authorField)
             twoColumnLayout.appendChild(presenterField)
             twoColumnLayout.appendChild(coAuthorField)
+
+            // Build the form
             formBody.appendChild(eventField)
             formBody.appendChild(twoColumnLayout)
 
@@ -3521,7 +3594,7 @@ export const Research = () => {
 
             fileSection.appendChild(fileGrid)
 
-            // Dynamic Program File section for In-House only (not Symposium)
+            // Dynamic Program File section for In-House only
             localFilesSection = $({
                 tag: 'div',
                 style: {
