@@ -1,28 +1,28 @@
-import {$} from '../../lib/lib.js'
+import { $ } from '../../lib/lib.js'
 
-export const headerFooter=({content})=>{
-    const TableHeader=()=>{
-        return($({
-            tag:'table',
-            style:{
-                width:'100%'
+export const headerFooter = ({ content }) => {
+    const TableHeader = () => {
+        return ($({
+            tag: 'table',
+            style: {
+                width: '100%'
             },
-            att:{
-                className:'printContainer'
+            att: {
+                className: 'printContainer'
             },
-            child:[
+            child: [
                 $({
-                    tag:'thead',
-                    child:[
+                    tag: 'thead',
+                    child: [
                         $({
-                            tag:'tr',
-                            child:[
+                            tag: 'tr',
+                            child: [
                                 $({
-                                    tag:'td',
-                                    child:[
+                                    tag: 'td',
+                                    child: [
                                         $({
-                                            tag:'div',
-                                            att:{
+                                            tag: 'div',
+                                            att: {
                                                 className: 'empty-header'
                                             }
                                         })
@@ -33,20 +33,20 @@ export const headerFooter=({content})=>{
                     ]
                 }),
                 $({
-                    tag:'tbody',
-                    child:[
+                    tag: 'tbody',
+                    child: [
                         $({
-                            tag:'tr',
-                            child:[
+                            tag: 'tr',
+                            child: [
                                 $({
-                                    tag:'td',
-                                    child:[
+                                    tag: 'td',
+                                    child: [
                                         $({
-                                            tag:'div',
-                                            att:{
+                                            tag: 'div',
+                                            att: {
                                                 className: 'contentPrinter'
                                             },
-                                            child:content
+                                            child: content
                                         })
                                     ]
                                 })
@@ -55,12 +55,12 @@ export const headerFooter=({content})=>{
                     ]
                 }),
                 $({
-                    tag:'tfoot',
-                    child:[
+                    tag: 'tfoot',
+                    child: [
                         $({
-                            tag:'div',
-                            att:{
-                                className:'empty-footer'
+                            tag: 'div',
+                            att: {
+                                className: 'empty-footer'
                             }
                         })
                     ]
@@ -69,20 +69,20 @@ export const headerFooter=({content})=>{
         }))
     }
 
-    return($({
-        tag:'div',
-        style:{
+    return ($({
+        tag: 'div',
+        style: {
             width: '210mm', // A4 width
             height: '297mm', // A4 height
             position: 'relative'
         },
-        child:[
+        child: [
             $({
-                tag:'div',
-                att:{
-                    className:'header-image-container'
+                tag: 'div',
+                att: {
+                    className: 'header-image-container'
                 },
-                style:{
+                style: {
                     position: 'absolute',
                     top: '0',
                     left: '0',
@@ -91,14 +91,14 @@ export const headerFooter=({content})=>{
                     zIndex: '0',
                     pointerEvents: 'none'
                 },
-                child:[
+                child: [
                     $({
-                        tag:'img',
-                        att:{
-                            src:"/client/images/header.png",
+                        tag: 'img',
+                        att: {
+                            src: "/client/images/header.png",
                             className: 'header-footer-image'
                         },
-                        style:{
+                        style: {
                             width: '100%',
                             height: '100%',
                             objectFit: 'contain'
@@ -107,11 +107,11 @@ export const headerFooter=({content})=>{
                 ]
             }),
             $({
-                tag:'div',
-                att:{
-                    className:'content-overlay'
+                tag: 'div',
+                att: {
+                    className: 'content-overlay'
                 },
-                style:{
+                style: {
                     position: 'relative',
                     zIndex: '1',
                     width: '100%',
@@ -119,7 +119,7 @@ export const headerFooter=({content})=>{
                     padding: '10mm 15mm 15mm 15mm', // Adjust padding for content area
                     boxSizing: 'border-box'
                 },
-                child:[
+                child: [
                     TableHeader()
                 ]
             })
@@ -127,89 +127,89 @@ export const headerFooter=({content})=>{
     }))
 }
 
-export const Print=({title,category,campus,date,author,review,getHandler,all})=>{
+export const Print = ({ title, category, campus, date, author, review, getHandler, all }) => {
     console.log('Print function received campus:', campus);
-    const details=()=>{
-        const tdData=({data,width})=>{
-            const getme=(el)=>{
-                if(data){
-                    el.innerHTML=data
+    const details = () => {
+        const tdData = ({ data, width }) => {
+            const getme = (el) => {
+                if (data) {
+                    el.innerHTML = data
                 }
-                if(width){
-                    el.style.width=width
+                if (width) {
+                    el.style.width = width
                 }
             }
-            return($({
-                tag:'td',
-                elementHandler:getme
+            return ($({
+                tag: 'td',
+                elementHandler: getme
             }))
         }
-        
-        const row=({leb1,leb2})=>{
-            return($({
-                tag:'tr',
-                child:[ // This should be an array
+
+        const row = ({ leb1, leb2 }) => {
+            return ($({
+                tag: 'tr',
+                child: [ // This should be an array
                     leb1,
                     leb2
                 ]
             }))
         }
 
-        return($({
-            tag:'table',
-            style:{
-                width:'100%',
+        return ($({
+            tag: 'table',
+            style: {
+                width: '100%',
                 marginTop: '10mm',
                 marginBottom: '10mm'
             },
-            child:[
+            child: [
                 row({
-                    leb1:tdData({
-                        data:'<b>Campus</b>',
-                        width:'15%'
+                    leb1: tdData({
+                        data: '<b>Campus</b>',
+                        width: '15%'
                     }),
-                    leb2:tdData({
-                        data:': '+campus,
-                        width:'85%'
+                    leb2: tdData({
+                        data: ': ' + campus,
+                        width: '85%'
                     }),
                 }),
                 row({
-                    leb1:tdData({
-                        data:'<b>Title </b>',
-                        width:'15%',
+                    leb1: tdData({
+                        data: '<b>Title </b>',
+                        width: '15%',
                     }),
-                    leb2:tdData({
-                        data:': '+title,
-                        width:'85%'
-                    }),
-                }),
-                row({
-                    leb1:tdData({
-                        data:'<b>Category</b>',
-                        width:'15%'
-                    }),
-                    leb2:tdData({
-                        data:': '+category,
-                        width:'85%'
+                    leb2: tdData({
+                        data: ': ' + title,
+                        width: '85%'
                     }),
                 }),
                 row({
-                    leb1:tdData({
-                        data:'<b>Author</b>',
-                        width:'15%'
+                    leb1: tdData({
+                        data: '<b>Category</b>',
+                        width: '15%'
                     }),
-                    leb2:tdData({
-                        data:': '+author,
-                        width:'85%'
+                    leb2: tdData({
+                        data: ': ' + category,
+                        width: '85%'
+                    }),
+                }),
+                row({
+                    leb1: tdData({
+                        data: '<b>Author</b>',
+                        width: '15%'
+                    }),
+                    leb2: tdData({
+                        data: ': ' + author,
+                        width: '85%'
                     }),
                 }),
             ]
         }))
     }
 
-    const getCont=(el)=>{
+    const getCont = (el) => {
         getHandler(el)
-        
+
         // Main container with header image background
         el.style.cssText = `
             width: 210mm;
@@ -225,69 +225,61 @@ export const Print=({title,category,campus,date,author,review,getHandler,all})=>
             border: 1px solid #ccc;
             font-family: 'Arial', sans-serif;
         `;
-        
+
         // Content wrapper to ensure text stays within safe area
         const contentWrapper = $({
-            tag:'div',
-            style:{
+            tag: 'div',
+            style: {
                 width: '100%',
                 minHeight: 'calc(297mm - 70mm)', // Full height minus top/bottom padding
                 position: 'relative'
             }
         });
-        
-        // Add details section
+
         contentWrapper.appendChild(details());
-        
-        // Add a separator
         contentWrapper.appendChild($({
-            tag:'hr',
-            style:{
+            tag: 'hr',
+            style: {
                 border: '1px solid #ccc',
                 margin: '10mm 0'
             }
         }));
 
-        // Add reviews/comments
-        if(review && Array.isArray(review)){
-            review.forEach((val, index)=>{
-                // Check if val is an object and has required properties
+        if (review && Array.isArray(review)) {
+            review.forEach((val, index) => {
                 if (!val || typeof val !== 'object') {
                     console.warn('Invalid review item:', val);
                     return;
                 }
-                
-                let state=true;
-                if(all){
-                    if(val.evalName && val.evalName.toUpperCase().includes("TECHNICAL")){
-                        state=false
+
+                let state = true;
+                if (all) {
+                    if (val.evalName && val.evalName.toUpperCase().includes("TECHNICAL")) {
+                        state = false
                     }
                 }
-                
-                if(state){
-                    const perComment=()=>{
-                        // Check for page break before new evaluator (except first)
+
+                if (state) {
+                    const perComment = () => {
                         const pageBreakStyle = index > 0 ? {
                             pageBreakBefore: 'always',
                             paddingTop: '10mm'
                         } : {};
-                        
+
                         const commentContainer = $({
-                            tag:'div',
-                            style:{
-                                width:'100%',
+                            tag: 'div',
+                            style: {
+                                width: '100%',
                                 marginBottom: '15mm',
                                 ...pageBreakStyle
                             }
                         });
-                        
-                        // Evaluator header - only if evalName exists
+
                         if (val.evalName) {
-                            // FIX: Ensure child is an array
                             const evaluatorDiv = $({
-                                tag:'div',
-                                style:{
-                                    width:'100%',
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
                                     fontSize: '12pt',
                                     fontWeight: 'bold',
                                     color: '#2c3e50',
@@ -297,15 +289,15 @@ export const Print=({title,category,campus,date,author,review,getHandler,all})=>
                                 },
                                 child: [ // Make sure this is an array
                                     $({
-                                        tag:'table',
-                                        style:{
-                                            width:'100%',
+                                        tag: 'table',
+                                        style: {
+                                            width: '100%',
                                         },
                                         child: [ // Make sure this is an array
                                             $({
-                                                tag:'tr',
-                                                att:{
-                                                    innerHTML:`<td style="font-size: 12pt; font-weight: bold;">EVALUATOR: ${val.evalName}</td>`
+                                                tag: 'tr',
+                                                att: {
+                                                    innerHTML: `<td style="font-size: 12pt; font-weight: bold;">EVALUATOR: ${val.evalName}</td>`
                                                 }
                                             })
                                         ]
@@ -314,19 +306,19 @@ export const Print=({title,category,campus,date,author,review,getHandler,all})=>
                             });
                             commentContainer.appendChild(evaluatorDiv);
                         }
-                        
+
                         // Function to add comment sections
                         const addCommentSection = (label, data) => {
                             if (data && data.trim() !== '') {
                                 const section = $({
-                                    tag:'div',
-                                    style:{
+                                    tag: 'div',
+                                    style: {
                                         marginBottom: '5mm'
                                     },
                                     child: [ // Make sure this is an array
                                         $({
-                                            tag:'div',
-                                            style:{
+                                            tag: 'div',
+                                            style: {
                                                 fontWeight: 'bold',
                                                 fontSize: '11pt',
                                                 color: '#34495e',
@@ -335,8 +327,8 @@ export const Print=({title,category,campus,date,author,review,getHandler,all})=>
                                             text: label + ':'
                                         }),
                                         $({
-                                            tag:'div',
-                                            style:{
+                                            tag: 'div',
+                                            style: {
                                                 fontSize: '10pt',
                                                 lineHeight: '1',
                                                 color: '#2c3e50',
@@ -347,17 +339,17 @@ export const Print=({title,category,campus,date,author,review,getHandler,all})=>
                                                 wordBreak: 'break-word',
                                                 whiteSpace: 'pre-wrap'
                                             },
-                                            att:{
+                                            att: {
                                                 innerHTML: data.replace(/\n/g, '<br>')
                                             }
                                         })
                                     ]
                                 });
-                                
+
                                 commentContainer.appendChild(section);
                             }
                         };
-                        
+
                         // Add all comment sections - check if each property exists
                         if (val.intro) addCommentSection("Introduction", val.intro);
                         if (val.abstract) addCommentSection("Abstract", val.abstract);
@@ -367,27 +359,27 @@ export const Print=({title,category,campus,date,author,review,getHandler,all})=>
                         if (val.recommendation) addCommentSection("Conclusion and Recommendation", val.recommendation);
                         if (val.literature) addCommentSection("Literature Cited", val.literature);
                         if (val.other) addCommentSection("Other comments", val.other);
-                        
+
                         return commentContainer;
                     }
-                    
+
                     contentWrapper.appendChild(perComment());
                 }
             })
         }
-        
+
         el.appendChild(contentWrapper);
     }
 
-    return($({
-        tag:'div',
-        style:{
-            backgroundColor:'white'
+    return ($({
+        tag: 'div',
+        style: {
+            backgroundColor: 'white'
         },
-        att:{
-            id:'commentPDF'
+        att: {
+            id: 'commentPDF'
         },
-        externalStyle:'/client/component/otherComponent/style/comment.css',
-        elementHandler:getCont
+        externalStyle: '/client/component/otherComponent/style/comment.css',
+        elementHandler: getCont
     }))
 }

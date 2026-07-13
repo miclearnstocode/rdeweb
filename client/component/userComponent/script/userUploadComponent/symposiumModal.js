@@ -1786,7 +1786,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         }))
         newTitleContainer.appendChild($({
             tag: 'div',
-            text: 'This will be saved as the Final Symposium Title',
+            text: 'This will be saved as the Final Research/Extension Title',
             style: { color: '#64748b', fontSize: '12px', marginBottom: '8px' }
         }))
 

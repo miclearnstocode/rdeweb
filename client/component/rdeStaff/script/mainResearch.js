@@ -1,11 +1,11 @@
-import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting, CustomModal} from "../../../lib/lib.js";
-import {Print} from "../../otherComponent/comment.js";
-import {PrintSummary} from "../../otherComponent/ReviewTemplate.js";
-import {Route, Router} from "../../../lib/Router.js";
-import {RankDocs} from "./src/docsRank.js";
-import {FinalRanking, RankPerCriteria, ScoreRankAVe} from "./src/rankAlgo.js";
-import {Summary} from "./src/Summary.js";
-import {PrintResearch} from "../../otherComponent/researchSummary.js";
+import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting, CustomModal } from "../../../lib/lib.js";
+import { Print } from "../../otherComponent/comment.js";
+import { PrintSummary } from "../../otherComponent/ReviewTemplate.js";
+import { Route, Router } from "../../../lib/Router.js";
+import { RankDocs } from "./src/docsRank.js";
+import { FinalRanking, RankPerCriteria, ScoreRankAVe } from "./src/rankAlgo.js";
+import { Summary } from "./src/Summary.js";
+import { PrintResearch } from "../../otherComponent/researchSummary.js";
 import { Forwarded } from "./src/forwarded.js";
 
 
@@ -15,7 +15,7 @@ export const ResearchMain = () => {
     const getMainFrame = (el) => {
         mainFrame = el
     }
-    const getLeftDiv = (el) => {  
+    const getLeftDiv = (el) => {
         leftPdiv = el
     }
     let serch
@@ -23,20 +23,20 @@ export const ResearchMain = () => {
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A'
         const date = new Date(dateString)
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
         })
     }
 
     const formatDateTime = (dateString) => {
         if (!dateString) return 'N/A'
         const date = new Date(dateString)
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
         }) + ' at ' + date.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
@@ -46,7 +46,7 @@ export const ResearchMain = () => {
     const Incoming = () => {
         let bodyContent, docQue
         let currentTab = 'faculty'
-        
+
         const label = $({
             tag: 'div',
             style: {
@@ -170,19 +170,19 @@ export const ResearchMain = () => {
                         $({
                             tag: 'span',
                             att: { className: 'fa-solid fa-magnifying-glass' },
-                            style: { 
-                                color: '#adb5bd', 
-                                fontSize: '16px', 
+                            style: {
+                                color: '#adb5bd',
+                                fontSize: '16px',
                                 flexShrink: '0',
                                 transition: 'color 0.2s ease'
                             }
                         }),
                         $({
                             tag: 'input',
-                            att: { 
-                                type: 'text', 
-                                className: 'searchInput', 
-                                placeholder: 'Search submissions...' 
+                            att: {
+                                type: 'text',
+                                className: 'searchInput',
+                                placeholder: 'Search submissions...'
                             },
                             style: {
                                 backgroundColor: 'transparent',
@@ -206,13 +206,13 @@ export const ResearchMain = () => {
                                     })
                                 },
                                 type2: 'focus',
-                                method2: (e) => { 
+                                method2: (e) => {
                                     e.target.style.width = '280px';
                                     const searchIcon = e.target.parentElement?.querySelector('.fa-magnifying-glass');
                                     if (searchIcon) searchIcon.style.color = '#0d6efd';
                                 },
                                 type3: 'blur',
-                                method3: (e) => { 
+                                method3: (e) => {
                                     e.target.style.width = '200px';
                                     const searchIcon = e.target.parentElement?.querySelector('.fa-magnifying-glass');
                                     if (searchIcon) searchIcon.style.color = '#adb5bd';
@@ -222,7 +222,7 @@ export const ResearchMain = () => {
                         // Optional clear button
                         $({
                             tag: 'span',
-                            att: { 
+                            att: {
                                 className: 'fa-solid fa-circle-xmark',
                                 title: 'Clear search'
                             },
@@ -262,7 +262,7 @@ export const ResearchMain = () => {
                 // Add focus effect to the container
                 const input = el.querySelector('input');
                 const clearBtn = el.querySelector('.fa-circle-xmark');
-                
+
                 if (input) {
                     // Show/hide clear button based on input value
                     input.addEventListener('input', (e) => {
@@ -270,18 +270,18 @@ export const ResearchMain = () => {
                             clearBtn.style.display = e.target.value.length > 0 ? 'block' : 'none';
                         }
                     });
-                    
+
                     input.addEventListener('focus', () => {
                         el.style.borderColor = '#0d6efd';
                         el.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
                     });
-                    
+
                     input.addEventListener('blur', () => {
                         el.style.borderColor = '#e9ecef';
                         el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
                     });
                 }
-                
+
                 // Make entire container clickable to focus input
                 el.addEventListener('click', () => {
                     if (input) input.focus();
@@ -291,9 +291,9 @@ export const ResearchMain = () => {
 
         const loadContent = () => {
             if (!bodyContent) return
-            
+
             bodyContent.innerHTML = ''
-            
+
             // Show loading indicator
             bodyContent.appendChild($({
                 tag: 'div',
@@ -302,7 +302,7 @@ export const ResearchMain = () => {
             }))
 
             const form = new FormData()
-            
+
             if (currentTab === 'faculty') {
                 form.append('incomingEndorsement', 'true')
             } else if (currentTab === 'undergraduate') {
@@ -320,7 +320,7 @@ export const ResearchMain = () => {
                 .then(data => {
                     bodyContent.innerHTML = ''
                     if (docQue) docQue.innerText = `  ${data.length}  `
-                    
+
                     if (data.length === 0) {
                         bodyContent.appendChild($({
                             tag: 'div',
@@ -332,7 +332,7 @@ export const ResearchMain = () => {
                         }))
                         return
                     }
-                    
+
                     data.forEach(val => {
                         if (currentTab === 'faculty') {
                             bodyContent.appendChild(docsFaculty({
@@ -392,7 +392,7 @@ export const ResearchMain = () => {
             let certificateFile = null
             let localInhouseData = null
             let endorsementLetterUrl = null
-            
+
             research.forEach(val => {
                 category = val.category
                 titleEntry = val.title
@@ -426,7 +426,7 @@ export const ResearchMain = () => {
             const isExtension = !center || center === '' || center === 'Extension (Extension)' || center === 'Extension'
             const isSymposium = eventType && (eventType.toLowerCase().includes('symposium') || eventType.toLowerCase().includes('rde'))
             const isInHouse = eventType && (eventType.toLowerCase().includes('in-house') || eventType.toLowerCase().includes('in house'))
-            
+
             let researchFileLabel = ''
             if (isExtension) {
                 if (isSymposium) researchFileLabel = 'Extension Paper'
@@ -447,7 +447,7 @@ export const ResearchMain = () => {
             // Modern file viewer using CustomModal
             const openFileInModal = (fileData, title, fileType) => {
                 let driveViewUrl = ''
-                
+
                 if (typeof fileData === 'object' && fileData !== null) {
                     driveViewUrl = fileData.drive_view_url || fileData.viewUrl || fileData.fileUrl || fileData.file || fileData.legacyFile || ''
                 } else if (typeof fileData === 'string') {
@@ -462,13 +462,13 @@ export const ResearchMain = () => {
                         driveViewUrl = fileData
                     }
                 }
-                
+
                 // If no valid URL found
                 if (!driveViewUrl) {
                     alert(`No ${fileType} file available`);
                     return;
                 }
-                
+
                 const createViewerContent = () => {
                     const container = $({
                         tag: 'div',
@@ -479,9 +479,9 @@ export const ResearchMain = () => {
                             position: 'relative'
                         }
                     });
-                    
+
                     const isGoogleDriveUrl = driveViewUrl && driveViewUrl.includes('drive.google.com');
-                    
+
                     if (isGoogleDriveUrl) {
                         let fileId = null;
                         const patterns = [
@@ -491,7 +491,7 @@ export const ResearchMain = () => {
                             /\/file\/d\/([a-zA-Z0-9_-]+)/,
                             /([a-zA-Z0-9_-]{25,})/
                         ];
-                        
+
                         for (let pattern of patterns) {
                             const match = driveViewUrl.match(pattern);
                             if (match && match[1]) {
@@ -499,11 +499,11 @@ export const ResearchMain = () => {
                                 break;
                             }
                         }
-                        
+
                         if (fileId) {
                             fileId = fileId.split('?')[0].split('&')[0];
                             const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-                            
+
                             const loadingIndicator = $({
                                 tag: 'div',
                                 style: {
@@ -528,7 +528,7 @@ export const ResearchMain = () => {
                                 ]
                             });
                             container.appendChild(loadingIndicator);
-                            
+
                             const iframe = document.createElement('iframe');
                             iframe.src = embedUrl;
                             iframe.style.width = '100%';
@@ -539,7 +539,7 @@ export const ResearchMain = () => {
                             iframe.style.left = '0';
                             iframe.allow = 'autoplay; fullscreen';
                             iframe.allowFullscreen = true;
-                            
+
                             iframe.onload = () => loadingIndicator.remove();
                             iframe.onerror = () => {
                                 loadingIndicator.remove();
@@ -551,7 +551,7 @@ export const ResearchMain = () => {
                                     </div>
                                 `;
                             };
-                            
+
                             container.appendChild(iframe);
                         } else {
                             container.innerHTML = `
@@ -598,10 +598,10 @@ export const ResearchMain = () => {
                             </div>
                         `;
                     }
-                    
+
                     return container;
                 };
-                
+
                 CustomModal({
                     title: `${fileType} - ${title.substring(0, 60)}${title.length > 60 ? '...' : ''}`,
                     size: 'large',
@@ -659,9 +659,9 @@ export const ResearchMain = () => {
                             } catch (e) {
                                 coauthors = []
                             }
-                            
+
                             if (coauthors.length === 0) return null
-                            
+
                             return $({
                                 tag: 'div',
                                 style: {
@@ -732,10 +732,10 @@ export const ResearchMain = () => {
                     }
 
                     const Button = ({ Label, Event, isAccept = false }) => {
-                        const colors = isAccept 
+                        const colors = isAccept
                             ? { bg: '#28a745', hover: '#218838' }
                             : { bg: '#dc3545', hover: '#c82333' }
-                        
+
                         return $({
                             tag: 'button',
                             style: {
@@ -769,7 +769,7 @@ export const ResearchMain = () => {
 
                     const showRejectModal = () => {
                         let rejectReason = ''
-                        
+
                         const modalContent = ({ closeModal }) => {
                             return $({
                                 tag: 'div',
@@ -782,9 +782,9 @@ export const ResearchMain = () => {
                                             $({
                                                 tag: 'label',
                                                 text: 'Reason for Rejection',
-                                                style: { 
-                                                    color: '#495057', 
-                                                    fontSize: '14px', 
+                                                style: {
+                                                    color: '#495057',
+                                                    fontSize: '14px',
                                                     fontWeight: '600',
                                                     fontFamily: 'Inter, sans-serif'
                                                 }
@@ -807,7 +807,7 @@ export const ResearchMain = () => {
                                                     transition: 'border-color 0.2s ease'
                                                 },
                                                 event: {
-                                                    type: 'input', 
+                                                    type: 'input',
                                                     method: (e) => { rejectReason = e.target.value },
                                                     focus: (e) => { e.target.style.borderColor = '#0d6efd' },
                                                     blur: (e) => { e.target.style.borderColor = '#dee2e6' }
@@ -818,7 +818,7 @@ export const ResearchMain = () => {
                                 ]
                             })
                         }
-                        
+
                         const modalFooter = ({ closeModal }) => {
                             return $({
                                 tag: 'div',
@@ -838,7 +838,7 @@ export const ResearchMain = () => {
                                             transition: 'all 0.2s ease'
                                         },
                                         event: {
-                                            type: 'click', 
+                                            type: 'click',
                                             method: closeModal,
                                             mouseenter: (e) => { e.target.style.backgroundColor = '#f8f9fa' },
                                             mouseleave: (e) => { e.target.style.backgroundColor = '#ffffff' }
@@ -866,32 +866,33 @@ export const ResearchMain = () => {
                                                     return
                                                 }
                                                 closeModal()
-                                                
+
                                                 let loading = Waiting()
                                                 document.body.appendChild(loading)
-                                                
+
+                                                // Simplified: Only send docId, reason, and rejection flag
                                                 const form = new FormData()
                                                 form.append('docId', docId)
-                                                form.append('fileUrl', file)
                                                 form.append('reasonEnd', rejectReason)
                                                 form.append('rejectIndorse', 'true')
                                                 form.append('fileType', `EndorsementLetter:${eventType}`)
-                                                
+                                                // fileUrl is NO LONGER needed
+
                                                 await fetch('/getresearch', {
                                                     method: 'POST',
                                                     body: form
                                                 }).then(res => res.json())
-                                                .then(dat => {
-                                                    loading.remove()
-                                                    if (dat?.status) {
-                                                        document.body.appendChild(ConfirmationAlert(dat.message, () => window.location.reload()))
-                                                    } else {
-                                                        document.body.appendChild(ConfirmationAlert(dat?.message || 'Error processing request', () => window.location.reload()))
-                                                    }
-                                                }).catch(() => {
-                                                    loading.remove()
-                                                    alert('Error submitting rejection. Please try again.')
-                                                })
+                                                    .then(dat => {
+                                                        loading.remove()
+                                                        if (dat?.status) {
+                                                            document.body.appendChild(ConfirmationAlert(dat.message, () => window.location.reload()))
+                                                        } else {
+                                                            document.body.appendChild(ConfirmationAlert(dat?.message || 'Error processing request', () => window.location.reload()))
+                                                        }
+                                                    }).catch(() => {
+                                                        loading.remove()
+                                                        alert('Error submitting rejection. Please try again.')
+                                                    })
                                             },
                                             mouseenter: (e) => { e.target.style.backgroundColor = '#c82333' },
                                             mouseleave: (e) => { e.target.style.backgroundColor = '#dc3545' }
@@ -900,8 +901,8 @@ export const ResearchMain = () => {
                                 ]
                             })
                         }
-                        
-                        CustomModal({
+
+                        return CustomModal({
                             title: 'Reject Document',
                             size: 'medium',
                             content: modalContent,
@@ -922,8 +923,8 @@ export const ResearchMain = () => {
                                 gap: '12px'
                             },
                             child: [
-                                Button({ 
-                                    Label: '✓ ACCEPT', 
+                                Button({
+                                    Label: '✓ ACCEPT',
                                     Event: async () => {
                                         if (confirm("Are you sure you want to accept this document?")) {
                                             let loading = Waiting()
@@ -945,15 +946,15 @@ export const ResearchMain = () => {
                                                 }
                                             }).catch(() => loading.remove())
                                         }
-                                    }, 
-                                    isAccept: true 
+                                    },
+                                    isAccept: true
                                 }),
-                                Button({ 
-                                    Label: '✗ REJECT', 
+                                Button({
+                                    Label: '✗ REJECT',
                                     Event: () => {
                                         if (confirm("Are you sure you want to reject this document?")) showRejectModal()
-                                    }, 
-                                    isAccept: false 
+                                    },
+                                    isAccept: false
                                 })
                             ]
                         })
@@ -962,14 +963,14 @@ export const ResearchMain = () => {
                     const getClickBot = (el) => {
                         const holder = $({
                             tag: 'div',
-                            style: { 
-                                flex: '1', 
-                                overflowY: 'auto', 
+                            style: {
+                                flex: '1',
+                                overflowY: 'auto',
                                 padding: '20px',
                                 backgroundColor: '#f8f9fa'
                             }
                         })
-                        
+
                         research.forEach(val => {
                             holder.appendChild(researchBot({
                                 dataURLResearch: val.file,
@@ -984,16 +985,16 @@ export const ResearchMain = () => {
                                 certificateFile: val.certificateFile
                             }))
                         })
-                        
+
                         el.appendChild(holder)
                         el.appendChild(Controller())
                     }
 
                     return $({
                         tag: 'div',
-                        style: { 
-                            width: '70%', 
-                            height: '100%', 
+                        style: {
+                            width: '70%',
+                            height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
                             backgroundColor: '#ffffff',
@@ -1008,10 +1009,10 @@ export const ResearchMain = () => {
                     // Helper function to extract file URL from various formats
                     const extractFileUrl = (fileData) => {
                         if (!fileData) return null;
-                        
+
                         // If it's a string, return it
                         if (typeof fileData === 'string') return fileData;
-                        
+
                         // If it's an object
                         if (typeof fileData === 'object') {
                             // Check for drive_view_url first (primary for research proposals)
@@ -1024,19 +1025,19 @@ export const ResearchMain = () => {
                             if (fileData.file) return fileData.file;
                             if (fileData.legacyFile) return fileData.legacyFile;
                         }
-                        
+
                         return null;
                     };
 
                     // Check if a file has a valid viewable URL
                     const hasViewableFile = (fileData) => {
                         if (!fileData) return false;
-                        
+
                         // If it's an object with hasFile property
                         if (typeof fileData === 'object' && fileData.hasFile !== undefined) {
                             return fileData.hasFile === true;
                         }
-                        
+
                         // Check if we can extract a URL
                         const url = extractFileUrl(fileData);
                         return url !== null && url !== '';
@@ -1044,7 +1045,7 @@ export const ResearchMain = () => {
 
                     // Get the research file from the first research entry
                     const researchFile = research.length > 0 ? research[0].file : null;
-                    
+
                     // Get program and certificate files
                     const programFileData = research.length > 0 ? research[0].programFile : null;
                     const certificateFileData = research.length > 0 ? research[0].certificateFile : null;
@@ -1193,8 +1194,8 @@ export const ResearchMain = () => {
 
                     return $({
                         tag: 'div',
-                        style: { 
-                            width: '30%', 
+                        style: {
+                            width: '30%',
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
@@ -1218,7 +1219,7 @@ export const ResearchMain = () => {
                                         color: '#0d6efd',
                                         disabled: !hasEndorsementFile
                                     }),
-                                    
+
                                     // Research Document Button - FIX: Use researchFile (the actual research proposal/paper)
                                     actionButton({
                                         icon: researchIcon,
@@ -1235,25 +1236,25 @@ export const ResearchMain = () => {
                                         color: researchColor,
                                         disabled: !hasResearchFile
                                     }),
-                                    
+
                                     // Program File Button (if available)
                                     ...(programFileData ? [actionButton({
                                         icon: 'fa-solid fa-file-alt',
                                         label: isExtension ? 'Local Program File' : 'Program File',
-                                        description: isExtension 
-                                            ? 'The local program document associated with this extension submission.' 
+                                        description: isExtension
+                                            ? 'The local program document associated with this extension submission.'
                                             : 'The program file document associated with this research submission.',
                                         onClick: () => openFileInModal(programFileData, titleEntry || research[0]?.title || 'Program File', isExtension ? 'Local Program File' : 'Program File'),
                                         color: '#fd7e14',
                                         disabled: !hasProgramFile
                                     })] : []),
-                                    
+
                                     // Certificate File Button (if available)
                                     ...(certificateFileData ? [actionButton({
                                         icon: 'fa-solid fa-certificate',
                                         label: isExtension ? 'Local Certificate File' : 'Certificate File',
-                                        description: isExtension 
-                                            ? 'The certificate document associated with this extension submission.' 
+                                        description: isExtension
+                                            ? 'The certificate document associated with this extension submission.'
                                             : 'The certificate document associated with this research submission.',
                                         onClick: () => openFileInModal(certificateFileData, titleEntry || research[0]?.title || 'Certificate File', isExtension ? 'Local Certificate File' : 'Certificate File'),
                                         color: '#28a745',
@@ -1289,12 +1290,12 @@ export const ResearchMain = () => {
                 });
             }
 
-            const icon = $({ 
-                tag: 'div', 
-                att: { className: 'fa-solid fa-chalkboard-user' }, 
-                style: { 
-                    fontSize: '28px', 
-                    margin: 'auto', 
+            const icon = $({
+                tag: 'div',
+                att: { className: 'fa-solid fa-chalkboard-user' },
+                style: {
+                    fontSize: '28px',
+                    margin: 'auto',
                     color: '#dc3545',
                     width: '48px',
                     height: '48px',
@@ -1303,45 +1304,45 @@ export const ResearchMain = () => {
                     justifyContent: 'center',
                     backgroundColor: '#fff5f5',
                     borderRadius: '12px'
-                } 
+                }
             })
 
             const leftBox = () => {
-                const details = (label, data) => $({ 
-                    tag: 'div', 
-                    style: { 
+                const details = (label, data) => $({
+                    tag: 'div',
+                    style: {
                         display: 'flex',
                         marginBottom: '8px',
                         fontSize: '13px',
                         fontFamily: 'Inter, sans-serif'
-                    }, 
+                    },
                     child: [
-                        $({ 
-                            tag: 'span', 
-                            text: `${label}:`, 
-                            style: { 
-                                color: '#6c757d', 
+                        $({
+                            tag: 'span',
+                            text: `${label}:`,
+                            style: {
+                                color: '#6c757d',
                                 fontWeight: '500',
                                 minWidth: '100px'
-                            } 
+                            }
                         }),
-                        $({ 
-                            tag: 'span', 
-                            text: data || 'N/A', 
-                            style: { 
+                        $({
+                            tag: 'span',
+                            text: data || 'N/A',
+                            style: {
                                 color: '#2c3e50',
                                 flex: '1'
-                            } 
+                            }
                         })
-                    ] 
+                    ]
                 })
-                
+
                 let [datePart, timePart] = (date || '').split(' ')
                 let timeFormat = timePart ? TimeConvert(timePart.split(":")) : 'N/A'
-                
+
                 const locationLabel = isExtension ? 'Campus' : 'Center'
                 const locationValue = isExtension ? (campus || 'N/A') : (research.length > 0 ? research[0].center : center || 'N/A')
-                
+
                 const detailItems = [
                     details("Title", titleEntry?.substring(0, 60) + (titleEntry?.length > 60 ? '...' : '') || 'N/A'),
                     details("Sender", sender),
@@ -1352,20 +1353,20 @@ export const ResearchMain = () => {
                     details("Date Submitted", `${formatDate(datePart)} at ${timeFormat}`)
                 ]
 
-                return $({ 
-                    tag: 'div', 
-                    style: { 
+                return $({
+                    tag: 'div',
+                    style: {
                         flex: '1',
                         padding: '12px 16px'
-                    }, 
+                    },
                     child: detailItems
                 })
             }
 
             return $({
                 tag: 'div',
-                style: { 
-                    width: '100%', 
+                style: {
+                    width: '100%',
                     marginBottom: '12px',
                     backgroundColor: '#ffffff',
                     borderRadius: '12px',
@@ -1379,14 +1380,14 @@ export const ResearchMain = () => {
                 child: [
                     $({
                         tag: 'div',
-                        style: { 
-                            display: 'flex', 
+                        style: {
+                            display: 'flex',
                             padding: '16px',
                             gap: '16px',
                             alignItems: 'center'
                         },
                         child: [
-                            icon, 
+                            icon,
                             leftBox(),
                             $({
                                 tag: 'div',
@@ -1407,13 +1408,13 @@ export const ResearchMain = () => {
                     })
                 ],
                 event: {
-                    type: 'click', 
+                    type: 'click',
                     method: () => viewDocs(),
-                    mouseenter: (e) => { 
+                    mouseenter: (e) => {
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                         e.currentTarget.style.transform = 'translateY(-2px)';
                     },
-                    mouseleave: (e) => { 
+                    mouseleave: (e) => {
                         e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
                         e.currentTarget.style.transform = 'translateY(0)';
                     }
@@ -1422,7 +1423,7 @@ export const ResearchMain = () => {
         }
         // Student Research Document
         const docsStudent = ({ id, title, author, coauthor, presenter, category, campus, event, paper_type, created_at, sender_type, sender_email, research_file, endorsement_file }) => {
-            
+
             const formatDate = (dateStr) => {
                 if (!dateStr) return 'N/A';
                 const date = new Date(dateStr);
@@ -1438,18 +1439,18 @@ export const ResearchMain = () => {
 
             const openFileInModal = (fileData, title, fileType) => {
                 let fileUrl = '';
-                
+
                 if (typeof fileData === 'object' && fileData !== null) {
                     fileUrl = fileData.drive_view_url || fileData.viewUrl || fileData.fileUrl || fileData.file || fileData.legacyFile || '';
                 } else if (typeof fileData === 'string') {
                     fileUrl = fileData;
                 }
-                
+
                 if (!fileUrl) {
                     alert(`No ${fileType} file available`);
                     return;
                 }
-                
+
                 const createViewerContent = () => {
                     const container = $({
                         tag: 'div',
@@ -1460,9 +1461,9 @@ export const ResearchMain = () => {
                             position: 'relative'
                         }
                     });
-                    
+
                     const isGoogleDriveUrl = fileUrl && typeof fileUrl === 'string' && (fileUrl.includes('drive.google.com') || fileUrl.includes('/d/'));
-                    
+
                     if (isGoogleDriveUrl) {
                         let fileId = null;
                         const patterns = [
@@ -1472,7 +1473,7 @@ export const ResearchMain = () => {
                             /\/file\/d\/([a-zA-Z0-9_-]+)/,
                             /([a-zA-Z0-9_-]{25,})/
                         ];
-                        
+
                         for (let pattern of patterns) {
                             const match = fileUrl.match(pattern);
                             if (match && match[1]) {
@@ -1480,11 +1481,11 @@ export const ResearchMain = () => {
                                 break;
                             }
                         }
-                        
+
                         if (fileId) {
                             fileId = fileId.split('?')[0].split('&')[0];
                             const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-                            
+
                             const loadingIndicator = $({
                                 tag: 'div',
                                 style: {
@@ -1509,7 +1510,7 @@ export const ResearchMain = () => {
                                 ]
                             });
                             container.appendChild(loadingIndicator);
-                            
+
                             const iframe = document.createElement('iframe');
                             iframe.src = embedUrl;
                             iframe.style.width = '100%';
@@ -1520,7 +1521,7 @@ export const ResearchMain = () => {
                             iframe.style.left = '0';
                             iframe.allow = 'autoplay; fullscreen';
                             iframe.allowFullscreen = true;
-                            
+
                             iframe.onload = () => loadingIndicator.remove();
                             iframe.onerror = () => {
                                 loadingIndicator.remove();
@@ -1532,7 +1533,7 @@ export const ResearchMain = () => {
                                     </div>
                                 `;
                             };
-                            
+
                             container.appendChild(iframe);
                         } else {
                             container.innerHTML = `
@@ -1579,10 +1580,10 @@ export const ResearchMain = () => {
                             </div>
                         `;
                     }
-                    
+
                     return container;
                 };
-                
+
                 CustomModal({
                     title: `${fileType} - ${title.substring(0, 50)}${title.length > 50 ? '...' : ''}`,
                     size: 'large',
@@ -1640,9 +1641,9 @@ export const ResearchMain = () => {
                         } catch (e) {
                             coauthors = []
                         }
-                        
+
                         if (coauthors.length === 0) return null
-                        
+
                         return $({
                             tag: 'div',
                             style: {
@@ -1688,10 +1689,10 @@ export const ResearchMain = () => {
                     }
 
                     const Button = ({ Label, Event, isAccept = false }) => {
-                        const colors = isAccept 
+                        const colors = isAccept
                             ? { bg: '#28a745', hover: '#218838' }
                             : { bg: '#dc3545', hover: '#c82333' }
-                        
+
                         return $({
                             tag: 'button',
                             style: {
@@ -1725,7 +1726,7 @@ export const ResearchMain = () => {
 
                     const showRejectModal = () => {
                         let rejectReason = ''
-                        
+
                         const modalContent = ({ closeModal }) => {
                             return $({
                                 tag: 'div',
@@ -1738,9 +1739,9 @@ export const ResearchMain = () => {
                                             $({
                                                 tag: 'label',
                                                 text: 'Reason for Rejection',
-                                                style: { 
-                                                    color: '#495057', 
-                                                    fontSize: '14px', 
+                                                style: {
+                                                    color: '#495057',
+                                                    fontSize: '14px',
                                                     fontWeight: '600',
                                                     fontFamily: 'Inter, sans-serif'
                                                 }
@@ -1763,7 +1764,7 @@ export const ResearchMain = () => {
                                                     transition: 'border-color 0.2s ease'
                                                 },
                                                 event: {
-                                                    type: 'input', 
+                                                    type: 'input',
                                                     method: (e) => { rejectReason = e.target.value },
                                                     focus: (e) => { e.target.style.borderColor = '#0d6efd' },
                                                     blur: (e) => { e.target.style.borderColor = '#dee2e6' }
@@ -1774,7 +1775,7 @@ export const ResearchMain = () => {
                                 ]
                             })
                         }
-                        
+
                         const modalFooter = ({ closeModal }) => {
                             return $({
                                 tag: 'div',
@@ -1794,7 +1795,7 @@ export const ResearchMain = () => {
                                             transition: 'all 0.2s ease'
                                         },
                                         event: {
-                                            type: 'click', 
+                                            type: 'click',
                                             method: closeModal,
                                             mouseenter: (e) => { e.target.style.backgroundColor = '#f8f9fa' },
                                             mouseleave: (e) => { e.target.style.backgroundColor = '#ffffff' }
@@ -1822,7 +1823,7 @@ export const ResearchMain = () => {
                                                     return
                                                 }
                                                 closeModal()
-                                                
+
                                                 let loading = Waiting()
                                                 document.body.appendChild(loading)
                                                 const req = new Request('/getresearch')
@@ -1848,7 +1849,7 @@ export const ResearchMain = () => {
                                 ]
                             })
                         }
-                        
+
                         CustomModal({
                             title: 'Reject Document',
                             size: 'medium',
@@ -1870,8 +1871,8 @@ export const ResearchMain = () => {
                                 gap: '12px'
                             },
                             child: [
-                                Button({ 
-                                    Label: '✓ ACCEPT', 
+                                Button({
+                                    Label: '✓ ACCEPT',
                                     Event: async () => {
                                         if (confirm("Are you sure you want to accept this research paper?")) {
                                             let loading = Waiting()
@@ -1893,15 +1894,15 @@ export const ResearchMain = () => {
                                                 }
                                             }).catch(() => loading.remove())
                                         }
-                                    }, 
-                                    isAccept: true 
+                                    },
+                                    isAccept: true
                                 }),
-                                Button({ 
-                                    Label: '✗ REJECT', 
+                                Button({
+                                    Label: '✗ REJECT',
                                     Event: () => {
                                         if (confirm("Are you sure you want to reject this document?")) showRejectModal()
-                                    }, 
-                                    isAccept: false 
+                                    },
+                                    isAccept: false
                                 })
                             ]
                         })
@@ -1910,14 +1911,14 @@ export const ResearchMain = () => {
                     const getClickBot = (el) => {
                         const holder = $({
                             tag: 'div',
-                            style: { 
-                                flex: '1', 
-                                overflowY: 'auto', 
+                            style: {
+                                flex: '1',
+                                overflowY: 'auto',
                                 padding: '20px',
                                 backgroundColor: '#f8f9fa'
                             }
                         })
-                        
+
                         holder.appendChild($({
                             tag: 'div',
                             style: {
@@ -1937,16 +1938,16 @@ export const ResearchMain = () => {
                                 labelDetails("Category", category)
                             ]
                         }))
-                        
+
                         el.appendChild(holder)
                         el.appendChild(Controller())
                     }
 
                     return $({
                         tag: 'div',
-                        style: { 
-                            width: '70%', 
-                            height: '100%', 
+                        style: {
+                            width: '70%',
+                            height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
                             backgroundColor: '#ffffff',
@@ -1957,11 +1958,11 @@ export const ResearchMain = () => {
                 }
 
                 const RightPanel = () => {
-                 
+
                     const extractFileUrl = (fileData) => {
                         if (!fileData) return null;
-                        
-                      
+
+
                         if (typeof fileData === 'string') return fileData;
                         if (typeof fileData === 'object') {
                             if (fileData.driveViewUrl) return fileData.driveViewUrl;
@@ -1973,14 +1974,14 @@ export const ResearchMain = () => {
                             if (fileData.file) return fileData.file;
                             if (fileData.legacyFile) return fileData.legacyFile;
                         }
-                        
+
                         return null;
                     };
 
 
                     const hasViewableFile = (fileData) => {
                         if (!fileData) return false;
-                        
+
 
                         if (typeof fileData === 'object' && fileData.hasFile !== undefined) {
                             return fileData.hasFile === true;
@@ -2104,8 +2105,8 @@ export const ResearchMain = () => {
 
                     return $({
                         tag: 'div',
-                        style: { 
-                            width: '30%', 
+                        style: {
+                            width: '30%',
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
@@ -2135,7 +2136,7 @@ export const ResearchMain = () => {
                                         color: '#0d6efd',
                                         disabled: !hasEndorsementFile
                                     }),
-                                    
+
                                     // Research Paper Button
                                     actionButton({
                                         icon: 'fa-solid fa-file-pdf',
@@ -2181,14 +2182,14 @@ export const ResearchMain = () => {
                 });
             };
 
-            const icon = $({ 
-                tag: 'div', 
-                att: { 
-                    className: paper_type === 'undergraduate' ? 'fa-solid fa-graduation-cap' : 'fa-solid fa-user-graduate' 
-                }, 
-                style: { 
-                    fontSize: '32px', 
-                    margin: 'auto', 
+            const icon = $({
+                tag: 'div',
+                att: {
+                    className: paper_type === 'undergraduate' ? 'fa-solid fa-graduation-cap' : 'fa-solid fa-user-graduate'
+                },
+                style: {
+                    fontSize: '32px',
+                    margin: 'auto',
                     color: paper_type === 'undergraduate' ? '#28a745' : '#fd7e14',
                     width: '56px',
                     height: '56px',
@@ -2197,56 +2198,56 @@ export const ResearchMain = () => {
                     justifyContent: 'center',
                     backgroundColor: paper_type === 'undergraduate' ? '#e8f5e9' : '#fff3e0',
                     borderRadius: '12px'
-                } 
+                }
             })
 
             // Left box content for card preview
             const leftBox = () => {
-                const details = (label, data) => $({ 
-                    tag: 'div', 
-                    style: { 
+                const details = (label, data) => $({
+                    tag: 'div',
+                    style: {
                         display: 'flex',
                         marginBottom: '8px',
                         fontSize: '13px',
                         fontFamily: 'Inter, sans-serif'
-                    }, 
+                    },
                     child: [
-                        $({ 
-                            tag: 'span', 
-                            text: `${label}:`, 
-                            style: { 
-                                color: '#6c757d', 
+                        $({
+                            tag: 'span',
+                            text: `${label}:`,
+                            style: {
+                                color: '#6c757d',
                                 fontWeight: '500',
                                 minWidth: '100px'
-                            } 
+                            }
                         }),
-                        $({ 
-                            tag: 'span', 
-                            text: data || 'N/A', 
-                            style: { 
+                        $({
+                            tag: 'span',
+                            text: data || 'N/A',
+                            style: {
                                 color: '#2c3e50',
                                 flex: '1'
-                            } 
+                            }
                         })
-                    ] 
+                    ]
                 })
-                
+
                 const detailItems = [
-                    details("Title", title.substring(0, 60) + (title.length > 60 ? '...' : '')), 
-                    details("Sender Type", sender_type), 
-                    details("Category", category), 
-                    details("Campus", campus), 
+                    details("Title", title.substring(0, 60) + (title.length > 60 ? '...' : '')),
+                    details("Sender Type", sender_type),
+                    details("Category", category),
+                    details("Campus", campus),
                     details("Event Type", event),
                     details("Sender Email", sender_email || 'N/A'),
                     details("Date Submitted", formatDate(created_at))
                 ]
-                
-                return $({ 
-                    tag: 'div', 
-                    style: { 
+
+                return $({
+                    tag: 'div',
+                    style: {
                         flex: '1',
                         padding: '12px 16px'
-                    }, 
+                    },
                     child: detailItems
                 })
             }
@@ -2254,8 +2255,8 @@ export const ResearchMain = () => {
             // Main card return
             return $({
                 tag: 'div',
-                style: { 
-                    width: '100%', 
+                style: {
+                    width: '100%',
                     marginBottom: '12px',
                     backgroundColor: '#ffffff',
                     borderRadius: '12px',
@@ -2269,14 +2270,14 @@ export const ResearchMain = () => {
                 child: [
                     $({
                         tag: 'div',
-                        style: { 
-                            display: 'flex', 
+                        style: {
+                            display: 'flex',
                             padding: '16px',
                             gap: '16px',
                             alignItems: 'center'
                         },
                         child: [
-                            icon, 
+                            icon,
                             leftBox(),
                             $({
                                 tag: 'div',
@@ -2297,13 +2298,13 @@ export const ResearchMain = () => {
                     })
                 ],
                 event: {
-                    type: 'click', 
+                    type: 'click',
                     method: () => viewStudentDocs(),
-                    mouseenter: (e) => { 
+                    mouseenter: (e) => {
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                         e.currentTarget.style.transform = 'translateY(-2px)';
                     },
-                    mouseleave: (e) => { 
+                    mouseleave: (e) => {
                         e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
                         e.currentTarget.style.transform = 'translateY(0)';
                     }
@@ -2383,8 +2384,8 @@ export const ResearchMain = () => {
                                 $({
                                     tag: 'span',
                                     text: 'Pending submission(s):',
-                                    style: { 
-                                        fontSize: '13px', 
+                                    style: {
+                                        fontSize: '13px',
                                         fontFamily: 'Inter, sans-serif',
                                         color: '#495057',
                                         fontWeight: '500'
@@ -2392,9 +2393,9 @@ export const ResearchMain = () => {
                                 }),
                                 $({
                                     tag: 'span',
-                                    style: { 
-                                        color: '#0d6efd', 
-                                        fontWeight: 'bold', 
+                                    style: {
+                                        color: '#0d6efd',
+                                        fontWeight: 'bold',
                                         fontSize: '16px',
                                         marginLeft: '4px',
                                         backgroundColor: '#e7f1ff',
@@ -2403,8 +2404,8 @@ export const ResearchMain = () => {
                                         minWidth: '30px',
                                         textAlign: 'center'
                                     },
-                                    elementHandler: (el) => { 
-                                        docQue = el 
+                                    elementHandler: (el) => {
+                                        docQue = el
                                     },
                                     text: '0'
                                 })
@@ -2417,30 +2418,30 @@ export const ResearchMain = () => {
         }))
     }
 
-    const ScoreSummary=()=>{
-        let Anchor,EventName
+    const ScoreSummary = () => {
+        let Anchor, EventName
         const safePath = (index) => {
             const path = Path(index);
             return path && path !== 'undefined' ? path : null;
         };
-        
+
         function ChangeId(eventId, eventName) {
             // Get current URL path
             const currentPath = window.location.pathname;
             const pathParts = currentPath.split('/');
-            
+
             // Find the position of 'scoreSummary' in the path
             const scoreSummaryIndex = pathParts.indexOf('scoreSummary');
-            
+
             if (scoreSummaryIndex !== -1) {
                 // Update event ID at position scoreSummaryIndex + 1
                 pathParts[scoreSummaryIndex + 1] = eventId;
-                
+
                 // Remove any category/center ID that follows
                 if (pathParts.length > scoreSummaryIndex + 2) {
                     pathParts.splice(scoreSummaryIndex + 2, pathParts.length - (scoreSummaryIndex + 2));
                 }
-                
+
                 // Navigate to new URL
                 window.location.href = pathParts.join('/');
             } else {
@@ -2449,81 +2450,81 @@ export const ResearchMain = () => {
             }
         }
 
-        const Top=()=>{
-            const FilterEvent=()=>{
-                return($({
-                    tag:'div',
-                    style:{
-                        margin:'auto',
-                        marginRight:'1vw',
-                        marginLeft:'auto',
-                        width:'fit-content',
-                        height:'fit-content',
-                        position:'relative',
-                        display:'flex'
+        const Top = () => {
+            const FilterEvent = () => {
+                return ($({
+                    tag: 'div',
+                    style: {
+                        margin: 'auto',
+                        marginRight: '1vw',
+                        marginLeft: 'auto',
+                        width: 'fit-content',
+                        height: 'fit-content',
+                        position: 'relative',
+                        display: 'flex'
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'div',
-                            style:{
-                                margin:'auto',
-                                marginRight:'1vw',
-                                fontSize:'1.5vw',
-                                color:'deepskyblue',
+                            tag: 'div',
+                            style: {
+                                margin: 'auto',
+                                marginRight: '1vw',
+                                fontSize: '1.5vw',
+                                color: 'deepskyblue',
                                 cursor: 'pointer'
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'a',
-                                    style:{
-                                        textDecoration:'none',
-                                        color:'deepskyblue',
+                                    tag: 'a',
+                                    style: {
+                                        textDecoration: 'none',
+                                        color: 'deepskyblue',
                                     },
-                                    att:{
-                                        className:'fa-solid fa-rotate',
-                                        href:'/rdeOffice/research/scoreSummary',
+                                    att: {
+                                        className: 'fa-solid fa-rotate',
+                                        href: '/rdeOffice/research/scoreSummary',
                                         title: 'Refresh'
                                     },
-                                    elementHandler:(el)=>{
-                                        Anchor=el
+                                    elementHandler: (el) => {
+                                        Anchor = el
                                     }
                                 })
                             ]
                         }),
                         $({
-                            tag:'select',
-                            style:{
-                                width:'20vw',
-                                height:'3vh',
-                                fontSize:'1vw',
-                                backgroundColor:'transparent',
-                                border:'none',
-                                color:'#bbb',
+                            tag: 'select',
+                            style: {
+                                width: '20vw',
+                                height: '3vh',
+                                fontSize: '1vw',
+                                backgroundColor: 'transparent',
+                                border: 'none',
+                                color: '#bbb',
                                 outLine: 'none',
                                 borderBottom: 'solid thin #999',
                             },
-                            event:{
-                                type:'change',
-                                method:(ev)=>{
+                            event: {
+                                type: 'change',
+                                method: (ev) => {
                                     const eventId = ev.target.value;
                                     const eventOption = ev.target.childNodes[ev.target.selectedIndex];
-                                    
+
                                     if (eventId && eventId !== 'Select Event') {
                                         // Update the URL to include the event ID
                                         const currentPath = window.location.pathname;
                                         const pathParts = currentPath.split('/');
-                                        
+
                                         // If we're already on a scoreSummary page with an event ID
                                         if (pathParts.includes('scoreSummary')) {
                                             // Update the event ID in the URL (position 4)
                                             pathParts[4] = eventId;
-                                            
+
                                             // If there's a category/center after the event ID, remove it
                                             // to go back to the main categories/centers view
                                             if (pathParts.length > 5) {
                                                 pathParts.splice(5, pathParts.length - 5);
                                             }
-                                            
+
                                             const newUrl = pathParts.join('/');
                                             window.location.href = newUrl;
                                         } else {
@@ -2533,41 +2534,41 @@ export const ResearchMain = () => {
                                     }
                                 }
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'option',
-                                    att:{
-                                        selected:true,
-                                        disabled:true,
+                                    tag: 'option',
+                                    att: {
+                                        selected: true,
+                                        disabled: true,
                                         value: ''
                                     },
-                                    text:'Select Event'
+                                    text: 'Select Event'
                                 })
                             ],
-                            elementHandler:(el)=>{
+                            elementHandler: (el) => {
                                 const req = new Request('/eventRequest')
                                 req.Post([
                                     {
-                                        name:'getEventAdmin',
-                                        value:'1'
+                                        name: 'getEventAdmin',
+                                        value: '1'
                                     }
                                 ])
                                 req.Json()
-                                req.Send().then(data=>{
-                                    data.forEach(val=>{
+                                req.Send().then(data => {
+                                    data.forEach(val => {
                                         const option = $({
-                                            tag:'option',
+                                            tag: 'option',
                                             att: {
                                                 value: val.id
                                             },
                                             text: val.name,
-                                            style:{
+                                            style: {
                                                 backgroundColor: '#222',
-                                                color:'deepskyblue',
-                                                fontSize:'1vw',
+                                                color: 'deepskyblue',
+                                                fontSize: '1vw',
                                             }
                                         })
-                                        
+
                                         // If this option matches the current event ID in the URL, select it
                                         const currentPath = window.location.pathname;
                                         const pathParts = currentPath.split('/');
@@ -2577,13 +2578,13 @@ export const ResearchMain = () => {
                                                 option.selected = true;
                                             }
                                         }
-                                        
+
                                         el.appendChild(option);
                                     })
                                 }).catch(err => {
                                     console.error('Error loading events:', err);
                                     el.appendChild($({
-                                        tag:'option',
+                                        tag: 'option',
                                         att: {
                                             disabled: true
                                         },
@@ -2595,56 +2596,56 @@ export const ResearchMain = () => {
                     ]
                 }))
             }
-            return($({
+            return ($({
                 tag: 'div',
                 style: {
                     width: '100%',
-                    height:'fit-content',
-                    paddingTop:'.5rem',
-                    paddingBottom:'.3rem',
-                    backgroundColor:'rgba(100,100,100,0.34)',
-                    display:'flex'
+                    height: 'fit-content',
+                    paddingTop: '.5rem',
+                    paddingBottom: '.3rem',
+                    backgroundColor: 'rgba(100,100,100,0.34)',
+                    display: 'flex'
                 },
-                child:[
+                child: [
                     $({
                         tag: 'button',
                         style: {
-                            width:'fit-content',
-                            height:'fit-content',
-                            marginRight:'2vw',
-                            marginLeft:'1vw',
-                            border:'solid thin deepskyblue',
-                            paddingLeft:'.5vw',
-                            paddingRight:'.5vw',
-                            borderRadius:'.5rem',
+                            width: 'fit-content',
+                            height: 'fit-content',
+                            marginRight: '2vw',
+                            marginLeft: '1vw',
+                            border: 'solid thin deepskyblue',
+                            paddingLeft: '.5vw',
+                            paddingRight: '.5vw',
+                            borderRadius: '.5rem',
                             backgroundColor: '#222',
                             cursor: 'pointer',
                             display: 'flex',
-                            flexDirection: 'column', 
+                            flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center'
                         },
-                        child:[
+                        child: [
                             $({
-                                tag:'div',
-                                text:'Back',
-                                style:{
-                                    fontSize:'1vw',
-                                    fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                                tag: 'div',
+                                text: 'Back',
+                                style: {
+                                    fontSize: '1vw',
+                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
                                     color: 'deepskyblue',
                                     textDecoration: 'hidden'
                                 }
                             }),
                             $({
-                                tag:'div',
-                                att:{
-                                    className:'fa fa-arrow-left'
+                                tag: 'div',
+                                att: {
+                                    className: 'fa fa-arrow-left'
                                 },
-                                style:{
-                                    margin:'auto',
-                                    textAlign:'center',
-                                    width:'100%',
-                                    fontSize:'1.2vw',
+                                style: {
+                                    margin: 'auto',
+                                    textAlign: 'center',
+                                    width: '100%',
+                                    fontSize: '1.2vw',
                                     color: 'deepskyblue'
                                 }
                             })
@@ -2657,17 +2658,17 @@ export const ResearchMain = () => {
                         }
                     }),
                     $({
-                        tag:'div',
-                        text:'Score Summary and Ranking',
-                        style:{
-                            margin:'auto',
-                            marginLeft:'1vw',
-                            color:'#bbb',
-                            width:'fit-content',
-                            height:'fit-content',
-                            fontSize:'1.2vw',
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            fontWeight:'bolder'
+                        tag: 'div',
+                        text: 'Score Summary and Ranking',
+                        style: {
+                            margin: 'auto',
+                            marginLeft: '1vw',
+                            color: '#bbb',
+                            width: 'fit-content',
+                            height: 'fit-content',
+                            fontSize: '1.2vw',
+                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                            fontWeight: 'bolder'
                         }
                     }),
                     FilterEvent()
@@ -2675,26 +2676,26 @@ export const ResearchMain = () => {
             }))
         }
 
-        const BodySum=()=>{
-            const LabelEvent=(text,url)=>{
-                return($({
-                    tag:'div',
+        const BodySum = () => {
+            const LabelEvent = (text, url) => {
+                return ($({
+                    tag: 'div',
                     style: {
-                        width:'fit-content',
+                        width: 'fit-content',
                         height: 'fit-content',
-                        fontSize:'1.5vw',
-                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                        margin:'2vh auto'
+                        fontSize: '1.5vw',
+                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                        margin: '2vh auto'
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'a',
+                            tag: 'a',
                             att: {
                                 href: `/rdeOffice/research/scoreSummary/${Path(4)}/category/${url}`
                             },
-                            text:text,
-                            style:{
-                                textDecoration:'none',
+                            text: text,
+                            style: {
+                                textDecoration: 'none',
                                 color: 'deepskyblue',
                                 padding: '10px 20px',
                                 border: 'solid 1px deepskyblue',
@@ -2706,41 +2707,41 @@ export const ResearchMain = () => {
                     ]
                 }))
             }
-            
-            const SummaryPanel=(text)=>{
-                let Report,ReportData
-                
+
+            const SummaryPanel = (text) => {
+                let Report, ReportData
+
                 const getReport = ({ scoreRank, rankAve, RankPerCrit }) => {
                     Report.addEventListener('click', () => {
                         mainFrame.appendChild(Summary());
                     })
                 }
 
-                return($({
-                    tag:'div',
-                    style:{
-                        width:'100%',
-                        height:'100%',
+                return ($({
+                    tag: 'div',
+                    style: {
+                        width: '100%',
+                        height: '100%',
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'div',
+                            tag: 'div',
                             style: {
-                                width:'100%',
-                                height:'fit-content',
-                                backgroundColor:'#2c3e50',
-                                fontFamily:'Helvetica',
-                                display:'flex',
+                                width: '100%',
+                                height: 'fit-content',
+                                backgroundColor: '#2c3e50',
+                                fontFamily: 'Helvetica',
+                                display: 'flex',
                                 padding: '10px',
                                 alignItems: 'center'
                             },
-                            elementHandler:(el)=>{
+                            elementHandler: (el) => {
                                 // Get event and category/center info
-                                const req= new Request('/score_rank')
+                                const req = new Request('/score_rank')
                                 req.Post([
                                     {
-                                        name:'getCatIdName',
-                                        value:text
+                                        name: 'getCatIdName',
+                                        value: text
                                     },
                                     {
                                         name: 'eventId',
@@ -2748,37 +2749,37 @@ export const ResearchMain = () => {
                                     }
                                 ])
                                 req.Json()
-                                req.Send().then(data=>{
+                                req.Send().then(data => {
                                     // Create back button
                                     const backBtn = $({
-                                        tag:'a',
-                                        att:{
-                                            href:Current().replace(Base(),'').split('/').slice(0,5).join('/'),
-                                            className:'fa-solid fa-arrow-left',
+                                        tag: 'a',
+                                        att: {
+                                            href: Current().replace(Base(), '').split('/').slice(0, 5).join('/'),
+                                            className: 'fa-solid fa-arrow-left',
                                             title: 'Back'
                                         },
-                                        style:{
-                                            color:'deepskyblue',
-                                            textDecoration:'none',
-                                            marginRight:'20px',
+                                        style: {
+                                            color: 'deepskyblue',
+                                            textDecoration: 'none',
+                                            marginRight: '20px',
                                             fontSize: '1.2vw',
                                             padding: '5px 10px',
                                             border: 'solid 1px deepskyblue',
                                             borderRadius: '3px'
                                         },
-                                        child:[
+                                        child: [
                                             $({
-                                                tag:'span',
-                                                text:' Back',
-                                                style:{
-                                                    fontFamily:'Helvetica',
-                                                    fontWeight:'normal',
+                                                tag: 'span',
+                                                text: ' Back',
+                                                style: {
+                                                    fontFamily: 'Helvetica',
+                                                    fontWeight: 'normal',
                                                     fontSize: '1vw'
                                                 }
                                             })
                                         ]
                                     });
-                                    
+
                                     // Get event name
                                     const getEventNameReq = new Request('/score_rank');
                                     getEventNameReq.Post([
@@ -2794,26 +2795,26 @@ export const ResearchMain = () => {
                                     getEventNameReq.Json();
                                     getEventNameReq.Send().then(eventData => {
                                         const eventName = eventData.length > 0 ? eventData[0].name : 'Unknown Event';
-                                        
+
                                         // Create header
                                         const headerText = $({
-                                            tag:'div',
-                                            style:{
+                                            tag: 'div',
+                                            style: {
                                                 fontSize: '1.2vw',
                                                 color: 'white',
                                                 fontWeight: 'bold',
                                                 marginLeft: '20px'
                                             },
-                                            child:[
+                                            child: [
                                                 $({
-                                                    tag:'span',
+                                                    tag: 'span',
                                                     text: eventName + ' - ',
                                                     style: {
                                                         color: '#bbb'
                                                     }
                                                 }),
                                                 $({
-                                                    tag:'span',
+                                                    tag: 'span',
                                                     text: data.length > 0 ? `"${data[0]['name']}"` : 'Unknown Category/Center',
                                                     style: {
                                                         color: 'deepskyblue'
@@ -2821,7 +2822,7 @@ export const ResearchMain = () => {
                                                 })
                                             ]
                                         });
-                                        
+
                                         el.appendChild(backBtn);
                                         el.appendChild(headerText);
                                     });
@@ -2829,14 +2830,14 @@ export const ResearchMain = () => {
                             }
                         }),
                         $({
-                            tag:'div',
-                            style:{
-                                width:'100%',
-                                height:'87%',
-                                overflowY:'auto',
-                                backgroundColor:'#767575'
+                            tag: 'div',
+                            style: {
+                                width: '100%',
+                                height: '87%',
+                                overflowY: 'auto',
+                                backgroundColor: '#767575'
                             },
-                            elementHandler:(el)=>{
+                            elementHandler: (el) => {
                                 const request = new Request('/ranking')
                                 request.Post([
                                     {
@@ -2853,19 +2854,19 @@ export const ResearchMain = () => {
                                     }
                                 ])
                                 request.Json()
-                                request.Send().then((data)=>{
-                                    
+                                request.Send().then((data) => {
+
                                     let Titles = []
                                     let docSet = []
                                     let allDocs = [] // Collect all documents for this category/center
-                                    
+
                                     // First, display each evaluator's scores
                                     data.forEach(val => {
                                         if (val.docs && val.docs.length > 0) {
                                             //console.log(`Evaluator ${val.evaluator?.fullname} has ${val.docs.length} documents`);
-                                            
+
                                             // Sort documents by TotalScore descending
-                                            const Order = val.docs.sort((a,b) => {
+                                            const Order = val.docs.sort((a, b) => {
                                                 const scoreA = parseFloat(a.TotalScore) || 0;
                                                 const scoreB = parseFloat(b.TotalScore) || 0;
                                                 return scoreB - scoreA; // Descending
@@ -2873,7 +2874,7 @@ export const ResearchMain = () => {
                                             // Rank per evaluator within this category/center
                                             let SortCrit = RankPerCriteria(Order, val.evaluator.fullname)
                                             Titles.push(SortCrit)
-                                            
+
                                             // Collect unique documents for this category/center
                                             Order.forEach(doc => {
                                                 if (doc.file && doc.file.id) {
@@ -2888,7 +2889,7 @@ export const ResearchMain = () => {
                                                             center: doc.file.center
                                                         })
                                                     }
-                                                    
+
                                                     // Add to docSet for this evaluator
                                                     docSet.push({
                                                         docId: doc.file.id,
@@ -2900,7 +2901,7 @@ export const ResearchMain = () => {
                                                     })
                                                 }
                                             })
-                                            
+
                                             // Display this evaluator's scores
                                             el.appendChild(RankDocs({
                                                 evalName: val.evaluator.fullname,
@@ -2912,21 +2913,21 @@ export const ResearchMain = () => {
                                     // Calculate ranking ONLY within this category/center
                                     if (allDocs.length > 0) {
                                         //console.log(`Total unique documents in this category/center: ${allDocs.length}`);
-                                        
+
                                         // Calculate average scores per document across all evaluators
                                         const docAverages = allDocs.map(doc => {
                                             // Get all scores for this document from all evaluators
                                             const docScores = docSet.filter(d => d.docId === doc.docId);
                                             const totalScore = docScores.reduce((sum, d) => sum + (parseFloat(d.totalScore) || 0), 0);
                                             const averageScore = docScores.length > 0 ? totalScore / docScores.length : 0;
-                                            
+
                                             return {
                                                 ...doc,
                                                 averageScore: averageScore,
                                                 totalEvaluators: docScores.length
                                             }
                                         })
-                                        
+
                                         // Calculate ranking based on average score (descending)
                                         const rankedByScore = docAverages
                                             .sort((a, b) => b.averageScore - a.averageScore)
@@ -2934,17 +2935,17 @@ export const ResearchMain = () => {
                                                 ...doc,
                                                 scoreRank: index + 1
                                             }))
-                                        
+
                                         // Prepare data for summary display
                                         const FinalRank = rankedByScore.map(doc => ({
                                             title: doc,
                                             averageScore: doc.averageScore,
                                             rankAverage: doc.scoreRank
                                         }))
-                                        
+
                                         const RankAve = FinalRanking(FinalRank);
                                         const ScoreRank = ScoreRankAVe(FinalRank);
-                                        
+
                                         getReport({
                                             scoreRank: ScoreRank,
                                             rankAve: RankAve,
@@ -2964,7 +2965,7 @@ export const ResearchMain = () => {
                                             },
                                             text: 'No documents found for this category/center. Please select a different category/center or check if documents have been scored.'
                                         }))
-                                        
+
                                         // Still create empty report
                                         getReport({
                                             scoreRank: [],
@@ -2985,7 +2986,7 @@ export const ResearchMain = () => {
                                         },
                                         text: `Error loading ranking data: ${error.message}`
                                     }));
-                                    
+
                                     getReport({
                                         scoreRank: [],
                                         rankAve: [],
@@ -2995,45 +2996,45 @@ export const ResearchMain = () => {
                             },
                         }),
                         $({
-                            tag:'div',
-                            style:{
-                                height:'7vh',
-                                width:'100%',
+                            tag: 'div',
+                            style: {
+                                height: '7vh',
+                                width: '100%',
                                 maxWidth: 'auto',
-                                backgroundColor:'#2c3e50',
-                                display:'flex',
-                                justifyContent:'center',
-                                position: 'fixed',   
-                                bottom: '0',            
-                                zIndex: '10',       
-                                padding: '10px 0'  
+                                backgroundColor: '#2c3e50',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                position: 'fixed',
+                                bottom: '0',
+                                zIndex: '10',
+                                padding: '10px 0'
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        width:'fit-content',
-                                        height:'fit-content',
-                                        margin:'auto'
+                                    tag: 'div',
+                                    style: {
+                                        width: 'fit-content',
+                                        height: 'fit-content',
+                                        margin: 'auto'
                                     },
-                                    child:[
+                                    child: [
                                         $({
-                                            tag:'button',
-                                            style:{
-                                                width:'fit-content',
-                                                height:'fit-content',
-                                                fontSize:'1.2vw',
-                                                borderRadius:'.5rem',
-                                                border:'none',
-                                                cursor:'pointer',
-                                                color:'white',
-                                                backgroundColor:'#3498db',
+                                            tag: 'button',
+                                            style: {
+                                                width: 'fit-content',
+                                                height: 'fit-content',
+                                                fontSize: '1.2vw',
+                                                borderRadius: '.5rem',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                color: 'white',
+                                                backgroundColor: '#3498db',
                                                 padding: '10px 20px',
                                                 fontWeight: 'bold'
                                             },
-                                            text:'Generate Summary Report',
-                                            elementHandler:(el)=>{
-                                                Report=el
+                                            text: 'Generate Summary Report',
+                                            elementHandler: (el) => {
+                                                Report = el
                                             }
                                         })
                                     ]
@@ -3044,61 +3045,61 @@ export const ResearchMain = () => {
                 }))
             }
 
-            return($({
-                tag:'div',
-                style:{
-                    width:'100%',
-                    height:'92%',
+            return ($({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    height: '92%',
                 },
-                child:[
+                child: [
                     $({
-                        tag:'div',
-                        style:{
-                            height:'10%',
-                            width:'100%',
-                            padding:'1.5vh',
-                            fontSize:'1.5vw',
-                            color:'white',
-                            fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            backgroundColor:'#2c3e50',
+                        tag: 'div',
+                        style: {
+                            height: '10%',
+                            width: '100%',
+                            padding: '1.5vh',
+                            fontSize: '1.5vw',
+                            color: 'white',
+                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
+                            backgroundColor: '#2c3e50',
                             textAlign: 'center',
                             borderBottom: 'solid 2px deepskyblue'
                         }
                     }),
                     $({
-                        tag:'div',
-                        style:{
-                            height:'80vh',
-                            width:'83vw',
-                            margin:'auto',
+                        tag: 'div',
+                        style: {
+                            height: '80vh',
+                            width: '83vw',
+                            margin: 'auto',
                             backgroundColor: '#d6d7d8',
                             padding: '20px'
                         },
-                        child:[
+                        child: [
                             Router({
-                                indexPath:5,
-                                components:[
+                                indexPath: 5,
+                                components: [
                                     Route('index', $({
-                                        tag:'div',
+                                        tag: 'div',
                                         style: {
                                             width: '100%',
-                                            height:'100%',
-                                            margin:'auto',
+                                            height: '100%',
+                                            margin: 'auto',
                                         },
-                                        elementHandler:(el)=>{
+                                        elementHandler: (el) => {
                                             // Create container for categories/centers
                                             const container = $({
-                                                tag:'div',
+                                                tag: 'div',
                                                 style: {
                                                     width: '90%',
                                                     margin: 'auto',
                                                     padding: '20px'
                                                 }
                                             });
-                                            
+
                                             // Create header
                                             const header = $({
-                                                tag:'div',
+                                                tag: 'div',
                                                 style: {
                                                     textAlign: 'center',
                                                     marginBottom: '30px',
@@ -3106,7 +3107,7 @@ export const ResearchMain = () => {
                                                 },
                                                 child: [
                                                     $({
-                                                        tag:'h2',
+                                                        tag: 'h2',
                                                         style: {
                                                             fontSize: '1.8vw',
                                                             marginBottom: '10px'
@@ -3114,7 +3115,7 @@ export const ResearchMain = () => {
                                                         text: 'Select Category/Center'
                                                     }),
                                                     $({
-                                                        tag:'p',
+                                                        tag: 'p',
                                                         style: {
                                                             fontSize: '1vw',
                                                             color: '#7f8c8d'
@@ -3123,25 +3124,25 @@ export const ResearchMain = () => {
                                                     })
                                                 ]
                                             });
-                                            
+
                                             container.appendChild(header);
-                                            
-                                            const req  = new Request('/score_rank')
+
+                                            const req = new Request('/score_rank')
                                             req.Post([
                                                 {
-                                                    name:'scoreRank',
-                                                    value:'1'
+                                                    name: 'scoreRank',
+                                                    value: '1'
                                                 },
                                                 {
-                                                    name:'getEventId',
-                                                    value:Path(4)+''
+                                                    name: 'getEventId',
+                                                    value: Path(4) + ''
                                                 }
                                             ])
                                             req.Json()
-                                            req.Send().then(data=>{
+                                            req.Send().then(data => {
                                                 if (data && data.items && data.items.length > 0) {
                                                     const itemsContainer = $({
-                                                        tag:'div',
+                                                        tag: 'div',
                                                         style: {
                                                             display: 'flex',
                                                             flexWrap: 'wrap',
@@ -3149,11 +3150,11 @@ export const ResearchMain = () => {
                                                             gap: '20px'
                                                         }
                                                     });
-                                                    
-                                                    data.items.forEach(val=>{
+
+                                                    data.items.forEach(val => {
                                                         itemsContainer.appendChild(LabelEvent(val.name, val.id));
                                                     });
-                                                    
+
                                                     container.appendChild(itemsContainer);
                                                 } else {
                                                     // Show message if no categories/centers found
@@ -3170,7 +3171,7 @@ export const ResearchMain = () => {
                                                         },
                                                         child: [
                                                             $({
-                                                                tag:'div',
+                                                                tag: 'div',
                                                                 att: {
                                                                     className: 'fa-solid fa-folder-open'
                                                                 },
@@ -3181,16 +3182,16 @@ export const ResearchMain = () => {
                                                                 }
                                                             }),
                                                             $({
-                                                                tag:'h3',
+                                                                tag: 'h3',
                                                                 text: 'No Data Available',
                                                                 style: {
                                                                     marginBottom: '10px'
                                                                 }
                                                             }),
                                                             $({
-                                                                tag:'p',
-                                                                text: data && data.isNewSystem ? 
-                                                                    'No centers found for this event.' : 
+                                                                tag: 'p',
+                                                                text: data && data.isNewSystem ?
+                                                                    'No centers found for this event.' :
                                                                     'No categories found for this event.'
                                                             })
                                                         ]
@@ -3216,7 +3217,7 @@ export const ResearchMain = () => {
                                             });
                                         }
                                     })),
-                                    Route('category',SummaryPanel(Path(6))),
+                                    Route('category', SummaryPanel(Path(6))),
                                 ]
                             })
                         ]
@@ -3225,24 +3226,24 @@ export const ResearchMain = () => {
             }))
         }
 
-        return($({
-            tag:'div',
-            style:{
-                width:'100%',
-                height:'100%',
+        return ($({
+            tag: 'div',
+            style: {
+                width: '100%',
+                height: '100%',
                 backgroundColor: '#333',
-                position:'absolute',
+                position: 'absolute',
                 left: '0',
                 top: '0',
-                display: (Path(3)==='scoreSummary')? 'block' : 'none'
+                display: (Path(3) === 'scoreSummary') ? 'block' : 'none'
             },
-            elementHandler:(el)=> {
-                setTimeout(()=>{
-                    const path=Path(3);
-                    if(path===undefined){
+            elementHandler: (el) => {
+                setTimeout(() => {
+                    const path = Path(3);
+                    if (path === undefined) {
                         el.remove()
                     }
-                },50)
+                }, 50)
             },
             child: [
                 Top(),

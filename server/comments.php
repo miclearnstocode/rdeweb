@@ -275,7 +275,6 @@ if(isset($_POST['updateCommentStatus'])){
     }
 }
 
-// Add endpoint to update isScored status
 if(isset($_POST['updateScoreStatus'])){
     $docId = $_POST['docId'];
     $evalId = $_SESSION['userId'];
@@ -289,14 +288,4 @@ if(isset($_POST['updateScoreStatus'])){
         
         echo json_encode(['success' => true]);
     }
-}
-
-// Add a debug endpoint
-if(isset($_POST['test_connection'])){
-    $response = new stdClass();
-    $response->status = 'success';
-    $response->session = isset($_SESSION['userId']) ? $_SESSION['userId'] : 'not set';
-    $response->message = 'Connection test successful';
-    echo json_encode($response);
-    exit();
 }
