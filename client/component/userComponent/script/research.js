@@ -1694,7 +1694,7 @@ export const Research = () => {
             })
 
             const createFileRow = (label, fileUrl, fileType, iconColor) => {
-                if (!fileUrl || fileUrl === '—' || fileUrl === null) return null
+                if (!fileUrl || fileUrl === '—' || fileUrl === null || fileUrl === '') return null
 
                 const row = $({
                     tag: 'div',
@@ -1773,33 +1773,46 @@ export const Research = () => {
                 return row
             }
 
-            // Regular files (for all submissions)
-            const researchRow = createFileRow('Research', doc.researchFile, 'research', '#2196F3')
-            if (researchRow) container.appendChild(researchRow)
+            const eventName = doc.eventName || ''
+            const isSymposium = eventName.toLowerCase().includes('symposium')
+            const isInHouse = eventName.toLowerCase().includes('in-house') ||
+                eventName.toLowerCase().includes('in house') ||
+                eventName.toLowerCase().includes('inhouse')
 
-            const programRow = createFileRow('Program', doc.programFile, 'program', '#4caf50')
-            if (programRow) container.appendChild(programRow)
+            const researchRow = createFileRow('Research', doc.researchFile || doc.drive_view_url, 'research', '#2196F3')
+            if (researchRow) container.appendChild(researchRow)
 
             const endorsementRow = createFileRow('Endorsement', doc.endorsementFile, 'endorsement', '#ff9800')
             if (endorsementRow) container.appendChild(endorsementRow)
 
-            const certificateRow = createFileRow('Certificate', doc.certificateFile, 'certificate', '#9C27B0')
-            if (certificateRow) container.appendChild(certificateRow)
+            if (isSymposium) {
+                const titleCertificateRow = createFileRow('Title Certificate', doc.title_certificate_view_url, 'title_certificate', '#E91E63')
+                if (titleCertificateRow) container.appendChild(titleCertificateRow)
 
-            // Title Change Certificate (from title_certificate_view_url)
-            const titleCertificateRow = createFileRow('Title Certificate', doc.title_certificate_view_url, 'title_certificate', '#E91E63')
-            if (titleCertificateRow) container.appendChild(titleCertificateRow)
-
-            // Local In-House specific files (Program and Certificate from local_inhouse table)
-            if (doc.local_inhouse === 1 || doc.local_inhouse === '1') {
                 const localProgramRow = createFileRow('Local Program', doc.local_program_file_view_url, 'program', '#4caf50')
                 if (localProgramRow) container.appendChild(localProgramRow)
 
                 const localCertificateRow = createFileRow('Local Certificate', doc.local_certificate_file_view_url, 'certificate', '#9C27B0')
                 if (localCertificateRow) container.appendChild(localCertificateRow)
+
+            } else if (isInHouse) {
+                const programRow = createFileRow('Program', doc.programFile || doc.program_drive_view_url, 'program', '#4caf50')
+                if (programRow) container.appendChild(programRow)
+
+                const certificateRow = createFileRow('Certificate', doc.certificateFile || doc.certificate_drive_view_url, 'certificate', '#9C27B0')
+                if (certificateRow) container.appendChild(certificateRow)
+
+            } else {
+                const programRow = createFileRow('Program', doc.programFile || doc.program_drive_view_url, 'program', '#4caf50')
+                if (programRow) container.appendChild(programRow)
+
+                const certificateRow = createFileRow('Certificate', doc.certificateFile || doc.certificate_drive_view_url, 'certificate', '#9C27B0')
+                if (certificateRow) container.appendChild(certificateRow)
+
+                const titleCertificateRow = createFileRow('Title Certificate', doc.title_certificate_view_url, 'title_certificate', '#E91E63')
+                if (titleCertificateRow) container.appendChild(titleCertificateRow)
             }
 
-            // If no files
             if (container.children.length === 0) {
                 container.appendChild($({
                     tag: 'span',
@@ -1819,7 +1832,6 @@ export const Research = () => {
             style: { padding: '16px 12px', verticalAlign: 'middle', textAlign: 'center' }
         })
 
-        // Create container for buttons
         const buttonContainer = $({
             tag: 'div',
             style: { display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }
@@ -1831,19 +1843,15 @@ export const Research = () => {
         buttonContainer.appendChild(actionButtons)
         actionsCell.appendChild(buttonContainer)
 
-        // ===== TITLE DISPLAY WITH CHANGE FLAG =====
         let titleDisplay
 
-        // Check if title was changed (title_changed == 1 from backend)
         const isTitleChanged = parseInt(doc.title_changed) === 1
 
         if (isTitleChanged && doc.final_symposium_title) {
-            // Title was changed - show both original and new with flag
             titleDisplay = $({
                 tag: 'div',
                 style: { display: 'flex', flexDirection: 'column', gap: '4px' },
                 child: [
-                    // Original title with strikethrough
                     $({
                         tag: 'div',
                         style: {
@@ -1867,7 +1875,6 @@ export const Research = () => {
                             })
                         ]
                     }),
-                    // New title with CHANGE FLAG
                     $({
                         tag: 'div',
                         style: {

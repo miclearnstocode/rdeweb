@@ -421,8 +421,8 @@ if (isset($_POST['rejectIndorse'])) {
 
         // Get current RDE staff user info
         $staffId = $_SESSION['userId'];
-        $staffEmail = ''; // This will actually store the staff's NAME (from email column)
-        $staffName = '';  // This will store the username
+        $staffEmail = ''; 
+        $staffName = ''; 
 
         // Get RDE staff info from rdestaff table
         $staffQuery = "SELECT email, username FROM rdestaff WHERE id=?";
@@ -432,12 +432,10 @@ if (isset($_POST['rejectIndorse'])) {
         $staffRes = $staffStmt->get_result();
 
         if ($staffRow = $staffRes->fetch_assoc()) {
-            // In rdestaff table, 'email' column actually stores the full name
-            $staffEmail = $staffRow['email']; // This is the staff's FULL NAME
-            $staffName = $staffRow['username']; // This is the login username
+            $staffEmail = $staffRow['email'];
+            $staffName = $staffRow['username'];
             error_log("RDE Staff Name: " . $staffEmail . " (Username: " . $staffName . ")");
         } else {
-            // Fallback to account_detail if not found in rdestaff
             $staffQuery2 = "SELECT email, fullName FROM account_detail WHERE id=?";
             $staffStmt2 = $con->prepare($staffQuery2);
             $staffStmt2->bind_param("i", $staffId);
@@ -457,52 +455,45 @@ if (isset($_POST['rejectIndorse'])) {
         $con->begin_transaction();
 
         try {
-            // 1. Update endorsement status
-            $query = "UPDATE endorsement SET endorsement.status=? WHERE endorsement.id=?";
-            $statement = $con->prepare($query);
-            $state = "rejected";
             $docId = $_POST['docId'];
-            $statement->bind_param("ss", $state, $docId);
+            $reason = $_POST['reasonEnd'] ?? 'No reason provided';
+            $type = $_POST['fileType'] ?? 'Unknown';
+
+            $query = "UPDATE endorsement SET endorsement.status='rejected' WHERE endorsement.id=?";
+            $statement = $con->prepare($query);
+            $statement->bind_param("s", $docId);
             $statement->execute();
 
-            // 2. Update researchfile status to 'rejected' (this table has the new columns)
             $researchUpdateQuery = "UPDATE researchfile SET status='rejected' WHERE endorsementid=?";
             $researchStmt = $con->prepare($researchUpdateQuery);
             $researchStmt->bind_param("i", $docId);
             $researchStmt->execute();
 
-            // 3. Insert into rejecteddocs table (this is where rejection records should go)
             $query = "INSERT INTO `rejecteddocs`(`id`, `docid`, `url`, `type`, `reason`, `rejectedby`, `date`) VALUES (?, ?, ?, ?, ?, ?, NOW())";
-            $docId = $_POST['docId'];
-            $fileUrl = $_POST['fileUrl'];
-            $type = $_POST['fileType'];
-            $reason = $_POST['reasonEnd'] ?? 'No reason provided';
             $idEn = round(microtime(true) * 1000) . '';
-
+            $placeholderUrl = 'Status updated to rejected - no file needed';
+            
             $statement2 = $con->prepare($query);
-            $statement2->bind_param("ssssss", $idEn, $docId, $fileUrl, $type, $reason, $staffId);
+            $statement2->bind_param("ssssss", $idEn, $docId, $placeholderUrl, $type, $reason, $staffId);
             $statement2->execute();
 
             // Commit transaction
             $con->commit();
 
             $response->status = true;
-
-            // Define email credentials (you should get these from a config file)
-            $rdeEmail = "rde@example.com"; // Replace with actual RDE email address
-            $emailPassword = "password"; // Replace with actual email password
+            $response->message = "Document Rejected Successfully";
 
             $from = new stdClass();
             $from->email = $rdeEmail;
             $from->password = $emailPassword;
             $from->name = 'Research, Development and Extension';
 
-            // Get sender info for email
+            // Get sender info for email notification
             $senderQuery = "SELECT 
                 account_detail.email, 
                 account_detail.fullName, 
                 endorsement.event,
-                endorsement.center
+                account_detail.campus
             FROM endorsement 
             LEFT JOIN account_detail ON endorsement.senderid = account_detail.id 
             WHERE endorsement.id=?";
@@ -533,7 +524,6 @@ if (isset($_POST['rejectIndorse'])) {
                     $researchAuthors[] = $titleRow['author'];
                 }
 
-                // Format for display
                 $formattedTitles = implode(', ', $researchTitles);
                 $formattedAuthors = implode(', ', array_unique($researchAuthors));
 
@@ -541,11 +531,8 @@ if (isset($_POST['rejectIndorse'])) {
                     $formattedTitles = "Research Document(s)";
                 }
 
-                $detailedReason = $reason;
-
-                // Send email - make sure SendEmail function exists
                 if (function_exists('SendEmail')) {
-                    $emailResult = SendEmail($from, $to, RejectedEntry($detailedReason, $eventName, $formattedTitles));
+                    $emailResult = SendEmail($from, $to, RejectedEntry($reason, $eventName, $formattedTitles));
 
                     if ($emailResult->status) {
                         $response->emailStat = 'Email sent successfully to ' . $to->email;
@@ -562,8 +549,6 @@ if (isset($_POST['rejectIndorse'])) {
                 $response->emailStat = 'Could not find sender information for email';
                 error_log("Could not find sender for endorsement ID: " . $docId);
             }
-
-            $response->message = "Document Rejected Successfully";
 
         } catch (Exception $e) {
             // Rollback on error

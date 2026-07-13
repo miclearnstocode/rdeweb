@@ -8,12 +8,11 @@ export const handleResubmit = async (endorsementId, endorsementUrl) => {
     document.body.appendChild(loading)
 
     try {
-        // Fetch the specific document data from the server by ID
         const formData = new FormData();
         formData.append('getRejectedForResubmit', 'true');
         formData.append('docId', endorsementId);
 
-        const response = await fetch('/getresearch', {
+        const response = await fetch('/uploadFacultyDocs', {
             method: 'POST',
             body: formData
         });
@@ -21,27 +20,31 @@ export const handleResubmit = async (endorsementId, endorsementUrl) => {
         loading.remove()
 
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error('Network response was not ok: ' + response.status);
         }
 
-        const data = await response.json();
+        const textResponse = await response.text();
 
-        // Check if we have data
-        if (!data || !data.data) {
-            throw new Error('Unable to load document data');
+        let data;
+        try {
+            data = JSON.parse(textResponse);
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            console.error('Raw response:', textResponse);
+            throw new Error('Invalid JSON response from server');
         }
 
-        // Get the document - handle both array and single object
-        let currentDoc;
-        if (Array.isArray(data.data) && data.data.length > 0) {
-            currentDoc = data.data[0];
-        } else if (typeof data.data === 'object') {
-            currentDoc = data.data;
-        } else {
-            throw new Error('Document data format is invalid');
+        if (!data || !data.status) {
+            throw new Error(data?.message || 'Failed to load document data');
         }
 
-        // Create an object to hold updated values that can be modified
+        if (!data.data) {
+            throw new Error(data.message || 'No document data found');
+        }
+
+        const currentDoc = data.data;
+
+        // ===== SYMPOSIUM DATA =====
         const updatedValues = {
             title: currentDoc.title || '',
             author: currentDoc.author || '',
@@ -51,7 +54,6 @@ export const handleResubmit = async (endorsementId, endorsementUrl) => {
             coAuthors: []
         };
 
-        // Parse coauthors - handle both array and string
         if (currentDoc.coauthor) {
             if (Array.isArray(currentDoc.coauthor)) {
                 updatedValues.coAuthors = currentDoc.coauthor;
@@ -60,38 +62,54 @@ export const handleResubmit = async (endorsementId, endorsementUrl) => {
                     const parsed = JSON.parse(currentDoc.coauthor);
                     updatedValues.coAuthors = Array.isArray(parsed) ? parsed : [];
                 } catch (e) {
-                    // If it's not JSON, treat as comma-separated string
                     updatedValues.coAuthors = currentDoc.coauthor.split(',').map(s => s.trim()).filter(s => s);
                 }
             }
         }
 
-        // Get file URLs with proper fallbacks
-        const researchFileUrl = currentDoc.research_file?.url ||
-            currentDoc.drive_view_url ||
-            '';
+        // ===== SYMPOSIUM FILES (Only Research + Endorsement) =====
+        const researchFileUrl = currentDoc.research_file?.url || '';
+        const endorsementFileUrl = currentDoc.endorsement_file?.url || endorsementUrl || '';
 
-        const programFileUrl = currentDoc.program_file?.url ||
-            currentDoc.program_drive_view_url ||
-            '';
+        // ===== LOCAL IN-HOUSE DATA =====
+        const localInhouseData = currentDoc.local_inhouse_data || null;
+        let localValues = null;
+        let localFiles = {};
 
-        const endorsementFileUrl = currentDoc.endorsement_file?.url ||
-            currentDoc.endorsement_url ||
-            endorsementUrl ||
-            '';
+        if (localInhouseData) {
+            localValues = {
+                document_title: localInhouseData.document_title || '',
+                campus: localInhouseData.campus || '',
+                category: localInhouseData.category || '',
+                center: localInhouseData.center || '',
+                main_author: localInhouseData.main_author || '',
+                presenter: localInhouseData.presenter || '',
+                co_authors: localInhouseData.co_authors || []
+            };
+
+            localFiles = {
+                program: localInhouseData.program_file?.url || '',
+                certificate: localInhouseData.certificate_file?.url || ''
+            };
+        }
 
         const closeModal = () => {
             if (resubmitModal) resubmitModal.remove();
         };
 
-        // Create the modal with the data
         resubmitModal = createResubmitModal({
             docId: endorsementId,
             currentDoc,
             updatedValues,
-            researchFileUrl,
-            programFileUrl,
-            endorsementFileUrl,
+            symposiumFiles: {
+                researchFileUrl,
+                endorsementFileUrl
+            },
+            localInhouseData: {
+                data: localValues,
+                files: localFiles,
+                exists: !!localInhouseData
+            },
             comments: currentDoc.comments || [],
             closeModal
         });
@@ -265,15 +283,15 @@ function createResubmitModal(params) {
         docId,
         currentDoc,
         updatedValues,
-        researchFileUrl,
-        programFileUrl,
-        endorsementFileUrl,
+        symposiumFiles,
+        localInhouseData,
         comments,
         closeModal
     } = params;
 
-    // Create local variables for file inputs and co-authors
-    let researchFile, programFile, endorsementFile;
+    // Create local variables for file inputs
+    let researchFile, endorsementFile;
+    let localProgramFile, localCertificateFile;
     let coAuthorInput, coAuthorList;
 
     // Co-authors management
@@ -407,6 +425,25 @@ function createResubmitModal(params) {
         ]
     })
 
+    // ===== SYMPOSIUM SECTION =====
+    const symposiumSection = $({
+        tag: 'div',
+        style: {
+            marginBottom: '24px',
+            padding: '16px',
+            backgroundColor: 'rgba(33, 150, 243, 0.05)',
+            borderRadius: '8px',
+            border: '1px solid rgba(33, 150, 243, 0.2)'
+        },
+        child: [
+            $({
+                tag: 'h4',
+                text: '📋 Symposium Details',
+                style: { color: '#2196F3', marginBottom: '16px', fontSize: '16px' }
+            })
+        ]
+    })
+
     // Two column layout for form fields
     const twoColumnLayout = $({
         tag: 'div',
@@ -420,10 +457,10 @@ function createResubmitModal(params) {
 
     // Title field
     const titleField = $({ tag: 'div', style: { marginBottom: '20px' } })
-    titleField.appendChild($({ tag: 'label', text: 'Document Title *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+    titleField.appendChild($({ tag: 'label', text: 'Symposium Title *', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
     const titleInput = $({
         tag: 'input',
-        att: { type: 'text', placeholder: 'Enter document title', value: updatedValues.title },
+        att: { type: 'text', placeholder: 'Enter symposium title', value: updatedValues.title },
         style: {
             width: '100%',
             padding: '10px 12px',
@@ -598,36 +635,36 @@ function createResubmitModal(params) {
     twoColumnLayout.appendChild(presenterField)
     twoColumnLayout.appendChild(coAuthorField)
 
-    formBody.appendChild(rejectionSection)
-    formBody.appendChild(twoColumnLayout)
+    symposiumSection.appendChild(twoColumnLayout)
 
-    // File upload sections - UPDATED LAYOUT
-    const fileSection = $({
+    // ===== SYMPOSIUM FILE UPLOADS (Only Research + Endorsement) =====
+    const symposiumFileSection = $({
         tag: 'div',
         style: {
-            marginTop: '20px',
-            paddingTop: '20px',
+            marginTop: '16px',
+            paddingTop: '16px',
             borderTop: '1px solid rgba(255,255,255,0.1)'
-        }
+        },
+        child: [
+            $({
+                tag: 'h4',
+                text: 'Symposium Files (leave empty to keep current)',
+                style: { color: '#aaa', marginBottom: '16px', fontSize: '14px' }
+            })
+        ]
     })
 
-    fileSection.appendChild($({
-        tag: 'h4',
-        text: 'Upload New Files (leave empty to keep current)',
-        style: { color: '#fff', marginBottom: '16px', fontSize: '16px' }
-    }))
-
-    const fileGrid = $({
+    const symposiumFileGrid = $({
         tag: 'div',
         style: {
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
+            gridTemplateColumns: '1fr 1fr',
             gap: '20px'
         }
     })
 
-    // Helper function to create file upload field with view current button above
-    const createFileUploadField = (label, fieldName, currentFileUrl) => {
+    // Helper function to create file upload field
+    const createFileUploadField = (label, fieldName, currentFileUrl, color = '#2196F3') => {
         const container = $({
             tag: 'div',
             style: {
@@ -648,9 +685,9 @@ function createResubmitModal(params) {
                     gap: '8px',
                     padding: '8px 16px',
                     backgroundColor: '#2a2a2a',
-                    border: '1px solid #2196F3',
+                    border: `1px solid ${color}`,
                     borderRadius: '8px',
-                    color: '#2196F3',
+                    color: color,
                     textDecoration: 'none',
                     fontSize: '13px',
                     fontWeight: '500',
@@ -665,17 +702,16 @@ function createResubmitModal(params) {
                 event: {
                     type: 'mouseenter',
                     method: (e) => {
-                        e.target.style.backgroundColor = '#2196F3';
+                        e.target.style.backgroundColor = color;
                         e.target.style.color = '#fff';
                     },
                     type: 'mouseleave',
                     method: (e) => {
                         e.target.style.backgroundColor = '#2a2a2a';
-                        e.target.style.color = '#2196F3';
+                        e.target.style.color = color;
                     },
                     type: 'click',
                     method: () => {
-                        // Open file in modal instead of new tab
                         openFileInModal(currentFileUrl, label);
                     }
                 }
@@ -687,7 +723,7 @@ function createResubmitModal(params) {
         const uploadArea = $({
             tag: 'div',
             style: {
-                border: '2px dashed #444',
+                border: `2px dashed ${color}44`,
                 borderRadius: '12px',
                 padding: '24px',
                 textAlign: 'center',
@@ -701,7 +737,6 @@ function createResubmitModal(params) {
             }
         })
 
-        // File input (hidden)
         const fileInput = $({
             tag: 'input',
             att: { type: 'file', accept: '.pdf,application/pdf', style: 'display: none' },
@@ -715,53 +750,48 @@ function createResubmitModal(params) {
                             fileInput.value = ''
                             return
                         }
-                        // Update the file display text
                         fileNameDisplay.innerText = `Selected: ${file.name}`
                         fileNameDisplay.style.color = '#4caf50'
-                        // Store the file in the appropriate variable
-                        if (fieldName === 'researchFile') {
-                            window.researchFile = file
-                        } else if (fieldName === 'programFile') {
-                            window.programFile = file
-                        } else if (fieldName === 'endorsementFile') {
-                            window.endorsementFile = file
+                        // Store the file
+                        const fileMap = {
+                            'researchFile': 'researchFile',
+                            'endorsementFile': 'endorsementFile',
+                            'localProgramFile': 'localProgramFile',
+                            'localCertificateFile': 'localCertificateFile'
+                        };
+                        const varName = fileMap[fieldName];
+                        if (varName) {
+                            window[varName] = file;
                         }
                     } else {
                         fileNameDisplay.innerText = ''
-                        if (fieldName === 'researchFile') {
-                            window.researchFile = null
-                        } else if (fieldName === 'programFile') {
-                            window.programFile = null
-                        } else if (fieldName === 'endorsementFile') {
-                            window.endorsementFile = null
+                        const varName = fileMap[fieldName];
+                        if (varName) {
+                            window[varName] = null;
                         }
                     }
                 }
             }
         })
 
-        // Icon
         const icon = $({
             tag: 'i',
             att: { className: 'fas fa-cloud-upload-alt' },
             style: { fontSize: '36px', color: '#666', marginBottom: '12px', display: 'block' }
         })
 
-        // Label text
         const labelText = $({
             tag: 'div',
             text: `Upload ${label}`,
             style: { color: '#888', fontSize: '14px', marginBottom: '4px' }
         })
 
-        // PDF hint
         const pdfHint = $({
             tag: 'div',
             text: '(PDF only)',
             style: { color: '#666', fontSize: '12px' }
         })
 
-        // File name display
         const fileNameDisplay = $({
             tag: 'div',
             style: {
@@ -783,17 +813,186 @@ function createResubmitModal(params) {
         return container
     }
 
-    // Create file upload fields
-    const researchFileField = createFileUploadField('Research File', 'researchFile', researchFileUrl)
-    const programFileField = createFileUploadField('Program File', 'programFile', programFileUrl)
-    const endorsementFileField = createFileUploadField('Endorsement Letter', 'endorsementFile', endorsementFileUrl)
+    // Symposium Files (Only Research + Endorsement)
+    const researchField = createFileUploadField('Research Paper', 'researchFile', symposiumFiles.researchFileUrl, '#4caf50')
+    const endorsementField = createFileUploadField('Endorsement Letter', 'endorsementFile', symposiumFiles.endorsementFileUrl, '#ff9800')
 
-    fileGrid.appendChild(researchFileField)
-    fileGrid.appendChild(programFileField)
-    fileGrid.appendChild(endorsementFileField)
+    symposiumFileGrid.appendChild(researchField)
+    symposiumFileGrid.appendChild(endorsementField)
 
-    fileSection.appendChild(fileGrid)
-    formBody.appendChild(fileSection)
+    symposiumFileSection.appendChild(symposiumFileGrid)
+
+    // ===== LOCAL IN-HOUSE SECTION (conditional) =====
+    let localSection = null;
+
+    if (localInhouseData.exists) {
+        localSection = $({
+            tag: 'div',
+            style: {
+                marginTop: '24px',
+                padding: '16px',
+                backgroundColor: 'rgba(255, 152, 0, 0.05)',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 152, 0, 0.2)'
+            },
+            child: [
+                $({
+                    tag: 'h4',
+                    text: '📁 Local In-House Details',
+                    style: { color: '#ff9800', marginBottom: '16px', fontSize: '16px' }
+                })
+            ]
+        })
+
+        // Local In-House fields
+        const localFields = $({
+            tag: 'div',
+            style: {
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px',
+                marginBottom: '16px'
+            }
+        })
+
+        // Local Title
+        const localTitleField = $({ tag: 'div' })
+        localTitleField.appendChild($({ tag: 'label', text: 'Local Title', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+        const localTitleInput = $({
+            tag: 'input',
+            att: { type: 'text', placeholder: 'Local document title', value: localInhouseData.data.document_title || '' },
+            style: {
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px'
+            },
+            event: {
+                type: 'input',
+                method: (e) => { localInhouseData.data.document_title = e.target.value }
+            }
+        })
+        localTitleField.appendChild(localTitleInput)
+
+        // Local Author
+        const localAuthorField = $({ tag: 'div' })
+        localAuthorField.appendChild($({ tag: 'label', text: 'Local Author', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+        const localAuthorInput = $({
+            tag: 'input',
+            att: { type: 'text', placeholder: 'Local author name', value: localInhouseData.data.main_author || '' },
+            style: {
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px'
+            },
+            event: {
+                type: 'input',
+                method: (e) => { localInhouseData.data.main_author = e.target.value }
+            }
+        })
+        localAuthorField.appendChild(localAuthorInput)
+
+        // Local Presenter
+        const localPresenterField = $({ tag: 'div' })
+        localPresenterField.appendChild($({ tag: 'label', text: 'Local Presenter', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+        const localPresenterInput = $({
+            tag: 'input',
+            att: { type: 'text', placeholder: 'Local presenter name', value: localInhouseData.data.presenter || '' },
+            style: {
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px'
+            },
+            event: {
+                type: 'input',
+                method: (e) => { localInhouseData.data.presenter = e.target.value }
+            }
+        })
+        localPresenterField.appendChild(localPresenterInput)
+
+        // Local Category
+        const localCategoryField = $({ tag: 'div' })
+        localCategoryField.appendChild($({ tag: 'label', text: 'Local Category', style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' } }))
+        const localCategoryInput = $({
+            tag: 'input',
+            att: { type: 'text', placeholder: 'Local category', value: localInhouseData.data.category || '' },
+            style: {
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '8px',
+                color: '#fff',
+                fontSize: '14px'
+            },
+            event: {
+                type: 'input',
+                method: (e) => { localInhouseData.data.category = e.target.value }
+            }
+        })
+        localCategoryField.appendChild(localCategoryInput)
+
+        localFields.appendChild(localTitleField)
+        localFields.appendChild(localAuthorField)
+        localFields.appendChild(localPresenterField)
+        localFields.appendChild(localCategoryField)
+
+        localSection.appendChild(localFields)
+
+        // Local In-House Files (Only Program + Certificate)
+        const localFileSection = $({
+            tag: 'div',
+            style: {
+                marginTop: '12px',
+                paddingTop: '12px',
+                borderTop: '1px solid rgba(255,255,255,0.1)'
+            },
+            child: [
+                $({
+                    tag: 'h4',
+                    text: 'Local In-House Files',
+                    style: { color: '#aaa', marginBottom: '12px', fontSize: '14px' }
+                })
+            ]
+        })
+
+        const localFileGrid = $({
+            tag: 'div',
+            style: {
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px'
+            }
+        })
+
+        const localProgramField = createFileUploadField('Local Program', 'localProgramFile', localInhouseData.files.program, '#ff9800')
+        const localCertificateField = createFileUploadField('Local Certificate', 'localCertificateFile', localInhouseData.files.certificate, '#ff9800')
+
+        localFileGrid.appendChild(localProgramField)
+        localFileGrid.appendChild(localCertificateField)
+
+        localFileSection.appendChild(localFileGrid)
+        localSection.appendChild(localFileSection)
+    }
+
+    // ===== BUILD THE FORM =====
+    formBody.appendChild(rejectionSection)
+    formBody.appendChild(symposiumSection)
+    formBody.appendChild(symposiumFileSection)
+    if (localSection) {
+        formBody.appendChild(localSection)
+    }
 
     // Form actions
     const actions = $({
@@ -849,9 +1048,11 @@ function createResubmitModal(params) {
                     docId,
                     updatedValues,
                     researchFile: window.researchFile,
-                    programFile: window.programFile,
                     endorsementFile: window.endorsementFile,
+                    localProgramFile: window.localProgramFile,
+                    localCertificateFile: window.localCertificateFile,
                     currentDoc,
+                    localInhouseData,
                     closeModal
                 });
             }
@@ -874,9 +1075,11 @@ export async function submitResubmit(params) {
         docId,
         updatedValues,
         researchFile,
-        programFile,
         endorsementFile,
+        localProgramFile,
+        localCertificateFile,
         currentDoc,
+        localInhouseData,
         closeModal
     } = params;
 
@@ -894,13 +1097,15 @@ export async function submitResubmit(params) {
                     }
                 })() : [])) : []);
 
-    if (!researchFile && !programFile && !endorsementFile &&
-        updatedValues.title === currentDoc.title &&
-        updatedValues.author === currentDoc.author &&
-        updatedValues.presenter === currentDoc.presenter &&
-        updatedValues.category === currentDoc.category &&
-        updatedValues.center === currentDoc.center &&
-        originalCoauthorStr === currentCoauthorStr) {
+    const hasChanges = researchFile || endorsementFile || localProgramFile || localCertificateFile ||
+        updatedValues.title !== currentDoc.title ||
+        updatedValues.author !== currentDoc.author ||
+        updatedValues.presenter !== currentDoc.presenter ||
+        updatedValues.category !== currentDoc.category ||
+        updatedValues.center !== currentDoc.center ||
+        originalCoauthorStr !== currentCoauthorStr;
+
+    if (!hasChanges) {
         alert('No changes made. Please update at least one field or file.');
         return;
     }
@@ -925,18 +1130,26 @@ export async function submitResubmit(params) {
         formData.append('center', updatedValues.center || '');
         formData.append('coauthor', JSON.stringify(updatedValues.coAuthors || []));
 
-        // Add files if changed
-        if (researchFile) {
-            formData.append('researchDoc', researchFile);
-        }
-        if (programFile) {
-            formData.append('programFile', programFile);
-        }
-        if (endorsementFile) {
-            formData.append('endorsementFile', endorsementFile);
+        // Add local in-house data if exists
+        if (localInhouseData && localInhouseData.exists) {
+            formData.append('local_title', localInhouseData.data.document_title || '');
+            formData.append('local_author', localInhouseData.data.main_author || '');
+            formData.append('local_presenter', localInhouseData.data.presenter || '');
+            formData.append('local_category', localInhouseData.data.category || '');
+            formData.append('local_center', localInhouseData.data.center || '');
+            formData.append('local_campus', localInhouseData.data.campus || '');
+            formData.append('local_coauthors', JSON.stringify(localInhouseData.data.co_authors || []));
         }
 
-        const response = await fetch('/getresearch', {
+        // Add symposium files (only Research + Endorsement)
+        if (researchFile) formData.append('researchDoc', researchFile);
+        if (endorsementFile) formData.append('endorsementFile', endorsementFile);
+
+        // Add local in-house files (only Program + Certificate)
+        if (localProgramFile) formData.append('localProgramFile', localProgramFile);
+        if (localCertificateFile) formData.append('localCertificateFile', localCertificateFile);
+
+        const response = await fetch('/uploadFacultyDocs', {
             method: 'POST',
             body: formData
         });
