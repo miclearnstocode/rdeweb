@@ -9,8 +9,8 @@ const openViewResearchesModal = () => {
     let currentModal = null
     let eventSelect, searchInput, tableBody
     let loadResearchDataFn, addResearchToTableFn
+    let currentFilter = 'all'
 
-    // Build the content for the modal
     const buildContent = () => {
         const container = $({
             tag: 'div',
@@ -22,8 +22,6 @@ const openViewResearchesModal = () => {
                 backgroundColor: '#ffffff'
             }
         })
-
-        // Search + Filter Bar
         const searchContainer = $({
             tag: 'div',
             style: {
@@ -38,7 +36,6 @@ const openViewResearchesModal = () => {
             }
         })
 
-        // Event Filter Dropdown
         const eventFilterWrapper = $({
             tag: 'div',
             style: {
@@ -559,6 +556,16 @@ const openViewResearchesModal = () => {
     const loadResearchData = async (eventId, searchTerm = '') => {
         if (!tableBody) return
 
+        currentFilter = 'all'
+
+        // Also reset stat card highlights
+        const statCards = document.querySelectorAll('.stat-card')
+        statCards.forEach((card) => {
+            card.style.borderColor = '#e8ecf0'
+            card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)'
+            card.style.transform = 'translateY(0)'
+        })
+
         tableBody.innerHTML = ''
 
         const loadingRow = $({
@@ -731,6 +738,7 @@ const openViewResearchesModal = () => {
 }
 
 export const Research = () => {
+    let currentFilter = 'all'
     // Utility to update stats cards
     const updateStatsFromData = (total, pending, accepted, rejected) => {
         const statsContainer = document.querySelector('.stats-container')
@@ -745,7 +753,6 @@ export const Research = () => {
         }
     }
 
-    // Recalculate stats from the current table rows
     const refreshStats = () => {
         if (!documentsTable) return
         const rows = documentsTable.querySelectorAll('tbody tr:not(.empty-state-row):not(.loading-row)')
@@ -757,14 +764,83 @@ export const Research = () => {
         rows.forEach(row => {
             const statusCell = row.cells[1]
             if (statusCell) {
-                const statusText = statusCell.innerText.toLowerCase()
-                if (statusText.includes('pending')) pending++
-                else if (statusText.includes('accepted') || statusText.includes('accepted')) accepted++
-                else if (statusText.includes('rejected')) rejected++
+                const statusText = statusCell.innerText.toLowerCase().trim()
+                // If status is empty or null, treat as pending
+                if (statusText === '' || statusText === '—' || statusText === 'pending proposal') {
+                    pending++
+                } else if (statusText.includes('accepted')) {
+                    accepted++
+                } else if (statusText.includes('rejected')) {
+                    rejected++
+                } else if (statusText.includes('pending')) {
+                    pending++
+                }
             }
         })
 
         updateStatsFromData(total, pending, accepted, rejected)
+    }
+
+    const filterTableByStatus = (status) => {
+        if (!documentsTable) return
+
+        const rows = documentsTable.querySelectorAll('tbody tr:not(.empty-state-row):not(.loading-row)')
+        currentFilter = status
+
+        rows.forEach(row => {
+            const statusCell = row.cells[1] // Status column
+            if (statusCell) {
+                // Get the raw status text
+                const statusText = statusCell.innerText.toLowerCase().trim()
+
+                // Check if it's empty or null - treat as pending
+                let isPending = statusText.includes('pending') || statusText === '' || statusText === '—' || statusText === 'pending proposal'
+
+                // For debugging - log what we're seeing
+                console.log('Status text:', statusText, 'isPending:', isPending)
+
+                if (status === 'all') {
+                    row.style.display = ''
+                } else if (status === 'pending') {
+                    row.style.display = isPending ? '' : 'none'
+                } else if (status === 'accepted') {
+                    row.style.display = statusText.includes('accepted') ? '' : 'none'
+                } else if (status === 'rejected') {
+                    row.style.display = statusText.includes('rejected') ? '' : 'none'
+                }
+            }
+        })
+
+        // Update active state on stat cards
+        const statCards = document.querySelectorAll('.stat-card')
+        statCards.forEach((card, index) => {
+            const cardStatus = ['all', 'pending', 'accepted', 'rejected'][index]
+            if (cardStatus === status) {
+                card.style.borderColor = getStatusColor(cardStatus)
+                card.style.boxShadow = `0 0 0 2px ${getStatusColor(cardStatus)}40, 0 12px 24px rgba(0,0,0,0.08)`
+                card.style.transform = 'translateY(-4px)'
+            } else {
+                card.style.borderColor = '#e8ecf0'
+                card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)'
+                card.style.transform = 'translateY(0)'
+            }
+        })
+    }
+
+    const getStatusColor = (status) => {
+        const colors = {
+            all: '#1976D2',
+            pending: '#FF9800',
+            accepted: '#4CAF50',
+            rejected: '#f44336'
+        }
+        return colors[status] || '#1976D2'
+    }
+
+    const applyCurrentFilter = () => {
+        if (currentFilter && currentFilter !== 'all') {
+            filterTableByStatus(currentFilter)
+        }
     }
 
     let documentsTable
@@ -812,7 +888,6 @@ export const Research = () => {
         "Extension", "Agricultural Machinery", "Industrial", "Engineering", "Information Technology"
     ]
 
-    // Status badge styling
     const getStatusBadge = (status) => {
         const styles = {
             pending: { bg: '#E6A017', text: 'Pending Proposal', icon: 'fa-clock' },
@@ -825,6 +900,30 @@ export const Research = () => {
             revision_rejected: { bg: '#C2185B', text: 'Rejected Revised Paper', icon: 'fa-times-circle' }
         }
         const normalizedStatus = (status || '').toLowerCase()
+
+        // If status is empty or null, treat as pending
+        if (!normalizedStatus || normalizedStatus === '') {
+            const config = styles.pending
+            return $({
+                tag: 'span',
+                style: {
+                    backgroundColor: config.bg,
+                    color: 'white',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                },
+                child: [
+                    $({ tag: 'i', att: { className: `fas ${config.icon}` }, style: { fontSize: '11px' } }),
+                    $({ tag: 'span', text: config.text })
+                ]
+            })
+        }
+
         const config = styles[normalizedStatus] || styles.pending
 
         return $({
@@ -1564,36 +1663,6 @@ export const Research = () => {
             }, 500);
         };
 
-        // Load rejection reason
-        const loadRejectionReason = async () => {
-            try {
-                const form = new FormData();
-                form.append('rejectedComments', 'true');
-                form.append('docId', doc.id);
-
-                const response = await fetch('/uploadFacultyDocs', {
-                    method: 'POST',
-                    body: form
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.status) {
-                        isRejected = true;
-                        displayRejectionReason(data);
-                    } else {
-                        // No rejection found, try loading comments instead
-                        loadComments();
-                    }
-                } else {
-                    throw new Error('Failed to load rejection reason');
-                }
-            } catch (error) {
-                console.error('Error loading rejection reason:', error);
-                // Fallback to loading comments
-                loadComments();
-            }
-        };
 
         // Load comments from API
         const loadComments = async () => {
@@ -1679,7 +1748,7 @@ export const Research = () => {
     const createTableRow = (doc) => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
         let status = doc.status || 'pending'
-        if (status === 'NULL' || status === 'null' || status === null) {
+        if (status === 'NULL' || status === '' || status === null) {
             status = 'pending'
         }
 
@@ -2022,11 +2091,10 @@ export const Research = () => {
                 }
             })
 
-            // Document Title (readonly)
             const titleField = $({ tag: 'div', style: { marginBottom: '0px' } });
             titleField.appendChild($({
                 tag: 'label',
-                text: 'Document Title',
+                text: 'Research/Extension Title',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }
             }));
 
@@ -2720,7 +2788,7 @@ export const Research = () => {
 
         const submitBtn = $({
             tag: 'button',
-            text: isEdit ? 'Submit Edited Entry' : 'Submit New Entry',
+            text: isEdit ? 'Submit Edited Entry' : 'Submit Entry',
             style: {
                 padding: '10px 28px',
                 backgroundColor: '#1976D2',
@@ -2749,7 +2817,7 @@ export const Research = () => {
                 return;
             }
             if (!formData.title) {
-                alert('Please enter a document title');
+                alert('Please enter a research/extension title');
                 return;
             }
             if (!formData.campus) {
@@ -3021,12 +3089,12 @@ export const Research = () => {
             const titleField = $({ tag: 'div', style: { marginBottom: '0' } })
             titleField.appendChild($({
                 tag: 'label',
-                text: 'Document Title *',
+                text: 'Research/Extension Title *',
                 style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
             }))
             titleInput = $({
                 tag: 'input',
-                att: { type: 'text', placeholder: 'Enter document title', value: isEdit ? capitalizeFirstLetter(editData?.title || '') : '' },
+                att: { type: 'text', placeholder: 'research or extension title', value: isEdit ? capitalizeFirstLetter(editData?.title || '') : '' },
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -3764,36 +3832,60 @@ export const Research = () => {
         })
 
         const stats = [
-            { label: 'Total Documents', value: '0', icon: 'fa-file-alt', color: '#2196F3' },
-            { label: 'Pending Proposal/Paper', value: '0', icon: 'fa-clock', color: '#FF9800' },
-            { label: 'Accepted Proposal/Paper', value: '0', icon: 'fa-check-circle', color: '#4CAF50' },
-            { label: 'Rejected Proposal/Paper', value: '0', icon: 'fa-times-circle', color: '#f44336' }
+            { label: 'Total Documents', value: '0', icon: 'fa-file-alt', color: '#1976D2', filter: 'all', description: 'All submissions' },
+            { label: 'Pending Proposal/Paper', value: '0', icon: 'fa-clock', color: '#FF9800', filter: 'pending', description: 'Awaiting review' },
+            { label: 'Accepted Proposal/Paper', value: '0', icon: 'fa-check-circle', color: '#4CAF50', filter: 'accepted', description: 'Approved documents' },
+            { label: 'Rejected Proposal/Paper', value: '0', icon: 'fa-times-circle', color: '#f44336', filter: 'rejected', description: 'Returned for revision' }
         ]
 
         stats.forEach((stat, index) => {
             const card = $({
                 tag: 'div',
+                att: { className: 'stat-card' },
                 style: {
                     backgroundColor: '#ffffff',
                     borderRadius: '16px',
                     padding: '24px 20px',
-                    border: '1px solid #e8ecf0',
+                    border: '2px solid #e8ecf0',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)',
                     transition: 'all 0.3s ease',
                     cursor: 'pointer'
                 },
                 event: {
-                    type: 'mouseenter',
-                    method: (e) => {
+                    type: 'click',
+                    method: () => {
+                        const newFilter = currentFilter === stat.filter ? 'all' : stat.filter
+                        filterTableByStatus(newFilter)
+
+                        const statCards = document.querySelectorAll('.stat-card')
+                        statCards.forEach((c, i) => {
+                            const cardFilter = ['all', 'pending', 'accepted', 'rejected'][i]
+                            if (cardFilter === newFilter) {
+                                c.style.borderColor = getStatusColor(cardFilter)
+                                c.style.boxShadow = `0 0 0 2px ${getStatusColor(cardFilter)}40, 0 12px 24px rgba(0,0,0,0.08)`
+                                c.style.transform = 'translateY(-4px)'
+                            } else {
+                                c.style.borderColor = '#e8ecf0'
+                                c.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)'
+                                c.style.transform = 'translateY(0)'
+                            }
+                        })
+                    },
+                    type2: 'mouseenter',
+                    method2: (e) => {
                         e.currentTarget.style.transform = 'translateY(-4px)';
                         e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04)';
-                        e.currentTarget.style.borderColor = stat.color;
+                        if (currentFilter !== stat.filter) {
+                            e.currentTarget.style.borderColor = stat.color;
+                        }
                     },
-                    type2: 'mouseleave',
-                    method2: (e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)';
-                        e.currentTarget.style.borderColor = '#e8ecf0';
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        if (currentFilter !== stat.filter) {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)';
+                            e.currentTarget.style.borderColor = '#e8ecf0';
+                        }
                     }
                 },
                 child: [
@@ -3834,11 +3926,11 @@ export const Research = () => {
                     }),
                     $({
                         tag: 'div',
-                        style: { marginTop: '12px' },
+                        style: { marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
                         child: [
                             $({
                                 tag: 'span',
-                                text: index === 0 ? 'Total submissions' : index === 1 ? 'Awaiting review' : index === 2 ? 'Approved documents' : 'Returned for revision',
+                                text: stat.description,
                                 style: { color: '#8a9aa8', fontSize: '12px', fontWeight: '400' }
                             })
                         ]
@@ -3869,7 +3961,6 @@ export const Research = () => {
             elementHandler: (el) => { documentsTable = el }
         })
 
-        // Table header
         const thead = $({ tag: 'thead' })
         const headerRow = $({
             tag: 'tr',
@@ -3904,7 +3995,6 @@ export const Research = () => {
         const tbody = $({ tag: 'tbody' })
         table.appendChild(tbody)
 
-        // Loading state
         const loadingRow = $({ tag: 'tr', att: { className: 'loading-row' } })
         const loadingCell = $({
             tag: 'td',
@@ -3953,7 +4043,6 @@ export const Research = () => {
                 loadingRow.appendChild(loadingCell)
                 tbody.appendChild(loadingRow)
 
-                // Use the endpoint that returns user-specific documents by senderid
                 const form = new FormData()
                 form.append('researchReviewed', 'true')
 
@@ -3965,25 +4054,20 @@ export const Research = () => {
                 if (response.ok) {
                     const data = await response.text().then(text => text ? JSON.parse(text) : {})
 
-                    // Clear loading state
                     tbody.innerHTML = ''
 
-                    // The researchReviewed endpoint returns an object with a 'list' property
                     if (data.list && Array.isArray(data.list) && data.list.length > 0) {
                         let totalDocs = 0
                         let pendingCount = 0
                         let acceptedCount = 0
                         let rejectedCount = 0
 
-                        // Process each endorsement (each contains ResearchDocs)
                         data.list.forEach(endorsement => {
-                            // Process each research document under this endorsement
                             if (endorsement.ResearchDocs && Array.isArray(endorsement.ResearchDocs)) {
                                 endorsement.ResearchDocs.forEach(researchDoc => {
                                     totalDocs++
 
-                                    // Count status from the endorsement level
-                                    const status = (endorsement.status || '').toLowerCase()
+                                    const status = (endorsement.status || '').toLowerCase().trim()
                                     if (status === 'rejected') {
                                         rejectedCount++
                                     } else if (status === 'accepted') {
@@ -3992,7 +4076,6 @@ export const Research = () => {
                                         pendingCount++
                                     }
 
-                                    // Parse coauthors if present
                                     let coAuthors = []
                                     if (researchDoc.coauthor) {
                                         try {
@@ -4002,30 +4085,21 @@ export const Research = () => {
                                         }
                                     }
 
-                                    // ===== CRITICAL: Capture title_changed and related fields =====
-                                    // Get title_changed from researchDoc (backend sends it)
                                     const titleChanged = parseInt(researchDoc.title_changed) === 1
                                     const finalSymposiumTitle = researchDoc.final_symposium_title || null
                                     const originalTitle = researchDoc.original_title || researchDoc.title || '—'
-
-                                    // Determine which title to display
                                     let displayTitle = researchDoc.title || '—'
 
-                                    // If title was changed and we have a final_symposium_title, use it
                                     if (titleChanged && finalSymposiumTitle) {
                                         displayTitle = finalSymposiumTitle
                                     }
-
-                                    // Create document object for table
                                     const documentObj = {
                                         id: researchDoc.docId,
                                         eventName: endorsement.eventType || '—',
-                                        // ===== TITLE FIELDS =====
                                         title: displayTitle,
                                         original_title: originalTitle,
                                         final_symposium_title: finalSymposiumTitle,
                                         title_changed: titleChanged ? 1 : 0,
-                                        // ===== END TITLE FIELDS =====
                                         category: researchDoc.category || '—',
                                         presenter: researchDoc.presenter || '—',
                                         author: researchDoc.author || '—',
@@ -4061,7 +4135,7 @@ export const Research = () => {
 
                         // Update stats
                         updateStatsFromData(totalDocs, pendingCount, acceptedCount, rejectedCount)
-
+                        applyCurrentFilter()
                         if (totalDocs === 0) {
                             showEmptyState()
                         }
@@ -4088,12 +4162,9 @@ export const Research = () => {
             }
         }
 
-        // Load documents when component mounts
         setTimeout(() => {
             loadDocuments()
         }, 100)
-
-        // Store loadDocuments function globally for refresh capability
         window.refreshDocumentsTable = loadDocuments
 
         return container
