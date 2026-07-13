@@ -1,4 +1,4 @@
-import {$, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting, CustomModal} from '../lib/lib.js'
+import { $, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting, CustomModal } from '../lib/lib.js'
 import { showPasswordResetModal } from "./../AccountRetrival/Code.js"
 
 const LoginPanel = (prop) => {
@@ -86,7 +86,7 @@ const LoginPanel = (prop) => {
         for (const authConfig of authEndpoints) {
             try {
                 const formData = authConfig.body(username, password)
-                
+
                 const response = await fetch(authConfig.endpoint, {
                     method: 'POST',
                     headers: {
@@ -100,7 +100,7 @@ const LoginPanel = (prop) => {
                 }
 
                 const data = await response.json()
-                
+
                 if (data.status === true) {
                     return {
                         success: true,
@@ -190,29 +190,29 @@ const LoginPanel = (prop) => {
                             type: 'submit',
                             method: async (ev) => {
                                 ev.preventDefault()
-                                
+
                                 if (isSubmitting) return
                                 isSubmitting = true
-                                
+
                                 const usernameValue = ev.target.username?.value || ''
                                 const passwordValue = ev.target.password?.value || ''
-                                
+
                                 if (!usernameValue || !passwordValue) {
                                     alert('Please enter both username and password')
                                     isSubmitting = false
                                     return
                                 }
-                                
+
                                 const submitBtn = ev.target.querySelector('.submitLog')
                                 const originalBtnText = submitBtn?.innerHTML || 'Submit'
                                 if (submitBtn) {
                                     submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...'
                                     submitBtn.disabled = true
                                 }
-                                
+
                                 try {
                                     const result = await detectUserTypeAndAuthenticate(usernameValue, passwordValue)
-                                    
+
                                     if (result.success) {
                                         window.location.replace(result.redirectUrl)
                                     } else {
@@ -466,11 +466,11 @@ const LoginPanel = (prop) => {
                                                 // SIMPLE: One event handler for click
                                                 event: {
                                                     type: 'click',
-                                                    method: function(e) {
+                                                    method: function (e) {
                                                         e.stopPropagation()
                                                         const input = document.getElementById('userPid')
                                                         const icon = document.getElementById('login-password-eye-icon')
-                                                        
+
                                                         if (input && icon) {
                                                             if (input.type === 'password') {
                                                                 input.type = 'text'
@@ -560,22 +560,27 @@ const Signup = (prop) => {
         userRole: (value) => { userRole = value }
     }
 
-    const togglePasswordVisibility = (inputId, iconId) => {
-        const input = document.getElementById(inputId)
-        const icon = document.getElementById(iconId)
-        
-        if (input && icon) {
-            if (input.type === 'password') {
-                input.type = 'text'
-                icon.className = 'fa-solid fa-eye-slash'
-            } else {
-                input.type = 'password'
-                icon.className = 'fa-solid fa-eye'
+    const option = ({ label, placeholder, value }) => {
+        const getOpt = (opt) => {
+            if (label) opt.innerText = label
+            if (placeholder) {
+                opt.disabled = true
+                opt.selected = true
             }
+            if (value) opt.value = value
+            opt.style.color = '#2c3e50'
+            opt.style.backgroundColor = '#ffffff'
         }
+        return $({ tag: 'option', elementHandler: getOpt })
     }
 
-    const ModernInput = ({ label, type, id, placeholder, icon, onInput, required = true }) => {
+    const campuses = [
+        "Roxas City Main", "Pilar", "Pontevedra", "Mambusao", "Burias",
+        "Sigma", "Sapian", "Tapaz", "Dumarao", "Dayao"
+    ]
+
+    // Modern Select Component
+    const ModernSelect = ({ label, id, options, onchange }) => {
         return $({
             tag: 'div',
             style: {
@@ -596,6 +601,53 @@ const Signup = (prop) => {
                         fontFamily: 'Inter, Segoe UI, sans-serif'
                     }
                 }),
+                $({
+                    tag: 'div',
+                    style: {
+                        position: 'relative',
+                        width: '100%'
+                    },
+                    child: [
+                        $({
+                            tag: 'select',
+                            att: { id: id, className: 'selectSign' },
+                            style: {
+                                width: '100%',
+                                padding: '12px 12px 12px 40px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #dee2e6',
+                                borderRadius: '10px',
+                                color: '#2c3e50',
+                                fontSize: '0.95rem',
+                                outline: 'none',
+                                cursor: 'pointer',
+                                appearance: 'none',
+                                boxSizing: 'border-box',
+                                height: '52px',
+                                lineHeight: '1.2',
+                                transition: 'all 0.3s ease'
+                            },
+                            event: {
+                                type: 'change',
+                                method: onchange
+                            },
+                            child: options
+                        })
+                    ]
+                })
+            ]
+        })
+    }
+
+    // Modern Input without label (just placeholder)
+    const ModernInput = ({ type, id, placeholder, icon, onInput, required = true }) => {
+        return $({
+            tag: 'div',
+            style: {
+                marginBottom: '1.25rem',
+                width: '100%'
+            },
+            child: [
                 $({
                     tag: 'div',
                     style: {
@@ -673,9 +725,10 @@ const Signup = (prop) => {
         })
     }
 
-    const ModernPasswordInput = ({ label, id, placeholder, icon, onInput, required = true }) => {
+    // Modern Password Input without label (just placeholder)
+    const ModernPasswordInput = ({ id, placeholder, icon, onInput, required = true }) => {
         let inputElement = null
-        
+
         return $({
             tag: 'div',
             style: {
@@ -683,19 +736,6 @@ const Signup = (prop) => {
                 width: '100%'
             },
             child: [
-                $({
-                    tag: 'label',
-                    att: { for: id },
-                    text: label,
-                    style: {
-                        display: 'block',
-                        color: '#2c3e50',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        marginBottom: '0.5rem',
-                        fontFamily: 'Inter, Segoe UI, sans-serif'
-                    }
-                }),
                 $({
                     tag: 'div',
                     style: {
@@ -791,7 +831,7 @@ const Signup = (prop) => {
                             elementHandler: (el) => {
                                 let isVisible = false
                                 const icon = el.querySelector('i')
-                                
+
                                 el.addEventListener('click', (e) => {
                                     e.stopPropagation()
                                     isVisible = !isVisible
@@ -803,12 +843,12 @@ const Signup = (prop) => {
                                         el.style.color = isVisible ? '#0d6efd' : '#adb5bd'
                                     }
                                 })
-                                
+
                                 el.addEventListener('mouseenter', () => {
                                     el.style.color = '#0d6efd'
                                     el.style.backgroundColor = 'rgba(13, 110, 253, 0.05)'
                                 })
-                                
+
                                 el.addEventListener('mouseleave', () => {
                                     el.style.color = isVisible ? '#0d6efd' : '#adb5bd'
                                     el.style.backgroundColor = 'transparent'
@@ -870,354 +910,28 @@ const Signup = (prop) => {
                 })
             ]
         })
-        
+
         form.appendChild(infoText)
 
-        const option = ({label, placeholder, value}) => {
-            const getOpt = (opt) => {
-                if (label) opt.innerText = label
-                if (placeholder) {
-                    opt.disabled = true
-                    opt.selected = true
-                }
-                if (value) opt.value = value
-                opt.style.color = '#2c3e50'
-                opt.style.backgroundColor = '#ffffff'
-            }
-            return $({ tag: 'option', elementHandler: getOpt })
-        }
-        
-        const campuses = [
-            "Roxas City Main", "Pilar", "Pontevedra", "Mambusao", "Burias",
-            "Sigma", "Sapian", "Tapaz", "Dumarao", "Dayao"
-        ]
-        
-        // Modern Select Component
-        const ModernSelect = ({ label, id, options, onchange, placeholder }) => {
-            return $({
-                tag: 'div',
-                style: {
-                    marginBottom: '1.25rem',
-                    width: '100%'
-                },
-                child: [
-                    $({
-                        tag: 'label',
-                        att: { for: id },
-                        text: label,
-                        style: {
-                            display: 'block',
-                            color: '#2c3e50',
-                            fontSize: '0.85rem',
-                            fontWeight: '600',
-                            marginBottom: '0.5rem',
-                            fontFamily: 'Inter, Segoe UI, sans-serif'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            position: 'relative',
-                            width: '100%'
-                        },
-                        child: [
-                            $({
-                                tag: 'span',
-                                style: {
-                                    position: 'absolute',
-                                    left: '12px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: '#6c757d',
-                                    fontSize: '1rem',
-                                    zIndex: '2'
-                                }
-                            }),
-                            $({
-                                tag: 'select',
-                                att: { id: id, className: 'selectSign' },
-                                style: {
-                                    width: '100%',
-                                    padding: '12px 12px 12px 40px',
-                                    backgroundColor: '#ffffff',
-                                    border: '1px solid #dee2e6',
-                                    borderRadius: '10px',
-                                    color: '#2c3e50',
-                                    fontSize: '0.95rem',
-                                    outline: 'none',
-                                    cursor: 'pointer',
-                                    appearance: 'none',
-                                    boxSizing: 'border-box',
-                                    height: '52px',
-                                    lineHeight: '1.2',
-                                    transition: 'all 0.3s ease'
-                                },
-                                event: {
-                                    type: 'focus',
-                                    method: (e) => {
-                                        e.target.style.borderColor = '#0d6efd'
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
-                                    }
-                                },
-                                event: {
-                                    type: 'blur',
-                                    method: (e) => {
-                                        e.target.style.borderColor = '#dee2e6'
-                                        e.target.style.boxShadow = 'none'
-                                    }
-                                },
-                                event: {
-                                    type: 'change',
-                                    method: onchange
-                                },
-                                child: options
-                            })
-                        ]
-                    })
-                ]
-            })
-        }
-        
-        // Modern Input without label (just placeholder)
-        const ModernInput = ({ type, id, placeholder, icon, onInput, required = true }) => {
-            return $({
-                tag: 'div',
-                style: {
-                    marginBottom: '1.25rem',
-                    width: '100%'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            position: 'relative',
-                            width: '100%'
-                        },
-                        child: [
-                            $({
-                                tag: 'span',
-                                style: {
-                                    position: 'absolute',
-                                    left: '12px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: '#6c757d',
-                                    fontSize: '1rem',
-                                    zIndex: '2'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'i',
-                                        att: { className: icon }
-                                    })
-                                ]
-                            }),
-                            $({
-                                tag: 'input',
-                                att: {
-                                    type: type,
-                                    id: id,
-                                    name: id,
-                                    placeholder: placeholder,
-                                    required: required,
-                                    autocomplete: 'off'
-                                },
-                                elementHandler: (el) => {
-                                    el.addEventListener('input', (e) => {
-                                        if (onInput) onInput(e.target.value)
-                                    })
-                                },
-                                style: {
-                                    width: '100%',
-                                    padding: '12px 12px 12px 40px',
-                                    backgroundColor: '#ffffff',
-                                    border: '1px solid #dee2e6',
-                                    borderRadius: '10px',
-                                    color: '#2c3e50',
-                                    fontSize: '0.95rem',
-                                    outline: 'none',
-                                    transition: 'all 0.3s ease',
-                                    boxSizing: 'border-box'
-                                },
-                                event: {
-                                    type: 'focus',
-                                    method: (e) => {
-                                        e.target.style.borderColor = '#0d6efd'
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
-                                        const icon = e.target.parentElement.querySelector('span')
-                                        if (icon) icon.style.color = '#0d6efd'
-                                    }
-                                },
-                                event: {
-                                    type: 'blur',
-                                    method: (e) => {
-                                        e.target.style.borderColor = '#dee2e6'
-                                        e.target.style.boxShadow = 'none'
-                                        const icon = e.target.parentElement.querySelector('span')
-                                        if (icon) icon.style.color = '#6c757d'
-                                    }
-                                }
-                            })
-                        ]
-                    })
-                ]
-            })
-        }
-
-        // Modern Password Input without label (just placeholder)
-        const ModernPasswordInput = ({ id, placeholder, icon, onInput, required = true }) => {
-            let inputElement = null
-            
-            return $({
-                tag: 'div',
-                style: {
-                    marginBottom: '1.25rem',
-                    width: '100%'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            position: 'relative',
-                            width: '100%'
-                        },
-                        child: [
-                            $({
-                                tag: 'span',
-                                style: {
-                                    position: 'absolute',
-                                    left: '12px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    color: '#6c757d',
-                                    fontSize: '1rem',
-                                    zIndex: '2'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'i',
-                                        att: { className: icon }
-                                    })
-                                ]
-                            }),
-                            $({
-                                tag: 'input',
-                                att: {
-                                    type: 'password',
-                                    id: id,
-                                    name: id,
-                                    placeholder: placeholder,
-                                    required: required,
-                                    autocomplete: 'new-password'
-                                },
-                                elementHandler: (el) => {
-                                    inputElement = el
-                                    el.addEventListener('input', (e) => {
-                                        if (onInput) onInput(e.target.value)
-                                    })
-                                },
-                                style: {
-                                    width: '100%',
-                                    padding: '12px 45px 12px 40px',
-                                    backgroundColor: '#ffffff',
-                                    border: '1px solid #dee2e6',
-                                    borderRadius: '10px',
-                                    color: '#2c3e50',
-                                    fontSize: '0.95rem',
-                                    outline: 'none',
-                                    transition: 'all 0.3s ease',
-                                    boxSizing: 'border-box'
-                                },
-                                event: {
-                                    type: 'focus',
-                                    method: (e) => {
-                                        e.target.style.borderColor = '#0d6efd'
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
-                                    }
-                                },
-                                event: {
-                                    type: 'blur',
-                                    method: (e) => {
-                                        e.target.style.borderColor = '#dee2e6'
-                                        e.target.style.boxShadow = 'none'
-                                    }
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                style: {
-                                    position: 'absolute',
-                                    right: '12px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    cursor: 'pointer',
-                                    color: '#adb5bd',
-                                    zIndex: '10',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '50%',
-                                    transition: 'all 0.3s ease'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'i',
-                                        att: { className: 'fa-solid fa-eye' }
-                                    })
-                                ],
-                                elementHandler: (el) => {
-                                    let isVisible = false
-                                    const icon = el.querySelector('i')
-                                    
-                                    el.addEventListener('click', (e) => {
-                                        e.stopPropagation()
-                                        isVisible = !isVisible
-                                        if (inputElement) {
-                                            inputElement.type = isVisible ? 'text' : 'password'
-                                            if (icon) {
-                                                icon.className = isVisible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'
-                                            }
-                                            el.style.color = isVisible ? '#0d6efd' : '#adb5bd'
-                                        }
-                                    })
-                                    
-                                    el.addEventListener('mouseenter', () => {
-                                        el.style.color = '#0d6efd'
-                                        el.style.backgroundColor = 'rgba(13, 110, 253, 0.05)'
-                                    })
-                                    
-                                    el.addEventListener('mouseleave', () => {
-                                        el.style.color = isVisible ? '#0d6efd' : '#adb5bd'
-                                        el.style.backgroundColor = 'transparent'
-                                    })
-                                }
-                            })
-                        ]
-                    })
-                ]
-            })
-        }
-        
         // Role Selection
         const roleOptions = [
             option({ label: '-- Select Role --', placeholder: true }),
             option({ label: 'Research Campus Chair', value: 'research_chair' }),
             option({ label: 'Research Center or Extension Chair', value: 'research_center_chair' })
         ]
-        
+
         form.appendChild(ModernSelect({
+            label: 'Select Role',
             id: 'select-role',
             options: roleOptions,
             onchange: (event) => {
                 const selectedRole = event.target.value
                 get.userRole(selectedRole)
-                
+
                 const campusContainer = document.getElementById('campus-container')
                 const centerContainer = document.getElementById('center-container')
                 const extensionCampusContainer = document.getElementById('extension-campus-container')
-                
+
                 if (selectedRole === 'research_chair') {
                     if (campusContainer) campusContainer.style.display = 'block'
                     if (centerContainer) centerContainer.style.display = 'none'
@@ -1240,7 +954,7 @@ const Signup = (prop) => {
                 }
             }
         }))
-        
+
         // Research Center Options
         const centerOptions = [option({ label: '-- Select Research Center or Extension --', placeholder: true })]
         CapsuOffice.forEach(val => {
@@ -1253,12 +967,13 @@ const Signup = (prop) => {
             }
             centerOptions.push(option({ label: val, value: code }))
         })
-        
+
         const centerWrapper = $({
             tag: 'div',
             att: { id: 'center-container', style: 'display: none; width: 100%;' },
             child: [
                 ModernSelect({
+                    label: 'Select Research Center',
                     id: 'select-sign',
                     options: centerOptions,
                     onchange: (event) => {
@@ -1278,18 +993,19 @@ const Signup = (prop) => {
             ]
         })
         form.appendChild(centerWrapper)
-        
+
         // Extension Campus Options
         const extensionOptions = [option({ label: '-- Select Campus --', placeholder: true })]
         campuses.forEach(val => {
             extensionOptions.push(option({ label: val, value: val }))
         })
-        
+
         const extensionCampusWrapper = $({
             tag: 'div',
             att: { id: 'extension-campus-container', style: 'display: none; width: 100%;' },
             child: [
                 ModernSelect({
+                    label: 'Select Extension Campus',
                     id: 'select-extension-campus',
                     options: extensionOptions,
                     onchange: (event) => { get.campus(event.target.value) }
@@ -1297,18 +1013,19 @@ const Signup = (prop) => {
             ]
         })
         form.appendChild(extensionCampusWrapper)
-        
+
         // Campus Options
         const campusOptions = [option({ label: '-- Select Campus --', placeholder: true })]
         campuses.forEach(val => {
             campusOptions.push(option({ label: val, value: val }))
         })
-        
+
         const campusWrapper = $({
             tag: 'div',
             att: { id: 'campus-container', style: 'display: none; width: 100%;' },
             child: [
                 ModernSelect({
+                    label: 'Select Campus',
                     id: 'select-campus',
                     options: campusOptions,
                     onchange: (event) => { get.campus(event.target.value) }
@@ -1316,9 +1033,9 @@ const Signup = (prop) => {
             ]
         })
         form.appendChild(campusWrapper)
-        
+
         // ============ FORM FIELDS (No Labels) ============
-        
+
         // 1. Full Name - Full width (above the two columns)
         form.appendChild(ModernInput({
             type: 'text',
@@ -1327,7 +1044,7 @@ const Signup = (prop) => {
             icon: 'fa-solid fa-user-circle',
             onInput: (val) => get.fullName(val)
         }))
-        
+
         // 2. Two column layout for remaining fields
         const twoColumnContainer = $({
             tag: 'div',
@@ -1380,9 +1097,9 @@ const Signup = (prop) => {
                 })
             ]
         })
-        
+
         form.appendChild(twoColumnContainer)
-        
+
         // Submit Button
         form.appendChild($({
             tag: 'button',
@@ -1406,29 +1123,15 @@ const Signup = (prop) => {
                 boxShadow: '0 2px 8px rgba(13, 110, 253, 0.3)'
             },
             event: {
-                type: 'mouseenter',
-                method: (e) => {
-                    e.target.style.transform = 'translateY(-2px)'
-                    e.target.style.boxShadow = '0 4px 15px rgba(13, 110, 253, 0.4)'
-                }
-            },
-            event: {
-                type: 'mouseleave',
-                method: (e) => {
-                    e.target.style.transform = 'translateY(0)'
-                    e.target.style.boxShadow = '0 2px 8px rgba(13, 110, 253, 0.3)'
-                }
-            },
-            event: {
                 type: 'click',
                 method: async (event) => {
                     event.preventDefault()
-                    
+
                     if (userRole === undefined) {
                         alert("Please select a role (Research Chair or Research Center Chair)..!")
                         return
                     }
-                    
+
                     if (userRole === 'research_chair') {
                         if (campus === undefined) {
                             alert("Please select a Campus..!")
@@ -1444,7 +1147,7 @@ const Signup = (prop) => {
                             return
                         }
                     }
-                    
+
                     if (email === undefined) { alert("E-Mail is missing..!"); return; }
                     if (fullName === undefined) { alert("Full name is missing..!"); return; }
                     if (username === undefined) { alert("Username is missing..!"); return; }
@@ -1454,7 +1157,7 @@ const Signup = (prop) => {
 
                     const formData = new FormData()
                     formData.append('auth', 'signup')
-                    
+
                     if (userRole === 'research_chair') {
                         formData.append('campus', campus.toUpperCase())
                     } else if (userRole === 'research_center_chair') {
@@ -1463,15 +1166,15 @@ const Signup = (prop) => {
                             formData.append('campus', campus.toUpperCase())
                         }
                     }
-                    
+
                     formData.append('userEmail', email)
                     formData.append('fullName', fullName)
                     formData.append('username', username)
                     formData.append('password', password)
-                    
+
                     let loading = Waiting()
                     document.body.appendChild(loading)
-                    
+
                     const remove = () => { loading.remove() }
 
                     try {
@@ -1479,15 +1182,15 @@ const Signup = (prop) => {
                             method: "POST",
                             body: formData
                         })
-                        
+
                         if (res.ok) {
                             remove()
                             const dat = await res.json()
-                            
+
                             if (dat.status) {
                                 document.body.appendChild(ConfirmationAlert(
-                                    "Your account has been successfully created!\nPlease check your email to verify your account.", 
-                                    () => { window.location.replace('/account/Login?') }
+                                    "Your account has been successfully created!\nPlease check your email to verify your account.",
+                                    () => { window.location.replace('/account/Login') }
                                 ))
                             } else {
                                 document.body.appendChild(ConfirmationAlert(dat.message, () => { window.location.reload() }))
@@ -1504,7 +1207,7 @@ const Signup = (prop) => {
                 }
             }
         }))
-        
+
         container.appendChild(form)
     }
 
@@ -1524,8 +1227,8 @@ const logo = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '1rem',
-            marginBottom: '0.5rem', 
-            padding: '0.5rem 0', 
+            marginBottom: '0.5rem',
+            padding: '0.5rem 0',
             backgroundColor: 'transparent'
         },
         child: [
@@ -1586,38 +1289,68 @@ export const LoginPage = () => {
     let clsObj
 
     const getBot = (val) => {
-        switch (window.location.href.replace(window.location.origin, '')) {
-            case '/account/Login?':
-                val.innerHTML = `<a href="/account/Signup?" style="
-                    color: #0d6efd;
-                    text-decoration: none;
-                    font-size: 0.85rem;
-                    font-family: 'Inter', 'Segoe UI', sans-serif;
-                    font-weight: 600;
-                    transition: all 0.3s ease;
-                    cursor: pointer;
-                    display: inline-block;
-                    padding: 4px 8px;
-                    border-radius: 6px;
-                " onmouseover="this.style.color='#0a58ca'; this.style.backgroundColor='#f8f9fa';" 
-                onmouseout="this.style.color='#0d6efd'; this.style.backgroundColor='transparent';">Create an account</a>
-                <span style='font-size:0.85rem;color: #6c757d;font-family: Inter, Segoe UI, sans-serif;'> (for CAPSU Research & Extension users only)</span>`
-                break;
-            case '/account/Signup?':
-                val.innerHTML = `<a href="/account/Login?" style="
-                    color: #0d6efd;
-                    text-decoration: none;
-                    font-size: 0.85rem;
-                    font-family: 'Inter', 'Segoe UI', sans-serif;
-                    font-weight: 600;
-                    transition: all 0.3s ease;
-                    cursor: pointer;
-                    display: inline-block;
-                    padding: 4px 8px;
-                    border-radius: 6px;
-                " onmouseover="this.style.color='#0a58ca'; this.style.backgroundColor='#f8f9fa';" 
-                onmouseout="this.style.color='#0d6efd'; this.style.backgroundColor='transparent';">Log in</a>`
-                break;
+        const currentPath = window.location.href.replace(window.location.origin, '');
+
+        if (currentPath === '/account/Login?' || currentPath === '/account/Login') {
+            // Use a span with click handler instead of static HTML
+            val.innerHTML = '';
+
+            const linkSpan = document.createElement('span');
+            linkSpan.style.cssText = `
+                color: #0d6efd;
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-family: 'Inter', 'Segoe UI', sans-serif;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 6px;
+            `;
+            linkSpan.textContent = 'Create an account';
+
+            linkSpan.addEventListener('mouseenter', () => {
+                linkSpan.style.color = '#0a58ca';
+                linkSpan.style.backgroundColor = '#f8f9fa';
+            });
+
+            linkSpan.addEventListener('mouseleave', () => {
+                linkSpan.style.color = '#0d6efd';
+                linkSpan.style.backgroundColor = 'transparent';
+            });
+
+            linkSpan.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.location.assign('/account/Signup?');
+            });
+
+            val.appendChild(linkSpan);
+
+            const noteSpan = document.createElement('span');
+            noteSpan.style.cssText = `
+                font-size: 0.85rem;
+                color: #6c757d;
+                font-family: Inter, Segoe UI, sans-serif;
+                margin-left: 4px;
+            `;
+            noteSpan.textContent = ' (for CAPSU Research & Extension users only)';
+            val.appendChild(noteSpan);
+
+        } else if (currentPath === '/account/Signup?' || currentPath === '/account/Signup') {
+            val.innerHTML = `<a href="/account/Login?" style="
+                color: #0d6efd;
+                text-decoration: none;
+                font-size: 0.85rem;
+                font-family: 'Inter', 'Segoe UI', sans-serif;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 6px;
+            " onmouseover="this.style.color='#0a58ca'; this.style.backgroundColor='#f8f9fa';" 
+            onmouseout="this.style.color='#0d6efd'; this.style.backgroundColor='transparent';">Log in</a>`
         }
     }
 
@@ -1626,14 +1359,13 @@ export const LoginPage = () => {
         clsObj.style.backgroundColor = 'transparent'
         clsObj.style.borderRadius = '16px'
         clsObj.style.padding = '2rem'
-        
-        switch (window.location.href.replace(window.location.origin, '')) {
-            case '/account/Login?':
-                clsObj.appendChild(LoginPanel())
-                break
-            case '/account/Signup?':
-                clsObj.appendChild(Signup())
-                break
+
+        const currentPath = window.location.href.replace(window.location.origin, '');
+
+        if (currentPath === '/account/Login?' || currentPath === '/account/Login') {
+            clsObj.appendChild(LoginPanel())
+        } else if (currentPath === '/account/Signup?' || currentPath === '/account/Signup') {
+            clsObj.appendChild(Signup())
         }
     }
 
@@ -1654,7 +1386,8 @@ export const LoginPage = () => {
             event: {
                 type: 'click',
                 method: () => {
-                    if (window.location.href.replace(window.location.origin, '') === '/account/Login?') {
+                    const currentPath = window.location.href.replace(window.location.origin, '');
+                    if (currentPath === '/account/Login?' || currentPath === '/account/Login') {
                         window.location.assign('/account/Signup?')
                     } else {
                         window.location.assign('/account/Login?')
@@ -1669,9 +1402,9 @@ export const LoginPage = () => {
         att: { className: 'LoginPanel' },
         child: [
             logo(),
-            $({ 
-                tag: 'div', 
-                elementHandler: getCLS, 
+            $({
+                tag: 'div',
+                elementHandler: getCLS,
                 att: { className: "clogOrSig" }
             }),
             ChangePanel(),

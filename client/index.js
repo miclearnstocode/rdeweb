@@ -121,6 +121,7 @@ const renderWithLoading = async (componentLoader, container) => {
 const routes = {
     public: {
         '/account/Login': { loader: LazyLogin, renderParticles: true },
+        '/account/Signup': { loader: LazyLogin, renderParticles: true },
         '/accountSupport': { component: Retrieval },
         '/view': { component: DocumentViewer }
     },
@@ -216,16 +217,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     const urlPath = window.location.href.replace(window.location.origin, '');
     const root = document.getElementById('root');
 
+    // Handle Login and Signup pages with particles
+    if (urlPath.startsWith('/account/Login') || urlPath.startsWith('/account/Signup')) {
+        renderParticles();
+    }
 
     const publicRoute = Object.entries(routes.public).find(([path]) => urlPath.startsWith(path));
 
     if (publicRoute) {
         const [path, route] = publicRoute;
-
-        // Handle Login page with particles
-        if (path === '/account/Login') {
-            renderParticles();
-        }
 
         // Render public route
         if (route.loader) {
@@ -235,7 +235,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
         return;
     }
-
 
     const protectedRoute = Object.entries(routes.protected).find(([path]) => urlPath.startsWith(path));
 
