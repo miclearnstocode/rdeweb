@@ -2943,7 +2943,7 @@ export const Research = () => {
                 style: { padding: '28px' }
             })
 
-            // Event selection (full width)
+            // Event selection (full width) - Always visible
             const eventField = $({ tag: 'div', style: { marginBottom: '20px' } })
             eventField.appendChild($({
                 tag: 'label',
@@ -2983,6 +2983,7 @@ export const Research = () => {
                             const isInHouse = selectedEventName && selectedEventName.toLowerCase().includes('in-house')
                             const isSymposium = selectedEventName && selectedEventName.toLowerCase().includes('symposium')
 
+                            // Handle Symposium - open separate modal
                             if (isSymposium && !isEdit && !symposiumModalActive) {
                                 normalFormContent.style.opacity = '0'
                                 normalFormContent.style.transform = 'translateX(-20px)'
@@ -3008,9 +3009,32 @@ export const Research = () => {
                                 return
                             }
 
+                            // Update form data
                             formData.eventName = selectedEventName
                             formData.eventId = selectedEventId
 
+                            // Show the rest of the form when an event is selected
+                            if (selectedEventName && selectedEventName !== '-- Select Event Name --') {
+                                // Show the two column layout
+                                twoColumnLayout.style.display = 'grid'
+                                twoColumnLayout.style.opacity = '0'
+                                twoColumnLayout.style.transform = 'translateY(10px)'
+
+                                // Show the file section
+                                fileSection.style.display = 'block'
+                                fileSection.style.opacity = '0'
+                                fileSection.style.transform = 'translateY(10px)'
+
+                                // Trigger a smooth reveal
+                                setTimeout(() => {
+                                    twoColumnLayout.style.opacity = '1'
+                                    twoColumnLayout.style.transform = 'translateY(0)'
+                                    fileSection.style.opacity = '1'
+                                    fileSection.style.transform = 'translateY(0)'
+                                }, 50)
+                            }
+
+                            // Show/hide Local Files section for In-House events
                             if (localFilesSection) {
                                 localFilesSection.style.display = isInHouse ? 'block' : 'none'
                             }
@@ -3064,14 +3088,16 @@ export const Research = () => {
             })
             eventField.appendChild(eventSelect)
 
-            // Two column layout
+            // Two column layout - Initially hidden until event is selected
             const twoColumnLayout = $({
                 tag: 'div',
                 style: {
-                    display: 'grid',
+                    display: 'none', // Initially hidden
                     gridTemplateColumns: '1fr 1fr',
                     gap: '20px',
-                    marginBottom: '20px'
+                    marginBottom: '20px',
+                    opacity: '0',
+                    transition: 'all 0.3s ease'
                 }
             })
 
@@ -3560,17 +3586,20 @@ export const Research = () => {
             twoColumnLayout.appendChild(presenterField)
             twoColumnLayout.appendChild(coAuthorField)
 
-            // Build the form
+            // Build the form - Add event field first, then twoColumnLayout
             formBody.appendChild(eventField)
             formBody.appendChild(twoColumnLayout)
 
-            // File upload sections
+            // File upload sections - Initially hidden
             const fileSection = $({
                 tag: 'div',
                 style: {
                     marginTop: '20px',
                     paddingTop: '20px',
-                    borderTop: '1px solid #e8ecf0'
+                    borderTop: '1px solid #e8ecf0',
+                    display: 'none', // Initially hidden
+                    opacity: '0',
+                    transition: 'all 0.3s ease'
                 }
             })
 
@@ -3632,17 +3661,21 @@ export const Research = () => {
 
             container.appendChild(formBody)
 
+            // If in edit mode, show all fields immediately
+            if (isEdit && editData?.eventName) {
+                twoColumnLayout.style.display = 'grid'
+                twoColumnLayout.style.opacity = '1'
+                fileSection.style.display = 'block'
+                fileSection.style.opacity = '1'
+                formBody.style.display = 'block'
+            }
+
             return container
         }
 
         function showSymposiumInContainer(eventName, eventId) {
-            // Store current modal for cleanup
             const currentModal = modal;
-
-            // Close the current modal
             currentModal.remove();
-
-            // Create and show the Symposium modal as a standalone modal
             const symposiumModal = SymposiumModal({
                 eventName: eventName,
                 eventId: eventId,

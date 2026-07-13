@@ -1913,15 +1913,13 @@ if (isset($_POST['saveLocalInhouse'])) {
         $eventName = isset($_POST['eventName']) ? trim($_POST['eventName']) : '';
 
         // Get form data
+        $localEventName = trim($_POST['local_eventname'] ?? '');
         $documentTitle = trim($_POST['document_title'] ?? '');
         $campus = trim($_POST['campus'] ?? '');
         $category = trim($_POST['category'] ?? '');
         $center = trim($_POST['center'] ?? '');
         $mainAuthor = trim($_POST['main_author'] ?? '');
-        $presenter = trim($_POST['presenter'] ?? '');
         $coAuthors = $_POST['co_authors'] ?? '[]';
-        
-        // ===== FIX: Initialize these variables =====
         $date_started = isset($_POST['date_started']) && !empty($_POST['date_started']) ? $_POST['date_started'] : null;
         $date_completed = isset($_POST['date_completed']) && !empty($_POST['date_completed']) ? $_POST['date_completed'] : null;
         $final_symposium_title = isset($_POST['final_symposium_title']) && !empty($_POST['final_symposium_title']) ? $_POST['final_symposium_title'] : null;
@@ -2046,11 +2044,8 @@ if (isset($_POST['saveLocalInhouse'])) {
             }
         }
 
-        // ===== STEP 1: INSERT INTO researchfile TABLE FIRST =====
         $rev = 'pending';
         $nullEndorsement = null;
-
-        // ===== FIX: Use proper variable names =====
         $insertResearchQuery = "INSERT INTO researchfile(
             paper_trail_no, senderid, endorsementid, event_id, author, coauthor, presenter,
             date_started, date_completed, title, final_symposium_title, event, status,
@@ -2074,16 +2069,16 @@ if (isset($_POST['saveLocalInhouse'])) {
             $mainAuthor,
             $coAuthors,
             $presenter,
-            $date_started,        // Now defined
-            $date_completed,      // Now defined
+            $date_started,        
+            $date_completed,      
             $documentTitle,
-            $final_symposium_title, // Now defined (fixed typo)
+            $final_symposium_title, 
             $eventName,
             $rev,
             $category,
             $center,
             $campus,
-            $title_changed,       // Now defined
+            $title_changed,       
             $programEventFileId,
             $programEventViewUrl,
             $programDriveDownloadUrl,
@@ -2100,16 +2095,14 @@ if (isset($_POST['saveLocalInhouse'])) {
         $insertResearchStmt->close();
 
         error_log("Researchfile created with ID: $researchId for Local In-House");
-
-        // ===== STEP 2: INSERT INTO local_inhouse TABLE USING research_id =====
         $query = "INSERT INTO local_inhouse (
             research_id,
+            local_eventname,
             document_title, 
             campus, 
             category, 
             center,
             main_author, 
-            presenter, 
             co_authors,
             program_file_view_url, 
             program_file_download_url,
@@ -2132,12 +2125,12 @@ if (isset($_POST['saveLocalInhouse'])) {
         $stmt->bind_param(
             'isssssssssssssssss',
             $researchId,
+            $localEventName,
             $documentTitle,
             $campus,
             $category,
             $center,
             $mainAuthor,
-            $presenter,
             $coAuthors,
             $programDriveViewUrl,
             $programDriveDownloadUrl,
@@ -2212,17 +2205,49 @@ if (isset($_POST['uploadSymposium'])) {
         $date_completed = isset($_POST['date_completed']) && !empty($_POST['date_completed']) ? $_POST['date_completed'] : null;
         $finalSymposiumTitle = isset($_POST['final_symposium_title']) && !empty($_POST['final_symposium_title']) ? $_POST['final_symposium_title'] : null;
         $title_changed = isset($_POST['title_changed']) ? (int) $_POST['title_changed'] : 0;
+        $fundSource = isset($_POST['fundSource']) ? trim($_POST['fundSource']) : '';
 
         $drive = new GoogleDriveService();
 
+        // ===== HELPER FUNCTION TO BUILD RESEARCHERS STRING =====
+        function buildResearchersString($author, $coAuthor, $presenter) {
+            $researchersParts = [];
+            
+            // Add main author
+            if (!empty($author)) {
+                $researchersParts[] = trim($author);
+            }
+            
+            // Add co-authors
+            $coAuthorsArray = json_decode($coAuthor, true) ?? [];
+            if (!empty($coAuthorsArray) && is_array($coAuthorsArray)) {
+                foreach ($coAuthorsArray as $coAuthorName) {
+                    $coAuthorName = trim($coAuthorName);
+                    if (!empty($coAuthorName) && !in_array($coAuthorName, $researchersParts)) {
+                        $researchersParts[] = $coAuthorName;
+                    }
+                }
+            }
+            
+            // Add presenter (if different from author and co-authors)
+            if (!empty($presenter)) {
+                $presenter = trim($presenter);
+                if (!in_array($presenter, $researchersParts)) {
+                    $researchersParts[] = $presenter;
+                }
+            }
+            
+            return implode(', ', $researchersParts);
+        }
+
         if ($presentationType === 'local') {
             // ===== LOCAL IN-HOUSE SYMPOSIUM SUBMISSION =====
+            $localEventName = isset($_POST['local_eventname']) ? trim($_POST['local_eventname']) : '';
             $localTitle = isset($_POST['local_title']) ? trim($_POST['local_title']) : '';
             $localCampus = isset($_POST['local_campus']) ? trim($_POST['local_campus']) : '';
             $localCategory = isset($_POST['local_category']) ? trim($_POST['local_category']) : '';
             $localCenter = isset($_POST['local_center']) ? trim($_POST['local_center']) : '';
             $localAuthor = isset($_POST['local_author']) ? trim($_POST['local_author']) : '';
-            $localPresenter = isset($_POST['local_presenter']) ? trim($_POST['local_presenter']) : '';
             $localCoAuthors = isset($_POST['local_coAuthors']) ? $_POST['local_coAuthors'] : '[]';
 
             if (empty($localTitle) || empty($localAuthor)) {
@@ -2416,7 +2441,7 @@ if (isset($_POST['uploadSymposium'])) {
                     true,
                     false,
                     $paperTrailNo,
-                    $existingResearchFolderId  // CRITICAL: Pass the existing folder ID
+                    $existingResearchFolderId
                 );
                 
                 if ($titleCertificatePaperTrailResult && $titleCertificatePaperTrailResult['success']) {
@@ -2482,6 +2507,25 @@ if (isset($_POST['uploadSymposium'])) {
             
             $researchId = $con->insert_id;
             $response->research_id = $researchId;
+            
+            // ===== INSERT INTO research_monitoring TABLE (LOCAL PATH) =====
+            $projectTitle = !empty($finalSymposiumTitle) ? $finalSymposiumTitle : $originalTitle;
+            $researchersString = buildResearchersString($author, $coAuthor, $presenter);
+
+            $monitoringQuery = "INSERT INTO research_monitoring (
+                research_id, project_title, researchers, start_date, fund_source, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+            
+            $monitoringStmt = $con->prepare($monitoringQuery);
+            if ($monitoringStmt) {
+                $monitoringStmt->bind_param('issss', $researchId, $projectTitle, $researchersString, $date_started, $fundSource);
+                if ($monitoringStmt->execute()) {
+                    error_log("Research monitoring record created for research_id: $researchId (Local)");
+                } else {
+                    error_log("Failed to insert research_monitoring (Local): " . $monitoringStmt->error);
+                }
+                $monitoringStmt->close();
+            }
             
             // ===== STEP 4: UPLOAD LOCAL IN-HOUSE PROGRAM FILE =====
             $programDriveFileId = null;
@@ -2549,7 +2593,7 @@ if (isset($_POST['uploadSymposium'])) {
 
             // ===== STEP 6: INSERT INTO local_inhouse TABLE =====
             $localQuery = "INSERT INTO local_inhouse (
-                research_id, document_title, campus, category, center, main_author, presenter, co_authors,
+                research_id,local_eventname, document_title, campus, category, center, main_author, co_authors,
                 program_file_view_url, program_file_download_url,
                 certificate_file_view_url, certificate_file_download_url,
                 created_at
@@ -2561,12 +2605,12 @@ if (isset($_POST['uploadSymposium'])) {
             $localStmt->bind_param(
                 'isssssssssss',
                 $researchId,
+                $localEventName,
                 $localTitle,
                 $localCampus,
                 $localCategory,
                 $localCenter,
                 $localAuthor,
-                $localPresenter,
                 $localCoAuthors,
                 $programDriveViewUrl,
                 $programDownloadUrl,
@@ -2604,17 +2648,14 @@ if (isset($_POST['uploadSymposium'])) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Symposium', $endorsementPaperTrailResult);
             }
             
-            // Save title change certificate
             if ($titleCertificatePaperTrailResult && $titleCertificatePaperTrailResult['success']) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Symposium', $titleCertificatePaperTrailResult);
             }
             
-            // Save program file
             if ($programPaperTrailResult && $programPaperTrailResult['success']) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Local In-House Review', $programPaperTrailResult);
             }
             
-            // Save local certificate
             if ($localCertificatePaperTrailResult && $localCertificatePaperTrailResult['success']) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Local In-House Review', $localCertificatePaperTrailResult);
             }
@@ -2760,7 +2801,6 @@ if (isset($_POST['uploadSymposium'])) {
             
             $endorsementId = $con->insert_id;
             
-            // ===== TITLE CHANGE CERTIFICATE =====
             $titleCertificateViewUrl = null;
             $titleCertificateDownloadUrl = null;
             $titleCertificatePaperTrailResult = null;
@@ -2771,7 +2811,6 @@ if (isset($_POST['uploadSymposium'])) {
                 $cleanOriginalTitle = cleanFolderNameForDrive($originalTitle);
                 $titleCertificateName = $cleanOriginalTitle . ' - certificate of title change.pdf';
                 
-                // ===== UPLOAD TO ENTRY FOLDER =====
                 $certificateUploadResult = $drive->uploadFile($tempCertificatePath, $titleCertificateName, $entryFolderId);
                 if ($certificateUploadResult['success']) {
                     $drive->makeFilePublic($certificateUploadResult['id']);
@@ -2783,7 +2822,6 @@ if (isset($_POST['uploadSymposium'])) {
                     error_log("Failed to upload title certificate to entry folder: " . ($certificateUploadResult['error'] ?? 'Unknown error'));
                 }
                 
-                // ===== GET THE EXISTING RESEARCH FOLDER ID FROM PAPER TRAIL =====
                 $existingResearchFolderId = null;
                 if (isset($researchPaperTrailResult['research_folder_id']) && !empty($researchPaperTrailResult['research_folder_id'])) {
                     $existingResearchFolderId = $researchPaperTrailResult['research_folder_id'];
@@ -2795,7 +2833,6 @@ if (isset($_POST['uploadSymposium'])) {
                     error_log("No existing research folder ID found, will create new folder");
                 }
                 
-                // ===== UPLOAD TO PAPER TRAIL - PASS EXISTING FOLDER ID =====
                 $titleCertificatePaperTrailResult = uploadToPaperTrail(
                     $tempCertificatePath,
                     $titleCertificateName, 
@@ -2808,7 +2845,7 @@ if (isset($_POST['uploadSymposium'])) {
                     true,
                     false,
                     $paperTrailNo,
-                    $existingResearchFolderId  // CRITICAL: Pass the existing folder ID
+                    $existingResearchFolderId 
                 );
                 
                 if ($titleCertificatePaperTrailResult && $titleCertificatePaperTrailResult['success']) {
@@ -2871,6 +2908,25 @@ if (isset($_POST['uploadSymposium'])) {
             $response->research_id = $researchId;
             $response->paper_trail_no = $paperTrailNo;
 
+            // ===== INSERT INTO research_monitoring TABLE (UNIVERSITY PATH) =====
+            $projectTitle = !empty($finalSymposiumTitle) ? $finalSymposiumTitle : $originalTitle;
+            $researchersString = buildResearchersString($author, $coAuthor, $presenter);
+
+            $monitoringQuery = "INSERT INTO research_monitoring (
+                research_id, project_title, researchers, start_date, fund_source, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())";
+            
+            $monitoringStmt = $con->prepare($monitoringQuery);
+            if ($monitoringStmt) {
+                $monitoringStmt->bind_param('issss', $researchId, $projectTitle, $researchersString, $date_started, $fundSource);
+                if ($monitoringStmt->execute()) {
+                    error_log("Research monitoring record created for research_id: $researchId (University)");
+                } else {
+                    error_log("Failed to insert research_monitoring (University): " . $monitoringStmt->error);
+                }
+                $monitoringStmt->close();
+            }
+
             // ===== MARK THE ORIGINAL IN-HOUSE RESEARCH AS SUBMITTED =====
             if ($selectedInhouseId) {
                 $updateSubmittedQuery = "UPDATE researchfile SET symposium_submitted = 1 WHERE id = ?";
@@ -2890,7 +2946,6 @@ if (isset($_POST['uploadSymposium'])) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Symposium', $endorsementPaperTrailResult);
             }
             
-            // FIX: Save title certificate to Paper Trail
             if ($titleCertificatePaperTrailResult && $titleCertificatePaperTrailResult['success']) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Symposium', $titleCertificatePaperTrailResult);
             }
@@ -2924,8 +2979,6 @@ function savePaperTrailRecord($con, $researchId, $paperTrailNo, $year, $submissi
     // Check if this is a title certificate
     $isTitleCertificate = isset($paperTrailResult['file_type']) && $paperTrailResult['file_type'] === 'title_certificate';
     
-    // For title certificates, they go into the same research folder
-    // All file types share the same folder structure
     $paperTrailQuery = "INSERT INTO paper_trail_files (
         research_id, 
         paper_trail_no, 
@@ -3457,7 +3510,8 @@ if (isset($_POST['researchReviewed'])) {
                     el.date_of_presentation,
                     el.name as event_name,
                     li.program_file_view_url as local_program_file_view_url,
-                    li.certificate_file_view_url as local_certificate_file_view_url
+                    li.certificate_file_view_url as local_certificate_file_view_url,
+                    li.local_eventname as local_eventname
                 FROM researchfile rf
                 LEFT JOIN event_list el ON rf.event_id = el.id
                 LEFT JOIN local_inhouse li ON rf.id = li.research_id
@@ -3509,6 +3563,7 @@ if (isset($_POST['researchReviewed'])) {
                     $researchDocs->local_inhouse = $res['local_inhouse'] ?? 0;
                     $researchDocs->local_program_file_view_url = $res['local_program_file_view_url'] ?? null;
                     $researchDocs->local_certificate_file_view_url = $res['local_certificate_file_view_url'] ?? null;
+                    $researchDocs->local_eventname = $res['local_eventname'] ?? null;
 
                     // Determine the display status
                     $currentDate = date('Y-m-d H:i:s');
@@ -3936,7 +3991,6 @@ if (isset($_POST['getRejectedForResubmit'])) {
                     'label' => 'Endorsement Letter'
                 ];
 
-                // ===== FETCH LOCAL IN-HOUSE DATA (if exists) =====
                 $data->local_inhouse_data = null;
                 
                 if ($data->local_inhouse == 1) {
@@ -3947,7 +4001,6 @@ if (isset($_POST['getRejectedForResubmit'])) {
                         li.category,
                         li.center,
                         li.main_author,
-                        li.presenter,
                         li.co_authors,
                         li.program_file_view_url,
                         li.program_file_download_url,
@@ -3975,7 +4028,6 @@ if (isset($_POST['getRejectedForResubmit'])) {
                             $data->local_inhouse_data->category = $localRow['category'] ?? '';
                             $data->local_inhouse_data->center = $localRow['center'] ?? '';
                             $data->local_inhouse_data->main_author = $localRow['main_author'] ?? '';
-                            $data->local_inhouse_data->presenter = $localRow['presenter'] ?? '';
                             
                             // Parse co_authors
                             if (!empty($localRow['co_authors'])) {
@@ -3985,7 +4037,6 @@ if (isset($_POST['getRejectedForResubmit'])) {
                                 $data->local_inhouse_data->co_authors = [];
                             }
                             
-                            // ===== LOCAL IN-HOUSE FILES (Only Program + Certificate) =====
                             $data->local_inhouse_data->program_file = [
                                 'url' => $localRow['program_file_view_url'] ?? '',
                                 'download_url' => $localRow['program_file_download_url'] ?? '',
@@ -4005,7 +4056,7 @@ if (isset($_POST['getRejectedForResubmit'])) {
                     }
                 }
 
-                // Rejection details
+
                 $data->rejection_reason = $row['reason'] ?? 'No reason provided';
                 $data->rejection_date = $row['rejection_date'] ?? '';
 
@@ -4039,9 +4090,6 @@ if (isset($_POST['getRejectedForResubmit'])) {
 }
 
 if (isset($_POST['resubmitDocument'])) {
-    error_log("=== START resubmitDocument ===");
-    error_log("POST data: " . print_r($_POST, true));
-
     $response = new stdClass();
     $response->status = false;
     $response->message = '';
@@ -4115,8 +4163,6 @@ if (isset($_POST['resubmitDocument'])) {
         error_log("  - Program file ID: " . ($oldProgramDriveFileId ?: 'none'));
         error_log("  - Endorsement file ID: " . ($oldEndorsementFileId ?: 'none'));
 
-        // STEP 2: Initialize Drive service
-        require_once __DIR__ . '/../config/driver_config.php';
         $driveService = new GoogleDriveService();
 
         // STEP 3: DELETE OLD FILES FIRST - ONLY for files being replaced
