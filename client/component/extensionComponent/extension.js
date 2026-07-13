@@ -1068,6 +1068,8 @@ export const Extension = () => {
     const viewComments = (doc) => {
         let commentsBody
         let commentsData = []
+        let modalInstance = null
+        let isRejected = false
 
         // Build the content for the modal
         const buildContent = () => {
@@ -1097,7 +1099,7 @@ export const Extension = () => {
                 style: { textAlign: 'center', padding: '40px', color: '#888' },
                 child: [
                     $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '24px', marginBottom: '12px', display: 'block' } }),
-                    $({ tag: 'div', text: 'Loading comments...' })
+                    $({ tag: 'div', text: 'Loading...' })
                 ]
             }))
 
@@ -1117,28 +1119,36 @@ export const Extension = () => {
                 }
             });
 
-            const printBtn = $({
-                tag: 'button',
-                style: {
-                    padding: '8px 20px',
-                    backgroundColor: '#2196F3',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                },
-                child: [
-                    $({ tag: 'i', att: { className: 'fas fa-print' }, style: { fontSize: '14px' } }),
-                    $({ tag: 'span', text: 'Print Comments' })
-                ],
-                event: {
-                    type: 'click',
-                    method: () => printComments()
-                }
-            });
+            // Only show print button if it's not rejected
+            if (!isRejected) {
+                const printBtn = $({
+                    tag: 'button',
+                    style: {
+                        padding: '8px 20px',
+                        backgroundColor: '#2196F3',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fas fa-print' }, style: { fontSize: '14px' } }),
+                        $({ tag: 'span', text: 'Print Comments' })
+                    ],
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            // FIX: Use closeModal from the footer's context, not modalInstance.close()
+                            closeModal();
+                            printComments();
+                        }
+                    }
+                });
+                footerContainer.appendChild(printBtn);
+            }
 
             const closeBtn = $({
                 tag: 'button',
@@ -1157,12 +1167,11 @@ export const Extension = () => {
                 }
             });
 
-            footerContainer.appendChild(printBtn);
             footerContainer.appendChild(closeBtn);
             return footerContainer;
         };
 
-        // Create individual comment card
+        // Create individual comment card for modal display
         const createCommentCard = (comment) => {
             const card = $({
                 tag: 'div',
@@ -1246,11 +1255,105 @@ export const Extension = () => {
             return card;
         };
 
-        // Display comments
-        const displayComments = (commentsData, docInfo) => {
+        // Display rejection reason
+        const displayRejectionReason = (data) => {
             commentsBody.innerHTML = '';
 
-            if (!commentsData || commentsData.length === 0) {
+            const container = $({
+                tag: 'div',
+                style: {
+                    padding: '20px'
+                },
+                child: [
+                    // Warning banner
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginBottom: '20px',
+                            padding: '16px',
+                            backgroundColor: '#fff3cd',
+                            borderRadius: '8px',
+                            borderLeft: '4px solid #ffc107'
+                        },
+                        child: [
+                            $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { color: '#856404', fontSize: '24px' } }),
+                            $({ tag: 'span', text: 'This document has been rejected', style: { color: '#856404', fontWeight: 'bold', fontSize: '16px' } })
+                        ]
+                    }),
+                    // Rejection reason
+                    $({
+                        tag: 'div',
+                        style: {
+                            backgroundColor: '#2a2a2a',
+                            borderRadius: '8px',
+                            padding: '20px',
+                            marginBottom: '16px',
+                            borderLeft: '4px solid #dc3545'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    marginBottom: '12px',
+                                    paddingBottom: '8px',
+                                    borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                },
+                                child: [
+                                    $({ tag: 'i', att: { className: 'fas fa-times-circle' }, style: { color: '#dc3545', fontSize: '18px' } }),
+                                    $({ tag: 'span', text: 'Rejection Reason', style: { color: '#dc3545', fontWeight: 'bold', fontSize: '15px' } })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    color: '#ddd',
+                                    fontSize: '14px',
+                                    lineHeight: '1.6',
+                                    whiteSpace: 'pre-wrap',
+                                    padding: '8px 12px',
+                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                    borderRadius: '4px'
+                                },
+                                text: data.reason || 'No reason provided'
+                            })
+                        ]
+                    }),
+                    // Rejection details
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            gap: '20px',
+                            fontSize: '13px',
+                            color: '#888',
+                            padding: '8px 4px'
+                        },
+                        child: [
+                            data.date ? $({
+                                tag: 'span',
+                                child: [
+                                    $({ tag: 'strong', text: 'Date: ', style: { color: '#aaa' } }),
+                                    $({ tag: 'span', text: new Date(data.date).toLocaleString() })
+                                ]
+                            }) : null
+                        ]
+                    })
+                ]
+            });
+
+            commentsBody.appendChild(container);
+        };
+
+        const displayComments = (data, docInfo) => {
+            commentsBody.innerHTML = '';
+
+            if (!data || data.length === 0) {
                 commentsBody.appendChild($({
                     tag: 'div',
                     style: { textAlign: 'center', padding: '40px', color: '#888' },
@@ -1262,13 +1365,13 @@ export const Extension = () => {
                 return;
             }
 
-            commentsData.forEach(comment => {
+            data.forEach(comment => {
                 const commentCard = createCommentCard(comment);
                 commentsBody.appendChild(commentCard);
             });
         };
 
-        // Print comments
+        // Print comments using the Print component
         const printComments = () => {
             if (!commentsData || commentsData.length === 0) {
                 AlertModal({
@@ -1278,80 +1381,63 @@ export const Extension = () => {
                 return;
             }
 
-            // Build print HTML
-            let printHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Review Comments - ${doc.title}</title>
-                    <style>
-                        body {
-                            font-family: 'Segoe UI', Arial, sans-serif;
-                            margin: 40px;
-                            background: white;
-                            color: #333;
-                        }
-                        .header {
-                            text-align: center;
-                            margin-bottom: 30px;
-                            padding-bottom: 20px;
-                            border-bottom: 2px solid #333;
-                        }
-                        .comment-card {
-                            margin-bottom: 30px;
-                            padding: 20px;
-                            border: 1px solid #ddd;
-                            border-radius: 8px;
-                            page-break-inside: avoid;
-                        }
-                        .eval-header {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-bottom: 15px;
-                            padding-bottom: 10px;
-                            border-bottom: 1px solid #eee;
-                        }
-                        .eval-name {
-                            font-weight: bold;
-                            color: #2196F3;
-                        }
-                        .section {
-                            margin-bottom: 15px;
-                        }
-                        .section-title {
-                            font-weight: bold;
-                            color: #FF9800;
-                            margin-bottom: 5px;
-                        }
-                        .section-content {
-                            margin-left: 10px;
-                        }
-                        @media print {
-                            body {
-                                margin: 20px;
-                            }
-                            .comment-card {
-                                page-break-inside: avoid;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Review Comments</h1>
-                        <p><strong>Document:</strong> ${doc.title}</p>
-                        <p><strong>Author:</strong> ${doc.author} | <strong>Event:</strong> ${doc.eventName}</p>
-                    </div>
-            `;
+            const printContainer = $({
+                tag: 'div',
+                style: {
+                    padding: '20px',
+                    backgroundColor: 'white'
+                }
+            });
 
-            commentsData.forEach(comment => {
-                printHtml += `
-                    <div class="comment-card">
-                        <div class="eval-header">
-                            <div class="eval-name">${comment.evalName || 'Evaluator'}</div>
-                            <div>${comment.date ? new Date(comment.date).toLocaleDateString() : ''}</div>
-                        </div>
-                `;
+            const headerInfo = $({
+                tag: 'div',
+                style: {
+                    textAlign: 'center',
+                    marginBottom: '20px',
+                    paddingBottom: '15px',
+                    borderBottom: '2px solid #333'
+                },
+                child: [
+                    $({ tag: 'h1', text: 'Review Comments', style: { marginBottom: '10px' } }),
+                    $({ tag: 'p', text: `Document: ${doc.title}`, style: { fontSize: '14px', margin: '5px 0' } }),
+                    $({ tag: 'p', text: `Author: ${doc.author} | Campus: ${doc.campus || 'N/A'} | Category: ${doc.category || 'N/A'}`, style: { fontSize: '14px', margin: '5px 0' } })
+                ]
+            });
+            printContainer.appendChild(headerInfo);
+
+            commentsData.forEach((comment, index) => {
+                if (index > 0) {
+                    printContainer.appendChild($({
+                        tag: 'div',
+                        style: { pageBreakBefore: 'always' }
+                    }));
+                }
+
+                const commentDiv = $({
+                    tag: 'div',
+                    style: {
+                        marginBottom: '25px',
+                        padding: '15px',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        pageBreakInside: 'avoid'
+                    }
+                });
+
+                if (comment.evalName) {
+                    commentDiv.appendChild($({
+                        tag: 'div',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            color: '#2196F3',
+                            marginBottom: '10px',
+                            paddingBottom: '8px',
+                            borderBottom: '1px solid #eee'
+                        },
+                        text: `Evaluator: ${comment.evalName}`
+                    }));
+                }
 
                 const sections = [
                     { title: 'Title', content: comment.title },
@@ -1367,28 +1453,85 @@ export const Extension = () => {
 
                 sections.forEach(section => {
                     if (section.content && section.content.trim() !== '') {
-                        printHtml += `
-                            <div class="section">
-                                <div class="section-title">${section.title}</div>
-                                <div class="section-content">${section.content}</div>
-                            </div>
-                        `;
+                        const sectionEl = $({
+                            tag: 'div',
+                            style: { marginBottom: '12px' },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: { fontWeight: 'bold', color: '#FF9800', marginBottom: '3px' },
+                                    text: section.title + ':'
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginLeft: '10px',
+                                        whiteSpace: 'pre-wrap',
+                                        lineHeight: '1.6'
+                                    },
+                                    text: section.content
+                                })
+                            ]
+                        });
+                        commentDiv.appendChild(sectionEl);
                     }
                 });
 
-                printHtml += `</div>`;
+                printContainer.appendChild(commentDiv);
             });
 
-            printHtml += `</body></html>`;
+            const printComponent = Print({
+                title: doc.title,
+                category: doc.category || 'N/A',
+                campus: doc.campus || 'N/A',
+                author: doc.author || 'N/A',
+                date: doc.date || new Date().toLocaleDateString(),
+                review: commentsData,
+                all: true,
+                getHandler: (el) => {
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @media print {
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                background: white;
+                            }
+                            .comment-card {
+                                page-break-inside: avoid;
+                                break-inside: avoid;
+                            }
+                        }
+                    `;
+                    if (el.querySelector('head')) {
+                        el.querySelector('head').appendChild(style);
+                    } else {
+                        el.appendChild(style);
+                    }
+                }
+            });
 
             const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=yes,scrollbars=yes');
+            if (!printWindow) {
+                alert('Please allow popups to print comments.');
+                return;
+            }
+
+            const tempDiv = document.createElement('div');
+            tempDiv.appendChild(printComponent);
+            const printHtml = tempDiv.innerHTML;
+
+            printWindow.document.write('<!DOCTYPE html><html><head><title>Review Comments - ' + doc.title + '</title></head><body>');
             printWindow.document.write(printHtml);
+            printWindow.document.write('</body></html>');
             printWindow.document.close();
-            printWindow.print();
-            printWindow.close();
+
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
         };
 
-        // Load comments from API
         const loadComments = async () => {
             try {
                 const form = new FormData();
@@ -1400,13 +1543,36 @@ export const Extension = () => {
                     body: form
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    commentsData = data;
-                    displayComments(data, doc);
-                } else {
-                    throw new Error('Failed to load comments');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
+
+                const text = await response.text();
+                if (!text || text.trim() === '') {
+                    // Empty response - show no comments
+                    commentsBody.innerHTML = '';
+                    commentsBody.appendChild($({
+                        tag: 'div',
+                        style: { textAlign: 'center', padding: '40px', color: '#888' },
+                        child: [
+                            $({ tag: 'i', att: { className: 'fas fa-comments' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
+                            $({ tag: 'div', text: 'No comments available for this document' })
+                        ]
+                    }));
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('Failed to parse comments response:', text);
+                    throw new Error('Invalid response format');
+                }
+
+                commentsData = data || [];
+                isRejected = false;
+                displayComments(data, doc);
             } catch (error) {
                 console.error('Error loading comments:', error);
                 commentsBody.innerHTML = '';
@@ -1415,28 +1581,82 @@ export const Extension = () => {
                     style: { textAlign: 'center', padding: '40px', color: '#f44336' },
                     child: [
                         $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
-                        $({ tag: 'div', text: 'Error loading comments: ' + error.message })
+                        $({ tag: 'div', text: 'Error loading data: ' + error.message })
                     ]
                 }));
             }
         };
 
+        // Check if document is rejected first - IMPROVED error handling
+        const checkDocumentStatus = async () => {
+            try {
+                const form = new FormData();
+                form.append('rejectedComments', 'true');
+                form.append('docId', doc.id);
+
+                const response = await fetch('/uploadExtensionDocs', {
+                    method: 'POST',
+                    body: form
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const text = await response.text();
+                if (!text || text.trim() === '') {
+                    // Empty response - treat as not rejected
+                    loadComments();
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('Failed to parse rejection response:', text);
+                    loadComments();
+                    return;
+                }
+
+                if (data && data.status === true) {
+                    isRejected = true;
+                    displayRejectionReason(data);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking rejection status:', error);
+                // On error, still try to load comments
+                loadComments();
+                return;
+            }
+
+            // Not rejected or error - load comments
+            loadComments();
+        };
+
         // Create and open the modal
-        CustomModal({
-            title: doc.title,
+        // Store the returned object from CustomModal
+        const modalResult = CustomModal({
+            title: isRejected ? 'Rejection Reason' : doc.title,
             content: buildContent,
             footer: buildFooter,
             size: 'large',
             onClose: () => {
                 commentsData = [];
+                isRejected = false;
+                modalInstance = null;
             }
         });
 
-        // Load comments after modal is open
+        // Store the modal instance reference
+        modalInstance = modalResult;
+
+        // Load data after modal is open
         setTimeout(() => {
-            loadComments();
+            checkDocumentStatus();
         }, 100);
-    }
+    };
 
     const createTableRow = (doc) => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })
@@ -1540,11 +1760,9 @@ export const Extension = () => {
                 return row
             }
 
-            // ===== Determine if this is a symposium submission =====
             const isSymposium = doc.eventName && doc.eventName.toLowerCase().includes('symposium');
             const isLocalInhouse = doc.local_inhouse === 1 || doc.local_inhouse === '1';
 
-            // ===== For SYMPOSIUM submissions =====
             if (isSymposium) {
                 // Research File
                 const researchRow = createFileRow('Research', doc.researchFile, 'research', '#2196F3')
@@ -1569,7 +1787,6 @@ export const Extension = () => {
                 const localCertificateRow = createFileRow('Local Certificate', doc.local_certificate_file_view_url, 'certificate', '#9C27B0')
                 if (localCertificateRow) container.appendChild(localCertificateRow)
 
-                // ===== For IN-HOUSE submissions =====
             } else if (isLocalInhouse || (doc.eventName && doc.eventName.toLowerCase().includes('in-house'))) {
                 // Research File
                 const researchRow = createFileRow('Research', doc.researchFile, 'research', '#2196F3')
@@ -1587,7 +1804,6 @@ export const Extension = () => {
                 const certificateRow = createFileRow('Certificate', doc.certificateFile || doc.certificate_drive_view_url, 'certificate', '#9C27B0')
                 if (certificateRow) container.appendChild(certificateRow)
 
-                // ===== For EXTENSION (default) submissions =====
             } else {
                 // Research File
                 const researchRow = createFileRow('Research', doc.researchFile, 'research', '#2196F3')
@@ -1611,7 +1827,7 @@ export const Extension = () => {
                 container.appendChild($({
                     tag: 'span',
                     text: '—',
-                    style: { color: '#666' }
+                    style: { color: '#4c4c4cff' }
                 }))
             }
 
@@ -1819,7 +2035,7 @@ export const Extension = () => {
             const titleField = $({ tag: 'div', style: { marginBottom: '0px' } });
             titleField.appendChild($({
                 tag: 'label',
-                text: 'Document Title',
+                text: 'Extension Title',
                 style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '13px', fontWeight: '500' }
             }));
 
@@ -1984,158 +2200,86 @@ export const Extension = () => {
             return container
         }
 
-        // Build the footer with action buttons
+        // Build footer with Print and Close buttons
         const buildFooter = ({ closeModal }) => {
             const footerContainer = $({
                 tag: 'div',
                 style: {
                     display: 'flex',
-                    gap: '12px',
                     justifyContent: 'flex-end',
+                    gap: '12px',
                     width: '100%'
                 }
-            })
+            });
 
-            const cancelBtn = $({
+            // Only show print button if it's not rejected
+            if (!isRejected) {
+                const printBtn = $({
+                    tag: 'button',
+                    style: {
+                        padding: '8px 20px',
+                        backgroundColor: '#2196F3',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fas fa-print' }, style: { fontSize: '14px' } }),
+                        $({ tag: 'span', text: 'Print Comments' })
+                    ],
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            // Close the modal using the closeModal function passed from CustomModal
+                            if (typeof closeModal === 'function') {
+                                closeModal();
+                            } else if (modalInstance && typeof modalInstance.close === 'function') {
+                                modalInstance.close();
+                            } else if (modalInstance && typeof modalInstance.remove === 'function') {
+                                modalInstance.remove();
+                            }
+                            // Small delay to allow modal to close before printing
+                            setTimeout(() => {
+                                printComments();
+                            }, 300);
+                        }
+                    }
+                });
+                footerContainer.appendChild(printBtn);
+            }
+
+            const closeBtn = $({
                 tag: 'button',
-                text: 'Cancel',
+                text: 'Close',
                 style: {
-                    padding: '10px 24px',
+                    padding: '8px 24px',
                     backgroundColor: '#444',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s ease'
+                    cursor: 'pointer'
                 },
                 event: {
                     type: 'click',
-                    method: () => closeModal(),
-                    type2: 'mouseenter',
-                    method2: (e) => { e.currentTarget.style.backgroundColor = '#555'; },
-                    type3: 'mouseleave',
-                    method3: (e) => { e.currentTarget.style.backgroundColor = '#444'; }
-                }
-            })
-
-            const submitBtn = $({
-                tag: 'button',
-                text: 'Submit Revision',
-                style: {
-                    padding: '10px 28px',
-                    backgroundColor: '#9C27B0',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s ease'
-                },
-                event: {
-                    type: 'click',
-                    method: async () => {
-                        if (!selectedFile) {
-                            AlertModal({
-                                title: 'File Required',
-                                message: 'Please select the revised research file (PDF)'
-                            });
-                            return;
-                        }
-
-                        if (selectedFile.type !== 'application/pdf') {
-                            AlertModal({
-                                title: 'Invalid File',
-                                message: 'Research file must be a valid PDF file'
-                            });
-                            return;
-                        }
-
-                        if (selectedFile.size > 10 * 1024 * 1024) {
-                            AlertModal({
-                                title: 'File Too Large',
-                                message: 'File size exceeds 10MB limit'
-                            });
-                            return;
-                        }
-
-                        // Show loading modal
-                        const loadingModal = LoadingModal({
-                            title: 'Submitting Revision',
-                            message: 'Please wait while we submit your revision...'
-                        });
-                        const localFileCategories = [
-                            { name: 'programFile', files: formData.programFile },
-                            { name: 'certificateFile', files: formData.certificateFile },
-                        ]
-                        if (isInHouse || isSymposium) {
-                            localFileCategories.forEach(cat => {
-                                if (cat.files && cat.files.length > 0) {
-                                    cat.files.forEach(file => {
-                                        form.append(cat.name, file)
-                                    })
-                                }
-                            })
-                        }
-                        const formData = new FormData();
-                        formData.append('submitRevision', 'true');
-                        formData.append('original_research_id', doc.id);
-                        formData.append('original_title', doc.title);
-                        formData.append('researchDoc', selectedFile);
-
-                        try {
-                            const response = await fetch('/uploadExtensionDocs', {
-                                method: 'POST',
-                                body: formData
-                            });
-
-                            const result = await response.json();
-
-                            if (loadingModal && loadingModal.closeModal) {
-                                loadingModal.closeModal();
-                            }
-                            if (result.status) {
-                                AlertModal({
-                                    title: 'Success',
-                                    message: result.message || 'Revision submitted successfully!',
-                                    onClose: () => {
-                                        closeModal();
-                                        if (window.refreshDocumentsTable) {
-                                            window.refreshDocumentsTable();
-                                        }
-                                    }
-                                });
-                            } else {
-                                AlertModal({
-                                    title: 'Submission Failed',
-                                    message: 'Failed to submit revision: ' + result.message
-                                });
-                            }
-                        } catch (error) {
-                            if (loadingModal && loadingModal.closeModal) {
-                                loadingModal.closeModal();
-                            }
-                            console.error('Revision submission error:', error);
-                            AlertModal({
-                                title: 'Error',
-                                message: 'Error submitting revision: ' + error.message
-                            });
+                    method: () => {
+                        if (typeof closeModal === 'function') {
+                            closeModal();
+                        } else if (modalInstance && typeof modalInstance.close === 'function') {
+                            modalInstance.close();
+                        } else if (modalInstance && typeof modalInstance.remove === 'function') {
+                            modalInstance.remove();
                         }
                     }
                 }
-            })
+            });
 
-            //hover effect for submit button
-            submitBtn.addEventListener('mouseenter', () => { submitBtn.style.backgroundColor = '#7B1FA2'; })
-            submitBtn.addEventListener('mouseleave', () => { submitBtn.style.backgroundColor = '#9C27B0'; })
-
-            footerContainer.appendChild(cancelBtn);
-            footerContainer.appendChild(submitBtn);
-
+            footerContainer.appendChild(closeBtn);
             return footerContainer;
-        }
+        };
 
         CustomModal({
             title: 'Submit Revised Paper/Proposal', content: buildContent,
@@ -2169,15 +2313,26 @@ export const Extension = () => {
     }
 
     const editDocument = (doc) => {
+        // Helper to get filename from URL
         const getFileNameFromUrl = (url) => {
-            if (!url || url === '—') return null;
+            if (!url || url === '—' || url === null) return null;
             if (url.includes('drive.google.com')) {
                 return 'Google Drive File (kept as is)';
             }
             return url.split('/').pop();
         }
 
-        formData = {
+        // Helper to determine if file exists
+        const hasFile = (url) => {
+            return url && url !== '—' && url !== null && url !== '';
+        }
+
+        // Check if this is a symposium submission
+        const isSymposium = doc.eventName && doc.eventName.toLowerCase().includes('symposium');
+        const isLocalInhouse = doc.local_inhouse === 1 || doc.local_inhouse === '1';
+
+        // Build the edit data object with all existing file info
+        const editData = {
             eventName: doc.eventName || '',
             title: doc.title || '',
             campus: doc.campus || '',
@@ -2186,19 +2341,43 @@ export const Extension = () => {
             presenter: doc.presenter || '',
             author: doc.author || '',
             coAuthors: doc.coAuthors || [],
-            researchFile: null,
-            programFile: null,
-            endorsementFile: null,
-            certificateFile: null,
             // Store existing file info for display
-            existingResearchFile: getFileNameFromUrl(doc.researchFile),
-            existingProgramFile: getFileNameFromUrl(doc.programFile),
-            existingEndorsementFile: getFileNameFromUrl(doc.endorsementFile),
+            existingResearchFile: hasFile(doc.researchFile) ? getFileNameFromUrl(doc.researchFile) : null,
+            existingProgramFile: hasFile(doc.programFile) ? getFileNameFromUrl(doc.programFile) : null,
+            existingEndorsementFile: hasFile(doc.endorsementFile) ? getFileNameFromUrl(doc.endorsementFile) : null,
+            existingCertificateFile: hasFile(doc.certificateFile) ? getFileNameFromUrl(doc.certificateFile) : null,
+            existingTitleCertificateFile: hasFile(doc.title_certificate_view_url) ? getFileNameFromUrl(doc.title_certificate_view_url) : null,
+            // Store existing file URLs for reference
+            existingResearchUrl: doc.researchFile || null,
+            existingProgramUrl: doc.programFile || null,
+            existingEndorsementUrl: doc.endorsementFile || null,
+            existingCertificateUrl: doc.certificateFile || null,
+            existingTitleCertificateUrl: doc.title_certificate_view_url || null,
+            // Store file IDs for reference
+            researchFileId: doc.drive_file_id || null,
+            programFileId: doc.program_drive_file_id || null,
+            endorsementFileId: doc.endorsement_drive_file_id || null,
+            // Store the research ID for update
+            researchId: doc.id || null,
+            endorsementId: doc.endorsement_id || null,
+            isSymposium: isSymposium,
+            isLocalInhouse: isLocalInhouse,
+            title_changed: doc.title_changed || 0,
+            final_symposium_title: doc.final_symposium_title || null,
             date_started: doc.date_started || '',
             date_completed: doc.date_completed || ''
         }
 
-        openUploadModal(true, doc)
+        // If this is a symposium or in-house, store additional file URLs
+        if (isSymposium || isLocalInhouse) {
+            editData.existingLocalProgramFile = hasFile(doc.local_program_file_view_url) ? getFileNameFromUrl(doc.local_program_file_view_url) : null;
+            editData.existingLocalCertificateFile = hasFile(doc.local_certificate_file_view_url) ? getFileNameFromUrl(doc.local_certificate_file_view_url) : null;
+            editData.existingLocalProgramUrl = doc.local_program_file_view_url || null;
+            editData.existingLocalCertificateUrl = doc.local_certificate_file_view_url || null;
+        }
+
+        // Pass isEdit = true and editData
+        openUploadModal(true, editData)
     }
 
     // Delete document
@@ -2208,7 +2387,16 @@ export const Extension = () => {
                 let loading = null
                 try {
                     loading = Waiting()
-                    document.body.appendChild(loading)
+                    if (loading && loading.nodeType === 1) {
+                        document.body.appendChild(loading)
+                    } else {
+                        // Fallback: create a simple loading indicator
+                        const fallbackLoading = document.createElement('div');
+                        fallbackLoading.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;color:white;font-size:18px;';
+                        fallbackLoading.textContent = 'Deleting...';
+                        document.body.appendChild(fallbackLoading);
+                        loading = fallbackLoading;
+                    }
 
                     await new Promise(resolve => setTimeout(resolve, 50))
 
@@ -2221,13 +2409,30 @@ export const Extension = () => {
                         body: form
                     })
 
-                    const result = await response.json()
+                    // Check if response is OK before parsing JSON
+                    if (!response.ok) {
+                        const text = await response.text();
+                        console.error('Delete response error:', text);
+                        throw new Error(`Server returned ${response.status}: ${text.substring(0, 100)}`);
+                    }
 
-                    if (loading && loading.remove) {
-                        loading.remove()
+                    // Try to parse JSON safely
+                    let result;
+                    try {
+                        result = await response.json();
+                    } catch (e) {
+                        const text = await response.text();
+                        console.error('Failed to parse JSON:', text);
+                        throw new Error('Server returned invalid response');
+                    }
+
+                    // Remove loading indicator
+                    if (loading && loading.parentNode) {
+                        loading.parentNode.removeChild(loading);
                     }
 
                     if (result.status) {
+                        // Remove the row from the table
                         const rows = documentsTable.querySelectorAll('tr')
                         for (let i = 1; i < rows.length; i++) {
                             if (rows[i].cells[2]?.innerText === doc.title) {
@@ -2237,12 +2442,17 @@ export const Extension = () => {
                         }
                         refreshStats()
 
-                        // Show success message
-                        document.body.appendChild(ConfirmationAlert(result.message, () => {
-                            if (window.refreshDocumentsTable) {
-                                window.refreshDocumentsTable()
+                        // Show success message using AlertModal instead of ConfirmationAlert
+                        AlertModal({
+                            title: 'Success',
+                            message: result.message || 'Document deleted successfully!',
+                            buttonText: 'OK',
+                            onClose: () => {
+                                if (window.refreshDocumentsTable) {
+                                    window.refreshDocumentsTable()
+                                }
                             }
-                        }))
+                        })
                     } else {
                         AlertModal({
                             title: 'Delete Failed',
@@ -2251,8 +2461,9 @@ export const Extension = () => {
                     }
                 } catch (error) {
                     console.error('Delete error:', error)
-                    if (loading && loading.remove) {
-                        loading.remove()
+                    // Remove loading indicator if it exists
+                    if (loading && loading.parentNode) {
+                        loading.parentNode.removeChild(loading);
                     }
                     AlertModal({
                         title: 'Error',
@@ -2263,8 +2474,7 @@ export const Extension = () => {
         })
     }
 
-    // Local Files Upload Component
-    const LocalFilesUploadField = ({ label, fieldName }) => {
+    const LocalFilesUploadField = ({ label, fieldName, existingFile = null, existingUrl = null }) => {
         let fileInput, fileNameDisplay
 
         const container = $({
@@ -2278,16 +2488,18 @@ export const Extension = () => {
             style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
         })
 
+        const hasExisting = existingFile && existingFile !== 'null' && existingFile !== '';
+
         const uploadArea = $({
             tag: 'div',
             style: {
-                border: '2px dashed #4caf50',
+                border: hasExisting ? '2px solid #4caf50' : '2px dashed #4caf50',
                 borderRadius: '8px',
-                padding: '30px 20px',
+                padding: hasExisting ? '16px 20px' : '30px 20px',
                 textAlign: 'center',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                backgroundColor: 'rgba(76, 175, 80, 0.05)'
+                backgroundColor: hasExisting ? 'rgba(76, 175, 80, 0.1)' : 'rgba(76, 175, 80, 0.05)'
             },
             event: {
                 type: 'click',
@@ -2295,10 +2507,53 @@ export const Extension = () => {
             }
         })
 
+        if (hasExisting) {
+            uploadArea.appendChild($({
+                tag: 'i',
+                att: { className: 'fas fa-check-circle' },
+                style: { fontSize: '32px', color: '#4caf50', marginBottom: '8px', display: 'block' }
+            }))
+            uploadArea.appendChild($({
+                tag: 'div',
+                text: `✓ Current: ${existingFile}`,
+                style: { color: '#2e7d32', fontSize: '13px', fontWeight: '500' }
+            }))
+            uploadArea.appendChild($({
+                tag: 'div',
+                text: 'Click to replace with new files',
+                style: { color: '#666', fontSize: '11px', marginTop: '4px' }
+            }))
+        } else {
+            uploadArea.appendChild($({
+                tag: 'i',
+                att: { className: 'fas fa-file-upload' },
+                style: { fontSize: '40px', color: '#4caf50', marginBottom: '12px', display: 'block' }
+            }))
+            uploadArea.appendChild($({
+                tag: 'div',
+                text: 'Select multiple PDF files',
+                style: { color: '#494949ff', fontSize: '15px', fontWeight: '500' }
+            }))
+            uploadArea.appendChild($({
+                tag: 'div',
+                text: 'Only PDF files are allowed',
+                style: { color: '#666', fontSize: '12px', marginTop: '6px' }
+            }))
+        }
+
         fileNameDisplay = $({
             tag: 'div',
-            style: { marginTop: '12px', fontSize: '13px', color: '#888', textAlign: 'left' }
+            style: {
+                marginTop: '12px',
+                fontSize: '13px',
+                color: hasExisting ? '#2e7d32' : '#888',
+                textAlign: 'left'
+            }
         })
+
+        if (hasExisting) {
+            fileNameDisplay.innerHTML = `<div style="color: #2e7d32"><i class="fas fa-check"></i> Current files kept</div>`;
+        }
 
         fileInput = $({
             tag: 'input',
@@ -2317,18 +2572,18 @@ export const Extension = () => {
                             return
                         }
                         formData[fieldName] = files
-                        fileNameDisplay.innerHTML = files.map(f => `<div style="margin-bottom: 4px color: #4caf50"><i class="fas fa-file-pdf"></i> ${f.name} (${(f.size / 1024).toFixed(1)} KB)</div>`).join('')
+                        fileNameDisplay.innerHTML = files.map(f => `<div style="margin-bottom: 4px; color: #4caf50"><i class="fas fa-file-pdf"></i> ${f.name} (${(f.size / 1024).toFixed(1)} KB) - will replace existing</div>`).join('')
+
+                        // Update upload area
+                        uploadArea.style.borderColor = '#1976D2';
+                        uploadArea.style.backgroundColor = 'rgba(25, 118, 210, 0.08)';
                     } else {
-                        fileNameDisplay.innerHTML = ''
+                        fileNameDisplay.innerHTML = hasExisting ? `<div style="color: #2e7d32"><i class="fas fa-check"></i> Current files kept</div>` : ''
                         formData[fieldName] = []
                     }
                 }
             }
         })
-
-        uploadArea.appendChild($({ tag: 'i', att: { className: 'fas fa-file-upload' }, style: { fontSize: '40px', color: '#4caf50', marginBottom: '12px', display: 'block' } }))
-        uploadArea.appendChild($({ tag: 'div', text: 'Select multiple PDF files', style: { color: '#fff', fontSize: '15px', fontWeight: '500' } }))
-        uploadArea.appendChild($({ tag: 'div', text: 'Only PDF files are allowed', style: { color: '#666', fontSize: '12px', marginTop: '6px' } }))
 
         container.appendChild(labelEl)
         container.appendChild(uploadArea)
@@ -2340,14 +2595,11 @@ export const Extension = () => {
 
     // Open upload modal
     const openUploadModal = (isEdit = false, editData = null) => {
-        let titleInput, categorySelect, authorInput, presenterInput, coAuthorInput, coAuthorList, campusSelect
+        let titleInput, authorInput, presenterInput, coAuthorInput, coAuthorList, campusSelect
         let eventSelect
-        let programFileContainer
-        let standardProgramFile
         let localFilesSection, localFilesTitle
-        let isSymposiumMode = false
         let symposiumModalActive = false
-        let modalContentBody
+        let isSymposiumMode = false
 
         formData = {
             eventName: isEdit ? editData?.eventName || '' : '',
@@ -2360,7 +2612,28 @@ export const Extension = () => {
             researchFile: null,
             programFile: null,
             endorsementFile: null,
-            certificateFile: null
+            certificateFile: null,
+            existingResearchFile: isEdit ? (editData?.existingResearchFile || null) : null,
+            existingProgramFile: isEdit ? (editData?.existingProgramFile || null) : null,
+            existingEndorsementFile: isEdit ? (editData?.existingEndorsementFile || null) : null,
+            existingCertificateFile: isEdit ? (editData?.existingCertificateFile || null) : null,
+            existingTitleCertificateFile: isEdit ? (editData?.existingTitleCertificateFile || null) : null,
+            existingResearchUrl: isEdit ? (editData?.existingResearchUrl || null) : null,
+            existingProgramUrl: isEdit ? (editData?.existingProgramUrl || null) : null,
+            existingEndorsementUrl: isEdit ? (editData?.existingEndorsementUrl || null) : null,
+            existingCertificateUrl: isEdit ? (editData?.existingCertificateUrl || null) : null,
+            existingTitleCertificateUrl: isEdit ? (editData?.existingTitleCertificateUrl || null) : null,
+            researchFileId: isEdit ? (editData?.researchFileId || null) : null,
+            programFileId: isEdit ? (editData?.programFileId || null) : null,
+            endorsementFileId: isEdit ? (editData?.endorsementFileId || null) : null,
+            researchId: isEdit ? (editData?.researchId || null) : null,
+            endorsementId: isEdit ? (editData?.endorsementId || null) : null,
+            isSymposium: isEdit ? (editData?.isSymposium || false) : false,
+            isLocalInhouse: isEdit ? (editData?.isLocalInhouse || false) : false,
+            title_changed: isEdit ? (editData?.title_changed || 0) : 0,
+            final_symposium_title: isEdit ? (editData?.final_symposium_title || null) : null,
+            date_started: isEdit ? (editData?.date_started || '') : '',
+            date_completed: isEdit ? (editData?.date_completed || '') : ''
         }
         const modal = $({
             tag: 'div',
@@ -2529,7 +2802,7 @@ export const Extension = () => {
         })
 
         submitBtn.addEventListener('click', async () => {
-            // Validate required fields
+            // Validate required fields (metadata)
             if (!formData.eventName) {
                 AlertModal({
                     title: 'Missing Information',
@@ -2540,7 +2813,7 @@ export const Extension = () => {
             if (!formData.title) {
                 AlertModal({
                     title: 'Missing Information',
-                    message: 'Please enter a document title'
+                    message: 'Please enter a extension title'
                 });
                 return;
             }
@@ -2572,34 +2845,85 @@ export const Extension = () => {
                 });
                 return;
             }
-            if (!formData.researchFile) {
-                AlertModal({
-                    title: 'Missing File',
-                    message: 'Please upload the research file'
-                });
-                return;
-            }
-            if (!formData.endorsementFile) {
-                AlertModal({
-                    title: 'Missing File',
-                    message: 'Please upload the endorsement letter'
-                });
-                return;
-            }
 
-            // Check for In-House event - require program file
-            const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
-            if (isInHouse && (!formData.programFile || formData.programFile.length === 0)) {
-                AlertModal({
-                    title: 'Missing File',
-                    message: 'Program file is required for In-House Review events'
-                });
-                return;
+            // ===== FILE VALIDATION - DIFFERENT FOR NEW VS EDIT =====
+
+            if (!isEdit) {
+                // NEW SUBMISSION: All files are required
+                if (!formData.researchFile) {
+                    AlertModal({
+                        title: 'Missing File',
+                        message: 'Please upload the research file'
+                    });
+                    return;
+                }
+                if (!formData.endorsementFile) {
+                    AlertModal({
+                        title: 'Missing File',
+                        message: 'Please upload the endorsement letter'
+                    });
+                    return;
+                }
+
+                // For In-House events, require program file
+                const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
+                if (isInHouse && (!formData.programFile || formData.programFile.length === 0)) {
+                    AlertModal({
+                        title: 'Missing File',
+                        message: 'Program file is required for In-House Review events'
+                    });
+                    return;
+                }
+            } else {
+                // EDIT MODE: Only validate that we have AT LEAST ONE file (new or existing) for each required type
+
+                // Check if we have a research file (either new upload or existing)
+                const hasResearch = formData.researchFile || formData.existingResearchUrl;
+                if (!hasResearch) {
+                    AlertModal({
+                        title: 'Missing File',
+                        message: 'Research file is required. Please upload a new file or keep the existing one.'
+                    });
+                    return;
+                }
+
+                // Check if we have an endorsement file (either new upload or existing)
+                const hasEndorsement = formData.endorsementFile || formData.existingEndorsementUrl;
+                if (!hasEndorsement) {
+                    AlertModal({
+                        title: 'Missing File',
+                        message: 'Endorsement letter is required. Please upload a new file or keep the existing one.'
+                    });
+                    return;
+                }
+
+                // For In-House events, check program file
+                const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
+                if (isInHouse) {
+                    const hasProgram = (formData.programFile && formData.programFile.length > 0) || formData.existingProgramUrl;
+                    if (!hasProgram) {
+                        AlertModal({
+                            title: 'Missing File',
+                            message: 'Program file is required for In-House Review events. Please upload a new file or keep the existing one.'
+                        });
+                        return;
+                    }
+                }
             }
 
             // Create FormData for submission
             const submitFormData = new FormData();
-            submitFormData.append('uploadResearch', 'true');
+
+            // Determine if this is an edit or new submission
+            if (isEdit && formData.researchId) {
+                submitFormData.append('updateResearch', 'true');
+                submitFormData.append('researchId', formData.researchId);
+                submitFormData.append('endorsementId', formData.endorsementId || '');
+            } else {
+                submitFormData.append('uploadResearch', 'true');
+            }
+
+            // Common fields
             submitFormData.append('eventType', formData.eventName);
             submitFormData.append('title', formData.title);
             submitFormData.append('author', formData.author);
@@ -2608,25 +2932,68 @@ export const Extension = () => {
             submitFormData.append('coAuthor', JSON.stringify(formData.coAuthors));
             submitFormData.append('presenter', formData.presenter);
 
-            // Append files
+            // ===== HANDLE RESEARCH FILE =====
             if (formData.researchFile) {
+                // New file uploaded - replace
                 submitFormData.append('researchDoc', formData.researchFile);
-            }
-            if (formData.endorsementFile) {
-                submitFormData.append('uploadedFileEndorsement', formData.endorsementFile);
+            } else if (isEdit && formData.existingResearchUrl) {
+                // Keep existing file - send the URL so server knows to keep it
+                submitFormData.append('keepResearch', 'true');
+                submitFormData.append('existingResearchUrl', formData.existingResearchUrl);
+                if (formData.researchFileId) {
+                    submitFormData.append('existingResearchFileId', formData.researchFileId);
+                }
             }
 
-            // For In-House events, append program and certificate files
+            // ===== HANDLE ENDORSEMENT FILE =====
+            if (formData.endorsementFile) {
+                // New file uploaded - replace
+                submitFormData.append('uploadedFileEndorsement', formData.endorsementFile);
+            } else if (isEdit && formData.existingEndorsementUrl) {
+                // Keep existing file
+                submitFormData.append('keepEndorsement', 'true');
+                submitFormData.append('existingEndorsementUrl', formData.existingEndorsementUrl);
+                if (formData.endorsementFileId) {
+                    submitFormData.append('existingEndorsementFileId', formData.endorsementFileId);
+                }
+            }
+
+            // ===== HANDLE PROGRAM FILE (for In-House) =====
+            const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
             if (isInHouse) {
                 if (formData.programFile && formData.programFile.length > 0) {
                     formData.programFile.forEach(file => {
                         submitFormData.append('programFile', file);
                     });
+                } else if (isEdit && formData.existingProgramUrl) {
+                    submitFormData.append('keepProgram', 'true');
+                    submitFormData.append('existingProgramUrl', formData.existingProgramUrl);
                 }
+
+                // Handle Certificate File (for In-House)
                 if (formData.certificateFile && formData.certificateFile.length > 0) {
                     formData.certificateFile.forEach(file => {
                         submitFormData.append('certificateFile', file);
                     });
+                } else if (isEdit && formData.existingCertificateUrl) {
+                    submitFormData.append('keepCertificate', 'true');
+                    submitFormData.append('existingCertificateUrl', formData.existingCertificateUrl);
+                }
+            }
+
+            // ===== HANDLE TITLE CERTIFICATE (for Symposium) =====
+            if (formData.titleCertificateFile) {
+                submitFormData.append('titleCertificateFile', formData.titleCertificateFile);
+            } else if (isEdit && formData.existingTitleCertificateUrl) {
+                submitFormData.append('keepTitleCertificate', 'true');
+                submitFormData.append('existingTitleCertificateUrl', formData.existingTitleCertificateUrl);
+            }
+
+            // Title change info
+            if (formData.title_changed) {
+                submitFormData.append('title_changed', '1');
+                if (formData.final_symposium_title) {
+                    submitFormData.append('final_symposium_title', formData.final_symposium_title);
                 }
             }
 
@@ -2642,16 +3009,13 @@ export const Extension = () => {
 
                 const result = await response.json();
 
-                // Remove loading
                 if (loading && loading.remove) loading.remove();
 
                 if (result.status) {
-                    // Close modal
                     modal.remove();
-                    // Show success message with modern modal
                     AlertModal({
-                        title: 'Success',
-                        message: result.message || 'Document submitted successfully!',
+                        title: isEdit ? 'Update Successful' : 'Success',
+                        message: result.message || (isEdit ? 'Document updated successfully!' : 'Document submitted successfully!'),
                         buttonText: 'OK',
                         onClose: () => {
                             if (window.refreshDocumentsTable) {
@@ -2661,8 +3025,8 @@ export const Extension = () => {
                     });
                 } else {
                     AlertModal({
-                        title: 'Submission Failed',
-                        message: result.message || 'Failed to submit document'
+                        title: isEdit ? 'Update Failed' : 'Submission Failed',
+                        message: result.message || (isEdit ? 'Failed to update document' : 'Failed to submit document')
                     });
                 }
             } catch (error) {
@@ -2719,7 +3083,6 @@ export const Extension = () => {
                     transition: 'all 0.2s ease'
                 },
                 event: {
-                    type: 'change',
                     type: 'mouseenter',
                     method: (e) => {
                         e.currentTarget.style.borderColor = '#cbd5e1';
@@ -2737,7 +3100,7 @@ export const Extension = () => {
                             const selectedOption = e.target.options[e.target.selectedIndex]
                             const selectedEventId = selectedOption ? selectedOption.getAttribute('id') : null
 
-                            // Check if selected event is In-House Review (not Symposium)
+                            // Check if selected event is In-House Review
                             const isInHouse = selectedEventName && selectedEventName.toLowerCase().includes('in-house')
 
                             // Check if selected event is Symposium
@@ -2762,7 +3125,6 @@ export const Extension = () => {
                                         symposiumPlaceholder.style.opacity = '1'
                                         symposiumPlaceholder.style.transform = 'translateX(0)'
                                     }, 50)
-
 
                                     const modalTitle = document.querySelector('#modalTitle')
                                     if (modalTitle) modalTitle.innerText = 'Symposium Submission (In-House Review Required)'
@@ -2832,10 +3194,10 @@ export const Extension = () => {
 
             // Title field
             const titleField = $({ tag: 'div', style: { marginBottom: '0' } })
-            titleField.appendChild($({ tag: 'label', text: 'Document Title *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+            titleField.appendChild($({ tag: 'label', text: 'Extension Title *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
             titleInput = $({
                 tag: 'input',
-                att: { type: 'text', placeholder: 'Enter document title', value: isEdit ? capitalizeFirstLetter(editData?.title || '') : '' },
+                att: { type: 'text', placeholder: 'extension title', value: isEdit ? capitalizeFirstLetter(editData?.title || '') : '' },
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -2906,7 +3268,7 @@ export const Extension = () => {
             })
             campusField.appendChild(campusSelect)
 
-            // Category field - static text instead of dropdown
+            // Category field - static text
             const categoryField = $({ tag: 'div', style: { marginBottom: '0' } })
             categoryField.appendChild($({ tag: 'label', text: 'Category *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
 
@@ -3147,7 +3509,6 @@ export const Extension = () => {
             coAuthorField.appendChild(coAuthorInputGroup)
             coAuthorField.appendChild(coAuthorList)
 
-
             twoColumnLayout.appendChild(titleField)
             twoColumnLayout.appendChild(campusField)
             twoColumnLayout.appendChild(categoryField)
@@ -3178,12 +3539,26 @@ export const Extension = () => {
                 }
             })
 
-            fileGrid.appendChild(FileUploadField({ label: 'Extension Entry File', fieldName: 'researchFile' }))
-            fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
+            // ✅ FIX: Files are NOT required when editing - only for new submissions
+            fileGrid.appendChild(FileUploadField({
+                label: 'Extension Entry File',
+                fieldName: 'researchFile',
+                existingFile: isEdit ? formData.existingResearchFile : null,
+                existingUrl: isEdit ? formData.existingResearchUrl : null,
+                required: false  // Never show required for edit
+            }))
+
+            fileGrid.appendChild(FileUploadField({
+                label: 'Endorsement Letter',
+                fieldName: 'endorsementFile',
+                existingFile: isEdit ? formData.existingEndorsementFile : null,
+                existingUrl: isEdit ? formData.existingEndorsementUrl : null,
+                required: false  // Never show required for edit
+            }))
 
             fileSection.appendChild(fileGrid)
 
-            // Dynamic Program File section for In-House only (not Symposium)
+            // Dynamic Program File section for In-House only
             localFilesSection = $({
                 tag: 'div',
                 style: {
@@ -3207,11 +3582,21 @@ export const Extension = () => {
                 }
             })
 
-            localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'programFile' }))
-            localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'certificateFile' }))
+            localFieldsGrid.appendChild(LocalFilesUploadField({
+                label: 'Program File',
+                fieldName: 'programFile',
+                existingFile: isEdit ? formData.existingProgramFile : null,
+                existingUrl: isEdit ? formData.existingProgramUrl : null
+            }))
+
+            localFieldsGrid.appendChild(LocalFilesUploadField({
+                label: 'Certificate',
+                fieldName: 'certificateFile',
+                existingFile: isEdit ? formData.existingCertificateFile : null,
+                existingUrl: isEdit ? formData.existingCertificateUrl : null
+            }))
 
             localFilesSection.appendChild(localFieldsGrid)
-
             fileSection.appendChild(localFilesSection)
             formBody.appendChild(fileSection)
 
@@ -3256,21 +3641,26 @@ export const Extension = () => {
             }
         }
 
-        // FileUploadField
-        function FileUploadField({ label, fieldName }) {
+        function FileUploadField({ label, fieldName, existingFile = null, existingUrl = null, required = false }) {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
-            container.appendChild($({ tag: 'label', text: label, style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+
+            const labelEl = $({
+                tag: 'label',
+                text: label + (required ? ' *' : ''),
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
+            })
+            container.appendChild(labelEl)
 
             const uploadArea = $({
                 tag: 'div',
                 style: {
-                    border: '2px dashed #cbd5e1',
+                    border: existingFile ? '2px solid #4caf50' : '2px dashed #cbd5e1',
                     borderRadius: '12px',
-                    padding: '24px',
+                    padding: existingFile ? '16px 24px' : '24px',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    backgroundColor: '#f8fafc'
+                    backgroundColor: existingFile ? '#e8f5e9' : '#f8fafc'
                 },
                 event: {
                     type: 'click',
@@ -3278,21 +3668,60 @@ export const Extension = () => {
                     type2: 'mouseenter',
                     method2: (e) => {
                         e.currentTarget.style.borderColor = '#1976D2';
-                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                        e.currentTarget.style.backgroundColor = existingFile ? '#c8e6c9' : '#f1f5f9';
                     },
                     type3: 'mouseleave',
                     method3: (e) => {
-                        e.currentTarget.style.borderColor = '#cbd5e1';
-                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                        e.currentTarget.style.borderColor = existingFile ? '#4caf50' : '#cbd5e1';
+                        e.currentTarget.style.backgroundColor = existingFile ? '#e8f5e9' : '#f8fafc';
                     }
                 }
             })
 
-            uploadArea.appendChild($({ tag: 'i', att: { className: 'fas fa-cloud-upload-alt' }, style: { fontSize: '32px', color: '#1976D2', marginBottom: '12px', display: 'block' } }))
-            uploadArea.appendChild($({ tag: 'div', text: `Click to upload ${label}`, style: { color: '#1a2a3a', fontSize: '14px', fontWeight: '500' } }))
-            uploadArea.appendChild($({ tag: 'div', text: '(PDF only, Max 10MB)', style: { color: '#64748b', fontSize: '12px', marginTop: '6px' } }))
+            // Icon based on existing file
+            const iconColor = existingFile ? '#4caf50' : '#1976D2';
+            const iconClass = existingFile ? 'fa-check-circle' : 'fa-cloud-upload-alt';
 
-            const fileNameDisplay = $({ tag: 'div', style: { marginTop: '12px', fontSize: '13px', color: '#2e7d32', textAlign: 'center', fontWeight: '500' } })
+            uploadArea.appendChild($({
+                tag: 'i',
+                att: { className: `fas ${iconClass}` },
+                style: { fontSize: '32px', color: iconColor, marginBottom: '12px', display: 'block' }
+            }))
+
+            if (existingFile) {
+                uploadArea.appendChild($({
+                    tag: 'div',
+                    text: `✓ Current: ${existingFile}`,
+                    style: { color: '#2e7d32', fontSize: '14px', fontWeight: '500' }
+                }))
+                uploadArea.appendChild($({
+                    tag: 'div',
+                    text: 'Click to replace with new file',
+                    style: { color: '#64748b', fontSize: '12px', marginTop: '4px' }
+                }))
+            } else {
+                uploadArea.appendChild($({
+                    tag: 'div',
+                    text: `Click to upload ${label}`,
+                    style: { color: '#1a2a3a', fontSize: '14px', fontWeight: '500' }
+                }))
+                uploadArea.appendChild($({
+                    tag: 'div',
+                    text: '(PDF only, Max 10MB)',
+                    style: { color: '#64748b', fontSize: '12px', marginTop: '6px' }
+                }))
+            }
+
+            const fileNameDisplay = $({
+                tag: 'div',
+                style: {
+                    marginTop: '12px',
+                    fontSize: '13px',
+                    color: existingFile ? '#2e7d32' : '#2e7d32',
+                    textAlign: 'center',
+                    fontWeight: '500'
+                }
+            })
 
             const fileInput = $({
                 tag: 'input',
@@ -3313,7 +3742,18 @@ export const Extension = () => {
                                 return
                             }
                             formData[fieldName] = file
-                            fileNameDisplay.innerText = `✓ Selected: ${file.name}`
+                            fileNameDisplay.innerText = `✓ Selected: ${file.name} (will replace existing)`
+
+                            // Update upload area styling
+                            uploadArea.style.borderColor = '#1976D2';
+                            uploadArea.style.backgroundColor = '#e3f2fd';
+
+                            // Update icon
+                            const icon = uploadArea.querySelector('i');
+                            if (icon) {
+                                icon.className = 'fas fa-file-upload';
+                                icon.style.color = '#1976D2';
+                            }
                         }
                     }
                 }
@@ -3322,6 +3762,11 @@ export const Extension = () => {
             container.appendChild(uploadArea)
             container.appendChild(fileNameDisplay)
             container.appendChild(fileInput)
+
+            // Return a reference to the file input for clearing
+            container._fileInput = fileInput;
+            container._fileNameDisplay = fileNameDisplay;
+            container._uploadArea = uploadArea;
 
             return container
         }
