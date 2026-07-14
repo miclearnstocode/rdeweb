@@ -3515,10 +3515,8 @@ if (isset($_POST['researchReviewed'])) {
                 throw new Exception("Database connection failed: " . $con->connect_error);
             }
 
-            // Temporarily disable ONLY_FULL_GROUP_BY for this session
             $con->query("SET SESSION sql_mode = ''");
-            
-            // Get endorsements
+
             $queryEndorsement = "SELECT * FROM endorsement WHERE senderid = ? ORDER BY date DESC";
             $endorseStmt = $con->prepare($queryEndorsement);
             if (!$endorseStmt) {
@@ -3537,10 +3535,10 @@ if (isset($_POST['researchReviewed'])) {
                 $endorsement->date = $val['date'] ?? '';
                 $endorsement->status = $val['status'] ?? '';
                 $endorsement->id = $val['id'] ?? 0;
+                $endorsement->type = 'faculty';
                 $endorsement->ResearchDocs = [];
                 $enID = $val['id'];
 
-                // ===== FIX: Remove GROUP BY or use proper aggregation =====
                 $queryResearch = "SELECT 
                     rf.author,
                     rf.coauthor,
@@ -3588,6 +3586,7 @@ if (isset($_POST['researchReviewed'])) {
                     $researchDocs->author = $res['author'] ?? '';
                     $researchDocs->coauthor = $res['coauthor'] ?? '';
                     $researchDocs->presenter = $res['presenter'] ?? '';
+                    $researchDocs->type = 'faculty';
                     
                     // Title display logic
                     $researchDocs->title_changed = (int)($res['title_changed'] ?? 0);
@@ -3621,8 +3620,8 @@ if (isset($_POST['researchReviewed'])) {
                     $researchDocs->local_program_file_view_url = $res['local_program_file_view_url'] ?? null;
                     $researchDocs->local_certificate_file_view_url = $res['local_certificate_file_view_url'] ?? null;
                     $researchDocs->local_eventname = $res['local_eventname'] ?? null;
-
-                    // Determine the display status
+                    
+                    // Determine the display status for faculty papers
                     $currentDate = date('Y-m-d H:i:s');
                     $presentationDate = $res['date_of_presentation'] ?? null;
                     $originalStatus = $res['original_status'] ?? 'pending';
@@ -3641,8 +3640,88 @@ if (isset($_POST['researchReviewed'])) {
                     $researchDocs->status = $displayStatus;
                     $endorsement->ResearchDocs[] = $researchDocs;
                 }
-                $response->list[] = $endorsement;
+                if (count($endorsement->ResearchDocs) > 0) {
+                    $response->list[] = $endorsement;
+                }
             }
+
+            $queryStudentPapers = "SELECT 
+                srp.id,
+                srp.senderid,
+                srp.event_id,
+                srp.author,
+                srp.coauthor,
+                srp.presenter,
+                srp.date_started,
+                srp.date_completed,
+                srp.title,
+                srp.event,
+                srp.status,
+                srp.paper_type,
+                srp.category,
+                srp.campus,
+                srp.research_file_view_url,
+                srp.endorsement_file_view_url,
+                srp.created_at,
+                srp.updated_at,
+                el.name as event_name,
+                el.date_of_presentation
+            FROM student_research_papers srp
+            LEFT JOIN event_list el ON srp.event_id = el.id
+            WHERE srp.senderid = ?
+            ORDER BY srp.created_at DESC";
+
+            $studentStmt = $con->prepare($queryStudentPapers);
+            if (!$studentStmt) {
+                throw new Exception("Student papers query prepare failed: " . $con->error);
+            }
+            $studentStmt->bind_param("i", $userId);
+            $studentStmt->execute();
+            $studentResult = $studentStmt->get_result();
+
+            while ($row = $studentResult->fetch_assoc()) {
+                // Determine event name
+                $eventName = !empty($row['event_name']) ? $row['event_name'] : ($row['event'] ?? 'Uncategorized');
+
+                // Create a single endorsement entry for each student paper
+                $studentEndorsement = new stdClass();
+                $studentEndorsement->type = 'student';
+                $studentEndorsement->id = $row['id'] ?? 0;
+                $studentEndorsement->eventType = $eventName;
+                $studentEndorsement->date = $row['created_at'] ?? date('Y-m-d H:i:s');
+                $studentEndorsement->status = $row['status'] ?? 'pending';
+                $studentEndorsement->endorsementFile = $row['endorsement_file_view_url'] ?? null;
+                $studentEndorsement->drive_file_id = null;
+                $studentEndorsement->drive_download_url = null;
+                $studentEndorsement->ResearchDocs = [];
+
+                // Create the research document entry
+                $researchDoc = new stdClass();
+                $researchDoc->docId = $row['id'] ?? 0;
+                $researchDoc->author = $row['author'] ?? '';
+                $researchDoc->coauthor = $row['coauthor'] ?? '';
+                $researchDoc->presenter = $row['presenter'] ?? '';
+                $researchDoc->title = $row['title'] ?? '';
+                $researchDoc->category = $row['category'] ?? '';
+                $researchDoc->campus = $row['campus'] ?? '';
+                $researchDoc->status = $row['status'] ?? 'pending';
+                $researchDoc->paper_type = $row['paper_type'] ?? 'undergraduate';
+                $researchDoc->event = $row['event'] ?? '';
+                $researchDoc->event_name = $eventName;
+                $researchDoc->event_id = $row['event_id'] ?? null;
+                $researchDoc->date_started = $row['date_started'] ?? null;
+                $researchDoc->date_completed = $row['date_completed'] ?? null;
+                $researchDoc->date_of_presentation = $row['date_of_presentation'] ?? null;
+                $researchDoc->type = 'student';
+                
+                // Set both research and endorsement file URLs
+                $researchDoc->researchFile = $row['research_file_view_url'] ?? null;
+                $researchDoc->endorsementFile = $row['endorsement_file_view_url'] ?? null;
+                
+                $studentEndorsement->ResearchDocs[] = $researchDoc;
+                $response->list[] = $studentEndorsement;
+            }
+
             $con->close();
             
         } else {
