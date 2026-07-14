@@ -2,7 +2,7 @@
 .settingsDiv {
     width: 100%;
     height: 100%;
-    background: transparent;
+    background: #f8fafc;
 }
 
 /* Modern Tabs Styling */
@@ -76,7 +76,7 @@
 .settingsFrame {
     height: 92%;
     width: 100%;
-    background: #ffffff;
+    background: #f8fafc;
     overflow-y: auto;
 }
 
@@ -87,7 +87,7 @@
     justify-content: center;
     gap: 2rem;
     padding: 2rem;
-    background: #ffffff;
+    background: #f8fafc;
 }
 
 .leftUserInfo,
@@ -99,13 +99,26 @@
     border-radius: 20px;
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    color: #1a2a3a;
 }
 
 .rightUserInfo {
     border-left: 1px solid #e8ecf0;
 }
 
+/* Labels */
 .usersLabel {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-weight: 700;
+    text-align: center;
+    margin: 1rem 0 2rem;
+    font-size: 1.3rem;
+    color: #1a2a3a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.rightLabel {
     font-family: 'Inter', 'Segoe UI', sans-serif;
     font-weight: 700;
     text-align: center;
@@ -135,7 +148,7 @@
     transform: translateX(5px);
 }
 
-/* Table User */
+/* Table User - Dark text */
 .tableUser {
     width: 100%;
     border-collapse: collapse;
@@ -146,13 +159,13 @@
     font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
-.tableUser td:first-child {
+.userInfoData {
     color: #1a2a3a;
     font-size: 1.1rem;
     font-weight: 600;
 }
 
-.tableUser td:last-child {
+.userInfoLabel {
     color: #64748b;
     font-size: 0.9rem;
 }
@@ -174,19 +187,7 @@
     transform: scale(1.1);
 }
 
-/* Right Section Labels */
-.rightLabel {
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    font-weight: 700;
-    text-align: center;
-    margin: 1rem 0 2rem;
-    font-size: 1.3rem;
-    color: #1a2a3a;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* User Label */
+/* User Label - Dark text */
 .userLabel {
     font-family: 'Inter', 'Segoe UI', sans-serif;
     font-weight: 600;
@@ -194,16 +195,32 @@
     margin: 2rem auto;
     font-size: 1.2rem;
     text-align: center;
+    width: 100%;
 }
 
 .userLabel td {
     padding: 8px;
 }
 
-/* Right Class Table */
+.usernameDisplay {
+    text-align: center;
+    color: #1a2a3a;
+    font-size: 1.5rem;
+    font-weight: 500;
+    padding: 0.5rem 0;
+}
+
+.usernameLabel {
+    font-weight: 400;
+    color: #64748b;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Right Class Table - Dark text */
 .rightClass {
     width: 100%;
-    color: #475569;
+    color: #1a2a3a;
     font-size: 1rem;
     font-family: 'Inter', 'Segoe UI', sans-serif;
     margin: 2rem 0;
@@ -216,25 +233,46 @@
     text-align: left;
     border-radius: 12px;
     transition: all 0.3s ease;
+    color: #1a2a3a;
+}
+
+.acBot {
+    padding: 0.5rem 1rem;
+    width: 40px;
+}
+
+.acBotUser {
+    color: #6c63ff;
+    font-size: 1.2rem;
+}
+
+.botName {
+    color: #1a2a3a;
+    font-size: 1rem;
+    padding: 0.5rem 0;
 }
 
 .trBot {
     background: #f8fafc;
     cursor: pointer;
     border: 1px solid #e8ecf0;
+    transition: all 0.3s ease;
 }
 
 .trBot:hover {
     background: #f1f5f9;
-    color: #1976D2;
     transform: translateX(5px);
+}
+
+.trBot:hover .botName {
+    color: #1976D2;
 }
 
 .trBot:active {
     transform: translateX(5px) scale(0.98);
 }
 
-/* Modal Input Styling */
+/* Modal Input Styling - Dark text */
 .nameField {
     width: 100%;
     padding: 12px 14px;
@@ -255,6 +293,245 @@
 
 .nameField::placeholder {
     color: #94a3b8;
+}
+
+/* Modal Containers */
+.editUserDiv {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    padding: 2rem;
+    z-index: 1000;
+    min-width: 400px;
+    max-width: 500px;
+    width: 90%;
+    color: #1a2a3a;
+}
+
+.editorCont {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    padding: 2rem;
+    z-index: 1000;
+    min-width: 400px;
+    max-width: 500px;
+    width: 90%;
+    color: #1a2a3a;
+}
+
+.editUserDiv input,
+.editorCont input {
+    color: #1a2a3a;
+}
+
+.editUserDiv select,
+.editorCont select {
+    color: #1a2a3a;
+}
+
+.editUserDiv option,
+.editorCont option {
+    color: #1a2a3a;
+}
+
+/* Password container */
+.passCont {
+    display: flex;
+    align-items: center;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    padding: 0 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.passCont input {
+    background-color: transparent;
+    height: 100%;
+    width: 95%;
+    border: none;
+    outline: none;
+    padding: 0.8rem 1rem;
+    font-family: monospace;
+    font-size: 1rem;
+    color: #1a2a3a;
+}
+
+.passCont input::placeholder {
+    color: #94a3b8;
+}
+
+.password-eye {
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0 0.5rem;
+}
+
+.password-eye:hover {
+    color: #1a2a3a;
+}
+
+/* Password wrapper */
+.passwordWrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 0.8rem;
+}
+
+.passwordWrapper input {
+    background-color: #f8f9fa;
+    height: 100%;
+    width: 100%;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    outline: none;
+    padding: 0.8rem 3rem 0.8rem 1rem;
+    font-family: monospace;
+    font-size: 1rem;
+    color: #1a2a3a;
+}
+
+.passwordWrapper input::placeholder {
+    color: #94a3b8;
+}
+
+.passwordWrapper .password-eye {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1.2rem;
+    z-index: 10;
+}
+
+.passwordWrapper .password-eye:hover {
+    color: #1a2a3a;
+}
+
+/* Edit password table */
+.editPass {
+    width: 100%;
+}
+
+.editPass input {
+    color: #1a2a3a;
+}
+
+.editPass input::placeholder {
+    color: #94a3b8;
+}
+
+/* Edit field container */
+.editConField {
+    width: 100%;
+}
+
+.userEdit {
+    margin-bottom: 1rem;
+}
+
+.userEdit input {
+    background-color: #f8f9fa;
+    height: 100%;
+    width: 95%;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    outline: none;
+    padding: 0.8rem 1rem;
+    font-family: monospace;
+    font-size: 1rem;
+    color: #1a2a3a;
+}
+
+.userEdit input::placeholder {
+    color: #94a3b8;
+}
+
+/* Save buttons */
+.saveDivEdit {
+    padding: 0.8rem 2rem;
+    background-color: #6c63ff;
+    color: #ffffff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    border: none;
+    font-size: 1rem;
+}
+
+.saveDivEdit:hover {
+    background-color: #5a52d5;
+    transform: scale(1.02);
+}
+
+.saveBotAcc {
+    padding: 0.8rem 2rem;
+    background-color: #6c63ff;
+    color: #ffffff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+    border: none;
+    font-size: 1rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.saveBotAcc:hover {
+    background-color: #5a52d5;
+    transform: scale(1.02);
+}
+
+/* Close buttons */
+.closeBotUser {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.closeBotUser:hover {
+    color: #1a2a3a;
+    transform: rotate(90deg);
+}
+
+.closeRight {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.closeRight:hover {
+    color: #1a2a3a;
+    transform: rotate(90deg);
+}
+
+/* Field editor table */
+.fieldEditor {
+    width: 100%;
 }
 
 /* Scrollbar Styling */
@@ -290,31 +567,46 @@
         flex-direction: column;
         padding: 1rem;
     }
-    
+
     .leftUserInfo,
     .rightUserInfo {
         width: 100%;
         height: auto;
         min-height: 50%;
     }
-    
+
     .settingsBot {
         font-size: 0.9rem;
         padding: 1rem;
     }
+
+    .editUserDiv,
+    .editorCont {
+        min-width: 300px;
+        max-width: 90%;
+    }
 }
 
 @media (max-width: 768px) {
-    .tableUser td:first-child {
+    .userInfoData {
         font-size: 0.9rem;
     }
-    
-    .tableUser td:last-child {
+
+    .userInfoLabel {
         font-size: 0.75rem;
     }
-    
-    .rightClass td {
-        padding: 0.75rem;
+
+    .botName {
         font-size: 0.9rem;
+    }
+
+    .editUserDiv,
+    .editorCont {
+        min-width: 280px;
+        padding: 1.5rem;
+    }
+
+    .usernameDisplay {
+        font-size: 1.2rem;
     }
 }

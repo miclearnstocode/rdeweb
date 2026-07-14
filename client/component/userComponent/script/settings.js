@@ -1,4 +1,4 @@
-import {$, CapsuOffice, ConfirmationAlert, dataURLtoFile, Move, ResizeImage, SpecialChar,Waiting} from '../../../lib/lib.js'
+import { $, CapsuOffice, ConfirmationAlert, dataURLtoFile, Move, ResizeImage, SpecialChar, Waiting } from '../../../lib/lib.js'
 
 const userInfo = () => {
     const left = () => {
@@ -8,9 +8,9 @@ const userInfo = () => {
             att: {
                 className: 'usersLabel'
             },
-            text: "User's Information",
+            text: "User's Information"
         })
-        const container = ({child, buttonEvent}) => {
+        const container = ({ child, buttonEvent }) => {
             const getbod = (bod) => {
                 if (child) {
                     bod.append(child)
@@ -40,8 +40,7 @@ const userInfo = () => {
                         margin: 'auto',
                         justifyContent: 'center',
                         display: 'flex',
-                        fontSize: '2vw',
-                        color: 'deepskyblue'
+                        fontSize: '1.5vw',
                     },
                     child: [
                         $({
@@ -67,11 +66,11 @@ const userInfo = () => {
             }))
         }
 
-        const UserInfo = ({data, label}) => {
+        const UserInfo = ({ data, label }) => {
             const Name = $({
                 tag: 'td',
-                style: {
-                    color: 'ghostwhite'
+                att: {
+                    className: 'userInfoData'
                 },
                 text: data
             })
@@ -87,9 +86,8 @@ const userInfo = () => {
                         child: [
                             $({
                                 tag: 'td',
-                                style: {
-                                    color: '#999',
-                                    fontSize: '1vw'
+                                att: {
+                                    className: 'userInfoLabel'
                                 },
                                 text: label
                             })
@@ -98,7 +96,7 @@ const userInfo = () => {
                 ]
             }))
         }
-        const buttonEvent = ({component}) => {
+        const buttonEvent = ({ component }) => {
             let content
             const Close = () => {
                 return ($({
@@ -124,12 +122,13 @@ const userInfo = () => {
                 tag: 'div',
                 att: {
                     className: 'editUserDiv'
-                }, elementHandler: getfloater,
+                },
+                elementHandler: getfloater,
                 child: [Close()]
             }))
         }
         const nameField = () => {
-            let data=''
+            let data = ''
             const inputField = $({
                 tag: 'tr',
                 child: [
@@ -142,10 +141,10 @@ const userInfo = () => {
                                     className: 'nameField',
                                     placeholder: 'Enter full name'
                                 },
-                                event:{
-                                    type:'input',
-                                    method:(el)=>{
-                                        data=el.target.value
+                                event: {
+                                    type: 'input',
+                                    method: (el) => {
+                                        data = el.target.value
                                     }
                                 }
                             })
@@ -158,7 +157,7 @@ const userInfo = () => {
                 child: [
                     $({
                         tag: 'td',
-                        style: {textAlign: 'center'},
+                        style: { textAlign: 'center' },
                         child: [
                             $({
                                 tag: 'div',
@@ -166,21 +165,21 @@ const userInfo = () => {
                                     className: 'saveDivEdit'
                                 },
                                 text: 'Save',
-                                event:{
-                                    type:'click',
-                                    method:async ()=>{
-                                        if(confirm("Click ok to CONFIRM")){
+                                event: {
+                                    type: 'click',
+                                    method: async () => {
+                                        if (confirm("Click ok to CONFIRM")) {
                                             let loading = Waiting()
                                             document.body.appendChild(loading)
                                             const remove = () => {
                                                 loading.remove()
                                             }
-                                            const form= new FormData();
-                                            form.append('changeName','true')
-                                            form.append('data',data)
-                                            await fetch('/settings',{
-                                                method:'POST',
-                                                body:form
+                                            const form = new FormData();
+                                            form.append('changeName', 'true')
+                                            form.append('data', data)
+                                            await fetch('/settings', {
+                                                method: 'POST',
+                                                body: form
                                             }).then(res => {
                                                 if (res.ok) {
                                                     remove()
@@ -233,10 +232,10 @@ const userInfo = () => {
                                     className: 'nameField',
                                     placeholder: 'Enter Designation'
                                 },
-                                event:{
-                                    type:'input',
-                                    method:(el)=>{
-                                        data=el.target.value
+                                event: {
+                                    type: 'input',
+                                    method: (el) => {
+                                        data = el.target.value
                                     }
                                 }
                             })
@@ -249,33 +248,30 @@ const userInfo = () => {
                 child: [
                     $({
                         tag: 'td',
-                        style: {textAlign: 'center'},
+                        style: { textAlign: 'center' },
                         child: [
                             $({
                                 tag: 'div',
                                 att: {
                                     className: 'saveDivEdit'
                                 },
-                                style:{
-                                    pointerEvents:'none'
-                                },
                                 text: 'Save',
-                                event:{
-                                    type:'click',
-                                    method:async ()=>{
+                                event: {
+                                    type: 'click',
+                                    method: async () => {
 
-                                        if(confirm("Click ok to CONFIRM")){
+                                        if (confirm("Click ok to CONFIRM")) {
                                             let loading = Waiting()
                                             document.body.appendChild(loading)
                                             const remove = () => {
                                                 loading.remove()
                                             }
-                                            const form= new FormData();
-                                            form.append('changeDesignation','true')
-                                            form.append('data',data)
-                                            await fetch('/settings',{
-                                                method:'POST',
-                                                body:form
+                                            const form = new FormData();
+                                            form.append('changeDesignation', 'true')
+                                            form.append('data', data)
+                                            await fetch('/settings', {
+                                                method: 'POST',
+                                                body: form
                                             }).then(res => {
                                                 if (res.ok) {
                                                     remove()
@@ -330,10 +326,10 @@ const userInfo = () => {
                                     className: 'nameField',
                                     placeholder: 'Enter new E-Mailer address'
                                 },
-                                event:{
-                                    type:'input',
-                                    method:(el)=>{
-                                        data=el.target.value
+                                event: {
+                                    type: 'input',
+                                    method: (el) => {
+                                        data = el.target.value
                                     }
                                 }
                             })
@@ -346,7 +342,7 @@ const userInfo = () => {
                 child: [
                     $({
                         tag: 'td',
-                        style: {textAlign: 'center'},
+                        style: { textAlign: 'center' },
                         child: [
                             $({
                                 tag: 'div',
@@ -354,21 +350,21 @@ const userInfo = () => {
                                     className: 'saveDivEdit'
                                 },
                                 text: 'Save',
-                                event:{
-                                    type:'click',
-                                    method:async ()=>{
-                                        if(confirm("Click ok to CONFIRM")){
+                                event: {
+                                    type: 'click',
+                                    method: async () => {
+                                        if (confirm("Click ok to CONFIRM")) {
                                             let loading = Waiting()
                                             document.body.appendChild(loading)
                                             const remove = () => {
                                                 loading.remove()
                                             }
-                                            const form= new FormData();
-                                            form.append('changeEmail','true')
-                                            form.append('data',data)
-                                            await fetch('/settings',{
-                                                method:'POST',
-                                                body:form
+                                            const form = new FormData();
+                                            form.append('changeEmail', 'true')
+                                            form.append('data', data)
+                                            await fetch('/settings', {
+                                                method: 'POST',
+                                                body: form
                                             }).then(res => {
                                                 if (res.ok) {
                                                     remove()
@@ -412,11 +408,11 @@ const userInfo = () => {
             let data
             const getCampus = (select) => {
                 select.appendChild($({
-                    tag:'option',
-                    att:{
-                        selected:true,
-                        innerText   :'Select Campus/Office',
-                        disabled:true
+                    tag: 'option',
+                    att: {
+                        selected: true,
+                        innerText: 'Select Campus/Office',
+                        disabled: true
                     }
                 }))
                 CapsuOffice.forEach(val => {
@@ -424,9 +420,6 @@ const userInfo = () => {
                         tag: 'option',
                         att: {
                             innerText: val
-                        },
-                        style: {
-                            color: 'black'
                         }
                     }))
                 })
@@ -443,10 +436,10 @@ const userInfo = () => {
                                     className: 'nameField',
                                 },
                                 elementHandler: getCampus,
-                                event:{
-                                    type:'change',
-                                    method:(el)=>{
-                                        data=el.target.value
+                                event: {
+                                    type: 'change',
+                                    method: (el) => {
+                                        data = el.target.value
                                     }
                                 }
                             })
@@ -459,7 +452,7 @@ const userInfo = () => {
                 child: [
                     $({
                         tag: 'td',
-                        style: {textAlign: 'center'},
+                        style: { textAlign: 'center' },
                         child: [
                             $({
                                 tag: 'div',
@@ -467,21 +460,21 @@ const userInfo = () => {
                                     className: 'saveDivEdit'
                                 },
                                 text: 'Save',
-                                event:{
-                                    type:'click',
-                                    method:async ()=>{
-                                        if(confirm("Click ok to CONFIRM")){
+                                event: {
+                                    type: 'click',
+                                    method: async () => {
+                                        if (confirm("Click ok to CONFIRM")) {
                                             let loading = Waiting()
                                             document.body.appendChild(loading)
                                             const remove = () => {
                                                 loading.remove()
                                             }
-                                            const form= new FormData();
-                                            form.append('changeCampus','true')
-                                            form.append('data',data)
-                                            await fetch('/settings',{
-                                                method:'POST',
-                                                body:form
+                                            const form = new FormData();
+                                            form.append('changeCampus', 'true')
+                                            form.append('data', data)
+                                            await fetch('/settings', {
+                                                method: 'POST',
+                                                body: form
                                             }).then(res => {
                                                 if (res.ok) {
                                                     remove()
@@ -525,43 +518,43 @@ const userInfo = () => {
             att: {
                 className: 'leftUserInfo'
             },
-            elementHandler: async (el)=>{
+            elementHandler: async (el) => {
                 el.appendChild(LabelTop)
-                leftMain=el
-                const form=new FormData()
-                form.append('settingsInfo','true')
+                leftMain = el
+                const form = new FormData()
+                form.append('settingsInfo', 'true')
                 await fetch('/settings', {
-                    method:'POST',
-                    body:form
-                }).then(res=>res.json())
-                    .then(data=>{
+                    method: 'POST',
+                    body: form
+                }).then(res => res.json())
+                    .then(data => {
                         el.appendChild(container({
-                            child:UserInfo({
-                            data:data.data.fullName,
-                            label:'Full Name'
-                        }),
-                        buttonEvent:nameField
-                    }))
-                        el.appendChild(container({
-                            child:UserInfo({
-                                data:data.data.userType,
-                                label:'Designation'
+                            child: UserInfo({
+                                data: data.data.fullName,
+                                label: 'Full Name'
                             }),
-                            buttonEvent:designation
+                            buttonEvent: nameField
                         }))
                         el.appendChild(container({
-                            child:UserInfo({
-                                data:data.data.email,
-                                label:'Email address'
+                            child: UserInfo({
+                                data: data.data.userType,
+                                label: 'Designation'
                             }),
-                            buttonEvent:email
+                            buttonEvent: designation
                         }))
                         el.appendChild(container({
-                            child:UserInfo({
-                                data:data.data.campus,
-                                label:'Office/Campus'
+                            child: UserInfo({
+                                data: data.data.email,
+                                label: 'Email address'
                             }),
-                            buttonEvent:office
+                            buttonEvent: email
+                        }))
+                        el.appendChild(container({
+                            child: UserInfo({
+                                data: data.data.campus,
+                                label: 'Office/Campus'
+                            }),
+                            buttonEvent: office
                         }))
                     })
             },
@@ -594,18 +587,18 @@ const userInfo = () => {
                         child: [
                             $({
                                 tag: 'td',
-                                style:{
-                                    textAlign:'center'
+                                att: {
+                                    className: 'usernameDisplay'
                                 },
-                                elementHandler:async (el)=>{
-                                    const form=new FormData()
-                                    form.append('settingsInfo','true')
+                                elementHandler: async (el) => {
+                                    const form = new FormData()
+                                    form.append('settingsInfo', 'true')
                                     await fetch('/settings', {
-                                        method:'POST',
-                                        body:form
-                                    }).then(res=>res.json())
-                                        .then(data=>{
-                                            el.innerText=data.data.username
+                                        method: 'POST',
+                                        body: form
+                                    }).then(res => res.json())
+                                        .then(data => {
+                                            el.innerText = data.data.username
                                         })
                                 }
                             })
@@ -616,13 +609,10 @@ const userInfo = () => {
                         child: [
                             $({
                                 tag: 'td',
-                                text: 'User Name',
-                                style: {
-                                    fontWeight: 'normal',
-                                    color: '#bbb',
-                                    fontSize: '1vw',
-                                    textAlign: 'center'
-                                }
+                                att: {
+                                    className: 'usernameLabel'
+                                },
+                                text: 'User Name'
                             })
                         ]
                     })
@@ -632,7 +622,7 @@ const userInfo = () => {
 
         const Container = () => {
 
-            const accBot = ({name, button}) => {
+            const accBot = ({ name, button }) => {
 
                 const getBot = (element) => {
                     if (button) {
@@ -640,7 +630,7 @@ const userInfo = () => {
                             tag: 'span',
                             att: {
                                 className: `${button.class} acBotUser`
-                            },
+                            }
                         }))
                     }
                 }
@@ -666,7 +656,7 @@ const userInfo = () => {
                         $({
                             tag: 'td',
                             att: {
-                                className: ''
+                                className: 'botName'
                             },
                             text: name
                         }),
@@ -674,10 +664,10 @@ const userInfo = () => {
                 }))
             }
 
-            const Password = ({placeholder, eventMethod}) => {
+            const Password = ({ placeholder, eventMethod }) => {
                 let inputRef
                 let eyeIconRef
-                
+
                 const togglePassword = (input, eyeIcon) => {
                     if (input.type === 'password') {
                         input.type = 'text';
@@ -687,16 +677,16 @@ const userInfo = () => {
                         eyeIcon.className = 'fa-solid fa-eye password-eye'
                     }
                 };
-                
+
                 const getInput = (el) => {
                     inputRef = el
                 };
-                
+
                 const getEyeIcon = (el) => {
                     eyeIconRef = el
                     el.addEventListener('click', () => togglePassword(inputRef, el))
                 };
-                
+
                 return ($({
                     tag: 'div',
                     att: {
@@ -715,18 +705,6 @@ const userInfo = () => {
                                 type: 'input',
                                 method: eventMethod
                             },
-                            style: {
-                                backgroundColor: 'transparent',
-                                height: '100%',
-                                width: '95%',
-                                border: 'none',
-                                outline: 'none',
-                                paddingRight: '1vw',
-                                paddingLeft: '1vw',
-                                fontFamily: 'monospace',
-                                fontSize: '1.5vw',
-                                color: '#bbb'
-                            },
                             elementHandler: (el) => {
                                 SpecialChar(el);
                                 getInput(el);
@@ -743,7 +721,7 @@ const userInfo = () => {
                 }))
             }
 
-            const mainEditorContainer = ({content}) => {
+            const mainEditorContainer = ({ content }) => {
                 let contain
                 const getContain = (elem) => {
                     contain = elem
@@ -776,8 +754,8 @@ const userInfo = () => {
                 }))
             }
 
-            const SaveButton = ({Method, url}) => {
-                let request=[]
+            const SaveButton = ({ Method, url }) => {
+                let request = []
 
                 const getSaveBot = (save) => {
 
@@ -804,18 +782,18 @@ const userInfo = () => {
                                 }
                             })
                                 .then(dat => {
-                                if (dat.status) {
-                                    document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                        window.location.reload()
-                                    }))
-                                } else {
-                                    document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                        window.location.reload()
-                                    }))
-                                }
-                            })
+                                    if (dat.status) {
+                                        document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                            window.location.reload()
+                                        }))
+                                    } else {
+                                        document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                            window.location.reload()
+                                        }))
+                                    }
+                                })
                         }
-                        request=[]
+                        request = []
                     })
                 }
 
@@ -832,8 +810,8 @@ const userInfo = () => {
 
 
             const changeUserName = () => {
-                let userName=''
-                let password=''
+                let userName = ''
+                let password = ''
                 const EditUserName = () => {
 
                     const inputUser = () => {
@@ -848,25 +826,13 @@ const userInfo = () => {
                                     att: {
                                         placeholder: 'Enter new Username'
                                     },
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        height: '100%',
-                                        width: '95%',
-                                        border: 'none',
-                                        outline: 'none',
-                                        paddingRight: '1vw',
-                                        paddingLeft: '1vw',
-                                        fontFamily: 'monospace',
-                                        fontSize: '1.5vw',
-                                        color: '#bbb'
-                                    },
-                                    event:{
-                                        type:'input',
-                                        method:(ev)=>{
-                                            userName=ev.target.value
+                                    event: {
+                                        type: 'input',
+                                        method: (ev) => {
+                                            userName = ev.target.value
                                         }
                                     },
-                                    elementHandler:SpecialChar
+                                    elementHandler: SpecialChar
                                 })
                             ]
                         }))
@@ -881,14 +847,14 @@ const userInfo = () => {
                         child: [
                             inputUser(),
                             Password({
-                                placeholder:'Enter Password',
-                                eventMethod:(eve)=>{
-                                    password=eve.target.value
+                                placeholder: 'Enter Password',
+                                eventMethod: (eve) => {
+                                    password = eve.target.value
                                 }
                             }),
                             SaveButton({
                                 url: '/settings',
-                                Method:(request)=>{
+                                Method: (request) => {
                                     request.push({
                                         reqName: 'editUserName',
                                         reqVal: 'true'
@@ -906,14 +872,14 @@ const userInfo = () => {
                         ]
                     }))
                 }
-                mainRight.appendChild(mainEditorContainer({content: [EditUserName]}))
+                mainRight.appendChild(mainEditorContainer({ content: [EditUserName] }))
             }
             const changePassword = () => {
-                let prevPass,newPassw,reType
+                let prevPass, newPassw, reType
                 const EditPassword = () => {
                     const newPass = () => {
                         let passAInput, passAEye, passBInput, passBEye;
-                        
+
                         const togglePassword = (input, eyeIcon) => {
                             if (input.type === 'password') {
                                 input.type = 'text';
@@ -923,7 +889,7 @@ const userInfo = () => {
                                 eyeIcon.className = 'fa-solid fa-eye password-eye';
                             }
                         };
-                        
+
                         const passA = $({
                             tag: 'tr',
                             child: [
@@ -932,9 +898,8 @@ const userInfo = () => {
                                     child: [
                                         $({
                                             tag: 'div',
-                                            style: {
-                                                position: 'relative',
-                                                width: '100%'
+                                            att: {
+                                                className: 'passwordWrapper'
                                             },
                                             child: [
                                                 $({
@@ -944,18 +909,6 @@ const userInfo = () => {
                                                         placeholder: 'Enter new Password',
                                                         maxLength: '20',
                                                         minLength: '8'
-                                                    },
-                                                    style: {
-                                                        backgroundColor: 'transparent',
-                                                        height: '100%',
-                                                        width: '100%',
-                                                        border: 'none',
-                                                        outline: 'none',
-                                                        paddingRight: '3rem',
-                                                        paddingLeft: '1rem',
-                                                        fontFamily: 'monospace',
-                                                        fontSize: '1.5vw',
-                                                        color: '#bbb'
                                                     },
                                                     event: {
                                                         type: 'input',
@@ -973,16 +926,6 @@ const userInfo = () => {
                                                     att: {
                                                         className: 'fa-solid fa-eye password-eye'
                                                     },
-                                                    style: {
-                                                        position: 'absolute',
-                                                        right: '12px',
-                                                        top: '50%',
-                                                        transform: 'translateY(-50%)',
-                                                        color: '#94a3b8',
-                                                        cursor: 'pointer',
-                                                        fontSize: '1.2rem',
-                                                        zIndex: '10'
-                                                    },
                                                     elementHandler: (el) => {
                                                         passAEye = el;
                                                         el.addEventListener('click', () => togglePassword(passAInput, el));
@@ -994,7 +937,7 @@ const userInfo = () => {
                                 })
                             ]
                         });
-                        
+
                         const passB = $({
                             tag: 'tr',
                             child: [
@@ -1003,9 +946,8 @@ const userInfo = () => {
                                     child: [
                                         $({
                                             tag: 'div',
-                                            style: {
-                                                position: 'relative',
-                                                width: '100%'
+                                            att: {
+                                                className: 'passwordWrapper'
                                             },
                                             child: [
                                                 $({
@@ -1015,18 +957,6 @@ const userInfo = () => {
                                                         placeholder: 'Re-type Password',
                                                         maxLength: '20',
                                                         minLength: '8'
-                                                    },
-                                                    style: {
-                                                        backgroundColor: 'transparent',
-                                                        height: '100%',
-                                                        width: '100%',
-                                                        border: 'none',
-                                                        outline: 'none',
-                                                        paddingRight: '3rem',
-                                                        paddingLeft: '1rem',
-                                                        fontFamily: 'monospace',
-                                                        fontSize: '1.5vw',
-                                                        color: '#bbb'
                                                     },
                                                     event: {
                                                         type: 'input',
@@ -1044,16 +974,6 @@ const userInfo = () => {
                                                     att: {
                                                         className: 'fa-solid fa-eye password-eye'
                                                     },
-                                                    style: {
-                                                        position: 'absolute',
-                                                        right: '12px',
-                                                        top: '50%',
-                                                        transform: 'translateY(-50%)',
-                                                        color: '#94a3b8',
-                                                        cursor: 'pointer',
-                                                        fontSize: '1.2rem',
-                                                        zIndex: '10'
-                                                    },
                                                     elementHandler: (el) => {
                                                         passBEye = el;
                                                         el.addEventListener('click', () => togglePassword(passBInput, el));
@@ -1065,7 +985,7 @@ const userInfo = () => {
                                 })
                             ]
                         })
-                        
+
                         return ($({
                             tag: 'table',
                             att: {
@@ -1084,14 +1004,14 @@ const userInfo = () => {
                         },
                         child: [
                             Password({
-                                placeholder:'Enter old Password',
-                                eventMethod:(eve)=>{
-                                    prevPass=eve.target.value
+                                placeholder: 'Enter old Password',
+                                eventMethod: (eve) => {
+                                    prevPass = eve.target.value
                                 }
                             }),
                             newPass(),
                             SaveButton({
-                                Method:(request)=>{
+                                Method: (request) => {
 
                                     request.push({
                                         reqName: 'editPassword',
@@ -1110,12 +1030,12 @@ const userInfo = () => {
                                         reqVal: reType
                                     })
                                 },
-                                url:'/settings'
+                                url: '/settings'
                             })
                         ]
                     }))
                 }
-                mainRight.appendChild(mainEditorContainer({content: [EditPassword]}))
+                mainRight.appendChild(mainEditorContainer({ content: [EditPassword] }))
             }
             return ($({
                 tag: 'table',
@@ -1171,7 +1091,7 @@ const signature = () => {
         let imgHolder
         let viewerSig
         let labelRange
-        let imageRes=50;
+        let imageRes = 50;
         let image
         const getImgHolder = (imgH) => {
             imgHolder = imgH
@@ -1180,8 +1100,8 @@ const signature = () => {
             viewerSig = v
             //================================================
             Move({
-                panel:viewerSig,
-                object:imgHolder
+                panel: viewerSig,
+                object: imgHolder
             })
             //==============================================
         }
@@ -1189,8 +1109,8 @@ const signature = () => {
             labelRange = element
         }
         const getImageResize = (value) => {
-            if(value===''||value===undefined){
-                value=50
+            if (value === '' || value === undefined) {
+                value = 50
             }
             let currentWidth = imgHolder.naturalWidth
             let currentHeight = imgHolder.naturalHeight
@@ -1198,7 +1118,7 @@ const signature = () => {
             imgHolder.style.height = currentHeight * value / 50 + 'px'
 
             labelRange.innerText = value + '%'
-            imageRes = (value / 50)*100
+            imageRes = (value / 50) * 100
         }
 
 
@@ -1228,7 +1148,7 @@ const signature = () => {
                 }).then(res => res.json())
                     .then(data => {
                         if (data.status) {
-                            setTimeout(()=>{window.location.reload()},100)
+                            setTimeout(() => { window.location.reload() }, 100)
                         } else {
                             alert(data.message)
                         }
@@ -1261,13 +1181,6 @@ const signature = () => {
                         className: 'sigIm',
                         alt: 'Uploaded Signature',
                     },
-                    style:{
-                        border:'solid thin ',
-                        fontFamily:'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-
-                        borderRadius:'1vw',
-                        padding:'.5rem'
-                    },
                     elementHandler: getImgHolder
                 }))
             }
@@ -1276,9 +1189,6 @@ const signature = () => {
                     tag: 'div',
                     att: {
                         className: 'baseFont'
-                    },
-                    style:{
-                        fontSize:'16px'
                     },
                     text: 'Full name',
                     elementHandler: getNameBase
@@ -1289,9 +1199,6 @@ const signature = () => {
                 tag: 'div',
                 att: {
                     className: 'viewerSig'
-                },
-                style:{
-                  overflow:'hidden'
                 },
                 elementHandler: getViewerSig,
                 child: [
@@ -1315,12 +1222,12 @@ const signature = () => {
                         event: {
                             type: 'input',
                             method: (event) => {
-                               // image=event.target.files[0]
-                                const getMe=(val)=>{
-                                    imgHolder.src=val
-                                    image=dataURLtoFile(val,"sig.png")
+                                // image=event.target.files[0]
+                                const getMe = (val) => {
+                                    imgHolder.src = val
+                                    image = dataURLtoFile(val, "sig.png")
                                 }
-                                ResizeImage(event.target.files[0],getMe)
+                                ResizeImage(event.target.files[0], getMe)
                             }
                         }
                     }))
@@ -1346,7 +1253,7 @@ const signature = () => {
                         att: {
                             type: 'number',
                             className: 'fontSizeSig',
-                            min:2,
+                            min: 2,
                             max: 30,
                             value: 16
                         },
@@ -1491,8 +1398,8 @@ const signature = () => {
                     child: [
                         $({
                             tag: 'td',
-                            elementHandler:  (element)=>{
-                                setTimeout(async()=>{
+                            elementHandler: (element) => {
+                                setTimeout(async () => {
                                     const form = new FormData()
                                     form.append('getSig', 'true')
                                     await fetch('/signature', {
@@ -1500,8 +1407,8 @@ const signature = () => {
                                         body: form
                                     }).then(res => res.json())
                                         .then(data => {
-                                            if(data.esign!==''){
-                                                let url=data.esign.url.replace('..', '')
+                                            if (data.esign !== '') {
+                                                let url = data.esign.url.replace('..', '')
                                                 element.appendChild($({
                                                     tag: 'img',
                                                     att: {
@@ -1509,12 +1416,7 @@ const signature = () => {
                                                         src: url,
                                                         draggable: false
                                                     },
-                                                    style:{
-                                                        height:'fit-content',
-                                                        width:'fit-content',
-                                                        margin:'auto'
-                                                    },
-                                                    elementHandler: (img)=>{
+                                                    elementHandler: (img) => {
                                                         let height = img.naturalHeight * (data.esign.scale / 100) + 'px'
                                                         let width = img.naturalWidth * (data.esign.scale / 100) + 'px'
                                                         img.style.height = height
@@ -1524,7 +1426,7 @@ const signature = () => {
                                                 }))
                                             }
                                         })
-                                },500)
+                                }, 500)
                             }
                         }),
 
@@ -1559,7 +1461,7 @@ const signature = () => {
     }))
 }
 
-const Tabs = ({getHeader}) => {
+const Tabs = ({ getHeader }) => {
     return ($({
         tag: 'table',
         att: {
@@ -1574,7 +1476,7 @@ const Tabs = ({getHeader}) => {
     }))
 }
 
-const FrameBody = ({getFrameBody}) => {
+const FrameBody = ({ getFrameBody }) => {
     return ($({
         tag: 'div',
         att: {
@@ -1585,7 +1487,7 @@ const FrameBody = ({getFrameBody}) => {
 }
 
 export const Settings = () => {
-    const TabButton = ({url, label, state}) => {
+    const TabButton = ({ url, label, state }) => {
         const getBot = (bot) => {
             if (state) {
                 bot.className += ' setBotActive'
@@ -1665,8 +1567,8 @@ export const Settings = () => {
             className: 'settingsDiv'
         },
         child: [
-            Tabs({getHeader: getTabHeader}),
-            FrameBody({getFrameBody: frameHolder})
+            Tabs({ getHeader: getTabHeader }),
+            FrameBody({ getFrameBody: frameHolder })
         ]
     }))
 }
