@@ -332,7 +332,7 @@ const LoginPanel = (prop) => {
                                     })
                                 ]
                             }),
-                            // Password Field - Centered (SIMPLIFIED FIX)
+                            // Password Field 
                             $({
                                 tag: 'div',
                                 style: {
@@ -425,7 +425,6 @@ const LoginPanel = (prop) => {
                                                     }
                                                 ]
                                             }),
-                                            // SIMPLIFIED: Password toggle with basic click handler
                                             $({
                                                 tag: 'span',
                                                 att: {
@@ -459,11 +458,10 @@ const LoginPanel = (prop) => {
                                                         style: {
                                                             color: '#adb5bd',
                                                             transition: 'all 0.3s ease',
-                                                            pointerEvents: 'none' // This prevents the icon from blocking clicks
+                                                            pointerEvents: 'none'
                                                         }
                                                     })
                                                 ],
-                                                // SIMPLE: One event handler for click
                                                 event: {
                                                     type: 'click',
                                                     method: function (e) {
@@ -491,7 +489,6 @@ const LoginPanel = (prop) => {
                                     })
                                 ]
                             }),
-                            // Submit Button - Centered
                             $({
                                 tag: 'button',
                                 att: {
@@ -1099,7 +1096,6 @@ const Signup = (prop) => {
         })
 
         form.appendChild(twoColumnContainer)
-
         // Submit Button
         form.appendChild($({
             tag: 'button',
@@ -1175,29 +1171,49 @@ const Signup = (prop) => {
                     let loading = Waiting()
                     document.body.appendChild(loading)
 
-                    const remove = () => { loading.remove() }
+                    const remove = () => {
+                        if (loading && loading.parentNode) {
+                            loading.remove()
+                        }
+                    }
 
                     try {
                         const res = await fetch('/loginAuth', {
                             method: "POST",
                             body: formData
-                        })
+                        });
 
-                        if (res.ok) {
-                            remove()
-                            const dat = await res.json()
+                        const rawText = await res.text();
+                        console.log('Raw server response:', rawText);
 
-                            if (dat.status) {
-                                document.body.appendChild(ConfirmationAlert(
-                                    "Your account has been successfully created!\nPlease check your email to verify your account.",
-                                    () => { window.location.replace('/account/Login') }
-                                ))
-                            } else {
-                                document.body.appendChild(ConfirmationAlert(dat.message, () => { window.location.reload() }))
-                            }
+                        let dat;
+                        try {
+                            dat = JSON.parse(rawText);
+                        } catch (parseError) {
+                            console.error('Failed to parse JSON:', parseError);
+                            remove();
+                            alert("Server returned an invalid response. Please check the console.");
+                            return;
+                        }
+
+                        remove();
+
+                        if (dat.status === true) {
+                            // SUCCESS - Show confirmation
+                            document.body.appendChild(ConfirmationAlert(
+                                "Your account has been successfully created!\nPlease check your email to verify your account.",
+                                () => {
+                                    window.location.replace('/account/Login')
+                                }
+                            ))
                         } else {
-                            remove()
-                            alert("Server error. Please try again later.")
+                            // ERROR - Show the error message
+                            document.body.appendChild(ConfirmationAlert(
+                                dat.message || "Registration failed. Please try again.",
+                                () => {
+                                    window.location.reload()
+                                }
+                            ))
                         }
                     } catch (error) {
                         remove()

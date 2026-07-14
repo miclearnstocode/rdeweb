@@ -21,10 +21,10 @@ if(isset($_SESSION['login'])){
             exit();
         }
         
-        // Check for Research Chair
+        // Check for Research Chair - NOW ROUTE TO /user
         if(isset($_SESSION['isResearchChair']) && $_SESSION['isResearchChair'] === true) {
             ob_clean();
-            header("location:/research-chair/submittedDocs/submittedFiles");
+            header("location:/user/research/submittedDocs/submittedFiles");
             exit();
         }
 
@@ -38,7 +38,7 @@ if(isset($_SESSION['login'])){
 
             case 'CAPSUUSERS':
                 ob_clean();
-                header("location:/user/create/share");
+                header("location:/user/research/submittedDocs/submittedFiles");
                 exit();
                 break;
 
@@ -55,7 +55,6 @@ if(isset($_SESSION['login'])){
                 break;
                 
             case 'EXTENSION':
-                // Extension users (non-chair) go to /extension
                 ob_clean();
                 header("location:/extension");
                 exit();
@@ -74,7 +73,18 @@ if(isset($_SESSION['login'])){
                 break;
                 
             default:
-                // If no matching case and not Extension/Research Chair, logout
+                // Check if userType contains 'Research Chair' - route to /user
+                if(isset($_SESSION['userType']) && strpos($_SESSION['userType'], 'Research Chair') !== false) {
+                    ob_clean();
+                    header("location:/user/research/submittedDocs/submittedFiles");
+                    exit();
+                }
+                // Check if userType contains 'Center Director' - route to /user
+                if(isset($_SESSION['userType']) && strpos($_SESSION['userType'], 'Center Director') !== false) {
+                    ob_clean();
+                    header("location:/user/research/submittedDocs/submittedFiles");
+                    exit();
+                }
                 ob_clean();
                 session_destroy();
                 header('location:/account/Login?');

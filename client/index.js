@@ -40,11 +40,6 @@ const LazyUser = async () => {
     return UserPanel;
 };
 
-const LazyResearchChair = async () => {
-    const ResearchChairPanel = await lazyLoad('/client/component/researchChair.js', 'ResearchChairPanel');
-    return ResearchChairPanel;
-};
-
 const LazyExtensionChair = async () => {
     const ExtensionUserPanel = await lazyLoad('/client/component/extensionUser.js', 'ExtensionUserPanel');
     return ExtensionUserPanel;
@@ -128,7 +123,7 @@ const routes = {
     protected: {
         '/admin': { loader: LazyAdmin },
         '/user': { loader: LazyUser },
-        '/research-chair': { loader: LazyResearchChair },
+        '/research-chair': { loader: LazyUser },
         '/extension-chair': { loader: LazyExtensionChair },
         '/evaluator': { loader: LazyEvaluator },
         '/rdeOffice': { loader: LazyRdeOffice },
@@ -227,7 +222,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (publicRoute) {
         const [path, route] = publicRoute;
 
-        // Render public route
         if (route.loader) {
             await renderWithLoading(route.loader, root);
         } else if (route.component) {
