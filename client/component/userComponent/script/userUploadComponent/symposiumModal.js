@@ -1566,7 +1566,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         }
 
-        const loadInhouseReviews = async () => {
+        const loadInhouseReviews = async (searchTerm = '', centerFilter = '', categoryFilter = '') => {
             loadingDiv.style.display = 'block'
             searchInput.disabled = true
             searchInput.placeholder = 'Loading reviews...'
@@ -1575,10 +1575,25 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 const formDataReq = new FormData()
                 formDataReq.append('getAcceptedInhouseReviews', 'true')
 
+                // Optional filters
+                if (searchTerm && searchTerm.trim() !== '') {
+                    formDataReq.append('search', searchTerm.trim())
+                }
+                if (centerFilter && centerFilter.trim() !== '') {
+                    formDataReq.append('center', centerFilter.trim())
+                }
+                if (categoryFilter && categoryFilter.trim() !== '') {
+                    formDataReq.append('category', categoryFilter.trim())
+                }
+
                 const response = await fetch('/uploadFacultyDocs', {
                     method: 'POST',
                     body: formDataReq
                 })
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`)
+                }
 
                 const result = await response.json()
 
@@ -1588,14 +1603,20 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 if (result.status && result.data && result.data.length > 0) {
                     inhouseReviewsList = result.data
                     loadingDiv.style.display = 'none'
+
+                    // Update the results display if there's a search term
+                    if (searchTerm && searchTerm.trim() !== '') {
+                        filterAndDisplayResults(searchTerm)
+                    }
                 } else {
                     loadingDiv.innerHTML = ''
+                    const message = result.message || 'No accepted in-house reviews found.'
                     loadingDiv.appendChild($({
                         tag: 'div',
                         style: { textAlign: 'center', padding: '20px', color: '#ef4444' },
                         child: [
                             $({ tag: 'i', att: { className: 'fas fa-exclamation-circle' }, style: { fontSize: '24px', display: 'block', marginBottom: '10px' } }),
-                            $({ tag: 'div', text: 'No accepted in-house reviews found. Please complete an in-house review first.' })
+                            $({ tag: 'div', text: message })
                         ]
                     }))
                     searchInput.disabled = true
@@ -1609,7 +1630,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     style: { textAlign: 'center', padding: '20px', color: '#ef4444' },
                     child: [
                         $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '24px', display: 'block', marginBottom: '10px' } }),
-                        $({ tag: 'div', text: 'Error loading in-house reviews. Please refresh and try again.' })
+                        $({ tag: 'div', text: 'Error loading in-house reviews: ' + (error.message || 'Please refresh and try again.') })
                     ]
                 }))
             }

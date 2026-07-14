@@ -423,7 +423,7 @@ export const ResearchMain = () => {
                 }
             }
 
-            const isExtension = !center || center === '' || center === 'Extension (Extension)' || center === 'Extension'
+            const isExtension = center === 'Extension (Extension)' || center === 'Extension'
             const isSymposium = eventType && (eventType.toLowerCase().includes('symposium') || eventType.toLowerCase().includes('rde'))
             const isInHouse = eventType && (eventType.toLowerCase().includes('in-house') || eventType.toLowerCase().includes('in house'))
 

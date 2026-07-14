@@ -3142,20 +3142,18 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
     $response->data = [];
 
     try {
-        // Check if user is logged in
-        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
-            throw new Exception("User not logged in. Please refresh the page.");
-        }
-        
-        $userId = (int)$_SESSION['userId'];
-        
         // Check database connection
         $con = new mysqli($host, $username, $pass, $dbName);
         if ($con->connect_error) {
             throw new Exception("Database connection failed: " . $con->connect_error);
         }
 
-        // ===== UPDATED QUERY - FILTER OUT ALREADY SUBMITTED =====
+        // Get optional filters from POST
+        $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
+        $center = isset($_POST['center']) ? trim($_POST['center']) : '';
+        $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+
+        // Build the base query - removed senderid filter and users join
         $query = "SELECT 
                     rf.id,
                     rf.title,
@@ -3163,10 +3161,16 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
                     rf.coauthor,
                     rf.category,
                     rf.center,
+                    rf.campus,
                     rf.event,
                     rf.event_id,
                     rf.symposium_submitted,
-                    e.status,
+                    rf.senderid,
+                    rf.date_started,
+                    rf.date_completed,
+                    rf.drive_view_url,
+                    e.status as endorsement_status,
+                    e.id as endorsement_id,
                     el.name as event_name,
                     el.date as event_date
                   FROM researchfile rf
@@ -3174,18 +3178,55 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
                   LEFT JOIN event_list el ON rf.event_id = el.id
                   WHERE (rf.event LIKE '%In-House Review%' 
                          OR rf.event LIKE '%in-house review%'
-                         OR rf.event LIKE '%In-House Review%')
-                  AND rf.senderid = ? 
+                         OR rf.event LIKE '%In-House Review%'
+                         OR rf.event LIKE '%In House Review%')
                   AND (e.status = 'accepted' OR rf.status = 'accepted')
-                  AND rf.symposium_submitted = 0 
-                  ORDER BY el.date DESC, rf.id DESC";
+                  AND rf.symposium_submitted = 0 ";
+
+        // Build parameter array and types
+        $params = [];
+        $types = "";
+        $whereConditions = [];
+
+        // Add search filter if provided
+        if (!empty($searchTerm)) {
+            $searchPattern = '%' . $searchTerm . '%';
+            $whereConditions[] = "(rf.title LIKE ? OR rf.author LIKE ? OR rf.presenter LIKE ?)";
+            $params = array_merge($params, [$searchPattern, $searchPattern, $searchPattern]);
+            $types .= "sss";
+        }
+
+        // Add center filter if provided
+        if (!empty($center)) {
+            $whereConditions[] = "rf.center = ?";
+            $params[] = $center;
+            $types .= "s";
+        }
+
+        // Add category filter if provided
+        if (!empty($category)) {
+            $whereConditions[] = "rf.category = ?";
+            $params[] = $category;
+            $types .= "s";
+        }
+
+        // Append WHERE conditions if any
+        if (!empty($whereConditions)) {
+            $query .= " AND " . implode(" AND ", $whereConditions);
+        }
+
+        // Add ORDER BY
+        $query .= " ORDER BY el.date DESC, rf.id DESC";
 
         $stmt = $con->prepare($query);
         if (!$stmt) {
             throw new Exception("Prepare failed: " . $con->error);
         }
-        
-        $stmt->bind_param("i", $userId);
+
+        // Bind parameters if any
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
         
         if (!$stmt->execute()) {
             throw new Exception("Execute failed: " . $stmt->error);
@@ -3193,6 +3234,7 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
         
         $result = $stmt->get_result();
 
+        $totalCount = 0;
         while ($row = $result->fetch_assoc()) {
             $data = new stdClass();
             $data->id = (int)$row['id'];
@@ -3200,10 +3242,16 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
             $data->author = $row['author'] ?? '';
             $data->category = $row['category'] ?? '';
             $data->center = $row['center'] ?? '';
+            $data->campus = $row['campus'] ?? '';
             $data->event_name = $row['event_name'] ?? $row['event'] ?? '';
             $data->event_date = $row['event_date'] ?? '';
-            $data->status = $row['status'] ?? '';
+            $data->endorsement_status = $row['endorsement_status'] ?? '';
             $data->symposium_submitted = (int)($row['symposium_submitted'] ?? 0);
+            $data->senderid = (int)($row['senderid'] ?? 0);
+            $data->date_started = $row['date_started'] ?? null;
+            $data->date_completed = $row['date_completed'] ?? null;
+            $data->drive_view_url = $row['drive_view_url'] ?? null;
+            $data->endorsement_id = (int)($row['endorsement_id'] ?? 0);
 
             // Parse coauthors
             if (!empty($row['coauthor'])) {
@@ -3214,10 +3262,19 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
             }
 
             $response->data[] = $data;
+            $totalCount++;
         }
 
         $response->status = true;
-        $response->message = count($response->data) . ' accepted in-house review(s) found';
+        $response->message = $totalCount . ' accepted in-house review(s) found';
+        $response->total = $totalCount;
+
+        // Include filter info in response
+        $response->filters = [
+            'search' => $searchTerm,
+            'center' => $center,
+            'category' => $category
+        ];
 
         $stmt->close();
         $con->close();
