@@ -1,11 +1,11 @@
-import {$, Request, MONTHS, Waiting} from '../../../lib/lib.js'
-import {Error} from "../../../error.js";
-import {Main} from "../../otherComponent/ReviewTemplate.js";
+import { $, Request, MONTHS, Waiting } from '../../../lib/lib.js'
+import { Error } from "../../../error.js";
+import { Main } from "../../otherComponent/ReviewTemplate.js";
 
 export const Recommendation = () => {
     const formatDate = (dateString) => {
         if (!dateString) return 'Unknown date';
-        
+
         try {
             const date = new Date(dateString);
             const now = new Date();
@@ -21,10 +21,10 @@ export const Recommendation = () => {
             } else if (diffDays < 7) {
                 return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
             } else {
-                return date.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric' 
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
                 });
             }
         } catch (e) {
@@ -39,13 +39,13 @@ export const Recommendation = () => {
             return ($({
                 tag: 'div',
                 style: {
-                    padding: '0.5vw 1.2vw',
+                    padding: '0.3vw 1vw',
                     borderRadius: '2vw',
-                    backgroundColor: 'rgba(0,188,212,0.1)',
-                    border: '1px solid rgba(0,188,212,0.2)',
+                    backgroundColor: '#f0f7ff',
+                    border: '1px solid #dbeafe',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5vw',
+                    gap: '0.4vw',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease'
                 },
@@ -56,36 +56,37 @@ export const Recommendation = () => {
                             className: 'fa-solid fa-reply'
                         },
                         style: {
-                            color: '#00bcd4',
-                            fontSize: '0.9vw'
+                            color: '#3b82f6',
+                            fontSize: '0.7vw'
                         }
                     }),
                     $({
                         tag: 'span',
                         text: 'Reply',
                         style: {
-                            color: '#00bcd4',
-                            fontSize: '0.85vw',
-                            fontFamily: 'Segoe UI, sans-serif'
+                            color: '#3b82f6',
+                            fontSize: '0.7vw',
+                            fontFamily: 'Segoe UI, sans-serif',
+                            fontWeight: '500'
                         }
                     })
                 ],
                 event: {
                     mouseover: (e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.2)'
+                        e.currentTarget.style.backgroundColor = '#dbeafe'
+                        e.currentTarget.style.borderColor = '#93c5fd'
                     },
                     mouseout: (e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.1)'
+                        e.currentTarget.style.backgroundColor = '#f0f7ff'
+                        e.currentTarget.style.borderColor = '#dbeafe'
                     },
                     click: () => {
-                        // Handle reply functionality
                         console.log('Reply to:', id)
                     }
                 }
             }))
         }
 
-        // Create message content array without null values
         const messageContent = [
             $({
                 tag: 'span',
@@ -99,7 +100,6 @@ export const Recommendation = () => {
             })
         ];
 
-        // Only add "Read more" span if message is long enough
         if (message && message.length > 150) {
             messageContent.push($({
                 tag: 'span',
@@ -108,9 +108,10 @@ export const Recommendation = () => {
                     whiteSpace: 'nowrap',
                     cursor: 'pointer',
                     userSelect: 'none',
-                    color: '#00bcd4',
-                    fontWeight: '500',
-                    marginLeft: '0.3vw'
+                    color: '#3b82f6',
+                    fontWeight: '600',
+                    marginLeft: '0.3vw',
+                    fontSize: '0.75vw'
                 },
                 event: {
                     type: 'click',
@@ -128,15 +129,14 @@ export const Recommendation = () => {
             }));
         }
 
-        // Create the element
         const element = $({
             tag: 'div',
             style: {
                 width: '100%',
-                marginBottom: '2vh',
-                animation: 'fadeIn 0.5s ease',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                paddingBottom: '2vh'
+                marginBottom: '1.5vh',
+                animation: 'fadeIn 0.4s ease',
+                borderBottom: '1px solid #f1f5f9',
+                paddingBottom: '1.5vh'
             },
             child: [
                 $({
@@ -144,23 +144,23 @@ export const Recommendation = () => {
                     style: {
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '1vw',
-                        marginBottom: '0.8vh',
+                        gap: '0.8vw',
+                        marginBottom: '0.5vh',
                         paddingLeft: '0.5vw'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
-                                width: '2.5vw',
-                                height: '2.5vw',
+                                width: '2vw',
+                                height: '2vw',
                                 borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 color: '#fff',
-                                fontSize: '1.2vw',
+                                fontSize: '0.9vw',
                                 fontWeight: 'bold'
                             },
                             text: user && user.charAt ? user.charAt(0).toUpperCase() : '?'
@@ -170,7 +170,7 @@ export const Recommendation = () => {
                             style: {
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '0.2vh'
+                                gap: '0.1vh'
                             },
                             child: [
                                 $({
@@ -178,9 +178,9 @@ export const Recommendation = () => {
                                     text: user || 'Anonymous',
                                     style: {
                                         fontFamily: 'Segoe UI, sans-serif',
-                                        fontSize: '1.1vw',
-                                        color: '#e0e0e0',
-                                        fontWeight: '500'
+                                        fontSize: '0.85vw',
+                                        color: '#1e293b',
+                                        fontWeight: '600'
                                     }
                                 }),
                                 $({
@@ -188,8 +188,8 @@ export const Recommendation = () => {
                                     text: formatDate(date),
                                     style: {
                                         fontFamily: 'Segoe UI, sans-serif',
-                                        fontSize: '0.8vw',
-                                        color: '#888'
+                                        fontSize: '0.65vw',
+                                        color: '#94a3b8'
                                     }
                                 })
                             ]
@@ -199,27 +199,29 @@ export const Recommendation = () => {
                 $({
                     tag: 'div',
                     style: {
-                        borderRadius: '0.8vw',
-                        background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                        padding: '1.5rem',
-                        marginLeft: '3.5vw',
+                        borderRadius: '0.6vw',
+                        background: '#f8fafc',
+                        padding: '1rem',
+                        marginLeft: '3vw',
                         position: 'relative',
-                        border: '1px solid #333',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
                                 position: 'absolute',
-                                top: '-0.5vw',
-                                left: '-0.5vw',
-                                width: '1vw',
-                                height: '1vw',
-                                background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
-                                borderRadius: '0.2vw',
+                                top: '-0.4vw',
+                                left: '-0.4vw',
+                                width: '0.6vw',
+                                height: '0.6vw',
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                borderRadius: '0.15vw',
                                 transform: 'rotate(45deg)',
-                                border: '1px solid #333'
+                                border: '1px solid #e2e8f0',
+                                borderRight: 'none',
+                                borderBottom: 'none'
                             }
                         }),
                         $({
@@ -228,8 +230,8 @@ export const Recommendation = () => {
                                 width: '100%',
                                 height: 'fit-content',
                                 fontFamily: 'Segoe UI, sans-serif',
-                                color: '#bbb',
-                                fontSize: '1vw',
+                                color: '#334155',
+                                fontSize: '0.8vw',
                                 userSelect: 'text',
                                 lineHeight: '1.6'
                             },
@@ -242,9 +244,9 @@ export const Recommendation = () => {
                     style: {
                         display: 'flex',
                         justifyContent: 'flex-end',
-                        marginTop: '1vh',
-                        marginRight: '1vw',
-                        gap: '0.8vw'
+                        marginTop: '0.5vh',
+                        marginRight: '0.5vw',
+                        gap: '0.6vw'
                     },
                     child: [
                         Reply()
@@ -261,12 +263,12 @@ export const Recommendation = () => {
             tag: 'div',
             style: {
                 width: '100%',
-                padding: '2vh 0',
+                padding: '1.5vh 0',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                marginBottom: '2vh'
+                borderBottom: '1px solid #e2e8f0',
+                marginBottom: '1.5vh'
             },
             child: [
                 $({
@@ -274,7 +276,7 @@ export const Recommendation = () => {
                     style: {
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '1vw'
+                        gap: '0.8vw'
                     },
                     child: [
                         $({
@@ -283,18 +285,18 @@ export const Recommendation = () => {
                                 className: 'fa-solid fa-comments'
                             },
                             style: {
-                                fontSize: '1.8vw',
-                                color: '#00bcd4'
+                                fontSize: '1.2vw',
+                                color: '#3b82f6'
                             }
                         }),
                         $({
                             tag: 'span',
                             text: 'Recommendations',
                             style: {
-                                fontSize: '1.5vw',
+                                fontSize: '1.1vw',
                                 fontFamily: 'arial black, san-serif',
-                                color: 'rgba(200,200,200,0.5)',
-                                letterSpacing: '0.1vw',
+                                color: '#1e293b',
+                                letterSpacing: '0.08vw',
                                 textTransform: 'uppercase'
                             }
                         })
@@ -303,16 +305,25 @@ export const Recommendation = () => {
                 $({
                     tag: 'div',
                     style: {
-                        padding: '0.5vh 1vw',
+                        padding: '0.3vh 1vw',
                         borderRadius: '2vw',
-                        background: 'rgba(0,188,212,0.1)',
-                        border: '1px solid rgba(0,188,212,0.2)',
-                        color: '#00bcd4',
-                        fontSize: '0.9vw',
-                        fontFamily: 'Segoe UI, sans-serif'
+                        background: '#f0f7ff',
+                        border: '1px solid #dbeafe',
+                        color: '#3b82f6',
+                        fontSize: '0.7vw',
+                        fontFamily: 'Segoe UI, sans-serif',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
                     },
                     text: 'Latest first',
                     event: {
+                        mouseover: (e) => {
+                            e.currentTarget.style.background = '#dbeafe'
+                        },
+                        mouseout: (e) => {
+                            e.currentTarget.style.background = '#f0f7ff'
+                        },
                         type: 'click',
                         method: () => {
                             const req = new Request('/dbderect')
@@ -336,23 +347,35 @@ export const Recommendation = () => {
         return ($({
             tag: 'div',
             style: {
-                background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                borderRadius: '0.8vw',
-                padding: '1.5rem',
-                border: '1px solid #333',
+                background: '#ffffff',
+                borderRadius: '0.6vw',
+                padding: '0.8rem 1.2rem',
+                border: '1px solid #e2e8f0',
                 flex: '1',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1vw'
+                gap: '0.8vw',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                transition: 'all 0.3s ease'
+            },
+            event: {
+                mouseover: (e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                },
+                mouseout: (e) => {
+                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                }
             },
             child: [
                 $({
                     tag: 'div',
                     style: {
-                        width: '3vw',
-                        height: '3vw',
-                        borderRadius: '0.8vw',
-                        background: `rgba(${color},0.1)`,
+                        width: '2.2vw',
+                        height: '2.2vw',
+                        borderRadius: '0.6vw',
+                        background: `rgba(${color},0.08)`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -364,7 +387,7 @@ export const Recommendation = () => {
                                 className: `fa-solid fa-${icon}`
                             },
                             style: {
-                                fontSize: '1.5vw',
+                                fontSize: '1vw',
                                 color: `rgb(${color})`
                             }
                         })
@@ -375,16 +398,19 @@ export const Recommendation = () => {
                     style: {
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.3vh'
+                        gap: '0.1vh'
                     },
                     child: [
                         $({
                             tag: 'span',
                             text: label,
                             style: {
-                                fontSize: '0.9vw',
-                                color: '#888',
-                                fontFamily: 'Segoe UI, sans-serif'
+                                fontSize: '0.6vw',
+                                color: '#94a3b8',
+                                fontFamily: 'Segoe UI, sans-serif',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.06em'
                             }
                         }),
                         $({
@@ -394,8 +420,8 @@ export const Recommendation = () => {
                             },
                             text: value,
                             style: {
-                                fontSize: '1.8vw',
-                                color: '#e0e0e0',
+                                fontSize: '1.3vw',
+                                color: '#1e293b',
                                 fontFamily: 'arial black, san-serif',
                                 fontWeight: 'bold'
                             }
@@ -411,12 +437,14 @@ export const Recommendation = () => {
             tag: 'div',
             style: {
                 display: 'flex',
-                gap: '1vw',
-                marginBottom: '2vh',
+                gap: '0.8vw',
+                marginBottom: '1.5vh',
                 padding: '0 0.5vw'
             },
             child: [
-                StatsCard({ icon: 'message', label: 'Total Recommendations', value: '0', color: '0,188,212' })
+                StatsCard({ icon: 'message', label: 'Total Recommendations', value: '0', color: '59,130,246' }),
+                StatsCard({ icon: 'users', label: 'Unique Users', value: '0', color: '16,185,129' }),
+                StatsCard({ icon: 'calendar-week', label: 'This Week', value: '0', color: '245,158,11' })
             ]
         }))
     }
@@ -425,18 +453,30 @@ export const Recommendation = () => {
         return ($({
             tag: 'div',
             style: {
-                height: '5vh',
-                border: '1px solid rgba(255,255,255,0.1)',
-                width: '20vw',
+                height: '3.5vh',
+                border: '1px solid #e2e8f0',
+                width: '18vw',
                 borderRadius: '2vw',
                 display: 'flex',
-                padding: '0 1vw',
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                color: '#bbb',
+                padding: '0 0.8vw',
+                backgroundColor: '#f8fafc',
+                color: '#334155',
                 alignItems: 'center',
                 transition: 'all 0.3s ease',
                 marginLeft: 'auto',
                 marginRight: '0.5vw'
+            },
+            event: {
+                focusin: (e) => {
+                    e.currentTarget.style.borderColor = '#3b82f6'
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                    e.currentTarget.style.backgroundColor = '#ffffff'
+                },
+                focusout: (e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0'
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.backgroundColor = '#f8fafc'
+                }
             },
             child: [
                 $({
@@ -445,9 +485,9 @@ export const Recommendation = () => {
                         className: 'fa-solid fa-search'
                     },
                     style: {
-                        fontSize: '1vw',
-                        color: '#666',
-                        marginRight: '0.5vw'
+                        fontSize: '0.7vw',
+                        color: '#94a3b8',
+                        marginRight: '0.4vw'
                     }
                 }),
                 $({
@@ -462,8 +502,8 @@ export const Recommendation = () => {
                         outline: 'none',
                         height: '100%',
                         width: '100%',
-                        color: '#e0e0e0',
-                        fontSize: '0.95vw',
+                        color: '#1e293b',
+                        fontSize: '0.7vw',
                         fontFamily: 'Segoe UI, sans-serif'
                     },
                     event: {
@@ -492,11 +532,11 @@ export const Recommendation = () => {
             tag: 'div',
             style: {
                 width: '100%',
-                padding: '4rem 2rem',
+                padding: '3rem 2rem',
                 textAlign: 'center',
-                background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                borderRadius: '1vw',
-                border: '1px solid #333'
+                background: '#f8fafc',
+                borderRadius: '0.8vw',
+                border: '2px dashed #e2e8f0'
             },
             child: [
                 $({
@@ -505,27 +545,28 @@ export const Recommendation = () => {
                         className: 'fa-solid fa-comment-slash'
                     },
                     style: {
-                        fontSize: '3vw',
-                        color: '#333',
-                        marginBottom: '2vh'
+                        fontSize: '2.5vw',
+                        color: '#cbd5e1',
+                        marginBottom: '1.5vh'
                     }
                 }),
                 $({
                     tag: 'div',
                     text: 'No recommendations yet',
                     style: {
-                        fontSize: '1.2vw',
-                        color: '#888',
+                        fontSize: '0.9vw',
+                        color: '#475569',
                         fontFamily: 'Segoe UI, sans-serif',
-                        marginBottom: '1vh'
+                        fontWeight: '600',
+                        marginBottom: '0.5vh'
                     }
                 }),
                 $({
                     tag: 'div',
                     text: 'When users submit recommendations, they will appear here',
                     style: {
-                        fontSize: '0.9vw',
-                        color: '#666',
+                        fontSize: '0.75vw',
+                        color: '#94a3b8',
                         fontFamily: 'Segoe UI, sans-serif'
                     }
                 })
@@ -533,18 +574,17 @@ export const Recommendation = () => {
         }))
     }
 
-    // Simple error component
     const SimpleError = ({ message }) => {
         return ($({
             tag: 'div',
             style: {
                 width: '100%',
-                padding: '2rem',
+                padding: '1.5rem',
                 textAlign: 'center',
-                background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                borderRadius: '1vw',
-                border: '1px solid #f44336',
-                color: '#f44336'
+                background: '#fef2f2',
+                borderRadius: '0.8vw',
+                border: '1px solid #fca5a5',
+                color: '#dc2626'
             },
             child: [
                 $({
@@ -553,17 +593,18 @@ export const Recommendation = () => {
                         className: 'fa-solid fa-exclamation-triangle'
                     },
                     style: {
-                        fontSize: '2vw',
-                        marginBottom: '1vh',
-                        color: '#f44336'
+                        fontSize: '1.5vw',
+                        marginBottom: '0.5vh',
+                        color: '#dc2626'
                     }
                 }),
                 $({
                     tag: 'div',
                     text: message || 'An error occurred',
                     style: {
-                        fontSize: '1vw',
-                        fontFamily: 'Segoe UI, sans-serif'
+                        fontSize: '0.8vw',
+                        fontFamily: 'Segoe UI, sans-serif',
+                        fontWeight: '500'
                     }
                 })
             ]
@@ -575,8 +616,8 @@ export const Recommendation = () => {
         style: {
             width: '100%',
             height: '100%',
-            backgroundColor: '#1a1a1a',
-            overflowY: 'auto'
+            backgroundColor: '#ffffff',
+            overflow: 'hidden'
         },
         child: [
             $({
@@ -584,7 +625,7 @@ export const Recommendation = () => {
                 style: {
                     width: '90%',
                     margin: '0 auto',
-                    padding: '2vh 0',
+                    padding: '1.5vh 0',
                     height: '100%'
                 },
                 child: [
@@ -595,17 +636,17 @@ export const Recommendation = () => {
                         style: {
                             display: 'flex',
                             alignItems: 'center',
-                            marginBottom: '2vh'
+                            marginBottom: '1.5vh'
                         },
                         child: [
                             $({
                                 tag: 'div',
                                 text: 'All Recommendations',
                                 style: {
-                                    fontSize: '1.1vw',
-                                    color: '#e0e0e0',
+                                    fontSize: '0.85vw',
+                                    color: '#1e293b',
                                     fontFamily: 'Segoe UI, sans-serif',
-                                    fontWeight: '500'
+                                    fontWeight: '600'
                                 }
                             }),
                             SearchBar()
@@ -615,7 +656,7 @@ export const Recommendation = () => {
                         tag: 'div',
                         style: {
                             width: '100%',
-                            height: 'calc(100% - 25vh)',
+                            height: 'calc(100% - 20vh)',
                             overflowY: 'auto',
                             padding: '0 0.5vw'
                         },
@@ -629,11 +670,10 @@ export const Recommendation = () => {
                                     width: '100%'
                                 },
                                 elementHandler: (el) => {
-                                    // Clear any existing content
                                     while (el.firstChild) {
                                         el.removeChild(el.firstChild);
                                     }
-                                    
+
                                     const req = new Request('/recommendation')
                                     req.Post([
                                         { name: 'recommendationRequest', value: '0' }
@@ -641,9 +681,8 @@ export const Recommendation = () => {
                                     req.Json()
                                     req.Send().then(data => {
                                         if (data && data.length > 0) {
-                                            // Sort by date (newest first)
                                             data.sort((a, b) => new Date(b.date) - new Date(a.date))
-                                            
+
                                             data.forEach(val => {
                                                 try {
                                                     const responseElement = Response({
@@ -657,15 +696,13 @@ export const Recommendation = () => {
                                                     console.error('Error creating response element:', err)
                                                 }
                                             })
-                                            
-                                            // Update stats after all elements are added
+
                                             setTimeout(() => {
                                                 try {
                                                     const statsValues = document.querySelectorAll('.stats-value')
                                                     if (statsValues.length >= 3) {
                                                         statsValues[0].textContent = data.length
-                                                        
-                                                        // Count this week
+
                                                         const oneWeekAgo = new Date()
                                                         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
                                                         const thisWeek = data.filter(item => {
@@ -675,10 +712,9 @@ export const Recommendation = () => {
                                                                 return false
                                                             }
                                                         }).length
-                                                        
-                                                        // Count unique users
+
                                                         const uniqueUsers = new Set(data.map(item => item.username).filter(Boolean)).size
-                                                        
+
                                                         statsValues[1].textContent = uniqueUsers
                                                         statsValues[2].textContent = thisWeek
                                                     }
