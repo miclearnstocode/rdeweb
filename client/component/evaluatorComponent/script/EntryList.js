@@ -217,8 +217,6 @@ export const EntryList = ({
                             lineHeight: '1.3',
                         }
                     }),
-
-                    // Author information with Presenter, Author, Co-authors
                     $({
                         tag: 'div',
                         style: {
@@ -416,15 +414,16 @@ export const EntryList = ({
                             }) : null
                         ]
                     }),
-                    userType === 'category' && categoryName ? $({
+                    categoryName ? $({
                         tag: 'span',
                         style: {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
-                            background: '#fef3c7',
+                            background: '#f0f9ff',
                             padding: '2px 10px 2px 6px',
                             borderRadius: '12px',
+                            border: '1px solid #bae6fd',
                         },
                         child: [
                             $({
@@ -433,15 +432,16 @@ export const EntryList = ({
                                     className: 'fa-solid fa-tag'
                                 },
                                 style: {
-                                    fontSize: '12px',
-                                    color: '#d97706'
+                                    fontSize: '11px',
+                                    color: '#0284c7'
                                 }
                             }),
                             $({
                                 tag: 'span',
                                 text: categoryName,
                                 style: {
-                                    color: '#92400e',
+                                    color: '#0369a1',
+                                    fontSize: '12px',
                                     fontWeight: '500',
                                 }
                             })

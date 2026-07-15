@@ -497,6 +497,7 @@ if(isset($_POST['collectEntries'])){
     $response = new stdClass();
     $response->count = 0;
     $response->userType = '';
+    $response->categoryCounts = [];
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $userId = $_SESSION['userId'] ?? '';
@@ -505,6 +506,7 @@ if(isset($_POST['collectEntries'])){
         $userType = 'none';
         $centerFilter = '';
         $categoryIds = [];
+        $categoryNames = [];
         
         if (!empty($centerId)) {
             $userType = 'center';
@@ -528,7 +530,11 @@ if(isset($_POST['collectEntries'])){
             }
             
         } else if (!empty($userId)) {
-            $categoryQuery = "SELECT category_id FROM evaluator_categories WHERE evaluator_id = ?";
+            // Get category IDs and names
+            $categoryQuery = "SELECT ec.category_id, c.name 
+                             FROM evaluator_categories ec 
+                             JOIN category c ON ec.category_id = c.id 
+                             WHERE ec.evaluator_id = ?";
             $catStmt = $con->prepare($categoryQuery);
             if ($catStmt) {
                 $catStmt->bind_param("i", $userId);
@@ -537,6 +543,7 @@ if(isset($_POST['collectEntries'])){
                 
                 while ($row = $catResult->fetch_assoc()) {
                     $categoryIds[] = $row['category_id'];
+                    $categoryNames[$row['category_id']] = $row['name'];
                 }
                 $catResult->free();
                 $catStmt->close();
@@ -546,6 +553,8 @@ if(isset($_POST['collectEntries'])){
                 }
             }
         }
+        
+        $response->userType = $userType;
         
         if ($userType === 'center' && !empty($centerFilter) && !empty($eventId)) {
             $query = "SELECT COUNT(*) as count FROM researchfile 
@@ -561,31 +570,53 @@ if(isset($_POST['collectEntries'])){
                 $statement->execute();
                 $result = $statement->get_result();
                 $row = $result->fetch_assoc();
-                $count = $row['count'] ?? 0;
+                $count = (int)($row['count'] ?? 0);
+                $response->count = $count;
                 
                 $result->free();
                 $statement->close();
             }
             
         } else if ($userType === 'category' && !empty($categoryIds) && !empty($eventId)) {
+            // Get counts per category
             $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
-            $query = "SELECT COUNT(*) as count FROM researchfile 
-                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                LEFT JOIN event_list ON researchfile.event_id = event_list.id
-                LEFT JOIN category ON researchfile.category = category.name
-                WHERE endorsement.status = 'accepted' 
-                AND event_list.id = ?
-                AND category.id IN ($placeholders)";
+            
+            // Query to get counts per category
+            $query = "SELECT 
+                        category.id as category_id,
+                        category.name as category_name,
+                        COUNT(rf.id) as count
+                      FROM category
+                      LEFT JOIN researchfile rf ON rf.category = category.name
+                      LEFT JOIN endorsement ON rf.endorsementid = endorsement.id
+                      LEFT JOIN event_list ON rf.event_id = event_list.id
+                      WHERE category.id IN ($placeholders)
+                      AND (endorsement.status = 'accepted' OR endorsement.status IS NULL)
+                      AND (event_list.id = ? OR event_list.id IS NULL)
+                      GROUP BY category.id, category.name";
 
             $statement = $con->prepare($query);
             if ($statement) {
-                $types = "s" . str_repeat("i", count($categoryIds));
-                $params = array_merge([$eventId], $categoryIds);
+                $types = str_repeat("i", count($categoryIds)) . "s";
+                $params = array_merge($categoryIds, [$eventId]);
                 $statement->bind_param($types, ...$params);
                 $statement->execute();
                 $result = $statement->get_result();
-                $row = $result->fetch_assoc();
-                $count = $row['count'] ?? 0;
+                
+                $totalCount = 0;
+                while ($row = $result->fetch_assoc()) {
+                    $catId = $row['category_id'];
+                    $catCount = (int)($row['count'] ?? 0);
+                    $response->categoryCounts[$catId] = [
+                        'id' => $catId,
+                        'name' => $row['category_name'],
+                        'count' => $catCount
+                    ];
+                    $totalCount += $catCount;
+                }
+                
+                // Set the total count
+                $response->count = $totalCount;
                 
                 $result->free();
                 $statement->close();
@@ -609,7 +640,8 @@ if(isset($_POST['collectEntries'])){
                     $statement->execute();
                     $result = $statement->get_result();
                     $row = $result->fetch_assoc();
-                    $count = $row['count'] ?? 0;
+                    $count = (int)($row['count'] ?? 0);
+                    $response->count = $count;
                     
                     $result->free();
                     $statement->close();
@@ -620,8 +652,9 @@ if(isset($_POST['collectEntries'])){
         $con->close();
     }
 
+    // Return as JSON
     ob_clean();
-    echo $count;
+    echo json_encode($response);
     exit();
 }
 
