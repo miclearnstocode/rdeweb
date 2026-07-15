@@ -1,248 +1,197 @@
-.accountList{
-    height: 100%;
-    width: 100%;
-}
-.accountTabsTable{
-    width: 100%;
-    table-layout: auto;
-    border-collapse: collapse;
-    height: 5vh;
-    margin: 0 auto auto 0;
-}
-.tabsAccount{
-    border-bottom: solid thin rgba(0,0,0,0.5);
-    padding-left: 1vw;
-    padding-right: 1vw;
-    width: 10vw;
-    white-space: nowrap;
-    cursor: pointer;
-    font-family: Arial,sans-serif;
-    font-size: 1vw;
-    font-weight: bolder;
-    border-radius: .5vw .5vw 0 0;
-    color: #999;
-    background-image: linear-gradient(transparent,rgba(0,0,0,0.9));
-    text-align: center;
-}
-.tabsAccount:hover{
-    background-color: rgba(100,100,100,0.4);
-    color: ghostwhite;
-    border-radius: .5vw .5vw 0 0;
-    transition: .3s;
-}
-.tabsAccountActive{
-    background-image: linear-gradient(black,transparent);
-    border-radius: .5vw .5vw 0 0;
-    color: deepskyblue;
-    pointer-events: none;
-    border:none;
-}
-
-
-.extend{
-    border-bottom: solid thin rgba(0,0,0,0.5);
-    width: auto;
-    background-image: linear-gradient(transparent,rgba(0,0,0,0.9));
-}
-.expandTD{
-    width: 100%;
-}
-.capAccPage{
-    width: 100%;
-    height: 98%;
-    padding-top: .5%;
-}
-
-.pageFrameAdmin{
-    width: 100%;
-    height: 95%;
-}
-.tapBar{
-    width: 95%;
-    margin: auto;
-    border-collapse: separate;
-    table-layout: auto;
-    height: 4vh;
-}
-
-.searchTd
-{
-    color: deepskyblue;
-    font-size: 1.3vw;
-    background-color: rgba(0,0,0,0.3);
-    height: 4vh;
-    white-space: nowrap;
-    border-radius: .5vw;
-}
-
-.inpuTDsearch{
-    background-color: transparent;
-    border: none;
-    outline: none;
-    padding-left: .5vw;
-    padding-right: .5vw;
-    width: 10vw;
-    margin-left: 1vw;
-    font-size: 1vw;
-    color: #bbb;
-}
-.inpuTDsearch:focus{
-    width: 20vw;
-    animation: expandSearch .3s;
-}
-
-@keyframes expandSearch {
-    from{
-        width: 10vw;
-    }
-    to{
-        width: 20vw;
-    }
-}
-.selectSort{
-    border: none;
-    outline: none;
-    background-color: transparent;
-    font-size: 1vw;
-    color: #bbb;
-}
-
-.selectSort option{
-    color: black;
-    background-color: grey;
-}
-
-.listDiv{
-    width: 98%;
-    height: 85%;
-    background-color: rgba(0,0,0,0.1);
-    margin:auto;
-    overflow-y: auto;
-
-}
-
-.listHead{
-    width: 95%;
-    height: 5vh;
-    background-color: rgba(100,100,100,0.4);
-    margin: auto;
-}
-.listHead td{
-    text-align: left;
-}
-
-.listTable{
-    width: 98%;
-    height: fit-content;
-    margin: 1vh auto;
-    cursor: pointer;
-}
-.listTable:hover{
-    background-color: rgba(0,0,0,0.3);
-    transition: .3s;
-}
-.listTable td{
-    font-size: 1vw;
-    font-family: Arial,sans-serif;
-    font-weight: bolder;
-    color: #ccc;
-}
-.listUserName{
-    width: 20%;
-}
-.listFullName{
-    width: 40%;
-}
-.listEmail{
-    width: 30%;
-}
-
-.space{
-    margin: auto;
-    padding-left: 2vw;
-}
-.hed{
-    font-size: 1.1vw;
-    font-family: Arial,sans-serif;
-    font-weight: bolder;
-    color: #999;
-}
-.deleteList{
-     width: 10%;
-     color: deepskyblue;
-     display: flex;
-     text-align: center;
- }
-.delI{
-    font-size: 1.5vw;
-}
-
-.delI:hover{
-    color: deepskyblue;
-}
-
-.listEvalTab{
-    width: 100%;
-    margin: 1vh auto;
-    background-color: rgba(0,0,0,0.3);
-    cursor: pointer;
-}
-
-.listEvalTab:hover{
-    background-color: rgba(0,0,0,0.6);
-    transition: .3s;
-}
-.delBotEval{
-    width: 10%;
-    text-align: center;
-}
-.delBotEval:hover{
-    background-color: black;
-}
-.deleteEval{
-    width: 100%;
-    text-align: center;
-    color: deepskyblue;
-    font-size: 1vw;
-    height: 100%;
-}
-
-.deleteEval:hover{
-    color: black;
-    text-shadow: 0 0 .3vw white;
-}
-.listRde{
-    background-color: rgba(0,0,0,0.2);
-    color: #bbb;
-}
-.listRde:hover{
-    background-color: rgba(0,0,0,0.5);
-}
-
-.backRdeAc{
-    border-bottom: solid thin #999;
-    color: #999;
-    cursor: pointer;
-}
-
-.backRdeAc:hover{
-    color: deepskyblue;
-    border-bottom: solid thin deepskyblue;
-    transition: .3s;
-}
-.openDet{
-    color: #999;
-    cursor: pointer;
-}
-.openDet:hover{
-    color: deepskyblue;
-    transition: .3s;
-}
-.acListCap{
-    color: #bbb;
-}
-.acListCap:hover{
-    background-color: rgba(100,100,100,0.2);
-    color: deepskyblue;
-    transition: .3s;
+/* Modern Light Theme */
+.accountList {
+    height: 100%;
+    width: 100%;
+    background: #f8fafc;
+}
+
+/* Tabs - Modern */
+.accountTabsTable {
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+    height: 48px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tabsAccount {
+    padding: 0 24px;
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    text-align: center;
+    height: 48px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    position: relative;
+    user-select: none;
+}
+
+/* Hover Effect */
+.tabsAccount:hover {
+    color: #1e293b;
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+/* Click Effect */
+.tabsAccount:active {
+    transform: scale(0.95);
+    background: #f1f5f9;
+    color: #3b82f6;
+}
+
+/* Active Tab - Combined with hover for better UX */
+.tabsAccountActive {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+    pointer-events: none;
+    background: #f8fafc;
+}
+
+/* Active tab with hover override (since pointer-events: none prevents hover) */
+.tabsAccountActive:hover {
+    color: #3b82f6;
+    background: #f8fafc;
+    transform: none;
+}
+
+/* Subtle ripple/click feedback */
+.tabsAccount::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: #3b82f6;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+    opacity: 0;
+}
+
+.tabsAccount:hover::after {
+    width: 60%;
+    opacity: 0.5;
+}
+
+.tabsAccountActive::after {
+    width: 100%;
+    opacity: 1;
+}
+
+/* Page Frame */
+.pageFrameAdmin {
+    width: 100%;
+    height: calc(100% - 48px);
+    background: #f8fafc;
+}
+
+.capAccPage {
+    width: 100%;
+    height: 100%;
+    background: #f8fafc;
+}
+
+/* List Rows */
+.list-row {
+    transition: all 0.2s ease;
+}
+
+.list-row:hover {
+    background: #f8fafc !important;
+}
+
+.listRde {
+    transition: all 0.2s ease;
+}
+
+.listRde:hover {
+    background: #f8fafc !important;
+}
+
+/* Back Button */
+.backRdeAc {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #3b82f6;
+}
+
+.backRdeAc:hover {
+    background: rgba(59, 130, 246, 0.12);
+    transform: translateX(4px);
+}
+
+.backRdeAc:active {
+    transform: scale(0.95);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Animation for tab click */
+@keyframes tabClick {
+    0% {
+        transform: scale(0.95);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.tabsAccount:active:not(.tabsAccountActive) {
+    animation: tabClick 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tabsAccount {
+        font-size: 12px;
+        padding: 0 12px;
+    }
+
+    .pageFrameAdmin {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .tabsAccount {
+        font-size: 10px;
+        padding: 0 8px;
+    }
 }

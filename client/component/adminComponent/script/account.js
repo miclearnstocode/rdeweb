@@ -1,26 +1,29 @@
-import {$, ConfirmationAlert, Request, Waiting} from '../../../lib/lib.js'
-import {Error} from "../../../error.js";
+import { $, ConfirmationAlert, Request, Waiting } from '../../../lib/lib.js'
+import { Error } from "../../../error.js";
+
+// Tab cache - prevent recreation
+let tabCache = new Map();
+let activePageInstance = null;
 
 const capUser = () => {
     const mainPan = () => {
         let bo // For search functionality
-        
+
         const Label = $({
             tag: 'div',
             style: {
                 width: '100%',
                 textAlign: 'center',
-                fontFamily: 'arial black, san-serif',
-                color: 'rgba(200,200,200,0.5)',
-                marginBottom: '2vh',
-                fontSize: '1.5vw',
-                letterSpacing: '0.1vw',
-                textTransform: 'uppercase',
-                textShadow: '0 0 10px rgba(0,191,255,0.3)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                color: '#1e293b',
+                marginBottom: '16px',
+                fontSize: '18px',
+                letterSpacing: '-0.3px',
+                fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'left',
-                gap: '1vw'
+                gap: '12px'
             },
             child: [
                 $({
@@ -29,8 +32,8 @@ const capUser = () => {
                         className: 'fa-solid fa-building'
                     },
                     style: {
-                        fontSize: '1.8vw',
-                        color: '#00bcd4'
+                        fontSize: '20px',
+                        color: '#3b82f6'
                     }
                 }),
                 $({
@@ -49,39 +52,42 @@ const capUser = () => {
                     left: '0',
                     width: '100%',
                     height: '100%',
-                    backgroundColor: 'rgba(0,0,0,0.9)',
+                    backgroundColor: 'rgba(15,23,42,0.6)',
                     display: 'flex',
                     zIndex: '9999',
-                    backdropFilter: 'blur(5px)'
+                    backdropFilter: 'blur(4px)'
                 },
                 child: [
                     $({
                         tag: 'div',
                         style: {
-                            width: '32%',
+                            width: '420px',
+                            maxWidth: '92%',
                             height: 'fit-content',
-                            background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                            backgroundColor: '#ffffff',
                             margin: 'auto',
-                            padding: '2.5rem',
-                            borderRadius: '1vw',
+                            padding: '32px',
+                            borderRadius: '12px',
                             position: 'relative',
-                            border: '1px solid #333',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
                         },
                         child: [
                             $({
                                 tag: 'div',
                                 style: {
                                     position: 'absolute',
-                                    top: '1.5vh',
-                                    right: '1.5vw',
+                                    top: '16px',
+                                    right: '16px',
                                     cursor: 'pointer',
-                                    color: '#666',
-                                    fontSize: '1.5vw',
-                                    transition: 'all 0.3s ease'
+                                    color: '#94a3b8',
+                                    fontSize: '20px',
+                                    transition: 'all 0.2s ease',
+                                    padding: '8px',
+                                    borderRadius: '8px'
                                 },
                                 att: {
-                                    className: 'fa-solid fa-circle-xmark'
+                                    className: 'fa-solid fa-times'
                                 },
                                 event: {
                                     type: 'click',
@@ -89,36 +95,38 @@ const capUser = () => {
                                         modal.remove()
                                     },
                                     mouseover: (e) => {
-                                        e.target.style.color = '#00bcd4'
+                                        e.target.style.color = '#1e293b'
+                                        e.target.style.backgroundColor = '#f1f5f9'
                                     },
                                     mouseout: (e) => {
-                                        e.target.style.color = '#666'
+                                        e.target.style.color = '#94a3b8'
+                                        e.target.style.backgroundColor = 'transparent'
                                     }
                                 }
                             }),
                             $({
                                 tag: 'div',
                                 style: {
-                                    fontFamily: 'Segoe UI, sans-serif',
-                                    fontSize: '1.8vw',
-                                    color: '#fff',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    fontSize: '20px',
+                                    color: '#1e293b',
                                     textAlign: 'center',
-                                    marginBottom: '1vh',
+                                    marginBottom: '8px',
                                     fontWeight: '600',
-                                    letterSpacing: '0.1vw'
+                                    letterSpacing: '-0.3px'
                                 },
                                 text: 'Reset Password'
                             }),
                             $({
                                 tag: 'div',
                                 style: {
-                                    fontFamily: 'Segoe UI, sans-serif',
-                                    fontSize: '1vw',
-                                    color: '#888',
-                                    marginBottom: '3vh',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    fontSize: '14px',
+                                    color: '#64748b',
+                                    marginBottom: '24px',
                                     textAlign: 'center',
-                                    padding: '0.5vh 0',
-                                    borderBottom: '1px solid #333'
+                                    padding: '8px 0',
+                                    borderBottom: '1px solid #f1f5f9'
                                 },
                                 text: `Reset password for: ${username}`
                             }),
@@ -127,7 +135,7 @@ const capUser = () => {
                             $({
                                 tag: 'div',
                                 style: {
-                                    marginBottom: '2.5vh',
+                                    marginBottom: '16px',
                                     position: 'relative'
                                 },
                                 child: [
@@ -135,11 +143,11 @@ const capUser = () => {
                                         tag: 'div',
                                         style: {
                                             position: 'absolute',
-                                            left: '1vw',
+                                            left: '12px',
                                             top: '50%',
                                             transform: 'translateY(-50%)',
-                                            color: '#666',
-                                            fontSize: '1vw',
+                                            color: '#94a3b8',
+                                            fontSize: '14px',
                                             zIndex: '1'
                                         },
                                         att: {
@@ -155,24 +163,27 @@ const capUser = () => {
                                         },
                                         style: {
                                             width: '100%',
-                                            padding: '0.8rem 2.5rem',
-                                            backgroundColor: '#333',
-                                            border: '1px solid #444',
-                                            borderRadius: '0.5vw',
-                                            color: '#fff',
-                                            fontSize: '1vw',
+                                            padding: '10px 12px 10px 40px',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#1e293b',
+                                            fontSize: '14px',
                                             outline: 'none',
-                                            transition: 'all 0.3s ease',
-                                            boxSizing: 'border-box'
+                                            transition: 'all 0.2s ease',
+                                            boxSizing: 'border-box',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                         },
                                         event: {
                                             focus: (e) => {
-                                                e.target.style.borderColor = '#00bcd4'
-                                                e.target.style.backgroundColor = '#3a3a3a'
+                                                e.target.style.borderColor = '#3b82f6'
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                                e.target.style.backgroundColor = '#ffffff'
                                             },
                                             blur: (e) => {
-                                                e.target.style.borderColor = '#444'
-                                                e.target.style.backgroundColor = '#333'
+                                                e.target.style.borderColor = '#e2e8f0'
+                                                e.target.style.boxShadow = 'none'
+                                                e.target.style.backgroundColor = '#f8fafc'
                                             }
                                         }
                                     }),
@@ -180,14 +191,14 @@ const capUser = () => {
                                         tag: 'div',
                                         style: {
                                             position: 'absolute',
-                                            right: '1vw',
+                                            right: '12px',
                                             top: '50%',
                                             transform: 'translateY(-50%)',
-                                            color: '#666',
-                                            fontSize: '1vw',
+                                            color: '#94a3b8',
+                                            fontSize: '14px',
                                             cursor: 'pointer',
                                             zIndex: '1',
-                                            transition: 'color 0.3s ease'
+                                            transition: 'color 0.2s ease'
                                         },
                                         att: {
                                             className: 'fa-solid fa-eye-slash toggle-password',
@@ -205,6 +216,12 @@ const capUser = () => {
                                                     target.type = 'password'
                                                     icon.className = 'fa-solid fa-eye-slash'
                                                 }
+                                            },
+                                            mouseover: (e) => {
+                                                e.target.style.color = '#3b82f6'
+                                            },
+                                            mouseout: (e) => {
+                                                e.target.style.color = '#94a3b8'
                                             }
                                         }
                                     })
@@ -215,7 +232,7 @@ const capUser = () => {
                             $({
                                 tag: 'div',
                                 style: {
-                                    marginBottom: '3vh',
+                                    marginBottom: '24px',
                                     position: 'relative'
                                 },
                                 child: [
@@ -223,11 +240,11 @@ const capUser = () => {
                                         tag: 'div',
                                         style: {
                                             position: 'absolute',
-                                            left: '1vw',
+                                            left: '12px',
                                             top: '50%',
                                             transform: 'translateY(-50%)',
-                                            color: '#666',
-                                            fontSize: '1vw',
+                                            color: '#94a3b8',
+                                            fontSize: '14px',
                                             zIndex: '1'
                                         },
                                         att: {
@@ -243,24 +260,27 @@ const capUser = () => {
                                         },
                                         style: {
                                             width: '100%',
-                                            padding: '0.8rem 2.5rem',
-                                            backgroundColor: '#333',
-                                            border: '1px solid #444',
-                                            borderRadius: '0.5vw',
-                                            color: '#fff',
-                                            fontSize: '1vw',
+                                            padding: '10px 12px 10px 40px',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#1e293b',
+                                            fontSize: '14px',
                                             outline: 'none',
-                                            transition: 'all 0.3s ease',
-                                            boxSizing: 'border-box'
+                                            transition: 'all 0.2s ease',
+                                            boxSizing: 'border-box',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                         },
                                         event: {
                                             focus: (e) => {
-                                                e.target.style.borderColor = '#00bcd4'
-                                                e.target.style.backgroundColor = '#3a3a3a'
+                                                e.target.style.borderColor = '#3b82f6'
+                                                e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                                e.target.style.backgroundColor = '#ffffff'
                                             },
                                             blur: (e) => {
-                                                e.target.style.borderColor = '#444'
-                                                e.target.style.backgroundColor = '#333'
+                                                e.target.style.borderColor = '#e2e8f0'
+                                                e.target.style.boxShadow = 'none'
+                                                e.target.style.backgroundColor = '#f8fafc'
                                             }
                                         }
                                     }),
@@ -268,14 +288,14 @@ const capUser = () => {
                                         tag: 'div',
                                         style: {
                                             position: 'absolute',
-                                            right: '1vw',
+                                            right: '12px',
                                             top: '50%',
                                             transform: 'translateY(-50%)',
-                                            color: '#666',
-                                            fontSize: '1vw',
+                                            color: '#94a3b8',
+                                            fontSize: '14px',
                                             cursor: 'pointer',
                                             zIndex: '1',
-                                            transition: 'color 0.3s ease'
+                                            transition: 'color 0.2s ease'
                                         },
                                         att: {
                                             className: 'fa-solid fa-eye-slash toggle-password',
@@ -293,6 +313,12 @@ const capUser = () => {
                                                     target.type = 'password'
                                                     icon.className = 'fa-solid fa-eye-slash'
                                                 }
+                                            },
+                                            mouseover: (e) => {
+                                                e.target.style.color = '#3b82f6'
+                                            },
+                                            mouseout: (e) => {
+                                                e.target.style.color = '#94a3b8'
                                             }
                                         }
                                     })
@@ -304,22 +330,22 @@ const capUser = () => {
                                 style: {
                                     display: 'flex',
                                     justifyContent: 'center',
-                                    gap: '1vw',
-                                    marginTop: '2vh'
+                                    gap: '12px'
                                 },
                                 child: [
                                     $({
                                         tag: 'button',
                                         style: {
-                                            padding: '0.8rem 2rem',
+                                            padding: '8px 24px',
                                             backgroundColor: 'transparent',
-                                            border: '1px solid #444',
-                                            borderRadius: '2vw',
-                                            color: '#999',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#64748b',
                                             cursor: 'pointer',
-                                            fontSize: '1vw',
-                                            fontFamily: 'Segoe UI, sans-serif',
-                                            transition: 'all 0.3s ease',
+                                            fontSize: '13px',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease',
                                             flex: '1'
                                         },
                                         text: 'Cancel',
@@ -329,28 +355,26 @@ const capUser = () => {
                                                 modal.remove()
                                             },
                                             mouseover: (e) => {
-                                                e.target.style.backgroundColor = '#333'
-                                                e.target.style.color = '#fff'
+                                                e.target.style.backgroundColor = '#f1f5f9'
                                             },
                                             mouseout: (e) => {
                                                 e.target.style.backgroundColor = 'transparent'
-                                                e.target.style.color = '#999'
                                             }
                                         }
                                     }),
                                     $({
                                         tag: 'button',
                                         style: {
-                                            padding: '0.8rem 2rem',
-                                            background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
+                                            padding: '8px 24px',
+                                            backgroundColor: '#3b82f6',
                                             border: 'none',
-                                            borderRadius: '2vw',
+                                            borderRadius: '8px',
                                             color: '#fff',
                                             cursor: 'pointer',
-                                            fontSize: '1vw',
-                                            fontFamily: 'Segoe UI, sans-serif',
+                                            fontSize: '13px',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                             fontWeight: '600',
-                                            transition: 'all 0.3s ease',
+                                            transition: 'all 0.2s ease',
                                             flex: '1'
                                         },
                                         text: 'Reset Password',
@@ -394,9 +418,7 @@ const capUser = () => {
 
                                                     if (data.status) {
                                                         modal.remove()
-                                                        document.body.appendChild(ConfirmationAlert('Password reset successfully!', () => {
-                                                            // Just close the alert
-                                                        }))
+                                                        document.body.appendChild(ConfirmationAlert('Password reset successfully!', () => { }))
                                                     } else {
                                                         alert(data.message || 'Failed to reset password')
                                                     }
@@ -404,6 +426,12 @@ const capUser = () => {
                                                     loading.remove()
                                                     alert('An error occurred')
                                                 }
+                                            },
+                                            mouseover: (e) => {
+                                                e.target.style.backgroundColor = '#2563eb'
+                                            },
+                                            mouseout: (e) => {
+                                                e.target.style.backgroundColor = '#3b82f6'
                                             }
                                         }
                                     })
@@ -425,9 +453,9 @@ const capUser = () => {
                         width: '100%',
                         display: 'flex',
                         alignItems: 'center',
-                        padding: '0.8vh 0',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        transition: 'all 0.3s ease',
+                        padding: '10px 0',
+                        borderBottom: '1px solid #f1f5f9',
+                        transition: 'all 0.2s ease',
                         backgroundColor: 'transparent'
                     },
                     att: {
@@ -435,7 +463,7 @@ const capUser = () => {
                     },
                     event: {
                         mouseover: (e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
+                            e.currentTarget.style.backgroundColor = '#f8fafc'
                         },
                         mouseout: (e) => {
                             e.currentTarget.style.backgroundColor = 'transparent'
@@ -447,10 +475,10 @@ const capUser = () => {
                             text: campusN || 'N/A',
                             style: {
                                 width: '14%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '0.95vw',
-                                color: '#e0e0e0',
-                                paddingLeft: '1vw',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#1e293b',
+                                paddingLeft: '12px',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
@@ -461,9 +489,9 @@ const capUser = () => {
                             text: designation || 'N/A',
                             style: {
                                 width: '12%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '0.95vw',
-                                color: '#e0e0e0',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#1e293b',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
@@ -474,9 +502,9 @@ const capUser = () => {
                             text: username,
                             style: {
                                 width: '12%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '0.95vw',
-                                color: '#aaa',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#64748b',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
@@ -486,16 +514,17 @@ const capUser = () => {
                             tag: 'div',
                             style: {
                                 width: '22%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '0.95vw',
-                                color: '#e0e0e0',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#1e293b',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                paddingRight: '1vw',
+                                paddingRight: '12px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.5vw'
+                                gap: '8px',
+                                fontWeight: '500'
                             },
                             child: [
                                 $({
@@ -504,8 +533,8 @@ const capUser = () => {
                                         className: 'fa-solid fa-user-circle',
                                     },
                                     style: {
-                                        color: 'rgba(0,188,212,0.6)',
-                                        fontSize: '1.2vw',
+                                        color: '#3b82f6',
+                                        fontSize: '14px',
                                         flexShrink: 0
                                     }
                                 }),
@@ -525,9 +554,9 @@ const capUser = () => {
                             text: email,
                             style: {
                                 width: '20%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '0.95vw',
-                                color: '#aaa',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#64748b',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
@@ -539,22 +568,22 @@ const capUser = () => {
                                 width: '24%',
                                 display: 'flex',
                                 justifyContent: 'flex-end',
-                                gap: '0.5vw',
-                                paddingRight: '1vw'
+                                gap: '8px',
+                                paddingRight: '12px'
                             },
                             child: [
                                 $({
                                     tag: 'div',
                                     style: {
-                                        padding: '0.3vw 0.8vw',
-                                        borderRadius: '1vw',
-                                        backgroundColor: 'rgba(0,188,212,0.1)',
-                                        border: '1px solid rgba(0,188,212,0.2)',
+                                        padding: '4px 14px',
+                                        borderRadius: '20px',
+                                        backgroundColor: 'rgba(59,130,246,0.06)',
+                                        border: '1px solid rgba(59,130,246,0.12)',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '0.3vw',
+                                        gap: '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.3s ease'
+                                        transition: 'all 0.2s ease'
                                     },
                                     child: [
                                         $({
@@ -563,17 +592,18 @@ const capUser = () => {
                                                 className: 'fa-solid fa-key'
                                             },
                                             style: {
-                                                color: '#00bcd4',
-                                                fontSize: '0.9vw'
+                                                color: '#3b82f6',
+                                                fontSize: '12px'
                                             }
                                         }),
                                         $({
                                             tag: 'span',
                                             text: 'Reset Password',
                                             style: {
-                                                color: '#00bcd4',
-                                                fontSize: '0.85vw',
-                                                fontFamily: 'Segoe UI, sans-serif'
+                                                color: '#3b82f6',
+                                                fontSize: '12px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontWeight: '500'
                                             }
                                         })
                                     ],
@@ -583,25 +613,25 @@ const capUser = () => {
                                             showPasswordReset(id, username)
                                         },
                                         mouseover: (e) => {
-                                            e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.2)'
+                                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.12)'
                                         },
                                         mouseout: (e) => {
-                                            e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.1)'
+                                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.06)'
                                         }
                                     }
                                 }),
                                 $({
                                     tag: 'div',
                                     style: {
-                                        padding: '0.3vw 0.8vw',
-                                        borderRadius: '1vw',
-                                        backgroundColor: 'rgba(244,67,54,0.1)',
-                                        border: '1px solid rgba(244,67,54,0.2)',
+                                        padding: '4px 14px',
+                                        borderRadius: '20px',
+                                        backgroundColor: 'rgba(239,68,68,0.06)',
+                                        border: '1px solid rgba(239,68,68,0.12)',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '0.3vw',
+                                        gap: '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.3s ease'
+                                        transition: 'all 0.2s ease'
                                     },
                                     child: [
                                         $({
@@ -610,17 +640,18 @@ const capUser = () => {
                                                 className: 'fa-solid fa-trash-can'
                                             },
                                             style: {
-                                                color: '#f44336',
-                                                fontSize: '0.9vw'
+                                                color: '#ef4444',
+                                                fontSize: '12px'
                                             }
                                         }),
                                         $({
                                             tag: 'span',
                                             text: 'Delete',
                                             style: {
-                                                color: '#f44336',
-                                                fontSize: '0.85vw',
-                                                fontFamily: 'Segoe UI, sans-serif'
+                                                color: '#ef4444',
+                                                fontSize: '12px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontWeight: '500'
                                             }
                                         })
                                     ],
@@ -658,10 +689,10 @@ const capUser = () => {
                                             }
                                         },
                                         mouseover: (e) => {
-                                            e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.2)'
+                                            e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.12)'
                                         },
                                         mouseout: (e) => {
-                                            e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.1)'
+                                            e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.06)'
                                         }
                                     }
                                 })
@@ -700,11 +731,12 @@ const capUser = () => {
                 style: {
                     width: '100%',
                     height: 'calc(100% - 12vh)',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
+                    backgroundColor: '#ffffff',
                     overflowY: 'auto',
                     overflowX: 'auto',
-                    borderRadius: '0.5vw',
-                    border: '1px solid rgba(255,255,255,0.05)'
+                    borderRadius: '0 0 8px 8px',
+                    border: '1px solid #f1f5f9',
+                    padding: '0 4px'
                 },
                 elementHandler: getContainer
             }))
@@ -714,17 +746,28 @@ const capUser = () => {
             return ($({
                 tag: 'div',
                 style: {
-                    height: '5vh',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    width: '25vw',
-                    marginBottom: '2vh',
-                    borderRadius: '2vw',
+                    height: '38px',
+                    border: '1px solid #e2e8f0',
+                    width: '250px',
+                    borderRadius: '8px',
                     display: 'flex',
-                    padding: '0 1vw',
-                    backgroundColor: 'rgba(0,0,0,0.4)',
-                    color: '#bbb',
+                    padding: '0 12px',
+                    backgroundColor: '#f8fafc',
+                    color: '#1e293b',
                     alignItems: 'center',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    focusin: (e) => {
+                        e.currentTarget.style.borderColor = '#3b82f6'
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                        e.currentTarget.style.backgroundColor = '#ffffff'
+                    },
+                    focusout: (e) => {
+                        e.currentTarget.style.borderColor = '#e2e8f0'
+                        e.currentTarget.style.boxShadow = 'none'
+                        e.currentTarget.style.backgroundColor = '#f8fafc'
+                    }
                 },
                 child: [
                     $({
@@ -733,9 +776,9 @@ const capUser = () => {
                             className: 'fa-solid fa-search'
                         },
                         style: {
-                            fontSize: '1vw',
-                            color: '#666',
-                            marginRight: '0.5vw'
+                            fontSize: '14px',
+                            color: '#94a3b8',
+                            marginRight: '8px'
                         }
                     }),
                     $({
@@ -750,9 +793,9 @@ const capUser = () => {
                             outline: 'none',
                             height: '100%',
                             width: '100%',
-                            color: '#e0e0e0',
-                            fontSize: '0.95vw',
-                            fontFamily: 'Segoe UI, sans-serif'
+                            color: '#1e293b',
+                            fontSize: '14px',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                         },
                         event: {
                             type: 'input',
@@ -779,12 +822,13 @@ const capUser = () => {
                     style: {
                         width: width,
                         textAlign: align,
-                        fontFamily: 'Segoe UI, sans-serif',
-                        fontSize: '0.9vw',
-                        color: '#888',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                        fontSize: '11px',
+                        color: '#94a3b8',
                         fontWeight: '600',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.05vw'
+                        letterSpacing: '0.5px',
+                        padding: '0 8px'
                     },
                     text: label
                 }))
@@ -795,10 +839,12 @@ const capUser = () => {
                 style: {
                     display: 'flex',
                     width: '100%',
-                    padding: '1vh 0',
-                    marginBottom: '0.5vh',
-                    borderBottom: '2px solid rgba(255,255,255,0.1)',
-                    minWidth: 'fit-content'
+                    padding: '10px 0',
+                    marginBottom: '4px',
+                    borderBottom: '1px solid #e2e8f0',
+                    minWidth: 'fit-content',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px 8px 0 0'
                 },
                 child: [
                     Leb({ label: 'CAMPUS/CENTER', width: '14%' }),
@@ -806,8 +852,7 @@ const capUser = () => {
                     Leb({ label: 'USERNAME', width: '12%' }),
                     Leb({ label: 'FULL NAME', width: '22%' }),
                     Leb({ label: 'EMAIL', width: '20%' }),
-                    Leb({ label: 'PASSWORD', width: '10%', align: 'center' }),
-                    Leb({ label: 'ACTIONS', width: '10%', align: 'center' })
+                    Leb({ label: '', width: '24%', align: 'center' })
                 ]
             }))
         }
@@ -816,10 +861,11 @@ const capUser = () => {
             tag: 'div',
             style: {
                 width: '95%',
-                margin: '2% auto',
-                height: '96%',
+                margin: '1% auto',
+                height: '98%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                maxWidth: '1400px'
             },
             child: [
                 $({
@@ -828,7 +874,9 @@ const capUser = () => {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: '1vh'
+                        marginBottom: '8px',
+                        flexWrap: 'wrap',
+                        gap: '8px'
                     },
                     child: [
                         Label,
@@ -846,6 +894,11 @@ const capUser = () => {
         att: {
             className: 'capAccPage'
         },
+        style: {
+            background: '#f8fafc',
+            height: '100%',
+            width: '100%'
+        },
         child: [
             mainPan()
         ]
@@ -853,24 +906,23 @@ const capUser = () => {
 }
 
 const evalPage = () => {
-    const mainPan=()=>{
+    const mainPan = () => {
         let bo
         const Label = $({
             tag: 'div',
             style: {
                 width: '100%',
                 textAlign: 'center',
-                fontFamily: 'arial black, san-serif',
-                color: 'rgba(200,200,200,0.5)',
-                marginBottom: '2vh',
-                fontSize: '1.5vw',
-                letterSpacing: '0.1vw',
-                textTransform: 'uppercase',
-                textShadow: '0 0 10px rgba(0,191,255,0.3)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                color: '#1e293b',
+                marginBottom: '16px',
+                fontSize: '18px',
+                letterSpacing: '-0.3px',
+                fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'left',
-                gap: '1vw'
+                gap: '12px'
             },
             child: [
                 $({
@@ -879,8 +931,8 @@ const evalPage = () => {
                         className: 'fa-solid fa-users'
                     },
                     style: {
-                        fontSize: '1.8vw',
-                        color: '#00bcd4'
+                        fontSize: '20px',
+                        color: '#3b82f6'
                     }
                 }),
                 $({
@@ -889,734 +941,660 @@ const evalPage = () => {
                 })
             ]
         })
-        
-        const container=()=>{
-            const PasswordCell = ({id, username}) => {
-                return($({
-                    tag:'td',
-                    style:{
-                        width:'10%',
-                        textAlign: 'center'
-                    },
-                    child:[
-                        $({
-                            tag:'div',
-                            style:{
-                                display:'flex',
-                                justifyContent:'center',
-                                gap:'0.5vw'
-                            },
-                            child:[
-                                $({
-                                    tag:'div',
-                                    att:{
-                                        className:'fa-solid fa-key'
-                                    },
-                                    style:{
-                                        color: '#00bcd4',
-                                        cursor: 'pointer',
-                                        fontSize: '1.2vw',
-                                        transition:'all 0.3s ease',
-                                        padding:'0.3vw',
-                                        borderRadius:'0.2vw',
-                                        backgroundColor:'rgba(0,188,212,0.1)'
-                                    },
-                                    event:{
-                                        type:'click',
-                                        method:()=>{
-                                            showPasswordReset(id, username);
-                                        },
-                                        mouseover:(e)=>{
-                                            e.target.style.color = '#fff';
-                                            e.target.style.backgroundColor = '#00bcd4';
-                                        },
-                                        mouseout:(e)=>{
-                                            e.target.style.color = '#00bcd4';
-                                            e.target.style.backgroundColor = 'rgba(0,188,212,0.1)';
-                                        }
-                                    }
-                                })
-                            ]
-                        })
-                    ]
-                }))
-            }
-            
-            const list=({fullName,category,username,id})=>{
-                return($({
-                    tag:'div',
-                    style:{
-                        width:'100%',
-                        display:'flex',
-                        alignItems:'center',
-                        padding:'0.8vh 0',
-                        borderBottom:'1px solid rgba(255,255,255,0.1)',
-                        transition:'all 0.3s ease',
-                        backgroundColor:'transparent',
-                        cursor:'pointer'
-                    },
-                    att:{
-                        className:'list-row'
-                    },
-                    event:{
-                        mouseover:(e)=>{
-                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+
+        const showPasswordReset = (id, username) => {
+            const modal = $({
+                tag: 'div',
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(15,23,42,0.6)',
+                    display: 'flex',
+                    zIndex: '9999',
+                    backdropFilter: 'blur(4px)'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '420px',
+                            maxWidth: '92%',
+                            height: 'fit-content',
+                            backgroundColor: '#ffffff',
+                            margin: 'auto',
+                            padding: '32px',
+                            borderRadius: '12px',
+                            position: 'relative',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
                         },
-                        mouseout:(e)=>{
-                            e.currentTarget.style.backgroundColor = 'transparent';
+                        child: [
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    cursor: 'pointer',
+                                    color: '#94a3b8',
+                                    fontSize: '20px',
+                                    transition: 'all 0.2s ease',
+                                    padding: '8px',
+                                    borderRadius: '8px'
+                                },
+                                att: {
+                                    className: 'fa-solid fa-times'
+                                },
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        modal.remove()
+                                    },
+                                    mouseover: (e) => {
+                                        e.target.style.color = '#1e293b'
+                                        e.target.style.backgroundColor = '#f1f5f9'
+                                    },
+                                    mouseout: (e) => {
+                                        e.target.style.color = '#94a3b8'
+                                        e.target.style.backgroundColor = 'transparent'
+                                    }
+                                }
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    fontSize: '20px',
+                                    color: '#1e293b',
+                                    textAlign: 'center',
+                                    marginBottom: '8px',
+                                    fontWeight: '600',
+                                    letterSpacing: '-0.3px'
+                                },
+                                text: 'Reset Password'
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    fontSize: '14px',
+                                    color: '#64748b',
+                                    marginBottom: '24px',
+                                    textAlign: 'center',
+                                    padding: '8px 0',
+                                    borderBottom: '1px solid #f1f5f9'
+                                },
+                                text: `Reset password for: ${username}`
+                            }),
+                            // Password fields (same as capUser)
+                            $({
+                                tag: 'div',
+                                style: {
+                                    marginBottom: '16px',
+                                    position: 'relative'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            position: 'absolute',
+                                            left: '12px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            color: '#94a3b8',
+                                            fontSize: '14px',
+                                            zIndex: '1'
+                                        },
+                                        att: {
+                                            className: 'fa-solid fa-lock'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'input',
+                                        att: {
+                                            type: 'password',
+                                            id: 'newPassword',
+                                            placeholder: 'Enter new password'
+                                        },
+                                        style: {
+                                            width: '100%',
+                                            padding: '10px 12px 10px 40px',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#1e293b',
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease',
+                                            boxSizing: 'border-box',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            position: 'absolute',
+                                            right: '12px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            color: '#94a3b8',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            zIndex: '1',
+                                            transition: 'color 0.2s ease'
+                                        },
+                                        att: {
+                                            className: 'fa-solid fa-eye-slash toggle-password',
+                                            'data-target': 'newPassword'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: (e) => {
+                                                const target = document.getElementById('newPassword')
+                                                const icon = e.target
+                                                if (target.type === 'password') {
+                                                    target.type = 'text'
+                                                    icon.className = 'fa-solid fa-eye'
+                                                } else {
+                                                    target.type = 'password'
+                                                    icon.className = 'fa-solid fa-eye-slash'
+                                                }
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    marginBottom: '24px',
+                                    position: 'relative'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            position: 'absolute',
+                                            left: '12px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            color: '#94a3b8',
+                                            fontSize: '14px',
+                                            zIndex: '1'
+                                        },
+                                        att: {
+                                            className: 'fa-solid fa-lock'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'input',
+                                        att: {
+                                            type: 'password',
+                                            id: 'confirmPassword',
+                                            placeholder: 'Confirm new password'
+                                        },
+                                        style: {
+                                            width: '100%',
+                                            padding: '10px 12px 10px 40px',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#1e293b',
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease',
+                                            boxSizing: 'border-box',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            position: 'absolute',
+                                            right: '12px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            color: '#94a3b8',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            zIndex: '1',
+                                            transition: 'color 0.2s ease'
+                                        },
+                                        att: {
+                                            className: 'fa-solid fa-eye-slash toggle-password',
+                                            'data-target': 'confirmPassword'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: (e) => {
+                                                const target = document.getElementById('confirmPassword')
+                                                const icon = e.target
+                                                if (target.type === 'password') {
+                                                    target.type = 'text'
+                                                    icon.className = 'fa-solid fa-eye'
+                                                } else {
+                                                    target.type = 'password'
+                                                    icon.className = 'fa-solid fa-eye-slash'
+                                                }
+                                            }
+                                        }
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    gap: '12px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'button',
+                                        style: {
+                                            padding: '8px 24px',
+                                            backgroundColor: 'transparent',
+                                            border: '1px solid #e2e8f0',
+                                            borderRadius: '8px',
+                                            color: '#64748b',
+                                            cursor: 'pointer',
+                                            fontSize: '13px',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease',
+                                            flex: '1'
+                                        },
+                                        text: 'Cancel',
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                modal.remove()
+                                            }
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'button',
+                                        style: {
+                                            padding: '8px 24px',
+                                            backgroundColor: '#3b82f6',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            color: '#fff',
+                                            cursor: 'pointer',
+                                            fontSize: '13px',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s ease',
+                                            flex: '1'
+                                        },
+                                        text: 'Reset Password',
+                                        event: {
+                                            type: 'click',
+                                            method: async () => {
+                                                const newPass = document.getElementById('newPassword').value
+                                                const confirmPass = document.getElementById('confirmPassword').value
+
+                                                if (!newPass || !confirmPass) {
+                                                    alert('Please fill in both password fields')
+                                                    return
+                                                }
+
+                                                if (newPass !== confirmPass) {
+                                                    alert('Passwords do not match')
+                                                    return
+                                                }
+
+                                                if (newPass.length < 6) {
+                                                    alert('Password must be at least 6 characters long')
+                                                    return
+                                                }
+
+                                                const form = new FormData()
+                                                form.append('resetEvaluatorPassword', 'true')
+                                                form.append('id', id)
+                                                form.append('newPassword', newPass)
+
+                                                let loading = Waiting()
+                                                document.body.appendChild(loading)
+
+                                                try {
+                                                    const response = await fetch('/evaluatorReg', {
+                                                        method: 'POST',
+                                                        body: form
+                                                    })
+                                                    const data = await response.json()
+
+                                                    loading.remove()
+
+                                                    if (data.status) {
+                                                        modal.remove()
+                                                        document.body.appendChild(ConfirmationAlert('Password reset successfully!', () => { }))
+                                                    } else {
+                                                        alert(data.message || 'Failed to reset password')
+                                                    }
+                                                } catch (error) {
+                                                    loading.remove()
+                                                    alert('An error occurred')
+                                                }
+                                            }
+                                        }
+                                    })
+                                ]
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modal)
+        }
+
+        const container = () => {
+            const list = ({ fullName, category, username, id }) => {
+                return ($({
+                    tag: 'div',
+                    style: {
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '10px 0',
+                        borderBottom: '1px solid #f1f5f9',
+                        transition: 'all 0.2s ease',
+                        backgroundColor: 'transparent'
+                    },
+                    att: {
+                        className: 'list-row'
+                    },
+                    event: {
+                        mouseover: (e) => {
+                            e.currentTarget.style.backgroundColor = '#f8fafc'
+                        },
+                        mouseout: (e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent'
                         }
                     },
-                    child:[
+                    child: [
                         $({
-                            tag:'div',
-                            style:{
-                                width:'5%',
+                            tag: 'div',
+                            style: {
+                                width: '5%',
                                 textAlign: 'center'
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'div',
-                                    att:{
-                                        className:'fa-solid fa-user-circle',
+                                    tag: 'div',
+                                    att: {
+                                        className: 'fa-solid fa-user-circle',
                                     },
-                                    style:{
-                                        color: 'rgba(0,188,212,0.6)',
-                                        fontSize:'1.2vw'
+                                    style: {
+                                        color: '#3b82f6',
+                                        fontSize: '18px'
                                     }
                                 })
                             ]
                         }),
                         $({
-                            tag:'div',
-                            text:fullName,
-                            style:{
-                                width:'30%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize:'0.95vw',
-                                color:'#e0e0e0',
-                                fontWeight:'400',
-                                whiteSpace:'nowrap',
-                                overflow:'hidden',
-                                textOverflow:'ellipsis',
-                                paddingRight:'1vw'
+                            tag: 'div',
+                            text: fullName,
+                            style: {
+                                width: '30%',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#1e293b',
+                                fontWeight: '500',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                paddingRight: '12px'
                             }
                         }),
                         $({
-                            tag:'div',
-                            text:username,
-                            style:{
-                                width:'15%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize:'0.95vw',
-                                color:'#aaa',
-                                fontWeight:'400'
+                            tag: 'div',
+                            text: username,
+                            style: {
+                                width: '15%',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#64748b'
                             }
                         }),
                         $({
-                            tag:'div',
-                            text:category,
-                            style:{
-                                width:'15%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize:'0.95vw',
-                                color:'#aaa',
-                                fontWeight:'400'
+                            tag: 'div',
+                            text: category,
+                            style: {
+                                width: '15%',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#64748b'
                             }
                         }),
                         $({
-                            tag:'div',
-                            style:{
-                                width:'25%',
+                            tag: 'div',
+                            style: {
+                                width: '25%',
                                 textAlign: 'left'
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        display:'inline-flex',
-                                        alignItems:'center',
-                                        gap:'0.5vw',
-                                        backgroundColor:'rgba(0,188,212,0.1)',
-                                        padding:'0.3vw 0.8vw',
-                                        borderRadius:'1vw',
-                                        border:'1px solid rgba(0,188,212,0.2)'
+                                    tag: 'div',
+                                    style: {
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        backgroundColor: 'rgba(59,130,246,0.06)',
+                                        padding: '4px 14px',
+                                        borderRadius: '20px',
+                                        border: '1px solid rgba(59,130,246,0.12)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
                                     },
-                                    child:[
+                                    child: [
                                         $({
-                                            tag:'span',
-                                            att:{
-                                                className:'fa-solid fa-key'
+                                            tag: 'span',
+                                            att: {
+                                                className: 'fa-solid fa-key'
                                             },
-                                            style:{
-                                                color:'#00bcd4',
-                                                fontSize:'0.9vw'
+                                            style: {
+                                                color: '#3b82f6',
+                                                fontSize: '12px'
                                             }
                                         }),
                                         $({
-                                            tag:'span',
-                                            text:'Reset Password',
-                                            style:{
-                                                color:'#00bcd4',
-                                                fontSize:'0.85vw',
-                                                fontFamily:'Segoe UI, sans-serif',
-                                                cursor:'pointer'
-                                            },
-                                            event:{
-                                                type:'click',
-                                                method:()=>{
-                                                    showPasswordReset(id, username);
-                                                }
+                                            tag: 'span',
+                                            text: 'Reset Password',
+                                            style: {
+                                                color: '#3b82f6',
+                                                fontSize: '12px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontWeight: '500'
                                             }
                                         })
-                                    ]
+                                    ],
+                                    event: {
+                                        type: 'click',
+                                        method: () => {
+                                            showPasswordReset(id, username)
+                                        },
+                                        mouseover: (e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.12)'
+                                        },
+                                        mouseout: (e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.06)'
+                                        }
+                                    }
                                 })
                             ]
                         }),
                         $({
-                            tag:'div',
-                            style:{
-                                width:'10%',
-                                textAlign:'center'
+                            tag: 'div',
+                            style: {
+                                width: '10%',
+                                textAlign: 'center'
                             },
-                            child:[
+                            child: [
                                 $({
-                                    tag:'div',
-                                    style:{
-                                        display:'flex',
-                                        justifyContent:'center',
-                                        gap:'0.5vw'
+                                    tag: 'div',
+                                    style: {
+                                        display: 'inline-flex',
+                                        padding: '4px 10px',
+                                        borderRadius: '20px',
+                                        backgroundColor: 'rgba(239,68,68,0.06)',
+                                        border: '1px solid rgba(239,68,68,0.12)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
                                     },
-                                    child:[
+                                    child: [
                                         $({
-                                            tag:'div',
-                                            att:{
-                                                className:'fa-solid fa-trash-can'
+                                            tag: 'span',
+                                            att: {
+                                                className: 'fa-solid fa-trash-can'
                                             },
-                                            style:{
-                                                color:'#f44336',
-                                                cursor:'pointer',
-                                                fontSize:'1.2vw',
-                                                transition:'all 0.3s ease',
-                                                padding:'0.3vw',
-                                                borderRadius:'0.2vw',
-                                                backgroundColor:'rgba(244,67,54,0.1)'
-                                            },
-                                            event:{
-                                                type:'click',
-                                                method:async ()=>{
-                                                    if(confirm('Are you sure you want to delete this evaluator?')){
-                                                        const form=new FormData()
-                                                        form.append('deleteEval','true')
-                                                        form.append('id',id)
-                                                        let loading = Waiting()
-                                                        document.body.appendChild(loading)
-                                                        const remove = () => {
-                                                            loading.remove()
-                                                        }
-                                                        await fetch('/evaluatorReg',{
-                                                            body:form,
-                                                            method:'POST',
-                                                        }).then(res => {
-                                                            if (res.ok) {
-                                                                remove()
-                                                                return res.json()
-                                                            }
-                                                        })
-                                                        .then(dat => {
-                                                            if (dat.status) {
-                                                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                                                    window.location.reload()
-                                                                }))
-                                                            } else {
-                                                                document.body.appendChild(ConfirmationAlert(dat.message, () => {
-                                                                    window.location.reload()
-                                                                }))
-                                                            }
-                                                        })
-                                                    }
-                                                },
-                                                mouseover:(e)=>{
-                                                    e.target.style.color = '#fff';
-                                                    e.target.style.backgroundColor = '#f44336';
-                                                },
-                                                mouseout:(e)=>{
-                                                    e.target.style.color = '#f44336';
-                                                    e.target.style.backgroundColor = 'rgba(244,67,54,0.1)';
-                                                }
+                                            style: {
+                                                color: '#ef4444',
+                                                fontSize: '12px'
                                             }
                                         })
-                                    ]
+                                    ],
+                                    event: {
+                                        type: 'click',
+                                        method: async () => {
+                                            if (confirm('Are you sure you want to delete this evaluator?')) {
+                                                const form = new FormData()
+                                                form.append('deleteEval', 'true')
+                                                form.append('id', id)
+                                                let loading = Waiting()
+                                                document.body.appendChild(loading)
+                                                await fetch('/evaluatorReg', {
+                                                    body: form,
+                                                    method: 'POST',
+                                                }).then(res => {
+                                                    if (res.ok) {
+                                                        loading.remove()
+                                                        return res.json()
+                                                    }
+                                                }).then(dat => {
+                                                    if (dat.status) {
+                                                        document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                                            window.location.reload()
+                                                        }))
+                                                    } else {
+                                                        document.body.appendChild(ConfirmationAlert(dat.message, () => {
+                                                            window.location.reload()
+                                                        }))
+                                                    }
+                                                })
+                                            }
+                                        }
+                                    }
                                 })
                             ]
                         })
                     ]
                 }))
             }
-            
-            const showPasswordReset = (id, username) => {
-                const modal = $({
-                    tag:'div',
-                    style:{
-                        position:'fixed',
-                        top:'0',
-                        left:'0',
-                        width:'100%',
-                        height:'100%',
-                        backgroundColor:'rgba(0,0,0,0.9)',
-                        display:'flex',
-                        zIndex:'9999',
-                        backdropFilter:'blur(5px)'
-                    },
-                    child:[
-                        $({
-                            tag:'div',
-                            style:{
-                                width:'32%',
-                                height:'fit-content',
-                                background:'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                                margin:'auto',
-                                padding:'2.5rem',
-                                borderRadius:'1vw',
-                                position:'relative',
-                                border:'1px solid #333',
-                                boxShadow:'0 20px 40px rgba(0,0,0,0.5)'
-                            },
-                            child:[
-                                $({
-                                    tag:'div',
-                                    style:{
-                                        position:'absolute',
-                                        top:'1.5vh',
-                                        right:'1.5vw',
-                                        cursor:'pointer',
-                                        color:'#666',
-                                        fontSize:'1.5vw',
-                                        transition:'all 0.3s ease'
-                                    },
-                                    att:{
-                                        className:'fa-solid fa-circle-xmark'
-                                    },
-                                    event:{
-                                        type:'click',
-                                        method:()=>{
-                                            modal.remove()
-                                        },
-                                        mouseover:(e)=>{
-                                            e.target.style.color = '#00bcd4';
-                                        },
-                                        mouseout:(e)=>{
-                                            e.target.style.color = '#666';
-                                        }
-                                    }
-                                }),
-                                $({
-                                    tag:'div',
-                                    style:{
-                                        fontFamily:'Segoe UI, sans-serif',
-                                        fontSize:'1.8vw',
-                                        color:'#fff',
-                                        textAlign:'center',
-                                        marginBottom:'1vh',
-                                        fontWeight:'600',
-                                        letterSpacing:'0.1vw'
-                                    },
-                                    text:'Reset Password'
-                                }),
-                                $({
-                                    tag:'div',
-                                    style:{
-                                        fontFamily:'Segoe UI, sans-serif',
-                                        fontSize:'1vw',
-                                        color:'#888',
-                                        marginBottom:'3vh',
-                                        textAlign:'center',
-                                        padding:'0.5vh 0',
-                                        borderBottom:'1px solid #333'
-                                    },
-                                    text:`Reset password for: ${username}`
-                                }),
-                                
-                                // New Password Field with Eye Icon
-                                $({
-                                    tag:'div',
-                                    style:{
-                                        marginBottom:'2.5vh',
-                                        position:'relative'
-                                    },
-                                    child:[
-                                        $({
-                                            tag:'div',
-                                            style:{
-                                                position:'absolute',
-                                                left:'1vw',
-                                                top:'50%',
-                                                transform:'translateY(-50%)',
-                                                color:'#666',
-                                                fontSize:'1vw',
-                                                zIndex:'1'
-                                            },
-                                            att:{
-                                                className:'fa-solid fa-lock'
-                                            }
-                                        }),
-                                        $({
-                                            tag:'input',
-                                            att:{
-                                                type:'password',
-                                                id:'newPassword',
-                                                placeholder:'Enter new password'
-                                            },
-                                            style:{
-                                                width:'100%',
-                                                padding:'0.8rem 2.5rem',
-                                                backgroundColor:'#333',
-                                                border:'1px solid #444',
-                                                borderRadius:'0.5vw',
-                                                color:'#fff',
-                                                fontSize:'1vw',
-                                                outline:'none',
-                                                transition:'all 0.3s ease',
-                                                boxSizing:'border-box'
-                                            },
-                                            event:{
-                                                focus:(e)=>{
-                                                    e.target.style.borderColor = '#00bcd4';
-                                                    e.target.style.backgroundColor = '#3a3a3a';
-                                                },
-                                                blur:(e)=>{
-                                                    e.target.style.borderColor = '#444';
-                                                    e.target.style.backgroundColor = '#333';
-                                                }
-                                            }
-                                        }),
-                                        $({
-                                            tag:'div',
-                                            style:{
-                                                position:'absolute',
-                                                right:'1vw',
-                                                top:'50%',
-                                                transform:'translateY(-50%)',
-                                                color:'#666',
-                                                fontSize:'1vw',
-                                                cursor:'pointer',
-                                                zIndex:'1',
-                                                transition:'color 0.3s ease'
-                                            },
-                                            att:{
-                                                className:'fa-solid fa-eye-slash toggle-password',
-                                                'data-target':'newPassword'
-                                            },
-                                            event:{
-                                                type:'click',
-                                                method:(e)=>{
-                                                    const target = document.getElementById('newPassword');
-                                                    const icon = e.target;
-                                                    if(target.type === 'password'){
-                                                        target.type = 'text';
-                                                        icon.className = 'fa-solid fa-eye';
-                                                    } else {
-                                                        target.type = 'password';
-                                                        icon.className = 'fa-solid fa-eye-slash';
-                                                    }
-                                                }
-                                            }
-                                        })
-                                    ]
-                                }),
-                                
-                                // Confirm Password Field with Eye Icon
-                                $({
-                                    tag:'div',
-                                    style:{
-                                        marginBottom:'3vh',
-                                        position:'relative'
-                                    },
-                                    child:[
-                                        $({
-                                            tag:'div',
-                                            style:{
-                                                position:'absolute',
-                                                left:'1vw',
-                                                top:'50%',
-                                                transform:'translateY(-50%)',
-                                                color:'#666',
-                                                fontSize:'1vw',
-                                                zIndex:'1'
-                                            },
-                                            att:{
-                                                className:'fa-solid fa-lock'
-                                            }
-                                        }),
-                                        $({
-                                            tag:'input',
-                                            att:{
-                                                type:'password',
-                                                id:'confirmPassword',
-                                                placeholder:'Confirm new password'
-                                            },
-                                            style:{
-                                                width:'100%',
-                                                padding:'0.8rem 2.5rem',
-                                                backgroundColor:'#333',
-                                                border:'1px solid #444',
-                                                borderRadius:'0.5vw',
-                                                color:'#fff',
-                                                fontSize:'1vw',
-                                                outline:'none',
-                                                transition:'all 0.3s ease',
-                                                boxSizing:'border-box'
-                                            },
-                                            event:{
-                                                focus:(e)=>{
-                                                    e.target.style.borderColor = '#00bcd4';
-                                                    e.target.style.backgroundColor = '#3a3a3a';
-                                                },
-                                                blur:(e)=>{
-                                                    e.target.style.borderColor = '#444';
-                                                    e.target.style.backgroundColor = '#333';
-                                                }
-                                            }
-                                        }),
-                                        $({
-                                            tag:'div',
-                                            style:{
-                                                position:'absolute',
-                                                right:'1vw',
-                                                top:'50%',
-                                                transform:'translateY(-50%)',
-                                                color:'#666',
-                                                fontSize:'1vw',
-                                                cursor:'pointer',
-                                                zIndex:'1',
-                                                transition:'color 0.3s ease'
-                                            },
-                                            att:{
-                                                className:'fa-solid fa-eye-slash toggle-password',
-                                                'data-target':'confirmPassword'
-                                            },
-                                            event:{
-                                                type:'click',
-                                                method:(e)=>{
-                                                    const target = document.getElementById('confirmPassword');
-                                                    const icon = e.target;
-                                                    if(target.type === 'password'){
-                                                        target.type = 'text';
-                                                        icon.className = 'fa-solid fa-eye';
-                                                    } else {
-                                                        target.type = 'password';
-                                                        icon.className = 'fa-solid fa-eye-slash';
-                                                    }
-                                                }
-                                            }
-                                        })
-                                    ]
-                                }),
-                                
-                                $({
-                                    tag:'div',
-                                    style:{
-                                        display:'flex',
-                                        justifyContent:'center',
-                                        gap:'1vw',
-                                        marginTop:'2vh'
-                                    },
-                                    child:[
-                                        $({
-                                            tag:'button',
-                                            style:{
-                                                padding:'0.8rem 2rem',
-                                                backgroundColor:'transparent',
-                                                border:'1px solid #444',
-                                                borderRadius:'2vw',
-                                                color:'#999',
-                                                cursor:'pointer',
-                                                fontSize:'1vw',
-                                                fontFamily:'Segoe UI, sans-serif',
-                                                transition:'all 0.3s ease',
-                                                flex:'1'
-                                            },
-                                            text:'Cancel',
-                                            event:{
-                                                type:'click',
-                                                method:()=>{
-                                                    modal.remove()
-                                                },
-                                                mouseover:(e)=>{
-                                                    e.target.style.backgroundColor = '#333';
-                                                    e.target.style.color = '#fff';
-                                                },
-                                                mouseout:(e)=>{
-                                                    e.target.style.backgroundColor = 'transparent';
-                                                    e.target.style.color = '#999';
-                                                }
-                                            }
-                                        }),
-                                        $({
-                                            tag:'button',
-                                            style:{
-                                                padding:'0.8rem 2rem',
-                                                background:'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
-                                                border:'none',
-                                                borderRadius:'2vw',
-                                                color:'#fff',
-                                                cursor:'pointer',
-                                                fontSize:'1vw',
-                                                fontFamily:'Segoe UI, sans-serif',
-                                                fontWeight:'600',
-                                                transition:'all 0.3s ease',
-                                                flex:'1'
-                                            },
-                                            text:'Reset Password',
-                                            event:{
-                                                type:'click',
-                                                method:async ()=>{
-                                                    const newPass = document.getElementById('newPassword').value
-                                                    const confirmPass = document.getElementById('confirmPassword').value
-                                                    
-                                                    if(!newPass || !confirmPass){
-                                                        alert('Please fill in both password fields')
-                                                        return
-                                                    }
-                                                    
-                                                    if(newPass !== confirmPass){
-                                                        alert('Passwords do not match')
-                                                        return
-                                                    }
-                                                    
-                                                    if(newPass.length < 6){
-                                                        alert('Password must be at least 6 characters long')
-                                                        return
-                                                    }
-                                                    
-                                                    const form = new FormData()
-                                                    form.append('resetEvaluatorPassword', 'true')
-                                                    form.append('id', id)
-                                                    form.append('newPassword', newPass)
-                                                    
-                                                    let loading = Waiting()
-                                                    document.body.appendChild(loading)
-                                                    
-                                                    try {
-                                                        const response = await fetch('/evaluatorReg', {
-                                                            method: 'POST',
-                                                            body: form
-                                                        })
-                                                        const data = await response.json()
-                                                        
-                                                        loading.remove()
-                                                        
-                                                        if(data.status){
-                                                            modal.remove()
-                                                            document.body.appendChild(ConfirmationAlert('Password reset successfully!', ()=>{
-                                                                // Just close the alert
-                                                            }))
-                                                        } else {
-                                                            alert(data.message || 'Failed to reset password')
-                                                        }
-                                                    } catch(error) {
-                                                        loading.remove()
-                                                        alert('An error occurred')
-                                                    }
-                                                }
-                                            }
-                                        })
-                                    ]
-                                })
-                            ]
-                        })
-                    ]
-                })
-                
-                document.body.appendChild(modal)
-            }
-            
-            const getContainer=async (panel)=>{
-                bo=panel
-                const form=new FormData()
-                form.append('evaluatorsList','true')
-                await fetch('/evaluatorReg',{
-                    body:form,
-                    method:'POST',
-                }).then(res=>res.json())
-                    .then(data=>{
-                        data.reverse().forEach(val=>{
+
+            const getContainer = async (panel) => {
+                bo = panel
+                const form = new FormData()
+                form.append('evaluatorsList', 'true')
+                await fetch('/evaluatorReg', {
+                    body: form,
+                    method: 'POST',
+                }).then(res => res.json())
+                    .then(data => {
+                        data.reverse().forEach(val => {
                             panel.appendChild(list({
-                                fullName:val.fullname,
-                                category:val.category,
-                                id:val.id,
-                                username:val.username
+                                fullName: val.fullname,
+                                category: val.category,
+                                id: val.id,
+                                username: val.username
                             }))
                         })
                     })
             }
-            
-            return($({
-                tag:'div',
-                style:{
-                    width:'100%',
+
+            return ($({
+                tag: 'div',
+                style: {
+                    width: '100%',
                     height: 'calc(100% - 12vh)',
-                    backgroundColor:'rgba(0,0,0,0.3)',
-                    overflowY:'auto',
-                    borderRadius:'0.5vw',
-                    border:'1px solid rgba(255,255,255,0.05)'
+                    backgroundColor: '#ffffff',
+                    overflowY: 'auto',
+                    borderRadius: '0 0 8px 8px',
+                    border: '1px solid #f1f5f9',
+                    padding: '0 4px'
                 },
-                elementHandler:getContainer
+                elementHandler: getContainer
             }))
         }
-        
-        const SearchBar=()=>{
-            return($({
-                tag:'div',
-                style:{
-                    height:'5vh',
-                    border:'1px solid rgba(255,255,255,0.1)',
-                    width:'25vw',
-                    marginBottom: '2vh',
-                    borderRadius:'2vw',
-                    display:'flex',
-                    padding:'0 1vw',
-                    backgroundColor:'rgba(0,0,0,0.4)',
-                    color:'#bbb',
-                    alignItems:'center',
-                    transition:'all 0.3s ease'
+
+        const SearchBar = () => {
+            return ($({
+                tag: 'div',
+                style: {
+                    height: '38px',
+                    border: '1px solid #e2e8f0',
+                    width: '250px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    padding: '0 12px',
+                    backgroundColor: '#f8fafc',
+                    color: '#1e293b',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease'
                 },
-                child:[
+                event: {
+                    focusin: (e) => {
+                        e.currentTarget.style.borderColor = '#3b82f6'
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                        e.currentTarget.style.backgroundColor = '#ffffff'
+                    },
+                    focusout: (e) => {
+                        e.currentTarget.style.borderColor = '#e2e8f0'
+                        e.currentTarget.style.boxShadow = 'none'
+                        e.currentTarget.style.backgroundColor = '#f8fafc'
+                    }
+                },
+                child: [
                     $({
-                        tag:'div',
-                        att:{
-                            className:'fa-solid fa-search'
+                        tag: 'div',
+                        att: {
+                            className: 'fa-solid fa-search'
                         },
-                        style:{
-                            fontSize:'1vw',
-                            color:'#666',
-                            marginRight:'0.5vw'
+                        style: {
+                            fontSize: '14px',
+                            color: '#94a3b8',
+                            marginRight: '8px'
                         }
                     }),
                     $({
-                        tag:'input',
-                        att:{
-                            type:'text',
-                            placeholder:'Search evaluators...'
+                        tag: 'input',
+                        att: {
+                            type: 'text',
+                            placeholder: 'Search evaluators...'
                         },
-                        style:{
-                            backgroundColor:'transparent',
-                            border:'none',
-                            outline:'none',
-                            height:'100%',
-                            width:'100%',
-                            color:'#e0e0e0',
-                            fontSize:'0.95vw',
-                            fontFamily:'Segoe UI, sans-serif'
+                        style: {
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            outline: 'none',
+                            height: '100%',
+                            width: '100%',
+                            color: '#1e293b',
+                            fontSize: '14px',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                         },
-                        event:{
-                            type:'input',
-                            method:(ev)=>{
-                                let list=bo.children
-                                for(let val of list){
-                                    if(!val.innerText.toUpperCase().includes(ev.target.value.toUpperCase())){
-                                        val.style.display='none'
-                                    }else {
-                                        val.style.display='flex'
+                        event: {
+                            type: 'input',
+                            method: (ev) => {
+                                let list = bo.children
+                                for (let val of list) {
+                                    if (!val.innerText.toUpperCase().includes(ev.target.value.toUpperCase())) {
+                                        val.style.display = 'none'
+                                    } else {
+                                        val.style.display = 'flex'
                                     }
                                 }
                             }
@@ -1625,64 +1603,70 @@ const evalPage = () => {
                 ]
             }))
         }
-        
-        const Head=()=>{
-            const Leb=({label,width,align='left'})=>{
-                return($({
-                    tag:'div',
-                    style:{
-                        width:width,
-                        textAlign:align,
-                        fontFamily:'Segoe UI, sans-serif',
-                        fontSize:'0.9vw',
-                        color:'#888',
-                        fontWeight:'600',
-                        textTransform:'uppercase',
-                        letterSpacing:'0.05vw'
+
+        const Head = () => {
+            const Leb = ({ label, width, align = 'left' }) => {
+                return ($({
+                    tag: 'div',
+                    style: {
+                        width: width,
+                        textAlign: align,
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                        fontSize: '11px',
+                        color: '#94a3b8',
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        padding: '0 8px'
                     },
-                    text:label
+                    text: label
                 }))
             }
-            
-            return($({
-                tag:'div',
-                style:{
-                    display:'flex',
-                    width:'100%',
-                    padding:'1vh 0',
-                    marginBottom:'0.5vh',
-                    borderBottom:'2px solid rgba(255,255,255,0.1)'
+
+            return ($({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    width: '100%',
+                    padding: '10px 0',
+                    marginBottom: '4px',
+                    borderBottom: '1px solid #e2e8f0',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px 8px 0 0'
                 },
-                child:[
-                    Leb({label:'',width:'5%',align:'center'}),
-                    Leb({label:'FULL NAME',width:'30%'}),
-                    Leb({label:'USERNAME',width:'15%'}),
-                    Leb({label:'CATEGORY',width:'15%'}),
-                    Leb({label:'PASSWORD',width:'25%'}),
-                    Leb({label:'ACTIONS',width:'10%',align:'center'}),
+                child: [
+                    Leb({ label: '', width: '5%', align: 'center' }),
+                    Leb({ label: 'FULL NAME', width: '30%' }),
+                    Leb({ label: 'USERNAME', width: '15%' }),
+                    Leb({ label: 'CATEGORY', width: '15%' }),
+                    Leb({ label: '', width: '25%' }),
+                    Leb({ label: '', width: '10%', align: 'center' }),
                 ]
             }))
         }
-        
-        return($({
-            tag:'div',
-            style:{
-                width:'90%',
-                margin:'2% auto',
-                height:'96%',
-                display:'flex',
-                flexDirection:'column'
+
+        return ($({
+            tag: 'div',
+            style: {
+                width: '90%',
+                margin: '1% auto',
+                height: '98%',
+                display: 'flex',
+                flexDirection: 'column',
+                maxWidth: '1400px'
             },
-            child:[
+            child: [
                 $({
-                    tag:'div',
-                    style:{
-                        display:'flex',
-                        justifyContent:'space-between',
-                        alignItems:'center',
-                        marginBottom:'1vh'
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '8px',
+                        flexWrap: 'wrap',
+                        gap: '8px'
                     },
-                    child:[
+                    child: [
                         Label,
                         SearchBar()
                     ]
@@ -1692,13 +1676,18 @@ const evalPage = () => {
             ]
         }))
     }
-    
+
     return ($({
         tag: 'div',
         att: {
             className: 'capAccPage'
         },
-        child:[
+        style: {
+            background: '#f8fafc',
+            height: '100%',
+            width: '100%'
+        },
+        child: [
             mainPan()
         ]
     }))
@@ -1710,20 +1699,32 @@ const rdePage = () => {
     const FullList = (url) => {
         let bodyPan
 
-        // Define SearchInput as a separate function
         const SearchInput = () => {
             return ($({
                 tag: 'div',
                 style: {
-                    height: '5vh',
-                    width: '25vw',
+                    height: '38px',
+                    border: '1px solid #e2e8f0',
+                    width: '250px',
+                    borderRadius: '8px',
                     display: 'flex',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '2vw',
-                    backgroundColor: 'rgba(0,0,0,0.4)',
-                    padding: '0 1vw',
+                    padding: '0 12px',
+                    backgroundColor: '#f8fafc',
+                    color: '#1e293b',
                     alignItems: 'center',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    focusin: (e) => {
+                        e.currentTarget.style.borderColor = '#3b82f6'
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                        e.currentTarget.style.backgroundColor = '#ffffff'
+                    },
+                    focusout: (e) => {
+                        e.currentTarget.style.borderColor = '#e2e8f0'
+                        e.currentTarget.style.boxShadow = 'none'
+                        e.currentTarget.style.backgroundColor = '#f8fafc'
+                    }
                 },
                 child: [
                     $({
@@ -1732,9 +1733,9 @@ const rdePage = () => {
                             className: 'fa-solid fa-search'
                         },
                         style: {
-                            fontSize: '1vw',
-                            color: '#666',
-                            marginRight: '0.5vw'
+                            fontSize: '14px',
+                            color: '#94a3b8',
+                            marginRight: '8px'
                         }
                     }),
                     $({
@@ -1744,9 +1745,9 @@ const rdePage = () => {
                             border: 'none',
                             outline: 'none',
                             width: '100%',
-                            fontSize: '0.95vw',
-                            color: '#e0e0e0',
-                            fontFamily: 'Segoe UI, sans-serif'
+                            fontSize: '14px',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                         },
                         att: {
                             placeholder: 'Search RDE staff...'
@@ -1769,9 +1770,6 @@ const rdePage = () => {
             }))
         }
 
-        // You can remove the Head function since we're not using it anymore
-        // Or keep it if needed elsewhere
-
         const Body = () => {
             const PasswordResetCell = ({ accountID, email }) => {
                 return ($({
@@ -1779,13 +1777,13 @@ const rdePage = () => {
                     style: {
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '0.3vw',
-                        padding: '0.3vw 0.8vw',
-                        borderRadius: '1vw',
-                        backgroundColor: 'rgba(0,188,212,0.1)',
-                        border: '1px solid rgba(0,188,212,0.2)',
+                        gap: '6px',
+                        padding: '4px 14px',
+                        borderRadius: '20px',
+                        backgroundColor: 'rgba(59,130,246,0.06)',
+                        border: '1px solid rgba(59,130,246,0.12)',
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease'
+                        transition: 'all 0.2s ease'
                     },
                     child: [
                         $({
@@ -1794,17 +1792,18 @@ const rdePage = () => {
                                 className: 'fa-solid fa-key'
                             },
                             style: {
-                                color: '#00bcd4',
-                                fontSize: '0.9vw'
+                                color: '#3b82f6',
+                                fontSize: '12px'
                             }
                         }),
                         $({
                             tag: 'span',
                             text: 'Reset Password',
                             style: {
-                                color: '#00bcd4',
-                                fontSize: '0.85vw',
-                                fontFamily: 'Segoe UI, sans-serif'
+                                color: '#3b82f6',
+                                fontSize: '12px',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontWeight: '500'
                             }
                         })
                     ],
@@ -1815,10 +1814,10 @@ const rdePage = () => {
                             showPasswordReset(accountID, email)
                         },
                         mouseover: (e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.2)'
+                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.12)'
                         },
                         mouseout: (e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.1)'
+                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.06)'
                         }
                     }
                 }))
@@ -1831,9 +1830,9 @@ const rdePage = () => {
                         width: '100%',
                         display: 'flex',
                         alignItems: 'center',
-                        padding: '1vh 0',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        transition: 'all 0.3s ease',
+                        padding: '10px 0',
+                        borderBottom: '1px solid #f1f5f9',
+                        transition: 'all 0.2s ease',
                         cursor: 'pointer'
                     },
                     att: {
@@ -1841,7 +1840,7 @@ const rdePage = () => {
                     },
                     event: {
                         mouseover: (e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
+                            e.currentTarget.style.backgroundColor = '#f8fafc'
                         },
                         mouseout: (e) => {
                             e.currentTarget.style.backgroundColor = 'transparent'
@@ -1853,13 +1852,14 @@ const rdePage = () => {
                             text: userName,
                             style: {
                                 width: '15%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '0.95vw',
-                                color: '#e0e0e0',
-                                paddingLeft: '1vw',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#1e293b',
+                                paddingLeft: '12px',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
-                                textOverflow: 'ellipsis'
+                                textOverflow: 'ellipsis',
+                                fontWeight: '500'
                             }
                         }),
                         $({
@@ -1867,13 +1867,13 @@ const rdePage = () => {
                             text: email,
                             style: {
                                 width: '40%',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '0.95vw',
-                                color: '#aaa',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '13px',
+                                color: '#64748b',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                paddingRight: '1vw'
+                                paddingRight: '12px'
                             }
                         }),
                         $({
@@ -1893,22 +1893,22 @@ const rdePage = () => {
                                 width: '25%',
                                 display: 'flex',
                                 justifyContent: 'flex-end',
-                                gap: '0.5vw',
-                                paddingRight: '1vw'
+                                gap: '8px',
+                                paddingRight: '12px'
                             },
                             child: [
                                 $({
                                     tag: 'div',
                                     style: {
-                                        padding: '0.3vw 0.8vw',
-                                        borderRadius: '1vw',
-                                        backgroundColor: 'rgba(255,193,7,0.1)',
-                                        border: '1px solid rgba(255,193,7,0.2)',
+                                        padding: '4px 14px',
+                                        borderRadius: '20px',
+                                        backgroundColor: 'rgba(245,158,11,0.06)',
+                                        border: '1px solid rgba(245,158,11,0.12)',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '0.3vw',
+                                        gap: '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.3s ease'
+                                        transition: 'all 0.2s ease'
                                     },
                                     child: [
                                         $({
@@ -1917,17 +1917,18 @@ const rdePage = () => {
                                                 className: 'fa-solid fa-user-pen'
                                             },
                                             style: {
-                                                color: '#ffc107',
-                                                fontSize: '0.9vw'
+                                                color: '#f59e0b',
+                                                fontSize: '12px'
                                             }
                                         }),
                                         $({
                                             tag: 'span',
                                             text: 'Edit',
                                             style: {
-                                                color: '#ffc107',
-                                                fontSize: '0.85vw',
-                                                fontFamily: 'Segoe UI, sans-serif'
+                                                color: '#f59e0b',
+                                                fontSize: '12px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontWeight: '500'
                                             }
                                         })
                                     ],
@@ -1952,15 +1953,15 @@ const rdePage = () => {
                                 $({
                                     tag: 'div',
                                     style: {
-                                        padding: '0.3vw 0.8vw',
-                                        borderRadius: '1vw',
-                                        backgroundColor: 'rgba(244,67,54,0.1)',
-                                        border: '1px solid rgba(244,67,54,0.2)',
+                                        padding: '4px 14px',
+                                        borderRadius: '20px',
+                                        backgroundColor: 'rgba(239,68,68,0.06)',
+                                        border: '1px solid rgba(239,68,68,0.12)',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '0.3vw',
+                                        gap: '6px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.3s ease'
+                                        transition: 'all 0.2s ease'
                                     },
                                     child: [
                                         $({
@@ -1969,17 +1970,18 @@ const rdePage = () => {
                                                 className: 'fa-solid fa-trash-can'
                                             },
                                             style: {
-                                                color: '#f44336',
-                                                fontSize: '0.9vw'
+                                                color: '#ef4444',
+                                                fontSize: '12px'
                                             }
                                         }),
                                         $({
                                             tag: 'span',
                                             text: 'Delete',
                                             style: {
-                                                color: '#f44336',
-                                                fontSize: '0.85vw',
-                                                fontFamily: 'Segoe UI, sans-serif'
+                                                color: '#ef4444',
+                                                fontSize: '12px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontWeight: '500'
                                             }
                                         })
                                     ],
@@ -1990,14 +1992,8 @@ const rdePage = () => {
                                             if (confirm("This operation cannot be undone. Would you like to proceed?")) {
                                                 const req = new Request('/rdeaccreq')
                                                 req.Post([
-                                                    {
-                                                        name: 'deleteRDEaccount',
-                                                        value: '0'
-                                                    },
-                                                    {
-                                                        name: 'userId',
-                                                        value: accountID
-                                                    }
+                                                    { name: 'deleteRDEaccount', value: '0' },
+                                                    { name: 'userId', value: accountID }
                                                 ])
                                                 req.Json()
                                                 req.Send().then(data => {
@@ -2026,85 +2022,80 @@ const rdePage = () => {
                         left: '0',
                         width: '100%',
                         height: '100%',
-                        backgroundColor: 'rgba(0,0,0,0.9)',
+                        backgroundColor: 'rgba(15,23,42,0.6)',
                         display: 'flex',
-                        zIndex: '9',
-                        backdropFilter: 'blur(5px)'
+                        zIndex: '9999',
+                        backdropFilter: 'blur(4px)'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
-                                width: '32%',
+                                width: '420px',
+                                maxWidth: '92%',
                                 height: 'fit-content',
-                                background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                                backgroundColor: '#ffffff',
                                 margin: 'auto',
-                                padding: '2.5rem',
-                                borderRadius: '1vw',
+                                padding: '32px',
+                                borderRadius: '12px',
                                 position: 'relative',
-                                border: '1px solid #333',
-                                boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                                border: '1px solid #e2e8f0',
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
                             },
                             child: [
                                 $({
                                     tag: 'div',
                                     style: {
                                         position: 'absolute',
-                                        top: '1.5vh',
-                                        right: '1.5vw',
+                                        top: '16px',
+                                        right: '16px',
                                         cursor: 'pointer',
-                                        color: '#666',
-                                        fontSize: '1.5vw',
-                                        transition: 'all 0.3s ease'
+                                        color: '#94a3b8',
+                                        fontSize: '20px',
+                                        transition: 'all 0.2s ease',
+                                        padding: '8px',
+                                        borderRadius: '8px'
                                     },
                                     att: {
-                                        className: 'fa-solid fa-circle-xmark'
+                                        className: 'fa-solid fa-times'
                                     },
                                     event: {
                                         type: 'click',
                                         method: () => {
                                             modal.remove()
-                                        },
-                                        mouseover: (e) => {
-                                            e.target.style.color = '#00bcd4'
-                                        },
-                                        mouseout: (e) => {
-                                            e.target.style.color = '#666'
                                         }
                                     }
                                 }),
                                 $({
                                     tag: 'div',
                                     style: {
-                                        fontFamily: 'Segoe UI, sans-serif',
-                                        fontSize: '1.8vw',
-                                        color: '#fff',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                        fontSize: '20px',
+                                        color: '#1e293b',
                                         textAlign: 'center',
-                                        marginBottom: '1vh',
-                                        fontWeight: '600',
-                                        letterSpacing: '0.1vw'
+                                        marginBottom: '8px',
+                                        fontWeight: '600'
                                     },
                                     text: 'Reset Password'
                                 }),
                                 $({
                                     tag: 'div',
                                     style: {
-                                        fontFamily: 'Segoe UI, sans-serif',
-                                        fontSize: '1vw',
-                                        color: '#888',
-                                        marginBottom: '3vh',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                        fontSize: '14px',
+                                        color: '#64748b',
+                                        marginBottom: '24px',
                                         textAlign: 'center',
-                                        padding: '0.5vh 0',
-                                        borderBottom: '1px solid #333'
+                                        padding: '8px 0',
+                                        borderBottom: '1px solid #f1f5f9'
                                     },
                                     text: `Reset password for: ${username}`
                                 }),
-
-                                // New Password Field with Eye Icon
+                                // Password fields (simplified - reuse from above)
                                 $({
                                     tag: 'div',
                                     style: {
-                                        marginBottom: '2.5vh',
+                                        marginBottom: '16px',
                                         position: 'relative'
                                     },
                                     child: [
@@ -2112,11 +2103,11 @@ const rdePage = () => {
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                left: '1vw',
+                                                left: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 zIndex: '1'
                                             },
                                             att: {
@@ -2132,39 +2123,29 @@ const rdePage = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '0.8rem 2.5rem',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '0.5vw',
-                                                color: '#fff',
-                                                fontSize: '1vw',
+                                                padding: '10px 12px 10px 40px',
+                                                backgroundColor: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                color: '#1e293b',
+                                                fontSize: '14px',
                                                 outline: 'none',
-                                                transition: 'all 0.3s ease',
-                                                boxSizing: 'border-box'
-                                            },
-                                            event: {
-                                                focus: (e) => {
-                                                    e.target.style.borderColor = '#00bcd4'
-                                                    e.target.style.backgroundColor = '#3a3a3a'
-                                                },
-                                                blur: (e) => {
-                                                    e.target.style.borderColor = '#444'
-                                                    e.target.style.backgroundColor = '#333'
-                                                }
+                                                transition: 'all 0.2s ease',
+                                                boxSizing: 'border-box',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                right: '1vw',
+                                                right: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 cursor: 'pointer',
-                                                zIndex: '1',
-                                                transition: 'color 0.3s ease'
+                                                zIndex: '1'
                                             },
                                             att: {
                                                 className: 'fa-solid fa-eye-slash toggle-password',
@@ -2187,12 +2168,10 @@ const rdePage = () => {
                                         })
                                     ]
                                 }),
-
-                                // Confirm Password Field with Eye Icon
                                 $({
                                     tag: 'div',
                                     style: {
-                                        marginBottom: '3vh',
+                                        marginBottom: '24px',
                                         position: 'relative'
                                     },
                                     child: [
@@ -2200,11 +2179,11 @@ const rdePage = () => {
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                left: '1vw',
+                                                left: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 zIndex: '1'
                                             },
                                             att: {
@@ -2220,39 +2199,29 @@ const rdePage = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '0.8rem 2.5rem',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '0.5vw',
-                                                color: '#fff',
-                                                fontSize: '1vw',
+                                                padding: '10px 12px 10px 40px',
+                                                backgroundColor: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                color: '#1e293b',
+                                                fontSize: '14px',
                                                 outline: 'none',
-                                                transition: 'all 0.3s ease',
-                                                boxSizing: 'border-box'
-                                            },
-                                            event: {
-                                                focus: (e) => {
-                                                    e.target.style.borderColor = '#00bcd4'
-                                                    e.target.style.backgroundColor = '#3a3a3a'
-                                                },
-                                                blur: (e) => {
-                                                    e.target.style.borderColor = '#444'
-                                                    e.target.style.backgroundColor = '#333'
-                                                }
+                                                transition: 'all 0.2s ease',
+                                                boxSizing: 'border-box',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                right: '1vw',
+                                                right: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 cursor: 'pointer',
-                                                zIndex: '1',
-                                                transition: 'color 0.3s ease'
+                                                zIndex: '1'
                                             },
                                             att: {
                                                 className: 'fa-solid fa-eye-slash toggle-password',
@@ -2275,28 +2244,27 @@ const rdePage = () => {
                                         })
                                     ]
                                 }),
-
                                 $({
                                     tag: 'div',
                                     style: {
                                         display: 'flex',
                                         justifyContent: 'center',
-                                        gap: '1vw',
-                                        marginTop: '2vh'
+                                        gap: '12px'
                                     },
                                     child: [
                                         $({
                                             tag: 'button',
                                             style: {
-                                                padding: '0.8rem 2rem',
+                                                padding: '8px 24px',
                                                 backgroundColor: 'transparent',
-                                                border: '1px solid #444',
-                                                borderRadius: '2vw',
-                                                color: '#999',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                color: '#64748b',
                                                 cursor: 'pointer',
-                                                fontSize: '1vw',
-                                                fontFamily: 'Segoe UI, sans-serif',
-                                                transition: 'all 0.3s ease',
+                                                fontSize: '13px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontWeight: '500',
+                                                transition: 'all 0.2s ease',
                                                 flex: '1'
                                             },
                                             text: 'Cancel',
@@ -2304,30 +2272,22 @@ const rdePage = () => {
                                                 type: 'click',
                                                 method: () => {
                                                     modal.remove()
-                                                },
-                                                mouseover: (e) => {
-                                                    e.target.style.backgroundColor = '#333'
-                                                    e.target.style.color = '#fff'
-                                                },
-                                                mouseout: (e) => {
-                                                    e.target.style.backgroundColor = 'transparent'
-                                                    e.target.style.color = '#999'
                                                 }
                                             }
                                         }),
                                         $({
                                             tag: 'button',
                                             style: {
-                                                padding: '0.8rem 2rem',
-                                                background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
+                                                padding: '8px 24px',
+                                                backgroundColor: '#3b82f6',
                                                 border: 'none',
-                                                borderRadius: '2vw',
+                                                borderRadius: '8px',
                                                 color: '#fff',
                                                 cursor: 'pointer',
-                                                fontSize: '1vw',
-                                                fontFamily: 'Segoe UI, sans-serif',
+                                                fontSize: '13px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                                 fontWeight: '600',
-                                                transition: 'all 0.3s ease',
+                                                transition: 'all 0.2s ease',
                                                 flex: '1'
                                             },
                                             text: 'Reset Password',
@@ -2371,9 +2331,7 @@ const rdePage = () => {
 
                                                         if (data.status) {
                                                             modal.remove()
-                                                            document.body.appendChild(ConfirmationAlert('Password reset successfully!', () => {
-                                                                // Just close the alert
-                                                            }))
+                                                            document.body.appendChild(ConfirmationAlert('Password reset successfully!', () => { }))
                                                         } else {
                                                             alert(data.message || 'Failed to reset password')
                                                         }
@@ -2400,19 +2358,17 @@ const rdePage = () => {
                     height: '90%',
                     width: '90%',
                     margin: '0 auto',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
+                    backgroundColor: '#ffffff',
                     overflowY: 'auto',
-                    borderRadius: '0.5vw',
-                    border: '1px solid rgba(255,255,255,0.05)'
+                    borderRadius: '0 0 8px 8px',
+                    border: '1px solid #f1f5f9',
+                    padding: '0 4px'
                 },
                 elementHandler: (el) => {
                     bodyPan = el
                     const req = new Request('/rdeaccreq')
                     req.Post([
-                        {
-                            name: 'rdeAccReq',
-                            value: '0'
-                        }
+                        { name: 'rdeAccReq', value: '0' }
                     ])
                     req.Json()
                     req.Send().then(data => {
@@ -2430,9 +2386,11 @@ const rdePage = () => {
                 style: {
                     display: 'flex',
                     width: '90%',
-                    margin: '0 auto 1vh auto',
-                    padding: '1vh 0',
-                    borderBottom: '2px solid rgba(255,255,255,0.1)'
+                    margin: '0 auto 4px auto',
+                    padding: '10px 0',
+                    borderBottom: '1px solid #e2e8f0',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px 8px 0 0'
                 },
                 child: [
                     $({
@@ -2440,13 +2398,13 @@ const rdePage = () => {
                         text: 'USERNAME',
                         style: {
                             width: '15%',
-                            fontFamily: 'Segoe UI, sans-serif',
-                            fontSize: '0.9vw',
-                            color: '#888',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            fontSize: '11px',
+                            color: '#94a3b8',
                             fontWeight: '600',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.05vw',
-                            paddingLeft: '1vw'
+                            letterSpacing: '0.5px',
+                            paddingLeft: '12px'
                         }
                     }),
                     $({
@@ -2454,12 +2412,12 @@ const rdePage = () => {
                         text: 'EMAIL',
                         style: {
                             width: '40%',
-                            fontFamily: 'Segoe UI, sans-serif',
-                            fontSize: '0.9vw',
-                            color: '#888',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            fontSize: '11px',
+                            color: '#94a3b8',
                             fontWeight: '600',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.05vw'
+                            letterSpacing: '0.5px'
                         }
                     }),
                     $({
@@ -2467,12 +2425,12 @@ const rdePage = () => {
                         text: 'PASSWORD',
                         style: {
                             width: '20%',
-                            fontFamily: 'Segoe UI, sans-serif',
-                            fontSize: '0.9vw',
-                            color: '#888',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            fontSize: '11px',
+                            color: '#94a3b8',
                             fontWeight: '600',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.05vw',
+                            letterSpacing: '0.5px',
                             textAlign: 'center'
                         }
                     }),
@@ -2481,14 +2439,14 @@ const rdePage = () => {
                         text: 'ACTIONS',
                         style: {
                             width: '25%',
-                            fontFamily: 'Segoe UI, sans-serif',
-                            fontSize: '0.9vw',
-                            color: '#888',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            fontSize: '11px',
+                            color: '#94a3b8',
                             fontWeight: '600',
                             textTransform: 'uppercase',
-                            letterSpacing: '0.05vw',
+                            letterSpacing: '0.5px',
                             textAlign: 'right',
-                            paddingRight: '1vw'
+                            paddingRight: '12px'
                         }
                     })
                 ]
@@ -2501,7 +2459,8 @@ const rdePage = () => {
                 width: '100%',
                 height: '100%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                background: '#f8fafc'
             },
             child: [
                 $({
@@ -2511,7 +2470,8 @@ const rdePage = () => {
                         height: '10%',
                         display: 'flex',
                         alignItems: 'center',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)'
+                        borderBottom: '1px solid #e2e8f0',
+                        background: '#ffffff'
                     },
                     child: [
                         $({
@@ -2529,7 +2489,12 @@ const rdePage = () => {
                                     style: {
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '1vw'
+                                        gap: '12px',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                        color: '#1e293b',
+                                        fontSize: '18px',
+                                        fontWeight: '600',
+                                        letterSpacing: '-0.3px'
                                     },
                                     child: [
                                         $({
@@ -2538,28 +2503,17 @@ const rdePage = () => {
                                                 className: 'fa-solid fa-users'
                                             },
                                             style: {
-                                                fontSize: '1.5vw',
-                                                color: '#00bcd4'
+                                                fontSize: '20px',
+                                                color: '#3b82f6'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
-                                            text: 'RDE Staff Management',
-                                            style: {
-                                                width: '100%',
-                                                textAlign:'center',
-                                                fontFamily:'arial black, san-serif',
-                                                color:'rgba(200,200,200,0.5)',
-                                                marginBottom:'2vh',
-                                                fontSize:'1.5vw',
-                                                letterSpacing:'0.1vw',
-                                                textTransform:'uppercase',
-                                                textShadow:'0 0 10px rgba(0,191,255,0.3)'
-                                            }
+                                            text: 'RDE Staff Management'
                                         })
                                     ]
                                 }),
-                                SearchInput() // Now SearchInput is defined and can be called
+                                SearchInput()
                             ]
                         })
                     ]
@@ -2572,7 +2526,6 @@ const rdePage = () => {
 
     const account = () => {
         let acBody
-
         const current = window.location.href
         const origin = window.location.origin
         const userID = current.replace(origin, '').split('/')[5]
@@ -2586,7 +2539,7 @@ const rdePage = () => {
                 tag: 'div',
                 style: {
                     width: '100%',
-                    marginBottom: '2vh',
+                    marginBottom: '16px',
                     position: 'relative'
                 },
                 child: [
@@ -2594,11 +2547,11 @@ const rdePage = () => {
                         tag: 'div',
                         style: {
                             position: 'absolute',
-                            left: '1vw',
+                            left: '12px',
                             top: '50%',
                             transform: 'translateY(-50%)',
-                            color: '#666',
-                            fontSize: '1vw',
+                            color: '#94a3b8',
+                            fontSize: '14px',
                             zIndex: '1'
                         },
                         att: {
@@ -2609,15 +2562,16 @@ const rdePage = () => {
                         tag: 'input',
                         style: {
                             width: '100%',
-                            padding: '0.8rem 2.5rem',
-                            backgroundColor: '#333',
-                            border: '1px solid #444',
-                            borderRadius: '0.5vw',
-                            color: '#fff',
-                            fontSize: '1vw',
+                            padding: '10px 12px 10px 40px',
+                            backgroundColor: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            color: '#1e293b',
+                            fontSize: '14px',
                             outline: 'none',
-                            transition: 'all 0.3s ease',
-                            boxSizing: 'border-box'
+                            transition: 'all 0.2s ease',
+                            boxSizing: 'border-box',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                         },
                         att: {
                             placeholder: placeHolder,
@@ -2633,12 +2587,14 @@ const rdePage = () => {
                                 inputName = ev.target.value
                             },
                             focus: (e) => {
-                                e.target.style.borderColor = '#00bcd4'
-                                e.target.style.backgroundColor = '#3a3a3a'
+                                e.target.style.borderColor = '#3b82f6'
+                                e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                e.target.style.backgroundColor = '#ffffff'
                             },
                             blur: (e) => {
-                                e.target.style.borderColor = '#444'
-                                e.target.style.backgroundColor = '#333'
+                                e.target.style.borderColor = '#e2e8f0'
+                                e.target.style.boxShadow = 'none'
+                                e.target.style.backgroundColor = '#f8fafc'
                             }
                         }
                     })
@@ -2647,17 +2603,17 @@ const rdePage = () => {
             const submit = $({
                 tag: 'div',
                 style: {
-                    background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
-                    padding: '0.8rem 2rem',
-                    borderRadius: '2vw',
+                    background: '#3b82f6',
+                    padding: '8px 24px',
+                    borderRadius: '8px',
                     color: '#fff',
                     cursor: 'pointer',
-                    fontSize: '1vw',
-                    fontFamily: 'Segoe UI, sans-serif',
+                    fontSize: '14px',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                     fontWeight: '600',
                     textAlign: 'center',
-                    transition: 'all 0.3s ease',
-                    marginTop: '1vh'
+                    transition: 'all 0.2s ease',
+                    marginTop: '8px'
                 },
                 text: 'Save Changes',
                 event: {
@@ -2666,18 +2622,9 @@ const rdePage = () => {
                         if (confirm("Save Changes?")) {
                             const req = new Request(reqUrl)
                             req.Post([
-                                {
-                                    name: 'userID',
-                                    value: userID
-                                },
-                                {
-                                    name: reqName,
-                                    value: '0'
-                                },
-                                {
-                                    name: 'fullNameInput',
-                                    value: inputName
-                                }
+                                { name: 'userID', value: userID },
+                                { name: reqName, value: '0' },
+                                { name: 'fullNameInput', value: inputName }
                             ])
                             req.Json()
                             req.Send().then(data => {
@@ -2700,10 +2647,10 @@ const rdePage = () => {
                     position: 'fixed',
                     top: '0',
                     left: '0',
-                    backgroundColor: 'rgba(0,0,0,0.9)',
+                    backgroundColor: 'rgba(15,23,42,0.6)',
                     display: 'flex',
                     zIndex: '9999',
-                    backdropFilter: 'blur(5px)'
+                    backdropFilter: 'blur(4px)'
                 },
                 elementHandler: (el) => {
                     mainBox = el
@@ -2712,41 +2659,38 @@ const rdePage = () => {
                     $({
                         tag: 'div',
                         style: {
-                            width: '35%',
+                            width: '420px',
+                            maxWidth: '92%',
                             height: 'fit-content',
-                            background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                            backgroundColor: '#ffffff',
                             margin: 'auto',
-                            padding: '2.5rem',
-                            borderRadius: '1vw',
+                            padding: '32px',
+                            borderRadius: '12px',
                             position: 'relative',
-                            border: '1px solid #333',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
                         },
                         child: [
                             $({
                                 tag: 'div',
                                 style: {
                                     position: 'absolute',
-                                    top: '1.5vh',
-                                    right: '1.5vw',
+                                    top: '16px',
+                                    right: '16px',
                                     cursor: 'pointer',
-                                    color: '#666',
-                                    fontSize: '1.5vw',
-                                    transition: 'all 0.3s ease'
+                                    color: '#94a3b8',
+                                    fontSize: '20px',
+                                    transition: 'all 0.2s ease',
+                                    padding: '8px',
+                                    borderRadius: '8px'
                                 },
                                 att: {
-                                    className: 'fa-solid fa-circle-xmark'
+                                    className: 'fa-solid fa-times'
                                 },
                                 event: {
                                     type: 'click',
                                     method: () => {
                                         mainBox.remove()
-                                    },
-                                    mouseover: (e) => {
-                                        e.target.style.color = '#00bcd4'
-                                    },
-                                    mouseout: (e) => {
-                                        e.target.style.color = '#666'
                                     }
                                 }
                             }),
@@ -2754,13 +2698,13 @@ const rdePage = () => {
                                 tag: 'div',
                                 text: label,
                                 style: {
-                                    fontFamily: 'Segoe UI, sans-serif',
-                                    fontSize: '1.8vw',
-                                    color: '#fff',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    fontSize: '20px',
+                                    color: '#1e293b',
                                     textAlign: 'center',
-                                    marginBottom: '3vh',
+                                    marginBottom: '24px',
                                     fontWeight: '600',
-                                    letterSpacing: '0.1vw'
+                                    letterSpacing: '-0.3px'
                                 }
                             }),
                             input,
@@ -2771,16 +2715,15 @@ const rdePage = () => {
             }))
         }
 
-        const ChangePassRde = ({ reqUrl, reqName, label, placeHolder }) => {
+        const ChangePassRde = ({ reqUrl, reqName, label }) => {
             let mainBox
-            let inputName
 
             const PasswordField = ({ id, placeholder }) => {
                 return ($({
                     tag: 'div',
                     style: {
                         width: '100%',
-                        marginBottom: '2vh',
+                        marginBottom: '16px',
                         position: 'relative'
                     },
                     child: [
@@ -2788,11 +2731,11 @@ const rdePage = () => {
                             tag: 'div',
                             style: {
                                 position: 'absolute',
-                                left: '1vw',
+                                left: '12px',
                                 top: '50%',
                                 transform: 'translateY(-50%)',
-                                color: '#666',
-                                fontSize: '1vw',
+                                color: '#94a3b8',
+                                fontSize: '14px',
                                 zIndex: '1'
                             },
                             att: {
@@ -2808,29 +2751,27 @@ const rdePage = () => {
                             },
                             style: {
                                 width: '100%',
-                                padding: '0.8rem 2.5rem',
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
-                                borderRadius: '0.5vw',
-                                color: '#fff',
-                                fontSize: '1vw',
+                                padding: '10px 12px 10px 40px',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                color: '#1e293b',
+                                fontSize: '14px',
                                 outline: 'none',
-                                transition: 'all 0.3s ease',
-                                boxSizing: 'border-box'
+                                transition: 'all 0.2s ease',
+                                boxSizing: 'border-box',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                             },
                             event: {
-                                input: (ev) => {
-                                    if (id === 'newPassword') {
-                                        inputName = ev.target.value
-                                    }
-                                },
                                 focus: (e) => {
-                                    e.target.style.borderColor = '#00bcd4'
-                                    e.target.style.backgroundColor = '#3a3a3a'
+                                    e.target.style.borderColor = '#3b82f6'
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                    e.target.style.backgroundColor = '#ffffff'
                                 },
                                 blur: (e) => {
-                                    e.target.style.borderColor = '#444'
-                                    e.target.style.backgroundColor = '#333'
+                                    e.target.style.borderColor = '#e2e8f0'
+                                    e.target.style.boxShadow = 'none'
+                                    e.target.style.backgroundColor = '#f8fafc'
                                 }
                             }
                         }),
@@ -2838,14 +2779,13 @@ const rdePage = () => {
                             tag: 'div',
                             style: {
                                 position: 'absolute',
-                                right: '1vw',
+                                right: '12px',
                                 top: '50%',
                                 transform: 'translateY(-50%)',
-                                color: '#666',
-                                fontSize: '1vw',
+                                color: '#94a3b8',
+                                fontSize: '14px',
                                 cursor: 'pointer',
-                                zIndex: '1',
-                                transition: 'color 0.3s ease'
+                                zIndex: '1'
                             },
                             att: {
                                 className: 'fa-solid fa-eye-slash toggle-password',
@@ -2873,17 +2813,17 @@ const rdePage = () => {
             const submit = $({
                 tag: 'div',
                 style: {
-                    background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
-                    padding: '0.8rem 2rem',
-                    borderRadius: '2vw',
+                    background: '#3b82f6',
+                    padding: '8px 24px',
+                    borderRadius: '8px',
                     color: '#fff',
                     cursor: 'pointer',
-                    fontSize: '1vw',
-                    fontFamily: 'Segoe UI, sans-serif',
+                    fontSize: '14px',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                     fontWeight: '600',
                     textAlign: 'center',
-                    transition: 'all 0.3s ease',
-                    marginTop: '1vh'
+                    transition: 'all 0.2s ease',
+                    marginTop: '8px'
                 },
                 text: 'Change Password',
                 event: {
@@ -2910,18 +2850,9 @@ const rdePage = () => {
                         if (confirm("Save Changes?")) {
                             const req = new Request(reqUrl)
                             req.Post([
-                                {
-                                    name: 'userID',
-                                    value: userID
-                                },
-                                {
-                                    name: reqName,
-                                    value: '0'
-                                },
-                                {
-                                    name: 'changePassInput',
-                                    value: newPass
-                                }
+                                { name: 'userID', value: userID },
+                                { name: reqName, value: '0' },
+                                { name: 'changePassInput', value: newPass }
                             ])
                             req.Json()
                             req.Send().then(data => {
@@ -2944,10 +2875,10 @@ const rdePage = () => {
                     position: 'fixed',
                     top: '0',
                     left: '0',
-                    backgroundColor: 'rgba(0,0,0,0.9)',
+                    backgroundColor: 'rgba(15,23,42,0.6)',
                     display: 'flex',
                     zIndex: '9999',
-                    backdropFilter: 'blur(5px)'
+                    backdropFilter: 'blur(4px)'
                 },
                 elementHandler: (el) => {
                     mainBox = el
@@ -2956,41 +2887,38 @@ const rdePage = () => {
                     $({
                         tag: 'div',
                         style: {
-                            width: '35%',
+                            width: '420px',
+                            maxWidth: '92%',
                             height: 'fit-content',
-                            background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                            backgroundColor: '#ffffff',
                             margin: 'auto',
-                            padding: '2.5rem',
-                            borderRadius: '1vw',
+                            padding: '32px',
+                            borderRadius: '12px',
                             position: 'relative',
-                            border: '1px solid #333',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
                         },
                         child: [
                             $({
                                 tag: 'div',
                                 style: {
                                     position: 'absolute',
-                                    top: '1.5vh',
-                                    right: '1.5vw',
+                                    top: '16px',
+                                    right: '16px',
                                     cursor: 'pointer',
-                                    color: '#666',
-                                    fontSize: '1.5vw',
-                                    transition: 'all 0.3s ease'
+                                    color: '#94a3b8',
+                                    fontSize: '20px',
+                                    transition: 'all 0.2s ease',
+                                    padding: '8px',
+                                    borderRadius: '8px'
                                 },
                                 att: {
-                                    className: 'fa-solid fa-circle-xmark'
+                                    className: 'fa-solid fa-times'
                                 },
                                 event: {
                                     type: 'click',
                                     method: () => {
                                         mainBox.remove()
-                                    },
-                                    mouseover: (e) => {
-                                        e.target.style.color = '#00bcd4'
-                                    },
-                                    mouseout: (e) => {
-                                        e.target.style.color = '#666'
                                     }
                                 }
                             }),
@@ -2998,13 +2926,13 @@ const rdePage = () => {
                                 tag: 'div',
                                 text: label,
                                 style: {
-                                    fontFamily: 'Segoe UI, sans-serif',
-                                    fontSize: '1.8vw',
-                                    color: '#fff',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    fontSize: '20px',
+                                    color: '#1e293b',
                                     textAlign: 'center',
-                                    marginBottom: '3vh',
+                                    marginBottom: '24px',
                                     fontWeight: '600',
-                                    letterSpacing: '0.1vw'
+                                    letterSpacing: '-0.3px'
                                 }
                             }),
                             PasswordField({ id: 'newPassword', placeholder: 'Enter new password' }),
@@ -3023,20 +2951,14 @@ const rdePage = () => {
                 height: '100%',
                 display: 'flex',
                 position: 'relative',
-                backgroundColor: 'rgba(0,0,0,0.3)'
+                backgroundColor: '#f8fafc'
             },
             elementHandler: (el) => {
                 acBody = el
                 const req = new Request('/rdeaccreq')
                 req.Post([
-                    {
-                        name: 'accountIdRde',
-                        value: '0',
-                    },
-                    {
-                        name: 'userID',
-                        value: userID
-                    }
+                    { name: 'accountIdRde', value: '0' },
+                    { name: 'userID', value: userID }
                 ])
                 req.Json()
                 req.Send().then(data => {
@@ -3050,15 +2972,17 @@ const rdePage = () => {
                     style: {
                         marginLeft: '2vw',
                         position: 'absolute',
-                        top: '2vh',
+                        top: '16px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5vw',
+                        gap: '8px',
                         cursor: 'pointer',
-                        padding: '0.5vh 1vw',
-                        borderRadius: '2vw',
-                        backgroundColor: 'rgba(255,255,255,0.05)',
-                        transition: 'all 0.3s ease'
+                        padding: '6px 16px',
+                        borderRadius: '20px',
+                        backgroundColor: 'rgba(59,130,246,0.06)',
+                        border: '1px solid rgba(59,130,246,0.12)',
+                        transition: 'all 0.2s ease',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                     },
                     att: {
                         className: 'backRdeAc'
@@ -3070,16 +2994,16 @@ const rdePage = () => {
                                 className: 'fa-solid fa-arrow-left'
                             },
                             style: {
-                                fontSize: '1vw',
-                                color: '#00bcd4'
+                                fontSize: '14px',
+                                color: '#3b82f6'
                             }
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '0.95vw',
-                                color: '#e0e0e0'
+                                fontSize: '13px',
+                                color: '#1e293b',
+                                fontWeight: '500'
                             },
                             text: 'Back to List'
                         })
@@ -3088,6 +3012,12 @@ const rdePage = () => {
                         type: 'click',
                         method: () => {
                             window.location.assign('/admin/accountList/rdestaff/list')
+                        },
+                        mouseover: (e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.12)'
+                        },
+                        mouseout: (e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.06)'
                         }
                     }
                 }),
@@ -3095,20 +3025,21 @@ const rdePage = () => {
                     tag: 'div',
                     style: {
                         width: '40%',
+                        maxWidth: '500px',
                         height: 'fit-content',
                         margin: 'auto',
-                        backgroundColor: 'rgba(0,0,0,0.5)',
-                        padding: '2rem',
-                        borderRadius: '1vw',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        backdropFilter: 'blur(10px)'
+                        backgroundColor: '#ffffff',
+                        padding: '32px',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
                                 textAlign: 'center',
-                                marginBottom: '3vh'
+                                marginBottom: '24px'
                             },
                             child: [
                                 $({
@@ -3117,8 +3048,8 @@ const rdePage = () => {
                                         className: 'fa-solid fa-user-circle'
                                     },
                                     style: {
-                                        fontSize: '4vw',
-                                        color: '#00bcd4',
+                                        fontSize: '64px',
+                                        color: '#3b82f6',
                                         opacity: '0.8'
                                     }
                                 }),
@@ -3126,11 +3057,12 @@ const rdePage = () => {
                                     tag: 'div',
                                     text: 'RDE Staff Details',
                                     style: {
-                                        fontFamily: 'Segoe UI, sans-serif',
-                                        fontSize: '1.5vw',
-                                        color: '#fff',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                        fontSize: '20px',
+                                        color: '#1e293b',
                                         fontWeight: '600',
-                                        marginTop: '1vh'
+                                        marginTop: '8px',
+                                        letterSpacing: '-0.3px'
                                     }
                                 })
                             ]
@@ -3140,7 +3072,7 @@ const rdePage = () => {
                             style: {
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '1.5vh'
+                                gap: '12px'
                             },
                             child: [
                                 $({
@@ -3148,10 +3080,10 @@ const rdePage = () => {
                                     style: {
                                         display: 'flex',
                                         alignItems: 'center',
-                                        padding: '1rem',
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        borderRadius: '0.5vw',
-                                        border: '1px solid rgba(255,255,255,0.1)'
+                                        padding: '12px 16px',
+                                        backgroundColor: '#f8fafc',
+                                        borderRadius: '8px',
+                                        border: '1px solid #f1f5f9'
                                     },
                                     child: [
                                         $({
@@ -3160,28 +3092,29 @@ const rdePage = () => {
                                                 className: 'fa-solid fa-user'
                                             },
                                             style: {
-                                                color: '#00bcd4',
-                                                fontSize: '1vw',
-                                                width: '2vw'
+                                                color: '#3b82f6',
+                                                fontSize: '14px',
+                                                width: '24px'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             text: 'Full Name:',
                                             style: {
-                                                fontFamily: 'Segoe UI, sans-serif',
-                                                fontSize: '0.95vw',
-                                                color: '#888',
-                                                width: '8vw'
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontSize: '13px',
+                                                color: '#64748b',
+                                                width: '100px'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             style: {
                                                 flex: '1',
-                                                fontFamily: 'Segoe UI, sans-serif',
-                                                fontSize: '0.95vw',
-                                                color: '#e0e0e0'
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontSize: '13px',
+                                                color: '#1e293b',
+                                                fontWeight: '500'
                                             },
                                             elementHandler: (el) => {
                                                 fName = el
@@ -3193,12 +3126,12 @@ const rdePage = () => {
                                                 className: 'fa-solid fa-pen-to-square'
                                             },
                                             style: {
-                                                color: '#00bcd4',
+                                                color: '#3b82f6',
                                                 cursor: 'pointer',
-                                                fontSize: '1vw',
-                                                padding: '0.3vw',
-                                                borderRadius: '0.2vw',
-                                                transition: 'all 0.3s ease'
+                                                fontSize: '14px',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'all 0.2s ease'
                                             },
                                             event: {
                                                 type: 'click',
@@ -3209,6 +3142,12 @@ const rdePage = () => {
                                                         label: 'Edit Full Name',
                                                         placeHolder: 'Fullname'
                                                     }))
+                                                },
+                                                mouseover: (e) => {
+                                                    e.currentTarget.style.backgroundColor = '#f1f5f9'
+                                                },
+                                                mouseout: (e) => {
+                                                    e.currentTarget.style.backgroundColor = 'transparent'
                                                 }
                                             }
                                         })
@@ -3219,10 +3158,10 @@ const rdePage = () => {
                                     style: {
                                         display: 'flex',
                                         alignItems: 'center',
-                                        padding: '1rem',
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        borderRadius: '0.5vw',
-                                        border: '1px solid rgba(255,255,255,0.1)'
+                                        padding: '12px 16px',
+                                        backgroundColor: '#f8fafc',
+                                        borderRadius: '8px',
+                                        border: '1px solid #f1f5f9'
                                     },
                                     child: [
                                         $({
@@ -3231,28 +3170,29 @@ const rdePage = () => {
                                                 className: 'fa-solid fa-at'
                                             },
                                             style: {
-                                                color: '#00bcd4',
-                                                fontSize: '1vw',
-                                                width: '2vw'
+                                                color: '#3b82f6',
+                                                fontSize: '14px',
+                                                width: '24px'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             text: 'Username:',
                                             style: {
-                                                fontFamily: 'Segoe UI, sans-serif',
-                                                fontSize: '0.95vw',
-                                                color: '#888',
-                                                width: '8vw'
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontSize: '13px',
+                                                color: '#64748b',
+                                                width: '100px'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             style: {
                                                 flex: '1',
-                                                fontFamily: 'Segoe UI, sans-serif',
-                                                fontSize: '0.95vw',
-                                                color: '#e0e0e0'
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontSize: '13px',
+                                                color: '#1e293b',
+                                                fontWeight: '500'
                                             },
                                             elementHandler: (el) => {
                                                 uName = el
@@ -3264,12 +3204,12 @@ const rdePage = () => {
                                                 className: 'fa-solid fa-pen-to-square'
                                             },
                                             style: {
-                                                color: '#00bcd4',
+                                                color: '#3b82f6',
                                                 cursor: 'pointer',
-                                                fontSize: '1vw',
-                                                padding: '0.3vw',
-                                                borderRadius: '0.2vw',
-                                                transition: 'all 0.3s ease'
+                                                fontSize: '14px',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                transition: 'all 0.2s ease'
                                             },
                                             event: {
                                                 type: 'click',
@@ -3291,13 +3231,13 @@ const rdePage = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
-                                        padding: '1rem',
-                                        backgroundColor: 'rgba(0,188,212,0.1)',
-                                        borderRadius: '0.5vw',
-                                        border: '1px solid rgba(0,188,212,0.3)',
-                                        marginTop: '1vh',
+                                        padding: '12px 16px',
+                                        backgroundColor: 'rgba(59,130,246,0.06)',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(59,130,246,0.12)',
+                                        marginTop: '4px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.3s ease'
+                                        transition: 'all 0.2s ease'
                                     },
                                     child: [
                                         $({
@@ -3305,7 +3245,7 @@ const rdePage = () => {
                                             style: {
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '1vw'
+                                                gap: '12px'
                                             },
                                             child: [
                                                 $({
@@ -3314,18 +3254,18 @@ const rdePage = () => {
                                                         className: 'fa-solid fa-key'
                                                     },
                                                     style: {
-                                                        color: '#00bcd4',
-                                                        fontSize: '1.2vw'
+                                                        color: '#3b82f6',
+                                                        fontSize: '16px'
                                                     }
                                                 }),
                                                 $({
                                                     tag: 'div',
                                                     text: 'Change Password',
                                                     style: {
-                                                        fontFamily: 'Segoe UI, sans-serif',
-                                                        fontSize: '1vw',
-                                                        color: '#00bcd4',
-                                                        fontWeight: '600'
+                                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                        fontSize: '14px',
+                                                        color: '#1e293b',
+                                                        fontWeight: '500'
                                                     }
                                                 })
                                             ]
@@ -3336,8 +3276,8 @@ const rdePage = () => {
                                                 className: 'fa-solid fa-chevron-right'
                                             },
                                             style: {
-                                                color: '#00bcd4',
-                                                fontSize: '1vw'
+                                                color: '#94a3b8',
+                                                fontSize: '14px'
                                             }
                                         })
                                     ],
@@ -3347,15 +3287,14 @@ const rdePage = () => {
                                             acBody.appendChild(ChangePassRde({
                                                 reqUrl: '/rdeaccreq',
                                                 reqName: 'editPass',
-                                                label: 'Change Password',
-                                                placeHolder: 'New Password'
+                                                label: 'Change Password'
                                             }))
                                         },
                                         mouseover: (e) => {
-                                            e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.15)'
+                                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.12)'
                                         },
                                         mouseout: (e) => {
-                                            e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.1)'
+                                            e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.06)'
                                         }
                                     }
                                 })
@@ -3372,6 +3311,7 @@ const rdePage = () => {
         style: {
             height: '100%',
             width: '100%',
+            background: '#f8fafc'
         },
         elementHandler: (el) => {
             mainPan = el
@@ -3392,116 +3332,137 @@ const rdePage = () => {
     }))
 }
 
-const TabButton = ({label, url}) => {
-
-
-
+// Tab Button with caching
+const TabButton = ({ label, url }) => {
     const getActive = (button) => {
-
         if (url.split('/')[3] === window.location.href.replace(window.location.origin, '').split('/')[3]) {
-
             button.className += ' tabsAccountActive'
-
         }
-
     }
 
-
-
     return ($({
-
-        tag: 'td',
-
-        att: {
-
-            className: 'tabsAccount'
-
+        tag: 'div',
+        style: {
+            padding: '8px 24px',
+            cursor: 'pointer',
+            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            fontSize: '13px',
+            fontWeight: '500',
+            color: '#64748b',
+            borderBottom: '2px solid transparent',
+            transition: 'all 0.2s ease',
+            whiteSpace: 'nowrap'
         },
-
+        att: {
+            className: 'tabsAccount'
+        },
         elementHandler: getActive,
-
         text: label,
-
         event: {
-
             type: 'click',
-
             method: () => {
-
                 window.location.assign(url)
-
+            },
+            mouseover: (e) => {
+                if (!e.currentTarget.className.includes('tabsAccountActive')) {
+                    e.currentTarget.style.color = '#1e293b'
+                    e.currentTarget.style.borderBottomColor = '#3b82f6'
+                }
+            },
+            mouseout: (e) => {
+                if (!e.currentTarget.className.includes('tabsAccountActive')) {
+                    e.currentTarget.style.color = '#64748b'
+                    e.currentTarget.style.borderBottomColor = 'transparent'
+                }
             }
-
         }
-
     }))
-
 }
-
-
 
 const page = [];
 page.push({
     url: '/admin/accountList/CapsuUser',
-    tab: TabButton({label: "CAPSU Account", url: '/admin/accountList/CapsuUser'}),
+    tab: TabButton({ label: "CAPSU Account", url: '/admin/accountList/CapsuUser' }),
     page: capUser
 })
 
 page.push({
     url: '/admin/accountList/Evaluator',
-    tab: TabButton({label: "Evaluators Account", url: '/admin/accountList/Evaluator'}),
+    tab: TabButton({ label: "Evaluators Account", url: '/admin/accountList/Evaluator' }),
     page: evalPage
 })
 
 page.push({
     url: '/admin/accountList/rdestaff/list',
-    tab: TabButton({label: "RDE Staff", url: '/admin/accountList/rdestaff/list'}),
+    tab: TabButton({ label: "RDE Staff", url: '/admin/accountList/rdestaff/list' }),
     page: rdePage
 })
 
-
-
 const Tabs = () => {
-    const getTable = (table) => {
-        page.forEach(val => {
-            table.appendChild(val.tab)
+    // Check if we have cached tabs
+    let cachedTabs = tabCache.get('accountTabs')
+
+    if (!cachedTabs) {
+        const tabContainer = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                gap: '4px',
+                padding: '0 16px',
+                background: '#ffffff',
+                borderBottom: '1px solid #e2e8f0',
+                height: '48px',
+                alignItems: 'center'
+            },
+            att: {
+                className: 'accountTabsContainer'
+            },
+            child: page.map(val => val.tab)
         })
+
+        cachedTabs = tabContainer
+        tabCache.set('accountTabs', cachedTabs)
     }
-    return ($({
-        tag: 'table',
-        att: {
-            className: 'accountTabsTable'
-        },
-        child: [
-            $({
-                tag: 'tr',
-                elementHandler: getTable
-            })
-        ]
-    }))
+
+    return cachedTabs
 }
 
 const pageFrame = () => {
     const getFrame = (frame) => {
         let frameState = true
-        page.forEach(val => {
-            const current=window.location.href
-            const origin=window.location.origin
-            const rout=current.replace(origin,'')
-            if (val.url.split('/')[3] === rout.split('/')[3]) {
-                frame.appendChild(val.page())
-                frameState = false
+        const current = window.location.href
+        const origin = window.location.origin
+        const rout = current.replace(origin, '')
+
+        // Check if we have a cached page instance
+        const activePage = page.find(val => val.url.split('/')[3] === rout.split('/')[3])
+
+        if (activePage) {
+            // Check cache for this page
+            let pageInstance = tabCache.get(activePage.url)
+            if (!pageInstance) {
+                pageInstance = activePage.page()
+                tabCache.set(activePage.url, pageInstance)
             }
-        })
+            frame.appendChild(pageInstance)
+            frameState = false
+        }
+
         if (frameState) {
             frame.appendChild(Error())
         }
     }
+
     return ($({
         tag: 'div',
         elementHandler: getFrame,
         att: {
             className: 'pageFrameAdmin'
+        },
+        style: {
+            height: 'calc(100% - 48px)',
+            width: '100%',
+            overflow: 'hidden'
         }
     }))
 }
@@ -3511,7 +3472,12 @@ export const AccountList = () => {
         externalStyle: '/client/component/adminComponent/componentStyle/account.css',
         tag: 'div',
         att: {
-            className: 'accountList '
+            className: 'accountList'
+        },
+        style: {
+            height: '100%',
+            width: '100%',
+            background: '#f8fafc'
         },
         child: [
             Tabs(),
